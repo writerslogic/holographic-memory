@@ -144,11 +144,18 @@ impl QueryCode {
         let delta = if hi > lo { (hi - lo) / levels } else { 1.0 };
         self.planes.fill(0);
         let mut total = 0u32;
-        for (i, &v) in x.iter().enumerate() {
-            let q = ((v - lo) / delta).round().clamp(0.0, levels) as u32;
-            total += q;
-            for p in 0..QUERY_BITS {
-                self.planes[p * words + i / 64] |= u64::from((q >> p) & 1) << (i % 64);
+        // One word of every plane is built in registers per 64 coordinates, then stored once.
+        for (w, chunk) in x.chunks(64).enumerate() {
+            let mut bits = [0u64; QUERY_BITS];
+            for (j, &v) in chunk.iter().enumerate() {
+                let q = ((v - lo) / delta).round().clamp(0.0, levels) as u32;
+                total += q;
+                for (p, b) in bits.iter_mut().enumerate() {
+                    *b |= u64::from((q >> p) & 1) << j;
+                }
+            }
+            for (p, b) in bits.into_iter().enumerate() {
+                self.planes[p * words + w] = b;
             }
         }
         self.lo = lo;
@@ -168,6 +175,11 @@ pub(crate) fn raw_estimates(codes: &[u64], planes: &[u64], words: usize, out: &m
         16 => return neon::raw::<16>(codes, planes, out),
         _ => {}
     }
+    #[cfg(target_arch = "x86_64")]
+    if tier::popcnt() {
+        // SAFETY: `popcnt` is true only after detecting the `popcnt` feature.
+        return unsafe { x86::raw_popcnt(codes, planes, words, out) };
+    }
     raw_scalar(codes, planes, words, out)
 }
 
@@ -180,7 +192,8 @@ fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
 }
 
 /// [`raw_estimates`] for one code row: NEON AND + CNT over the bit planes for the row widths
-/// the index produces (16 planes x 64 words at most), scalar otherwise.
+/// the index produces (16 planes x 64 words at most), POPCNT on x86 when detected, scalar
+/// otherwise.
 #[must_use]
 #[inline]
 pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
@@ -188,6 +201,10 @@ pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
     {
         let mut out = [0u32; 1];
         match words {
+            1 => {
+                neon::raw::<1>(code, planes, &mut out);
+                return out[0];
+            }
             2 => {
                 neon::raw::<2>(code, planes, &mut out);
                 return out[0];
@@ -206,6 +223,11 @@ pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
             }
             _ => {}
         }
+    }
+    #[cfg(target_arch = "x86_64")]
+    if tier::popcnt() {
+        // SAFETY: `popcnt` is true only after detecting the `popcnt` feature.
+        return unsafe { x86::raw_one_popcnt(code, planes, words) };
     }
     raw_one_scalar(code, planes, words)
 }
@@ -231,12 +253,11 @@ mod neon {
 
     use super::{scalar_word, QUERY_BITS};
 
-    /// [`super::DotI8`] with the SDOT instruction. Handed out only by `dot_i8_kernel` after
-    /// detecting `dotprod`.
-    #[cfg_attr(target_feature = "dotprod", allow(dead_code))]
+    /// [`sdot`] behind a length check, for the kernel tests (after detecting `dotprod`).
+    #[cfg(test)]
     pub(super) fn dot_i8_sdot(a: &[i8], b: &[i8]) -> i32 {
         assert!(a.len() == b.len() && a.len().is_multiple_of(16));
-        // SAFETY: the only caller path checked `dotprod` at runtime.
+        // SAFETY: the only caller detected `dotprod` at runtime; lengths checked above.
         unsafe { sdot(a, b) }
     }
 
@@ -336,7 +357,7 @@ mod neon {
         }
     }
 
-    /// [`super::DotI8`] with widening multiplies; for cores without `dotprod`.
+    /// [`super::dot_i8_inline`] with widening multiplies; for cores without `dotprod`.
     #[cfg_attr(target_feature = "dotprod", allow(dead_code))]
     pub(super) fn dot_i8(a: &[i8], b: &[i8]) -> i32 {
         assert!(a.len() == b.len() && a.len().is_multiple_of(16));
@@ -393,66 +414,21 @@ mod neon {
     }
 }
 
-/// Integer dot product of two i8 rows whose length is a multiple of 16.
-#[cfg_attr(
-    all(target_arch = "aarch64", target_feature = "dotprod"),
-    allow(dead_code)
-)]
-pub(crate) type DotI8 = fn(&[i8], &[i8]) -> i32;
-
-/// The fastest [`DotI8`] this CPU supports.
-#[cfg_attr(
-    all(target_arch = "aarch64", target_feature = "dotprod"),
-    allow(dead_code)
-)]
-pub(crate) fn dot_i8_kernel() -> DotI8 {
-    #[cfg(target_arch = "aarch64")]
-    {
-        if std::arch::is_aarch64_feature_detected!("dotprod") {
-            return neon::dot_i8_sdot;
-        }
-        neon::dot_i8
-    }
-    #[cfg(target_arch = "x86_64")]
-    match tier::get() {
-        tier::VNNI => dot_i8_vnni_checked,
-        tier::AVX2 => dot_i8_avx2_checked,
-        _ => dot_i8_scalar,
-    }
-    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
-    dot_i8_scalar
-}
-
-/// [`DotI8`] with AVX2; handed out only by `dot_i8_kernel` after detecting the feature.
-#[cfg(target_arch = "x86_64")]
-fn dot_i8_avx2_checked(a: &[i8], b: &[i8]) -> i32 {
-    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
-    // SAFETY: the only caller path checked `avx2` at runtime; lengths checked above.
-    unsafe { x86::dot_i8_avx2(a, b) }
-}
-
-/// [`DotI8`] with AVX512-VNNI on 256-bit registers; handed out only by `dot_i8_kernel` after
-/// detecting the features.
-#[cfg(target_arch = "x86_64")]
-fn dot_i8_vnni_checked(a: &[i8], b: &[i8]) -> i32 {
-    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
-    // SAFETY: the only caller path checked `avx512vnni`, `avx512vl` and `avx2` at runtime;
-    // lengths checked above.
-    unsafe { x86::dot_i8_vnni(a, b) }
-}
-
 /// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|vnni` (read once, at the
 /// first distance call) pins a lower tier than the CPU supports, so every tier can be run and
 /// compared on one machine; `auto` or unset takes the best detected tier, and a tier above
 /// what the CPU supports falls back to the best detected one.
 #[cfg(target_arch = "x86_64")]
 mod tier {
-    use std::sync::atomic::{AtomicU8, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
     pub(super) const SCALAR: u8 = 1;
     pub(super) const AVX2: u8 = 2;
     pub(super) const VNNI: u8 = 3;
     static TIER: AtomicU8 = AtomicU8::new(0);
+    /// `popcnt` detected and the tier not pinned to `scalar`. Stored before [`TIER`]; a reader
+    /// that sees the tier but not yet this flag takes the scalar popcount, which is exact too.
+    static POPCNT: AtomicBool = AtomicBool::new(false);
 
     #[inline(always)]
     pub(super) fn get() -> u8 {
@@ -460,6 +436,13 @@ mod tier {
             0 => detect(),
             t => t,
         }
+    }
+
+    /// True if the popcount kernels may use the POPCNT instruction.
+    #[inline(always)]
+    pub(super) fn popcnt() -> bool {
+        get();
+        POPCNT.load(Ordering::Relaxed)
     }
 
     #[cold]
@@ -485,24 +468,50 @@ mod tier {
             }
         };
         let tier = want.min(best);
+        POPCNT.store(
+            want != SCALAR && is_x86_feature_detected!("popcnt"),
+            Ordering::Relaxed,
+        );
         TIER.store(tier, Ordering::Relaxed);
         tier
     }
 }
 
-/// [`DotI8`] resolved at compile time, so the search loop can inline it: SDOT when the build
-/// target enables `dotprod` (every Apple core), else the runtime-detected kernel.
+/// Integer dot product of two i8 rows whose length is a multiple of 16, dispatched inline so
+/// the search loop makes no indirect call: SDOT when the build target enables `dotprod`
+/// (every Apple core), else the kernel of the detected tier (one relaxed load, a plain move
+/// on x86).
 #[must_use]
 #[inline(always)]
 pub(crate) fn dot_i8_inline(a: &[i8], b: &[i8]) -> i32 {
+    assert!(a.len() == b.len() && a.len().is_multiple_of(16));
     #[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
     {
-        assert!(a.len() == b.len() && a.len().is_multiple_of(16));
         // SAFETY: `dotprod` is enabled for the whole build; the lengths are checked above.
         unsafe { neon::sdot(a, b) }
     }
     #[cfg(not(all(target_arch = "aarch64", target_feature = "dotprod")))]
-    dot_i8_kernel()(a, b)
+    {
+        #[cfg(target_arch = "aarch64")]
+        {
+            if std::arch::is_aarch64_feature_detected!("dotprod") {
+                // SAFETY: `dotprod` was detected at runtime; the lengths are checked above.
+                return unsafe { neon::sdot(a, b) };
+            }
+            neon::dot_i8(a, b)
+        }
+        #[cfg(target_arch = "x86_64")]
+        match tier::get() {
+            // SAFETY: the tier is VNNI only after detecting `avx512vnni`, `avx512vl` and `avx2`;
+            // the lengths are checked above.
+            tier::VNNI => unsafe { x86::dot_i8_vnni(a, b) },
+            // SAFETY: the tier is AVX2 only after detecting `avx2`; the lengths are checked above.
+            tier::AVX2 => unsafe { x86::dot_i8_avx2(a, b) },
+            _ => dot_i8_scalar(a, b),
+        }
+        #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+        dot_i8_scalar(a, b)
+    }
 }
 
 /// Lays out an i8 query code for [`dot_i4_inline`]: per 32-wide block, its 16 even then its
@@ -718,6 +727,44 @@ pub(crate) fn prefetch(words: &[u64]) {
 mod x86 {
     use std::arch::x86_64::*;
 
+    use super::QUERY_BITS;
+
+    /// [`super::raw_estimates`] with the POPCNT instruction (baseline x86_64 lowers
+    /// `count_ones` to a bit-twiddling sequence). The same integer sums as the scalar form.
+    ///
+    /// # Safety
+    /// The CPU supports `popcnt`.
+    #[target_feature(enable = "popcnt")]
+    pub(super) unsafe fn raw_popcnt(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
+        assert_eq!(planes.len(), QUERY_BITS * words);
+        assert_eq!(codes.len(), out.len() * words);
+        for (code, o) in codes.chunks_exact(words).zip(out.iter_mut()) {
+            *o = raw_one_popcnt(code, planes, words);
+        }
+    }
+
+    /// [`super::raw_one`] with the POPCNT instruction; `code.len() == words`.
+    ///
+    /// # Safety
+    /// The CPU supports `popcnt`.
+    #[target_feature(enable = "popcnt")]
+    #[inline]
+    pub(super) unsafe fn raw_one_popcnt(code: &[u64], planes: &[u64], words: usize) -> u32 {
+        debug_assert_eq!(code.len(), words);
+        let (p0, rest) = planes.split_at(words);
+        let (p1, rest) = rest.split_at(words);
+        let (p2, p3) = rest.split_at(words);
+        let mut total = 0u32;
+        for ((((&c, &a0), &a1), &a2), &a3) in code.iter().zip(p0).zip(p1).zip(p2).zip(&p3[..words])
+        {
+            total += (c & a0).count_ones()
+                + ((c & a1).count_ones() << 1)
+                + ((c & a2).count_ones() << 2)
+                + ((c & a3).count_ones() << 3);
+        }
+        total
+    }
+
     /// Signed i8 dot product of two rows of equal length, a multiple of 16, exact over the
     /// whole i8 range: the bytes widen to i16 lanes (`vpmovsxbw`) and `vpmaddwd` sums pairs
     /// of products into i32 (the `maddubs` form would misread -128 after the sign trick).
@@ -922,6 +969,39 @@ mod tests {
                     raw_one(code, &planes, words),
                     want,
                     "raw_one, row {row}, words {words}, seed {seed}"
+                );
+            }
+        }
+    }
+
+    /// The POPCNT kernels against the scalar reference, bit for bit, whatever tier is pinned.
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn popcnt_kernels_match_scalar() {
+        if !is_x86_feature_detected!("popcnt") {
+            return;
+        }
+        let mut rng = SplitMix(17);
+        for words in 0..=17 {
+            let rows = 9;
+            let codes: Vec<u64> = (0..rows * words).map(|_| rng.next_u64()).collect();
+            let planes: Vec<u64> = (0..QUERY_BITS * words).map(|_| rng.next_u64()).collect();
+            let mut want = vec![0u32; rows];
+            let mut got = vec![u32::MAX; rows];
+            if words > 0 {
+                raw_scalar(&codes, &planes, words, &mut want);
+                // SAFETY: `popcnt` was detected above.
+                unsafe { x86::raw_popcnt(&codes, &planes, words, &mut got) };
+                assert_eq!(got, want, "words {words}");
+            }
+            for (row, code) in codes.chunks(words.max(1)).take(rows).enumerate() {
+                let code = &code[..words.min(code.len())];
+                // SAFETY: `popcnt` was detected above.
+                let fast = unsafe { x86::raw_one_popcnt(code, &planes, words) };
+                assert_eq!(
+                    fast,
+                    raw_one_scalar(code, &planes, words),
+                    "row {row}, words {words}"
                 );
             }
         }
@@ -1204,13 +1284,14 @@ mod tests {
             .collect()
     }
 
-    /// The tail, odd-dimension and extreme-value cases every integer kernel must match the
-    /// scalar reference on, bit for bit (lengths are the multiples of 16 the index produces).
+    /// The empty-row, tail, odd-dimension and extreme-value cases every integer kernel must
+    /// match the scalar reference on, bit for bit (lengths are the multiples of 16 the index
+    /// produces).
     #[test]
     fn every_integer_kernel_matches_scalar() {
         let mut rng = SplitMix(99);
         for (name, i8k, i4k) in int_variants() {
-            for len in (16..=512).step_by(16) {
+            for len in (0..=512).step_by(16) {
                 for round in 0..24 {
                     let mut a = random_i8(&mut rng, len);
                     let mut b = random_i8(&mut rng, len);

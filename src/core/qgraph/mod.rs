@@ -49,8 +49,7 @@ use crate::core::error::HmsError;
 use adjacency::Adjacency;
 
 use kernels::{
-    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_kernel, DotI8, QueryCode, Rotation,
-    SplitMix,
+    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_inline, QueryCode, Rotation, SplitMix,
 };
 #[cfg(feature = "experimental")]
 pub use vertex::QueryProfile;
@@ -169,9 +168,11 @@ struct Candidate {
     done: bool,
 }
 
+/// Visited marks with an 8-bit epoch, as the vertex index keeps them: a quarter of the cache
+/// footprint of `u32` epochs, at the cost of clearing every 255 searches.
 struct Visited {
-    marks: Vec<u32>,
-    epoch: u32,
+    marks: Vec<u8>,
+    epoch: u8,
 }
 
 impl Visited {
@@ -199,11 +200,15 @@ impl Visited {
     }
 }
 
-/// One bit per vertex; reset clears only words touched by the previous search.
+/// One bit per vertex; reset clears only words touched by the previous search. Also holds the
+/// construction search's candidate buffers, so a thread allocates them once.
 #[derive(Default)]
 struct BuildVisited {
     bits: Vec<u64>,
     touched: Vec<u32>,
+    pool: Vec<Candidate>,
+    fresh: Vec<u32>,
+    dists: Vec<f32>,
 }
 
 impl BuildVisited {
@@ -311,7 +316,6 @@ struct BuildCodes {
     q: Vec<i8>,
     /// Per-row factors, side by side so that one cache line load serves a row.
     meta: Vec<CodeMeta>,
-    dot: DotI8,
     /// Euclidean rows: `meta` carries the squared norm the exact distance uses and the norm.
     euclidean: bool,
     /// Euclidean rows: relative f32 rounding slack of the computed distance.
@@ -364,7 +368,6 @@ impl BuildCodes {
             width,
             q,
             meta,
-            dot: dot_i8_kernel(),
             euclidean: norms.is_some(),
             // The computed dot product and squared norms are each within `dim * 2^-24` of the
             // magnitudes summed; twice that, and at least the unit-row slack, covers them.
@@ -388,6 +391,7 @@ impl BuildCodes {
     /// `x = s_x q_x + e_x`: `<p, u> <= s_p s_u <q_p, q_u> + |e_p| + |s_p q_p| |e_u|`, and
     /// `|s_p q_p| <= 1 + |e_p|`. `SLACK` covers the f32 rounding of this bound and of the exact
     /// dot product (at most `dim * 2^-24` for unit vectors).
+    #[inline]
     fn d2_lower(&self, p: u32, u: u32) -> f32 {
         self.d2_bounds(p, u).0
     }
@@ -397,7 +401,7 @@ impl BuildCodes {
     /// The 8-bit estimate of the computed `d2` of the unit rows `p` and `u`.
     #[inline]
     fn d2_est(&self, p: u32, u: u32) -> f32 {
-        let raw = (self.dot)(self.code(p), self.code(u)) as f32;
+        let raw = dot_i8_inline(self.code(p), self.code(u)) as f32;
         let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
         if self.euclidean {
             (mp.n2 + mu.n2 - 2.0 * mp.scale * mu.scale * raw).max(0.0)
@@ -409,10 +413,12 @@ impl BuildCodes {
     /// For rows of any norm the same inequality reads
     /// `|<p, u> - s_p s_u <q_p, q_u>| <= |e_p| |u| + (|p| + |e_p|) |e_u|`, and the computed
     /// distance `|p|^2 + |u|^2 - 2 <p, u>` gets a slack relative to the magnitudes it sums.
+    /// Inlined so that [`Self::d2_lower`] drops the unused upper bound.
+    #[inline]
     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
         const SLACK: f32 = 1e-4;
         let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
-        let raw = (self.dot)(self.code(p), self.code(u)) as f32;
+        let raw = dot_i8_inline(self.code(p), self.code(u)) as f32;
         let ep = mp.err;
         let est = mp.scale * mu.scale * raw;
         if !self.euclidean {
@@ -550,14 +556,17 @@ impl Rows<'_> {
         let (mut n_fresh, mut n_exact) = (0u64, 0u64);
         visited.reset(graph.len());
         visited.insert(start);
-        let mut pool = vec![Candidate {
+        // The thread's buffers, taken for this call and returned at its end.
+        let mut pool = std::mem::take(&mut visited.pool);
+        let mut fresh = std::mem::take(&mut visited.fresh);
+        let mut dists = std::mem::take(&mut visited.dists);
+        pool.clear();
+        pool.push(Candidate {
             dist: self.d2(p, start),
             id: start,
             done: false,
-        }];
+        });
         let mut expanded = Vec::new();
-        let mut fresh = Vec::new();
-        let mut dists = Vec::new();
         let mut cur = 0;
         while cur < pool.len() {
             pool[cur].done = true;
@@ -640,14 +649,15 @@ impl Rows<'_> {
         }
         if self.quantized {
             // Exact distances of the expanded set, which the prune scores exactly.
-            let ids: Vec<u32> = expanded.iter().map(|e| e.1).collect();
-            let mut d = Vec::with_capacity(ids.len());
-            self.d2_stream(p, &ids, &mut d);
-            n_exact += ids.len() as u64;
-            for (e, d) in expanded.iter_mut().zip(d) {
+            fresh.clear();
+            fresh.extend(expanded.iter().map(|e| e.1));
+            self.d2_stream(p, &fresh, &mut dists);
+            n_exact += fresh.len() as u64;
+            for (e, &d) in expanded.iter_mut().zip(&dists) {
                 e.0 = d;
             }
         }
+        (visited.pool, visited.fresh, visited.dists) = (pool, fresh, dists);
         prof::count(&prof::FRESH, n_fresh);
         prof::count(&prof::EXACT, n_exact);
         expanded
@@ -687,7 +697,7 @@ impl Rows<'_> {
         cands.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
         let a2 = alpha * alpha;
         let mut out: Vec<u32> = Vec::with_capacity(r);
-        let mut open: Vec<u32> = Vec::new();
+        let mut open: Vec<u32> = Vec::with_capacity(r);
         for &(dc, c, was_kept) in &cands {
             if out.len() == r {
                 break;
@@ -762,22 +772,25 @@ impl Rows<'_> {
                 .zip(closed_of)
                 .zip(&groups)
                 .collect();
-            jobs.into_par_iter()
-                .for_each(|(((row, len), closed), grp)| {
+            jobs.into_par_iter().for_each_init(
+                Vec::new,
+                |merged: &mut Vec<u32>, (((row, len), closed), grp)| {
                     let t = grp[0].0;
-                    let mut merged = row[..*len as usize].to_vec();
+                    merged.clear();
+                    merged.extend_from_slice(&row[..*len as usize]);
                     for &(_, s) in grp.iter() {
                         if !merged.contains(&s) {
                             merged.push(s);
                         }
                     }
                     if merged.len() > r {
-                        merged = self.prune_merged(t, &merged, *closed as usize, alpha, r);
+                        *merged = self.prune_merged(t, merged, *closed as usize, alpha, r);
                         *closed = merged.len() as u32;
                     }
-                    row[..merged.len()].copy_from_slice(&merged);
+                    row[..merged.len()].copy_from_slice(merged);
                     *len = merged.len() as u32;
-                });
+                },
+            );
             prof::add(&prof::REV, trev);
             start = end;
             size = (size * 2).min(max_batch);
@@ -833,8 +846,15 @@ impl Rows<'_> {
             let mut d = Vec::new();
             self.d2_stream(v as u32, &ids, &mut d);
             let mut c: Vec<(f32, u32)> = d.into_iter().zip(ids).collect();
-            c.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
-            c.into_iter().take(r - have.len()).map(|x| x.1).collect()
+            // The ids are distinct, so the order is total and the `k` nearest, sorted, are
+            // the first `k` of a full sort.
+            let order = |a: &(f32, u32), b: &(f32, u32)| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1));
+            if c.len() > k {
+                c.select_nth_unstable_by(k - 1, order);
+                c.truncate(k);
+            }
+            c.sort_by(order);
+            c.into_iter().map(|x| x.1).collect()
         });
     }
 }
@@ -1556,8 +1576,8 @@ impl Searcher<'_> {
             if params.max_exact > 0 && expanded >= params.max_exact {
                 break;
             }
-            let v = self.pool.remove(cur).id;
-            if let Some(next) = self.pool[cur..].iter().find(|c| !c.done) {
+            let v = self.pool[cur].id;
+            if let Some(next) = self.pool[cur + 1..].iter().find(|c| !c.done) {
                 kernels::prefetch(idx.block(next.id));
             }
             let b = idx.block(v);
@@ -1565,20 +1585,22 @@ impl Searcher<'_> {
             exact += 1;
             expanded += 1;
             push_top(&mut self.results, k, -ipv, v);
-            // The expanded vertex re-enters the pool with its exact distance, so an optimistic
-            // estimate cannot hold a pool slot and stall the search.
-            let pos = self.pool.partition_point(|c| c.dist <= -ipv);
-            if pos < ef {
-                self.pool.insert(
-                    pos,
-                    Candidate {
-                        dist: -ipv,
-                        id: v,
-                        done: true,
-                    },
-                );
-                self.pool.truncate(ef);
+            // The expanded vertex moves to the slot of its exact distance, so an optimistic
+            // estimate cannot hold a pool slot and stall the search. The pool is sorted and at
+            // most `ef` long, so the slot is the one a remove and re-insert would give, and
+            // one rotation of the span between the two slots moves it there.
+            let mut pos = self.pool.partition_point(|c| c.dist <= -ipv);
+            if pos > cur {
+                pos -= 1;
+                self.pool[cur..=pos].rotate_left(1);
+            } else {
+                self.pool[pos..=cur].rotate_right(1);
             }
+            self.pool[pos] = Candidate {
+                dist: -ipv,
+                id: v,
+                done: true,
+            };
 
             kernels::raw_estimates(
                 &b[idx.codes_off..idx.factors_off],

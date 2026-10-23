@@ -521,6 +521,8 @@ fn block_table(q: &[f32], bits: u8, m: usize, t: &mut [f32]) {
 pub struct BlockQuery {
     table: Vec<f32>,
     lut: Vec<u8>,
+    /// Per group, the minimum of its table entries.
+    mins: Vec<f32>,
     delta: f32,
     min_sum: f32,
     /// `1 / s_q`, which puts the block estimate in [`VGraph::est`] units.
@@ -532,6 +534,7 @@ impl BlockQuery {
         Self {
             table: vec![0.0; 16 * m],
             lut: vec![0; 16 * m],
+            mins: vec![0.0; m],
             delta: 1.0,
             min_sum: 0.0,
             inv_sq: 1.0,
@@ -541,22 +544,24 @@ impl BlockQuery {
     /// Quantizes the float table to bytes: per group, entries are offset by the group's
     /// minimum; one step `delta` serves every group.
     fn quantize(&mut self, m: usize) {
+        debug_assert_eq!(self.lut.len(), 16 * m);
+        debug_assert_eq!(self.mins.len(), m);
         let mut range = 0f32;
         let mut min_sum = 0f32;
-        for g in self.table.as_chunks::<16>().0 {
-            let lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
+        let groups = self.table.as_chunks::<16>().0;
+        for (g, lo) in groups.iter().zip(self.mins.iter_mut()) {
+            *lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
             let hi = g.iter().fold(f32::NEG_INFINITY, |a, &v| a.max(v));
-            min_sum += lo;
-            range = range.max(hi - lo);
+            min_sum += *lo;
+            range = range.max(hi - *lo);
         }
         let delta = if range > 0.0 { range / 255.0 } else { 1.0 };
-        for (j, g) in self.table.as_chunks::<16>().0.iter().enumerate() {
-            let lo = g.iter().fold(f32::INFINITY, |a, &v| a.min(v));
-            for (v, &e) in g.iter().enumerate() {
-                self.lut[16 * j + v] = ((e - lo) / delta).round().clamp(0.0, 255.0) as u8;
+        let luts = self.lut.as_chunks_mut::<16>().0;
+        for ((g, &lo), lut) in groups.iter().zip(&self.mins).zip(luts) {
+            for (o, &e) in lut.iter_mut().zip(g) {
+                *o = ((e - lo) / delta).round().clamp(0.0, 255.0) as u8;
             }
         }
-        debug_assert_eq!(self.lut.len(), 16 * m);
         self.delta = delta;
         self.min_sum = min_sum;
     }
@@ -870,14 +875,17 @@ impl VGraph {
 
         let screen_rot = screen.then(|| Rotation::new(dim, 0, SCREEN_SEED));
         let screen_words = screen_rot.as_ref().map_or(0, |r| r.padded() / 64);
-        // The centred row of stored vertex `v`, which every code below encodes.
-        let centred = |v: usize| -> Vec<f32> {
+        // The centred row of stored vertex `v`, which every code below encodes, written to a
+        // per-worker buffer.
+        let centred = |v: usize, out: &mut Vec<f32>| {
             let o = old(v);
-            g.vectors[o * g.dim..o * g.dim + dim]
-                .iter()
-                .zip(&mean)
-                .map(|(a, m)| a - m)
-                .collect()
+            out.clear();
+            out.extend(
+                g.vectors[o * g.dim..o * g.dim + dim]
+                    .iter()
+                    .zip(&mean)
+                    .map(|(a, m)| a - m),
+            );
         };
         // Codes are written in place, so no per-vertex buffers sit next to the final arrays.
         let mut codes = Lines::zeroed(n * stride);
@@ -889,12 +897,12 @@ impl VGraph {
             .par_chunks_exact_mut(stride)
             .zip(scales.par_iter_mut())
             .enumerate()
-            .for_each(|(v, (dst, s))| {
-                let x = centred(v);
+            .for_each_init(Vec::<f32>::new, |x, (v, (dst, s))| {
+                centred(v, x);
                 *s = if bits == 8 {
-                    quantize(&x, &mut dst[..cbytes])
+                    quantize(x, &mut dst[..cbytes])
                 } else {
-                    quantize4(&x, &mut dst[..cbytes])
+                    quantize4(x, &mut dst[..cbytes])
                 };
             });
         let mut residual = Vec::with_capacity(n * res_stride);
@@ -907,17 +915,17 @@ impl VGraph {
                 .par_chunks_exact_mut(res_stride)
                 .zip(res_scales.par_iter_mut())
                 .enumerate()
-                .for_each(|(v, (r, sr))| {
-                    let mut x = centred(v);
+                .for_each_init(Vec::<f32>::new, |x, (v, (r, sr))| {
+                    centred(v, x);
                     let c = &code_bytes[v * stride..v * stride + cbytes];
                     let s = scales[v];
                     x.iter_mut()
                         .enumerate()
                         .for_each(|(i, a)| *a -= s * f32::from(code_at(c, bits, i)));
                     *sr = if residual_bits == 8 {
-                        quantize(&x, r)
+                        quantize(x, r)
                     } else {
-                        quantize4(&x, r)
+                        quantize4(x, r)
                     };
                 });
         }
@@ -926,24 +934,26 @@ impl VGraph {
             screen_rows
                 .par_chunks_exact_mut(screen_words + 1)
                 .enumerate()
-                .for_each(|(v, srow)| {
-                    let x = centred(v);
-                    let mut xr = vec![0f32; rot.padded()];
-                    rot.apply(&x, &mut xr);
-                    let (mut norm2, mut abs) = (0f32, 0f32);
-                    let mut pop = 0u32;
-                    for (i, &a) in xr.iter().enumerate() {
-                        norm2 += a * a;
-                        abs += a.abs();
-                        if a >= 0.0 {
-                            srow[i / 64] |= 1u64 << (i % 64);
-                            pop += 1;
+                .for_each_init(
+                    || (Vec::<f32>::new(), vec![0f32; rot.padded()]),
+                    |(x, xr), (v, srow)| {
+                        centred(v, x);
+                        rot.apply(x, xr);
+                        let (mut norm2, mut abs) = (0f32, 0f32);
+                        let mut pop = 0u32;
+                        for (i, &a) in xr.iter().enumerate() {
+                            norm2 += a * a;
+                            abs += a.abs();
+                            if a >= 0.0 {
+                                srow[i / 64] |= 1u64 << (i % 64);
+                                pop += 1;
+                            }
                         }
-                    }
-                    // x_r ~= f * sign(x_r) with f = |x_r|^2 / sum |x_r,i| (the RaBitQ factor).
-                    let f = if abs > 0.0 { norm2 / abs } else { 0.0 };
-                    srow[screen_words] = u64::from(f.to_bits()) | (u64::from(pop) << 32);
-                });
+                        // x_r ~= f * sign(x_r) with f = |x_r|^2 / sum |x_r,i| (the RaBitQ factor).
+                        let f = if abs > 0.0 { norm2 / abs } else { 0.0 };
+                        srow[screen_words] = u64::from(f.to_bits()) | (u64::from(pop) << 32);
+                    },
+                );
         }
 
         let r = g.degree;
@@ -1065,56 +1075,67 @@ impl VGraph {
             .bytes_mut()
             .par_chunks_exact_mut(per_vertex * record)
             .enumerate()
-            .for_each(|(v, dst)| {
-                // Codes are of the residual `r = x_u - x_v` of each neighbour `u` to the
-                // vertex `v` (as in SymphonyQG), so the code error scales with `|r|`; `e`
-                // folds in the query-independent terms `<x_v, r> - s * <levels, rot(x_v)>`,
-                // which makes the estimate's error `<rot(q - x_v), code error>`, scaled by
-                // the query's distance to `v` as well:
-                // `<q, x_u - mean> = <q, x_v - mean> + s * <levels, rot(q)> + e`.
-                let xv = row(v);
-                let mut xr = vec![0f32; bd];
-                rot.apply(xv, &mut xr);
-                let mut diff = vec![0f32; dim];
-                let mut rr = vec![0f32; bd];
-                let mut nibbles = vec![0u8; BLOCK * m];
-                let mut scales = [0f32; BLOCK];
-                let mut offsets = [0f32; BLOCK];
-                let mut list: Vec<u32> = Vec::with_capacity(r);
-                self.for_each_neighbour(v, |u| list.push(u));
-                for (b, rec) in dst.chunks_exact_mut(record).enumerate() {
-                    nibbles.fill(0);
-                    scales.fill(0.0);
-                    offsets.fill(0.0);
-                    for i in 0..BLOCK {
-                        let Some(&u) = list.get(b * BLOCK + i) else {
-                            break;
-                        };
-                        let xu = row(u as usize);
-                        for (d, (a, b)) in diff.iter_mut().zip(xu.iter().zip(xv)) {
-                            *d = a - b;
+            .for_each_init(
+                || {
+                    let list = Vec::<u32>::with_capacity(r);
+                    (
+                        vec![0f32; bd],
+                        vec![0f32; dim],
+                        vec![0f32; bd],
+                        vec![0u8; BLOCK * m],
+                        list,
+                    )
+                },
+                |(xr, diff, rr, nibbles, list), (v, dst)| {
+                    // Codes are of the residual `r = x_u - x_v` of each neighbour `u` to the
+                    // vertex `v` (as in SymphonyQG), so the code error scales with `|r|`; `e`
+                    // folds in the query-independent terms `<x_v, r> - s * <levels, rot(x_v)>`,
+                    // which makes the estimate's error `<rot(q - x_v), code error>`, scaled by
+                    // the query's distance to `v` as well:
+                    // `<q, x_u - mean> = <q, x_v - mean> + s * <levels, rot(q)> + e`.
+                    // Every buffer is overwritten before it is read: `apply` writes all of its
+                    // output, `diff` is rewritten per neighbour, `nibbles` is cleared per block.
+                    let xv = row(v);
+                    rot.apply(xv, xr);
+                    let mut scales = [0f32; BLOCK];
+                    let mut offsets = [0f32; BLOCK];
+                    list.clear();
+                    self.for_each_neighbour(v, |u| list.push(u));
+                    for (b, rec) in dst.chunks_exact_mut(record).enumerate() {
+                        nibbles.fill(0);
+                        scales.fill(0.0);
+                        offsets.fill(0.0);
+                        for i in 0..BLOCK {
+                            let Some(&u) = list.get(b * BLOCK + i) else {
+                                break;
+                            };
+                            let xu = row(u as usize);
+                            for (d, (a, b)) in diff.iter_mut().zip(xu.iter().zip(xv)) {
+                                *d = a - b;
+                            }
+                            rot.apply(diff, rr);
+                            let nib = &mut nibbles[i * m..(i + 1) * m];
+                            let s = encode_block_code(rr, bits, nib);
+                            let dot_lv: f32 =
+                                (0..bd).map(|j| block_level(nib, bits, j) * xr[j]).sum();
+                            let dot_vr: f32 = xv.iter().zip(diff.iter()).map(|(a, b)| a * b).sum();
+                            scales[i] = s;
+                            offsets[i] = dot_vr - s * dot_lv;
                         }
-                        rot.apply(&diff, &mut rr);
-                        let nib = &mut nibbles[i * m..(i + 1) * m];
-                        let s = encode_block_code(&rr, bits, nib);
-                        let dot_lv: f32 = (0..bd).map(|j| block_level(nib, bits, j) * xr[j]).sum();
-                        let dot_vr: f32 = xv.iter().zip(&diff).map(|(a, b)| a * b).sum();
-                        scales[i] = s;
-                        offsets[i] = dot_vr - s * dot_lv;
+                        // SAFETY-free reinterpretation: the record is plain bytes.
+                        let rec_u8 = unsafe {
+                            std::slice::from_raw_parts_mut(rec.as_mut_ptr().cast::<u8>(), rec.len())
+                        };
+                        pack32(nibbles, m, &mut rec_u8[..16 * m]);
+                        for (i, (s, e)) in scales.iter().zip(&offsets).enumerate() {
+                            let at = 16 * m + 4 * i;
+                            rec_u8[at..at + 4].copy_from_slice(&s.to_le_bytes());
+                            let at = 16 * m + 4 * BLOCK + 4 * i;
+                            rec_u8[at..at + 4].copy_from_slice(&e.to_le_bytes());
+                        }
                     }
-                    // SAFETY-free reinterpretation: the record is plain bytes.
-                    let rec_u8 = unsafe {
-                        std::slice::from_raw_parts_mut(rec.as_mut_ptr().cast::<u8>(), rec.len())
-                    };
-                    pack32(&nibbles, m, &mut rec_u8[..16 * m]);
-                    for (i, (s, e)) in scales.iter().zip(&offsets).enumerate() {
-                        let at = 16 * m + 4 * i;
-                        rec_u8[at..at + 4].copy_from_slice(&s.to_le_bytes());
-                        let at = 16 * m + 4 * BLOCK + 4 * i;
-                        rec_u8[at..at + 4].copy_from_slice(&e.to_le_bytes());
-                    }
-                }
-            });
+                },
+            );
         self.block_bits = bits;
         self.block_dim = bd;
         self.block_m = m;
@@ -1604,8 +1625,9 @@ impl VGraph {
             loop {
                 let mut moved = false;
                 for &u in &layer[p as usize] {
-                    let d = self.est(qc, self.upper_ids[u as usize], w);
-                    reservoir.offer(key(d, self.upper_ids[u as usize]));
+                    let id = self.upper_ids[u as usize];
+                    let d = self.est(qc, id, w);
+                    reservoir.offer(key(d, id));
                     evals += 1;
                     if d < best {
                         best = d;
@@ -2207,19 +2229,22 @@ impl SearchScratch {
                 let list = &mut self.fresh;
                 g.for_each_neighbour(v, |u| list.push(u));
                 self.survivors.clear();
-                'screen: for b in 0..g.blocks_per_vertex {
+                for (b, ids) in self
+                    .fresh
+                    .chunks(BLOCK)
+                    .take(g.blocks_per_vertex)
+                    .enumerate()
+                {
                     let (codes, scales, offsets) = g.block(v, b);
                     scan32(codes, &self.bq.lut, g.block_m, &mut self.scan);
-                    for i in 0..BLOCK {
-                        let Some(&u) = self.fresh.get(b * BLOCK + i) else {
-                            break 'screen;
-                        };
+                    let (scales, offsets) = (scales.as_chunks::<4>().0, offsets.as_chunks::<4>().0);
+                    for (((&u, &raw), s), o) in ids.iter().zip(&self.scan).zip(scales).zip(offsets)
+                    {
                         if !self.visited.insert(u) {
                             continue;
                         }
-                        let s = le_f32(scales, i);
-                        let ip =
-                            ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
+                        let s = f32::from_le_bytes(*s);
+                        let ip = ip_v + s * (delta * raw as f32 + min_sum) + f32::from_le_bytes(*o);
                         if let Some(w) = worst {
                             let sigma = (g.block_kappa * s * s * d2_v).sqrt();
                             if -(ip + sigmas * sigma) * inv_sq >= w {
@@ -2262,16 +2287,19 @@ impl SearchScratch {
                 self.fresh.clear();
                 let list = &mut self.fresh;
                 g.for_each_neighbour(v, |u| list.push(u));
-                'blocks: for b in 0..g.blocks_per_vertex {
+                for (b, ids) in self
+                    .fresh
+                    .chunks(BLOCK)
+                    .take(g.blocks_per_vertex)
+                    .enumerate()
+                {
                     let (codes, scales, offsets) = g.block(v, b);
                     scan32(codes, &self.bq.lut, g.block_m, &mut self.scan);
-                    for i in 0..BLOCK {
-                        let Some(&u) = self.fresh.get(b * BLOCK + i) else {
-                            break 'blocks;
-                        };
-                        let s = le_f32(scales, i);
-                        let ip =
-                            ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
+                    let (scales, offsets) = (scales.as_chunks::<4>().0, offsets.as_chunks::<4>().0);
+                    for (((&u, &raw), s), o) in ids.iter().zip(&self.scan).zip(scales).zip(offsets)
+                    {
+                        let s = f32::from_le_bytes(*s);
+                        let ip = ip_v + s * (delta * raw as f32 + min_sum) + f32::from_le_bytes(*o);
                         if !fuse {
                             // Without fusion the block path keeps the plain path's byte marks
                             // (the per-vertex trace records would not stay in cache).
@@ -2310,13 +2338,12 @@ impl SearchScratch {
                         if old != u64::MAX {
                             self.pool.remove(old);
                         }
+                        // `t` borrows `visited` only, so it stays live across the pool update.
                         let Some((pos, evicted)) = self.pool.insert(kk) else {
-                            if old != u64::MAX {
-                                self.visited.trace(u).1.key = u64::MAX;
-                            }
+                            t.key = u64::MAX;
                             continue;
                         };
-                        self.visited.trace(u).1.key = kk;
+                        t.key = kk;
                         if let Some(e) = evicted {
                             self.visited.trace(key_id(e)).1.key = u64::MAX;
                         }
