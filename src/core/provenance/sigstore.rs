@@ -83,7 +83,7 @@ pub fn create_local_bundle(
     identity: Option<&str>,
 ) -> Result<SigstoreBundle> {
     let digest = Sha256::digest(content);
-    let digest_hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    let digest_hex = super::hex_encode(&digest);
 
     let signature = signing_key.sign(content);
     let sig_base64 = base64_encode(&signature.to_bytes());
@@ -116,7 +116,7 @@ pub fn create_local_bundle(
 /// Does NOT verify Rekor inclusion or certificate chains (those require online access).
 pub fn verify_bundle(bundle: &SigstoreBundle, content: &[u8]) -> Result<()> {
     let digest = Sha256::digest(content);
-    let digest_hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    let digest_hex = super::hex_encode(&digest);
     if digest_hex != bundle.message_signature.message_digest.digest {
         return Err(anyhow!("content digest mismatch"));
     }
@@ -145,7 +145,7 @@ pub fn verify_bundle_with_key(
     verifying_key: &ed25519_dalek::VerifyingKey,
 ) -> Result<()> {
     let digest = Sha256::digest(content);
-    let digest_hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    let digest_hex = super::hex_encode(&digest);
     if digest_hex != bundle.message_signature.message_digest.digest {
         return Err(anyhow!("content digest mismatch"));
     }

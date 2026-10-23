@@ -69,14 +69,7 @@ pub fn hopfield_query(
         .map(|(_, pat)| config.beta * query.similarity(pat))
         .collect();
 
-    // Step 2: Apply entmax transformation
-    let weights = if config.alpha <= 1.0 + f64::EPSILON {
-        softmax(&scores)
-    } else if (config.alpha - 1.5).abs() < f64::EPSILON {
-        entmax_15(&scores)
-    } else {
-        sparsemax(&scores)
-    };
+    let weights = entmax(&scores, config.alpha);
 
     // Step 3: Collect non-zero weights as retrieval results
     let mut results: Vec<RetrievalResult> = weights
@@ -120,13 +113,7 @@ pub fn hopfield_query_iterative(
             .map(|(_, pat)| config.beta * current_query.similarity(pat))
             .collect();
 
-        let weights = if config.alpha <= 1.0 + f64::EPSILON {
-            softmax(&scores)
-        } else if (config.alpha - 1.5).abs() < f64::EPSILON {
-            entmax_15(&scores)
-        } else {
-            sparsemax(&scores)
-        };
+        let weights = entmax(&scores, config.alpha);
 
         // Reconstruct query as weighted bundle of attended patterns
         current_query = weighted_reconstruct(patterns, &weights, query.dim);
@@ -136,6 +123,17 @@ pub fn hopfield_query_iterative(
     }
 
     hopfield_query(&current_query, patterns, config, max_results)
+}
+
+/// α-entmax over `scores`: softmax for α ≤ 1, 1.5-entmax for α = 1.5, sparsemax otherwise.
+fn entmax(scores: &[f64], alpha: f64) -> Vec<f64> {
+    if alpha <= 1.0 + f64::EPSILON {
+        softmax(scores)
+    } else if (alpha - 1.5).abs() < f64::EPSILON {
+        entmax_15(scores)
+    } else {
+        sparsemax(scores)
+    }
 }
 
 /// Sparsemax transformation (α=2 entmax).

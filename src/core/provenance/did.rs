@@ -29,15 +29,16 @@ pub fn ed25519_from_did_key(did: &str) -> Result<[u8; 32]> {
         .ok_or_else(|| anyhow!("not a did:key URI"))?;
     let (_, decoded) =
         multibase::decode(multibase_part).map_err(|e| anyhow!("multibase decode failed: {e}"))?;
-    if decoded.len() != 34
-        || decoded[0] != ED25519_MULTICODEC[0]
-        || decoded[1] != ED25519_MULTICODEC[1]
-    {
-        return Err(anyhow!("not an Ed25519 did:key (wrong prefix or length)"));
-    }
-    let mut key = [0u8; 32];
-    key.copy_from_slice(&decoded[2..34]);
-    Ok(key)
+    ed25519_multicodec_key(&decoded)
+        .ok_or_else(|| anyhow!("not an Ed25519 did:key (wrong prefix or length)"))
+}
+
+/// The key inside an Ed25519 multicodec value: the 2-byte prefix followed by exactly 32 bytes.
+fn ed25519_multicodec_key(decoded: &[u8]) -> Option<[u8; 32]> {
+    decoded
+        .strip_prefix(ED25519_MULTICODEC.as_slice())?
+        .try_into()
+        .ok()
 }
 
 /// Build a did:jwk URI from an Ed25519 public key (32 bytes), the inverse of
@@ -166,15 +167,8 @@ pub fn ed25519_from_did_document(doc: &serde_json::Value) -> Result<[u8; 32]> {
         .ok_or_else(|| anyhow!("no publicKeyMultibase in verification method"))?;
     let (_, decoded) =
         multibase::decode(multibase_key).map_err(|e| anyhow!("multibase decode failed: {e}"))?;
-    if decoded.len() != 34
-        || decoded[0] != ED25519_MULTICODEC[0]
-        || decoded[1] != ED25519_MULTICODEC[1]
-    {
-        return Err(anyhow!("not an Ed25519 key (wrong multicodec prefix)"));
-    }
-    let mut key = [0u8; 32];
-    key.copy_from_slice(&decoded[2..34]);
-    Ok(key)
+    ed25519_multicodec_key(&decoded)
+        .ok_or_else(|| anyhow!("not an Ed25519 key (wrong multicodec prefix)"))
 }
 
 #[cfg(test)]

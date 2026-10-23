@@ -48,9 +48,9 @@ pub fn tiny_tokenizer() -> Vec<u8> {
     .expect("tokenizer json")
 }
 
-struct Lcg(u64);
+pub(crate) struct Lcg(pub(crate) u64);
 impl Lcg {
-    fn next(&mut self) -> f32 {
+    pub(crate) fn next(&mut self) -> f32 {
         self.0 = self
             .0
             .wrapping_mul(6364136223846793005)

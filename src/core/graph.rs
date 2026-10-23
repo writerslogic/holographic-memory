@@ -140,28 +140,7 @@ impl RelationStore {
         relation_type: Option<&str>,
         at_time: f64,
     ) -> Vec<Relation> {
-        let source_indices = self.by_source.read();
-        let indices = match source_indices.get(source_id) {
-            Some(v) => v,
-            None => return Vec::new(),
-        };
-
-        let rels = self.relations.read();
-        indices
-            .iter()
-            .filter_map(|&idx| {
-                let r = &rels[idx];
-                if !r.is_valid_at(at_time) {
-                    return None;
-                }
-                if let Some(rt) = relation_type {
-                    if r.relation_type != rt {
-                        return None;
-                    }
-                }
-                Some(r.to_relation())
-            })
-            .collect()
+        self.valid_relations(&self.by_source, source_id, relation_type, at_time)
     }
 
     /// Get all incoming relations to a node.
@@ -171,27 +150,29 @@ impl RelationStore {
         relation_type: Option<&str>,
         at_time: f64,
     ) -> Vec<Relation> {
-        let target_indices = self.by_target.read();
-        let indices = match target_indices.get(target_id) {
-            Some(v) => v,
-            None => return Vec::new(),
-        };
+        self.valid_relations(&self.by_target, target_id, relation_type, at_time)
+    }
 
+    /// Relations listed under `node_id` in `index` that are live at `at_time`.
+    fn valid_relations(
+        &self,
+        index: &RwLock<FxHashMap<String, Vec<usize>>>,
+        node_id: &str,
+        relation_type: Option<&str>,
+        at_time: f64,
+    ) -> Vec<Relation> {
+        let index = index.read();
+        let Some(indices) = index.get(node_id) else {
+            return Vec::new();
+        };
         let rels = self.relations.read();
         indices
             .iter()
-            .filter_map(|&idx| {
-                let r = &rels[idx];
-                if !r.is_valid_at(at_time) {
-                    return None;
-                }
-                if let Some(rt) = relation_type {
-                    if r.relation_type != rt {
-                        return None;
-                    }
-                }
-                Some(r.to_relation())
+            .map(|&idx| &rels[idx])
+            .filter(|r| {
+                r.is_valid_at(at_time) && relation_type.is_none_or(|rt| r.relation_type == rt)
             })
+            .map(StoredRelation::to_relation)
             .collect()
     }
 

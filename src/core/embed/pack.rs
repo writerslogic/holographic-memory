@@ -236,6 +236,23 @@ pub struct Sha256Mismatch {
     pub actual: String,
 }
 
+/// Little-endian `f32` words; a trailing partial word is ignored.
+pub(super) fn f32s_le(raw: &[u8]) -> Vec<f32> {
+    raw.as_chunks::<4>()
+        .0
+        .iter()
+        .map(|&b| f32::from_le_bytes(b))
+        .collect()
+}
+
+/// Little-endian `u16` words; a trailing partial word is ignored.
+fn u16s_le(raw: &[u8]) -> impl Iterator<Item = u16> + '_ {
+    raw.as_chunks::<2>()
+        .0
+        .iter()
+        .map(|&b| u16::from_le_bytes(b))
+}
+
 pub fn sha256_hex(bytes: &[u8]) -> String {
     hex(&Sha256::digest(bytes))
 }
@@ -361,31 +378,14 @@ pub(crate) fn read(path: &Path, expected_sha256: Option<&str>) -> Result<Loaded>
         );
         let raw = t.exact(e.len, &e.name)?;
         let tensor = match e.dtype.as_str() {
-            "f32" => Tensor::F32(
-                raw.as_chunks::<4>()
-                    .0
-                    .iter()
-                    .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-                    .collect(),
-            ),
-            "f16" => Tensor::F16(
-                raw.as_chunks::<2>()
-                    .0
-                    .iter()
-                    .map(|b| u16::from_le_bytes([b[0], b[1]]))
-                    .collect(),
-            ),
+            "f32" => Tensor::F32(f32s_le(&raw)),
+            "f16" => Tensor::F16(u16s_le(&raw).collect()),
             _ => {
                 let (q, s) = raw.split_at(data as usize);
                 Tensor::I8 {
                     group: e.group,
                     q: q.to_vec(),
-                    scale: s
-                        .as_chunks::<4>()
-                        .0
-                        .iter()
-                        .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-                        .collect(),
+                    scale: f32s_le(s),
                 }
             }
         };
@@ -568,23 +568,10 @@ pub(crate) fn read_safetensors(path: &Path) -> Result<NamedTensors> {
         );
         let raw = &bytes[base + a..base + b];
         let values: Vec<f32> = match dtype {
-            "F32" => raw
-                .as_chunks::<4>()
-                .0
-                .iter()
-                .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-                .collect(),
-            "F16" => raw
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|c| f16_to_f32(u16::from_le_bytes([c[0], c[1]])))
-                .collect(),
-            "BF16" => raw
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|c| f32::from_bits(u32::from(u16::from_le_bytes([c[0], c[1]])) << 16))
+            "F32" => f32s_le(raw),
+            "F16" => u16s_le(raw).map(f16_to_f32).collect(),
+            "BF16" => u16s_le(raw)
+                .map(|h| f32::from_bits(u32::from(h) << 16))
                 .collect(),
             // Index buffers such as position_ids carry no weights.
             "I64" | "I32" | "U8" | "BOOL" => continue,

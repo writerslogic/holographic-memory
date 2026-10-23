@@ -65,21 +65,7 @@ impl EntangledHVec {
         indices.sort_unstable();
         indices.dedup();
 
-        // Birthday collision backfill: if collisions reduced count, fill remaining
-        // slots deterministically until we reach exactly active_count.
-        let max_backfill_attempts = active_count * 10;
-        let mut backfill_counter = 0u64;
-        while indices.len() < active_count {
-            if backfill_counter as usize >= max_backfill_attempts {
-                break;
-            }
-            let idx = (hash_u64(seed.wrapping_add(0xDEAD), backfill_counter) % dim as u64) as u32;
-            backfill_counter += 1;
-            if indices.binary_search(&idx).is_err() {
-                let pos = indices.partition_point(|&x| x < idx);
-                indices.insert(pos, idx);
-            }
-        }
+        backfill_collisions(&mut indices, active_count, dim, seed);
 
         Self { dim, indices }
     }
@@ -96,18 +82,7 @@ impl EntangledHVec {
         indices.sort_unstable();
         indices.dedup();
 
-        let mut backfill_counter = 0u64;
-        while indices.len() < active_count {
-            if backfill_counter as usize >= active_count * 10 {
-                break;
-            }
-            let idx = (hash_u64(seed.wrapping_add(0xDEAD), backfill_counter) % dim as u64) as u32;
-            backfill_counter += 1;
-            if indices.binary_search(&idx).is_err() {
-                let pos = indices.partition_point(|&x| x < idx);
-                indices.insert(pos, idx);
-            }
-        }
+        backfill_collisions(&mut indices, active_count, dim, seed);
 
         Self { dim, indices }
     }
@@ -548,6 +523,20 @@ fn laplace_sample(rng: &mut impl rand::RngExt, scale: f64) -> f64 {
         }
     };
     -scale * u.signum() * (1.0 - 2.0 * u.abs()).ln()
+}
+
+/// Fills slots lost to birthday collisions with deterministic indices until `indices` holds
+/// `active_count` values, giving up after `10 * active_count` probes. `indices` must be sorted
+/// and deduplicated, and stays so.
+fn backfill_collisions(indices: &mut Vec<u32>, active_count: usize, dim: usize, seed: u64) {
+    let mut counter = 0u64;
+    while indices.len() < active_count && (counter as usize) < active_count * 10 {
+        let idx = (hash_u64(seed.wrapping_add(0xDEAD), counter) % dim as u64) as u32;
+        counter += 1;
+        if let Err(pos) = indices.binary_search(&idx) {
+            indices.insert(pos, idx);
+        }
+    }
 }
 
 /// Splitmix64-based mixer with full avalanche. Two inputs are combined via

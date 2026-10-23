@@ -133,22 +133,29 @@ impl ProvenanceManager {
                 record: record.clone(),
             };
             if let Ok(line) = serde_json::to_string(&entry) {
-                let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
-                let mut buf = line;
-                buf.push('\n');
-                if let Err(e) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(path)
-                    .and_then(|mut f| f.write_all(buf.as_bytes()))
-                {
-                    tracing::warn!("provenance log write failed: {e}");
-                }
-                *self.chain_head.write() = new_hash;
-                self.write_signed_head(&new_hash, path);
+                self.append_chained(path, line, "provenance");
             }
         }
         self.records.write().insert(fact_id.to_string(), record);
+    }
+
+    /// Appends `line` to the hash-chained log at `path`, then advances and re-signs the chain
+    /// head. A failed append is logged rather than returned: the in-memory state stays
+    /// authoritative and `verify_log_integrity` reports the gap.
+    fn append_chained(&self, path: &Path, line: String, what: &str) {
+        let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
+        let mut buf = line;
+        buf.push('\n');
+        if let Err(e) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .and_then(|mut f| f.write_all(buf.as_bytes()))
+        {
+            tracing::warn!("{what} log write failed: {e}");
+        }
+        *self.chain_head.write() = new_hash;
+        self.write_signed_head(&new_hash, path);
     }
 
     fn write_signed_head(&self, head: &[u8; 32], log_path: &Path) {
@@ -172,10 +179,7 @@ impl ProvenanceManager {
     }
 
     pub fn record_deletion(&self, fact_id: &str, reason: Option<&str>) -> Result<DeletionRecord> {
-        let timestamp_ms = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let timestamp_ms = unix_millis();
 
         let mut claim_payload = Vec::new();
         let cbor_claim = ciborium::Value::Map(vec![
@@ -216,19 +220,7 @@ impl ProvenanceManager {
                 "deletion": record,
             });
             if let Ok(line) = serde_json::to_string(&entry_json) {
-                let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
-                let mut buf = line;
-                buf.push('\n');
-                if let Err(e) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(path)
-                    .and_then(|mut f| f.write_all(buf.as_bytes()))
-                {
-                    tracing::warn!("deletion log write failed: {e}");
-                }
-                *self.chain_head.write() = new_hash;
-                self.write_signed_head(&new_hash, path);
+                self.append_chained(path, line, "deletion");
             }
         }
 
@@ -270,19 +262,7 @@ impl ProvenanceManager {
                 "cose_envelope": rotation_envelope,
             });
             if let Ok(line) = serde_json::to_string(&entry_json) {
-                let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
-                let mut buf = line;
-                buf.push('\n');
-                if let Err(e) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(path)
-                    .and_then(|mut f| f.write_all(buf.as_bytes()))
-                {
-                    tracing::warn!("key rotation log write failed: {e}");
-                }
-                *self.chain_head.write() = new_hash;
-                self.write_signed_head(&new_hash, path);
+                self.append_chained(path, line, "key rotation");
             }
         }
 
@@ -531,20 +511,25 @@ impl ProvenanceManager {
         }
         let mut level: Vec<[u8; 32]> = leaves.to_vec();
         while level.len() > 1 {
-            let mut next = Vec::with_capacity(level.len().div_ceil(2));
-            for pair in level.chunks(2) {
-                if pair.len() == 2 {
-                    let mut hasher = Sha256::new();
-                    hasher.update(pair[0]);
-                    hasher.update(pair[1]);
-                    next.push(hasher.finalize().into());
-                } else {
-                    next.push(pair[0]);
-                }
-            }
-            level = next;
+            level = Self::merkle_parents(&level);
         }
         level[0]
+    }
+
+    /// One Merkle level up: SHA-256 of each adjacent pair, an odd last node carried unhashed.
+    fn merkle_parents(level: &[[u8; 32]]) -> Vec<[u8; 32]> {
+        level
+            .chunks(2)
+            .map(|pair| match pair {
+                [left, right] => {
+                    let mut hasher = Sha256::new();
+                    hasher.update(left);
+                    hasher.update(right);
+                    hasher.finalize().into()
+                }
+                _ => pair[0],
+            })
+            .collect()
     }
 
     fn merkle_proof(leaves: &[[u8; 32]], index: usize) -> Vec<(bool, [u8; 32])> {
@@ -560,18 +545,7 @@ impl ProvenanceManager {
             if sibling_idx < level.len() {
                 proof.push((idx % 2 == 1, level[sibling_idx]));
             }
-            let mut next = Vec::with_capacity(level.len().div_ceil(2));
-            for pair in level.chunks(2) {
-                if pair.len() == 2 {
-                    let mut hasher = Sha256::new();
-                    hasher.update(pair[0]);
-                    hasher.update(pair[1]);
-                    next.push(hasher.finalize().into());
-                } else {
-                    next.push(pair[0]);
-                }
-            }
-            level = next;
+            level = Self::merkle_parents(&level);
             idx /= 2;
         }
         proof
@@ -618,10 +592,7 @@ impl ProvenanceManager {
         Ok(StoreManifest {
             manifest_id: manifest_label,
             issuer_did: Some(self.issuer_did.clone()),
-            created_ms: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            created_ms: unix_millis(),
             fact_count,
             store_hash,
             cose_envelope: Some(cose_envelope),
@@ -667,16 +638,9 @@ impl ProvenanceManager {
         let mut result = self.verify_fact_provenance_self_consistency(record)?;
         let fallback = self.signing_key.verifying_key();
         let key = Self::resolve_cose_verifying_key(record, &fallback);
-        let trusted = trust.is_trusted(&key);
-        result.details.push(VerificationDetail {
-            check: "trust_anchor".to_string(),
-            passed: trusted,
-            message: if trusted {
-                None
-            } else {
-                Some("signing key is not in the trust store".to_string())
-            },
-        });
+        result
+            .details
+            .push(trust_anchor_detail(trust.is_trusted(&key)));
         result.valid = result.details.iter().all(|d| d.passed) && !result.details.is_empty();
         Ok(result)
     }
@@ -695,35 +659,19 @@ impl ProvenanceManager {
         let verifying_key = Self::resolve_cose_verifying_key(record, &fallback);
 
         if let Some(ref envelope) = record.cose_envelope {
-            match cose::verify_and_extract(&verifying_key, envelope) {
-                Ok(_) => details.push(VerificationDetail {
-                    check: "cose_signature".to_string(),
-                    passed: true,
-                    message: None,
-                }),
-                Err(e) => details.push(VerificationDetail {
-                    check: "cose_signature".to_string(),
-                    passed: false,
-                    message: Some(e.to_string()),
-                }),
-            }
+            details.push(outcome_detail(
+                "cose_signature",
+                &cose::verify_and_extract(&verifying_key, envelope),
+            ));
         }
 
         if let Some(ref vc_json) = record.vc_json {
             match serde_json::from_str::<vc::FactCredential>(vc_json) {
                 Ok(ref credential) => {
-                    match vc::verify_credential(credential) {
-                        Ok(()) => details.push(VerificationDetail {
-                            check: "vc_proof".to_string(),
-                            passed: true,
-                            message: None,
-                        }),
-                        Err(e) => details.push(VerificationDetail {
-                            check: "vc_proof".to_string(),
-                            passed: false,
-                            message: Some(e.to_string()),
-                        }),
-                    }
+                    details.push(outcome_detail(
+                        "vc_proof",
+                        &vc::verify_credential(credential),
+                    ));
                     let revoked = credential
                         .credential_status
                         .as_ref()
@@ -882,16 +830,9 @@ impl ProvenanceManager {
         let mut result = self.verify_store_manifest_self_consistency(manifest, store_data)?;
         let fallback = self.signing_key.verifying_key();
         let key = Self::resolve_manifest_verifying_key(manifest, &fallback);
-        let trusted = trust.is_trusted(&key);
-        result.details.push(VerificationDetail {
-            check: "trust_anchor".to_string(),
-            passed: trusted,
-            message: if trusted {
-                None
-            } else {
-                Some("signing key is not in the trust store".to_string())
-            },
-        });
+        result
+            .details
+            .push(trust_anchor_detail(trust.is_trusted(&key)));
         result.valid = result.details.iter().all(|d| d.passed) && !result.details.is_empty();
         Ok(result)
     }
@@ -971,34 +912,18 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
             .map_err(|_| anyhow::anyhow!("COSE key_id is not 32 bytes"))?;
         let verifying_key = ed25519_dalek::VerifyingKey::from_bytes(&pk)
             .map_err(|e| anyhow::anyhow!("invalid public key in COSE: {e}"))?;
-        match cose::verify_and_extract(&verifying_key, envelope) {
-            Ok(_) => details.push(VerificationDetail {
-                check: "cose_signature".to_string(),
-                passed: true,
-                message: None,
-            }),
-            Err(e) => details.push(VerificationDetail {
-                check: "cose_signature".to_string(),
-                passed: false,
-                message: Some(e.to_string()),
-            }),
-        }
+        details.push(outcome_detail(
+            "cose_signature",
+            &cose::verify_and_extract(&verifying_key, envelope),
+        ));
     }
 
     if let Some(ref vc_json) = record.vc_json {
         match serde_json::from_str::<vc::FactCredential>(vc_json) {
-            Ok(ref credential) => match vc::verify_credential(credential) {
-                Ok(()) => details.push(VerificationDetail {
-                    check: "vc_proof".to_string(),
-                    passed: true,
-                    message: None,
-                }),
-                Err(e) => details.push(VerificationDetail {
-                    check: "vc_proof".to_string(),
-                    passed: false,
-                    message: Some(e.to_string()),
-                }),
-            },
+            Ok(ref credential) => details.push(outcome_detail(
+                "vc_proof",
+                &vc::verify_credential(credential),
+            )),
             Err(e) => details.push(VerificationDetail {
                 check: "vc_parse".to_string(),
                 passed: false,
@@ -1026,15 +951,7 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
             })
             .and_then(|pk| ed25519_dalek::VerifyingKey::from_bytes(&pk).ok());
         let trusted = signer_key.as_ref().is_some_and(|k| trust.is_trusted(k));
-        details.push(VerificationDetail {
-            check: "trust_anchor".to_string(),
-            passed: trusted,
-            message: if trusted {
-                None
-            } else {
-                Some("signing key is not in the trust store".to_string())
-            },
-        });
+        details.push(trust_anchor_detail(trusted));
     }
 
     let all_passed = details.iter().all(|d| d.passed);
@@ -1046,6 +963,35 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
     })
 }
 
+fn outcome_detail<T, E: std::fmt::Display>(
+    check: &str,
+    outcome: &Result<T, E>,
+) -> VerificationDetail {
+    VerificationDetail {
+        check: check.to_string(),
+        passed: outcome.is_ok(),
+        message: outcome.as_ref().err().map(ToString::to_string),
+    }
+}
+
+fn trust_anchor_detail(trusted: bool) -> VerificationDetail {
+    VerificationDetail {
+        check: "trust_anchor".to_string(),
+        passed: trusted,
+        message: (!trusted).then(|| "signing key is not in the trust store".to_string()),
+    }
+}
+
+/// Milliseconds since the Unix epoch; 0 if the clock reads before it. `u64` milliseconds last
+/// until the year 584 million, so the narrowing cast cannot truncate.
+fn unix_millis() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+/// Lowercase hex, two digits per byte.
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
