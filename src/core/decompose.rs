@@ -88,7 +88,6 @@ impl Decomposer {
         // Irregular verbs: inflected form → lemma.
         // Covers the ~80 most common irregular English verbs.
         let irregular_verbs: FxHashMap<&'static str, &'static str> = [
-            // be
             ("is", "be"),
             ("are", "be"),
             ("was", "be"),
@@ -96,349 +95,249 @@ impl Decomposer {
             ("am", "be"),
             ("been", "be"),
             ("being", "be"),
-            // have
             ("has", "have"),
             ("had", "have"),
             ("having", "have"),
-            // do
             ("does", "do"),
             ("did", "do"),
             ("done", "do"),
-            // say
             ("says", "say"),
             ("said", "say"),
-            // make
             ("makes", "make"),
             ("made", "make"),
             ("making", "make"),
-            // go
             ("goes", "go"),
             ("went", "go"),
             ("gone", "go"),
             ("going", "go"),
-            // take
             ("takes", "take"),
             ("took", "take"),
             ("taken", "take"),
             ("taking", "take"),
-            // come
             ("comes", "come"),
             ("came", "come"),
             ("coming", "come"),
-            // see
             ("sees", "see"),
             ("saw", "see"),
             ("seen", "see"),
             ("seeing", "see"),
-            // know
             ("knows", "know"),
             ("knew", "know"),
             ("known", "know"),
-            // get
             ("gets", "get"),
             ("got", "get"),
             ("gotten", "get"),
             ("getting", "get"),
-            // give
             ("gives", "give"),
             ("gave", "give"),
             ("given", "give"),
             ("giving", "give"),
-            // find
             ("finds", "find"),
             ("found", "find"),
             ("finding", "find"),
-            // think
             ("thinks", "think"),
             ("thought", "think"),
             ("thinking", "think"),
-            // tell
             ("tells", "tell"),
             ("told", "tell"),
             ("telling", "tell"),
-            // become
             ("becomes", "become"),
             ("became", "become"),
-            // leave
             ("leaves", "leave"),
             ("left", "leave"),
             ("leaving", "leave"),
-            // put
             ("puts", "put"),
             ("putting", "put"),
-            // keep
             ("keeps", "keep"),
             ("kept", "keep"),
             ("keeping", "keep"),
-            // let
             ("lets", "let"),
             ("letting", "let"),
-            // begin
             ("begins", "begin"),
             ("began", "begin"),
             ("begun", "begin"),
-            // show
             ("shows", "show"),
             ("showed", "show"),
             ("shown", "show"),
             ("showing", "show"),
-            // hear
             ("hears", "hear"),
             ("heard", "hear"),
-            // run
             ("runs", "run"),
             ("ran", "run"),
             ("running", "run"),
-            // move
             ("moves", "move"),
             ("moved", "move"),
             ("moving", "move"),
-            // live
             ("lives", "live"),
             ("lived", "live"),
             ("living", "live"),
-            // believe
             ("believes", "believe"),
             ("believed", "believe"),
-            // hold
             ("holds", "hold"),
             ("held", "hold"),
             ("holding", "hold"),
-            // bring
             ("brings", "bring"),
             ("brought", "bring"),
-            // write
             ("writes", "write"),
             ("wrote", "write"),
             ("written", "write"),
             ("writing", "write"),
-            // sit
             ("sits", "sit"),
             ("sat", "sit"),
             ("sitting", "sit"),
-            // stand
             ("stands", "stand"),
             ("stood", "stand"),
             ("standing", "stand"),
-            // lose
             ("loses", "lose"),
             ("lost", "lose"),
             ("losing", "lose"),
-            // pay
             ("pays", "pay"),
             ("paid", "pay"),
-            // meet
             ("meets", "meet"),
             ("met", "meet"),
-            // set
             ("sets", "set"),
             ("setting", "set"),
-            // learn
             ("learns", "learn"),
             ("learnt", "learn"),
             ("learned", "learn"),
-            // lead
             ("leads", "lead"),
             ("led", "lead"),
             ("leading", "lead"),
-            // grow
             ("grows", "grow"),
             ("grew", "grow"),
             ("grown", "grow"),
-            // build
             ("builds", "build"),
             ("built", "build"),
             ("building", "build"),
-            // send
             ("sends", "send"),
             ("sent", "send"),
-            // fall
             ("falls", "fall"),
             ("fell", "fall"),
             ("fallen", "fall"),
-            // buy
             ("buys", "buy"),
             ("bought", "buy"),
-            // feel
             ("feels", "feel"),
             ("felt", "feel"),
-            // speak
             ("speaks", "speak"),
             ("spoke", "speak"),
             ("spoken", "speak"),
-            // read
             ("reads", "read"),
-            // spend
             ("spends", "spend"),
             ("spent", "spend"),
-            // win
             ("wins", "win"),
             ("won", "win"),
-            // teach
             ("teaches", "teach"),
             ("taught", "teach"),
-            // eat
             ("eats", "eat"),
             ("ate", "eat"),
             ("eaten", "eat"),
-            // drink
             ("drinks", "drink"),
             ("drank", "drink"),
             ("drunk", "drink"),
-            // drive
             ("drives", "drive"),
             ("drove", "drive"),
             ("driven", "drive"),
-            // break
             ("breaks", "break"),
             ("broke", "break"),
             ("broken", "break"),
-            // catch
             ("catches", "catch"),
             ("caught", "catch"),
-            // draw
             ("draws", "draw"),
             ("drew", "draw"),
             ("drawn", "draw"),
-            // fly
             ("flies", "fly"),
             ("flew", "fly"),
             ("flown", "fly"),
-            // mean
             ("means", "mean"),
             ("meant", "mean"),
-            // contain
             ("contains", "contain"),
             ("contained", "contain"),
-            // include
             ("includes", "include"),
             ("included", "include"),
-            // require
             ("requires", "require"),
             ("required", "require"),
-            // provide
             ("provides", "provide"),
             ("provided", "provide"),
-            // create
             ("creates", "create"),
             ("created", "create"),
             ("creating", "create"),
-            // cause
             ("causes", "cause"),
             ("caused", "cause"),
-            // support
             ("supports", "support"),
             ("supported", "support"),
-            // produce
             ("produces", "produce"),
             ("produced", "produce"),
-            // use
             ("uses", "use"),
             ("used", "use"),
             ("using", "use"),
-            // need
             ("needs", "need"),
             ("needed", "need"),
-            // want
             ("wants", "want"),
             ("wanted", "want"),
-            // call
             ("calls", "call"),
             ("called", "call"),
-            // try
             ("tries", "try"),
             ("tried", "try"),
-            // ask
             ("asks", "ask"),
             ("asked", "ask"),
-            // work
             ("works", "work"),
             ("worked", "work"),
-            // play
             ("plays", "play"),
             ("played", "play"),
-            // kill
             ("kills", "kill"),
             ("killed", "kill"),
-            // turn
             ("turns", "turn"),
             ("turned", "turn"),
-            // help
             ("helps", "help"),
             ("helped", "help"),
-            // start
             ("starts", "start"),
             ("started", "start"),
-            // follow
             ("follows", "follow"),
             ("followed", "follow"),
-            // stop
             ("stops", "stop"),
             ("stopped", "stop"),
-            // open
             ("opens", "open"),
             ("opened", "open"),
-            // close
             ("closes", "close"),
             ("closed", "close"),
-            // carry
             ("carries", "carry"),
             ("carried", "carry"),
-            // offer
             ("offers", "offer"),
             ("offered", "offer"),
-            // remember
             ("remembers", "remember"),
             ("remembered", "remember"),
-            // love
             ("loves", "love"),
             ("loved", "love"),
-            // consider
             ("considers", "consider"),
             ("considered", "consider"),
-            // appear
             ("appears", "appear"),
             ("appeared", "appear"),
-            // allow
             ("allows", "allow"),
             ("allowed", "allow"),
-            // serve
             ("serves", "serve"),
             ("served", "serve"),
-            // expect
             ("expects", "expect"),
             ("expected", "expect"),
-            // remain
             ("remains", "remain"),
             ("remained", "remain"),
-            // suggest
             ("suggests", "suggest"),
             ("suggested", "suggest"),
-            // raise
             ("raises", "raise"),
             ("raised", "raise"),
-            // develop
             ("develops", "develop"),
             ("developed", "develop"),
-            // describe
             ("describes", "describe"),
             ("described", "describe"),
-            // own
             ("owns", "own"),
             ("owned", "own"),
-            // define
             ("defines", "define"),
             ("defined", "define"),
-            // connect
             ("connects", "connect"),
             ("connected", "connect"),
-            // represent
             ("represents", "represent"),
             ("represented", "represent"),
-            // involve
             ("involves", "involve"),
             ("involved", "involve"),
-            // belong
             ("belongs", "belong"),
             ("belonged", "belong"),
         ]
@@ -525,7 +424,6 @@ impl Decomposer {
             if sentence.is_empty() {
                 continue;
             }
-            // Split conjunctions into sub-clauses
             let clauses = self.split_conjunctions(sentence);
             for clause in &clauses {
                 let tokens = self.tokenize(clause);
@@ -610,22 +508,17 @@ impl Decomposer {
     fn extract_all(&self, tokens: &[String]) -> Vec<MeaningUnit> {
         let mut results = Vec::new();
 
-        // Try passive voice first: "NP was/were VERBed by NP"
+        // A passive match excludes the other patterns.
         if let Some(unit) = self.try_passive(tokens) {
             results.push(unit);
             return results;
         }
 
-        // Try copula: "NP is/are NP"
+        // Copula and verb matches are different relations, so both are kept.
         if let Some(unit) = self.try_copula(tokens) {
             results.push(unit);
         }
-
-        // Try verb+prep and simple verb patterns
         results.extend(self.try_verb_patterns(tokens));
-
-        // Deduplicate: if copula and verb both matched, keep both
-        // (they represent different semantic relations)
         results
     }
 
@@ -762,17 +655,13 @@ impl Decomposer {
     }
 
     fn lemmatize_verb(&self, word: &str) -> Option<String> {
-        // Check irregular verbs first
         if let Some(&lemma) = self.irregular_verbs.get(word) {
             return Some(lemma.to_string());
         }
-
-        // Check if the word itself is a base-form irregular
         if self.irregular_verbs.values().any(|&v| v == word) {
             return Some(word.to_string());
         }
 
-        // Regular morphology: try to stem and validate
         if word.len() < 3 {
             return None;
         }

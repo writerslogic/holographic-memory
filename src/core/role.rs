@@ -179,7 +179,7 @@ mod tests {
         let t1 = reg.compose_triple(&a, &r, &b); // "A r B"
         let t2 = reg.compose_triple(&b, &r, &a); // "B r A"
 
-        // These MUST be different (commutativity fix)
+        // Swapping subject and object must change the composite.
         assert!(
             t1.similarity(&t2) < 0.5,
             "Swapped subject/object should produce different composites, got similarity {}",

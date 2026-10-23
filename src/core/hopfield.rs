@@ -61,9 +61,8 @@ pub fn hopfield_query(
         return Vec::new();
     }
 
-    // Step 1: Compute similarity scores (Jaccard similarity scaled by β)
-    // Using Jaccard instead of raw intersection count because multi-scale
-    // encoding produces variable-density vectors; raw counts bias toward denser vectors.
+    // Jaccard rather than raw overlap: multi-scale encoding produces vectors of varying
+    // density, and raw counts favour the denser ones.
     let scores: Vec<f64> = patterns
         .iter()
         .map(|(_, pat)| config.beta * query.similarity(pat))
@@ -71,7 +70,6 @@ pub fn hopfield_query(
 
     let weights = entmax(&scores, config.alpha);
 
-    // Step 3: Collect non-zero weights as retrieval results
     let mut results: Vec<RetrievalResult> = weights
         .iter()
         .enumerate()
@@ -155,7 +153,6 @@ fn sparsemax(scores: &[f64]) -> Vec<f64> {
         return vec![1.0];
     }
 
-    // Sort indices by score descending
     let mut sorted_indices: Vec<usize> = (0..n).collect();
     sorted_indices.sort_unstable_by(|&a, &b| {
         scores[b]
@@ -182,7 +179,6 @@ fn sparsemax(scores: &[f64]) -> Vec<f64> {
         return vec![uniform; n];
     }
 
-    // Recompute cumsum for the support
     let tau_sum: f64 = sorted_indices[..support_size]
         .iter()
         .map(|&i| scores[i])
@@ -214,7 +210,6 @@ fn entmax_15(scores: &[f64]) -> Vec<f64> {
     let mut lo = max_score - 1.0;
     let mut hi = max_score;
 
-    // Expand bounds if needed
     while sum_clipped_sq(scores, lo) < 1.0 {
         lo -= 1.0;
     }
@@ -360,12 +355,10 @@ mod tests {
             max_iter: 1,
         };
 
-        // Query with p1 itself should retrieve p1 with highest weight
         let results = hopfield_query(&p1, &patterns, &config, 10);
         assert!(!results.is_empty(), "Should retrieve at least one pattern");
         assert_eq!(results[0].id, "p1", "Should retrieve the exact pattern");
 
-        // Query with p2 should retrieve p2
         let results = hopfield_query(&p2, &patterns, &config, 10);
         assert!(!results.is_empty());
         assert_eq!(results[0].id, "p2");
@@ -387,7 +380,6 @@ mod tests {
         let query = patterns[5].1.clone();
         let results = hopfield_query(&query, &patterns, &config, 20);
 
-        // Sparsemax should produce far fewer than 20 results
         assert!(
             results.len() < 10,
             "Sparsemax should produce sparse output, got {} results",
@@ -401,7 +393,6 @@ mod tests {
         let p1 = make_pattern(dim, 100);
         let p2 = make_pattern(dim, 200);
 
-        // Create a noisy query (bind p1 with random noise)
         let noise = make_pattern(dim, 999);
         let noisy_query = p1.bind(&noise);
 

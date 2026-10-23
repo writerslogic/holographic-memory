@@ -59,14 +59,11 @@ impl TextProcessor {
                 let mut last_was_vowel = false;
                 let starts_with_word_char = !chunk.is_empty() && is_word_byte(chunk[0]);
 
-                // Fast ASCII/UTF8 character class scanner
                 let mut i = 0;
                 while i < chunk.len() {
                     let b = chunk[i];
 
-                    // Identify character category
                     if b < 128 {
-                        // ASCII Path
                         match b {
                             b'a' | b'e' | b'i' | b'o' | b'u' | b'A' | b'E' | b'I' | b'O' | b'U' => {
                                 vowels += 1;
@@ -127,8 +124,7 @@ impl TextProcessor {
                         }
                         i += 1;
                     } else {
-                        // Multi-byte UTF-8 Path
-                        // Basic heuristic: Non-ASCII non-punctuation are word parts
+                        // Heuristic: non-ASCII, non-punctuation characters are word parts.
                         let char_len = if b & 0b11100000 == 0b11000000 {
                             2
                         } else if b & 0b11110000 == 0b11100000 {
@@ -237,7 +233,7 @@ mod tests {
         assert_eq!(metrics.word_count, 4);
         assert_eq!(metrics.syllable_count, 4);
 
-        // Thai (3 characters)
+        // Thai: every one of the six code points counts as a word.
         let metrics = TextProcessor::analyze("สวัสดี");
         assert_eq!(metrics.word_count, 6);
     }
@@ -271,7 +267,6 @@ mod tests {
     fn readability_simple_text() {
         let metrics = TextProcessor::analyze("The cat sat on the mat.");
         let score = TextProcessor::calculate_readability(&metrics);
-        // Simple short sentence: high readability (Flesch score > 80)
         assert!(
             score > 80.0,
             "Simple text should score > 80, got {:.1}",
@@ -288,7 +283,6 @@ mod tests {
              practical considerations illuminates fundamental architectural decisions.",
         );
         let score = TextProcessor::calculate_readability(&metrics);
-        // Complex text: lower readability (Flesch score < 40)
         assert!(
             score < 40.0,
             "Complex text should score < 40, got {:.1}",
