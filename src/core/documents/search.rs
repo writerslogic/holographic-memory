@@ -107,7 +107,7 @@ struct CapturedQuery {
     lexical_scores: Option<Vec<f64>>,
 }
 
-pub(super) fn prepare_search(
+pub(crate) fn prepare_search(
     text: &str,
     options: &SearchOptions,
     embedding_dimensions: Option<usize>,
@@ -187,7 +187,7 @@ pub(super) fn prepare_search(
 
 /// The number of documents with at least one chunk containing a term of `text`, in either
 /// stored form: the documents an unfiltered lexical search scores above zero.
-pub(super) fn count_matches(store: &DocumentStore, text: &str) -> Result<usize> {
+pub(crate) fn count_matches(store: &DocumentStore, text: &str) -> Result<usize> {
     ensure!(text.len() <= MAX_DOCUMENT_BYTES, "query exceeds 8 MiB");
     let mut matched = vec![0u64; store.slot_count.div_ceil(64)];
     for (form, terms) in [terms(text, false), terms(text, true)].iter().enumerate() {
@@ -218,7 +218,7 @@ pub(super) fn count_matches(store: &DocumentStore, text: &str) -> Result<usize> 
     Ok(count)
 }
 
-pub(super) fn capture_search(
+pub(crate) fn capture_search(
     store: &DocumentStore,
     prepared: Vec<PreparedSearch>,
 ) -> CapturedSearch {
@@ -622,7 +622,7 @@ fn capture_indexed_query(
     }
 }
 
-pub(super) fn execute_search(captured: &CapturedSearch, query: usize) -> Vec<DocumentResult> {
+pub(crate) fn execute_search(captured: &CapturedSearch, query: usize) -> Vec<DocumentResult> {
     execute_query(&captured.queries[query])
 }
 

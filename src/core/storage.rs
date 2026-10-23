@@ -117,7 +117,7 @@ pub struct PersistentArena {
     base_path: PathBuf,
     data_path: RwLock<PathBuf>,
     read_segments: RwLock<Vec<Arc<Mmap>>>,
-    active_segment: Arc<RwLock<ActiveSegment>>,
+    active_segment: RwLock<ActiveSegment>,
     active_id: AtomicUsize,
     write_offset: AtomicUsize,
     active_capacity: AtomicUsize,
@@ -226,7 +226,7 @@ impl PersistentArena {
             base_path: base,
             data_path: RwLock::new(data_path),
             read_segments: RwLock::new(segments),
-            active_segment: Arc::new(RwLock::new(active)),
+            active_segment: RwLock::new(active),
             active_id: AtomicUsize::new(active_id),
             write_offset: AtomicUsize::new(recovered_offset),
             active_capacity: AtomicUsize::new(active_capacity),
@@ -824,21 +824,15 @@ impl PersistentArena {
         Ok(path)
     }
 
-    pub(crate) fn replace_with_compacted(&self, prepared: PreparedCompaction) -> Result<()> {
-        self.replace_compacted(prepared, false)
-    }
-
-    /// Like [`Self::replace_with_compacted`], but overwrites the replaced generation with
-    /// zeros and syncs it before unlinking, then does the same for every unreferenced
-    /// generation or legacy segment left by an interrupted compaction.
-    pub(crate) fn replace_with_compacted_scrubbing(
+    /// Publishes the compacted generation in `prepared` and removes the replaced one. With
+    /// `scrub`, the replaced generation is overwritten with zeros and synced before unlinking,
+    /// and so is every unreferenced generation or legacy segment left by an interrupted
+    /// compaction.
+    pub(crate) fn replace_with_compacted(
         &self,
         prepared: PreparedCompaction,
+        scrub: bool,
     ) -> Result<()> {
-        self.replace_compacted(prepared, true)
-    }
-
-    fn replace_compacted(&self, prepared: PreparedCompaction, scrub: bool) -> Result<()> {
         let staged = prepared.arena;
         ensure!(
             staged.segment_size == self.segment_size
@@ -1044,7 +1038,7 @@ mod tests {
         arena.write_slice(b"old generation")?;
         let staged = PersistentArena::new(arena.new_generation_dir()?)?;
         staged.write_slice(b"new generation")?;
-        arena.replace_with_compacted(staged.prepare_compacted()?)?;
+        arena.replace_with_compacted(staged.prepare_compacted()?, false)?;
         Ok(())
     }
 
@@ -1066,7 +1060,7 @@ mod tests {
         let mut prepared = staged.prepare_compacted()?;
         arena.replay_compaction_tail(&mut prepared, &mut cursor, end)?;
         assert_eq!(cursor, end);
-        arena.replace_with_compacted(prepared)?;
+        arena.replace_with_compacted(prepared, false)?;
         drop(arena);
         let restored = PersistentArena::new(root.path().join("live"))?;
         let mut offset = 0;
@@ -1192,7 +1186,7 @@ mod tests {
                 }
                 assert!(staged
                     .prepare_compacted()
-                    .and_then(|prepared| arena.replace_with_compacted(prepared))
+                    .and_then(|prepared| arena.replace_with_compacted(prepared, false))
                     .is_err());
                 assert_eq!(arena.read_frame(0)?.0, b"acknowledged generation");
                 drop(arena);

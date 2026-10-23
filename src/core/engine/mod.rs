@@ -77,7 +77,7 @@ pub struct HmsCore {
     revision: std::sync::atomic::AtomicU64,
     /// The frame format this store is written in (its `store.json` schema); both are read.
     journal: journal::JournalFormat,
-    pub(crate) arena: Arc<PersistentArena>,
+    pub(crate) arena: PersistentArena,
     pub(crate) dimensions: usize,
     pub(crate) storage_path: PathBuf,
     shards: RwLock<ShardSet>,
@@ -158,7 +158,7 @@ impl HmsCore {
         let store_lock = StoreLock::acquire(&base_path)?;
         let schema = super::schema::validate_store(&base_path, dim, &config)?;
 
-        let arena = Arc::new(PersistentArena::new(base_path.join("vectors_data.bin"))?);
+        let arena = PersistentArena::new(base_path.join("vectors_data.bin"))?;
 
         let audit = if config.security.audit_enabled {
             Some(AuditLog::new(&base_path)?)

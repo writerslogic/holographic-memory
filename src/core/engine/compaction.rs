@@ -56,7 +56,7 @@ enum DocumentMutation<'a> {
 
 impl HmsCore {
     pub fn compact(&self) -> Result<()> {
-        self.compact_with_hook(|| {})
+        self.compact_impl(|| {}, || {}, false)
     }
 
     /// Compacts and then physically erases what the compaction replaced: the old generation
@@ -92,18 +92,6 @@ impl HmsCore {
             self.train_dense_index()?;
         }
         Ok(())
-    }
-
-    fn compact_with_hook(&self, after_snapshot: impl FnOnce()) -> Result<()> {
-        self.compact_with_hooks(after_snapshot, || {})
-    }
-
-    fn compact_with_hooks(
-        &self,
-        after_snapshot: impl FnOnce(),
-        before_publication: impl FnOnce(),
-    ) -> Result<()> {
-        self.compact_impl(after_snapshot, before_publication, false)
     }
 
     fn compact_impl(
@@ -170,11 +158,7 @@ impl HmsCore {
         self.arena
             .replay_compaction_tail(&mut prepared, &mut cursor, end)?;
         staging.disarm();
-        if scrub {
-            self.arena.replace_with_compacted_scrubbing(prepared)?;
-        } else {
-            self.arena.replace_with_compacted(prepared)?;
-        }
+        self.arena.replace_with_compacted(prepared, scrub)?;
         self.revision
             .fetch_add(1, std::sync::atomic::Ordering::Release);
         // The arena pointer has moved, so writers may continue: the lease ends here. Index
@@ -422,12 +406,16 @@ mod tests {
                 done_tx.send(())?;
                 Ok(())
             });
-            let compacted = core.compact_with_hook(|| {
-                start_tx.send(()).unwrap();
-                done_rx
-                    .recv_timeout(Duration::from_secs(5))
-                    .expect("compaction snapshot blocked mutations or queries");
-            });
+            let compacted = core.compact_impl(
+                || {
+                    start_tx.send(()).unwrap();
+                    done_rx
+                        .recv_timeout(Duration::from_secs(5))
+                        .expect("compaction snapshot blocked mutations or queries");
+                },
+                || {},
+                false,
+            );
             writer.join().unwrap()?;
             compacted?;
             let expected = assert_current(&core)?;
@@ -489,7 +477,7 @@ mod tests {
             .unwrap();
         let core = HmsCore::new(1024, Some(root), Some(config))?;
         seed(&core)?;
-        core.compact_with_hook(|| mutate(&core).unwrap())
+        core.compact_impl(|| mutate(&core).unwrap(), || {}, false)
     }
 
     #[test]
@@ -535,11 +523,15 @@ mod tests {
             start_rx.recv()?;
             other_core.compact()
         });
-        core.compact_with_hook(|| {
-            start_tx.send(()).unwrap();
-            assert!(core.compaction.try_lock().is_none());
-            mutate(&core).unwrap();
-        })?;
+        core.compact_impl(
+            || {
+                start_tx.send(()).unwrap();
+                assert!(core.compaction.try_lock().is_none());
+                mutate(&core).unwrap();
+            },
+            || {},
+            false,
+        )?;
         other.join().unwrap()?;
         let expected = assert_current(&core)?;
         drop(core);
@@ -589,12 +581,13 @@ mod tests {
             assert_ne!(initial.indices(), late.indices());
             assert_ne!(during.indices(), late.indices());
             core.memorize("vector".into(), initial)?;
-            core.compact_with_hooks(
+            core.compact_impl(
                 || core.memorize("vector".into(), during).unwrap(),
                 || {
                     core.memorize("vector".into(), late.clone()).unwrap();
                     core.memorize_document(document("late", "late")).unwrap();
                 },
+                false,
             )?;
             let expected =
                 serde_json::to_value(core.search_documents("needle", &Default::default())?)?;

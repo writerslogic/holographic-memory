@@ -48,7 +48,7 @@ fn legacy_frames_geometry_and_compaction_survive_reopening() -> Result<()> {
             staged.write_slice(payload)?;
         }
         let expected = arena.read_slice(0, arena.stats().used_bytes)?;
-        arena.replace_with_compacted(staged.finish()?.prepare_compacted()?)?;
+        arena.replace_with_compacted(staged.finish()?.prepare_compacted()?, false)?;
         assert_eq!(arena.read_slice(0, expected.len())?, expected);
         drop(arena);
         let arena = PersistentArena::new(&live)?;
@@ -92,7 +92,7 @@ fn mismatched_compaction_geometry_preserves_the_acknowledged_generation() -> Res
         let staged = PersistentArena::new(&stage)?;
         staged.write_slice(b"incompatible")?;
         assert!(arena
-            .replace_with_compacted(staged.prepare_compacted()?)
+            .replace_with_compacted(staged.prepare_compacted()?, false)
             .is_err());
         assert_eq!(arena.checkpoint(), checkpoint);
         assert!(!live.join("CURRENT").exists());
@@ -215,7 +215,7 @@ fn compacted_store_without_root_manifest_keeps_published_generation_geometry() -
         let stage = arena.new_generation_dir()?;
         let mut staged = StagedArena::new(&stage, Some(&arena))?;
         staged.write_slice(b"durable frame")?;
-        arena.replace_with_compacted(staged.finish()?.prepare_compacted()?)?;
+        arena.replace_with_compacted(staged.finish()?.prepare_compacted()?, false)?;
         drop(arena);
         std::fs::remove_file(root.path().join(FORMAT_MANIFEST))?;
         let restored = PersistentArena::new(root.path())?;
