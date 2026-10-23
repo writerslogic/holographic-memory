@@ -330,3 +330,7 @@ required-features = ["cli"]
 [[example]]
 name = "document_operations"
 required-features = ["cli"]
+
+[[bench]]
+name = "ingest_alloc"
+harness = false
