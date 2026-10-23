@@ -140,15 +140,25 @@ impl RateLimiter {
 
     fn check_at(&self, tenant: &str, now: Instant) -> Result<(), u64> {
         let mut buckets = self.buckets.lock();
-        if buckets.len() >= MAX_BUCKETS && !buckets.contains_key(tenant) {
+        let known = buckets.contains_key(tenant);
+        if !known && buckets.len() >= MAX_BUCKETS {
             // A bucket idle long enough to be full again is indistinguishable from a new one.
             let refill = Duration::from_secs_f64(self.burst / self.rate);
             buckets.retain(|_, b| now.duration_since(b.last) < refill);
         }
-        let bucket = buckets.entry(tenant.to_string()).or_insert(Bucket {
-            tokens: self.burst,
-            last: now,
-        });
+        if !known {
+            // The tenant name is copied only for a new bucket, not on every request.
+            buckets.insert(
+                tenant.to_string(),
+                Bucket {
+                    tokens: self.burst,
+                    last: now,
+                },
+            );
+        }
+        let bucket = buckets
+            .get_mut(tenant)
+            .expect("the tenant's bucket exists or was just inserted");
         let elapsed = now.saturating_duration_since(bucket.last).as_secs_f64();
         bucket.tokens = (bucket.tokens + elapsed * self.rate).min(self.burst);
         bucket.last = now;

@@ -44,6 +44,8 @@ pub struct DocIn {
 
 pub struct ValidDoc {
     pub input: DocumentInput,
+    /// Length of the metadata's JSON serialization, measured once at validation.
+    pub metadata_bytes: usize,
 }
 
 pub fn dense(values: &[f64], input_dim: usize, what: &str) -> Result<(), ApiError> {
@@ -83,7 +85,7 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
         Some(m @ Value::Object(_)) => m,
         Some(_) => return Err(ApiError::bad("metadata must be a JSON object")),
     };
-    check_metadata_size(&metadata)?;
+    let metadata_bytes = check_metadata_size(&metadata)?;
     // With an on-device embedder a document may omit its vector; the server embeds its text.
     let embeddings = match doc.vector {
         None if server_embeds && text.split_whitespace().next().is_some() => None,
@@ -110,7 +112,10 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
         title_weight: None,
     };
     match chunk_document(&input) {
-        Ok(chunks) if chunks.len() == 1 => Ok(ValidDoc { input }),
+        Ok(chunks) if chunks.len() == 1 => Ok(ValidDoc {
+            input,
+            metadata_bytes,
+        }),
         Ok(_) => Err(ApiError::bad(format!(
             "text must fit one chunk of at most {CHUNK_WORDS} words; split the document and send one vector per part"
         ))),
@@ -118,13 +123,14 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
     }
 }
 
-pub fn check_metadata_size(metadata: &Value) -> Result<(), ApiError> {
-    if serde_json::to_vec(metadata).map_or(true, |v| v.len() > MAX_METADATA_BYTES) {
-        return Err(ApiError::bad(format!(
+/// The length of `metadata`'s JSON serialization, or an error past `MAX_METADATA_BYTES`.
+pub fn check_metadata_size(metadata: &Value) -> Result<usize, ApiError> {
+    match serde_json::to_vec(metadata) {
+        Ok(bytes) if bytes.len() <= MAX_METADATA_BYTES => Ok(bytes.len()),
+        _ => Err(ApiError::bad(format!(
             "metadata exceeds {MAX_METADATA_BYTES} bytes"
-        )));
+        ))),
     }
-    Ok(())
 }
 
 /// Reject a write that would take the tenant past `max_documents_per_tenant`; `fresh` counts
@@ -191,9 +197,7 @@ pub fn validate_batch(docs: &[ValidDoc], input_dim: usize) -> Result<(), ApiErro
     let mut embedding_values = 0usize;
     for doc in docs {
         source_bytes += doc.input.id.len() + doc.input.text.len();
-        metadata_bytes += serde_json::to_vec(&doc.input.metadata)
-            .map_err(ApiError::internal)?
-            .len();
+        metadata_bytes += doc.metadata_bytes;
         embedding_values += doc
             .input
             .embeddings
@@ -354,6 +358,9 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) -> 
     };
     let mut pending: Vec<(u64, Vec<u8>)> = Vec::new();
     let mut buffer: Vec<u8> = Vec::new();
+    // Leading bytes of `buffer` already searched for a newline: a long line split across many
+    // frames is scanned once, not once per frame.
+    let mut scanned = 0usize;
     let (mut total, mut line_no) = (0u64, 0u64);
     let mut ended = false;
     let permit = Arc::new(permit);
@@ -388,8 +395,8 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) -> 
             }
         }
         let mut start = 0;
-        while let Some(offset) = buffer[start..].iter().position(|b| *b == b'\n') {
-            let end = start + offset;
+        while let Some(offset) = buffer[scanned..].iter().position(|b| *b == b'\n') {
+            let end = scanned + offset;
             line_no += 1;
             if end - start > max_line {
                 return Err(too_large(format!(
@@ -401,8 +408,10 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) -> 
                 pending.push((line_no, line.to_vec()));
             }
             start = end + 1;
+            scanned = start;
         }
         buffer.drain(..start);
+        scanned = buffer.len();
         if buffer.len() > max_line {
             return Err(too_large(format!(
                 "line {} exceeds {max_line} bytes",

@@ -21,11 +21,14 @@ use crate::error::{ApiError, ApiResult};
 use crate::limits::{fingerprint, Begin, StoredResponse};
 use crate::tenants::AppState;
 
-pub fn principal(req: &Request) -> Result<Principal, ApiError> {
-    req.extensions().get::<Principal>().cloned().ok_or_else(|| {
-        // The auth middleware runs before every API handler; reaching here is a wiring bug.
-        ApiError::internal("request reached a handler without a principal")
-    })
+pub fn principal(req: &Request) -> Result<Arc<Principal>, ApiError> {
+    req.extensions()
+        .get::<Arc<Principal>>()
+        .cloned()
+        .ok_or_else(|| {
+            // The auth middleware runs before every API handler; reaching here is a wiring bug.
+            ApiError::internal("request reached a handler without a principal")
+        })
 }
 
 /// Authorize `req` for `scope`, resolve its tenant and charge the tenant's rate limit.
@@ -33,7 +36,7 @@ pub fn admit(
     state: &AppState,
     req: &Request,
     scope: Scope,
-) -> Result<(Principal, String), ApiError> {
+) -> Result<(Arc<Principal>, String), ApiError> {
     let principal = principal(req)?;
     if let Err(error) = principal.require(scope) {
         state.metrics.auth_failures.fetch_add(1, Ordering::Relaxed);
@@ -210,12 +213,13 @@ pub async fn json_write(
     };
     let worker = state.clone();
     let result = blocking(permit, move || {
-        let result = work(&worker, &tenant, bytes);
+        // The stored replay shares the response body instead of deep-copying it.
+        let result = work(&worker, &tenant, bytes).map(|(status, body)| (status, Arc::new(body)));
         if let Some(guard) = guard {
             guard.complete(&match &result {
                 Ok((status, body)) => StoredResponse {
                     status: *status,
-                    body: Arc::new(body.clone()),
+                    body: Arc::clone(body),
                 },
                 Err(e) => StoredResponse {
                     status: e.status,
