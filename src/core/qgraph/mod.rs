@@ -238,6 +238,16 @@ impl BuildVisited {
     }
 }
 
+/// Profiling only: enables the construction profile and calls `hook` with each phase's name
+/// (`setup`, `pass`, `pass`, `fill`, `upper`) as the phase ends, so a profiler can attribute
+/// its own counters (allocations, peak bytes) to the phases. Set it before the first build; it
+/// can be set once.
+#[cfg(feature = "experimental")]
+#[doc(hidden)]
+pub fn set_build_phase_hook(hook: fn(&str)) -> bool {
+    prof::HOOK.set(hook).is_ok()
+}
+
 /// Opt-in construction profile (`HMS_QGRAPH_BUILD_PROFILE` set): per-phase wall and CPU
 /// seconds, construction-search filter counts and a hash of the built graph, on stderr.
 mod prof {
@@ -302,16 +312,6 @@ mod prof {
         }
     }
 }
-/// Profiling only: enables the construction profile and calls `hook` with each phase's name
-/// (`setup`, `pass`, `pass`, `fill`, `upper`) as the phase ends, so a profiler can attribute
-/// its own counters (allocations, peak bytes) to the phases. Set it before the first build; it
-/// can be set once.
-#[cfg(feature = "experimental")]
-#[doc(hidden)]
-pub fn set_build_phase_hook(hook: fn(&str)) -> bool {
-    prof::HOOK.set(hook).is_ok()
-}
-
 thread_local! {
     static BUILD_VISITED: RefCell<BuildVisited> = RefCell::new(BuildVisited::default());
 }
