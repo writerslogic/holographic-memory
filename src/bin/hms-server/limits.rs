@@ -351,7 +351,54 @@ impl Idempotency {
 #[cfg(test)]
 mod tests {
     use super::*;
-    include!("limits_audit2.rs");
+    #[test]
+    fn rate_limit_bucket_cap_rejects_new_tenants_when_full() {
+        let limiter = RateLimiter::new(1.0, 1).unwrap();
+        let now = Instant::now();
+        let first = Instant::now();
+        for i in 0..MAX_BUCKETS {
+            limiter.check_at(&format!("tenant{i}"), now).unwrap();
+        }
+        let below = first.elapsed();
+        let start = Instant::now();
+        for i in MAX_BUCKETS..MAX_BUCKETS + 1000 {
+            assert!(limiter.check_at(&format!("tenant{i}"), now).is_err());
+        }
+        let above = start.elapsed();
+        let count = limiter.buckets.lock().entries.len();
+        eprintln!(
+            "rate: first_10000_us={} next_1000_us={} buckets={count}",
+            below.as_micros(),
+            above.as_micros()
+        );
+        assert!(
+            count <= MAX_BUCKETS,
+            "bucket map exceeds its intended bound"
+        );
+        assert!(limiter
+            .check_at("after-refill", now + Duration::from_secs(1))
+            .is_ok());
+    }
+
+    #[test]
+    fn idempotency_keeps_running_entries_at_capacity() {
+        let store = Idempotency::new(Duration::from_secs(60), 1);
+        let fp = fingerprint("POST", "/x", "t", b"body");
+        let Begin::Proceed(first) = store.begin("t", "first", fp).unwrap() else {
+            panic!()
+        };
+        assert!(store.begin("t", "second", fp).is_err());
+        let retry = store.begin("t", "first", fp);
+        assert!(
+            retry.is_err(),
+            "a retry is executing while its original request is still running"
+        );
+        drop(first);
+        assert!(matches!(
+            store.begin("t", "second", fp).unwrap(),
+            Begin::Proceed(_)
+        ));
+    }
 
     #[tokio::test]
     async fn queue_admits_up_to_its_bound_then_sheds() {

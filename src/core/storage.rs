@@ -11,8 +11,8 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 #[cfg(test)]
-#[path = "storage/audit_repros.rs"]
-mod audit_repros;
+#[path = "storage/recovery_tests.rs"]
+mod recovery_tests;
 mod staging;
 pub(crate) use staging::StagedArena;
 
@@ -344,7 +344,7 @@ impl PersistentArena {
         let mut scratch = Vec::new();
         let data = &mmap[..];
         let fail = |offset: usize, max_version: u32| -> Result<(usize, u32)> {
-            match Self::committed_after(data, offset + 1) {
+            match Self::committed_after(data, offset + 1, true) {
                 Some(next) => Err(anyhow!(
                     "frame at offset {offset} fails its checks but committed data follows at \
                      offset {next}: the segment is corrupt, not a torn tail; restore a \
@@ -360,7 +360,10 @@ impl PersistentArena {
             // A zero header or the end marker means no more frames.
             if raw_len == 0 && comp_len == 0 {
                 if is_log_end(&data[offset..offset + HEADER_SIZE]) {
-                    if version == 0 && Self::committed_after(data, offset + HEADER_SIZE).is_some() {
+                    // A torn first append can persist its end marker without its header.
+                    if version == 0
+                        && Self::committed_after(data, offset + HEADER_SIZE, false).is_some()
+                    {
                         return fail(offset, max_version);
                     }
                     break;
@@ -430,15 +433,15 @@ impl PersistentArena {
     }
 
     /// The first offset at or after `from` holding committed data: a valid frame or the end
-    /// marker, scanning every byte up to the last non-zero byte of the segment (bytes beyond
-    /// the write frontier are zero).
-    fn committed_after(data: &[u8], from: usize) -> Option<usize> {
+    /// marker when `include_end_marker` is true. Bytes beyond the write frontier are zero.
+    fn committed_after(data: &[u8], from: usize, include_end_marker: bool) -> Option<usize> {
         let last = super::format::scan::last_nonzero(data)?;
         let mut scratch = Vec::new();
         (from..=last.saturating_sub(HEADER_SIZE - 1)).find(|&at| {
             at + HEADER_SIZE <= data.len()
                 && (Self::frame_checks_out(data, at, &mut scratch)
-                    || (is_log_end(&data[at..at + HEADER_SIZE])
+                    || (include_end_marker
+                        && is_log_end(&data[at..at + HEADER_SIZE])
                         && data[at + 12..at + 16] == END_MARK.to_le_bytes()))
         })
     }

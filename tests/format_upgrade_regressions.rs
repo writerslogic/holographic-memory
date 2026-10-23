@@ -6,7 +6,7 @@ use format_common::goldens;
 use holographic_memory::core::format::{upgrade_store, verify_path, Verdict, VerifyOptions};
 
 #[test]
-fn audit2_mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
+fn mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
     let source = root.path().join("source");
     let output = root.path().join("output");
@@ -35,7 +35,7 @@ fn audit2_mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<(
 }
 
 #[test]
-fn audit2_scanner_rejects_incomplete_stored_triple() {
+fn scanner_rejects_incomplete_stored_triple() {
     let input = br#"[{"StoredTriple":{}}]"#;
     let mut replay = holographic_memory::core::format::scan::Replay::default();
     assert!(holographic_memory::core::format::scan::check_transaction(
@@ -47,7 +47,7 @@ fn audit2_scanner_rejects_incomplete_stored_triple() {
 }
 
 #[test]
-fn audit2_live_nul_prefix_survives_compaction() -> anyhow::Result<()> {
+fn nul_prefixed_document_survives_compaction() -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
     let path = root.path().display().to_string();
     let core = holographic_memory::HmsCore::new(256, Some(path.clone()), None)?;
@@ -67,7 +67,7 @@ fn audit2_live_nul_prefix_survives_compaction() -> anyhow::Result<()> {
 }
 
 #[test]
-fn audit2_shallow_verify_agrees_with_replay_for_missing_fields() -> anyhow::Result<()> {
+fn verify_agrees_with_replay_on_missing_fields() -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
     let fixtures = goldens()?;
     let fixture = fixtures.iter().find(|g| g.name == "v4-plain").unwrap();

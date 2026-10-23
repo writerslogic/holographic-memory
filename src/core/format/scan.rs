@@ -152,10 +152,6 @@ fn decode_frame_into(
     })
 }
 
-/// The first offset at or after `from` holding committed data: a frame that decodes, or an
-/// end marker. Mirrors the engine's rule for telling a torn append from corruption: the
-/// writer puts the end marker in the same flush as the frame, so anything valid after a bad
-/// frame was committed after it.
 pub(crate) fn last_nonzero(data: &[u8]) -> Option<usize> {
     let (blocks, tail) = data.as_chunks::<4096>();
     if let Some(at) = tail.iter().rposition(|&b| b != 0) {
@@ -168,13 +164,14 @@ pub(crate) fn last_nonzero(data: &[u8]) -> Option<usize> {
         .map(|at| block * 4096 + at)
 }
 
-fn committed_after(data: &[u8], from: usize) -> Option<usize> {
+fn committed_after(data: &[u8], from: usize, include_end_marker: bool) -> Option<usize> {
     let last = last_nonzero(data)?;
     // One output buffer for every candidate offset of a damaged tail.
     let mut scratch = Vec::new();
     (from..=last.saturating_sub(FRAME_HEADER_LEN - 1)).find(|&at| {
         at + FRAME_HEADER_LEN <= data.len()
-            && (is_end_marker(data, at) || decode_frame_into(data, at, &mut scratch).is_ok())
+            && ((include_end_marker && is_end_marker(data, at))
+                || decode_frame_into(data, at, &mut scratch).is_ok())
     })
 }
 
@@ -199,7 +196,7 @@ pub fn scan_segment(
             if is_log_end(data, offset) {
                 // The writer never leaves committed frames after the end of its log, so one
                 // that decodes there was hidden by damage to this header.
-                if let Some(at) = committed_after(data, offset + FRAME_HEADER_LEN) {
+                if let Some(at) = committed_after(data, offset + FRAME_HEADER_LEN, false) {
                     return SegmentScan {
                         frames,
                         end_offset: offset,
@@ -237,7 +234,7 @@ fn fault(
     offset: usize,
     reason: &'static str,
 ) -> SegmentScan {
-    let committed_at = committed_after(data, offset + 1);
+    let committed_at = committed_after(data, offset + 1, true);
     let end = if is_final && committed_at.is_none() {
         SegmentEnd::TornTail { reason }
     } else {

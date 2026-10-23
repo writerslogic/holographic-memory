@@ -210,7 +210,20 @@ fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    include!("text_audit2.rs");
+    #[test]
+    fn nul_prefixed_live_text_is_not_scrubbed() {
+        let dir = tempfile::tempdir().unwrap();
+        let segment = create(&dir.path().join("text"));
+        for prefix in [15, 16, 17] {
+            let text = format!("{}live searchable text", "\0".repeat(prefix));
+            let (at, len) = segment.append(&text).unwrap();
+            assert_eq!(segment.read(at, len).unwrap(), text);
+            assert!(
+                !segment.is_scrubbed(at, len),
+                "live prefix of {prefix} NUL bytes triggers the deleted-record path"
+            );
+        }
+    }
 
     fn create(path: &Path) -> TextSegment {
         TextSegment::create(

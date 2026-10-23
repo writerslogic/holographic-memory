@@ -4,7 +4,7 @@
 use super::*;
 
 #[test]
-fn audit_repro_zeroed_interior_header() -> Result<()> {
+fn zeroed_interior_header_is_corruption() -> Result<()> {
     let dir = tempfile::tempdir()?;
     let arena = PersistentArena::new(dir.path())?;
     arena.write_slice(b"first committed record")?;
@@ -23,7 +23,7 @@ fn audit_repro_zeroed_interior_header() -> Result<()> {
 }
 
 #[test]
-fn audit_repro_compressed_raw_length_mismatch() -> Result<()> {
+fn raw_length_mismatch_is_rejected() -> Result<()> {
     let dir = tempfile::tempdir()?;
     let arena = PersistentArena::new(dir.path())?;
     let data = vec![7; 1024];

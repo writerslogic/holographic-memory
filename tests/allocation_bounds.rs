@@ -66,7 +66,7 @@ fn scanner_reuses_a_single_raw_buffer() {
             measured(|| scan::scan_segment(&segment, true, |_, _| {}));
         assert_eq!(scan.frames.len(), count);
         assert!(allocated < raw.len() * 2);
-        eprintln!("AUDIT2 scan: frames={count} compressed_bytes={} allocated_bytes={allocated} allocation_calls={calls} elapsed_us={micros}", segment.len());
+        eprintln!("scan: frames={count} compressed_bytes={} allocated_bytes={allocated} allocation_calls={calls} elapsed_us={micros}", segment.len());
     }
 }
 
@@ -83,7 +83,7 @@ fn recent_audit_query_uses_bounded_scratch() {
         let (result, allocated, calls, micros) = measured(|| core.audit_since(1));
         assert!(result.unwrap().is_empty());
         assert!(allocated < 128 * 1024);
-        eprintln!("AUDIT2 audit: entries={count} returned=0 allocated_bytes={allocated} allocation_calls={calls} elapsed_us={micros}");
+        eprintln!("audit: entries={count} returned=0 allocated_bytes={allocated} allocation_calls={calls} elapsed_us={micros}");
     }
 }
 

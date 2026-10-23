@@ -326,6 +326,7 @@ fn upgrade_data_dir(
     let result = (|| -> Result<(usize, Report)> {
         std::fs::create_dir_all(staging.join("tenants"))?;
         let mut frames = 0;
+        let mut copied_verdicts = crate::core::hash::FastMap::default();
         for tenant in &sniff.tenants {
             let name = tenant_dir(source, &tenant.name)?;
             let from = source.join("tenants").join(&name);
@@ -334,6 +335,7 @@ fn upgrade_data_dir(
             let tenant_plan = plan_from(&from, &tenant.report)?;
             if tenant_plan.up_to_date {
                 crate::core::admin::copy_tree(&from, &to)?;
+                copied_verdicts.insert(tenant.name.clone(), tenant.report.verdict);
                 frames += tenant.report.frames;
             } else {
                 let staged = stage_store(&from, &to)?;
@@ -347,10 +349,27 @@ fn upgrade_data_dir(
             }
         }
         let mut verification = verify_path(&staging, &VerifyOptions::default())?;
+        for tenant in &verification.tenants {
+            let allowed = copied_verdicts
+                .get(&tenant.name)
+                .copied()
+                .unwrap_or(Verdict::Ok);
+            ensure!(
+                tenant.report.verdict == Verdict::Ok
+                    || (allowed == Verdict::Recoverable
+                        && tenant.report.verdict == Verdict::Recoverable),
+                "upgraded tenant {:?} verifies as {:?} (allowed {:?}): {:?}",
+                tenant.name,
+                tenant.report.verdict,
+                allowed,
+                tenant.report.findings
+            );
+        }
         ensure!(
-            verification.verdict == Verdict::Ok,
-            "upgraded data directory does not verify: {:?}",
-            verification.findings
+            matches!(verification.verdict, Verdict::Ok | Verdict::Recoverable),
+            "upgraded data directory does not verify: {:?}; tenants: {:?}",
+            verification.findings,
+            verification.tenants
         );
         for tenant in &mut verification.tenants {
             tenant.report.path = destination
