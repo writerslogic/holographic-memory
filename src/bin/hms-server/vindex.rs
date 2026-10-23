@@ -1078,7 +1078,6 @@ mod tests {
 
         let reopened = VectorIndex::open(&vdir, dim, &core).unwrap();
         assert!(!vdir.join("dirty").exists(), "reconciled");
-        let status = reopened.status();
         assert_eq!(
             reopened.live(),
             19,

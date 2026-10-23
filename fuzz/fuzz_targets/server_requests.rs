@@ -39,6 +39,8 @@ mod routes;
 mod serve;
 #[path = "../../src/bin/hms-server/tenants.rs"]
 mod tenants;
+#[path = "../../src/bin/hms-server/vindex.rs"]
+mod vindex;
 #[path = "../../src/bin/hms-server/types.rs"]
 mod types;
 
