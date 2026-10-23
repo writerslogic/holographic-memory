@@ -36,6 +36,9 @@ impl KMeansNystrom {
 
     /// Return the top `n_probe` nearest clusters sorted by distance (ascending).
     pub fn top_clusters(&self, point: &DVector<f32>, n_probe: usize) -> Vec<usize> {
+        if n_probe == 0 || self.centroids.is_empty() {
+            return Vec::new();
+        }
         let mut dists: Vec<(usize, f32)> = self
             .centroids
             .iter()
@@ -43,9 +46,6 @@ impl KMeansNystrom {
             .map(|(i, c)| (i, (point - c).norm_squared()))
             .collect();
         let n = n_probe.min(dists.len());
-        if n == 0 {
-            return vec![];
-        }
         dists.select_nth_unstable_by(n.saturating_sub(1), |a, b| {
             a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
         });
@@ -56,17 +56,14 @@ impl KMeansNystrom {
 
     fn lloyds(&mut self, data: &[DVector<f32>]) {
         for _ in 0..MAX_ITERS {
-            // Assignment
-            let assignments: Vec<usize> = data.iter().map(|p| self.assign(p)).collect();
-
             // Update centroids
             let dim = self.centroids[0].len();
             let mut sums: Vec<DVector<f32>> =
                 (0..self.k).map(|_| DVector::<f32>::zeros(dim)).collect();
             let mut counts = vec![0usize; self.k];
 
-            for (i, point) in data.iter().enumerate() {
-                let c = assignments[i];
+            for point in data {
+                let c = self.assign(point);
                 sums[c] += point;
                 counts[c] += 1;
             }

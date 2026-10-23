@@ -92,13 +92,13 @@ impl HypothesisEngine {
         // Fall back to the first filler if bundling yields nothing.
         let bundled = EntangledHVec::bundle(&filler_vecs);
         let probe = if bundled.indices().is_empty() {
-            filler_vecs[0].clone()
+            &filler_vecs[0]
         } else {
-            bundled
+            &bundled
         };
 
         // Hopfield cleanup to find nearest stored atom
-        let result = atom_memory.cleanup(&probe, beta, 64, 3);
+        let result = atom_memory.cleanup(probe, beta, 64, 3);
         if !result.found {
             return None;
         }

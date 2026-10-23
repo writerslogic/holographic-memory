@@ -64,8 +64,11 @@ impl IdfWeights {
         if sorted.is_empty() {
             return;
         }
-        sorted.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        let median = sorted[sorted.len() / 2];
+        let middle = sorted.len() / 2;
+        let (_, median, _) = sorted.select_nth_unstable_by(middle, |a, b| {
+            a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)
+        });
+        let median = *median;
         let cap = (self.clip_factor * median as f64) as f32;
         for w in &mut self.weights {
             if *w > cap {

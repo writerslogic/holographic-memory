@@ -85,7 +85,7 @@ impl SparseInvertedIndex {
             "posting lists must be sorted before query"
         );
 
-        if query_dims.is_empty() || self.doc_count == 0 {
+        if k == 0 || query_dims.is_empty() || self.doc_count == 0 {
             return Vec::new();
         }
 
@@ -112,7 +112,8 @@ impl SparseInvertedIndex {
         // 4. Compute Jaccard and extract Top-K
         // Jaccard = inter / (m_q + m_d - inter).
         // With fixed sparsity m_q = m_d = self.m.
-        let mut heap = BinaryHeap::with_capacity(k + 1);
+        let mut heap =
+            BinaryHeap::with_capacity(k.min(accumulator.touched.len()).saturating_add(1));
 
         // We only need to check doc_ids that were touched
         for &doc_id in &accumulator.touched {

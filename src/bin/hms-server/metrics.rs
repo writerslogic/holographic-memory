@@ -129,7 +129,7 @@ impl Metrics {
                 "# HELP {name} {help}\n# TYPE {name} counter\n{name} {value}"
             );
         };
-        let gauge = |out: &mut String, name: &str, help: &str, value: String| {
+        let gauge = |out: &mut String, name: &str, help: &str, value: &dyn std::fmt::Display| {
             let _ = writeln!(
                 out,
                 "# HELP {name} {help}\n# TYPE {name} gauge\n{name} {value}"
@@ -140,68 +140,68 @@ impl Metrics {
             "# HELP hms_build_info Build information.\n# TYPE hms_build_info gauge\nhms_build_info{{version=\"{}\"}} 1",
             env!("CARGO_PKG_VERSION")
         );
-        gauge(&mut out, "hms_up", "1 while serving.", "1".into());
+        gauge(&mut out, "hms_up", "1 while serving.", &1);
         gauge(
             &mut out,
             "hms_ready",
             "1 when /readyz succeeds.",
-            u8::from(sat.ready).to_string(),
+            &u8::from(sat.ready),
         );
         gauge(
             &mut out,
             "hms_uptime_seconds",
             "Seconds since start.",
-            self.started.elapsed().as_secs().to_string(),
+            &self.started.elapsed().as_secs(),
         );
         if let Some(rss) = resident_bytes() {
             gauge(
                 &mut out,
                 "process_resident_memory_bytes",
                 "Resident set size of the process.",
-                rss.to_string(),
+                &rss,
             );
         }
         gauge(
             &mut out,
             "hms_http_in_flight_requests",
             "Requests being served.",
-            self.in_flight.load(Relaxed).to_string(),
+            &self.in_flight.load(Relaxed),
         );
         gauge(
             &mut out,
             "hms_work_slots_in_use",
             "Work slots held by admitted requests.",
-            sat.work_in_use.to_string(),
+            &sat.work_in_use,
         );
         gauge(
             &mut out,
             "hms_work_slots_capacity",
             "Configured work slots.",
-            sat.work_capacity.to_string(),
+            &sat.work_capacity,
         );
         gauge(
             &mut out,
             "hms_queue_depth",
             "Requests waiting for a work slot.",
-            sat.queue_depth.to_string(),
+            &sat.queue_depth,
         );
         gauge(
             &mut out,
             "hms_connections_open",
             "Open client connections.",
-            self.connections_open.load(Relaxed).to_string(),
+            &self.connections_open.load(Relaxed),
         );
         gauge(
             &mut out,
             "hms_tenants_open",
             "Tenant stores open.",
-            sat.tenants.len().to_string(),
+            &sat.tenants.len(),
         );
         gauge(
             &mut out,
             "hms_idempotency_records",
             "Idempotency records held.",
-            sat.idempotency_records.to_string(),
+            &sat.idempotency_records,
         );
         counter(
             &mut out,
@@ -322,14 +322,15 @@ impl Metrics {
         ] {
             let _ = writeln!(out, "# HELP {name} {help}\n# TYPE {name} {kind}");
             for t in &sat.tenants {
-                let value = match name {
-                    "hms_tenant_documents" => t.documents.to_string(),
-                    "hms_tenant_vectors" => t.vectors.to_string(),
-                    "hms_tenant_index_bytes" => format!("{}", t.used_bytes),
-                    "hms_tenant_document_index_trained" => u8::from(t.index_trained).to_string(),
-                    "hms_tenant_compactions_total" => t.compaction_runs.to_string(),
-                    "hms_tenant_compaction_failures_total" => t.compaction_failures.to_string(),
-                    _ => format!("{}", t.compaction_seconds),
+                let trained = u8::from(t.index_trained);
+                let value: &dyn std::fmt::Display = match name {
+                    "hms_tenant_documents" => &t.documents,
+                    "hms_tenant_vectors" => &t.vectors,
+                    "hms_tenant_index_bytes" => &t.used_bytes,
+                    "hms_tenant_document_index_trained" => &trained,
+                    "hms_tenant_compactions_total" => &t.compaction_runs,
+                    "hms_tenant_compaction_failures_total" => &t.compaction_failures,
+                    _ => &t.compaction_seconds,
                 };
                 let _ = writeln!(out, "{name}{{tenant=\"{}\"}} {value}", t.name);
             }

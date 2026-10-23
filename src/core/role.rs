@@ -60,12 +60,11 @@ impl RoleRegistry {
                 .shifts
                 .get(role)
                 .ok_or_else(|| anyhow!("unknown role: {}", role))?;
-            let shifted = if *shift == 0 {
-                vec.clone()
+            result = if *shift == 0 {
+                result.bind(vec)
             } else {
-                vec.permute(*shift)
+                result.bind(&vec.permute(*shift))
             };
-            result = result.bind(&shifted);
         }
         Ok(result)
     }
@@ -91,12 +90,11 @@ impl RoleRegistry {
                 .shifts
                 .get(role)
                 .ok_or_else(|| anyhow!("unknown role: {}", role))?;
-            let shifted = if *shift == 0 {
-                vec.clone()
+            known_combined = if *shift == 0 {
+                known_combined.bind(vec)
             } else {
-                vec.permute(*shift)
+                known_combined.bind(&vec.permute(*shift))
             };
-            known_combined = known_combined.bind(&shifted);
         }
 
         let residual = composite.bind(&known_combined);
