@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! The rmcp `ServerHandler`: tools, resources and prompts over a `MemoryBackend`.
+//! The rmcp `ServerHandler`: tools, resources and prompts over an `HmsBackend`.
 
 use std::sync::Arc;
 use std::time::Instant;

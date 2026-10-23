@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! `MemoryBackend` over the HMS document store: one engine store per namespace.
+//! The memory backend over the HMS document store: one engine store per namespace.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
