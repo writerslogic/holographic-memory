@@ -1070,56 +1070,67 @@ impl VGraph {
             .bytes_mut()
             .par_chunks_exact_mut(per_vertex * record)
             .enumerate()
-            .for_each(|(v, dst)| {
-                // Codes are of the residual `r = x_u - x_v` of each neighbour `u` to the
-                // vertex `v` (as in SymphonyQG), so the code error scales with `|r|`; `e`
-                // folds in the query-independent terms `<x_v, r> - s * <levels, rot(x_v)>`,
-                // which makes the estimate's error `<rot(q - x_v), code error>`, scaled by
-                // the query's distance to `v` as well:
-                // `<q, x_u - mean> = <q, x_v - mean> + s * <levels, rot(q)> + e`.
-                let xv = row(v);
-                let mut xr = vec![0f32; bd];
-                rot.apply(xv, &mut xr);
-                let mut diff = vec![0f32; dim];
-                let mut rr = vec![0f32; bd];
-                let mut nibbles = vec![0u8; BLOCK * m];
-                let mut scales = [0f32; BLOCK];
-                let mut offsets = [0f32; BLOCK];
-                let mut list: Vec<u32> = Vec::with_capacity(r);
-                self.for_each_neighbour(v, |u| list.push(u));
-                for (b, rec) in dst.chunks_exact_mut(record).enumerate() {
-                    nibbles.fill(0);
-                    scales.fill(0.0);
-                    offsets.fill(0.0);
-                    for i in 0..BLOCK {
-                        let Some(&u) = list.get(b * BLOCK + i) else {
-                            break;
-                        };
-                        let xu = row(u as usize);
-                        for (d, (a, b)) in diff.iter_mut().zip(xu.iter().zip(xv)) {
-                            *d = a - b;
+            .for_each_init(
+                || {
+                    let list = Vec::<u32>::with_capacity(r);
+                    (
+                        vec![0f32; bd],
+                        vec![0f32; dim],
+                        vec![0f32; bd],
+                        vec![0u8; BLOCK * m],
+                        list,
+                    )
+                },
+                |(xr, diff, rr, nibbles, list), (v, dst)| {
+                    // Codes are of the residual `r = x_u - x_v` of each neighbour `u` to the
+                    // vertex `v` (as in SymphonyQG), so the code error scales with `|r|`; `e`
+                    // folds in the query-independent terms `<x_v, r> - s * <levels, rot(x_v)>`,
+                    // which makes the estimate's error `<rot(q - x_v), code error>`, scaled by
+                    // the query's distance to `v` as well:
+                    // `<q, x_u - mean> = <q, x_v - mean> + s * <levels, rot(q)> + e`.
+                    // Every buffer is overwritten before it is read: `apply` writes all of its
+                    // output, `diff` is rewritten per neighbour, `nibbles` is cleared per block.
+                    let xv = row(v);
+                    rot.apply(xv, xr);
+                    let mut scales = [0f32; BLOCK];
+                    let mut offsets = [0f32; BLOCK];
+                    list.clear();
+                    self.for_each_neighbour(v, |u| list.push(u));
+                    for (b, rec) in dst.chunks_exact_mut(record).enumerate() {
+                        nibbles.fill(0);
+                        scales.fill(0.0);
+                        offsets.fill(0.0);
+                        for i in 0..BLOCK {
+                            let Some(&u) = list.get(b * BLOCK + i) else {
+                                break;
+                            };
+                            let xu = row(u as usize);
+                            for (d, (a, b)) in diff.iter_mut().zip(xu.iter().zip(xv)) {
+                                *d = a - b;
+                            }
+                            rot.apply(diff, rr);
+                            let nib = &mut nibbles[i * m..(i + 1) * m];
+                            let s = encode_block_code(rr, bits, nib);
+                            let dot_lv: f32 =
+                                (0..bd).map(|j| block_level(nib, bits, j) * xr[j]).sum();
+                            let dot_vr: f32 = xv.iter().zip(diff.iter()).map(|(a, b)| a * b).sum();
+                            scales[i] = s;
+                            offsets[i] = dot_vr - s * dot_lv;
                         }
-                        rot.apply(&diff, &mut rr);
-                        let nib = &mut nibbles[i * m..(i + 1) * m];
-                        let s = encode_block_code(&rr, bits, nib);
-                        let dot_lv: f32 = (0..bd).map(|j| block_level(nib, bits, j) * xr[j]).sum();
-                        let dot_vr: f32 = xv.iter().zip(&diff).map(|(a, b)| a * b).sum();
-                        scales[i] = s;
-                        offsets[i] = dot_vr - s * dot_lv;
+                        // SAFETY-free reinterpretation: the record is plain bytes.
+                        let rec_u8 = unsafe {
+                            std::slice::from_raw_parts_mut(rec.as_mut_ptr().cast::<u8>(), rec.len())
+                        };
+                        pack32(nibbles, m, &mut rec_u8[..16 * m]);
+                        for (i, (s, e)) in scales.iter().zip(&offsets).enumerate() {
+                            let at = 16 * m + 4 * i;
+                            rec_u8[at..at + 4].copy_from_slice(&s.to_le_bytes());
+                            let at = 16 * m + 4 * BLOCK + 4 * i;
+                            rec_u8[at..at + 4].copy_from_slice(&e.to_le_bytes());
+                        }
                     }
-                    // SAFETY-free reinterpretation: the record is plain bytes.
-                    let rec_u8 = unsafe {
-                        std::slice::from_raw_parts_mut(rec.as_mut_ptr().cast::<u8>(), rec.len())
-                    };
-                    pack32(&nibbles, m, &mut rec_u8[..16 * m]);
-                    for (i, (s, e)) in scales.iter().zip(&offsets).enumerate() {
-                        let at = 16 * m + 4 * i;
-                        rec_u8[at..at + 4].copy_from_slice(&s.to_le_bytes());
-                        let at = 16 * m + 4 * BLOCK + 4 * i;
-                        rec_u8[at..at + 4].copy_from_slice(&e.to_le_bytes());
-                    }
-                }
-            });
+                },
+            );
         self.block_bits = bits;
         self.block_dim = bd;
         self.block_m = m;
