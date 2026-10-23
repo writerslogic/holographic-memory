@@ -8,7 +8,7 @@ import tempfile
 import numpy as np
 import pytest
 
-from holographic_sdk.importers import ImporterError, ImportOptions, run_import
+from holographic_sdk.importers import ImporterError
 
 from .conftest import DIM, assert_faithful, assert_resumable, vec
 

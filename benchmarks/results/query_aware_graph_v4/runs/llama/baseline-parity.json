@@ -1,0 +1,11 @@
+{
+  "ordered_ids_identical": true,
+  "queries": 256,
+  "settings": 3,
+  "repetitions": 3,
+  "raw": {
+    "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/raw.hdf5",
+    "sha256": "9cee91f10b473477d3faf950ebf4b5146e16ec4c42707942aa4c3ec2c745a795",
+    "bytes": 3871624
+  }
+}

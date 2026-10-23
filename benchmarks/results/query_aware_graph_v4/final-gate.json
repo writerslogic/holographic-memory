@@ -1,0 +1,7 @@
+{
+  "status": "pass",
+  "command": "cargo +1.96.0 test --locked --all-features",
+  "passed": 991,
+  "ignored": 6,
+  "native_python_passed": 52
+}

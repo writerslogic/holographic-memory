@@ -1,0 +1,353 @@
+{
+  "scope": "reserved learn validation only; no untouched final test",
+  "host": "writerslogic-02",
+  "inputs": [
+    {
+      "path": "/home/davidcondrey/sol-qag/repo-v4/benchmarks/public/qag_serving_execute.py",
+      "sha256": "c0e427aac50183eccb64d61d1d3a89d0be0d413dde3f3b3eded6fc16a85fa744",
+      "bytes": 9801
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/repo-v4/benchmarks/public/qag_serving_module.py",
+      "sha256": "57b6d9804f9a08ef7cb52c6355e1a7e937f9087718f357866aa1c03506365a19",
+      "bytes": 4326
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/repo-v4/benchmarks/results/query_aware_graph_v1/sources/qag_report_full_evaluation_v1.py",
+      "sha256": "a99b7668d5085452468e95bea188c15b2acf529d3ebcf3aad86808c38f00ba8a",
+      "bytes": 14116
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v4/runs/llama/definitions/qag_serving/config.yml",
+      "sha256": "17108ba23ea2a318c1b05bf30005e47533d1f295c6bdb707db7e313126128296",
+      "bytes": 4996
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/bench.sh",
+      "sha256": "25f1be1b6bae9daec999e7371b5280c27f9307270bf3c6d3fdd21fed350dab79",
+      "bytes": 1056
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/run.py",
+      "sha256": "0e7e3d1045149171ddf043d52373895b154f41febfe15230f0bdd2437e9d57a0",
+      "bytes": 149
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_serving/module.py",
+      "sha256": "57b6d9804f9a08ef7cb52c6355e1a7e937f9087718f357866aa1c03506365a19",
+      "bytes": 4326
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/algorithms/qag_pair/module.py",
+      "sha256": "47a603dae4f362ca0fd2020d084ee5dbc80d01557008426fb3f0107959d18ef2",
+      "bytes": 17463
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/main.py",
+      "sha256": "b7cc5f040091912bbbb294ace09c3ab205d0ff6ae9a09125c657041c42a90d2d",
+      "bytes": 12096
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/runner.py",
+      "sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+      "bytes": 12642
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/workers.py",
+      "sha256": "dfe0ccdab5339ee03e077e7d3180081048ceabab04265a21dfd7a6fcbe146af7",
+      "bytes": 17579
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/numa.py",
+      "sha256": "34631c428ed5b00988362db5252ccdb8bd535a4c2e622d67e241b8d53fa543de",
+      "bytes": 11511
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/definitions.py",
+      "sha256": "0f82e53359927e9e5e940508c5f223c6de13195505ab83581e01f6fe57590d5e",
+      "bytes": 14310
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/results.py",
+      "sha256": "b131607bff10bf86f825e20778d1e315fc6de5bec98dc829aabeb1a774aee9ac",
+      "bytes": 5447
+    },
+    {
+      "path": "/home/davidcondrey/vibe-hms/vibe/vibe/distance.py",
+      "sha256": "b6cf2794de49fe05b025dd8d87c11655118244d9af5a4d2a10ba9e3159d4c9fe",
+      "bytes": 3321
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/data/llama-full-training/queries.f32",
+      "sha256": "6ac89a55c119173744004b605c75f1ab0d4b026241e12317536b6ba17a967ffd",
+      "bytes": 16777216
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/runs/llama-full-validation-v1/evaluation.hdf5",
+      "sha256": "5ba18b70d875f635aad5be934a3a5c2a1fc576faae7bac596a2dfc35990d12dd",
+      "bytes": 6144
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/runs/llama-full-validation-v1/validation-export.hdf5",
+      "sha256": "3d43410e565ae8a50e05c29cefcb2b93910c3b666e93c53d97676247b000396c",
+      "bytes": 161874432
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/raw.hdf5",
+      "sha256": "9cee91f10b473477d3faf950ebf4b5146e16ec4c42707942aa4c3ec2c745a795",
+      "bytes": 3871624
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v2/runs/llama-layout-v2/report.json",
+      "sha256": "0a106a910fcd4444b08dd316822c6d667a2e29b87398784e09ca517290af89f1",
+      "bytes": 60244
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v4/diagnostics/llama.json",
+      "sha256": "f58b519bc542fdbc6db116b95fe85e452f3b543e909827ff2433cd53f6a7c811",
+      "bytes": 7734204
+    },
+    {
+      "path": "/home/davidcondrey/sol-qag/v4/holographic_memory.so",
+      "sha256": "120cb2e15f923548cbebc8fa64de5c47135417a9f8b2f6823e7fc9f0843c78e2",
+      "bytes": 2057640
+    }
+  ],
+  "schedule": [
+    [
+      0,
+      100,
+      400,
+      0
+    ],
+    [
+      1,
+      100,
+      400,
+      0
+    ],
+    [
+      2,
+      100,
+      400,
+      0
+    ],
+    [
+      3,
+      100,
+      400,
+      0
+    ],
+    [
+      0,
+      256,
+      400,
+      0
+    ],
+    [
+      1,
+      256,
+      400,
+      0
+    ],
+    [
+      2,
+      256,
+      400,
+      0
+    ],
+    [
+      3,
+      256,
+      400,
+      0
+    ],
+    [
+      0,
+      512,
+      400,
+      0
+    ],
+    [
+      1,
+      512,
+      400,
+      0
+    ],
+    [
+      2,
+      512,
+      400,
+      0
+    ],
+    [
+      3,
+      512,
+      400,
+      0
+    ],
+    [
+      3,
+      100,
+      400,
+      1
+    ],
+    [
+      2,
+      100,
+      400,
+      1
+    ],
+    [
+      1,
+      100,
+      400,
+      1
+    ],
+    [
+      0,
+      100,
+      400,
+      1
+    ],
+    [
+      3,
+      256,
+      400,
+      1
+    ],
+    [
+      2,
+      256,
+      400,
+      1
+    ],
+    [
+      1,
+      256,
+      400,
+      1
+    ],
+    [
+      0,
+      256,
+      400,
+      1
+    ],
+    [
+      3,
+      512,
+      400,
+      1
+    ],
+    [
+      2,
+      512,
+      400,
+      1
+    ],
+    [
+      1,
+      512,
+      400,
+      1
+    ],
+    [
+      0,
+      512,
+      400,
+      1
+    ],
+    [
+      0,
+      100,
+      400,
+      2
+    ],
+    [
+      1,
+      100,
+      400,
+      2
+    ],
+    [
+      2,
+      100,
+      400,
+      2
+    ],
+    [
+      3,
+      100,
+      400,
+      2
+    ],
+    [
+      0,
+      256,
+      400,
+      2
+    ],
+    [
+      1,
+      256,
+      400,
+      2
+    ],
+    [
+      2,
+      256,
+      400,
+      2
+    ],
+    [
+      3,
+      256,
+      400,
+      2
+    ],
+    [
+      0,
+      512,
+      400,
+      2
+    ],
+    [
+      1,
+      512,
+      400,
+      2
+    ],
+    [
+      2,
+      512,
+      400,
+      2
+    ],
+    [
+      3,
+      512,
+      400,
+      2
+    ]
+  ],
+  "command": [
+    "/home/davidcondrey/vibe-hms/bench.sh",
+    "qag-serving-llama-v4-128-ip",
+    "1",
+    "vibe",
+    "/home/davidcondrey/sol-qag/v4/runs/llama/definitions",
+    "nolock"
+  ],
+  "harness_sha256": "153c8778d80088c460cdc87443eec9e1914e53b32341cc7856c35da03e4cfa7a",
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1",
+    "HMS_QAG_CANDIDATE_SO": "/home/davidcondrey/sol-qag/v4/holographic_memory.so",
+    "HMS_QAG_TRAINING_QUERIES": "/home/davidcondrey/sol-qag/data/llama-full-training/queries.f32",
+    "HMS_QAG_TRAINING_QUERIES_SHA256": "6ac89a55c119173744004b605c75f1ab0d4b026241e12317536b6ba17a967ffd"
+  }
+}

@@ -54,7 +54,7 @@ use kernels::{
 };
 #[cfg(feature = "experimental")]
 pub use vertex::QueryProfile;
-pub use vertex::{Residency, SearchKnobs, VGraph, VSearchParams, VSearcher};
+pub use vertex::{Residency, SearchKnobs, VGraph, VMetric, VSearchParams, VSearcher};
 
 /// Default out-degree of every vertex; one batch of edge codes per expansion.
 pub const DEFAULT_DEGREE: usize = 32;

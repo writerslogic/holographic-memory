@@ -880,7 +880,7 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
                 VGraph::open(p, residency).with_context(|| format!("opening {}", p.display()))?;
             open_secs = Some(t.elapsed().as_secs_f64());
             ensure!(
-                v.metric() == metric && v.dim() == d,
+                v.metric() == metric.into() && v.dim() == d,
                 "{} indexes {:?} vectors of dimension {}, the dataset is {metric:?} in {d}",
                 p.display(),
                 v.metric(),
@@ -1013,6 +1013,7 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
                     K,
                     VSearchParams {
                         ef,
+                        reservoir: 0,
                         rerank: second,
                         patience,
                         screen_sigmas: sigmas.max(0.0),

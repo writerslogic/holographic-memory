@@ -123,11 +123,12 @@ def test_euclidean_ranks_by_distance_not_angle(data, queries):
 
 
 @pytest.mark.parametrize("code_bits", [4, 8])
-def test_inner_product_ranks_by_dot_product(data, queries, code_bits):
+@pytest.mark.parametrize("direct_ip", [False, True])
+def test_inner_product_ranks_by_dot_product(data, queries, code_bits, direct_ip):
     scaled = data * np.random.default_rng(10).uniform(0.2, 5.0, (len(data), 1)).astype(np.float32)
     dots = queries.astype(np.float64) @ scaled.astype(np.float64).T
     truth = np.argsort(-dots, axis=1, kind="stable")[:, :K]
-    idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2, code_bits=code_bits)
+    idx = hm.VectorIndex("ip", degree=32, build_ef=128, threads=2, code_bits=code_bits, direct_ip=direct_ip)
     idx.fit(scaled)
     assert repr(idx).startswith("VectorIndex(metric='ip'")
     # The reduction puts every row on one sphere, a harder graph than the raw data: more effort.
@@ -139,6 +140,46 @@ def test_inner_product_ranks_by_dot_product(data, queries, code_bits):
     assert recall(found, exact_top_k(scaled, queries, K)) < 0.9
     with pytest.raises(ValueError, match="dimensions"):
         idx.query(np.ones(DIM + 1, np.float32), K)
+
+
+@pytest.mark.parametrize("capacity", [1, 2, 3, 4])
+def test_independent_retention_capacity_bounds_reranking(capacity):
+    rows = np.array([[0.0, 0.0], [0.8, 0.0], [1.0, 381.0]], dtype=np.float32)
+    index = hm.VectorIndex("ip", degree=2, build_ef=16, threads=1, code_bits=8, direct_ip=True)
+    index.fit(rows)
+    index.set_query_arguments(ef=3, rerank=3, reservoir=capacity)
+    assert index.query(np.array([1.0, 0.0], dtype=np.float32), 1).tolist() == [2 if capacity > 1 else 1]
+
+
+def test_direct_ip_storage_and_zero_query_contract():
+    rows = clustered(128, 128, 61)
+    legacy = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8)
+    direct = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1, code_bits=8, direct_ip=True)
+    for index in (legacy, direct):
+        index.fit(rows)
+        index.set_query_arguments(ef=128, rerank=128, reservoir=128)
+    assert legacy.index_bytes - direct.index_bytes == 148 * len(rows) + 64
+    np.testing.assert_array_equal(direct.query(np.zeros(128, np.float32), 128), np.arange(128))
+    probes = clustered(4, 128, 62)
+    for single, batch in zip([direct.query(q, K) for q in probes], direct.batch_query(probes, K)):
+        np.testing.assert_array_equal(single, batch)
+    with pytest.raises(ValueError, match="direct_ip requires"):
+        hm.VectorIndex("angular", direct_ip=True)
+
+
+def test_omitted_reservoir_restores_legacy_retention():
+    rows = clustered(128, 17, 63)
+    query = clustered(1, 17, 64)[0]
+    index = hm.VectorIndex("ip", degree=16, build_ef=64, threads=1)
+    index.fit(rows)
+    index.set_query_arguments(ef=32, rerank=64)
+    expected = index.query(query, K)
+    index.set_query_arguments(ef=32, rerank=64, reservoir=64)
+    index.query(query, K)
+    with pytest.raises(OverflowError):
+        index.set_query_arguments(ef=1, reservoir=-1)
+    index.set_query_arguments(ef=32, rerank=64)
+    np.testing.assert_array_equal(index.query(query, K), expected)
 
 
 def test_default_traversal_codes_match_explicit_four_bits():

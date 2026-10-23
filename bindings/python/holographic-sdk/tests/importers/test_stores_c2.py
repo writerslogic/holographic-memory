@@ -22,7 +22,7 @@ def _vecs(n):
 @pytest.fixture
 def llama_dir(tmp_path):
     pytest.importorskip("llama_index.core")
-    from llama_index.core import StorageContext, VectorStoreIndex
+    from llama_index.core import VectorStoreIndex
     from llama_index.core.embeddings import MockEmbedding
     from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 

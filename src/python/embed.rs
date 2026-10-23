@@ -178,6 +178,25 @@ impl PyEmbedder {
     }
 }
 
+/// The given embedder, or a default one loading from the companion package's model packs.
+fn embedder_or_default(
+    py: Python<'_>,
+    embedder: Option<PyRef<'_, PyEmbedder>>,
+) -> PyResult<Arc<Embedder>> {
+    match embedder {
+        Some(e) => Ok(e.inner.clone()),
+        None => {
+            let options = EmbedOptions {
+                model_dir: companion_dir(py),
+                ..EmbedOptions::default()
+            };
+            Ok(Arc::new(
+                py.detach(|| Embedder::new(&options)).map_err(err)?,
+            ))
+        }
+    }
+}
+
 /// An exact in-memory semantic index: `add`, `search`, `remove`, `save`, `load`.
 #[pyclass(name = "SemanticIndex")]
 struct PySemanticIndex {
@@ -190,16 +209,7 @@ impl PySemanticIndex {
     #[new]
     #[pyo3(signature = (embedder=None))]
     fn new(py: Python<'_>, embedder: Option<PyRef<'_, PyEmbedder>>) -> PyResult<Self> {
-        let embedder = match embedder {
-            Some(e) => e.inner.clone(),
-            None => {
-                let options = EmbedOptions {
-                    model_dir: companion_dir(py),
-                    ..EmbedOptions::default()
-                };
-                Arc::new(py.detach(|| Embedder::new(&options)).map_err(err)?)
-            }
-        };
+        let embedder = embedder_or_default(py, embedder)?;
         Ok(Self {
             inner: SemanticIndex::new(embedder),
         })
@@ -240,16 +250,7 @@ impl PySemanticIndex {
         path: PathBuf,
         embedder: Option<PyRef<'_, PyEmbedder>>,
     ) -> PyResult<Self> {
-        let embedder = match embedder {
-            Some(e) => e.inner.clone(),
-            None => {
-                let options = EmbedOptions {
-                    model_dir: companion_dir(py),
-                    ..EmbedOptions::default()
-                };
-                Arc::new(py.detach(|| Embedder::new(&options)).map_err(err)?)
-            }
-        };
+        let embedder = embedder_or_default(py, embedder)?;
         Ok(Self {
             inner: SemanticIndex::load(&path, embedder).map_err(err)?,
         })

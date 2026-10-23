@@ -1,0 +1,1 @@
+qag-serving-llama-v4-128-ip /home/davidcondrey/sol-qag/v4/runs/llama/definitions rc=0 708s 14:12:42

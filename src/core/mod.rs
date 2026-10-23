@@ -14,8 +14,6 @@ pub(crate) mod schema;
 // behind the `experimental` feature so they are not part of the crate's
 // published public API. See CONTRIBUTING for the codebook-first roadmap.
 #[cfg(feature = "experimental")]
-pub mod algebra;
-#[cfg(feature = "experimental")]
 pub mod algebraic_codebook;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod atom_memory;
@@ -27,12 +25,8 @@ pub mod block_codes;
 pub mod bloom_memory;
 #[cfg(feature = "experimental")]
 pub mod bundle_subset;
-#[cfg(feature = "experimental")]
-pub mod cls_memory;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cognition;
-#[cfg(feature = "experimental")]
-pub mod compose;
 #[cfg(feature = "experimental")]
 pub mod counting_bloom_memory;
 // Living connection-graph: plastic, event-sourced holographic relation store.
@@ -103,14 +97,10 @@ pub(crate) mod os_memory;
 #[cfg(target_arch = "x86_64")]
 pub(crate) mod simd_math;
 pub mod sparse;
-#[cfg(feature = "experimental")]
-pub mod sparse_autoencoder;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod storage;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod store_lock;
-#[cfg(feature = "experimental")]
-pub mod ternary;
 pub(crate) mod text;
 pub(crate) mod tombstone;
 #[cfg(not(target_arch = "wasm32"))]

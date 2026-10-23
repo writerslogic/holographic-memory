@@ -56,6 +56,12 @@ pub fn tenant_hex(name: &str) -> String {
     name.bytes().map(|b| format!("{b:02x}")).collect()
 }
 
+/// The tenant a store directory name encodes, if `name` is exactly `tenant_hex` of a valid one.
+pub fn tenant_from_hex(name: &str) -> Option<String> {
+    let tenant = String::from_utf8(crate::auth::unhex(name)?).ok()?;
+    (valid_tenant(&tenant) && tenant_hex(&tenant) == name).then_some(tenant)
+}
+
 #[derive(Default, Clone, Serialize)]
 pub struct CompactionStatus {
     pub running: bool,
@@ -613,8 +619,6 @@ impl AppState {
         let status = guard.tenant.compaction.lock().clone();
         Ok(status)
     }
-
-    // ---- snapshots -------------------------------------------------------------------------
 
     pub fn create_snapshot(&self, name: &str) -> Result<SnapshotInfo, ApiError> {
         let quiesced = self.quiesce(name)?;

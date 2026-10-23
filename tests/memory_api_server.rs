@@ -6,74 +6,32 @@
 
 #![cfg(feature = "server")]
 
-use std::io::{BufRead, BufReader, Read, Write};
-use std::net::{SocketAddr, TcpStream};
-use std::process::{Child, Command, Stdio};
+use std::path::Path;
+use std::process::{Command, Stdio};
 
 use serde_json::{json, Value};
 
-const DIM: usize = 8;
+mod server_support;
+use server_support::{Server, DIM};
 
-struct Server {
-    child: Child,
-    addr: SocketAddr,
+fn start(dir: &Path, extra: &[&str]) -> Server {
+    let mut args = vec!["--no-auth"];
+    args.extend_from_slice(extra);
+    Server::start_in(dir, &args, &[])
 }
 
-impl Server {
-    fn start(dir: &std::path::Path, extra: &[&str]) -> Self {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_hms-server"))
-            .args(["--bind", "127.0.0.1:0", "--input-dim", &DIM.to_string()])
-            .args(["--dim", "2048", "--data-dir"])
-            .arg(dir)
-            .args(["--no-auth"])
-            .args(extra)
-            .env_remove("HMS_API_KEY")
-            .stdout(Stdio::piped())
-            .spawn()
-            .unwrap();
-        let mut line = String::new();
-        BufReader::new(child.stdout.as_mut().unwrap())
-            .read_line(&mut line)
-            .unwrap();
-        let addr = line
-            .trim()
-            .rsplit(' ')
-            .next()
-            .and_then(|a| a.parse().ok())
-            .unwrap_or_else(|| panic!("no listen address in {line:?}"));
-        Self { child, addr }
-    }
+trait MemoryPost {
+    fn post(&self, op: &str, tenant: &str, body: &Value) -> (u16, Value);
+}
 
+impl MemoryPost for Server {
     fn post(&self, op: &str, tenant: &str, body: &Value) -> (u16, Value) {
-        let body = body.to_string();
-        let mut stream = TcpStream::connect(self.addr).unwrap();
-        let request = format!(
-            "POST /api/v1/memory/{op} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\
-             Content-Type: application/json\r\nX-Tenant-ID: {tenant}\r\nContent-Length: {}\r\n\r\n{body}",
-            body.len()
-        );
-        stream.write_all(request.as_bytes()).unwrap();
-        let mut raw = Vec::new();
-        let _ = stream.read_to_end(&mut raw);
-        let text = String::from_utf8_lossy(&raw);
-        let status = text.split(' ').nth(1).and_then(|s| s.parse().ok()).unwrap();
-        let body = text.split("\r\n\r\n").nth(1).unwrap_or("");
-        (status, serde_json::from_str(body).unwrap_or(Value::Null))
-    }
-
-    fn stop(&mut self) {
-        Command::new("kill")
-            .args(["-TERM", &self.child.id().to_string()])
-            .status()
-            .unwrap();
-        assert!(self.child.wait().unwrap().success());
-    }
-}
-
-impl Drop for Server {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        let response = self
+            .req("POST", &format!("/api/v1/memory/{op}"))
+            .tenant(tenant)
+            .json(body)
+            .send();
+        (response.status, response.json())
     }
 }
 
@@ -95,7 +53,7 @@ fn ids(response: &Value) -> Vec<&str> {
 #[test]
 fn memory_round_trip_over_http_with_history_errors_and_isolation() {
     let dir = tempfile::tempdir().unwrap();
-    let server = Server::start(dir.path(), &[]);
+    let server = start(&dir.path().join("data"), &[]);
 
     let (status, out) = server.post(
         "remember",
@@ -220,7 +178,7 @@ fn memory_state_and_configuration_survive_restart() {
     .unwrap();
     let data = dir.path().join("data");
     let args = ["--memory-config", config.to_str().unwrap()];
-    let mut server = Server::start(&data, &args);
+    let mut server = start(&data, &args);
     for (id, from) in [("v1", 100), ("v2", 200), ("v3", 300)] {
         let (status, out) = server.post(
             "remember",
@@ -230,9 +188,9 @@ fn memory_state_and_configuration_survive_restart() {
         );
         assert_eq!(status, 200, "{out}");
     }
-    server.stop();
+    assert!(server.stop(), "server must exit cleanly on SIGTERM");
 
-    let server = Server::start(&data, &args);
+    let server = start(&data, &args);
     let (_, current) = server.post(
         "recall",
         "t",

@@ -14,7 +14,9 @@ pub struct TraversalDiagnostic {
     pub results: Vec<u32>,
     /// Unique vertices scored during descent or base-layer traversal.
     pub evaluated: Vec<u32>,
-    /// Final beam in routing-score order, before residual reranking.
+    /// Final traversal beam, independent of result retention.
+    pub beam: Vec<u32>,
+    /// Result reservoir (or final beam in legacy mode), before residual reranking.
     pub retained: Vec<u32>,
     /// Retained vertices passed to residual reranking; empty when reranking is disabled.
     pub rerank_candidates: Vec<u32>,

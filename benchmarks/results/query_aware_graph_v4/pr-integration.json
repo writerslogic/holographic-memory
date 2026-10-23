@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "base_commit": "1cfb43f850fbdf11e823f9217010b22a364106f6",
+  "tested_source_commit": "8c2f2beec07e8905d3a64ddbac7e0ff3e12b9e79",
+  "archive_commit": "7d6bd08494b71e6e99b629909742e3460a8fc898",
+  "archive_and_tested_source_code_identical": true,
+  "archive_note": "The archive predates the LFS-only/sign-off amendment; source, tests, manifests and build inputs are identical.",
+  "source_hash_receipt": "pr-source.sha256",
+  "source_hashes_verified": 13,
+  "linux_host": "writerslogic-02",
+  "linux_toolchain": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+  "profile_environment": {
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "1",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0"
+  },
+  "linux_all_features": {
+    "passed": 994,
+    "ignored": 6,
+    "command": "cargo +1.96.0 test --locked --all-features",
+    "log": "pr-integration-logs/all-features-tests.log"
+  },
+  "msrv_library": {
+    "passed": 606,
+    "ignored": 4,
+    "command": "cargo +1.89.0 test --locked --features experimental --lib",
+    "log": "pr-library-tests-msrv.log"
+  },
+  "native_python": {
+    "passed": 52,
+    "log": "pr-integration-logs/python-tests.log",
+    "build_command": "cargo +1.96.0 build --locked --features experimental,python --lib",
+    "extension_profile": "dev, opt-level=1",
+    "runner": "pr-integration.sh; uv run --no-project with the existing VIBE Python environment"
+  },
+  "format": {
+    "status": "pass",
+    "command": "cargo +1.89.0 fmt -- --check"
+  },
+  "clippy": {
+    "status": "pass",
+    "command": "cargo +1.96.0 clippy --locked --all-targets --all-features -- -D warnings",
+    "version": "clippy 0.1.96 (ac68faa20c 2026-05-25)",
+    "exit_code": 0,
+    "log": "pr-integration-logs/clippy.log"
+  },
+  "measured_source": {
+    "base_commit": "4d5168f7ce8253b15aefe2f7ce24f0e248de4deb",
+    "patch": "measured-source.patch",
+    "patch_sha256": "7d6686a86ec456e6f43f5b83ee76a21fba68cd79601f859fb1e1485648798998",
+    "reconstructed_source_and_caller_hashes_verified": 13,
+    "performance_remeasured_after_integration": false
+  },
+  "log_sha256": {
+    "pr-integration-logs/all-features-tests.log": "68ff4aab3143514598ad15d87cb0f2232ff4b99e3cb4aacba18d89efc10a1dcc",
+    "pr-integration-logs/clippy.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "pr-integration-logs/clippy.log": "536e25200cd0b94299f84ae22b5fe9d03f6ac677c3e54e49216a6f32fd91614a",
+    "pr-integration-logs/python-build.log": "be6f0c022c04d7fdfefcd852a9b51b6b3eb3362076e177354f02892a3d490fb3",
+    "pr-integration-logs/python-extension.sha256": "da20a26238560ae1d4d0ff24ef3221a10177aaa4c665dadce504f54bfc07d6a6",
+    "pr-integration-logs/python-tests.log": "40e2b36370f484c5fa1693cf33c55a6ae0f2ba5efc7b577bb4404ba1c2534cac"
+  }
+}

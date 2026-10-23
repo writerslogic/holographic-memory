@@ -124,9 +124,11 @@ struct PyVectorIndex {
     build_ef: usize,
     code_bits: u8,
     compact_adjacency: bool,
+    direct_ip: bool,
     pool: Option<rayon::ThreadPool>,
     ef: usize,
     rerank: usize,
+    reservoir: usize,
     patience: usize,
     dim: usize,
     built: Option<Built>,
@@ -145,6 +147,7 @@ impl PyVectorIndex {
         VSearchParams {
             ef: self.ef,
             rerank: self.rerank,
+            reservoir: self.reservoir,
             patience: self.patience,
             ..VSearchParams::default()
         }
@@ -182,8 +185,9 @@ impl PyVectorIndex {
     /// `build_ef` the construction search width, `threads` the build and batch-query threads
     /// (0 = one per core). `code_bits` selects 4-bit traversal codes (default) or 8-bit
     /// traversal codes for higher routing precision; residual reranking remains 8-bit.
+    /// `direct_ip` serves original coordinates with negative-IP scores on the lifted graph.
     #[new]
-    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4, compact_adjacency=false))]
+    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4, compact_adjacency=false, direct_ip=false))]
     fn new(
         metric: &str,
         degree: usize,
@@ -191,6 +195,7 @@ impl PyVectorIndex {
         threads: usize,
         code_bits: u8,
         compact_adjacency: bool,
+        direct_ip: bool,
     ) -> PyResult<Self> {
         let metric = match metric {
             "angular" => Distance::Angular,
@@ -202,6 +207,9 @@ impl PyVectorIndex {
                 )))
             }
         };
+        if direct_ip && metric != Distance::InnerProduct {
+            return Err(PyValueError::new_err("direct_ip requires metric 'ip'"));
+        }
         if degree == 0 || !degree.is_multiple_of(2) {
             return Err(PyValueError::new_err(format!(
                 "degree must be positive and even, not {degree}"
@@ -230,9 +238,11 @@ impl PyVectorIndex {
             build_ef,
             code_bits,
             compact_adjacency,
+            direct_ip,
             pool,
             ef: 64,
             rerank: 64,
+            reservoir: 0,
             patience: 0,
             dim: 0,
             built: None,
@@ -295,6 +305,7 @@ impl PyVectorIndex {
         let metric = self.metric;
         let code_bits = self.code_bits;
         let compact_adjacency = self.compact_adjacency;
+        let direct_ip = self.direct_ip;
         let graph = py
             .detach(|| {
                 self.run(|| {
@@ -313,15 +324,26 @@ impl PyVectorIndex {
                         training_data.as_deref(),
                     )?;
                     // The graph's float rows are dropped here; the index keeps only its codes.
-                    let mut index = VGraph::from_graph_with(
-                        &g,
-                        code_bits,
-                        RESIDUAL_BITS,
-                        true,
-                        true,
-                        id_bytes,
-                        false,
-                    )?;
+                    let mut index = if direct_ip {
+                        VGraph::from_lifted_ip_graph(
+                            &g,
+                            code_bits,
+                            RESIDUAL_BITS,
+                            true,
+                            true,
+                            id_bytes,
+                        )?
+                    } else {
+                        VGraph::from_graph_with(
+                            &g,
+                            code_bits,
+                            RESIDUAL_BITS,
+                            true,
+                            true,
+                            id_bytes,
+                            false,
+                        )?
+                    };
                     if compact_adjacency {
                         index.compact_adjacency()?;
                     }
@@ -336,16 +358,24 @@ impl PyVectorIndex {
 
     /// Search effort: `ef` is the candidate pool size, `rerank` how many of the best pool
     /// candidates are re-scored with the residual code (0 returns the pool order).
+    /// `reservoir` retains candidates independently of traversal (0 uses the final beam).
     /// `patience` stops after that many expansions without improving the estimated top k
     /// (0 disables this early stop).
-    #[pyo3(signature = (ef, rerank=64, patience=0))]
-    fn set_query_arguments(&mut self, ef: usize, rerank: usize, patience: usize) -> PyResult<()> {
+    #[pyo3(signature = (ef, rerank=64, patience=0, reservoir=0))]
+    fn set_query_arguments(
+        &mut self,
+        ef: usize,
+        rerank: usize,
+        patience: usize,
+        reservoir: usize,
+    ) -> PyResult<()> {
         if ef == 0 {
             return Err(PyValueError::new_err("ef must be positive"));
         }
         self.ef = ef;
         self.rerank = rerank;
         self.patience = patience;
+        self.reservoir = reservoir;
         Ok(())
     }
 
@@ -364,6 +394,7 @@ impl PyVectorIndex {
             query_buf,
             metric,
             dim,
+            direct_ip,
             ..
         } = self;
         let built = built
@@ -375,7 +406,7 @@ impl PyVectorIndex {
             Ok(s) => query_buf.extend_from_slice(s),
             Err(_) => query_buf.extend(v.as_array().iter().copied()),
         }
-        if *metric == Distance::InnerProduct {
+        if *metric == Distance::InnerProduct && !*direct_ip {
             if query_buf.len() != *dim {
                 return Err(PyValueError::new_err(format!(
                     "the query has {} dimensions, the index has {dim}",
@@ -416,10 +447,10 @@ impl PyVectorIndex {
         let params = self.params();
         let graph = &*built.graph;
         let metric = self.metric;
-        if metric == Distance::InnerProduct {
+        if metric == Distance::InnerProduct && !self.direct_ip {
             queries = augment_queries(&queries, dim);
         }
-        let dim = metric.graph_dim(dim);
+        let dim = graph.dim();
         let results: Vec<Vec<u32>> = py
             .detach(|| {
                 self.run(|| {
@@ -462,12 +493,14 @@ impl PyVectorIndex {
 
     fn __repr__(&self) -> String {
         format!(
-            "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, n={})",
+            "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, direct_ip={}, reservoir={}, n={})",
             self.metric.name(),
             self.degree,
             self.build_ef,
             self.ef,
             self.rerank,
+            self.direct_ip,
+            self.reservoir,
             self.__len__()
         )
     }

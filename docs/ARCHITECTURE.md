@@ -37,17 +37,12 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   |   +-- self_modify.rs        Self-modification proposals
   |
   +-- entangled.rs              EntangledHVec: sparse binary hypervector type
-  +-- ternary.rs                TernaryHVec: ternary {-1, 0, +1} hypervector type
-  +-- algebra.rs                HolographicAlgebra trait (EntangledHVec, TernaryHVec)
   +-- encoding.rs               Text -> sparse vector (multiscale words and character n-grams)
   +-- block_codes.rs            BlockCodeVec: structured block-code bundles
   +-- bloom_memory.rs           BloomMemory: Bloom-filter-based bundled storage
-  +-- cls_memory.rs             CLSMemory: concept-level sparse memory
   +-- hopfield.rs               Modern Hopfield network with sparse softmax
   +-- resonator.rs              Resonator network for symbolic factorization
-  +-- compose.rs                Vector composition utilities
   +-- decompose.rs              Decomposer: vector decomposition
-  +-- sparse_autoencoder.rs     Sparse autoencoder for representation learning
   +-- graph.rs                  Graph engine: typed relations, multi-hop BFS, temporal
   +-- documents.rs              Chunking, stemmed BM25, metadata filters, BM25/cosine score blend
   +-- schema.rs                 Store and embedding-space compatibility

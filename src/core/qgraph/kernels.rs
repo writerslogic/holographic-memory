@@ -4,7 +4,7 @@
 //! popcount that turns 1-bit edge codes into inner-product estimates.
 
 /// Bits per query coordinate in the bit-plane estimator.
-pub(crate) const QUERY_BITS: usize = 4;
+const QUERY_BITS: usize = 4;
 const ROUNDS: usize = 3;
 
 /// SplitMix64: small, seedable and stable across platforms and crate versions.
@@ -97,6 +97,7 @@ where
     }
 }
 
+#[must_use]
 pub(crate) fn dot(a: &[f32], b: &[f32]) -> f32 {
     debug_assert_eq!(a.len(), b.len());
     let mut acc = [0f32; 16];
@@ -170,20 +171,17 @@ pub(crate) fn raw_estimates(codes: &[u64], planes: &[u64], words: usize, out: &m
     raw_scalar(codes, planes, words, out)
 }
 
-pub(crate) fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
+fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
     assert_eq!(planes.len(), QUERY_BITS * words);
     assert_eq!(codes.len(), out.len() * words);
     for (code, o) in codes.chunks_exact(words).zip(out.iter_mut()) {
-        *o = code
-            .iter()
-            .enumerate()
-            .map(|(w, &c)| scalar_word(c, planes, words, w))
-            .sum();
+        *o = raw_one_scalar(code, planes, words);
     }
 }
 
 /// [`raw_estimates`] for one code row: NEON AND + CNT over the bit planes for the row widths
 /// the index produces (16 planes x 64 words at most), scalar otherwise.
+#[must_use]
 #[inline]
 pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
     #[cfg(target_arch = "aarch64")]
@@ -214,7 +212,7 @@ pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
 
 /// Scalar form of [`raw_one`] (the reference, and the microbenchmark's baseline).
 #[inline]
-pub(crate) fn raw_one_scalar(code: &[u64], planes: &[u64], words: usize) -> u32 {
+fn raw_one_scalar(code: &[u64], planes: &[u64], words: usize) -> u32 {
     code.iter()
         .enumerate()
         .map(|(w, &c)| scalar_word(c, planes, words, w))
@@ -242,6 +240,8 @@ mod neon {
         unsafe { sdot(a, b) }
     }
 
+    /// # Safety
+    /// The CPU supports `dotprod`; `a` and `b` have the same length, a multiple of 16.
     #[target_feature(enable = "dotprod")]
     #[inline]
     pub(super) unsafe fn sdot(a: &[i8], b: &[i8]) -> i32 {
@@ -278,6 +278,9 @@ mod neon {
     /// [`super::dot_i4_inline`] with SDOT: each 16 packed bytes become the 16 even and the 16 odd
     /// coordinates of a 32-wide block, matched with the query laid out by
     /// [`super::interleave_for_i4`].
+    ///
+    /// # Safety
+    /// The CPU supports `dotprod`; `q.len() == 2 * p.len()` and `p.len()` is a multiple of 16.
     #[target_feature(enable = "dotprod")]
     #[inline]
     pub(super) unsafe fn sdot4(q: &[i8], p: &[i8]) -> i32 {
@@ -489,6 +492,7 @@ mod tier {
 
 /// [`DotI8`] resolved at compile time, so the search loop can inline it: SDOT when the build
 /// target enables `dotprod` (every Apple core), else the runtime-detected kernel.
+#[must_use]
 #[inline(always)]
 pub(crate) fn dot_i8_inline(a: &[i8], b: &[i8]) -> i32 {
     #[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
@@ -520,6 +524,7 @@ pub(crate) fn interleave_for_i4(q: &[i8], out: &mut [i8]) {
 
 /// `sum_i q_i * c_i` for a query code laid out by [`interleave_for_i4`] and a row packed as
 /// [`dot_f32_i4`] reads it; `q.len() == 2 * packed.len()`, a multiple of 32.
+#[must_use]
 #[inline(always)]
 pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
     assert!(q.len() == 2 * packed.len() && packed.len().is_multiple_of(16));
@@ -556,6 +561,7 @@ pub(crate) fn dot_i4_inline(q: &[i8], packed: &[i8]) -> i32 {
 /// [`dot_i4_inline`] of one query against four rows of equal length. On AVX2 the query's
 /// widened halves are loaded once per 16 packed bytes and the four row loads are in flight
 /// together; the sums are the same integers, so every result equals the single call's.
+#[must_use]
 #[inline(always)]
 pub(crate) fn dot_i4_inline_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
     #[cfg(target_arch = "x86_64")]
@@ -580,7 +586,7 @@ pub(crate) fn dot_i4_inline_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
 }
 
 #[cfg(any(test, not(all(target_arch = "aarch64", target_feature = "dotprod"))))]
-pub(crate) fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
+fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
     let mut s = 0i32;
     for (qb, pb) in q
         .as_chunks::<32>()
@@ -598,6 +604,7 @@ pub(crate) fn dot_i4_scalar(q: &[i8], packed: &[i8]) -> i32 {
 
 /// `sum_i a_i * c_i` where `c` is packed two signed 4-bit values per byte, element `2j` in the
 /// low nibble of byte `j` and `2j + 1` in the high nibble; `a.len() == 2 * packed.len()`.
+#[must_use]
 pub(crate) fn dot_f32_i4(a: &[f32], packed: &[i8]) -> f32 {
     debug_assert_eq!(a.len(), 2 * packed.len());
     let mut acc = [0f32; 16];
@@ -618,7 +625,7 @@ pub(crate) fn dot_f32_i4(a: &[f32], packed: &[i8]) -> f32 {
 }
 
 #[cfg(any(test, not(target_arch = "aarch64")))]
-pub(crate) fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
+fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
     assert_eq!(a.len(), b.len());
     a.iter()
         .zip(b)
@@ -627,6 +634,7 @@ pub(crate) fn dot_i8_scalar(a: &[i8], b: &[i8]) -> i32 {
 }
 
 /// `sum_i a_i * b_i` for a float row and an i8 row of the same length.
+#[must_use]
 pub(crate) fn dot_f32_i8(a: &[f32], b: &[i8]) -> f32 {
     debug_assert_eq!(a.len(), b.len());
     let mut acc = [0f32; 16];
@@ -713,6 +721,9 @@ mod x86 {
     /// Signed i8 dot product of two rows of equal length, a multiple of 16, exact over the
     /// whole i8 range: the bytes widen to i16 lanes (`vpmovsxbw`) and `vpmaddwd` sums pairs
     /// of products into i32 (the `maddubs` form would misread -128 after the sign trick).
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; `a` and `b` have the same length.
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn dot_i8_avx2(a: &[i8], b: &[i8]) -> i32 {
         let mut acc = _mm256_setzero_si256();
@@ -730,6 +741,9 @@ mod x86 {
     /// [`super::dot_i4_inline`]: each 16 packed bytes become the 16 even and the 16 odd
     /// coordinates of a 32-wide block, matched with the query laid out by
     /// [`super::interleave_for_i4`].
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; `q.len() == 2 * p.len()` and `p.len()` is a multiple of 16.
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn dot_i4_avx2(q: &[i8], p: &[i8]) -> i32 {
         let mask = _mm_set1_epi8(0x0f);
@@ -758,6 +772,10 @@ mod x86 {
     /// [`dot_i4_avx2`] of four rows against one query: the query's widened halves are loaded
     /// once per 16 packed bytes and each row keeps its own accumulator, so the four row loads
     /// are in flight together. Lane by lane the same integer sums as four single calls.
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; the rows have one length, a multiple of 16, and `q.len()` is
+    /// twice it.
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn dot_i4_avx2_x4(q: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
         let mask = _mm_set1_epi8(0x0f);
@@ -794,6 +812,10 @@ mod x86 {
     /// by 128 into the unsigned operand, so `sum (a + 128) b = a.b + 128 sum b`, and a second
     /// `vpdpbusd` against ones yields `sum b` to subtract. Exact over the whole i8 range. The
     /// 512-bit forms measured no faster on 128 and 256-wide rows (kill test).
+    ///
+    /// # Safety
+    /// The CPU supports AVX512F, AVX512VL, AVX512-VNNI and AVX2; `a` and `b` have the same
+    /// length, a multiple of 16.
     #[target_feature(enable = "avx512f,avx512vl,avx512vnni,avx2")]
     pub(super) unsafe fn dot_i8_vnni(a: &[i8], b: &[i8]) -> i32 {
         let (flip, ones) = (_mm256_set1_epi8(-128), _mm256_set1_epi8(1));
@@ -817,6 +839,10 @@ mod x86 {
     /// [`dot_i4_avx2`] with `vpdpbusd`: the nibbles are the unsigned operand, offset so that
     /// `n ^ 8` is the signed nibble plus 8, in 0..=15; the query is the signed one. Then
     /// `sum c q = sum (c + 8) q - 8 sum q`, with `sum q` from `vpdpbusd` against ones.
+    ///
+    /// # Safety
+    /// The CPU supports AVX512F, AVX512VL, AVX512-VNNI and AVX2; `q.len() == 2 * p.len()` and
+    /// `p.len()` is a multiple of 16.
     #[target_feature(enable = "avx512f,avx512vl,avx512vnni,avx2")]
     pub(super) unsafe fn dot_i4_vnni(q: &[i8], p: &[i8]) -> i32 {
         let mask = _mm_set1_epi8(0x0f);
@@ -844,6 +870,8 @@ mod x86 {
         h(acc) - 8 * h(sum_q)
     }
 
+    /// # Safety
+    /// The CPU supports AVX2.
     #[target_feature(enable = "avx2")]
     unsafe fn horizontal_sum(v: __m256i) -> i32 {
         let s = _mm_add_epi32(_mm256_castsi256_si128(v), _mm256_extracti128_si256::<1>(v));
@@ -879,60 +907,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn optimized_popcount_matches_scalar() {
-        let mut rng = SplitMix(7);
+    fn popcount_kernels_match_scalar_at_every_width() {
+        let seed = 7;
+        let mut rng = SplitMix(seed);
         for words in 1..=17 {
             let codes: Vec<u64> = (0..32 * words).map(|_| rng.next_u64()).collect();
             let planes: Vec<u64> = (0..QUERY_BITS * words).map(|_| rng.next_u64()).collect();
             let (mut fast, mut slow) = ([0u32; 32], [0u32; 32]);
             raw_estimates(&codes, &planes, words, &mut fast);
             raw_scalar(&codes, &planes, words, &mut slow);
-            assert_eq!(fast, slow, "words = {words}");
+            assert_eq!(fast, slow, "raw_estimates, words {words}, seed {seed}");
+            for (row, (code, want)) in codes.chunks_exact(words).zip(slow).enumerate() {
+                assert_eq!(
+                    raw_one(code, &planes, words),
+                    want,
+                    "raw_one, row {row}, words {words}, seed {seed}"
+                );
+            }
         }
     }
 
+    /// The dispatched entry points and the float-by-integer dots, including the empty row;
+    /// the raw kernels are covered by `every_integer_kernel_matches_scalar`.
     #[test]
-    fn integer_dot_kernels_match_scalar() {
-        let mut rng = SplitMix(13);
-        let kernels: Vec<DotI8> = {
-            #[cfg(target_arch = "aarch64")]
-            {
-                let mut k: Vec<DotI8> = vec![neon::dot_i8];
-                if std::arch::is_aarch64_feature_detected!("dotprod") {
-                    k.push(neon::dot_i8_sdot);
-                }
-                k
-            }
-            #[cfg(not(target_arch = "aarch64"))]
-            vec![dot_i8_kernel()]
-        };
+    fn dispatched_and_float_dots_match_scalar() {
+        let seed = 13;
+        let mut rng = SplitMix(seed);
         for len in (0..=96).step_by(16) {
-            let a: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
-            let mut b: Vec<i8> = (0..len).map(|_| rng.next_u64() as i8).collect();
-            if len > 0 {
-                b[0] = -128;
+            let a = random_i8(&mut rng, len);
+            let mut b = random_i8(&mut rng, len);
+            if let Some(first) = b.first_mut() {
+                *first = -128;
             }
             let want = dot_i8_scalar(&a, &b);
-            for k in &kernels {
-                assert_eq!(k(&a, &b), want, "len = {len}");
-            }
-            assert_eq!(dot_i8_inline(&a, &b), want, "len = {len}");
+            assert_eq!(dot_i8_inline(&a, &b), want, "len {len}, seed {seed}");
             let af: Vec<f32> = a.iter().map(|&x| f32::from(x)).collect();
-            assert_eq!(dot_f32_i8(&af, &b), want as f32);
+            assert_eq!(dot_f32_i8(&af, &b), want as f32, "len {len}, seed {seed}");
             let nib: Vec<i8> = b.iter().map(|&x| x >> 4).collect();
-            let packed: Vec<i8> = nib
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|p| ((p[0] as u8 & 0x0F) | ((p[1] as u8) << 4)) as i8)
-                .collect();
-            assert_eq!(dot_f32_i4(&af, &packed), dot_i8_scalar(&a, &nib) as f32);
+            let packed = pack_nibbles(&b);
+            let want4 = dot_i8_scalar(&a, &nib);
+            assert_eq!(
+                dot_f32_i4(&af, &packed),
+                want4 as f32,
+                "len {len}, seed {seed}"
+            );
             if len % 32 == 0 {
                 let mut qi = vec![0i8; len];
                 interleave_for_i4(&a, &mut qi);
-                let want4 = dot_i8_scalar(&a, &nib);
-                assert_eq!(dot_i4_scalar(&qi, &packed), want4, "len = {len}");
-                assert_eq!(dot_i4_inline(&qi, &packed), want4, "len = {len}");
+                assert_eq!(dot_i4_scalar(&qi, &packed), want4, "len {len}, seed {seed}");
+                assert_eq!(dot_i4_inline(&qi, &packed), want4, "len {len}, seed {seed}");
             }
         }
     }
@@ -980,23 +1003,6 @@ mod tests {
         assert!((approx - exact).abs() <= qc.delta / 2.0 * pop + 1e-4);
     }
 
-    #[test]
-    fn raw_one_matches_scalar_at_every_width() {
-        let mut rng = SplitMix(21);
-        for words in [1usize, 2, 3, 4, 8, 16] {
-            let x: Vec<f32> = (0..64 * words).map(|_| rng.next_f32() - 0.5).collect();
-            let mut qc = QueryCode::new(words);
-            qc.encode(&x);
-            for _ in 0..8 {
-                let code: Vec<u64> = (0..words).map(|_| rng.next_u64()).collect();
-                assert_eq!(
-                    raw_one(&code, &qc.planes, words),
-                    raw_one_scalar(&code, &qc.planes, words)
-                );
-            }
-        }
-    }
-
     /// Kill test for the 1-bit screen (experiment E2): per neighbour,
     /// the screen must cost < 25% of the 8-bit SDOT estimate on a nytimes-sized working set
     /// (300k rows, 256 dims: 256-byte code rows, 40-byte screen rows) with the search loop's
@@ -1004,7 +1010,7 @@ mod tests {
     /// `cargo test --release raw_screen_microbenchmark -- --ignored --nocapture`; writes JSON
     /// to `$HMS_SCREEN_BENCH_OUT` when set.
     #[test]
-    #[ignore]
+    #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn raw_screen_microbenchmark() {
         use std::time::Instant;
         const N: usize = 300_000;
@@ -1150,18 +1156,18 @@ mod tests {
     type I8Kernel = fn(&[i8], &[i8]) -> i32;
 
     /// Every integer kernel this CPU can run, by name: `(name, i8 dot, i4 dot)`.
-    fn int_variants() -> Vec<(&'static str, Option<I8Kernel>, Option<I8Kernel>)> {
-        let mut v: Vec<(&'static str, Option<I8Kernel>, Option<I8Kernel>)> =
-            vec![("scalar", Some(dot_i8_scalar), Some(dot_i4_scalar))];
+    fn int_variants() -> Vec<(&'static str, I8Kernel, I8Kernel)> {
+        // SAFETY (every unsafe kernel below): its target features are detected before it is
+        // listed, and every caller passes rows of the lengths the kernel requires.
+        let mut v: Vec<(&'static str, I8Kernel, I8Kernel)> =
+            vec![("scalar", dot_i8_scalar, dot_i4_scalar)];
         #[cfg(target_arch = "aarch64")]
         {
-            v.push(("neon_widening", Some(neon::dot_i8), Some(neon::dot_i4)));
+            v.push(("neon_widening", neon::dot_i8, neon::dot_i4));
             if std::arch::is_aarch64_feature_detected!("dotprod") {
-                v.push((
-                    "sdot",
-                    Some(neon::dot_i8_sdot),
-                    Some(|q, p| unsafe { neon::sdot4(q, p) }),
-                ));
+                v.push(("sdot", neon::dot_i8_sdot, |q, p| unsafe {
+                    neon::sdot4(q, p)
+                }));
             }
         }
         #[cfg(target_arch = "x86_64")]
@@ -1169,15 +1175,15 @@ mod tests {
             if is_x86_feature_detected!("avx2") {
                 v.push((
                     "avx2",
-                    Some(|a, b| unsafe { x86::dot_i8_avx2(a, b) }),
-                    Some(|q, p| unsafe { x86::dot_i4_avx2(q, p) }),
+                    |a, b| unsafe { x86::dot_i8_avx2(a, b) },
+                    |q, p| unsafe { x86::dot_i4_avx2(q, p) },
                 ));
             }
             if is_x86_feature_detected!("avx512vnni") && is_x86_feature_detected!("avx512vl") {
                 v.push((
                     "vnni",
-                    Some(|a, b| unsafe { x86::dot_i8_vnni(a, b) }),
-                    Some(|q, p| unsafe { x86::dot_i4_vnni(q, p) }),
+                    |a, b| unsafe { x86::dot_i8_vnni(a, b) },
+                    |q, p| unsafe { x86::dot_i4_vnni(q, p) },
                 ));
             }
         }
@@ -1227,10 +1233,8 @@ mod tests {
                         }
                         _ => {}
                     }
-                    if let Some(k) = i8k {
-                        assert_eq!(k(&a, &b), dot_i8_scalar(&a, &b), "{name} i8 len {len}");
-                    }
-                    if let (Some(k), true) = (i4k, len % 32 == 0) {
+                    assert_eq!(i8k(&a, &b), dot_i8_scalar(&a, &b), "{name} i8 len {len}");
+                    if len % 32 == 0 {
                         let mut packed = pack_nibbles(&b);
                         if round == 1 {
                             packed.fill(-128); // both nibbles -8
@@ -1240,7 +1244,7 @@ mod tests {
                         let mut q = vec![0i8; len];
                         interleave_for_i4(&a, &mut q);
                         assert_eq!(
-                            k(&q, &packed),
+                            i4k(&q, &packed),
                             dot_i4_scalar(&q, &packed),
                             "{name} i4 len {len}"
                         );
@@ -1257,7 +1261,7 @@ mod tests {
     /// `cargo test --release dot_kernel_microbench -- --ignored --nocapture`; writes JSON to
     /// `$HMS_PLATFORM_BENCH_OUT` when set.
     #[test]
-    #[ignore]
+    #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn dot_kernel_microbench() {
         use std::time::Instant;
         const COLD_ROWS: usize = 400_000;
@@ -1289,9 +1293,7 @@ mod tests {
                 let query: &[i8] = if kind == "i8" { &q } else { &qi };
                 let mut ref_sum = None;
                 for (name, i8k, i4k) in int_variants() {
-                    let Some(k) = (if kind == "i8" { i8k } else { i4k }) else {
-                        continue;
-                    };
+                    let k = if kind == "i8" { i8k } else { i4k };
                     let mut best = (f64::INFINITY, f64::INFINITY);
                     let mut sum = 0i64;
                     for _ in 0..7 {

@@ -25,6 +25,7 @@ impl Adjacency {
 
     /// Lists from their lengths and their concatenation; `None` when the lengths do not
     /// account for `flat` exactly or a list is longer than `degree`.
+    #[must_use]
     pub(crate) fn from_flat(lens: Vec<u32>, flat: &[u32], degree: usize) -> Option<Self> {
         if lens.iter().any(|&l| l as usize > degree)
             || lens.iter().map(|&l| l as usize).sum::<usize>() != flat.len()
@@ -155,6 +156,7 @@ impl Adjacency {
     }
 
     /// The lists as separate vectors.
+    #[must_use]
     pub(crate) fn to_lists(&self) -> Vec<Vec<u32>> {
         self.iter().map(<[u32]>::to_vec).collect()
     }

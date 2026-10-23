@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! The rmcp `ServerHandler`: tools, resources and prompts over a `MemoryBackend`.
+//! The rmcp `ServerHandler`: tools, resources and prompts over an `HmsBackend`.
 
 use std::sync::Arc;
 use std::time::Instant;
@@ -17,7 +17,8 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Map, Value};
 use tokio::sync::Semaphore;
 
-use crate::memory::{preview, Fail, Limits, ListReq, MemoryBackend, SearchReq};
+use crate::memory::{preview, Fail, Limits, ListReq, SearchReq};
+use crate::store::HmsBackend;
 use crate::tools::{self, Exposure};
 
 const INSTRUCTIONS: &str = "Persistent memory backed by Holographic Memory, stored on this machine. \
@@ -30,7 +31,7 @@ const MEMORY_URI: &str = "hms://memory/";
 const STATS_URI: &str = "hms://stats";
 
 pub struct Inner {
-    pub backend: Arc<dyn MemoryBackend>,
+    pub backend: Arc<HmsBackend>,
     pub exposure: Exposure,
     pub limits: Limits,
     pub resources: bool,
@@ -45,7 +46,7 @@ pub struct HmsMcp {
 
 impl HmsMcp {
     pub fn new(
-        backend: Arc<dyn MemoryBackend>,
+        backend: Arc<HmsBackend>,
         exposure: Exposure,
         limits: Limits,
         resources: bool,
