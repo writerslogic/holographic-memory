@@ -63,24 +63,26 @@ Each HMS row also records the following from its manifest:
 - the audit counts, which must all be zero
 - CPU and load average
 
-## Cost (gpt-5 list price $1.25 / $10 per 1M tokens)
+## Cost (gpt-5 list price $1.25 / $10 per 1M tokens, to confirm against OpenAI pricing)
 
 There is no cache credit. The Batch API's 50% discount is **not available** because the harness makes
 synchronous `chat.completions` calls. Using it would mean our own batch implementation of the
 answer/judge step, which is a patch, so these figures are full price.
 
-Spent so far: **$0.32** ($0.09 smoke and $0.24 LongMemEval calibration).
+Spent so far: **$0.34** ($0.09 smoke, $0.24 LongMemEval calibration, $0.02 evaluate-only smoke).
 
 | Run | Count-matched (top-200 raw) | Token-matched (`max_context_tokens: 7000`) | Basis |
 |---|---|---|---|
 | LoCoMo | **$46.6** | **$42.5** (161 memories, 10.2k-token prompt; measured on conv 0) | Prompts counted with `price.py` on conv 0 (152 q, scaled to 1,540). Output from 3 calibrated questions: answer 1,159 completion tokens incl. reasoning, judge 192. Output is ~$21 of the total either way |
 | LongMemEval-S | **$59.5** | ~$10 | 30 predicted questions (all single-session-user; the harness orders by type), 87.6k-token prompts, scaled to 500. Output from 2 calibrated questions |
-| BEAM 1M | ~$208, and partly infeasible | ~$25 | Estimate: 200 x 1,081-token mean chunk = ~216k-token prompts (p90 chunk 1,372 reaches the 272k input limit). 3.45 nuggets/q, event-ordering extract/align calls. Output assumed like LoCoMo |
+| BEAM 1M | ~$208 | ~$25 | Estimate: 200 x 1,081-token mean chunk = ~216k-token prompts, near the 272k input limit (to confirm; whether any prompt exceeds it is unmeasured). 3.45 nuggets/q, event-ordering extract/align calls. Output assumed like LoCoMo |
 | BEAM 10M | ~$59 | ~$7 | Same per-question estimate, 200 q, 3.1 nuggets/q |
 
 Apart from LoCoMo token-matched, the token-matched and BEAM figures are estimates from the formulas above, not `price.py` runs on
 predict output. Before any paid BEAM run, rerun `price.py` on its `--predict-only` output, which
-costs $0.
+costs $0. `price.py` has not yet run on BEAM output, and it is unchecked whether BEAM predict files carry `rubric`. A BEAM-1M conversation-0 predict-only run ($0) settles both.
+
+Uncertainty: on LoCoMo, output (reasoning included) is about 45% of the $47 estimate, and it rests on 3 calls of 597, 1,126 and 1,754 completion tokens. Set each run's `--max-spend` to its price plus a margin. Re-price LongMemEval and BEAM from LoCoMo's real proxy log before spending on them, since the $64 plan has only ~$11 of slack.
 
 ### Proposed order within the ~$75 credit
 
@@ -95,9 +97,14 @@ LongMemEval then come to about $107, which exceeds the credit.
 
 ## Wall clock
 
-Ingest throughput depends on the disk, because every `remember` is synced. On this machine's
-external USB HDD it was 15 facts/s. On the internal SSD it was 182 facts/s, which is 2.3 s for LoCoMo
-conversation 0's 419 turns. Put `--data-dir` on an SSD.
+Ingest throughput depends on the disk, because every `remember` is synced. The machine was an Apple
+M-series running macOS, HMS 69d15687, with harness `--max-workers 10`. Development measurements, one
+run each and not in the timing lock:
+- External USB HDD: 15 facts/s, one LoCoMo conversation alone (load avg about 3).
+- Internal SSD: 182 facts/s, which is 2.3 s for LoCoMo conversation 0's 419 turns.
+- With three runs sharing the HDD, it fell to 0.7-1.5 facts/s.
+
+Put `--data-dir` on an SSD.
 
 LLM latency through the proxy (gpt-5, OpenAI) was 8-23 s per LoCoMo answer and 3-5 s per judge
 call. LongMemEval answers with 87k-token prompts took 9-12 s.

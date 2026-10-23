@@ -91,7 +91,8 @@ LoCoMo and LongMemEval, which costs 4x, and `100` for BEAM.
   - Judge (LoCoMo/BEAM): the same, plus `response_format={"type":"json_object"}` and a system prompt.
   - Judge (LongMemEval): plain text with yes/no parsing.
 - **Omitted parameters:** no `temperature` (the client omits it for gpt-5, so the API default of 1
-  applies), no `reasoning_effort` (default `medium`), no `seed`, no `verbosity`.
+  applies), no `reasoning_effort` (the API default applies; documented as `medium`, to confirm),
+  no `seed`, no `verbosity`. The proxy confirmed that none of these was sent.
 - **Endpoint:** we call `api.openai.com`. **Mem0's published runs used Azure OpenAI**
   (`"provider": "azure"` in every result file), with the deployment and API version not recorded.
   Model weights behind the same snapshot should match, but Azure content filtering and default
@@ -109,8 +110,21 @@ scores both as WRONG and keeps going. The manifest's `audit` block counts each c
 - `failed after` lines and retry lines in the harness log
 
 `llm.finish_reasons` shows `length` truncations, and `ingest.facts` should equal the harness chunk
-count. A run with any of these is not reportable until it is re-run. A run that hit the proxy's
-spend cap (`llm.blocked > 0`) is discarded.
+count. A run with any of these is not reportable until those questions are re-scored.
+
+After a 402 from the proxy's spend cap (`llm.blocked > 0`) or a 429 when credit runs out, the
+harness has already written WRONG results with empty answers into the per-question files. A plain
+rerun does not fix this. LoCoMo and LongMemEval `--evaluate-only` skip any file that already holds
+`cutoff_results` (unless `--rejudge` is given, which re-scores everything), and they refuse to
+start while any file is missing. To salvage a run:
+1. Delete only the `cutoff_results` key from the files listed in `audit.empty_generated_answers`.
+2. Raise `--max-spend`.
+3. Rerun `--evaluate-only`.
+
+The BEAM runner has no `--rejudge`, and its skip logic is not checked. Each run writes
+`manifest-<predict|evaluate|full>-<UTC stamp>.json`. `retrieval_before` and `retrieval_after` hash
+only the question ids and returned memories. On `--evaluate-only`, `audit.retrieval_unchanged` must
+be true; this was checked on a 1-question LoCoMo evaluate-only smoke run ($0.02).
 
 ## Commands
 
@@ -155,10 +169,10 @@ per question:
 |---|---|---|---|
 | LoCoMo | 12,285 mean (152 q of conv 0), of which ~9.1k is memory text | 6,956 memory tokens | 1.3x Mem0 |
 | LongMemEval-S | 87,577 mean (30 q) | ~6.8k | about 76% of a ~115k-token haystack, so near full context |
-| BEAM 1M | ~216k estimated (200 x 1,081-token mean chunk; p90 chunk 1,372) | n/a | The p90 hits gpt-5's 272k input limit, so some calls would fail |
+| BEAM 1M | ~216k estimated (200 x 1,081-token mean chunk), not measured | n/a | Close to gpt-5's input limit (272k per OpenAI's model page, to confirm); whether any prompt exceeds it is unmeasured |
 
 The count-matched run is the literal protocol. On LongMemEval and BEAM it measures the reader's
-long-context ability more than memory retrieval, and BEAM-1M would partly fail on context length.
+long-context ability more than memory retrieval, and BEAM-1M prompts sit near the context limit.
 `max_context_tokens: 7000` gives a token-matched variant. It is just as fixed, and stated next to
 the score. Pick one of these before any paid run:
 

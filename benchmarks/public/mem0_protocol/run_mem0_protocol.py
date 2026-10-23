@@ -10,7 +10,7 @@ Starts hms-server (lexical memory API), the Mem0-OSS shim in front of it and the
 OpenAI logging proxy, then runs ``python -m benchmarks.<bench>.run`` inside a clean
 checkout of memory-benchmarks pinned to PINNED_COMMIT with the flags that reproduce
 the published headline runs (gpt-5 answerer and judge, top-200, single pass). Writes
-``manifest.json`` (HMS commit and binary hash, frozen retrieval config, harness
+``manifest-<phase>-<UTC stamp>.json`` (HMS commit and binary hash, frozen retrieval config, harness
 commit, exact command, dataset hash, model parameters and snapshots seen by the
 proxy, spend, silent-failure audit) next to the harness output.
 
@@ -65,12 +65,26 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def sha256_tree(root: Path) -> str:
-    h = hashlib.sha256()
-    for p in sorted(root.rglob("*.json")):
-        h.update(str(p.relative_to(root)).encode())
-        h.update(sha256_file(p).encode())
-    return h.hexdigest()
+def retrieval_hash(out_dir: Path) -> dict:
+    """Hash of the frozen retrieval only: question_id and each result's (id, memory, created_at).
+
+    Answers and judgments that --evaluate-only adds to the same files, and the ingestion
+    checkpoints, are excluded, so the hash before and after an evaluate-only run must match.
+    """
+    rows = []
+    for p in out_dir.glob("predicted_*/*.json") if out_dir.exists() else []:
+        if p.name.startswith("_"):
+            continue
+        try:
+            d = json.loads(p.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if "question_id" not in d or "retrieval" not in d:
+            continue
+        hits = [(r.get("id"), r.get("memory"), r.get("created_at")) for r in d["retrieval"].get("search_results", [])]
+        rows.append((str(d["question_id"]), hits))
+    rows.sort(key=lambda r: r[0])
+    return {"questions": len(rows), "sha256": hashlib.sha256(json.dumps(rows).encode()).hexdigest()}
 
 
 def git(repo: Path, *args: str) -> str:
@@ -234,6 +248,7 @@ def main() -> None:
         cmd += args.extra
         env = {k: v for k, v in os.environ.items() if not k.startswith(("MEM0_", "AZURE_"))}
         env["OPENAI_BASE_URL"] = f"http://127.0.0.1:{proxy_port}/v1"
+        retrieval_before = retrieval_hash(out_dir)
         started = dt.datetime.now(dt.timezone.utc).isoformat()
         rc = subprocess.run(cmd, cwd=clone, env=env, stdout=logs["harness"], stderr=subprocess.STDOUT).returncode
         finished = dt.datetime.now(dt.timezone.utc).isoformat()
@@ -250,7 +265,11 @@ def main() -> None:
         for f in logs.values():
             f.close()
 
-    predicted = sorted(out_dir.glob("predicted_*")) if out_dir.exists() else []
+    phase = "evaluate" if "--evaluate-only" in args.extra else "predict" if "--predict-only" in args.extra else "full"
+    retrieval_after = retrieval_hash(out_dir)
+    audit = audit_outputs(out_dir, work / "harness.log") if out_dir.exists() else {}
+    if phase == "evaluate":
+        audit["retrieval_unchanged"] = retrieval_before == retrieval_after
     manifest = {
         "benchmark": args.benchmark,
         "started_utc": started, "finished_utc": finished, "harness_exit_code": rc,
@@ -269,11 +288,13 @@ def main() -> None:
         "llm": {"endpoint": "api.openai.com chat.completions (Mem0 published runs: Azure OpenAI)",
                 **summarize_proxy(proxy_log)},
         "ingest": {"tenants": len(facts), "facts": sum(facts.values())},
-        "predict_dirs_sha256": {p.name: sha256_tree(p) for p in predicted},
-        "audit": audit_outputs(out_dir, work / "harness.log") if out_dir.exists() else {},
+        "phase": phase,
+        "retrieval_before": retrieval_before, "retrieval_after": retrieval_after,
+        "audit": audit,
         "machine": {"cpu": cpu_name(), "os": platform.system(), "load_avg": os.getloadavg()},
     }
-    (work / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True))
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    (work / f"manifest-{phase}-{stamp}.json").write_text(json.dumps(manifest, indent=2, sort_keys=True))
     print(json.dumps({"exit": rc, "spend_usd": manifest["llm"]["spend_usd"], "audit": manifest["audit"]}, indent=2))
     sys.exit(rc)
 
