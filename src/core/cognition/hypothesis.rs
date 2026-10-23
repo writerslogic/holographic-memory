@@ -97,7 +97,6 @@ impl HypothesisEngine {
             &bundled
         };
 
-        // Hopfield cleanup to find nearest stored atom
         let result = atom_memory.cleanup(probe, beta, 64, 3);
         if !result.found {
             return None;

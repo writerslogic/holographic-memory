@@ -19,19 +19,20 @@ pub(crate) fn greedy_search_internal(
     }
 
     let n = index.vectors.len();
-    let mut visited = vec![false; n];
-
-    // Min-heap frontier: expand closest-first (Reverse makes BinaryHeap act as min-heap).
-    let mut frontier: BinaryHeap<Reverse<(u32, u32)>> = BinaryHeap::with_capacity(ef_search * 2);
-    // Max-heap result set: keeps the ef_search best (closest) candidates.
-    // The furthest candidate sits at the top; we pop it when the set is full
-    // and a closer candidate arrives. This replaces the O(n log n) sort.
-    let mut results: BinaryHeap<(u32, u32)> = BinaryHeap::with_capacity(ef_search + 1);
-
     let start = index.navigating_node as usize;
     if start >= n {
         return vec![];
     }
+    let mut visited = vec![false; n];
+
+    // Min-heap frontier: expand closest-first (Reverse makes BinaryHeap act as min-heap).
+    let mut frontier: BinaryHeap<Reverse<(u32, u32)>> =
+        BinaryHeap::with_capacity(ef_search.saturating_mul(2).min(n));
+    // Max-heap result set: keeps the ef_search best (closest) candidates.
+    // The furthest candidate sits at the top; we pop it when the set is full
+    // and a closer candidate arrives. This replaces the O(n log n) sort.
+    let mut results: BinaryHeap<(u32, u32)> =
+        BinaryHeap::with_capacity(ef_search.saturating_add(1).min(n));
 
     let start_dist = query.hamming(&index.vectors[start]);
     frontier.push(Reverse((start_dist, start as u32)));
@@ -92,6 +93,9 @@ pub(super) fn greedy_search(
     k: usize,
     ef_search: usize,
 ) -> Vec<RetrievalResult> {
+    if k == 0 {
+        return Vec::new();
+    }
     let candidates = greedy_search_internal(index, query, ef_search.max(k));
 
     candidates

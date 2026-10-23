@@ -104,7 +104,6 @@ impl Planner {
         let mut expanded: FastMap<String, std::ops::Range<usize>> = FastMap::default();
         let mut grounded = FastSet::default();
 
-        // Best-first search using a min-heap on cost.
         let mut heap = BinaryHeap::new();
         heap.push(Subgoal {
             target: goal.to_string(),
@@ -119,7 +118,6 @@ impl Planner {
                 continue;
             }
 
-            // Find triples where object == target.
             let candidates = triple_store.query(None, None, Some(&subgoal.target));
             let filtered: Vec<_> = if causal_relations.is_empty() {
                 candidates

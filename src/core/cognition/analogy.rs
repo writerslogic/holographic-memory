@@ -49,7 +49,6 @@ impl AnalogyDetector {
             comp_signatures.push((entities, relations));
         }
 
-        // Compare pairs of components
         let mut analogies = Vec::new();
         for i in 0..comp_signatures.len() {
             for j in (i + 1)..comp_signatures.len() {
@@ -61,8 +60,6 @@ impl AnalogyDetector {
                     continue;
                 }
 
-                // Ranked matching: compute all pairwise similarities, then select
-                // best non-conflicting mapping in descending similarity order.
                 if let Some(analogy) = ranked_match(entities_a, entities_b, &shared, triple_store) {
                     if analogy.score > 0.0 {
                         analogies.push(analogy);
@@ -137,7 +134,6 @@ fn ranked_match(
     shared_relations: &[String],
     triples: &TripleStore,
 ) -> Option<Analogy> {
-    // Build profiles for each entity in A and B
     let profiles_a: Vec<(String, FastSet<String>)> = entities_a
         .iter()
         .map(|e| (e.clone(), entity_profile(e, triples, shared_relations)))
@@ -151,7 +147,6 @@ fn ranked_match(
         return None;
     }
 
-    // Compute all pairwise similarities
     let mut pairs: Vec<(f64, usize, usize)> =
         Vec::with_capacity(profiles_a.len() * profiles_b.len());
     for (i, (_ea, pa)) in profiles_a.iter().enumerate() {
@@ -163,10 +158,8 @@ fn ranked_match(
         }
     }
 
-    // Sort by descending similarity
     pairs.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
-    // Greedily select best non-conflicting mapping
     let mut used_a = FastSet::default();
     let mut used_b = FastSet::default();
     let mut mapping = Vec::new();
@@ -188,7 +181,6 @@ fn ranked_match(
 
     let score = total_score / mapping.len() as f64;
 
-    // Compute edge-overlap scoring
     let mapping_quality = compute_edge_overlap(&mapping, shared_relations, triples);
 
     Some(Analogy {

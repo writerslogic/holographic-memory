@@ -56,7 +56,6 @@ impl KMeansNystrom {
 
     fn lloyds(&mut self, data: &[DVector<f32>]) {
         for _ in 0..MAX_ITERS {
-            // Update centroids
             let dim = self.centroids[0].len();
             let mut sums: Vec<DVector<f32>> =
                 (0..self.k).map(|_| DVector::<f32>::zeros(dim)).collect();

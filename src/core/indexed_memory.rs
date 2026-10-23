@@ -62,16 +62,16 @@ impl IndexedMemory {
     }
 
     pub fn get(&self, id: &str) -> Option<EntangledHVec> {
+        self.get_with_idx(id).map(|(_, vector)| vector)
+    }
+
+    pub(crate) fn get_with_idx(&self, id: &str) -> Option<(u32, EntangledHVec)> {
         let idx = *self.id_to_idx.read().get(id)?;
         let vecs = self.vectors.read();
         if self.tombstones.read().is_deleted(idx as u32) {
             return None;
         }
-        Some(vecs[idx].1.clone())
-    }
-
-    pub fn idx_for(&self, id: &str) -> Option<u32> {
-        self.id_to_idx.read().get(id).map(|&i| i as u32)
+        Some((idx as u32, vecs[idx].1.clone()))
     }
 
     pub fn get_by_idx(&self, idx: u32) -> Option<(String, EntangledHVec)> {

@@ -24,7 +24,7 @@ impl IVFIndex {
         let n_landmarks = config.n_landmarks.min(n);
         let n_clusters = config.n_clusters.min(n);
 
-        // 1. Sample landmarks (seed from n to vary with data size)
+        // Seed from n to vary the landmark sample with data size.
         let landmark_seed = n as u64;
         let mut rng = StdRng::seed_from_u64(landmark_seed);
         let mut indices: Vec<usize> = (0..n).collect();
@@ -35,20 +35,20 @@ impl IVFIndex {
             .map(|&i| vectors[i].clone())
             .collect();
 
-        // 2. Nyström projection
+        drop(indices);
+
         let projector = NystromProjector::train(landmarks, config.d_reduced)?;
         let projected = projector.project_batch(vectors);
 
-        // 3. K-means in projected space (different seed to decorrelate from landmarks)
+        // Decorrelate clustering from landmark sampling.
         let kmeans = KMeansNystrom::train(&projected, n_clusters, landmark_seed.wrapping_add(1));
 
-        // 4. Compute assignments
         let assignments: Vec<usize> = projected.iter().map(|p| kmeans.assign(p)).collect();
 
-        // 5. Train PQ codebooks
+        drop(projected);
+
         let pq = PQEncoder::train(vectors, dim);
 
-        // 6. Build inverted lists
         let lists = InvertedLists::new();
         for (i, vec) in vectors.iter().enumerate() {
             let cluster = assignments[i];

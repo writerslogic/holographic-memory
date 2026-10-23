@@ -55,28 +55,9 @@ pub fn multi_hop_query(
 }
 
 fn single_hop(start_entity: &str, relation: &str, ctx: &MeaningContext<'_>) -> Vec<MultiHopResult> {
-    let Some(s_vec) = ctx.atom_memory.get(start_entity) else {
-        return Vec::new();
-    };
-    let (_, r_vec) = ctx.atom_memory.get_or_insert(relation);
-
-    let results =
-        fuzzy_structural_query(ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object");
-
-    results
-        .into_iter()
-        .map(|r| MultiHopResult {
-            entity_id: r.entity_id.clone(),
-            confidence: r.confidence,
-            method: MultiHopMethod::SingleAlgebraic,
-            hops: vec![HopDetail {
-                from_entity: start_entity.to_string(),
-                relation: relation.to_string(),
-                to_entity: r.entity_id,
-                confidence: r.confidence,
-            }],
-        })
-        .collect()
+    algebraic_hop(start_entity, relation, ctx, || {
+        MultiHopMethod::SingleAlgebraic
+    })
 }
 
 fn rule_rewrite(
@@ -85,25 +66,32 @@ fn rule_rewrite(
     rule_name: &str,
     ctx: &MeaningContext<'_>,
 ) -> Vec<MultiHopResult> {
+    algebraic_hop(start_entity, output_relation, ctx, || {
+        MultiHopMethod::RuleRewrite {
+            rule_name: rule_name.to_string(),
+        }
+    })
+}
+
+fn algebraic_hop(
+    start_entity: &str,
+    relation: &str,
+    ctx: &MeaningContext<'_>,
+    method: impl Fn() -> MultiHopMethod,
+) -> Vec<MultiHopResult> {
     let Some(s_vec) = ctx.atom_memory.get(start_entity) else {
         return Vec::new();
     };
-    let (_, r_vec) = ctx.atom_memory.get_or_insert(output_relation);
-
-    let results =
-        fuzzy_structural_query(ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object");
-
-    results
+    let (_, r_vec) = ctx.atom_memory.get_or_insert(relation);
+    fuzzy_structural_query(ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object")
         .into_iter()
         .map(|r| MultiHopResult {
             entity_id: r.entity_id.clone(),
             confidence: r.confidence,
-            method: MultiHopMethod::RuleRewrite {
-                rule_name: rule_name.to_string(),
-            },
+            method: method(),
             hops: vec![HopDetail {
                 from_entity: start_entity.to_string(),
-                relation: output_relation.to_string(),
+                relation: relation.to_string(),
                 to_entity: r.entity_id,
                 confidence: r.confidence,
             }],
@@ -140,7 +128,7 @@ fn chained_lookup(
             let evidence_weight = 1.0 / (fan_out as f64).sqrt();
             let hop_confidence = HOP_DECAY * evidence_weight.min(1.0);
 
-            for t in &triples {
+            for t in triples {
                 let hop = HopDetail {
                     from_entity: entity.clone(),
                     relation: relation.to_string(),
@@ -150,7 +138,7 @@ fn chained_lookup(
                 let mut hops = all_hops.get(i).cloned().unwrap_or_default();
                 hops.push(hop);
                 next_hops.push(hops);
-                next_entities.push(t.object_id.clone());
+                next_entities.push(t.object_id);
             }
         }
 

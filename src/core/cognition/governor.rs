@@ -154,21 +154,9 @@ impl MemoryGovernor {
         composite_memory: &CompositeMemory,
         triple_store: &TripleStore,
     ) -> usize {
-        let mut cursor = 0;
-        let mut forgotten = 0;
-        loop {
-            let page = composite_memory.inner().id_page(&mut cursor, 256);
-            if page.is_empty() {
-                break;
-            }
-            for id in page {
-                if !triple_store.has_composite(&id) && composite_memory.delete(&id) {
-                    forgotten += 1;
-                }
-            }
-        }
-
-        forgotten
+        Self::forget_unreferenced(composite_memory.inner(), |id| {
+            triple_store.has_composite(id)
+        })
     }
 
     /// Remove atoms not referenced by any live triple.
@@ -177,24 +165,30 @@ impl MemoryGovernor {
         atom_memory: &AtomMemory,
         triple_store: &TripleStore,
     ) -> usize {
+        Self::forget_unreferenced(atom_memory.inner(), |id| {
+            triple_store.has(Some(id), None, None)
+                || triple_store.has(None, Some(id), None)
+                || triple_store.has(None, None, Some(id))
+        })
+    }
+
+    fn forget_unreferenced(
+        memory: &crate::core::indexed_memory::IndexedMemory,
+        referenced: impl Fn(&str) -> bool,
+    ) -> usize {
         let mut cursor = 0;
         let mut forgotten = 0;
         loop {
-            let page = atom_memory.inner().id_page(&mut cursor, 256);
+            let page = memory.id_page(&mut cursor, 256);
             if page.is_empty() {
                 break;
             }
             for id in page {
-                if !triple_store.has(Some(&id), None, None)
-                    && !triple_store.has(None, Some(&id), None)
-                    && !triple_store.has(None, None, Some(&id))
-                    && atom_memory.delete(&id)
-                {
+                if !referenced(&id) && memory.delete(&id) {
                     forgotten += 1;
                 }
             }
         }
-
         forgotten
     }
 

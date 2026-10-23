@@ -473,7 +473,12 @@ pub fn retrieve_prepared(prepared: &Prepared<'_>) -> Result<Retrieval> {
                 if !facts.numbers.is_empty() {
                     witness.insert(format!(
                         "quantity:{}:session:{sid}",
-                        facts.numbers.iter().cloned().collect::<Vec<_>>().join("/")
+                        facts
+                            .numbers
+                            .iter()
+                            .map(String::as_str)
+                            .collect::<Vec<_>>()
+                            .join("/")
                     ));
                 }
                 if (facts.companion || facts.friend)
@@ -498,7 +503,12 @@ pub fn retrieve_prepared(prepared: &Prepared<'_>) -> Result<Retrieval> {
                 if required.chronology && !facts.temporal.is_empty() {
                     witness.insert(format!(
                         "time:{}:session:{sid}",
-                        facts.temporal.iter().cloned().collect::<Vec<_>>().join("/")
+                        facts
+                            .temporal
+                            .iter()
+                            .map(String::as_str)
+                            .collect::<Vec<_>>()
+                            .join("/")
                     ));
                     if relevant(i)
                         && (!acquisition

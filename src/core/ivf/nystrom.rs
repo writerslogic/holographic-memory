@@ -43,10 +43,8 @@ impl NystromProjector {
             }
         }
 
-        // Symmetric eigendecomposition
         let eigen = kernel.symmetric_eigen();
 
-        // Sort eigenvalues descending, filter non-positive, take top d_reduced
         let mut indexed: Vec<(usize, f32)> = eigen
             .eigenvalues
             .iter()
@@ -88,18 +86,26 @@ impl NystromProjector {
 
     /// Project a single vector into the reduced space using exponential Jaccard kernel.
     pub fn project(&self, vec: &EntangledHVec) -> DVector<f32> {
-        let m = self.landmarks.len();
-        let mut k_vec = DVector::<f32>::zeros(m);
+        let mut kernel = DVector::<f32>::zeros(self.landmarks.len());
+        self.project_with_kernel(vec, &mut kernel)
+    }
+
+    fn project_with_kernel(&self, vec: &EntangledHVec, kernel: &mut DVector<f32>) -> DVector<f32> {
         for (i, lm) in self.landmarks.iter().enumerate() {
             let jaccard = vec.similarity(lm) as f32;
-            k_vec[i] = (-(1.0 - jaccard)).exp();
+            kernel[i] = (-(1.0 - jaccard)).exp();
         }
-        self.transform.tr_mul(&k_vec)
+        self.transform.tr_mul(kernel)
     }
 
     /// Project a batch of vectors in parallel.
     pub fn project_batch(&self, vecs: &[EntangledHVec]) -> Vec<DVector<f32>> {
-        vecs.par_iter().map(|v| self.project(v)).collect()
+        vecs.par_iter()
+            .map_init(
+                || DVector::<f32>::zeros(self.landmarks.len()),
+                |kernel, vec| self.project_with_kernel(vec, kernel),
+            )
+            .collect()
     }
 }
 

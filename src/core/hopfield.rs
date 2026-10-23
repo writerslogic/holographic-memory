@@ -59,7 +59,7 @@ pub fn hopfield_query<S: AsRef<str>, V: Borrow<EntangledHVec>>(
     config: &HopfieldConfig,
     max_results: usize,
 ) -> Vec<RetrievalResult> {
-    if patterns.is_empty() || config.beta <= 0.0 {
+    if max_results == 0 || patterns.is_empty() || config.beta <= 0.0 {
         return Vec::new();
     }
 
@@ -101,17 +101,22 @@ pub fn hopfield_query_iterative<S: AsRef<str>, V: Borrow<EntangledHVec>>(
     config: &HopfieldConfig,
     max_results: usize,
 ) -> Vec<RetrievalResult> {
+    if max_results == 0 || patterns.is_empty() {
+        return Vec::new();
+    }
     if config.max_iter <= 1 {
         return hopfield_query(query, patterns, config, max_results);
     }
 
     let mut current_query = query.clone();
-
+    let mut scores = Vec::with_capacity(patterns.len());
     for _ in 0..config.max_iter - 1 {
-        let scores: Vec<f64> = patterns
-            .iter()
-            .map(|(_, pat)| config.beta * current_query.similarity(pat.borrow()))
-            .collect();
+        scores.clear();
+        scores.extend(
+            patterns
+                .iter()
+                .map(|(_, pat)| config.beta * current_query.similarity(pat.borrow())),
+        );
 
         let weights = entmax(&scores, config.alpha);
 
@@ -122,6 +127,7 @@ pub fn hopfield_query_iterative<S: AsRef<str>, V: Borrow<EntangledHVec>>(
         }
     }
 
+    drop(scores);
     hopfield_query(&current_query, patterns, config, max_results)
 }
 

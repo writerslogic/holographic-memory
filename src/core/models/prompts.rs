@@ -6,6 +6,8 @@
 //! tuned result and must stay byte-identical to the Python reference. The separately selected
 //! conversation embedding instruction includes both source roles.
 
+use std::fmt::Write as _;
+
 use serde_json::Value;
 
 /// (year, month, day).
@@ -44,13 +46,25 @@ fn take_chars(s: &str, n: usize) -> &str {
 
 /// `Session.fact_input`: numbered user turns, each cut to 1500 characters, the whole to 24000.
 pub fn fact_input<S: AsRef<str>>(user_turns: &[S]) -> String {
-    let joined = user_turns
-        .iter()
-        .enumerate()
-        .map(|(i, t)| format!("[{}] {}", i + 1, take_chars(t.as_ref(), 1500)))
-        .collect::<Vec<_>>()
-        .join("\n");
-    take_chars(&joined, 24000).to_string()
+    let mut joined = String::new();
+    let mut scalar_count = 0;
+    for (i, turn) in user_turns.iter().enumerate() {
+        if scalar_count >= 24000 {
+            break;
+        }
+        let start = joined.len();
+        if i > 0 {
+            joined.push('\n');
+        }
+        let _ = write!(joined, "[{}] {}", i + 1, take_chars(turn.as_ref(), 1500));
+        scalar_count += joined[start..].chars().count();
+    }
+    if scalar_count > 24000 {
+        let end = take_chars(&joined, 24000).len();
+        joined.truncate(end);
+    }
+    joined.shrink_to_fit();
+    joined
 }
 
 pub fn fact_prompt<S: AsRef<str>>(user_turns: &[S]) -> String {

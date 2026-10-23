@@ -4,6 +4,7 @@
 //! against `Limits`, and call only the `HmsBackend` methods.
 
 use std::collections::BTreeSet;
+use std::fmt::Write as _;
 
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
@@ -563,13 +564,14 @@ fn markdown_entry(m: &Memory) -> String {
         m.id, m.version
     );
     if !m.tags.is_empty() {
-        out.push_str(&format!("- tags: {}\n", m.tags.join(", ")));
+        let _ = writeln!(out, "- tags: {}", m.tags.join(", "));
     }
     if !m.metadata.is_empty() {
-        out.push_str(&format!(
-            "- metadata: `{}`\n",
+        let _ = writeln!(
+            out,
+            "- metadata: `{}`",
             serde_json::to_string(&m.metadata).unwrap_or_default()
-        ));
+        );
     }
     out.push('\n');
     out.push_str(&m.text);

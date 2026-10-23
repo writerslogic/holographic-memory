@@ -101,7 +101,6 @@ impl DistributionalRefiner {
         let mut report = RefinementReport::default();
         let mut total_context_depth: usize = 0;
 
-        // For each atom, compute its context vector and blend
         for (atom_id, relations) in &atom_relations {
             if relations.len() < config.min_context_relations {
                 report.atoms_skipped += 1;
@@ -174,7 +173,6 @@ impl DistributionalRefiner {
             let orig_indices =
                 original.indices()[..orig_slots.min(original.indices().len())].to_vec();
 
-            // Merge
             let mut new_indices: Vec<u32> = orig_indices;
             new_indices.extend(ctx_scored.iter().map(|(idx, _)| *idx));
             new_indices.sort_unstable();
