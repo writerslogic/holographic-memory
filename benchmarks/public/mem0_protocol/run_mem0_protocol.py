@@ -24,6 +24,7 @@ Example (3 LoCoMo questions, $1 cap):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as dt
 import hashlib
 import json
@@ -118,7 +119,7 @@ def cpu_name() -> str:
             if line.startswith("model name"):
                 return line.split(":", 1)[1].strip()
     except OSError:
-        pass
+        return platform.processor()  # no sysctl or /proc/cpuinfo: fall back to the generic name
     return platform.processor()
 
 
@@ -212,10 +213,11 @@ def main() -> None:
     config = json.loads(args.config.read_text())
     hms_repo = HERE.parents[2]
     project = args.project_name or f"hms-{args.benchmark}"
-    logs = {name: open(work / f"{name}.log", "ab") for name in ("hms-server", "shim", "proxy", "harness")}
-
+    stack = contextlib.ExitStack()
     procs: list[subprocess.Popen] = []
     try:
+        logs = {name: stack.enter_context(open(work / f"{name}.log", "ab"))
+                for name in ("hms-server", "shim", "proxy", "harness")}
         hms_cmd = [str(args.hms_bin), "--no-auth", "--bind", "127.0.0.1:0", "--data-dir", str((args.data_dir or work / "hms-data").resolve()),
                    "--input-dim", "384", "--max-top-k", str(config.get("max_k", 200)), "--max-tenants", "1024",
                    "--tenant-idle-seconds", "120", "--max-concurrent-work", "16", "--max-queue", "1024",
@@ -262,8 +264,7 @@ def main() -> None:
                 p.wait(timeout=60)
             except subprocess.TimeoutExpired:
                 p.kill()
-        for f in logs.values():
-            f.close()
+        stack.close()
 
     phase = "evaluate" if "--evaluate-only" in args.extra else "predict" if "--predict-only" in args.extra else "full"
     retrieval_after = retrieval_hash(out_dir)
