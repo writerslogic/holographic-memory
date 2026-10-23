@@ -15,12 +15,11 @@ from typing import Any, Dict, List
 import pytest
 
 from holographic_sdk.importers import cli as cli_mod
-from holographic_sdk.importers import ImportOptions, ImporterError, run_import
-from holographic_sdk.importers.sources.base import Source
+from holographic_sdk.importers import ImporterError
 
 from .conftest import API_KEY, assert_faithful, assert_resumable, vec
 from .helpers_embedder import DIM, embed
-from .mockserver import ApiError, MockApi
+from .mockserver import MockApi
 
 EMBEDDER = "importers.helpers_embedder:embed"
 os.environ.setdefault("MEM0_DIR", tempfile.mkdtemp(prefix="mem0-dir-"))  # mem0 reads this at import time

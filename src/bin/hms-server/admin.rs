@@ -20,7 +20,7 @@ use tokio::io::AsyncWriteExt;
 use crate::auth::Scope;
 use crate::error::{ApiError, ApiResult};
 use crate::request::*;
-use crate::tenants::{copy_store, tenant_hex, valid_tenant, AppState};
+use crate::tenants::{copy_store, tenant_from_hex, AppState};
 use crate::types::*;
 
 pub async fn create_snapshot(State(state): State<Arc<AppState>>, req: Request) -> ApiResult {
@@ -155,6 +155,18 @@ impl Drop for Staging {
     }
 }
 
+/// Verify the staged store and swap it in for the tenant's; the staging directory is removed
+/// on failure. Returns the snapshot taken of the replaced store.
+fn install_staged(state: &AppState, tenant: &str, staging: Staging) -> Result<String, ApiError> {
+    verify(staging.path())?;
+    let staged = staging.take();
+    let result = state.restore_staged(tenant, &staged);
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(&staged);
+    }
+    result
+}
+
 /// `POST /api/v1/snapshots/{id}/restore`: replace the tenant's store with a snapshot. The
 /// store being replaced is kept as snapshot `pre-restore-<time>`.
 pub async fn restore_snapshot(
@@ -168,13 +180,7 @@ pub async fn restore_snapshot(
         let source = state.snapshot_path(&tenant, &id)?;
         let staging = Staging::new(&state)?;
         copy_store(&source, staging.path()).map_err(ApiError::internal)?;
-        verify(staging.path())?;
-        let staged = staging.take();
-        let result = state.restore_staged(&tenant, &staged);
-        if result.is_err() {
-            let _ = std::fs::remove_dir_all(&staged);
-        }
-        result
+        install_staged(&state, &tenant, staging)
     })
     .await?;
     Ok(json_response(
@@ -281,13 +287,7 @@ pub async fn restore_upload(State(state): State<Arc<AppState>>, req: Request) ->
         let result = (|| {
             let file = std::fs::File::open(&upload).map_err(ApiError::internal)?;
             unpack_archive(file, staging.path(), max)?;
-            verify(staging.path())?;
-            let staged = staging.take();
-            let result = state.restore_staged(&tenant, &staged);
-            if result.is_err() {
-                let _ = std::fs::remove_dir_all(&staged);
-            }
-            result
+            install_staged(&state, &tenant, staging)
         })();
         let _ = std::fs::remove_file(&upload);
         result
@@ -369,14 +369,7 @@ pub async fn list_tenants(State(state): State<Arc<AppState>>, req: Request) -> A
     if let Ok(entries) = std::fs::read_dir(&root) {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().into_owned();
-            let bytes: Option<Vec<u8>> = (0..name.len() / 2)
-                .map(|i| u8::from_str_radix(&name[2 * i..2 * i + 2], 16).ok())
-                .collect();
-            if let Some(decoded) = bytes.and_then(|b| String::from_utf8(b).ok()) {
-                if valid_tenant(&decoded) && tenant_hex(&decoded) == name {
-                    tenants.push(decoded);
-                }
-            }
+            tenants.extend(tenant_from_hex(&name));
         }
     }
     tenants.sort();

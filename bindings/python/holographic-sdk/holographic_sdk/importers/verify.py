@@ -11,7 +11,7 @@ the vectors that would be sent (which measures the loss from projection).
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from .common import scrub, vector_list

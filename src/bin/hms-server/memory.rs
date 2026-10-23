@@ -5,7 +5,6 @@
 //! applyForgetting,consolidate}`; docs/memory-api) behind the server's auth, limits, tenant
 //! lifecycle and idempotency.
 
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use axum::extract::{Request, State};
@@ -14,8 +13,8 @@ use holographic_memory::core::memory_api::MemoryError;
 use serde_json::{json, Value};
 
 use crate::auth::Scope;
-use crate::config::{MAX_ID_BYTES, MAX_METADATA_BYTES, MAX_TEXT_BYTES};
-use crate::documents::dense;
+use crate::config::{MAX_ID_BYTES, MAX_TEXT_BYTES};
+use crate::documents::{check_metadata_size, dense, enforce_quota};
 use crate::error::{ApiError, ApiResult};
 use crate::request::{json_write, parse};
 use crate::tenants::AppState;
@@ -55,11 +54,7 @@ fn validate_memory_request(op: &str, request: &Value, state: &AppState) -> Resul
             }
         }
         if let Some(metadata) = map.get("metadata") {
-            if serde_json::to_vec(metadata).map_or(true, |v| v.len() > MAX_METADATA_BYTES) {
-                return Err(ApiError::bad(format!(
-                    "metadata exceeds {MAX_METADATA_BYTES} bytes"
-                )));
-            }
+            check_metadata_size(metadata)?;
         }
         map.get("embedding")
             .map_or(Ok(()), |v| vector(v, "embedding"))
@@ -125,21 +120,10 @@ async fn run(op: &'static str, scope: Scope, state: Arc<AppState>, req: Request)
         };
         validate_memory_request(op, &request, state)?;
         let core = state.core(tenant)?;
-        let quota = state.cfg.max_documents_per_tenant;
-        if op == "remember" && quota > 0 {
-            let fresh = new_facts(&request, |id| core.has_document(id));
-            if core.document_count() as u64 + fresh > quota {
-                state
-                    .metrics
-                    .quota_rejections
-                    .fetch_add(1, Ordering::Relaxed);
-                return Err(ApiError::new(
-                    StatusCode::TOO_MANY_REQUESTS,
-                    "quota_exceeded",
-                    format!("tenant document quota of {quota} would be exceeded"),
-                )
-                .retry_after(60));
-            }
+        if op == "remember" {
+            enforce_quota(state, &core, || {
+                new_facts(&request, |id| core.has_document(id))
+            })?;
         }
         let response = core.memory().call(op, request).map_err(memory_error)?;
         if scope == Scope::Write {

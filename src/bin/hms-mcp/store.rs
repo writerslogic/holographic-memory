@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! `MemoryBackend` over the HMS document store: one engine store per namespace.
+//! The memory backend over the HMS document store: one engine store per namespace.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -13,8 +13,8 @@ use parking_lot::Mutex;
 use serde_json::{json, Map, Value};
 
 use crate::memory::{
-    Fail, ForgetOut, ForgetReq, Hit, Limits, ListReq, Memory, MemoryBackend, Page, RememberOut,
-    RememberReq, Res, SearchReq, RESERVED,
+    Fail, ForgetOut, ForgetReq, Hit, Limits, ListReq, Memory, Page, RememberOut, RememberReq, Res,
+    SearchReq, RESERVED,
 };
 
 const K_CREATED: &str = "hms.created";
@@ -287,10 +287,8 @@ impl HmsBackend {
             }
         }
     }
-}
 
-impl MemoryBackend for HmsBackend {
-    fn remember(&self, namespace: &str, req: RememberReq) -> Res<RememberOut> {
+    pub fn remember(&self, namespace: &str, req: RememberReq) -> Res<RememberOut> {
         let store = self.store(namespace)?;
         let id = req.id.clone().unwrap_or_else(generated_id);
         let _write = store.gate.lock();
@@ -366,12 +364,12 @@ impl MemoryBackend for HmsBackend {
         })
     }
 
-    fn get(&self, namespace: &str, id: &str) -> Res<Option<Memory>> {
+    pub fn get(&self, namespace: &str, id: &str) -> Res<Option<Memory>> {
         let store = self.store(namespace)?;
         Ok(store.core.get_document(id).map(|r| record_memory(&r)))
     }
 
-    fn search(&self, namespace: &str, req: SearchReq) -> Res<Vec<Hit>> {
+    pub fn search(&self, namespace: &str, req: SearchReq) -> Res<Vec<Hit>> {
         let store = self.store(namespace)?;
         let filter = tag_filter(&req.tags, &req.filter);
         let options = SearchOptions {
@@ -402,7 +400,7 @@ impl MemoryBackend for HmsBackend {
             .collect())
     }
 
-    fn list(&self, namespace: &str, req: ListReq) -> Res<Page> {
+    pub fn list(&self, namespace: &str, req: ListReq) -> Res<Page> {
         let store = self.store(namespace)?;
         let tag_key = req.tag.as_ref().map(|t| format!("{TAG_PREFIX}{t}"));
         let prefix = req.prefix.as_deref().unwrap_or("");
@@ -450,7 +448,7 @@ impl MemoryBackend for HmsBackend {
         }
     }
 
-    fn forget(&self, namespace: &str, req: ForgetReq) -> Res<ForgetOut> {
+    pub fn forget(&self, namespace: &str, req: ForgetReq) -> Res<ForgetOut> {
         let store = self.store(namespace)?;
         let _write = store.gate.lock();
         let mut ids = req.ids.clone();
@@ -491,7 +489,7 @@ impl MemoryBackend for HmsBackend {
         Ok(ForgetOut { deleted, missing })
     }
 
-    fn stats(&self, namespace: &str) -> Res<Value> {
+    pub fn stats(&self, namespace: &str) -> Res<Value> {
         let store = self.store(namespace)?;
         let security = store.core.security_status();
         Ok(json!({
