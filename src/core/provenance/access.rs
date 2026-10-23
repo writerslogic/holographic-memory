@@ -76,7 +76,7 @@ pub fn issue_access_credential(
         vc::parse_iso8601_utc(until)?;
     }
     let nonce: [u8; 16] = rand::random();
-    let id: String = nonce.iter().map(|b| format!("{b:02x}")).collect();
+    let id = super::hex_encode(&nonce);
 
     let mut credential = AccessCredential {
         context: vec![
@@ -86,7 +86,7 @@ pub fn issue_access_credential(
         credential_type: vec![VC_TYPE.to_string(), ACCESS_CREDENTIAL_TYPE.to_string()],
         id: format!("urn:hms:access:{id}"),
         issuer: did_key_from_ed25519(&signing_key.verifying_key().to_bytes()),
-        valid_from: vc::chrono_iso8601_now(),
+        valid_from: vc::iso8601_now(),
         valid_until: valid_until.map(str::to_string),
         credential_subject: AccessSubject {
             id: subject_did.to_string(),

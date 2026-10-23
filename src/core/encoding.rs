@@ -423,7 +423,7 @@ fn encode_cached(
     let words: Vec<&str> = text.split_whitespace().collect();
     let mut level_bundles: Vec<EntangledHVec> = Vec::with_capacity(CHAR_NGRAM_SIZES.len() + 2);
 
-    // --- Character n-grams at multiple scales ---
+    // Character n-grams at multiple scales.
     for &n in &CHAR_NGRAM_SIZES {
         let windows = match state.chars.len().checked_sub(n) {
             Some(rest) => rest + 1,
@@ -443,7 +443,7 @@ fn encode_cached(
 
     let d = dim as u32;
 
-    // --- Word-level encoding with positional binding ---
+    // Word-level encoding with positional binding.
     if !words.is_empty() {
         state.flat.clear();
         for (pos, word) in words.iter().enumerate() {
@@ -463,7 +463,7 @@ fn encode_cached(
         level_bundles.push(state.bundle_flat(words.len(), encoder));
     }
 
-    // --- Word bigrams for phrase structure ---
+    // Word bigrams for phrase structure.
     if words.len() >= 2 {
         state.flat.clear();
         for (pos, pair) in words.windows(2).enumerate() {
@@ -519,7 +519,7 @@ fn encode_reference(text: &str, dim: usize, encoder: TextEncoder) -> EntangledHV
     // This prevents any single level from dominating majority-vote thresholds.
     let mut level_bundles: Vec<EntangledHVec> = Vec::new();
 
-    // --- Character n-grams at multiple scales ---
+    // Character n-grams at multiple scales.
     for &n in &CHAR_NGRAM_SIZES {
         if chars.len() < n {
             continue;
@@ -546,7 +546,7 @@ fn encode_reference(text: &str, dim: usize, encoder: TextEncoder) -> EntangledHV
         level_bundles.push(encoder.bundle(&ngrams));
     }
 
-    // --- Word-level encoding with positional binding ---
+    // Word-level encoding with positional binding.
     if !words.is_empty() {
         let word_vecs: Vec<EntangledHVec> = words
             .iter()
@@ -559,7 +559,7 @@ fn encode_reference(text: &str, dim: usize, encoder: TextEncoder) -> EntangledHV
         level_bundles.push(encoder.bundle(&word_vecs));
     }
 
-    // --- Word bigrams for phrase structure ---
+    // Word bigrams for phrase structure.
     if words.len() >= 2 {
         let phrase_vecs: Vec<EntangledHVec> = words
             .windows(2)
@@ -625,29 +625,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_determinism() {
-        let dim = 16384;
-        let v1 = encode_text_internal("hello world", dim);
-        let v2 = encode_text_internal("hello world", dim);
-        assert!(
-            (v1.similarity(&v2) - 1.0).abs() < f64::EPSILON,
-            "Same input must produce identical vectors"
-        );
-    }
-
-    #[test]
     fn test_empty_input() {
         let v = encode_text_internal("", 16384);
         assert!(v.indices().is_empty());
-    }
-
-    #[test]
-    fn test_single_char() {
-        let v = encode_text_internal("x", 16384);
-        assert!(
-            !v.indices().is_empty(),
-            "Single char should produce a vector"
-        );
     }
 
     #[test]
@@ -701,7 +681,7 @@ mod tests {
     #[test]
     fn test_multi_scale_captures_short_text() {
         let dim = 16384;
-        // Two-character text should still produce a meaningful vector
+        assert!(!encode_text_internal("x", dim).indices().is_empty());
         let v = encode_text_internal("hi", dim);
         assert!(!v.indices().is_empty());
         // Should be similar to "his" (shared bigram "hi")

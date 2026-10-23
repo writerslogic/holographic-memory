@@ -59,7 +59,7 @@ impl Index {
         for (entity, ids) in &self.by_entity {
             out.extend(ids.iter().map(|id| format!("entity {entity} {id}")));
         }
-        out.sort();
+        out.sort_unstable();
         out
     }
 

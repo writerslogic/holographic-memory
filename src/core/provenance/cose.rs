@@ -115,12 +115,16 @@ mod tests {
     }
 
     #[test]
-    fn tampered_payload_rejected() {
+    fn wrong_key_or_tampered_payload_is_rejected() {
         let key = test_keypair();
         let envelope = sign_payload(&key, b"original").unwrap();
-
         let wrong_key = test_keypair();
         assert!(verify_and_extract(&wrong_key.verifying_key(), &envelope).is_err());
+
+        let mut sign1 = CoseSign1::from_slice(&envelope).unwrap();
+        sign1.payload = Some(b"tampered".to_vec());
+        let tampered = sign1.to_vec().unwrap();
+        assert!(verify_and_extract(&key.verifying_key(), &tampered).is_err());
     }
 
     #[test]

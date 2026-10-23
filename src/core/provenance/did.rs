@@ -29,15 +29,16 @@ pub fn ed25519_from_did_key(did: &str) -> Result<[u8; 32]> {
         .ok_or_else(|| anyhow!("not a did:key URI"))?;
     let (_, decoded) =
         multibase::decode(multibase_part).map_err(|e| anyhow!("multibase decode failed: {e}"))?;
-    if decoded.len() != 34
-        || decoded[0] != ED25519_MULTICODEC[0]
-        || decoded[1] != ED25519_MULTICODEC[1]
-    {
-        return Err(anyhow!("not an Ed25519 did:key (wrong prefix or length)"));
-    }
-    let mut key = [0u8; 32];
-    key.copy_from_slice(&decoded[2..34]);
-    Ok(key)
+    ed25519_multicodec_key(&decoded)
+        .ok_or_else(|| anyhow!("not an Ed25519 did:key (wrong prefix or length)"))
+}
+
+/// The key inside an Ed25519 multicodec value: the 2-byte prefix followed by exactly 32 bytes.
+fn ed25519_multicodec_key(decoded: &[u8]) -> Option<[u8; 32]> {
+    decoded
+        .strip_prefix(ED25519_MULTICODEC.as_slice())?
+        .try_into()
+        .ok()
 }
 
 /// Build a did:jwk URI from an Ed25519 public key (32 bytes), the inverse of
@@ -166,15 +167,8 @@ pub fn ed25519_from_did_document(doc: &serde_json::Value) -> Result<[u8; 32]> {
         .ok_or_else(|| anyhow!("no publicKeyMultibase in verification method"))?;
     let (_, decoded) =
         multibase::decode(multibase_key).map_err(|e| anyhow!("multibase decode failed: {e}"))?;
-    if decoded.len() != 34
-        || decoded[0] != ED25519_MULTICODEC[0]
-        || decoded[1] != ED25519_MULTICODEC[1]
-    {
-        return Err(anyhow!("not an Ed25519 key (wrong multicodec prefix)"));
-    }
-    let mut key = [0u8; 32];
-    key.copy_from_slice(&decoded[2..34]);
-    Ok(key)
+    ed25519_multicodec_key(&decoded)
+        .ok_or_else(|| anyhow!("not an Ed25519 key (wrong multicodec prefix)"))
 }
 
 #[cfg(test)]
@@ -196,6 +190,28 @@ mod tests {
     }
 
     #[test]
+    fn did_key_accepts_only_a_32_byte_ed25519_multicodec_key() {
+        for (prefix, len, valid) in [
+            (ED25519_MULTICODEC, 31, false),
+            (ED25519_MULTICODEC, 32, true),
+            (ED25519_MULTICODEC, 33, false),
+            ([0xec, 0x01], 32, false),
+        ] {
+            let mut bytes = prefix.to_vec();
+            bytes.extend(std::iter::repeat_n(0xAB, len));
+            let did = format!(
+                "did:key:{}",
+                multibase::encode(multibase::Base::Base58Btc, &bytes)
+            );
+            assert_eq!(
+                ed25519_from_did_key(&did).is_ok(),
+                valid,
+                "prefix {prefix:?}, key length {len}"
+            );
+        }
+    }
+
+    #[test]
     fn did_jwk_from_ed25519_roundtrips() {
         let pk = [0x42u8; 32];
         let did = did_jwk_from_ed25519(&pk);
@@ -214,27 +230,31 @@ mod tests {
     }
 
     #[test]
-    fn did_web_simple() {
-        let did = did_web_from_domain("example.com", None);
-        assert_eq!(did, "did:web:example.com");
-        let url = did_web_to_url(&did).unwrap();
-        assert_eq!(url, "https://example.com/.well-known/did.json");
-    }
-
-    #[test]
-    fn did_web_with_path() {
-        let did = did_web_from_domain("example.com", Some(&["users", "alice"]));
-        assert_eq!(did, "did:web:example.com:users:alice");
-        let url = did_web_to_url(&did).unwrap();
-        assert_eq!(url, "https://example.com/users/alice/did.json");
-    }
-
-    #[test]
-    fn did_web_with_port() {
-        let did = did_web_from_domain("localhost%3A8080", None);
-        assert_eq!(did, "did:web:localhost%3A8080");
-        let url = did_web_to_url(&did).unwrap();
-        assert_eq!(url, "https://localhost:8080/.well-known/did.json");
+    fn did_web_maps_domain_path_and_port_to_its_document_url() {
+        let users_alice: &[&str] = &["users", "alice"];
+        for (domain, path, did, url) in [
+            (
+                "example.com",
+                None,
+                "did:web:example.com",
+                "https://example.com/.well-known/did.json",
+            ),
+            (
+                "example.com",
+                Some(users_alice),
+                "did:web:example.com:users:alice",
+                "https://example.com/users/alice/did.json",
+            ),
+            (
+                "localhost%3A8080",
+                None,
+                "did:web:localhost%3A8080",
+                "https://localhost:8080/.well-known/did.json",
+            ),
+        ] {
+            assert_eq!(did_web_from_domain(domain, path), did);
+            assert_eq!(did_web_to_url(did).unwrap(), url, "{did}");
+        }
     }
 
     #[test]

@@ -236,6 +236,23 @@ pub struct Sha256Mismatch {
     pub actual: String,
 }
 
+/// Little-endian `f32` words; a trailing partial word is ignored.
+pub(super) fn f32s_le(raw: &[u8]) -> Vec<f32> {
+    raw.as_chunks::<4>()
+        .0
+        .iter()
+        .map(|&b| f32::from_le_bytes(b))
+        .collect()
+}
+
+/// Little-endian `u16` words; a trailing partial word is ignored.
+fn u16s_le(raw: &[u8]) -> impl Iterator<Item = u16> + '_ {
+    raw.as_chunks::<2>()
+        .0
+        .iter()
+        .map(|&b| u16::from_le_bytes(b))
+}
+
 pub fn sha256_hex(bytes: &[u8]) -> String {
     hex(&Sha256::digest(bytes))
 }
@@ -245,6 +262,7 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes
         .iter()
         .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
+            // Writing to a String cannot fail.
             let _ = write!(s, "{b:02x}");
             s
         })
@@ -266,13 +284,13 @@ pub fn sha256_file(path: &Path) -> Result<String> {
 }
 
 /// Hashes everything it reads so the digest always covers exactly the bytes that were parsed.
-struct Tee<R: Read> {
-    inner: R,
+struct Tee {
+    inner: std::io::BufReader<std::fs::File>,
     hash: Sha256,
     read: u64,
 }
 
-impl<R: Read> Tee<R> {
+impl Tee {
     fn exact(&mut self, len: u64, what: &str) -> Result<Vec<u8>> {
         let len = usize::try_from(len).context("section too large")?;
         let mut v = vec![0u8; len];
@@ -361,31 +379,14 @@ pub(crate) fn read(path: &Path, expected_sha256: Option<&str>) -> Result<Loaded>
         );
         let raw = t.exact(e.len, &e.name)?;
         let tensor = match e.dtype.as_str() {
-            "f32" => Tensor::F32(
-                raw.as_chunks::<4>()
-                    .0
-                    .iter()
-                    .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-                    .collect(),
-            ),
-            "f16" => Tensor::F16(
-                raw.as_chunks::<2>()
-                    .0
-                    .iter()
-                    .map(|b| u16::from_le_bytes([b[0], b[1]]))
-                    .collect(),
-            ),
+            "f32" => Tensor::F32(f32s_le(&raw)),
+            "f16" => Tensor::F16(u16s_le(&raw).collect()),
             _ => {
                 let (q, s) = raw.split_at(data as usize);
                 Tensor::I8 {
                     group: e.group,
                     q: q.to_vec(),
-                    scale: s
-                        .as_chunks::<4>()
-                        .0
-                        .iter()
-                        .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-                        .collect(),
+                    scale: f32s_le(s),
                 }
             }
         };
@@ -430,10 +431,9 @@ pub(crate) struct Source {
     pub(crate) matrix: bool,
 }
 
-fn quantize_i8(values: &[f32], rows: usize, group: usize) -> (Vec<u8>, Vec<f32>) {
+fn quantize_i8(values: &[f32], group: usize) -> (Vec<u8>, Vec<f32>) {
     let mut q = Vec::with_capacity(values.len());
     let mut scales = Vec::with_capacity(values.len() / group);
-    let _ = rows;
     for g in values.chunks_exact(group) {
         let max = g.iter().fold(0f32, |m, v| m.max(v.abs()));
         let scale = if max > 0.0 { max / 127.0 } else { 1.0 };
@@ -481,7 +481,7 @@ pub(crate) fn build(
                 } else {
                     cols
                 };
-                let (q, scales) = quantize_i8(&s.values, s.shape[0], group);
+                let (q, scales) = quantize_i8(&s.values, group);
                 let mut b = q;
                 for sc in scales {
                     b.extend_from_slice(&sc.to_le_bytes());
@@ -533,8 +533,11 @@ pub(crate) fn build(
 /// Reads a safetensors file as f32 tensors by name (F32, F16 and BF16 are accepted).
 pub(crate) fn read_safetensors(path: &Path) -> Result<NamedTensors> {
     let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
-    ensure!(bytes.len() >= 8, "safetensors file is too short");
-    let hl = u64::from_le_bytes(bytes[..8].try_into().expect("8 bytes")) as usize;
+    let Some(header_len) = bytes.first_chunk::<8>() else {
+        bail!("safetensors file is too short");
+    };
+    // A length past `usize` fails the bound below instead of wrapping into it.
+    let hl = usize::try_from(u64::from_le_bytes(*header_len)).unwrap_or(usize::MAX);
     ensure!(
         hl <= bytes.len() - 8 && hl <= 100 << 20,
         "safetensors header length is invalid"
@@ -568,23 +571,10 @@ pub(crate) fn read_safetensors(path: &Path) -> Result<NamedTensors> {
         );
         let raw = &bytes[base + a..base + b];
         let values: Vec<f32> = match dtype {
-            "F32" => raw
-                .as_chunks::<4>()
-                .0
-                .iter()
-                .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-                .collect(),
-            "F16" => raw
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|c| f16_to_f32(u16::from_le_bytes([c[0], c[1]])))
-                .collect(),
-            "BF16" => raw
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|c| f32::from_bits(u32::from(u16::from_le_bytes([c[0], c[1]])) << 16))
+            "F32" => f32s_le(raw),
+            "F16" => u16s_le(raw).map(f16_to_f32).collect(),
+            "BF16" => u16s_le(raw)
+                .map(|h| f32::from_bits(u32::from(h) << 16))
                 .collect(),
             // Index buffers such as position_ids carry no weights.
             "I64" | "I32" | "U8" | "BOOL" => continue,

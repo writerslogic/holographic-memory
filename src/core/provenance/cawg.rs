@@ -7,6 +7,7 @@ use ed25519_dalek::{Signer, SigningKey};
 use serde::{Deserialize, Serialize};
 
 use super::did;
+use super::vc::iso8601_now;
 
 /// A hashed URI reference to a C2PA assertion.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -23,7 +24,7 @@ pub fn hash_assertion(label: &str, content: &[u8]) -> HashedUri {
     HashedUri {
         url: format!("self#jumbf=c2pa.assertions/{label}"),
         alg: "sha256".to_string(),
-        hash: hash.iter().map(|b| format!("{b:02x}")).collect(),
+        hash: super::hex_encode(&hash),
     }
 }
 
@@ -163,32 +164,6 @@ fn sign_cose_vc(signing_key: &SigningKey, payload: &[u8]) -> Result<Vec<u8>> {
     sign1
         .to_tagged_vec()
         .map_err(|e| anyhow::anyhow!("COSE_Sign1 tagged serialization failed: {e}"))
-}
-
-/// Current UTC time as an RFC 3339 / ISO 8601 `validFrom` timestamp.
-fn iso8601_now() -> String {
-    let dur = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default();
-    let secs = dur.as_secs();
-    let days = secs / 86400;
-    let rem = secs % 86400;
-    let z = days + 719468;
-    let era = z / 146097;
-    let doe = z - era * 146097;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let year = if m <= 2 { y + 1 } else { y };
-    format!(
-        "{year:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z",
-        rem / 3600,
-        (rem % 3600) / 60,
-        rem % 60
-    )
 }
 
 /// Verify a CAWG Identity Claims Aggregation (ICA) identity assertion from its raw CBOR

@@ -46,7 +46,6 @@ impl EntangledHVec {
 
         let per_group = active_count / NUM_ENTANGLEMENTS;
         if per_group > 0 {
-            // Standard entangled generation with groups
             for e in 0..NUM_ENTANGLEMENTS {
                 let group_seed = hash_u64(seed, e as u64);
                 for p in 0..per_group {
@@ -55,7 +54,7 @@ impl EntangledHVec {
                 }
             }
         } else {
-            // Fallback for small dims: generate active_count indices directly
+            // Too few active indices to give every group one.
             for p in 0..active_count {
                 let idx = hash_u64(seed, p as u64) % dim as u64;
                 indices.push(idx as u32);
@@ -65,21 +64,7 @@ impl EntangledHVec {
         indices.sort_unstable();
         indices.dedup();
 
-        // Birthday collision backfill: if collisions reduced count, fill remaining
-        // slots deterministically until we reach exactly active_count.
-        let max_backfill_attempts = active_count * 10;
-        let mut backfill_counter = 0u64;
-        while indices.len() < active_count {
-            if backfill_counter as usize >= max_backfill_attempts {
-                break;
-            }
-            let idx = (hash_u64(seed.wrapping_add(0xDEAD), backfill_counter) % dim as u64) as u32;
-            backfill_counter += 1;
-            if indices.binary_search(&idx).is_err() {
-                let pos = indices.partition_point(|&x| x < idx);
-                indices.insert(pos, idx);
-            }
-        }
+        backfill_collisions(&mut indices, active_count, dim, seed);
 
         Self { dim, indices }
     }
@@ -96,18 +81,7 @@ impl EntangledHVec {
         indices.sort_unstable();
         indices.dedup();
 
-        let mut backfill_counter = 0u64;
-        while indices.len() < active_count {
-            if backfill_counter as usize >= active_count * 10 {
-                break;
-            }
-            let idx = (hash_u64(seed.wrapping_add(0xDEAD), backfill_counter) % dim as u64) as u32;
-            backfill_counter += 1;
-            if indices.binary_search(&idx).is_err() {
-                let pos = indices.partition_point(|&x| x < idx);
-                indices.insert(pos, idx);
-            }
-        }
+        backfill_collisions(&mut indices, active_count, dim, seed);
 
         Self { dim, indices }
     }
@@ -137,12 +111,9 @@ impl EntangledHVec {
             };
         }
 
-        // Compute random projection dot products.
-        // Achlioptas (2003) sparse ternary projection:
-        // P(+1) = P(-1) = 1/6, P(0) = 2/3.
-        // Preserves JL distances with 3x fewer multiplications.
-        // Uses FxHash per (dim, input_pos) pair for deterministic ternary values
-        // instead of StdRng per dimension (avoids target_dim RNG inits).
+        // Achlioptas (2003) sparse ternary projection: P(+1) = P(-1) = 1/6, P(0) = 2/3,
+        // which preserves JL distances with 3x fewer multiplications. Each ternary value is
+        // `hash_u64(output dimension, input position)`, so no RNG is seeded per dimension.
         //
         // The hash pass is branchless: surviving terms are compacted into
         // `terms` (hash outcomes are unpredictable, so branching mispredicts),
@@ -170,7 +141,6 @@ impl EntangledHVec {
             })
             .collect();
 
-        // Select top active_count by magnitude
         if projections.len() > active_count {
             projections.select_nth_unstable_by(active_count - 1, |a, b| {
                 b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
@@ -205,29 +175,23 @@ impl EntangledHVec {
         };
         let active_count = (target_dim / DEFAULT_RHO_DENOM).max(1);
 
-        // Map normalized value to a starting offset in the index space.
-        // We use (target_dim - active_count) possible start positions.
         let max_offset = (target_dim - active_count) as f64;
         let start_offset = (normalized * max_offset).round() as usize;
 
-        // Deterministic permutation for global spread with local overlap monotonicity.
-        // Must be prime so gcd(PERM_PRIME, dim) = 1 for all dim, ensuring a
-        // full-period bijection. (The old golden-ratio constant was divisible by 5,
-        // restricting output to 20% of dimensions for dim % 5 == 0.)
+        // Scatters adjacent window slots across the index space; nearby values still share
+        // most slots, so similarity falls monotonically with distance. A constant divisible
+        // by 5 would confine output to a fifth of the dimensions when `dim % 5 == 0`.
         const PERM_PRIME: u64 = 0x9E3779B97F4A7C55;
 
         let mut indices = Vec::with_capacity(active_count);
         for i in 0..active_count {
             let logical_idx = (start_offset + i) as u64;
-            // Deterministic shuffle: (logical_idx * prime) % target_dim
             let idx = (logical_idx.wrapping_mul(PERM_PRIME) % target_dim as u64) as u32;
             indices.push(idx);
         }
 
         indices.sort_unstable();
-        // PERM_PRIME is prime ⇒ gcd(PERM_PRIME, target_dim)=1 ⇒ mapping is injective.
-        // Dedup is a defensive no-op; no backfill needed (unlike random() where
-        // hash collisions across entanglement groups are possible).
+        // The wrapping product is not guaranteed injective modulo `target_dim`.
         indices.dedup();
 
         Self {
@@ -399,7 +363,6 @@ impl EntangledHVec {
 
         let target_count = (dim / DEFAULT_RHO_DENOM).max(1);
 
-        // If too many pass threshold, keep top target_count by count
         if selected.len() > target_count {
             selected.select_nth_unstable_by(target_count - 1, |a, b| b.1.cmp(&a.1));
             selected.truncate(target_count);
@@ -550,9 +513,23 @@ fn laplace_sample(rng: &mut impl rand::RngExt, scale: f64) -> f64 {
     -scale * u.signum() * (1.0 - 2.0 * u.abs()).ln()
 }
 
+/// Fills slots lost to birthday collisions with deterministic indices until `indices` holds
+/// `active_count` values, giving up after `10 * active_count` probes. `indices` must be sorted
+/// and deduplicated, and stays so.
+fn backfill_collisions(indices: &mut Vec<u32>, active_count: usize, dim: usize, seed: u64) {
+    let mut counter = 0u64;
+    while indices.len() < active_count && (counter as usize) < active_count * 10 {
+        let idx = (hash_u64(seed.wrapping_add(0xDEAD), counter) % dim as u64) as u32;
+        counter += 1;
+        if let Err(pos) = indices.binary_search(&idx) {
+            indices.insert(pos, idx);
+        }
+    }
+}
+
 /// Splitmix64-based mixer with full avalanche. Two inputs are combined via
 /// wrapping arithmetic then passed through the splitmix64 finalizer.
-/// Replaces FxHasher which has poor avalanche for close seeds.
+/// Close seeds give unrelated outputs (FxHasher's avalanche is too weak for that).
 pub fn hash_u64(a: u64, b: u64) -> u64 {
     let mut z = a.wrapping_mul(0x9E3779B97F4A7C15).wrapping_add(b);
     z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);
@@ -618,17 +595,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_entangled_self_similarity() {
+    fn self_similarity_and_containment_are_one() {
         let v = EntangledHVec::new_deterministic(16384, 42);
         assert!(
             (v.similarity(&v) - 1.0).abs() < 0.0001,
             "Self-similarity should be 1.0"
         );
+        assert!(
+            (v.containment_similarity(&v) - 1.0).abs() < 0.0001,
+            "Self-containment should be 1.0"
+        );
     }
 
     #[test]
     fn test_entangled_random_pair_distance() {
-        // Two random sparse vectors should have near-zero Jaccard overlap
         let a = EntangledHVec::new_deterministic(16384, 1);
         let b = EntangledHVec::new_deterministic(16384, 2);
         let sim = a.similarity(&b);
@@ -654,12 +634,10 @@ mod tests {
     fn test_entangled_bundle_majority() {
         let dim = 16384;
         let base = EntangledHVec::new_deterministic(dim, 100);
-        // Create 5 copies of base + 2 random noise
         let mut vecs = vec![base.clone(); 5];
         vecs.push(EntangledHVec::new_deterministic(dim, 200));
         vecs.push(EntangledHVec::new_deterministic(dim, 300));
         let bundled = EntangledHVec::bundle(&vecs);
-        // Bundled should be most similar to base (majority)
         let sim_base = bundled.similarity(&base);
         let sim_random = bundled.similarity(&EntangledHVec::new_deterministic(dim, 400));
         assert!(
@@ -673,16 +651,8 @@ mod tests {
         let dense: Vec<f32> = (0..128).map(|i| (i as f32 - 64.0) / 64.0).collect();
         let e = EntangledHVec::from_dense(&dense, 10000);
         assert_eq!(e.dim, 10000);
-        // Should have ~dim/256 active indices
         let expected = 10000 / 256;
         assert_eq!(e.indices.len(), expected);
-    }
-
-    #[test]
-    fn test_from_scalar() {
-        let e = EntangledHVec::from_scalar(0.5, 0.0, 1.0, 10000);
-        assert_eq!(e.dim, 10000);
-        assert!(!e.indices.is_empty());
     }
 
     #[test]
@@ -719,7 +689,6 @@ mod tests {
         let noise = EntangledHVec::new_deterministic(dim, 200);
         let vecs = vec![base.clone(), base.clone(), base.clone(), noise];
         let det = EntangledHVec::bundle(&vecs);
-        // Run multiple low-epsilon bundles and check they differ from deterministic
         let mut diffs = 0;
         for _ in 0..5 {
             let dp = EntangledHVec::bundle_dp(&vecs, 0.1);
@@ -757,15 +726,6 @@ mod tests {
     }
 
     #[test]
-    fn test_containment_self() {
-        let v = EntangledHVec::new_deterministic(16384, 42);
-        assert!(
-            (v.containment_similarity(&v) - 1.0).abs() < 0.0001,
-            "Self-containment should be 1.0"
-        );
-    }
-
-    #[test]
     fn test_bind_ordered_non_commutative() {
         let a = EntangledHVec::new_deterministic(16384, 1);
         let b = EntangledHVec::new_deterministic(16384, 2);
@@ -794,9 +754,10 @@ mod tests {
         let dim = 16384;
         let base_val = 0.5;
         let v_base = EntangledHVec::from_scalar(base_val, 0.0, 1.0, dim);
+        assert_eq!(v_base.dim, dim);
+        assert!(!v_base.indices.is_empty());
 
         let mut prev_sim = 1.0;
-        // Check points moving away from 0.5
         for i in 1..20 {
             let offset = i as f64 * 0.02;
             let v_curr = EntangledHVec::from_scalar(base_val + offset, 0.0, 1.0, dim);

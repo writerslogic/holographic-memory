@@ -229,12 +229,7 @@ impl SemanticIndex {
             data.len() == n * header.dimensions * 4,
             "index vector data has the wrong size"
         );
-        let vectors: Vec<f32> = data
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-            .collect();
+        let vectors = super::pack::f32s_le(data);
         ensure!(
             vectors.iter().all(|v| v.is_finite()),
             "index contains non-finite values"

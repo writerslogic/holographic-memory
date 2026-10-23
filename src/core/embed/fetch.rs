@@ -53,6 +53,7 @@ pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
     std::fs::create_dir_all(cache)
         .with_context(|| format!("create cache directory {}", cache.display()))?;
     let work = cache.join(format!(".fetch-{}-{}", spec.id, std::process::id()));
+    // A leftover of an interrupted fetch; usually there is none to remove.
     let _ = std::fs::remove_dir_all(&work);
     std::fs::create_dir_all(&work)?;
     let result = (|| -> Result<PathBuf> {
@@ -84,6 +85,7 @@ pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
         std::fs::rename(&tmp, &dest).with_context(|| format!("install {}", dest.display()))?;
         Ok(dest)
     })();
+    // Best effort: the fetch outcome matters more than removing its scratch directory.
     let _ = std::fs::remove_dir_all(&work);
     result
 }

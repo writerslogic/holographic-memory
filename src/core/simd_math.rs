@@ -21,7 +21,6 @@ unsafe fn avx2_intersection_count(a: &[u32], b: &[u32]) -> usize {
     let mut i = 0;
     let mut j = 0;
 
-    // Process blocks of 8 u32s
     while i + 8 <= a.len() && j + 8 <= b.len() {
         let max_a = a[i + 7];
         let max_b = b[j + 7];
@@ -50,7 +49,6 @@ unsafe fn avx2_intersection_count(a: &[u32], b: &[u32]) -> usize {
         }
     }
 
-    // Tail scalar loop
     while i < a.len() && j < b.len() {
         if a[i] < b[j] {
             i += 1;
@@ -80,7 +78,7 @@ mod tests {
         for (dim, seed) in [(2048usize, 1u64), (16384, 2), (65536, 3)] {
             let a = EntangledHVec::new_deterministic(dim, seed);
             let b = EntangledHVec::new_deterministic(dim, seed + 100);
-            let union = EntangledHVec::bundle(&[a.clone(), b.clone()]);
+            let union = EntangledHVec::bundle(&[&a, &b]);
             let dense = EntangledHVec::new_with_density(dim, 8, seed);
             for (x, y) in [
                 (&a, &b),

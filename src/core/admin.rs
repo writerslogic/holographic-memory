@@ -412,6 +412,7 @@ pub fn migrate_store(
         })
     })();
     if result.is_err() && temp.exists() {
+        // Best effort: the migration error is what the caller needs, not a cleanup failure.
         let _ = std::fs::remove_dir_all(&temp);
     }
     result

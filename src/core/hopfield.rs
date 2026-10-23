@@ -61,24 +61,15 @@ pub fn hopfield_query(
         return Vec::new();
     }
 
-    // Step 1: Compute similarity scores (Jaccard similarity scaled by β)
-    // Using Jaccard instead of raw intersection count because multi-scale
-    // encoding produces variable-density vectors; raw counts bias toward denser vectors.
+    // Jaccard rather than raw overlap: multi-scale encoding produces vectors of varying
+    // density, and raw counts favour the denser ones.
     let scores: Vec<f64> = patterns
         .iter()
         .map(|(_, pat)| config.beta * query.similarity(pat))
         .collect();
 
-    // Step 2: Apply entmax transformation
-    let weights = if config.alpha <= 1.0 + f64::EPSILON {
-        softmax(&scores)
-    } else if (config.alpha - 1.5).abs() < f64::EPSILON {
-        entmax_15(&scores)
-    } else {
-        sparsemax(&scores)
-    };
+    let weights = entmax(&scores, config.alpha);
 
-    // Step 3: Collect non-zero weights as retrieval results
     let mut results: Vec<RetrievalResult> = weights
         .iter()
         .enumerate()
@@ -120,13 +111,7 @@ pub fn hopfield_query_iterative(
             .map(|(_, pat)| config.beta * current_query.similarity(pat))
             .collect();
 
-        let weights = if config.alpha <= 1.0 + f64::EPSILON {
-            softmax(&scores)
-        } else if (config.alpha - 1.5).abs() < f64::EPSILON {
-            entmax_15(&scores)
-        } else {
-            sparsemax(&scores)
-        };
+        let weights = entmax(&scores, config.alpha);
 
         // Reconstruct query as weighted bundle of attended patterns
         current_query = weighted_reconstruct(patterns, &weights, query.dim);
@@ -136,6 +121,17 @@ pub fn hopfield_query_iterative(
     }
 
     hopfield_query(&current_query, patterns, config, max_results)
+}
+
+/// α-entmax over `scores`: softmax for α ≤ 1, 1.5-entmax for α = 1.5, sparsemax otherwise.
+fn entmax(scores: &[f64], alpha: f64) -> Vec<f64> {
+    if alpha <= 1.0 + f64::EPSILON {
+        softmax(scores)
+    } else if (alpha - 1.5).abs() < f64::EPSILON {
+        entmax_15(scores)
+    } else {
+        sparsemax(scores)
+    }
 }
 
 /// Sparsemax transformation (α=2 entmax).
@@ -157,7 +153,6 @@ fn sparsemax(scores: &[f64]) -> Vec<f64> {
         return vec![1.0];
     }
 
-    // Sort indices by score descending
     let mut sorted_indices: Vec<usize> = (0..n).collect();
     sorted_indices.sort_unstable_by(|&a, &b| {
         scores[b]
@@ -184,7 +179,6 @@ fn sparsemax(scores: &[f64]) -> Vec<f64> {
         return vec![uniform; n];
     }
 
-    // Recompute cumsum for the support
     let tau_sum: f64 = sorted_indices[..support_size]
         .iter()
         .map(|&i| scores[i])
@@ -216,7 +210,6 @@ fn entmax_15(scores: &[f64]) -> Vec<f64> {
     let mut lo = max_score - 1.0;
     let mut hi = max_score;
 
-    // Expand bounds if needed
     while sum_clipped_sq(scores, lo) < 1.0 {
         lo -= 1.0;
     }
@@ -301,66 +294,46 @@ mod tests {
         EntangledHVec::new_deterministic(dim, seed)
     }
 
-    #[test]
-    fn test_sparsemax_single() {
-        let result = sparsemax(&[5.0]);
-        assert_eq!(result.len(), 1);
-        assert!((result[0] - 1.0).abs() < 1e-10);
-    }
+    type Transform = fn(&[f64]) -> Vec<f64>;
+    const TRANSFORMS: [(&str, Transform); 3] = [
+        ("softmax", softmax),
+        ("entmax_15", entmax_15),
+        ("sparsemax", sparsemax),
+    ];
 
     #[test]
-    fn test_sparsemax_sparsity() {
-        // One dominant score should suppress others
-        let result = sparsemax(&[10.0, 1.0, 1.0, 1.0]);
-        assert!(result[0] > 0.9, "Dominant score should get most weight");
-        let nonzero = result.iter().filter(|&&w| w > 1e-10).count();
-        assert!(nonzero < 4, "Sparsemax should produce zeros");
-    }
-
-    #[test]
-    fn test_sparsemax_uniform() {
-        // Equal scores → equal weights
-        let result = sparsemax(&[3.0, 3.0, 3.0]);
-        for &w in &result {
-            assert!(
-                (w - 1.0 / 3.0).abs() < 1e-10,
-                "Equal scores should give uniform weights"
-            );
+    fn entmax_family_outputs_probability_distributions() {
+        let inputs: [&[f64]; 4] = [
+            &[5.0],
+            &[3.0, 3.0, 3.0],
+            &[10.0, 1.0, 1.0, 1.0],
+            &[5.0, 3.0, 1.0, 0.5, 0.1],
+        ];
+        for (name, transform) in TRANSFORMS {
+            for scores in inputs {
+                let weights = transform(scores);
+                assert_eq!(weights.len(), scores.len(), "{name} {scores:?}");
+                assert!(weights.iter().all(|&w| w >= 0.0), "{name} {scores:?}");
+                let sum: f64 = weights.iter().sum();
+                assert!((sum - 1.0).abs() < 1e-6, "{name} {scores:?} sums to {sum}");
+                if scores.windows(2).all(|pair| pair[0] == pair[1]) {
+                    let uniform = 1.0 / scores.len() as f64;
+                    assert!(
+                        weights.iter().all(|&w| (w - uniform).abs() < 1e-6),
+                        "{name} {scores:?} is not uniform: {weights:?}"
+                    );
+                }
+            }
         }
     }
 
     #[test]
-    fn test_sparsemax_sums_to_one() {
-        let result = sparsemax(&[5.0, 3.0, 1.0, 0.5, 0.1]);
-        let sum: f64 = result.iter().sum();
-        assert!(
-            (sum - 1.0).abs() < 1e-8,
-            "Sparsemax output should sum to 1, got {}",
-            sum
-        );
-    }
-
-    #[test]
-    fn test_entmax_15_sparsity() {
-        let result = entmax_15(&[10.0, 1.0, 1.0, 1.0]);
-        let nonzero = result.iter().filter(|&&w| w > 1e-10).count();
-        assert!(nonzero <= 3, "1.5-entmax should produce some zeros");
-        let sum: f64 = result.iter().sum();
-        assert!(
-            (sum - 1.0).abs() < 1e-6,
-            "1.5-entmax should sum to 1, got {}",
-            sum
-        );
-    }
-
-    #[test]
-    fn test_softmax_no_zeros() {
-        let result = softmax(&[10.0, 1.0, 1.0, 1.0]);
-        for &w in &result {
-            assert!(w > 0.0, "Softmax should never produce exact zeros");
+    fn only_softmax_keeps_dominated_scores_nonzero() {
+        let scores = [10.0, 1.0, 1.0, 1.0];
+        for ((name, transform), expected_support) in TRANSFORMS.into_iter().zip([4, 1, 1]) {
+            let support = transform(&scores).iter().filter(|&&w| w > 1e-10).count();
+            assert_eq!(support, expected_support, "{name}");
         }
-        let sum: f64 = result.iter().sum();
-        assert!((sum - 1.0).abs() < 1e-10);
     }
 
     #[test]
@@ -382,12 +355,10 @@ mod tests {
             max_iter: 1,
         };
 
-        // Query with p1 itself should retrieve p1 with highest weight
         let results = hopfield_query(&p1, &patterns, &config, 10);
         assert!(!results.is_empty(), "Should retrieve at least one pattern");
         assert_eq!(results[0].id, "p1", "Should retrieve the exact pattern");
 
-        // Query with p2 should retrieve p2
         let results = hopfield_query(&p2, &patterns, &config, 10);
         assert!(!results.is_empty());
         assert_eq!(results[0].id, "p2");
@@ -409,7 +380,6 @@ mod tests {
         let query = patterns[5].1.clone();
         let results = hopfield_query(&query, &patterns, &config, 20);
 
-        // Sparsemax should produce far fewer than 20 results
         assert!(
             results.len() < 10,
             "Sparsemax should produce sparse output, got {} results",
@@ -423,7 +393,6 @@ mod tests {
         let p1 = make_pattern(dim, 100);
         let p2 = make_pattern(dim, 200);
 
-        // Create a noisy query (bind p1 with random noise)
         let noise = make_pattern(dim, 999);
         let noisy_query = p1.bind(&noise);
 
@@ -436,7 +405,6 @@ mod tests {
         };
 
         let results = hopfield_query_iterative(&noisy_query, &patterns, &config, 10);
-        // Should still be able to retrieve something
-        assert!(!results.is_empty(), "Iterative query should return results");
+        assert_eq!(results[0].id, "p1");
     }
 }

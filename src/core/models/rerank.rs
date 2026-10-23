@@ -32,6 +32,7 @@ impl Reranker {
         let l = load(source, device, super::dtype_for(device, false))?;
         let mut tokenizer = l.tokenizer;
         tokenizer.with_padding(None);
+        // Only invalid truncation parameters are rejected; disabling it cannot fail.
         let _ = tokenizer.with_truncation(None);
         let prefix = encode(&tokenizer, prompts::RERANK_PREFIX, false)?;
         let suffix = encode(&tokenizer, prompts::RERANK_SUFFIX, false)?;

@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::did::did_key_from_ed25519;
+use super::hex_encode;
 
 /// A W3C Verifiable Credential Data Model 2.0 credential wrapping an HMS fact.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -75,7 +76,7 @@ pub fn create_fact_credential(
     triple: Option<(&str, &str, &str)>,
     status_index: u64,
 ) -> FactCredential {
-    let timestamp = chrono_iso8601_now();
+    let timestamp = iso8601_now();
     let hash_hex = hex_encode(content_hash);
 
     let mut subject = FactSubject {
@@ -154,7 +155,7 @@ pub(crate) fn sign_document<T: Serialize>(
     unsigned: &T,
 ) -> Result<DataIntegrityProof> {
     let issuer_did = did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
-    let created = chrono_iso8601_now();
+    let created = iso8601_now();
     let verification_method = format!("{issuer_did}#key-0");
     let proof_options = serde_json::json!({
         "type": PROOF_TYPE,
@@ -295,7 +296,8 @@ pub(crate) fn parse_iso8601_utc(value: &str) -> Result<u64> {
     Ok(days * 86400 + hour * 3600 + minute * 60 + second)
 }
 
-pub(crate) fn chrono_iso8601_now() -> String {
+/// Current UTC time as an RFC 3339 / ISO 8601 timestamp with second precision.
+pub(crate) fn iso8601_now() -> String {
     let dur = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default();
@@ -330,22 +332,15 @@ fn simple_uuid() -> String {
     rand::rng().fill_bytes(&mut bytes);
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    let hex = hex_encode(&bytes);
     format!(
-        "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}",
-        u32::from_be_bytes(bytes[0..4].try_into().unwrap()),
-        u16::from_be_bytes(bytes[4..6].try_into().unwrap()),
-        u16::from_be_bytes(bytes[6..8].try_into().unwrap()),
-        u16::from_be_bytes(bytes[8..10].try_into().unwrap()),
-        u64::from_be_bytes({
-            let mut buf = [0u8; 8];
-            buf[2..8].copy_from_slice(&bytes[10..16]);
-            buf
-        }),
+        "{}-{}-{}-{}-{}",
+        &hex[..8],
+        &hex[8..12],
+        &hex[12..16],
+        &hex[16..20],
+        &hex[20..]
     )
-}
-
-fn hex_encode(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 #[cfg(test)]

@@ -410,7 +410,7 @@ mod tests {
     }
 
     #[test]
-    fn test_signing_roundtrip() {
+    fn signature_verifies_only_the_signed_data() {
         let dir = tempdir().unwrap();
         let key_path = dir.path().join("test.key");
         let mgr = SigningManager::new(&key_path).unwrap();
@@ -418,16 +418,6 @@ mod tests {
         let data = b"hello world";
         let sig = mgr.sign(data);
         mgr.verify(data, &sig).unwrap();
-    }
-
-    #[test]
-    fn test_signing_tamper_detection() {
-        let dir = tempdir().unwrap();
-        let key_path = dir.path().join("test.key");
-        let mgr = SigningManager::new(&key_path).unwrap();
-
-        let data = b"hello world";
-        let sig = mgr.sign(data);
         assert!(mgr.verify(b"tampered", &sig).is_err());
     }
 
@@ -482,8 +472,10 @@ mod tests {
             let mgr = EncryptionManager::new("correct", dir.path()).unwrap();
             mgr.encrypt(b"secret").unwrap()
         };
+        let same_salt = EncryptionManager::new("wrong", dir.path()).unwrap();
+        assert!(same_salt.decrypt(&encrypted).is_err());
 
-        // Remove salt so second manager generates fresh key
+        // A fresh salt derives yet another key.
         std::fs::remove_file(dir.path().join("encryption.salt")).unwrap();
         let mgr = EncryptionManager::new("wrong", dir.path()).unwrap();
         assert!(mgr.decrypt(&encrypted).is_err());

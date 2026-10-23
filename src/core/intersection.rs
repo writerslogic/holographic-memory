@@ -101,56 +101,6 @@ fn binary_search_left(slice: &[u32], target: u32) -> usize {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_sparse_intersection() {
-        let a = vec![1, 3, 5, 7, 9];
-        let b = vec![2, 3, 6, 7, 10];
-        assert_eq!(sparse_intersection_count(&a, &b), 2);
-    }
-
-    #[test]
-    fn test_sparse_intersection_empty() {
-        let a: Vec<u32> = vec![];
-        let b = vec![1, 2, 3];
-        assert_eq!(sparse_intersection_count(&a, &b), 0);
-    }
-
-    #[test]
-    fn test_galloping_skewed() {
-        // Small vs large: should trigger galloping path
-        let small = vec![5, 50, 500];
-        let large: Vec<u32> = (0..1000).collect();
-        assert_eq!(sparse_intersection_count(&small, &large), 3);
-    }
-
-    #[test]
-    fn test_galloping_no_overlap() {
-        let small = vec![1001, 1002, 1003];
-        let large: Vec<u32> = (0..1000).collect();
-        assert_eq!(sparse_intersection_count(&small, &large), 0);
-    }
-
-    #[test]
-    fn test_galloping_all_overlap() {
-        let small = vec![0, 1, 2, 3, 4];
-        let large: Vec<u32> = (0..1000).collect();
-        assert_eq!(sparse_intersection_count(&small, &large), 5);
-    }
-
-    #[test]
-    fn test_merge_balanced() {
-        let a: Vec<u32> = (0..100).step_by(2).collect(); // evens
-        let b: Vec<u32> = (0..100).step_by(3).collect(); // multiples of 3
-        let expected = (0..100u32).filter(|x| x % 2 == 0 && x % 3 == 0).count();
-        assert_eq!(sparse_intersection_count(&a, &b), expected);
-    }
-
-    #[test]
-    fn test_identical() {
-        let a: Vec<u32> = (0..50).collect();
-        assert_eq!(sparse_intersection_count(&a, &a), 50);
-    }
-
     fn naive(a: &[u32], b: &[u32]) -> usize {
         let set: std::collections::HashSet<u32> = b.iter().copied().collect();
         a.iter().filter(|x| set.contains(x)).count()
@@ -225,16 +175,5 @@ mod tests {
         check_all(&evens, &odds);
         check_all(&[], &odds);
         check_all(&[], &[]);
-    }
-
-    #[test]
-    fn test_reversed_args() {
-        // Ensure order does not matter
-        let a = vec![1, 5, 10];
-        let b: Vec<u32> = (0..1000).collect();
-        assert_eq!(
-            sparse_intersection_count(&a, &b),
-            sparse_intersection_count(&b, &a)
-        );
     }
 }

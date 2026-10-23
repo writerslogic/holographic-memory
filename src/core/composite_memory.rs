@@ -19,11 +19,6 @@ impl CompositeMemory {
         self.inner.insert(id, composite)
     }
 
-    #[allow(dead_code)]
-    pub fn get(&self, id: &str) -> Option<EntangledHVec> {
-        self.inner.get(id)
-    }
-
     pub fn get_by_idx(&self, idx: u32) -> Option<(String, EntangledHVec)> {
         self.inner.get_by_idx(idx)
     }

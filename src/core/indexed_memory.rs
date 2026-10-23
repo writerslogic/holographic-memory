@@ -21,11 +21,7 @@ pub struct IndexedMemory {
 pub struct CleanupResult {
     pub found: bool,
     pub id: String,
-    #[allow(dead_code)]
-    pub vector: EntangledHVec,
     pub confidence: f64,
-    #[allow(dead_code)]
-    pub iterations: usize,
 }
 
 impl IndexedMemory {
@@ -181,14 +177,12 @@ pub fn hopfield_cleanup(
     let empty = CleanupResult {
         found: false,
         id: String::new(),
-        vector: EntangledHVec::from_indices(vec![], probe.dim),
         confidence: 0.0,
-        iterations: 0,
     };
 
     let mut current = probe.clone();
 
-    for iter in 0..max_iter {
+    for _ in 0..max_iter {
         let overlaps = memory.overlap_scan(&current);
         if overlaps.is_empty() {
             return empty;
@@ -223,13 +217,11 @@ pub fn hopfield_cleanup(
 
         if sim > 0.999 {
             let best = &attention[0];
-            if let Some((id, vec)) = memory.get_by_idx(best.0) {
+            if let Some((id, _)) = memory.get_by_idx(best.0) {
                 return CleanupResult {
                     found: true,
                     id,
-                    vector: vec,
                     confidence: best.1,
-                    iterations: iter + 1,
                 };
             }
             return empty;
@@ -242,13 +234,11 @@ pub fn hopfield_cleanup(
     }
     let attention = sparse_softmax(&overlaps, beta);
     let best = &attention[0];
-    if let Some((id, vec)) = memory.get_by_idx(best.0) {
+    if let Some((id, _)) = memory.get_by_idx(best.0) {
         CleanupResult {
             found: true,
             id,
-            vector: vec,
             confidence: best.1,
-            iterations: max_iter,
         }
     } else {
         empty
@@ -293,14 +283,20 @@ mod tests {
         assert_eq!(results[0].0, 0); // v1 should be top match
     }
 
-    #[test]
-    fn test_hopfield_cleanup_exact() {
+    fn hundred_atoms() -> IndexedMemory {
         let mem = IndexedMemory::new(16384, 3.0);
         for i in 0..100u64 {
-            let v = EntangledHVec::new_deterministic(16384, i);
-            mem.insert(format!("atom_{}", i), v);
+            mem.insert(
+                format!("atom_{i}"),
+                EntangledHVec::new_deterministic(16384, i),
+            );
         }
+        mem
+    }
 
+    #[test]
+    fn test_hopfield_cleanup_exact() {
+        let mem = hundred_atoms();
         let query = EntangledHVec::new_deterministic(16384, 42);
         let result = hopfield_cleanup(&query, &mem, 24.0, 64, 3);
         assert!(result.found);
@@ -310,20 +306,13 @@ mod tests {
 
     #[test]
     fn test_hopfield_cleanup_noisy() {
-        let mem = IndexedMemory::new(16384, 3.0);
-        for i in 0..100u64 {
-            let v = EntangledHVec::new_deterministic(16384, i);
-            mem.insert(format!("atom_{}", i), v);
-        }
-
-        let original = EntangledHVec::new_deterministic(16384, 42);
-        let indices = original.indices().to_vec();
-        let mut noisy = indices.clone();
-        // Flip 25% of active indices (16 of 64)
-        let mut rng = rand::rng();
-        use rand::RngExt;
-        for item in noisy.iter_mut().take(16) {
-            *item = rng.random_range(0..16384u32);
+        let mem = hundred_atoms();
+        let mut noisy = EntangledHVec::new_deterministic(16384, 42)
+            .indices()
+            .to_vec();
+        // Replace 25% of the active indices (16 of 64) with seeded noise.
+        for (i, item) in noisy.iter_mut().take(16).enumerate() {
+            *item = (crate::core::entangled::hash_u64(7, i as u64) % 16384) as u32;
         }
         noisy.sort_unstable();
         noisy.dedup();

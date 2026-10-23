@@ -285,18 +285,23 @@ mod tests {
     }
 
     #[test]
-    fn minimum_resolution_roundtrip() {
-        // N=2 (1-bit phase) is the substrate minimum; bind/unbind must stay exact.
-        let a = PhaseHVec::new_random(256, 2, 3);
-        let b = PhaseHVec::new_random(256, 2, 4);
-        assert_eq!(a.bind(&b).unbind(&b).phases(), a.phases());
-    }
-
-    #[test]
-    fn maximum_resolution_constructs() {
-        // N at the upper bound (65536) must construct and self-match.
-        let a = PhaseHVec::new_random(128, 65536, 7);
-        assert_eq!(a.n(), 65536);
-        assert!((a.similarity(&a) - 1.0).abs() < 1e-9);
+    fn resolution_outside_2_to_65536_is_rejected_and_bounds_roundtrip() {
+        for (n, valid) in [
+            (1u32, false),
+            (2, true),
+            (3, true),
+            (65535, true),
+            (65536, true),
+            (65537, false),
+        ] {
+            let built = std::panic::catch_unwind(|| PhaseHVec::new_random(128, n, 3));
+            assert_eq!(built.is_ok(), valid, "n={n}");
+            if let Ok(a) = built {
+                let b = PhaseHVec::new_random(128, n, 4);
+                assert_eq!(a.n(), n, "n={n}");
+                assert_eq!(a.bind(&b).unbind(&b).phases(), a.phases(), "n={n}");
+                assert!((a.similarity(&a) - 1.0).abs() < 1e-9, "n={n}");
+            }
+        }
     }
 }

@@ -8,6 +8,8 @@ use sha2::{Digest, Sha256};
 
 use super::cawg;
 use super::did::did_key_from_ed25519;
+use super::hex_encode;
+use super::vc::iso8601_now;
 
 /// HMS knowledge store manifest using C2PA assertion labels for semantic interop.
 /// Signed via COSE Sign1 and also encoded as JUMBF (ISO 19566-5) in StoreManifest.
@@ -77,11 +79,7 @@ pub fn create_manifest(
 ) -> Result<HmsManifest> {
     let did = did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
     let timestamp = iso8601_now();
-    let hash_hex: String = params
-        .store_hash
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect();
+    let hash_hex = hex_encode(params.store_hash);
 
     let assertions = vec![
         Assertion {
@@ -190,7 +188,7 @@ pub fn validate_store_hash(manifest: &HmsManifest, store_data: &[u8]) -> Result<
         .ok_or_else(|| anyhow!("hash assertion has no hash field"))?;
 
     let actual_hash = Sha256::digest(store_data);
-    let actual_hex: String = actual_hash.iter().map(|b| format!("{b:02x}")).collect();
+    let actual_hex = hex_encode(&actual_hash);
 
     Ok(actual_hex == expected_hex)
 }
@@ -250,11 +248,7 @@ pub fn create_agent_provenance_manifest(
         data: agent_assertion,
     });
 
-    let mem_hex: String = params
-        .memory_provenance
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect();
+    let mem_hex = hex_encode(params.memory_provenance);
     manifest.assertions.push(Assertion {
         label: "cogmem.memory.provenance".to_string(),
         data: serde_json::json!({ "alg": "EdDSA", "coseHex": mem_hex }),
@@ -270,10 +264,7 @@ pub fn create_agent_provenance_manifest(
     // PLACEHOLDER soft binding. This is a SHA-256 digest, NOT a perceptual fingerprint:
     // it will not survive any edit, so it provides no durability yet. A real durable
     // soft binding requires an approved perceptual/watermark algorithm (unimplemented).
-    let digest: String = Sha256::digest(params.asset)
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect();
+    let digest = hex_encode(&Sha256::digest(params.asset));
     manifest.assertions.push(Assertion {
         label: "c2pa.soft_binding".to_string(),
         data: serde_json::json!({
@@ -292,10 +283,7 @@ pub fn create_agent_provenance_manifest(
 
     // Attestation binds to the hash of the partial claim (every assertion signed so far).
     if let Some(att) = params.attestation {
-        let partial_hash: String = Sha256::digest(serde_json::to_vec(&manifest.assertions)?)
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect();
+        let partial_hash = hex_encode(&Sha256::digest(serde_json::to_vec(&manifest.assertions)?));
         manifest.assertions.push(Assertion {
             label: "c2pa.attestation".to_string(),
             data: serde_json::json!({
@@ -341,10 +329,7 @@ pub fn verify_agent_provenance_manifest(
             .iter()
             .filter(|a| a.label != "c2pa.attestation")
             .collect();
-        let recomputed: String = Sha256::digest(serde_json::to_vec(&partial)?)
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect();
+        let recomputed = hex_encode(&Sha256::digest(serde_json::to_vec(&partial)?));
         if recomputed != claimed {
             return Err(anyhow!(
                 "attestation does not bind to the manifest's partial claim"
@@ -352,36 +337,6 @@ pub fn verify_agent_provenance_manifest(
         }
     }
     Ok(manifest)
-}
-
-fn iso8601_now() -> String {
-    let dur = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default();
-    let secs = dur.as_secs();
-    let days = secs / 86400;
-    let rem = secs % 86400;
-    let (year, month, day) = days_to_ymd(days);
-    format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
-        rem / 3600,
-        (rem % 3600) / 60,
-        rem % 60
-    )
-}
-
-fn days_to_ymd(days_since_epoch: u64) -> (u64, u64, u64) {
-    let z = days_since_epoch + 719468;
-    let era = z / 146097;
-    let doe = z - era * 146097;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    (y, m, d)
 }
 
 #[cfg(test)]

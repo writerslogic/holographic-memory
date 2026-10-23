@@ -109,7 +109,7 @@ impl KeyEventLog {
         let identifier = did::did_key_from_ed25519(&pk_bytes);
         let current_key = did::did_key_from_ed25519(&pk_bytes);
 
-        let mut event = KeyEvent {
+        let event = KeyEvent {
             version: "KERI10JSON".to_string(),
             event_type: EventType::Inception,
             digest: String::new(),
@@ -123,13 +123,7 @@ impl KeyEventLog {
             anchors: Vec::new(),
             signature: String::new(),
         };
-
-        event.digest = self_addressing_digest(&event)?;
-        event.signature = sign_event(signing_key, &event)?;
-
-        self.events.push(event);
-        self.persist()?;
-        Ok(self.events.last().unwrap())
+        self.append_signed(event, signing_key)
     }
 
     /// Create a rotation event replacing the current key with a new key.
@@ -147,7 +141,7 @@ impl KeyEventLog {
         let new_pk = new_key.verifying_key().to_bytes();
         let new_did = did::did_key_from_ed25519(&new_pk);
 
-        let mut event = KeyEvent {
+        let event = KeyEvent {
             version: "KERI10JSON".to_string(),
             event_type: EventType::Rotation,
             digest: String::new(),
@@ -161,13 +155,7 @@ impl KeyEventLog {
             anchors: Vec::new(),
             signature: String::new(),
         };
-
-        event.digest = self_addressing_digest(&event)?;
-        event.signature = sign_event(current_key, &event)?;
-
-        self.events.push(event);
-        self.persist()?;
-        Ok(self.events.last().unwrap())
+        self.append_signed(event, current_key)
     }
 
     /// Create an interaction event anchoring data (seals) without rotating keys.
@@ -181,7 +169,7 @@ impl KeyEventLog {
             .last()
             .ok_or_else(|| anyhow!("no prior event for interaction"))?;
 
-        let mut event = KeyEvent {
+        let event = KeyEvent {
             version: "KERI10JSON".to_string(),
             event_type: EventType::Interaction,
             digest: String::new(),
@@ -195,13 +183,17 @@ impl KeyEventLog {
             anchors,
             signature: String::new(),
         };
+        self.append_signed(event, signing_key)
+    }
 
+    /// Fills in the event's self-addressing digest and `signer`'s signature over it, then
+    /// appends and persists it.
+    fn append_signed(&mut self, mut event: KeyEvent, signer: &SigningKey) -> Result<&KeyEvent> {
         event.digest = self_addressing_digest(&event)?;
-        event.signature = sign_event(signing_key, &event)?;
-
+        event.signature = sign_event(signer, &event)?;
         self.events.push(event);
         self.persist()?;
-        Ok(self.events.last().unwrap())
+        Ok(self.events.last().expect("an event was just pushed"))
     }
 
     /// Verify the entire KEL chain: each event's digest and signature, plus chain linkage.
@@ -289,7 +281,7 @@ fn next_keys_digest(keys: &[String]) -> Result<String> {
         hasher.update(pk);
     }
     let hash = hasher.finalize();
-    Ok(hash.iter().map(|b| format!("{b:02x}")).collect())
+    Ok(super::hex_encode(&hash))
 }
 
 fn self_addressing_digest(event: &KeyEvent) -> Result<String> {
@@ -299,7 +291,7 @@ fn self_addressing_digest(event: &KeyEvent) -> Result<String> {
     let serialized =
         serde_json::to_vec(&e).map_err(|e| anyhow!("event serialization failed: {e}"))?;
     let hash = Sha256::digest(&serialized);
-    Ok(hash.iter().map(|b| format!("{b:02x}")).collect())
+    Ok(super::hex_encode(&hash))
 }
 
 fn sign_event(signing_key: &SigningKey, event: &KeyEvent) -> Result<String> {
@@ -349,7 +341,7 @@ mod tests {
     fn next_key_digest(key: &SigningKey) -> String {
         let pk = key.verifying_key().to_bytes();
         let hash = Sha256::digest(pk);
-        hash.iter().map(|b| format!("{b:02x}")).collect()
+        super::super::hex_encode(&hash)
     }
 
     #[test]

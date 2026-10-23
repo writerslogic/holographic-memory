@@ -33,10 +33,7 @@ impl ProvenanceRecord {
         Self {
             source_uri: None,
             source_hash: None,
-            timestamp_ms: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            timestamp_ms: super::unix_millis(),
             sequence: 0,
             issuer_did: None,
             cose_envelope: None,

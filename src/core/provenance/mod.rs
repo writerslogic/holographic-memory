@@ -16,7 +16,7 @@ pub mod vc;
 
 use anyhow::Result;
 use ed25519_dalek::SigningKey;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -47,7 +47,7 @@ pub struct ProvenanceManager {
     signing_key: SigningKey,
     issuer_did: String,
     records: RwLock<fxhash::FxHashMap<String, ProvenanceRecord>>,
-    chain_head: RwLock<[u8; 32]>,
+    chain_head: Mutex<[u8; 32]>,
     logical_clock: std::sync::atomic::AtomicU64,
     log_path: Option<PathBuf>,
     revocation_bitstring: RwLock<Vec<u8>>,
@@ -61,14 +61,22 @@ impl ProvenanceManager {
         let signing_key = super::security::SigningManager::new(key_path)?.into_signing_key();
         let issuer_did = did::did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
         let log_path = storage_path.map(|p| p.join("provenance_log.jsonl"));
-        let (records, chain_head) = Self::load_log(log_path.as_deref());
+        let (records, chain_head) = Self::load_log(log_path.as_deref())?;
         let clock_init = records
             .values()
             .map(|r| r.sequence)
             .max()
             .map_or(0, |max| max + 1);
         let mut kel = match storage_path {
-            Some(p) => keri::KeyEventLog::with_path(&p.join("kel.json")).unwrap_or_default(),
+            Some(p) => match keri::KeyEventLog::with_path(&p.join("kel.json")) {
+                Ok(kel) => kel,
+                // `persist` is not atomic, so a crash can leave a torn file; refusing to open
+                // would turn that crash into an outage.
+                Err(e) => {
+                    tracing::warn!("KEL unreadable, starting an in-memory log: {e}");
+                    keri::KeyEventLog::default()
+                }
+            },
             None => keri::KeyEventLog::new(),
         };
         if kel.events().is_empty() {
@@ -81,10 +89,12 @@ impl ProvenanceManager {
             signing_key,
             issuer_did,
             records: RwLock::new(records),
-            chain_head: RwLock::new(chain_head),
+            chain_head: Mutex::new(chain_head),
             logical_clock: std::sync::atomic::AtomicU64::new(clock_init),
             log_path: log_path.clone(),
-            revocation_bitstring: RwLock::new(Self::load_revocation_bitstring(log_path.as_deref())),
+            revocation_bitstring: RwLock::new(Self::load_revocation_bitstring(
+                log_path.as_deref(),
+            )?),
             kel: RwLock::new(kel),
             #[cfg(feature = "provenance-scitt")]
             scitt_endpoint: None,
@@ -94,12 +104,14 @@ impl ProvenanceManager {
     pub fn from_signing_key(signing_key: SigningKey) -> Self {
         let issuer_did = did::did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
         let mut kel = keri::KeyEventLog::new();
-        let _ = kel.inception(&signing_key, None);
+        if let Err(e) = kel.inception(&signing_key, None) {
+            tracing::warn!("KEL inception failed: {e}");
+        }
         Self {
             signing_key,
             issuer_did,
             records: RwLock::new(fxhash::FxHashMap::default()),
-            chain_head: RwLock::new([0u8; 32]),
+            chain_head: Mutex::new([0u8; 32]),
             logical_clock: std::sync::atomic::AtomicU64::new(0),
             log_path: None,
             revocation_bitstring: RwLock::new(Vec::new()),
@@ -126,29 +138,45 @@ impl ProvenanceManager {
 
     pub fn store_record(&self, fact_id: &str, record: ProvenanceRecord) {
         if let Some(ref path) = self.log_path {
-            let prev_hash = hex_encode(&*self.chain_head.read());
-            let entry = LogEntry {
-                prev_hash,
-                fact_id: fact_id.to_string(),
-                record: record.clone(),
-            };
-            if let Ok(line) = serde_json::to_string(&entry) {
-                let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
-                let mut buf = line;
-                buf.push('\n');
-                if let Err(e) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(path)
-                    .and_then(|mut f| f.write_all(buf.as_bytes()))
-                {
-                    tracing::warn!("provenance log write failed: {e}");
-                }
-                *self.chain_head.write() = new_hash;
-                self.write_signed_head(&new_hash, path);
-            }
+            self.append_chained(path, "provenance", |prev_hash| {
+                serde_json::to_string(&LogEntry {
+                    prev_hash,
+                    fact_id: fact_id.to_string(),
+                    record: record.clone(),
+                })
+            });
         }
         self.records.write().insert(fact_id.to_string(), record);
+    }
+
+    /// Appends the line `line_for` builds from the current head's hex to the hash-chained log
+    /// at `path`, then advances and re-signs the head. The head stays locked throughout so
+    /// concurrent writers cannot chain two lines to the same predecessor. A failed append is
+    /// logged rather than returned: the in-memory state stays authoritative and
+    /// `verify_log_integrity` reports the gap. A line that fails to serialize is skipped.
+    fn append_chained(
+        &self,
+        path: &Path,
+        what: &str,
+        line_for: impl FnOnce(String) -> serde_json::Result<String>,
+    ) {
+        let mut head = self.chain_head.lock();
+        let Ok(line) = line_for(hex_encode(&*head)) else {
+            return;
+        };
+        let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
+        let mut buf = line;
+        buf.push('\n');
+        if let Err(e) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .and_then(|mut f| f.write_all(buf.as_bytes()))
+        {
+            tracing::warn!("{what} log write failed: {e}");
+        }
+        *head = new_hash;
+        self.write_signed_head(&new_hash, path);
     }
 
     fn write_signed_head(&self, head: &[u8; 32], log_path: &Path) {
@@ -172,10 +200,7 @@ impl ProvenanceManager {
     }
 
     pub fn record_deletion(&self, fact_id: &str, reason: Option<&str>) -> Result<DeletionRecord> {
-        let timestamp_ms = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let timestamp_ms = unix_millis();
 
         let mut claim_payload = Vec::new();
         let cbor_claim = ciborium::Value::Map(vec![
@@ -208,28 +233,14 @@ impl ProvenanceManager {
         self.records.write().remove(fact_id);
 
         if let Some(ref path) = self.log_path {
-            let prev_hash = hex_encode(&*self.chain_head.read());
-            let entry_json = serde_json::json!({
-                "prev_hash": prev_hash,
-                "action": "delete",
-                "fact_id": fact_id,
-                "deletion": record,
+            self.append_chained(path, "deletion", |prev_hash| {
+                serde_json::to_string(&serde_json::json!({
+                    "prev_hash": prev_hash,
+                    "action": "delete",
+                    "fact_id": fact_id,
+                    "deletion": record,
+                }))
             });
-            if let Ok(line) = serde_json::to_string(&entry_json) {
-                let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
-                let mut buf = line;
-                buf.push('\n');
-                if let Err(e) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(path)
-                    .and_then(|mut f| f.write_all(buf.as_bytes()))
-                {
-                    tracing::warn!("deletion log write failed: {e}");
-                }
-                *self.chain_head.write() = new_hash;
-                self.write_signed_head(&new_hash, path);
-            }
         }
 
         Ok(record)
@@ -261,29 +272,15 @@ impl ProvenanceManager {
         let rotation_envelope = cose::sign_payload(&self.signing_key, &rotation_payload)?;
 
         if let Some(ref path) = self.log_path {
-            let prev_hash = hex_encode(&*self.chain_head.read());
-            let entry_json = serde_json::json!({
-                "prev_hash": prev_hash,
-                "action": "key_rotation",
-                "old_did": old_did,
-                "new_did": new_did,
-                "cose_envelope": rotation_envelope,
+            self.append_chained(path, "key rotation", |prev_hash| {
+                serde_json::to_string(&serde_json::json!({
+                    "prev_hash": prev_hash,
+                    "action": "key_rotation",
+                    "old_did": old_did,
+                    "new_did": new_did,
+                    "cose_envelope": rotation_envelope,
+                }))
             });
-            if let Ok(line) = serde_json::to_string(&entry_json) {
-                let new_hash: [u8; 32] = Sha256::digest(line.as_bytes()).into();
-                let mut buf = line;
-                buf.push('\n');
-                if let Err(e) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(path)
-                    .and_then(|mut f| f.write_all(buf.as_bytes()))
-                {
-                    tracing::warn!("key rotation log write failed: {e}");
-                }
-                *self.chain_head.write() = new_hash;
-                self.write_signed_head(&new_hash, path);
-            }
         }
 
         self.signing_key = new_signing_key;
@@ -334,17 +331,29 @@ impl ProvenanceManager {
         Ok(true)
     }
 
-    fn load_log(path: Option<&Path>) -> (fxhash::FxHashMap<String, ProvenanceRecord>, [u8; 32]) {
+    /// Replays the log into the live records and the chain head. A missing log is an empty
+    /// one; an unreadable one is an error, since chaining new entries onto a guessed head
+    /// would break the log.
+    fn load_log(
+        path: Option<&Path>,
+    ) -> Result<(fxhash::FxHashMap<String, ProvenanceRecord>, [u8; 32])> {
         let mut map = fxhash::FxHashMap::default();
         let mut head = [0u8; 32];
         let Some(path) = path else {
-            return (map, head);
+            return Ok((map, head));
         };
-        let Ok(file) = std::fs::File::open(path) else {
-            return (map, head);
+        let file = match std::fs::File::open(path) {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok((map, head)),
+            Err(e) => return Err(anyhow::anyhow!("failed to open provenance log: {e}")),
         };
         for line in std::io::BufReader::new(file).lines() {
-            let Ok(line) = line else { continue };
+            let line = match line {
+                Ok(line) => line,
+                // A crash can tear the last line mid-character; replay what precedes it.
+                Err(e) if e.kind() == std::io::ErrorKind::InvalidData => continue,
+                Err(e) => return Err(anyhow::anyhow!("log read error: {e}")),
+            };
             head = Sha256::digest(line.as_bytes()).into();
             if let Ok(entry) = serde_json::from_str::<LogEntry>(&line) {
                 map.insert(entry.fact_id, entry.record);
@@ -356,24 +365,37 @@ impl ProvenanceManager {
                 }
             }
         }
-        (map, head)
+        Ok((map, head))
     }
 
-    fn load_revocation_bitstring(log_path: Option<&Path>) -> Vec<u8> {
+    /// A missing status list means nothing is revoked. An unreadable one is an error rather
+    /// than an empty list, which would report every revoked credential as valid.
+    fn load_revocation_bitstring(log_path: Option<&Path>) -> Result<Vec<u8>> {
         let Some(path) = log_path else {
-            return Vec::new();
+            return Ok(Vec::new());
         };
-        let bitstring_path = path.with_extension("statuslist");
-        std::fs::read(bitstring_path).unwrap_or_default()
+        match std::fs::read(path.with_extension("statuslist")) {
+            Ok(bits) => Ok(bits),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+            Err(e) => Err(anyhow::anyhow!(
+                "failed to read revocation status list: {e}"
+            )),
+        }
     }
 
     pub fn revoke_credential(&self, status_index: u64) -> Result<()> {
-        let byte_idx = (status_index / 8) as usize;
+        // The index is caller-supplied: one past `usize` or past what can be allocated is an
+        // error, not an overflow or an allocation abort.
+        let out_of_range = || anyhow::anyhow!("status index {status_index} is out of range");
+        let byte_idx = usize::try_from(status_index / 8).map_err(|_| out_of_range())?;
+        let len = byte_idx.checked_add(1).ok_or_else(out_of_range)?;
         let bit_idx = (status_index % 8) as u8;
         {
             let mut bits = self.revocation_bitstring.write();
-            if bits.len() <= byte_idx {
-                bits.resize(byte_idx + 1, 0);
+            if bits.len() < len {
+                let additional = len - bits.len();
+                bits.try_reserve(additional).map_err(|_| out_of_range())?;
+                bits.resize(len, 0);
             }
             bits[byte_idx] |= 1 << bit_idx;
         }
@@ -387,10 +409,12 @@ impl ProvenanceManager {
     }
 
     pub fn is_revoked(&self, status_index: u64) -> bool {
-        let byte_idx = (status_index / 8) as usize;
         let bit_idx = (status_index % 8) as u8;
         let bits = self.revocation_bitstring.read();
-        byte_idx < bits.len() && (bits[byte_idx] & (1 << bit_idx)) != 0
+        usize::try_from(status_index / 8)
+            .ok()
+            .and_then(|byte_idx| bits.get(byte_idx))
+            .is_some_and(|byte| byte & (1 << bit_idx) != 0)
     }
 
     /// Create a full provenance record for a stored fact.
@@ -531,20 +555,25 @@ impl ProvenanceManager {
         }
         let mut level: Vec<[u8; 32]> = leaves.to_vec();
         while level.len() > 1 {
-            let mut next = Vec::with_capacity(level.len().div_ceil(2));
-            for pair in level.chunks(2) {
-                if pair.len() == 2 {
-                    let mut hasher = Sha256::new();
-                    hasher.update(pair[0]);
-                    hasher.update(pair[1]);
-                    next.push(hasher.finalize().into());
-                } else {
-                    next.push(pair[0]);
-                }
-            }
-            level = next;
+            level = Self::merkle_parents(&level);
         }
         level[0]
+    }
+
+    /// One Merkle level up: SHA-256 of each adjacent pair, an odd last node carried unhashed.
+    fn merkle_parents(level: &[[u8; 32]]) -> Vec<[u8; 32]> {
+        level
+            .chunks(2)
+            .map(|pair| match pair {
+                [left, right] => {
+                    let mut hasher = Sha256::new();
+                    hasher.update(left);
+                    hasher.update(right);
+                    hasher.finalize().into()
+                }
+                _ => pair[0],
+            })
+            .collect()
     }
 
     fn merkle_proof(leaves: &[[u8; 32]], index: usize) -> Vec<(bool, [u8; 32])> {
@@ -560,18 +589,7 @@ impl ProvenanceManager {
             if sibling_idx < level.len() {
                 proof.push((idx % 2 == 1, level[sibling_idx]));
             }
-            let mut next = Vec::with_capacity(level.len().div_ceil(2));
-            for pair in level.chunks(2) {
-                if pair.len() == 2 {
-                    let mut hasher = Sha256::new();
-                    hasher.update(pair[0]);
-                    hasher.update(pair[1]);
-                    next.push(hasher.finalize().into());
-                } else {
-                    next.push(pair[0]);
-                }
-            }
-            level = next;
+            level = Self::merkle_parents(&level);
             idx /= 2;
         }
         proof
@@ -618,10 +636,7 @@ impl ProvenanceManager {
         Ok(StoreManifest {
             manifest_id: manifest_label,
             issuer_did: Some(self.issuer_did.clone()),
-            created_ms: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            created_ms: unix_millis(),
             fact_count,
             store_hash,
             cose_envelope: Some(cose_envelope),
@@ -667,16 +682,9 @@ impl ProvenanceManager {
         let mut result = self.verify_fact_provenance_self_consistency(record)?;
         let fallback = self.signing_key.verifying_key();
         let key = Self::resolve_cose_verifying_key(record, &fallback);
-        let trusted = trust.is_trusted(&key);
-        result.details.push(VerificationDetail {
-            check: "trust_anchor".to_string(),
-            passed: trusted,
-            message: if trusted {
-                None
-            } else {
-                Some("signing key is not in the trust store".to_string())
-            },
-        });
+        result
+            .details
+            .push(trust_anchor_detail(trust.is_trusted(&key)));
         result.valid = result.details.iter().all(|d| d.passed) && !result.details.is_empty();
         Ok(result)
     }
@@ -695,35 +703,19 @@ impl ProvenanceManager {
         let verifying_key = Self::resolve_cose_verifying_key(record, &fallback);
 
         if let Some(ref envelope) = record.cose_envelope {
-            match cose::verify_and_extract(&verifying_key, envelope) {
-                Ok(_) => details.push(VerificationDetail {
-                    check: "cose_signature".to_string(),
-                    passed: true,
-                    message: None,
-                }),
-                Err(e) => details.push(VerificationDetail {
-                    check: "cose_signature".to_string(),
-                    passed: false,
-                    message: Some(e.to_string()),
-                }),
-            }
+            details.push(outcome_detail(
+                "cose_signature",
+                &cose::verify_and_extract(&verifying_key, envelope),
+            ));
         }
 
         if let Some(ref vc_json) = record.vc_json {
             match serde_json::from_str::<vc::FactCredential>(vc_json) {
                 Ok(ref credential) => {
-                    match vc::verify_credential(credential) {
-                        Ok(()) => details.push(VerificationDetail {
-                            check: "vc_proof".to_string(),
-                            passed: true,
-                            message: None,
-                        }),
-                        Err(e) => details.push(VerificationDetail {
-                            check: "vc_proof".to_string(),
-                            passed: false,
-                            message: Some(e.to_string()),
-                        }),
-                    }
+                    details.push(outcome_detail(
+                        "vc_proof",
+                        &vc::verify_credential(credential),
+                    ));
                     let revoked = credential
                         .credential_status
                         .as_ref()
@@ -882,16 +874,9 @@ impl ProvenanceManager {
         let mut result = self.verify_store_manifest_self_consistency(manifest, store_data)?;
         let fallback = self.signing_key.verifying_key();
         let key = Self::resolve_manifest_verifying_key(manifest, &fallback);
-        let trusted = trust.is_trusted(&key);
-        result.details.push(VerificationDetail {
-            check: "trust_anchor".to_string(),
-            passed: trusted,
-            message: if trusted {
-                None
-            } else {
-                Some("signing key is not in the trust store".to_string())
-            },
-        });
+        result
+            .details
+            .push(trust_anchor_detail(trust.is_trusted(&key)));
         result.valid = result.details.iter().all(|d| d.passed) && !result.details.is_empty();
         Ok(result)
     }
@@ -971,34 +956,18 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
             .map_err(|_| anyhow::anyhow!("COSE key_id is not 32 bytes"))?;
         let verifying_key = ed25519_dalek::VerifyingKey::from_bytes(&pk)
             .map_err(|e| anyhow::anyhow!("invalid public key in COSE: {e}"))?;
-        match cose::verify_and_extract(&verifying_key, envelope) {
-            Ok(_) => details.push(VerificationDetail {
-                check: "cose_signature".to_string(),
-                passed: true,
-                message: None,
-            }),
-            Err(e) => details.push(VerificationDetail {
-                check: "cose_signature".to_string(),
-                passed: false,
-                message: Some(e.to_string()),
-            }),
-        }
+        details.push(outcome_detail(
+            "cose_signature",
+            &cose::verify_and_extract(&verifying_key, envelope),
+        ));
     }
 
     if let Some(ref vc_json) = record.vc_json {
         match serde_json::from_str::<vc::FactCredential>(vc_json) {
-            Ok(ref credential) => match vc::verify_credential(credential) {
-                Ok(()) => details.push(VerificationDetail {
-                    check: "vc_proof".to_string(),
-                    passed: true,
-                    message: None,
-                }),
-                Err(e) => details.push(VerificationDetail {
-                    check: "vc_proof".to_string(),
-                    passed: false,
-                    message: Some(e.to_string()),
-                }),
-            },
+            Ok(ref credential) => details.push(outcome_detail(
+                "vc_proof",
+                &vc::verify_credential(credential),
+            )),
             Err(e) => details.push(VerificationDetail {
                 check: "vc_parse".to_string(),
                 passed: false,
@@ -1026,15 +995,7 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
             })
             .and_then(|pk| ed25519_dalek::VerifyingKey::from_bytes(&pk).ok());
         let trusted = signer_key.as_ref().is_some_and(|k| trust.is_trusted(k));
-        details.push(VerificationDetail {
-            check: "trust_anchor".to_string(),
-            passed: trusted,
-            message: if trusted {
-                None
-            } else {
-                Some("signing key is not in the trust store".to_string())
-            },
-        });
+        details.push(trust_anchor_detail(trusted));
     }
 
     let all_passed = details.iter().all(|d| d.passed);
@@ -1046,6 +1007,35 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
     })
 }
 
+fn outcome_detail<T, E: std::fmt::Display>(
+    check: &str,
+    outcome: &Result<T, E>,
+) -> VerificationDetail {
+    VerificationDetail {
+        check: check.to_string(),
+        passed: outcome.is_ok(),
+        message: outcome.as_ref().err().map(ToString::to_string),
+    }
+}
+
+fn trust_anchor_detail(trusted: bool) -> VerificationDetail {
+    VerificationDetail {
+        check: "trust_anchor".to_string(),
+        passed: trusted,
+        message: (!trusted).then(|| "signing key is not in the trust store".to_string()),
+    }
+}
+
+/// Milliseconds since the Unix epoch; 0 if the clock reads before it. `u64` milliseconds last
+/// until the year 584 million, so the narrowing cast cannot truncate.
+fn unix_millis() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+/// Lowercase hex, two digits per byte.
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
@@ -1068,12 +1058,18 @@ fn hex_decode(hex: &str) -> Result<[u8; 32]> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
+    use tempfile::{tempdir, TempDir};
+
+    /// A manager with a fresh key, logging under its own temporary directory.
+    fn manager() -> (TempDir, ProvenanceManager) {
+        let dir = tempdir().unwrap();
+        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        (dir, mgr)
+    }
 
     #[test]
     fn full_fact_provenance_flow() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let record = mgr
             .create_fact_provenance(
@@ -1100,8 +1096,7 @@ mod tests {
 
     #[test]
     fn full_triple_provenance_flow() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let record = mgr
             .create_triple_provenance(&TripleProvenanceParams {
@@ -1128,8 +1123,7 @@ mod tests {
 
     #[test]
     fn store_manifest_flow() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let store_data = b"serialized store contents here";
         let manifest = mgr
@@ -1154,29 +1148,22 @@ mod tests {
     }
 
     #[test]
-    fn issuer_did_consistency() {
-        let dir = tempdir().unwrap();
-        let key_path = dir.path().join("test.key");
-        let mgr1 = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
-        let mgr2 = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
-        assert_eq!(mgr1.issuer_did(), mgr2.issuer_did());
-    }
-
-    #[test]
     fn records_persist_to_disk() {
         let dir = tempdir().unwrap();
         let key_path = dir.path().join("test.key");
 
-        {
+        let issuer = {
             let mgr = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
             mgr.create_fact_provenance("f1", b"content one", None)
                 .unwrap();
             mgr.create_fact_provenance("f2", b"content two", None)
                 .unwrap();
             assert_eq!(mgr.record_count(), 2);
-        }
+            mgr.issuer_did().to_string()
+        };
 
         let mgr2 = ProvenanceManager::new(&key_path, Some(dir.path())).unwrap();
+        assert_eq!(mgr2.issuer_did(), issuer);
         assert_eq!(mgr2.record_count(), 2);
         assert!(mgr2.get_record("f1").is_some());
         assert!(mgr2.get_record("f2").is_some());
@@ -1184,8 +1171,7 @@ mod tests {
 
     #[test]
     fn standalone_verify_without_manager() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
         let record = mgr
             .create_fact_provenance("standalone-001", b"verify without manager", None)
             .unwrap();
@@ -1199,21 +1185,11 @@ mod tests {
     }
 
     #[test]
-    fn hash_chain_integrity() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
-        mgr.create_fact_provenance("c1", b"first", None).unwrap();
-        mgr.create_fact_provenance("c2", b"second", None).unwrap();
-        mgr.create_fact_provenance("c3", b"third", None).unwrap();
-        assert!(mgr.verify_log_integrity().unwrap());
-    }
-
-    #[test]
     fn tampered_log_detected() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (dir, mgr) = manager();
         mgr.create_fact_provenance("t1", b"one", None).unwrap();
         mgr.create_fact_provenance("t2", b"two", None).unwrap();
+        assert!(mgr.verify_log_integrity().unwrap());
         drop(mgr);
 
         let log_path = dir.path().join("provenance_log.jsonl");
@@ -1262,8 +1238,7 @@ mod tests {
 
     #[test]
     fn batch_provenance_merkle() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let items: Vec<(&str, &[u8], Option<&str>)> = vec![
             ("b1", b"alpha", None),
@@ -1295,8 +1270,7 @@ mod tests {
 
     #[test]
     fn credential_revocation() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let record = mgr
             .create_fact_provenance("fact-rev", b"revocable content", None)
@@ -1334,9 +1308,30 @@ mod tests {
     }
 
     #[test]
+    fn unreadable_provenance_state_fails_to_open() {
+        for name in ["provenance_log.jsonl", "provenance_log.statuslist"] {
+            let dir = tempdir().unwrap();
+            std::fs::create_dir(dir.path().join(name)).unwrap();
+            assert!(
+                ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).is_err(),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    fn unallocatable_status_index_is_an_error() {
+        let (_dir, mgr) = manager();
+        assert!(mgr.revoke_credential(u64::MAX).is_err());
+        assert!(!mgr.is_revoked(u64::MAX));
+        mgr.revoke_credential(9).unwrap();
+        assert!(mgr.is_revoked(9));
+        assert!(!mgr.is_revoked(8));
+    }
+
+    #[test]
     fn untrusted_key_rejected() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
         let record = mgr
             .create_fact_provenance("fact-trust", b"authentic content", None)
             .unwrap();
@@ -1371,8 +1366,7 @@ mod tests {
         // A record carrying only a self-signed VC (no COSE envelope) must still
         // be trust-anchored via its issuer DID, not treated as authentic just
         // because the VC verifies against its own embedded issuer.
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
         let record = mgr
             .create_fact_provenance("vc-only", b"content", None)
             .unwrap();
@@ -1399,8 +1393,7 @@ mod tests {
 
     #[test]
     fn cawg_untrusted_issuer_rejected() {
-        let dir = tempdir().unwrap();
-        let mgr = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        let (_dir, mgr) = manager();
 
         let referenced = vec![(
             "self#jumbf=c2pa.assertions/c2pa.hash.data".to_string(),

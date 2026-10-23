@@ -179,7 +179,7 @@ mod tests {
         let t1 = reg.compose_triple(&a, &r, &b); // "A r B"
         let t2 = reg.compose_triple(&b, &r, &a); // "B r A"
 
-        // These MUST be different (commutativity fix)
+        // Swapping subject and object must change the composite.
         assert!(
             t1.similarity(&t2) < 0.5,
             "Swapped subject/object should produce different composites, got similarity {}",
@@ -188,15 +188,10 @@ mod tests {
     }
 
     #[test]
-    fn test_register_duplicate_same_shift() {
+    fn re_registering_a_role_requires_its_existing_shift() {
         let mut reg = RoleRegistry::new(16384);
-        assert!(reg.register("subject", 0).is_ok()); // same shift, ok
-    }
-
-    #[test]
-    fn test_register_duplicate_different_shift() {
-        let mut reg = RoleRegistry::new(16384);
-        assert!(reg.register("subject", 5).is_err()); // different shift, error
+        assert!(reg.register("subject", 0).is_ok());
+        assert!(reg.register("subject", 5).is_err());
     }
 
     #[test]

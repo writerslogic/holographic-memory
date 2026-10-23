@@ -140,28 +140,7 @@ impl RelationStore {
         relation_type: Option<&str>,
         at_time: f64,
     ) -> Vec<Relation> {
-        let source_indices = self.by_source.read();
-        let indices = match source_indices.get(source_id) {
-            Some(v) => v,
-            None => return Vec::new(),
-        };
-
-        let rels = self.relations.read();
-        indices
-            .iter()
-            .filter_map(|&idx| {
-                let r = &rels[idx];
-                if !r.is_valid_at(at_time) {
-                    return None;
-                }
-                if let Some(rt) = relation_type {
-                    if r.relation_type != rt {
-                        return None;
-                    }
-                }
-                Some(r.to_relation())
-            })
-            .collect()
+        self.valid_relations(&self.by_source, source_id, relation_type, at_time)
     }
 
     /// Get all incoming relations to a node.
@@ -171,27 +150,30 @@ impl RelationStore {
         relation_type: Option<&str>,
         at_time: f64,
     ) -> Vec<Relation> {
-        let target_indices = self.by_target.read();
-        let indices = match target_indices.get(target_id) {
-            Some(v) => v,
-            None => return Vec::new(),
-        };
+        self.valid_relations(&self.by_target, target_id, relation_type, at_time)
+    }
 
+    /// Relations listed under `node_id` in `index` that are live at `at_time`.
+    fn valid_relations(
+        &self,
+        index: &RwLock<FxHashMap<String, Vec<usize>>>,
+        node_id: &str,
+        relation_type: Option<&str>,
+        at_time: f64,
+    ) -> Vec<Relation> {
+        // `relations` before any index, the order `add` takes them in.
         let rels = self.relations.read();
+        let index = index.read();
+        let Some(indices) = index.get(node_id) else {
+            return Vec::new();
+        };
         indices
             .iter()
-            .filter_map(|&idx| {
-                let r = &rels[idx];
-                if !r.is_valid_at(at_time) {
-                    return None;
-                }
-                if let Some(rt) = relation_type {
-                    if r.relation_type != rt {
-                        return None;
-                    }
-                }
-                Some(r.to_relation())
+            .map(|&idx| &rels[idx])
+            .filter(|r| {
+                r.is_valid_at(at_time) && relation_type.is_none_or(|rt| r.relation_type == rt)
             })
+            .map(StoredRelation::to_relation)
             .collect()
     }
 
@@ -238,9 +220,9 @@ impl RelationStore {
                 }
             } else {
                 // No type filter: check each incoming relation's type for symmetry
+                let rels = self.relations.read();
                 let incoming_indices = self.by_target.read();
                 if let Some(indices) = incoming_indices.get(&node_id) {
-                    let rels = self.relations.read();
                     for &idx in indices {
                         let r = &rels[idx];
                         if !r.is_valid_at(at_time) || r.deleted {
@@ -339,25 +321,23 @@ mod tests {
         0.8
     }
 
+    /// An always-valid relation without properties.
+    fn rel(source: &str, relation_type: &str, target: &str) -> Relation {
+        Relation {
+            source_id: source.into(),
+            relation_type: relation_type.into(),
+            target_id: target.into(),
+            properties: None,
+            valid_from: 0.0,
+            valid_to: 0.0,
+        }
+    }
+
     #[test]
     fn test_add_and_query_outgoing() {
         let store = RelationStore::new();
-        store.add(&Relation {
-            source_id: "paris".into(),
-            relation_type: "capital_of".into(),
-            target_id: "france".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
-        store.add(&Relation {
-            source_id: "berlin".into(),
-            relation_type: "capital_of".into(),
-            target_id: "germany".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
+        store.add(&rel("paris", "capital_of", "france"));
+        store.add(&rel("berlin", "capital_of", "germany"));
 
         let out = store.outgoing("paris", Some("capital_of"), 0.0);
         assert_eq!(out.len(), 1);
@@ -373,14 +353,7 @@ mod tests {
     #[test]
     fn test_remove_relation() {
         let store = RelationStore::new();
-        store.add(&Relation {
-            source_id: "a".into(),
-            relation_type: "knows".into(),
-            target_id: "b".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
+        store.add(&rel("a", "knows", "b"));
         assert_eq!(store.count(), 1);
         assert!(store.remove("a", "knows", "b"));
         assert_eq!(store.count(), 0);
@@ -395,14 +368,7 @@ mod tests {
             transitive: false,
             symmetric: true,
         });
-        store.add(&Relation {
-            source_id: "alice".into(),
-            relation_type: "friend_of".into(),
-            target_id: "bob".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
+        store.add(&rel("alice", "friend_of", "bob"));
 
         // Bob should see Alice via symmetric inference
         let paths = store.traverse("bob", Some("friend_of"), 1, 0.0, &dummy_sim);
@@ -418,22 +384,8 @@ mod tests {
             transitive: true,
             symmetric: false,
         });
-        store.add(&Relation {
-            source_id: "paris".into(),
-            relation_type: "is_in".into(),
-            target_id: "france".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
-        store.add(&Relation {
-            source_id: "france".into(),
-            relation_type: "is_in".into(),
-            target_id: "europe".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
+        store.add(&rel("paris", "is_in", "france"));
+        store.add(&rel("france", "is_in", "europe"));
 
         let paths = store.traverse("paris", Some("is_in"), 3, 0.0, &dummy_sim);
         // Should find both direct (paris->france) and transitive (paris->europe)
@@ -457,30 +409,9 @@ mod tests {
     #[test]
     fn test_multi_hop_traversal() {
         let store = RelationStore::new();
-        store.add(&Relation {
-            source_id: "a".into(),
-            relation_type: "links".into(),
-            target_id: "b".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
-        store.add(&Relation {
-            source_id: "b".into(),
-            relation_type: "links".into(),
-            target_id: "c".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
-        store.add(&Relation {
-            source_id: "c".into(),
-            relation_type: "links".into(),
-            target_id: "d".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
+        store.add(&rel("a", "links", "b"));
+        store.add(&rel("b", "links", "c"));
+        store.add(&rel("c", "links", "d"));
 
         let paths = store.traverse("a", Some("links"), 3, 0.0, &dummy_sim);
         let max_hops = paths.iter().map(|p| p.hops.len()).max().unwrap_or(0);
@@ -491,20 +422,14 @@ mod tests {
     fn test_temporal_filter() {
         let store = RelationStore::new();
         store.add(&Relation {
-            source_id: "a".into(),
-            relation_type: "employs".into(),
-            target_id: "b".into(),
-            properties: None,
             valid_from: 1000.0,
             valid_to: 2000.0,
+            ..rel("a", "employs", "b")
         });
         store.add(&Relation {
-            source_id: "a".into(),
-            relation_type: "employs".into(),
-            target_id: "c".into(),
-            properties: None,
             valid_from: 1500.0,
-            valid_to: 0.0, // still active
+            valid_to: 0.0,
+            ..rel("a", "employs", "c")
         });
 
         // At time 1200: only b
@@ -525,22 +450,8 @@ mod tests {
     #[test]
     fn test_snapshot() {
         let store = RelationStore::new();
-        store.add(&Relation {
-            source_id: "a".into(),
-            relation_type: "r".into(),
-            target_id: "b".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
-        store.add(&Relation {
-            source_id: "c".into(),
-            relation_type: "r".into(),
-            target_id: "d".into(),
-            properties: None,
-            valid_from: 0.0,
-            valid_to: 0.0,
-        });
+        store.add(&rel("a", "r", "b"));
+        store.add(&rel("c", "r", "d"));
         store.remove("a", "r", "b");
 
         let snap = store.snapshot();
