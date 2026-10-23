@@ -96,6 +96,118 @@ On the held-out conversations, HMS primary scores 71.97, which is 0.8 points bel
 - **Lexical-only HMS.** Without embeddings, HMS scores 64.91, below Mem0 (66.88), Mem0^g and Zep
   overall, and below Mem0 on J in every category except temporal.
 
+## Retrieval round 2: why multi-hop and open-domain still lose
+
+Results: [`benchmarks/results/locomo_v2.json`](../../benchmarks/results/locomo_v2.json). This round
+tried to close the multi-hop and open-domain gaps through retrieval alone. The reader, judge,
+prompts, Mem0 protocol and raw-turn ingest were unchanged. **No candidate passed, so the J
+numbers above stand, and every loss listed above remains.** The round spent no OpenAI money.
+
+### Protocol
+- **Diagnosis.** Misses were diagnosed offline from the #236 primary outputs on all 10
+  conversations. LoCoMo's evidence annotations were used only to score evidence recall and to
+  classify misses. No question text, gold answer, annotation or per-question outcome entered any
+  retrieval code, parameter or test fixture.
+- **Selection.** Each lever and its grid were written down before the lever was first measured.
+  The configuration was chosen on the 3 tuning conversations by a fixed rule: highest mean evidence
+  recall over ids 1 and 3, without lowering overall evidence recall.
+- **Held-out.** The 7 held-out conversations were scored once per final candidate. They are the
+  clean estimate; all-10 rows overlap the tuning set.
+- **Second gate.** Every candidate also had to not lower answer-session recall on the 100
+  LongMemEval dev questions. That run used the memory API with the cached all-MiniLM-L6-v2 turn
+  embeddings, retrieval only (`benchmarks/public/longmemeval_memory_recall.py`).
+- **Count.** Configurations tried: 8 on the LoCoMo tuning set, 3 held-out looks (the baseline and
+  two candidates), and 8 LongMemEval dev runs. Two of those dev runs were invalid: they mixed
+  unembedded assistant turns into hybrid recall, and were discarded.
+
+### Diagnosis (evidence recall at the 1,764-token cap)
+In the primary arm, 100 of 282 multi-hop and 49 of 96 open-domain answers were judged wrong in most
+passes. Those wrong answers were missing 498 evidence turns between them:
+
+| Where the missing evidence turn was | Turns |
+|---|---|
+| Within 2 turns of a retrieved turn, same session | 258 |
+| In a retrieved session, farther away | 152 |
+| Shares no content word with the question | 365 |
+| An image turn whose content is only in the caption (Mem0's protocol does not ingest captions) | 202 |
+| Inside k=30 per speaker but cut by the token cap | 104 |
+
+The categories overlap, so the counts do not add up to 498.
+
+Evidence sits in one speaker's memory for 232 of 282 multi-hop and 82 of 92 open-domain questions,
+yet round-robin packing gives each speaker about 18 of the ~36 slots. Many open-domain wrong answers
+(15 of 49) had every evidence turn in context, but more (21 of 49) had none. Uncapped recall
+scores lower on open-domain than capped (47.57 vs 48.96), so the 1,764-token cap is not what
+limits this category.
+
+### Levers and results
+Evidence recall, overall / id 1 / id 3:
+
+| Configuration | Tuning 3 | Held-out 7 (one look) |
+|---|---|---|
+| Baseline: #236 primary, round-robin packing | .843 / .642 / .476 | .810 / .590 / .589 |
+| Episode context β=0.25 | .855 / .648 / .524 | |
+| Episode context β=0.5 (candidate B) | .851 / .639 / .548 | .841 / .620 / .611 |
+| Episode context β=1.0 | .827 / .586 / .500 | |
+| Cosine packing (candidate A) | .852 / .710 / .595 | .834 / .650 / .593 |
+| Zipper packing | .856 / .676 / .595 | not scored |
+| Cosine packing + episode 0.5 | .857 / .714 / .571 | |
+| Zipper packing + episode 0.5 | .860 / .675 / .524 | |
+
+The three levers:
+- **Episode context**, a memory-API recall option. Each candidate's score gains β times the best
+  score among the other candidates that share its event time.
+- **Cosine packing**, in the adapter. Both speakers' k=30 lists are merged by raw query cosine.
+  The cosine is comparable across the two tenants; the blend score is not, because it is min-max
+  normalized per tenant.
+- **Zipper packing**, in the adapter. Each speaker's recall order is kept, and the next slot goes to
+  the speaker whose next memory has the higher cosine.
+
+Both held-out candidates raised evidence recall on LoCoMo. Both failed the LongMemEval dev gate:
+
+| LongMemEval dev (answer-session recall) | any@5 | all@5 | any@10 | all@10 |
+|---|---|---|---|---|
+| Single tenant, recall order | .82 | .69 | .83 | .73 |
+| Single tenant, episode β=0.5 | .72 | .49 | .78 | .63 |
+| Single tenant, reordered by cosine (the within-list part of A) | .75 | .55 | .78 | .65 |
+| Two tenants by session parity, round-robin packing | .82 | .66 | .85 | .73 |
+| Two tenants by session parity, zipper packing | .81 | .63 | .83 | .73 |
+
+- **Episode context: rejected.** On LongMemEval, boosting one session's siblings pushes the other
+  answer sessions out of the top k.
+- **Cosine packing: rejected.** Its within-list reordering discards the lexical signal. The gate
+  used MiniLM, which is weaker than text-embedding-3-small. That is a limitation of the gate, but it
+  does not change the decision.
+- **Zipper packing: rejected, with no held-out look.** On a single list zipper is the identity, so
+  it was gated on a two-tenant split instead. There it drops at cuts 5 and 10, by 1 to 3 of 100
+  questions; at a cut of 20 it scores .86 / .75 against .85 / .74.
+
+The gate's sensitivity is limited in two ways. Its cache embeds user turns only, which caps
+baseline any@30 at .86, against .99 when every turn is ingested. MiniLM is also a weaker model
+than the one LoCoMo uses.
+
+The runs used an hms-server built with the episode option compiled in. After the option was
+reverted, the server was rebuilt from this branch, and four runs were repeated on it: round-robin
+and cosine packing on the tuning set, the LongMemEval baseline, and two-tenant zipper. All four
+reproduced bit-identically.
+
+On the order of events: the rule that promoted zipper was written after the A and B held-out looks.
+The rule takes the best tuning configuration whose every part passes the second gate. Zipper was
+already in the pre-registered grid.
+
+### What still loses, and why
+- **Multi-hop vs Mem0 (63.90 vs 67.13 J).** The cap is the binding limit: uncapped recall reaches
+  67.38. At the cap, the evidence for list questions is spread across many sessions and usually
+  belongs to one speaker. Packing by relevance across speakers recovers part of it on LoCoMo
+  (held-out evidence recall .590 to .650). Every packing rule tried so far lowered LongMemEval
+  recall, so none ships.
+- **Open-domain vs Mem0 (48.96 vs 51.15).** Not bound by the cap: 15 of the 49 wrong answers had all
+  of their evidence in context, while 21 had none of it, so the largest class is evidence that was
+  never retrieved. The loss is consistent, not noise: the five primary passes scored 46.9 to 51.0
+  (sd 1.65), and every one of them is below Mem0's 51.15.
+- **Single-hop and overall vs full-context.** Full-context reads every turn. Evidence recall at the
+  cap is .905 on single-hop (tuning) and .893 (held-out).
+
 ## Not protocol-matched: Zep's own number
 
 Zep reports 75.14 ± 0.17 J using its own harness (getzep/zep-papers `kg_architecture_agent_memory/locomo_eval`;
@@ -139,6 +251,10 @@ $B --out final-fullctx  --full-context --runs 1
 
 Reader and judge calls are cached by prompt hash, so a rerun pays only for prompts that change.
 `--dry-run` counts cache misses and their input tokens without making any chat call.
+Round 2 runs retrieval only, with no spend: `$B --convs conv-26,conv-30,conv-41 --embed --token-budget 1764
+--retrieval-only --pack {round-robin,cosine,zipper}`. The LongMemEval gate runs as `longmemeval_memory_recall.py
+--cache-dir ~/.cache/hms-bench [--order cosine | --split --pack zipper]`, with `HMS_MAX_TENANTS=256` and numpy
+added to the `uv` line. Episode context was measured with an unshipped recall option, described above.
 `assemble_results.py` writes the results JSON from the four `predictions.jsonl` files. A full run
 from an empty cache costs about 13 USD at list price: about 6 for full-context, 3 for the primary
 arm, 2.1 for uncapped and 1.6 for lexical.

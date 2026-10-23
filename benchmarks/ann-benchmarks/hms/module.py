@@ -14,9 +14,10 @@ from ..base.module import BaseANN
 class HMS(BaseANN):
     """HMS (holographic-memory) quantized graph index.
 
-    A proximity graph whose traversal reads 4-bit codes of randomly rotated rows; the `rerank`
-    best candidates are re-scored with an 8-bit residual code. Build arguments: graph out-degree
-    and construction search width. Query arguments: candidate pool size `ef` and re-rank depth.
+    A proximity graph whose traversal reads a `code_bits`-bit (8 or 4) code of each row; the
+    `rerank` best candidates are re-scored with an 8-bit residual code. Build arguments: graph
+    out-degree, construction search width and traversal code width. Query arguments: candidate
+    pool size `ef` and re-rank depth.
     """
 
     def __init__(self, metric, method_param):
@@ -25,16 +26,22 @@ class HMS(BaseANN):
         self.metric = metric
         self.degree = method_param["degree"]
         self.build_ef = method_param["build_ef"]
-        self.name = f"hms(degree={self.degree}, build_ef={self.build_ef})"
+        self.code_bits = method_param.get("code_bits", 8)
+        self.name = f"hms(degree={self.degree}, build_ef={self.build_ef}, code_bits={self.code_bits})"
         self.index = None
 
     def fit(self, X):
-        self.index = VectorIndex(self.metric, degree=self.degree, build_ef=self.build_ef)
+        self.index = VectorIndex(
+            self.metric, degree=self.degree, build_ef=self.build_ef, code_bits=self.code_bits
+        )
         self.index.fit(np.ascontiguousarray(X, dtype=np.float32))
 
     def set_query_arguments(self, ef, rerank):
         self.index.set_query_arguments(ef, rerank)
-        self.name = f"hms(degree={self.degree}, build_ef={self.build_ef}, ef={ef}, rerank={rerank})"
+        self.name = (
+            f"hms(degree={self.degree}, build_ef={self.build_ef}, code_bits={self.code_bits}, "
+            f"ef={ef}, rerank={rerank})"
+        )
 
     def query(self, v, n):
         return self.index.query(v, n)

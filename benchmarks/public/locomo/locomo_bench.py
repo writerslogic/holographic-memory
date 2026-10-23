@@ -262,6 +262,32 @@ def cap_tokens(lists, enc, budget):
     return kept
 
 
+def pack_by_similarity(lists, sims, enc, budget, keep_rank_order):
+    """Fill the budget from both speakers' lists in order of query similarity.
+
+    The cosine is comparable across the two tenants; the blend score is min-max normalized per
+    tenant and is not. With `keep_rank_order` each list keeps its recall order and the next slot goes
+    to the speaker whose next memory is more similar (a merge of the two ranked lists); otherwise
+    all memories are ordered by similarity alone. A memory that does not fit ends its speaker's list.
+    """
+    if keep_rank_order:
+        queues = {side: list(range(len(items))) for side, items in lists.items()}
+    else:
+        queues = {side: sorted(range(len(items)), key=lambda i, s=side: (-sims[s][i], i)) for side, items in lists.items()}
+    kept = {side: [] for side in lists}
+    used = 0
+    while any(queues.values()):
+        side = max((s for s in queues if queues[s]), key=lambda s: (sims[s][queues[s][0]], s == 'a'))
+        i = queues[side].pop(0)
+        cost = len(enc.encode(json.dumps(lists[side][i]))) + 1
+        if used + cost > budget:
+            queues[side] = []
+            continue
+        kept[side].append(i)
+        used += cost
+    return kept
+
+
 FULL_CONTEXT_SYSTEM = ('You are a helpful assistant that can answer questions based on the provided context.'
                        'If the question involves timing, use the conversation date for reference.'
                        'Provide the shortest possible answer.'
@@ -287,14 +313,22 @@ def answer(server, llm, sample, dates, qa, args, enc):
     body = {'query': question, 'k': args.k, **json.loads(args.recall_options)}
     if use_embed:
         body['embedding'] = llm.embed([question])[0]
-    lists, ids = {}, {}
+    if args.pack != 'round-robin':
+        body['explain'] = True
+    lists, ids, sims = {}, {}, {}
     for side in ('a', 'b'):
         hits = server.memory(tenant(sample['sample_id'], side), 'recall', body)['results']
         ids[side] = [h['id'] for h in hits]
         lists[side] = [f"{dates[side][h['id']]}: {h['text']}" for h in hits]
-    if args.token_budget:
+        if args.pack != 'round-robin':
+            sims[side] = [h['explanation'].get('semanticScore') or 0.0 for h in hits]
+    if args.token_budget and args.pack == 'round-robin':
         lists = cap_tokens(lists, enc, args.token_budget)
         ids = {side: ids[side][:len(lists[side])] for side in ids}
+    elif args.token_budget:
+        kept = pack_by_similarity(lists, sims, enc, args.token_budget, args.pack == 'zipper')
+        lists = {side: [lists[side][i] for i in kept[side]] for side in lists}
+        ids = {side: [ids[side][i] for i in kept[side]] for side in ids}
     mem_a, mem_b = json.dumps(lists['a'], indent=4), json.dumps(lists['b'], indent=4)
     prompt = Template(ANSWER_PROMPT).render(
         speaker_1_user_id=conv['speaker_a'], speaker_2_user_id=conv['speaker_b'],
@@ -355,6 +389,9 @@ def main():
     ap.add_argument('--recall-options', default='{}', help='extra RecallOptions JSON, e.g. {"fusion": "rrf"}')
     ap.add_argument('--token-budget', type=int, default=0,
                     help='cap the rendered memories of both speakers at this many o200k tokens (0: k only)')
+    ap.add_argument('--pack', choices=('round-robin', 'cosine', 'zipper'), default='round-robin',
+                    help='how --token-budget fills the cap from both speakers: by rank alternately (as in #236), '
+                         'by query cosine across both, or merging the ranked lists by query cosine')
     ap.add_argument('--workers', type=int, default=16)
     ap.add_argument('--hms-sha', default='')
     ap.add_argument('--dry-run', action='store_true',
@@ -428,6 +465,7 @@ def main():
         'arm': 'full-context' if args.full_context else 'hms-memory-api',
         'embedding_model': EMBED_MODEL if args.embed else None, 'k_per_speaker': args.k,
         'recall_options': json.loads(args.recall_options), 'token_budget': args.token_budget or None,
+        'pack': args.pack if args.token_budget else None,
         'memory_config': json.loads(Path(args.memory_config).read_text()) if args.memory_config else None,
         'runs': 0 if args.retrieval_only else args.runs, 'conversations': sorted(ran), 'split': SPLIT, 'hms_sha': args.hms_sha,
         'new_api_tokens': {m: list(t) for m, t in usage.tokens.items()}, 'new_api_spend_usd': usage.usd(),

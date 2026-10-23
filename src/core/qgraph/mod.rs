@@ -26,6 +26,7 @@ mod build_kernels;
 mod fastscan;
 pub(crate) mod kernels;
 mod projection;
+mod rerank;
 #[cfg(not(target_arch = "wasm32"))]
 mod update;
 mod vertex;
