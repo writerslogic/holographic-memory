@@ -100,7 +100,8 @@ struct CapturedQuery {
     use_postings: bool,
     dense: Option<Arc<DenseIndex>>,
     dfs: Option<[BTreeMap<String, usize>; 2]>,
-    /// The store's text segment, read for result text after the store lock is released.
+    /// The store's text segment, read for result text after the store lock is released (under
+    /// the mutation gate for a live search, see [`read_ranked`]).
     text: Option<Arc<super::text::TextSegment>>,
     /// Set when the capture already scored the query (an unfiltered lexical query): `chunks`
     /// are then its top `limit` lexical chunks, best first, and these their BM25 scores.
@@ -622,11 +623,71 @@ fn capture_indexed_query(
     }
 }
 
+impl CapturedSearch {
+    pub(crate) fn len(&self) -> usize {
+        self.queries.len()
+    }
+
+    pub(crate) fn into_prepared(self) -> Vec<PreparedSearch> {
+        self.queries
+            .into_iter()
+            .map(|query| query.prepared)
+            .collect()
+    }
+}
+
+/// A ranked result whose chunk text is not read yet (see [`read_ranked`]).
+pub(crate) struct RankedHit {
+    result: DocumentResult,
+    document: Arc<StoredDocument>,
+    chunk: usize,
+}
+
+impl RankedHit {
+    fn read(mut self, segment: Option<&super::text::TextSegment>) -> DocumentResult {
+        self.result.text = super::index::text_of(&self.document.chunks[self.chunk], segment);
+        self.result
+    }
+}
+
+/// Ranks and reads a capture. A replace or delete scrubs the text it supersedes, so a capture
+/// that outlived the store's locks reads such text as empty (see [`read_ranked`]).
 pub(crate) fn execute_search(captured: &CapturedSearch, query: usize) -> Vec<DocumentResult> {
+    let segment = captured.queries[query].text.as_deref();
+    rank_search(captured, query)
+        .into_iter()
+        .map(|hit| hit.read(segment))
+        .collect()
+}
+
+/// [`execute_search`] without reading the hits' text, so ranking needs no lock.
+pub(crate) fn rank_search(captured: &CapturedSearch, query: usize) -> Vec<RankedHit> {
     execute_query(&captured.queries[query])
 }
 
-fn execute_query(captured: &CapturedQuery) -> Vec<DocumentResult> {
+/// The hits with their text, or `None` when the text of one was scrubbed since the capture
+/// (its document replaced or deleted). The caller holds the mutation gate's read side, which
+/// excludes the writes that scrub, so a read never overlaps one.
+pub(crate) fn read_ranked(
+    captured: &CapturedSearch,
+    query: usize,
+    hits: Vec<RankedHit>,
+) -> Option<Vec<DocumentResult>> {
+    let segment = captured.queries[query].text.as_deref();
+    hits.into_iter()
+        .map(|hit| {
+            let chunk = &hit.document.chunks[hit.chunk];
+            let scrubbed = chunk.text.is_none()
+                && chunk
+                    .text_at
+                    .zip(segment)
+                    .is_some_and(|((at, len), segment)| segment.is_scrubbed(at, len));
+            (!scrubbed).then(|| hit.read(segment))
+        })
+        .collect()
+}
+
+fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
     if let Some(index) = &captured.dense {
         let query = captured
             .prepared
@@ -660,7 +721,7 @@ fn execute_query(captured: &CapturedQuery) -> Vec<DocumentResult> {
     execute_chunks(captured, &captured.chunks)
 }
 
-fn execute_chunks(captured: &CapturedQuery, chunks: &[CapturedChunk]) -> Vec<DocumentResult> {
+fn execute_chunks(captured: &CapturedQuery, chunks: &[CapturedChunk]) -> Vec<RankedHit> {
     if chunks.is_empty() {
         return Vec::new();
     }
@@ -756,18 +817,22 @@ fn execute_chunks(captured: &CapturedQuery, chunks: &[CapturedChunk]) -> Vec<Doc
         .map(|(i, score)| {
             let document = &chunks[i].document;
             let chunk = chunks[i].chunk();
-            DocumentResult {
-                id: chunk.id.clone(),
-                document_id: document.id.clone(),
-                source_uri: document.source_uri.clone(),
-                version: document.version.clone(),
-                metadata: document.metadata.clone(),
-                text: super::index::text_of(chunk, captured.text.as_deref()),
-                start_byte: chunk.start_byte,
-                end_byte: chunk.end_byte,
-                score,
-                lexical_score: scores[i].0,
-                semantic_score: scores[i].1,
+            RankedHit {
+                result: DocumentResult {
+                    id: chunk.id.clone(),
+                    document_id: document.id.clone(),
+                    source_uri: document.source_uri.clone(),
+                    version: document.version.clone(),
+                    metadata: document.metadata.clone(),
+                    text: None,
+                    start_byte: chunk.start_byte,
+                    end_byte: chunk.end_byte,
+                    score,
+                    lexical_score: scores[i].0,
+                    semantic_score: scores[i].1,
+                },
+                document: Arc::clone(document),
+                chunk: chunks[i].index,
             }
         })
         .collect()

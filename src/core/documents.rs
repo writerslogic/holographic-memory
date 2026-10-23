@@ -36,7 +36,10 @@ pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, Le
 pub use listing::DocumentRecord;
 pub(crate) use listing::{count, get_record, list_records};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
-pub(crate) use search::{capture_search, count_matches, execute_search, prepare_search};
+pub(crate) use search::{
+    capture_search, count_matches, execute_search, prepare_search, rank_search, read_ranked,
+    PreparedSearch,
+};
 pub(crate) use text::TextSegment;
 pub(crate) use vector_index::{
     build_vector_snapshot, capture_vector_rows, search_vector_snapshot, vector_index_status,

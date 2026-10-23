@@ -16,6 +16,8 @@ use anyhow::{ensure, Context, Result};
 
 /// Appends are serialized by the store's write lock; readers (captured queries that outlive
 /// the lock) only touch bytes below the length they observed, so the segment needs no lock.
+/// A scrub overwrites a record in place, so a live search reads text under the mutation gate
+/// (see `documents::read_ranked`).
 pub(crate) struct TextSegment {
     file: File,
     len: AtomicU64,
