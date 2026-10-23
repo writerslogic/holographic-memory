@@ -83,11 +83,10 @@ pub struct Tenant {
     pub dir: PathBuf,
     core: Arc<RwLock<Option<Open>>>,
     last_used_ms: AtomicU64,
-    /// Advanced by every committed change made through this server; feeds ETags and compaction.
-    /// Drawn from `clock`, shared by every tenant this process opens, so a tenant reopened after
-    /// eviction never repeats a generation an earlier open of it handed out.
+    /// Bumped by every committed change made through this server; feeds ETags and compaction.
+    /// Starts at a random value per open, so a tenant reopened after eviction does not repeat
+    /// the generations an earlier open handed out.
     pub generation: AtomicU64,
-    clock: Arc<AtomicU64>,
     /// Set while a snapshot or restore holds the store exclusively; requests are turned away
     /// at once instead of occupying work slots while they wait.
     quiesced: AtomicBool,
@@ -101,13 +100,6 @@ pub struct Open {
     memory: Memory,
     /// Absent when its files could not be opened; the engine then answers every vector query.
     vectors: Option<Arc<VectorIndex>>,
-}
-
-impl Tenant {
-    fn advance(&self) {
-        let tick = self.clock.fetch_add(1, Ordering::AcqRel) + 1;
-        self.generation.fetch_max(tick, Ordering::AcqRel);
-    }
 }
 
 impl Open {
@@ -211,7 +203,7 @@ impl CoreGuard {
     }
 
     pub fn bump(&self) {
-        self.tenant.advance();
+        self.tenant.generation.fetch_add(1, Ordering::AcqRel);
     }
 }
 
@@ -289,7 +281,6 @@ pub struct AppState {
     /// Random per process; makes ETags from a previous run never match this one.
     pub epoch: u64,
     tenants: Mutex<HashMap<String, Arc<TenantSlot>>>,
-    generations: Arc<AtomicU64>,
     compaction_lock: Mutex<()>,
     /// Set once at startup when TLS is on, so the reload endpoint can reach the certificate.
     pub tls: std::sync::OnceLock<Arc<crate::serve::Tls>>,
@@ -328,7 +319,6 @@ impl AppState {
             started: Instant::now(),
             epoch: rand::random(),
             tenants: Mutex::new(HashMap::new()),
-            generations: Arc::new(AtomicU64::new(0)),
             compaction_lock: Mutex::new(()),
             tls: std::sync::OnceLock::new(),
             cfg,
@@ -447,14 +437,14 @@ impl AppState {
         );
         std::fs::create_dir_all(&dir)?;
         let core = self.open_core(&dir)?;
-        let generation = self.generations.fetch_add(1, Ordering::AcqRel) + 1;
+        // Half the range leaves room to count up without wrapping.
+        let generation = rand::random::<u64>() >> 1;
         Ok(Tenant {
             name: name.to_string(),
             dir,
             core: Arc::new(RwLock::new(Some(core))),
             last_used_ms: AtomicU64::new(self.now_ms()),
             generation: AtomicU64::new(generation),
-            clock: self.generations.clone(),
             quiesced: AtomicBool::new(false),
             // Nothing changed since the open, so there is nothing to compact yet.
             compaction: Mutex::new(CompactionStatus {
@@ -864,7 +854,7 @@ impl AppState {
         drop(write);
         match outcome {
             Ok(backup) => {
-                tenant.advance();
+                tenant.generation.fetch_add(1, Ordering::AcqRel);
                 *tenant.compaction.lock() = CompactionStatus::default();
                 crate::log_event!(Info, "snapshot_restored", "tenant" => name, "previous_store" => backup);
                 Ok(backup)
@@ -964,35 +954,41 @@ mod tests {
             .exists()
     }
 
-    /// An ETag issued before an idle eviction never matches the reopened store's content.
+    /// An ETag issued before an idle eviction never matches the reopened store's content, and
+    /// a tenant's generations say nothing about other tenants' writes.
     #[test]
-    fn generation_keeps_rising_across_eviction_and_reopen() {
+    fn generations_do_not_repeat_across_reopen_or_leak_across_tenants() {
         let directory = tempfile::tempdir().unwrap();
         let state = crate::tests::state_with(directory.path(), 2, &["--tenant-idle-seconds", "1"]);
-        let core = state.core("a").unwrap();
-        core.bump();
-        let before = core.tenant.generation.load(Ordering::Acquire);
-        drop(core);
+        let writes = 8;
+        let generations = |name: &str| {
+            let core = state.core(name).unwrap();
+            let first = core.tenant.generation.load(Ordering::Acquire);
+            for _ in 0..writes {
+                core.bump();
+            }
+            first..=first + writes
+        };
+        let before = generations("a");
         std::thread::sleep(Duration::from_millis(1100));
         assert_eq!(state.evict_idle(), 1);
-        let reopened = state.core("a").unwrap();
-        assert!(reopened.tenant.generation.load(Ordering::Acquire) > before);
-        let opened = reopened.tenant.generation.load(Ordering::Acquire);
-        drop(reopened);
+        let after = generations("a");
+        assert!(
+            after.end() < before.start() || before.end() < after.start(),
+            "{before:?} and {after:?} overlap"
+        );
+        let a = state.core("a").unwrap();
+        let start = a.tenant.generation.load(Ordering::Acquire);
+        generations("b");
+        a.bump();
+        assert_eq!(a.tenant.generation.load(Ordering::Acquire), start + 1);
+        drop(a);
+        drop(state.core("c").unwrap());
         state.compact_changed();
         assert_eq!(
-            state.compaction_status("a").unwrap().runs,
+            state.compaction_status("c").unwrap().runs,
             0,
-            "an unchanged reopened store is not compacted"
-        );
-        assert_eq!(
-            state
-                .core("a")
-                .unwrap()
-                .tenant
-                .generation
-                .load(Ordering::Acquire),
-            opened
+            "a store unchanged since its open is not compacted"
         );
     }
 
