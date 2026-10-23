@@ -177,6 +177,10 @@ pub(super) fn merge_structure(
     for s in repaired {
         again[s] = true;
     }
+    // The previous graph is not read again: drop its pages before the passes allocate.
+    plan.old
+        .release_pages()
+        .map_err(|e| super::super::invalid(format!("release previous base pages: {e}")))?;
     let mut order: Vec<u32> = (0..n as u32).filter(|&s| again[s as usize]).collect();
     drop(again);
     shuffle(&mut order, params.seed ^ n as u64 ^ 1);

@@ -161,3 +161,27 @@ tombstone-triggered rebuilds); peak RSS 6.02 GiB for the benchmark process, 6.22
 the parent, so memory was not the limit. Projection, not measured: the 640 searches alone need
 about 2,480 s at ef 512, so this runbook needs a lower ef and fewer or cheaper rebuilds to fit
 the hour.
+
+## Merged consolidation (development measurements)
+
+`UpdatableIndex.consolidate(merge=True)` keeps the previous base graph instead of rebuilding
+it: it splices deleted rows out of the lists that pointed at them, links the delta in with the
+build's first insertion pass, and runs the build's second pass over the delta, the base rows it
+links to and the rows that lost a deleted neighbour (`docs/file-format/VECTOR-UPDATES.md`). The
+fork adapter turns it on with `"merge": true`. Each Modal row below is one round (`run.py
+--nodocker`, harness 89a3aba, `cpu=8.0`, 8 GiB, non-preemptible, R32 L64 alpha 1.0 T8, ef 512,
+HMS 9b26418, which is c1ec45d before its rebase onto main); the control is the same image
+without merging, run in the same hour, since step sums vary by about a third between containers.
+
+| delete_runbook | delta / deleted ratio | recall@10 | wall | runbook steps: insert / search / delete s | peak RSS |
+|---|---|---|---|---|---|
+| rebuild (control) | 1.0 / 0.3 | 0.9371 | 17:42 | 1,061: 505 / 149 / 408 | 4.70 GiB |
+| merge | 1.0 / 0.3 | 0.9376 | 12:07 | 726: 382 / 103 / 241 | 4.69 GiB |
+| merge | 0.25 / 0.15 | 0.9444 | 17:32 | 1,052: 696 / 50 / 306 | 4.93 GiB |
+
+A merge searches again for about four to six rows per changed row, so it beats a rebuild only
+while the churn per consolidation is a fraction of the live set: merging at a quarter of the
+base spends more on inserts than rebuilding at doubling. The configured point merges at the
+rebuild thresholds (1.0 / 0.3), where the merges replace the tombstone-triggered rebuilds.
+
+FINAL_RUNBOOK_MERGE

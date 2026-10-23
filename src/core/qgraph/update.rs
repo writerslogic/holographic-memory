@@ -973,11 +973,9 @@ impl UpdatableVGraph {
                         old_to_new,
                     };
                     let (dim, build) = (manifest.dim, &manifest.build);
-                    let graph = prepared.build_with(build, |rows, norms| {
+                    prepared.build_with(build, |rows, norms| {
                         merge::merge_structure(rows, norms, dim, build, &plan)
-                    })?;
-                    old.release_pages()?;
-                    graph
+                    })?
                 }
                 _ => prepared.build(&manifest.build)?,
             };
