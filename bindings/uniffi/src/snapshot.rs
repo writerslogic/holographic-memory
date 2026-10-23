@@ -159,12 +159,14 @@ impl Staging {
         if self.dest.is_dir() {
             fs::remove_dir(&self.dest)?;
         }
+        sync_dirs(&self.dir)?;
         fs::rename(&self.dir, &self.dest)?;
         self.published = true;
         if let Some(parent) = self.dest.parent().filter(|p| !p.as_os_str().is_empty()) {
-            if let Ok(dir) = File::open(parent) {
-                let _ = dir.sync_all();
-            }
+            #[cfg(unix)]
+            File::open(parent)?.sync_all()?;
+            #[cfg(not(unix))]
+            let _ = parent;
         }
         Ok(())
     }
@@ -176,6 +178,22 @@ impl Drop for Staging {
             let _ = fs::remove_dir_all(&self.dir);
         }
     }
+}
+
+/// Syncs `dir` and every directory below it, so the entries of the synced files they hold
+/// are durable before the tree is published.
+/// Unix only: Windows cannot open a directory as a file to flush it.
+fn sync_dirs(dir: &Path) -> std::io::Result<()> {
+    if cfg!(not(unix)) {
+        return Ok(());
+    }
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        if entry.file_type()?.is_dir() {
+            sync_dirs(&entry.path())?;
+        }
+    }
+    File::open(dir)?.sync_all()
 }
 
 fn copy_tree(

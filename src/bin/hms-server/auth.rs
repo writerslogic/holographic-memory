@@ -484,6 +484,8 @@ fn append_entry(path: &Path, entry: KeyEntry) -> Result<()> {
     temporary
         .persist(path)
         .with_context(|| format!("cannot write {}", path.display()))?;
+    // The rename is durable only once the directory holding the new entry is synced.
+    crate::vindex::sync_dir(dir).with_context(|| format!("cannot sync {}", dir.display()))?;
     Ok(())
 }
 
