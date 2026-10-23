@@ -168,6 +168,11 @@ pub(crate) fn raw_estimates(codes: &[u64], planes: &[u64], words: usize, out: &m
         16 => return neon::raw::<16>(codes, planes, out),
         _ => {}
     }
+    #[cfg(target_arch = "x86_64")]
+    if tier::popcnt() {
+        // SAFETY: `popcnt` is true only after detecting the `popcnt` feature.
+        return unsafe { x86::raw_popcnt(codes, planes, words, out) };
+    }
     raw_scalar(codes, planes, words, out)
 }
 
@@ -180,7 +185,8 @@ fn raw_scalar(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
 }
 
 /// [`raw_estimates`] for one code row: NEON AND + CNT over the bit planes for the row widths
-/// the index produces (16 planes x 64 words at most), scalar otherwise.
+/// the index produces (16 planes x 64 words at most), POPCNT on x86 when detected, scalar
+/// otherwise.
 #[must_use]
 #[inline]
 pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
@@ -206,6 +212,11 @@ pub(crate) fn raw_one(code: &[u64], planes: &[u64], words: usize) -> u32 {
             }
             _ => {}
         }
+    }
+    #[cfg(target_arch = "x86_64")]
+    if tier::popcnt() {
+        // SAFETY: `popcnt` is true only after detecting the `popcnt` feature.
+        return unsafe { x86::raw_one_popcnt(code, planes, words) };
     }
     raw_one_scalar(code, planes, words)
 }
@@ -398,12 +409,15 @@ mod neon {
 /// what the CPU supports falls back to the best detected one.
 #[cfg(target_arch = "x86_64")]
 mod tier {
-    use std::sync::atomic::{AtomicU8, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
     pub(super) const SCALAR: u8 = 1;
     pub(super) const AVX2: u8 = 2;
     pub(super) const VNNI: u8 = 3;
     static TIER: AtomicU8 = AtomicU8::new(0);
+    /// `popcnt` detected and the tier not pinned to `scalar`. Stored before [`TIER`]; a reader
+    /// that sees the tier but not yet this flag takes the scalar popcount, which is exact too.
+    static POPCNT: AtomicBool = AtomicBool::new(false);
 
     #[inline(always)]
     pub(super) fn get() -> u8 {
@@ -411,6 +425,13 @@ mod tier {
             0 => detect(),
             t => t,
         }
+    }
+
+    /// True if the popcount kernels may use the POPCNT instruction.
+    #[inline(always)]
+    pub(super) fn popcnt() -> bool {
+        get();
+        POPCNT.load(Ordering::Relaxed)
     }
 
     #[cold]
@@ -436,6 +457,10 @@ mod tier {
             }
         };
         let tier = want.min(best);
+        POPCNT.store(
+            want != SCALAR && is_x86_feature_detected!("popcnt"),
+            Ordering::Relaxed,
+        );
         TIER.store(tier, Ordering::Relaxed);
         tier
     }
@@ -691,6 +716,44 @@ pub(crate) fn prefetch(words: &[u64]) {
 mod x86 {
     use std::arch::x86_64::*;
 
+    use super::QUERY_BITS;
+
+    /// [`super::raw_estimates`] with the POPCNT instruction (baseline x86_64 lowers
+    /// `count_ones` to a bit-twiddling sequence). The same integer sums as the scalar form.
+    ///
+    /// # Safety
+    /// The CPU supports `popcnt`.
+    #[target_feature(enable = "popcnt")]
+    pub(super) unsafe fn raw_popcnt(codes: &[u64], planes: &[u64], words: usize, out: &mut [u32]) {
+        assert_eq!(planes.len(), QUERY_BITS * words);
+        assert_eq!(codes.len(), out.len() * words);
+        for (code, o) in codes.chunks_exact(words).zip(out.iter_mut()) {
+            *o = raw_one_popcnt(code, planes, words);
+        }
+    }
+
+    /// [`super::raw_one`] with the POPCNT instruction; `code.len() == words`.
+    ///
+    /// # Safety
+    /// The CPU supports `popcnt`.
+    #[target_feature(enable = "popcnt")]
+    #[inline]
+    pub(super) unsafe fn raw_one_popcnt(code: &[u64], planes: &[u64], words: usize) -> u32 {
+        debug_assert_eq!(code.len(), words);
+        let (p0, rest) = planes.split_at(words);
+        let (p1, rest) = rest.split_at(words);
+        let (p2, p3) = rest.split_at(words);
+        let mut total = 0u32;
+        for ((((&c, &a0), &a1), &a2), &a3) in code.iter().zip(p0).zip(p1).zip(p2).zip(&p3[..words])
+        {
+            total += (c & a0).count_ones()
+                + ((c & a1).count_ones() << 1)
+                + ((c & a2).count_ones() << 2)
+                + ((c & a3).count_ones() << 3);
+        }
+        total
+    }
+
     /// Signed i8 dot product of two rows of equal length, a multiple of 16, exact over the
     /// whole i8 range: the bytes widen to i16 lanes (`vpmovsxbw`) and `vpmaddwd` sums pairs
     /// of products into i32 (the `maddubs` form would misread -128 after the sign trick).
@@ -895,6 +958,39 @@ mod tests {
                     raw_one(code, &planes, words),
                     want,
                     "raw_one, row {row}, words {words}, seed {seed}"
+                );
+            }
+        }
+    }
+
+    /// The POPCNT kernels against the scalar reference, bit for bit, whatever tier is pinned.
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn popcnt_kernels_match_scalar() {
+        if !is_x86_feature_detected!("popcnt") {
+            return;
+        }
+        let mut rng = SplitMix(17);
+        for words in 0..=17 {
+            let rows = 9;
+            let codes: Vec<u64> = (0..rows * words).map(|_| rng.next_u64()).collect();
+            let planes: Vec<u64> = (0..QUERY_BITS * words).map(|_| rng.next_u64()).collect();
+            let mut want = vec![0u32; rows];
+            let mut got = vec![u32::MAX; rows];
+            if words > 0 {
+                raw_scalar(&codes, &planes, words, &mut want);
+                // SAFETY: `popcnt` was detected above.
+                unsafe { x86::raw_popcnt(&codes, &planes, words, &mut got) };
+                assert_eq!(got, want, "words {words}");
+            }
+            for (row, code) in codes.chunks(words.max(1)).take(rows).enumerate() {
+                let code = &code[..words.min(code.len())];
+                // SAFETY: `popcnt` was detected above.
+                let fast = unsafe { x86::raw_one_popcnt(code, &planes, words) };
+                assert_eq!(
+                    fast,
+                    raw_one_scalar(code, &planes, words),
+                    "row {row}, words {words}"
                 );
             }
         }
