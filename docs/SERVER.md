@@ -77,7 +77,9 @@ A document is `{"id": str, "vector": [float], "text"?: str, "metadata"?: object}
 
 Batch totals are limited to 8 MiB of ids and text, 8 MiB of metadata and 1,048,576 embedding values; the native prepared transaction is limited to 32 MiB. All documents are validated before one atomic commit; repeated ids keep their last occurrence while `added` stays the incoming count.
 
-Index maintenance explicitly builds the tenant's optional document index over stored embeddings and reports whether one is trained; a store too small to train returns `false`. Ingest does not trigger training. If the store changes during training, maintenance returns a fixed internal error and can be retried.
+`index` routes an unfiltered query: `auto` (the default; `--query-index` sets it) uses the graph index when one is built and the exact scan otherwise, `exact` always scans, `graph` answers 409 `index_unavailable` until maintenance has built one. `ef` is the beam width of a graph query (`--query-ef`, default 128). The graph index is persisted with the tenant store: every document ingested with a vector is appended to the tenant's vector log before the engine commits it, index maintenance builds the graph over those rows and writes it next to the store, and a restart opens the written graph instead of rebuilding it. Maintenance after a restart is a no-op until something changed; scheduled compaction rebuilds after 64 mutations. A graph file that does not read back is ignored and its rows still answer, exactly, until the next maintenance; after a stop that was not clean the index checks each of its documents against the engine before serving. The graph covers documents ingested through the documents API; while a tenant also holds embeddings written through the memory API, its unfiltered queries go to the engine's own snapshot instead.
+
+Index maintenance also builds the tenant's optional document index over stored embeddings and reports whether one is trained; a store too small to train returns `false`. Ingest does not trigger training. If the store changes during training, maintenance returns a fixed internal error and can be retried.
 
 ### Bulk ingest
 
@@ -126,6 +128,8 @@ A query may then be `{"query": str, "today"?: str, "top_k"?, "filter"?, "query_v
 Each tenant is one engine store. Documents (embedding, text and metadata) go through the engine's document API. A batch writes its final distinct ids in one transaction; a validation failure leaves existing documents unchanged. Embeddings are kept at full precision, so the sparse-code compression described in the main README does not apply to this service.
 
 The store records the embedding model, revision and input dimension (`--embedding-model`, `--embedding-revision`, `--input-dim`). Reopening a store with different values is refused, so vectors from different models are never mixed.
+
+`<tenant>/vindex/` holds the persisted graph index: `rows.log` (one checksummed frame per inserted, replaced or deleted vector, synced per request at the engine's durability class), the snapshot maintenance last published (`CURRENT`, `graph-<epoch>.vertex`, `rows-<epoch>.bin`, `ids-<epoch>.bin`, each written through a temporary file and a rename) and `dirty`, present between the first mutation after open and a clean close. Snapshots copy the directory with the store.
 
 Snapshots, compaction and restore are described in [`server/operations.md`](server/operations.md).
 

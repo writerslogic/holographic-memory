@@ -37,9 +37,10 @@ PROTOCOL = {
     "ops": "100 replacements then 100 deletions on a copy of the built data directory, one request each, each acknowledged per `durability`",
     "durability": DURABILITY,
     "durability_class": DURABILITY_CLASS,
-    "hms_server": "ANN: the graph snapshot lives in memory only, so every serving process rebuilds it (POST /api/v1/index/maintain) before "
-                  "its first query; its cold start and serving peak RSS include that build. Text: documents enter through the memory API "
-                  "(remember) and queries through POST /api/v1/search (document search's BM25 ranking; ids and scores only)",
+    "hms_server": "ANN: the graph is persisted with the tenant store (vindex/) and opened at start; POST /api/v1/index/maintain is still "
+                  "sent after every restart (a no-op when nothing changed since the snapshot) and counts into cold start. Text: documents "
+                  "enter through the memory API (remember) and queries through POST /api/v1/search (document search's BM25 ranking; ids "
+                  "and scores only)",
     "guards_lifted": "Weaviate's disk read-only guard (DISK_USE_READONLY_PERCENTAGE=100): a safety stop that trips on a nearly full host disk",
     "server_threads":"build threads = protocol build_threads where the server has a knob; per-query search parallelism pinned to 1 where a knob exists",
 }

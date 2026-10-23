@@ -29,6 +29,7 @@ use crate::config::{Config, MAX_TENANT_BYTES};
 use crate::error::ApiError;
 use crate::limits::{Idempotency, RateLimiter, WorkLimit};
 use crate::metrics::{Metrics, Saturation, TenantGauge};
+use crate::vindex::VectorIndex;
 
 /// The memory API configuration applied to every tenant; absent means the conservative defaults.
 pub fn load_memory_config(path: Option<&Path>) -> Result<MemoryConfig> {
@@ -90,10 +91,25 @@ pub struct Tenant {
     pub compaction: Mutex<CompactionStatus>,
 }
 
-/// An open store: the engine and the memory API over it. Dropping it releases the store lock.
+/// An open store: the engine, the memory API over it and the persisted vector index next to
+/// it. Dropping it releases the store lock.
 pub struct Open {
     core: Arc<HmsCore>,
     memory: Memory,
+    /// Absent when its files could not be opened; the engine then answers every vector query.
+    vectors: Option<Arc<VectorIndex>>,
+}
+
+impl Open {
+    /// Flushes the engine and marks the vector index cleanly closed, so the next open trusts
+    /// its log without checking the engine.
+    pub fn settle(&self) -> Result<()> {
+        self.core.flush()?;
+        if let Some(vectors) = &self.vectors {
+            vectors.close()?;
+        }
+        Ok(())
+    }
 }
 
 impl std::ops::Deref for Open {
@@ -152,6 +168,36 @@ impl CoreGuard {
 
     pub fn memory(&self) -> &Memory {
         &self.open().memory
+    }
+
+    pub fn vectors(&self) -> Option<&VectorIndex> {
+        self.open().vectors.as_deref()
+    }
+
+    /// Whether the persisted vector index holds a graph over every embedded chunk, so it
+    /// answers the unfiltered graph queries.
+    pub fn vectors_cover(&self) -> bool {
+        self.vectors().is_some_and(|vectors| vectors.covers(self))
+    }
+
+    /// Maintains the persisted vector index, then the engine's snapshot; while the persisted
+    /// graph covers the store the engine keeps only its exact scan. `force` rebuilds after any
+    /// mutation; otherwise after the rebuild threshold.
+    pub fn maintain_vector_indexes(&self, graph_min_rows: usize, force: bool) -> Result<()> {
+        if let Some(vectors) = self.vectors() {
+            vectors.maintain(graph_min_rows, force)?;
+        }
+        let engine_rows = if self.vectors_cover() {
+            usize::MAX
+        } else {
+            graph_min_rows
+        };
+        if force {
+            self.open().core.rebuild_vector_index(engine_rows)?;
+        } else {
+            self.open().core.maintain_vector_index(engine_rows)?;
+        }
+        Ok(())
     }
 
     pub fn bump(&self) {
@@ -362,7 +408,18 @@ impl AppState {
             core.clone(),
             load_memory_config(self.cfg.memory_config.as_deref())?,
         )?;
-        Ok(Open { core, memory })
+        let vectors = match VectorIndex::open(&dir.join("vindex"), self.cfg.input_dim, &core) {
+            Ok(index) => Some(Arc::new(index)),
+            Err(error) => {
+                crate::log_event!(Warn, "vector_index_open_failed", "path" => dir.display().to_string(), "detail" => format!("{error:#}"));
+                None
+            }
+        };
+        Ok(Open {
+            core,
+            memory,
+            vectors,
+        })
     }
 
     fn open_tenant(&self, name: &str) -> Result<Tenant> {
@@ -476,7 +533,7 @@ impl AppState {
                 continue;
             }
             if let Some(core) = write.as_ref() {
-                if let Err(error) = core.flush() {
+                if let Err(error) = core.settle() {
                     crate::log_event!(Error, "evict_flush_failed", "tenant" => tenant.name, "detail" => format!("{error:#}"));
                     continue;
                 }
@@ -512,7 +569,7 @@ impl AppState {
             };
             let guard = tenant.core.write();
             if let Some(core) = guard.as_ref() {
-                if let Err(error) = core.flush() {
+                if let Err(error) = core.settle() {
                     crate::log_event!(Error, "shutdown_flush_failed", "tenant" => name, "detail" => format!("{error:#}"));
                     failed = true;
                 }
@@ -567,11 +624,11 @@ impl AppState {
         }
         let started = Instant::now();
         let result = guard.compact();
-        // Scheduled maintenance of the vector snapshot rides on compaction: a rebuild happens
-        // only when the engine recommends one (no snapshot yet, or enough mutations since the
-        // capture), and its duration counts into this compaction's.
+        // Scheduled maintenance of the vector indexes rides on compaction: a rebuild happens
+        // only past the mutation threshold (or with no snapshot yet), and its duration counts
+        // into this compaction's.
         if result.is_ok() {
-            if let Err(error) = guard.maintain_vector_index(self.cfg.graph_min_rows) {
+            if let Err(error) = guard.maintain_vector_indexes(self.cfg.graph_min_rows, false) {
                 crate::log_event!(Warn, "vector_index_rebuild_failed", "tenant" => name, "detail" => format!("{error:#}"));
             }
         }
@@ -639,7 +696,7 @@ impl AppState {
             return Err(ApiError::conflict("tenant store was closed; retry"));
         };
         let result = (|| -> Result<u64> {
-            core.flush()?;
+            core.settle()?;
             std::fs::create_dir_all(&root)?;
             let partial = root.join(format!(".partial-{id}"));
             let bytes = copy_store(&tenant.dir, &partial)?;
@@ -716,7 +773,7 @@ impl AppState {
         let tenant = write.tenant.clone();
         let outcome = (|| -> Result<String> {
             if let Some(core) = write.open() {
-                core.flush()?;
+                core.settle()?;
             }
             write.close();
             let backup_id = format!(

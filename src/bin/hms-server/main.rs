@@ -22,6 +22,7 @@ mod routes;
 mod serve;
 mod tenants;
 mod types;
+mod vindex;
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
