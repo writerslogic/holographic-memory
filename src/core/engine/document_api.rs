@@ -54,14 +54,21 @@ impl HmsCore {
             self.embed_document_inputs(std::slice::from_mut(&mut input))?;
             input
         };
-        let document = documents::prepare_with_options(
-            input,
-            self.dimensions,
-            self.config.embedding_space.as_ref().map(|s| s.dimensions),
-            None,
-            self.config.text_encoder,
-            options,
-        )?;
+        // The store's kept interner, as batches use: a single write otherwise stems and copies
+        // every word of the document afresh. It is a pure cache; the terms do not depend on it.
+        let mut memo = self.stem_memos.take();
+        let document = {
+            let _memo = memo.install();
+            documents::prepare_with_options(
+                input,
+                self.dimensions,
+                self.config.embedding_space.as_ref().map(|s| s.dimensions),
+                None,
+                self.config.text_encoder,
+                options,
+            )?
+        };
+        drop(memo);
         let count = document.chunks.len() as u32;
         self.commit(&[Mutation::Document(Arc::new(document))])?;
         Ok(count)
