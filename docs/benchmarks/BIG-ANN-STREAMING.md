@@ -43,8 +43,9 @@ stays flat across deletes and consolidations (at ef 1024 the 33 official checkpo
   is now 1.0.
 * The remaining distance to the DiskANN baseline (R64, Ls 100: 0.924) is the degree: R64 L128
   gains another 12 points at ef 64 and 10 at ef 128 on the prefix, at 2x the build time per
-  consolidation and about 128 more bytes per live row; the delete runbook already peaks near
-  7.5 GiB at R32, so R64 needs the consolidation memory reduced before it fits the 8 GiB cap.
+  consolidation and about 128 more bytes per live row; R32 peaked at 7.47 GiB
+  (sampled summed RSS, Modal, ef 1024) and at 4.85 GiB (GNU time, writerslogic-02, ef 64 and 128), and
+  the official R64 L64 run at ef 256 peaked at 5.57 GiB on Modal (see the official runs table).
 * Candidate retention (`reservoir`) changes nothing at any ef (0.7161 at 0, 256 and 512), so
   neither quantized estimates nor pool eviction is a loss mechanism here; the queries are
   simply far from the clustered rows (in-distribution queries reach 0.973 at ef 64 on the
@@ -69,8 +70,8 @@ Per search step of the official runbook (harness ground truth, same wheel, R32 L
 | ff70f3e | R32 L64 alpha 1.2 | 64 | 0.6814 | about 18 min per ef | 7.78 GB (both) | Modal 8 vCPU |
 | ff70f3e | R32 L64 alpha 1.2 | 128 | 0.7755 | | | Modal 8 vCPU |
 | cc5dede | R32 L64 alpha 1.2 | 1024 | 0.9301 | 36.0 min | 7.47 GiB | Modal 8 vCPU |
-| e4df0b1 | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
-| e4df0b1 | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
+| 791749b, alpha 1.0 passed explicitly | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
+| 791749b, alpha 1.0 passed explicitly | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
 | c80aa52 (main) | R32 L64 alpha 1.0 | 64 | 0.7623 | 14:24 (runbook steps 864 s) | 4.98 GiB | Modal cpu 8.0 |
 | 082766e | R32 L64 alpha 1.0 | 64 | 0.7623 | 13:32 (runbook steps 811 s) | 4.85 GiB | Modal cpu 8.0 |
 | 082766e | R32 L64 alpha 1.0 | 128 | 0.8401 | 18:53 (1,132 s) | 4.84 GiB | Modal cpu 8.0 |
@@ -99,7 +100,7 @@ At R32 L64 alpha 1.0, **ef 512 scores 0.9371 against the track baseline's 0.924,
 peak, in a 15:41 replay (941 s of runbook steps)**; ef 384 falls just short (0.9226). Every one
 of the five Modal replays finished in 13:32-20:51 against the baseline's 23 minutes, one round
 each and on different hardware from the baseline's, so that is an observation, not a matched
-timing comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of e4df0b1 to
+timing comparison. The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of the 791749b runs (alpha 1.0 passed explicitly) to
 the fourth digit, and main without the 3-byte ids scores the same 0.7623 on Modal, so the
 change leaves the results unchanged.
 
