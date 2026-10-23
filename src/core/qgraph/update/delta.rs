@@ -110,11 +110,12 @@ impl Delta {
             let parent = neighbors[0] as usize;
             self.next_sibling[slot] = self.first_child[parent];
             self.first_child[parent] = slot as u32;
+            let mut d = Vec::new();
             for &u in &neighbors {
-                let mut candidates: Vec<_> = self.edges[u as usize]
-                    .iter()
-                    .map(|&v| (rows.d2(u, v), v))
-                    .collect();
+                // Four rows at a time; `dot4` is bit-identical to `dot`.
+                let edges = &self.edges[u as usize];
+                rows.d2_many(u, edges, &mut d);
+                let mut candidates: Vec<_> = d.iter().copied().zip(edges.iter().copied()).collect();
                 candidates.push((rows.d2(u, slot as u32), slot as u32));
                 let pruned = rows.prune(u, candidates, params.alpha, params.degree);
                 self.edges.set(u as usize, &pruned);
