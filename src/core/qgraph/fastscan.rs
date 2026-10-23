@@ -18,8 +18,17 @@ pub(crate) const BLOCK: usize = 32;
 #[inline]
 pub(crate) fn scan32(codes: &[u8], lut: &[u8], m: usize, out: &mut [u32; BLOCK]) {
     assert!(codes.len() >= 16 * m && lut.len() >= 16 * m);
+    // At most 256 groups of at most 255 fit a u16 lane without overflow: one pass, widened
+    // once (every index's case), or 256-group passes summed in u32.
+    if m <= 256 {
+        let mut part = [0u16; BLOCK];
+        scan32_u16(&codes[..16 * m], &lut[..16 * m], m, &mut part);
+        for (o, p) in out.iter_mut().zip(part) {
+            *o = u32::from(p);
+        }
+        return;
+    }
     out.fill(0);
-    // At most 256 groups of at most 255 fit a u16 lane without overflow.
     for (c, l) in codes[..16 * m]
         .chunks(16 * 256)
         .zip(lut[..16 * m].chunks(16 * 256))
