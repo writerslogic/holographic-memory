@@ -115,7 +115,7 @@ fn fsync_plain(file: &File) -> std::io::Result<()> {
     file.sync_data()
 }
 
-fn sync_dir(dir: &Path) -> std::io::Result<()> {
+pub fn sync_dir(dir: &Path) -> std::io::Result<()> {
     #[cfg(unix)]
     File::open(dir)?.sync_all()?;
     #[cfg(not(unix))]

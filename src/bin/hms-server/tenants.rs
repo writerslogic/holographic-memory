@@ -29,7 +29,7 @@ use crate::config::{Config, MAX_TENANT_BYTES};
 use crate::error::ApiError;
 use crate::limits::{Idempotency, RateLimiter, WorkLimit};
 use crate::metrics::{Metrics, Saturation, TenantGauge};
-use crate::vindex::VectorIndex;
+use crate::vindex::{sync_dir, VectorIndex};
 
 /// The memory API configuration applied to every tenant; absent means the conservative defaults.
 pub fn load_memory_config(path: Option<&Path>) -> Result<MemoryConfig> {
@@ -83,8 +83,11 @@ pub struct Tenant {
     pub dir: PathBuf,
     core: Arc<RwLock<Option<Open>>>,
     last_used_ms: AtomicU64,
-    /// Bumped by every committed change made through this server; feeds ETags and compaction.
+    /// Advanced by every committed change made through this server; feeds ETags and compaction.
+    /// Drawn from `clock`, shared by every tenant this process opens, so a tenant reopened after
+    /// eviction never repeats a generation an earlier open of it handed out.
     pub generation: AtomicU64,
+    clock: Arc<AtomicU64>,
     /// Set while a snapshot or restore holds the store exclusively; requests are turned away
     /// at once instead of occupying work slots while they wait.
     quiesced: AtomicBool,
@@ -98,6 +101,13 @@ pub struct Open {
     memory: Memory,
     /// Absent when its files could not be opened; the engine then answers every vector query.
     vectors: Option<Arc<VectorIndex>>,
+}
+
+impl Tenant {
+    fn advance(&self) {
+        let tick = self.clock.fetch_add(1, Ordering::AcqRel) + 1;
+        self.generation.fetch_max(tick, Ordering::AcqRel);
+    }
 }
 
 impl Open {
@@ -201,7 +211,7 @@ impl CoreGuard {
     }
 
     pub fn bump(&self) {
-        self.tenant.generation.fetch_add(1, Ordering::AcqRel);
+        self.tenant.advance();
     }
 }
 
@@ -279,6 +289,7 @@ pub struct AppState {
     /// Random per process; makes ETags from a previous run never match this one.
     pub epoch: u64,
     tenants: Mutex<HashMap<String, Arc<TenantSlot>>>,
+    generations: Arc<AtomicU64>,
     compaction_lock: Mutex<()>,
     /// Set once at startup when TLS is on, so the reload endpoint can reach the certificate.
     pub tls: std::sync::OnceLock<Arc<crate::serve::Tls>>,
@@ -317,6 +328,7 @@ impl AppState {
             started: Instant::now(),
             epoch: rand::random(),
             tenants: Mutex::new(HashMap::new()),
+            generations: Arc::new(AtomicU64::new(0)),
             compaction_lock: Mutex::new(()),
             tls: std::sync::OnceLock::new(),
             cfg,
@@ -435,14 +447,20 @@ impl AppState {
         );
         std::fs::create_dir_all(&dir)?;
         let core = self.open_core(&dir)?;
+        let generation = self.generations.fetch_add(1, Ordering::AcqRel) + 1;
         Ok(Tenant {
             name: name.to_string(),
             dir,
             core: Arc::new(RwLock::new(Some(core))),
             last_used_ms: AtomicU64::new(self.now_ms()),
-            generation: AtomicU64::new(0),
+            generation: AtomicU64::new(generation),
+            clock: self.generations.clone(),
             quiesced: AtomicBool::new(false),
-            compaction: Mutex::new(CompactionStatus::default()),
+            // Nothing changed since the open, so there is nothing to compact yet.
+            compaction: Mutex::new(CompactionStatus {
+                generation_at_last_run: Some(generation),
+                ..CompactionStatus::default()
+            }),
         })
     }
 
@@ -486,7 +504,13 @@ impl AppState {
             ));
         }
         let guard = tenant.core.write_arc();
-        Ok(Quiesced { tenant, guard })
+        let quiesced = Quiesced { tenant, guard };
+        // Eviction can close the store between the lookup and the write lock; the slot then
+        // belongs to whichever open comes next, and moving files under it would race that one.
+        if quiesced.open().is_none() {
+            return Err(ApiError::conflict("tenant store was closed; retry"));
+        }
+        Ok(quiesced)
     }
 
     fn forget_if_closed(&self, name: &str, tenant: &Arc<Tenant>) {
@@ -522,14 +546,19 @@ impl AppState {
         let now = self.now_ms();
         let mut closed = 0;
         for tenant in self.ready_tenants() {
-            if now.saturating_sub(tenant.last_used_ms.load(Ordering::Relaxed)) < idle {
+            if now.saturating_sub(tenant.last_used_ms.load(Ordering::Relaxed)) < idle
+                || tenant.quiesced.load(Ordering::Acquire)
+            {
                 continue;
             }
             // A request or maintenance task holding the read side means it is not idle.
             let Some(mut write) = tenant.core.try_write_arc() else {
                 continue;
             };
-            if now.saturating_sub(tenant.last_used_ms.load(Ordering::Relaxed)) < idle {
+            // A snapshot or restore waiting for the write side owns the store next.
+            if now.saturating_sub(tenant.last_used_ms.load(Ordering::Relaxed)) < idle
+                || tenant.quiesced.load(Ordering::Acquire)
+            {
                 continue;
             }
             if let Some(core) = write.as_ref() {
@@ -563,9 +592,15 @@ impl AppState {
         let tenants: Vec<_> = self.tenants.lock().drain().collect();
         let mut failed = false;
         for (name, slot) in tenants {
+            // The map is already drained: stopping here would leave every later tenant unflushed.
             let tenant = match &*slot.status.lock() {
                 TenantStatus::Ready(tenant) => tenant.clone(),
-                _ => anyhow::bail!("tenant initialization remained incomplete at shutdown"),
+                TenantStatus::Opening => {
+                    crate::log_event!(Error, "shutdown_flush_failed", "tenant" => name, "detail" => "initialization incomplete at shutdown");
+                    failed = true;
+                    continue;
+                }
+                TenantStatus::Failed(_) => continue,
             };
             let guard = tenant.core.write();
             if let Some(core) = guard.as_ref() {
@@ -613,8 +648,11 @@ impl AppState {
 
     /// Compact one tenant's store and record the outcome. Compactions run one at a time.
     pub fn compact(&self, name: &str, trigger: &'static str) -> Result<CompactionStatus, ApiError> {
-        let guard = self.core(name)?;
+        // Queue for the serial slot before holding the store: a compaction waiting its turn must
+        // not pin the read side, which would keep a snapshot of this tenant (and with it every
+        // request, turned away as busy) waiting on another tenant's compaction.
         let _serial = self.compaction_lock.lock();
+        let guard = self.core(name)?;
         let generation = guard.tenant.generation.load(Ordering::Acquire);
         {
             let mut status = guard.tenant.compaction.lock();
@@ -662,7 +700,7 @@ impl AppState {
                 let s = tenant.compaction.lock();
                 (s.running, s.generation_at_last_run)
             };
-            if running || last == Some(generation) || (last.is_none() && generation == 0) {
+            if running || last == Some(generation) {
                 continue;
             }
             if let Err(error) = self.compact(&tenant.name, "scheduled") {
@@ -697,11 +735,15 @@ impl AppState {
         };
         let result = (|| -> Result<u64> {
             core.settle()?;
-            std::fs::create_dir_all(&root)?;
+            create_dir_durably(&root)?;
             let partial = root.join(format!(".partial-{id}"));
             let bytes = copy_store(&tenant.dir, &partial)?;
             std::fs::rename(&partial, &target)?;
-            sync_dir(&root);
+            if let Err(error) = sync_dir(&root) {
+                // Not reported as created, so not left behind as one either.
+                let _ = std::fs::remove_dir_all(&target);
+                return Err(error.into());
+            }
             Ok(bytes)
         })();
         drop(quiesced);
@@ -783,13 +825,18 @@ impl AppState {
                     .to_lowercase()
             );
             let root = self.snapshot_root(name);
-            std::fs::create_dir_all(&root)?;
+            create_dir_durably(&root)?;
             let backup = root.join(&backup_id);
+            let tenants_root = parent(&tenant.dir)?;
             let moved = (|| -> Result<()> {
                 std::fs::rename(&tenant.dir, &backup)
                     .context("cannot set the current store aside")?;
+                sync_dir(&root)?;
+                sync_dir(tenants_root)?;
                 std::fs::rename(staged, &tenant.dir)
                     .context("cannot move the restored store into place")?;
+                sync_dir(tenants_root)?;
+                sync_dir(parent(staged)?)?;
                 Ok(())
             })();
             let reopened = moved.and_then(|()| self.open_core(&tenant.dir));
@@ -803,6 +850,8 @@ impl AppState {
                     if backup.is_dir() {
                         let _ = std::fs::remove_dir_all(&tenant.dir);
                         std::fs::rename(&backup, &tenant.dir).context("rollback failed")?;
+                        sync_dir(tenants_root).context("rollback failed")?;
+                        sync_dir(&root).context("rollback failed")?;
                     }
                     write.reopen(
                         self.open_core(&tenant.dir)
@@ -815,7 +864,7 @@ impl AppState {
         drop(write);
         match outcome {
             Ok(backup) => {
-                tenant.generation.fetch_add(1, Ordering::AcqRel);
+                tenant.advance();
                 *tenant.compaction.lock() = CompactionStatus::default();
                 crate::log_event!(Info, "snapshot_restored", "tenant" => name, "previous_store" => backup);
                 Ok(backup)
@@ -833,10 +882,28 @@ pub fn valid_snapshot_id(id: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_'))
 }
 
-fn sync_dir(path: &Path) {
-    if let Ok(dir) = std::fs::File::open(path) {
-        let _ = dir.sync_all();
+fn parent(path: &Path) -> Result<&Path> {
+    path.parent()
+        .with_context(|| format!("{} has no parent directory", path.display()))
+}
+
+/// `create_dir_all`, with every directory it created synced into its parent.
+fn create_dir_durably(dir: &Path) -> Result<()> {
+    let existing = dir.ancestors().find(|a| a.is_dir()).map(Path::to_path_buf);
+    if existing.as_deref() == Some(dir) {
+        return Ok(());
     }
+    std::fs::create_dir_all(dir)?;
+    for created in dir.ancestors().skip(1) {
+        if created.as_os_str().is_empty() {
+            break;
+        }
+        sync_dir(created)?;
+        if Some(created) == existing.as_deref() {
+            break;
+        }
+    }
+    Ok(())
 }
 
 fn skip_entry(name: &str) -> bool {
@@ -863,7 +930,7 @@ pub fn copy_store(src: &Path, dst: &Path) -> Result<u64> {
             std::fs::File::open(&to)?.sync_all()?;
         }
     }
-    sync_dir(dst);
+    sync_dir(dst)?;
     Ok(bytes)
 }
 
@@ -879,4 +946,125 @@ pub fn dir_size(path: &Path) -> u64 {
             _ => 0,
         })
         .sum()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::mpsc;
+
+    fn dirty(state: &AppState, name: &str) -> bool {
+        state
+            .cfg
+            .data_dir
+            .join("tenants")
+            .join(tenant_hex(name))
+            .join("vindex")
+            .join("dirty")
+            .exists()
+    }
+
+    /// An ETag issued before an idle eviction never matches the reopened store's content.
+    #[test]
+    fn generation_keeps_rising_across_eviction_and_reopen() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(directory.path(), 2, &["--tenant-idle-seconds", "1"]);
+        let core = state.core("a").unwrap();
+        core.bump();
+        let before = core.tenant.generation.load(Ordering::Acquire);
+        drop(core);
+        std::thread::sleep(Duration::from_millis(1100));
+        assert_eq!(state.evict_idle(), 1);
+        let reopened = state.core("a").unwrap();
+        assert!(reopened.tenant.generation.load(Ordering::Acquire) > before);
+        let opened = reopened.tenant.generation.load(Ordering::Acquire);
+        drop(reopened);
+        state.compact_changed();
+        assert_eq!(
+            state.compaction_status("a").unwrap().runs,
+            0,
+            "an unchanged reopened store is not compacted"
+        );
+        assert_eq!(
+            state
+                .core("a")
+                .unwrap()
+                .tenant
+                .generation
+                .load(Ordering::Acquire),
+            opened
+        );
+    }
+
+    /// Eviction leaves a tenant alone while a snapshot or restore is waiting to take it.
+    #[test]
+    fn eviction_skips_a_quiesced_tenant() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(directory.path(), 2, &["--tenant-idle-seconds", "1"]);
+        let tenant = state.core("a").unwrap().tenant.clone();
+        tenant.quiesced.store(true, Ordering::Release);
+        std::thread::sleep(Duration::from_millis(1100));
+        assert_eq!(state.evict_idle(), 0);
+        assert!(tenant.core.read().is_some());
+        tenant.quiesced.store(false, Ordering::Release);
+        assert_eq!(state.evict_idle(), 1);
+    }
+
+    /// Shutdown settles every ready tenant even when another one never finished opening.
+    #[test]
+    fn flush_all_settles_every_tenant_past_an_incomplete_one() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(directory.path(), 2, &[]);
+        let names: Vec<String> = (0..16).map(|i| format!("t{i}")).collect();
+        for name in &names {
+            let core = state.core(name).unwrap();
+            let row = crate::vindex::normalize(&[1.0, 0.0]).unwrap();
+            core.vectors()
+                .unwrap()
+                .stage(&[("d".into(), 1, row)])
+                .unwrap();
+            assert!(dirty(&state, name));
+        }
+        state.tenants.lock().insert(
+            "opening".into(),
+            Arc::new(TenantSlot {
+                status: Mutex::new(TenantStatus::Opening),
+                ready: Condvar::new(),
+            }),
+        );
+        assert!(
+            state.flush_all().is_err(),
+            "the incomplete tenant is reported"
+        );
+        for name in &names {
+            assert!(!dirty(&state, name), "{name} was not settled");
+        }
+    }
+
+    /// A compaction queued behind another tenant's does not hold its own tenant's store, so a
+    /// snapshot of that tenant proceeds.
+    #[test]
+    fn queued_compaction_does_not_hold_the_tenant() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(directory.path(), 2, &[]);
+        drop(state.core("a").unwrap());
+        let serial = state.compaction_lock.lock();
+        let compacting = {
+            let state = state.clone();
+            std::thread::spawn(move || state.compact("a", "manual").map(|_| ()))
+        };
+        std::thread::sleep(Duration::from_millis(200));
+        let (sent, received) = mpsc::channel();
+        {
+            let state = state.clone();
+            std::thread::spawn(move || {
+                let quiesced = state.quiesce("a").map(drop);
+                sent.send(quiesced.is_ok()).unwrap();
+            });
+        }
+        let quiesced = received.recv_timeout(Duration::from_secs(5));
+        drop(serial);
+        compacting.join().unwrap().unwrap();
+        assert_eq!(quiesced, Ok(true), "snapshot waited on another compaction");
+    }
 }
