@@ -1,0 +1,246 @@
+{
+ "benchmark": "big-ann-benchmarks NeurIPS'23 streaming track, delete_runbook.yaml on msturing-10M-clustered",
+ "harness_commit": "89a3aba",
+ "track_baseline": {
+  "system": "DiskANN R64 L50 Ls100",
+  "recall10": 0.924,
+  "minutes": 23,
+  "source": "neurips23/streaming/README.md, Azure D8lds v5"
+ },
+ "adapter": "neurips23/streaming/hms/hms.py (alpha default 1.0) with the bounded msturing range reader; consolidate when delta >= 1.0 x base and >= 100k rows, or deleted >= 30% of base",
+ "official_runs": [
+  {
+   "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
+   "R": 32,
+   "L": 64,
+   "alpha": 1.0,
+   "T": 8,
+   "ef": 64,
+   "rerank": 64,
+   "recall10": 0.7623,
+   "runbook_seconds": 811.4,
+   "seconds_by_operation": {
+    "search": 29.1,
+    "insert": 432.0,
+    "delete": 350.3,
+    "replace": 0.0
+   },
+   "run_py_wall": "13:31.99",
+   "cpu_percent": 709,
+   "max_rss_bytes_benchmark_process": 5212020736,
+   "peak_sampled_rss_bytes_all_processes": 5432266752,
+   "eligibility": {
+    "search_checkpoints": 33,
+    "queries": 330000,
+    "returned_ids": 3300000,
+    "all_returned_ids_live_and_unique": true
+   },
+   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "modal_app": "ap-PGMSGvZCLeZ7Dp27nBVK70"
+  },
+  {
+   "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
+   "R": 32,
+   "L": 64,
+   "alpha": 1.0,
+   "T": 8,
+   "ef": 128,
+   "rerank": 128,
+   "recall10": 0.8401,
+   "runbook_seconds": 1132.5,
+   "seconds_by_operation": {
+    "search": 58.1,
+    "insert": 609.2,
+    "delete": 465.3,
+    "replace": 0.0
+   },
+   "run_py_wall": "18:53.27",
+   "cpu_percent": 715,
+   "max_rss_bytes_benchmark_process": 5195878400,
+   "peak_sampled_rss_bytes_all_processes": 5416026112,
+   "eligibility": {
+    "search_checkpoints": 33,
+    "queries": 330000,
+    "returned_ids": 3300000,
+    "all_returned_ids_live_and_unique": true
+   },
+   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "modal_app": "ap-7bsFgge1FHLWkEb9xM7IOe"
+  },
+  {
+   "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
+   "R": 32,
+   "L": 64,
+   "alpha": 1.0,
+   "T": 8,
+   "ef": 384,
+   "rerank": 384,
+   "recall10": 0.9226,
+   "runbook_seconds": 1250.4,
+   "seconds_by_operation": {
+    "search": 147.4,
+    "insert": 597.8,
+    "delete": 505.2,
+    "replace": 0.0
+   },
+   "run_py_wall": "20:51.12",
+   "cpu_percent": 716,
+   "max_rss_bytes_benchmark_process": 5233876992,
+   "peak_sampled_rss_bytes_all_processes": 5456261120,
+   "eligibility": {
+    "search_checkpoints": 33,
+    "queries": 330000,
+    "returned_ids": 3300000,
+    "all_returned_ids_live_and_unique": true
+   },
+   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "modal_app": "ap-Lx3gi1FOnVEay3B0LyA0Ii"
+  },
+  {
+   "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
+   "R": 32,
+   "L": 64,
+   "alpha": 1.0,
+   "T": 8,
+   "ef": 512,
+   "rerank": 512,
+   "recall10": 0.9371,
+   "runbook_seconds": 940.8,
+   "seconds_by_operation": {
+    "search": 191.2,
+    "insert": 420.7,
+    "delete": 328.9,
+    "replace": 0.0
+   },
+   "run_py_wall": "15:41.41",
+   "cpu_percent": 735,
+   "max_rss_bytes_benchmark_process": 5195005952,
+   "peak_sampled_rss_bytes_all_processes": 5331775488,
+   "eligibility": {
+    "search_checkpoints": 33,
+    "queries": 330000,
+    "returned_ids": 3300000,
+    "all_returned_ids_live_and_unique": true
+   },
+   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "modal_app": "ap-9Be3mBpFRIvUqrUmCLcvDD"
+  },
+  {
+   "hms_commit": "082766eb2c0483d4d41cec8715c6fb793b49746e",
+   "R": 64,
+   "L": 64,
+   "alpha": 1.0,
+   "T": 8,
+   "ef": 256,
+   "rerank": 256,
+   "recall10": 0.9353,
+   "runbook_seconds": 908.2,
+   "seconds_by_operation": {
+    "search": 121.4,
+    "insert": 443.0,
+    "delete": 343.8,
+    "replace": 0.0
+   },
+   "run_py_wall": "15:08.96",
+   "cpu_percent": 743,
+   "max_rss_bytes_benchmark_process": 5976023040,
+   "peak_sampled_rss_bytes_all_processes": 6196989952,
+   "eligibility": {
+    "search_checkpoints": 33,
+    "queries": 330000,
+    "returned_ids": 3300000,
+    "all_returned_ids_live_and_unique": true
+   },
+   "host": "Modal, 8 schedulable CPUs (cpu=8.0), 8 GiB memory hard limit, non-preemptible",
+   "modal_app": "ap-2EeMPwjBWmNjMnsiXrAb90"
+  }
+ ],
+ "replays": {
+  "description": "replay.py: the official runbook through UpdatableIndex with the adapter policy, recall@10 against the harness ground truth at every search step, several ef per pass; RSS sampled every 0.2 s (RssAnon, RssFile, VmRSS); the dataset is read through numpy.memmap, so RssFile includes source pages the official adapter does not hold",
+  "host": "Intel Core Ultra 9 185H, 22 threads, shared; each replay 8 threads on its own cores (0-7, 8-15 or 16-21), nice 19, systemd scope MemoryMax=12G MemorySwapMax=0; load average 11-25 from concurrent runs: elapsed and consolidation seconds are not timing claims",
+  "hms_commit": "c80aa52 (main; recall and graphs do not depend on the id width)",
+  "note": "runs stopped early (R64 L128, R64 L48) cover only the first checkpoints; their means are not comparable with full-runbook means",
+  "rows": [
+   {
+    "R": 32,
+    "L": 64,
+    "alpha": 1.0,
+    "steps_completed": 75,
+    "of_steps": 75,
+    "search_checkpoints": 33,
+    "of_checkpoints": 33,
+    "mean_recall10": {
+     "ef256": 0.8971,
+     "ef384": 0.9226,
+     "ef512": 0.9371,
+     "ef768": 0.9537
+    },
+    "consolidation_seconds": 1764.5,
+    "elapsed_seconds": 3692.3,
+    "peak_vmrss_mib": 4660,
+    "peak_rss_anon_mib": 2100,
+    "peak_rss_file_mib": 3111
+   },
+   {
+    "R": 64,
+    "L": 64,
+    "alpha": 1.0,
+    "steps_completed": 75,
+    "of_steps": 75,
+    "search_checkpoints": 33,
+    "of_checkpoints": 33,
+    "mean_recall10": {
+     "ef64": 0.8281,
+     "ef128": 0.8915,
+     "ef192": 0.9195,
+     "ef256": 0.9353
+    },
+    "consolidation_seconds": 1900.1,
+    "elapsed_seconds": 3011.2,
+    "peak_vmrss_mib": 6288,
+    "peak_rss_anon_mib": 2808,
+    "peak_rss_file_mib": 4203
+   },
+   {
+    "R": 64,
+    "L": 48,
+    "alpha": 1.0,
+    "steps_completed": 24,
+    "of_steps": 75,
+    "search_checkpoints": 11,
+    "of_checkpoints": 33,
+    "mean_recall10": {
+     "ef128": 0.8563,
+     "ef192": 0.894,
+     "ef256": 0.916,
+     "ef384": 0.9411
+    },
+    "consolidation_seconds": 364.7,
+    "elapsed_seconds": 839.0,
+    "peak_vmrss_mib": 3671,
+    "peak_rss_anon_mib": 1476,
+    "peak_rss_file_mib": 2373
+   },
+   {
+    "R": 64,
+    "L": 128,
+    "alpha": 1.0,
+    "steps_completed": 12,
+    "of_steps": 75,
+    "search_checkpoints": 6,
+    "of_checkpoints": 33,
+    "mean_recall10": {
+     "ef64": 0.8533,
+     "ef128": 0.9238,
+     "ef192": 0.9524,
+     "ef256": 0.9669
+    },
+    "consolidation_seconds": 212.3,
+    "elapsed_seconds": 407.2,
+    "peak_vmrss_mib": 2076,
+    "peak_rss_anon_mib": 807,
+    "peak_rss_file_mib": 1274
+   }
+  ]
+ }
+}

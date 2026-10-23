@@ -9,8 +9,9 @@ memory-mapped base graph, an in-memory delta graph of the rows inserted since th
 consolidation, and a rebuild of the base over the live rows when the delta or the deleted
 share passes the adapter's thresholds (delta 1.0x the base, 30% deleted, 100k rows minimum).
 
-Every number below traces to `benchmarks/results/bigann_streaming_delete_runbook_v1.json`,
-which records the HMS commit, the harness commit (`89a3aba`), the machine and the parameters.
+Every number below traces to `benchmarks/results/bigann_streaming_delete_runbook_v1.json`
+or, from "Operating point" on, `benchmarks/results/bigann_streaming_delete_runbook_v2.json`;
+both record the HMS commit, the harness commit (`89a3aba`), the machine and the parameters.
 
 ## Where the recall went
 
@@ -70,8 +71,76 @@ Per search step of the official runbook (harness ground truth, same wheel, R32 L
 | cc5dede | R32 L64 alpha 1.2 | 1024 | 0.9301 | 36.0 min | 7.47 GiB | Modal 8 vCPU |
 | e4df0b1 | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
 | e4df0b1 | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
+| 082766e | R32 L64 alpha 1.0 | 64 | 0.7623 | 13:32 (runbook steps 811 s) | 4.85 GiB | Modal 8 vCPU |
+| 082766e | R32 L64 alpha 1.0 | 128 | 0.8401 | 18:53 (1,132 s) | 4.84 GiB | Modal 8 vCPU |
+| 082766e | R32 L64 alpha 1.0 | 384 | 0.9226 | 20:51 (1,250 s) | 4.87 GiB | Modal 8 vCPU |
+| 082766e | R32 L64 alpha 1.0 | **512** | **0.9371** | **15:41 (941 s)** | 4.84 GiB | Modal 8 vCPU |
+| 082766e | R64 L64 alpha 1.0 | 256 | 0.9353 | 15:09 (908 s) | 5.57 GiB | Modal 8 vCPU |
 
 The baseline the track README quotes is DiskANN at R64 L50 Ls100: 0.924 in about 23 minutes
 on the competition VM (Azure D8lds v5). The writerslogic-02 runs are recall runs at `nice 19`
 on a shared host (Core Ultra 9 185H, 8 of 22 threads, 8 GiB cgroup cap); their wall time is
 an upper bound, not a timing claim.
+
+The Modal runs at 082766e each replay the runbook once, the R32 ones in four containers started
+together (cpu 8.0: eight schedulable CPUs, 8 GiB hard memory limit, non-preemptible,
+`/usr/bin/time -v` around `run.py`). Wall time spread between containers is host noise as much
+as ef: the ef 512 replay finished before the ef 384 one. The runbook-step sum (the harness's
+own per-step times) is the closer measure of index work; the wall includes start-up and the
+dataset range reads.
+
+## Operating point
+
+At R32 L64 alpha 1.0, **ef 512 scores 0.9371 against the track baseline's 0.924, in a 15:41
+replay (941 s of runbook steps) against the baseline's 23 minutes, at a 4.84 GiB peak.** ef 384
+falls just short (0.9226). The ef 64 and ef 128 rows reproduce the Core Ultra 9 numbers of
+e4df0b1 to the fourth digit, so the 3-byte ids of this change leave the results unchanged.
+
+The choice came from full-runbook replays on a shared Intel Core Ultra 9 185H (8 threads per
+replay, nice 19, load average 11-25; `replay.py`: the official runbook through `UpdatableIndex`
+with the adapter's policy, recall@10 against the harness ground truth at every checkpoint,
+several ef per pass). Mean recall@10 over the checkpoints each replay reached (rows marked
+partial were stopped early; their means cover the early checkpoints, which score higher than
+the late ones, so they are not comparable with full means):
+
+| build | checkpoints | ef 64 | ef 128 | ef 192 | ef 256 | ef 384 | ef 512 | ef 768 |
+|---|---|---|---|---|---|---|---|---|
+| R32 L64 | 33 of 33 | | | | 0.8971 | 0.9226 | 0.9371 | 0.9537 |
+| R64 L64 | 33 of 33 | 0.8281 | 0.8915 | 0.9195 | 0.9353 | | | |
+| R64 L48 | 11 of 33 (partial) | | 0.8563 | 0.8940 | 0.9160 | 0.9411 | | |
+| R64 L128 | 6 of 33 (partial) | 0.8533 | 0.9238 | 0.9524 | 0.9669 | | | |
+
+Each complete replay reproduced the official score to the fourth digit (R32 ef 384 0.9226, ef
+512 0.9371; R64 ef 256 0.9353), so a full replay is the official score without the harness.
+
+Degree 64 reaches the same recall at half the ef (R64 L64 ef 256 against R32 L64 ef 512), and
+on Modal its four rebuilding steps took 619 s against 580 s at R32, so the two points are
+close to a tie: R64 finishes 33 s sooner (908 s of steps against 941 s; 121 s of searching
+against 191 s) and scores 0.0018 lower, at 0.73 GiB more memory. R32 ef 512 is the configured
+point. In both, the inserts and deletes (which run the four rebuilds, of 1.9M to 3.8M live
+rows) are 80-87% of the time. R64 L128 rebuilt the first 825k rows 2.7x slower than R64 L64
+on the shared host and was stopped; R64 L48 was stopped after 11 checkpoints to free cores.
+
+## Memory
+
+Peak RSS at R32 is 4.84-4.87 GiB for the benchmark process (4.97 GiB sampled with the Modal
+parent), reached near the end of the runbook, when the live count (5.2M) and the mapped base
+pages searches touch are largest; at R64 it is 5.57 GiB. The anonymous peak comes earlier, in
+the step-49 rebuild of 3.8M rows (old delta, new adjacency, Python): 2.1 GiB at R32 and 2.7 GiB
+at R64 in the replays. The 8 GiB limit is not binding at either point. The earlier 7.47-7.78 GB
+peaks were measured at ff70f3e and cc5dede, before #205 moved consolidation onto a mapped
+scratch matrix and a bounded encoder instead of an owned row copy plus a full owned graph and
+encoding; the drop is consistent with that change, which this one does not touch.
+
+This change narrows the consolidated base's neighbour ids from 4 to 3 bytes whenever the
+generation has fewer than 2^24 - 1 rows (4-byte ids above that; variable-width encodings are
+untouched), as the static `VectorIndex` already does: the base vertex file shrinks from 380 to
+348 bytes per row at R32 (508 to 444 at R64), about 166 MB at 5.2M rows. The measured peak did
+not visibly move: 4.85 GiB at e4df0b1 (Core Ultra 9 host, 8 GiB cgroup) and 4.85 GiB at 082766e
+(Modal), on different hosts, so this is not a paired measurement.
+
+On the Core Ultra 9 host (no reclaim pressure, 12 GiB scope), the replays' RSS peaks split into
+anonymous memory (delta graph, build adjacency, Python) and mapped files (base, scratch rows,
+and the replay's own `numpy.memmap` of the source, which the official adapter does not hold):
+R32 L64 peaks at 4.55 GiB VmRSS (2.0 GiB anonymous, 2.5 GiB mapped) at step 73 with 5.2M live
+rows; R64 L64 at 6.04 GiB (2.0 anonymous, 4.1 mapped) at step 68 with 4.8M live rows.
