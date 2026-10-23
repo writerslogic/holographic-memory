@@ -42,8 +42,9 @@ stays flat across deletes and consolidations (at ef 1024 the 33 official checkpo
   is now 1.0.
 * The remaining distance to the DiskANN baseline (R64, Ls 100: 0.924) is the degree: R64 L128
   gains another 12 points at ef 64 and 10 at ef 128 on the prefix, at 2x the build time per
-  consolidation and about 128 more bytes per live row; the delete runbook already peaks near
-  7.5 GiB at R32, so R64 needs the consolidation memory reduced before it fits the 8 GiB cap.
+  consolidation and about 128 more bytes per live row; R32 peaked at 7.47 GiB
+  (sampled summed RSS, Modal, ef 1024) and at 4.85 GiB (GNU time, writerslogic-02, ef 64 and 128), so
+  whether R64 fits the 8 GiB cap is unmeasured; it needs one official R64 run.
 * Candidate retention (`reservoir`) changes nothing at any ef (0.7161 at 0, 256 and 512), so
   neither quantized estimates nor pool eviction is a loss mechanism here; the queries are
   simply far from the clustered rows (in-distribution queries reach 0.973 at ef 64 on the
@@ -68,8 +69,8 @@ Per search step of the official runbook (harness ground truth, same wheel, R32 L
 | ff70f3e | R32 L64 alpha 1.2 | 64 | 0.6814 | about 18 min per ef | 7.78 GB (both) | Modal 8 vCPU |
 | ff70f3e | R32 L64 alpha 1.2 | 128 | 0.7755 | | | Modal 8 vCPU |
 | cc5dede | R32 L64 alpha 1.2 | 1024 | 0.9301 | 36.0 min | 7.47 GiB | Modal 8 vCPU |
-| e4df0b1 | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
-| e4df0b1 | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
+| 791749b, alpha 1.0 passed explicitly | R32 L64 alpha 1.0 | 64 | 0.7623 | 59:40 for both replays, nice 19 | 4.85 GiB (GNU time, both) | writerslogic-02, cores 0-7 |
+| 791749b, alpha 1.0 passed explicitly | R32 L64 alpha 1.0 | 128 | 0.8401 | | | writerslogic-02, cores 0-7 |
 
 The baseline the track README quotes is DiskANN at R64 L50 Ls100: 0.924 in about 23 minutes
 on the competition VM (Azure D8lds v5). The writerslogic-02 runs are recall runs at `nice 19`
