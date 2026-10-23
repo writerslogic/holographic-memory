@@ -109,6 +109,10 @@ impl ActiveSegment {
         self.map
             .flush_range(offset, len)
             .map_err(|e| anyhow!("mmap flush_range failed: {}", e))?;
+        #[cfg(test)]
+        if tests::FAIL_NEXT_SYNC.replace(false) {
+            return Err(anyhow!("injected segment sync failure"));
+        }
         super::durable_file::sync_mapped_file(&self.file).context("segment sync failed")
     }
 }
@@ -625,7 +629,17 @@ impl PersistentArena {
             0
         };
         if durable {
-            active.sync_range(offset, total_frame_len + sentinel_len)?;
+            if let Err(error) = active.sync_range(offset, total_frame_len + sentinel_len) {
+                // The caller treats a failed commit as not committed and does not apply it:
+                // take the frame back out of the log, so a restart does not replay it and the
+                // next append overwrites its range (and syncs that range again). The frame's
+                // bytes and end marker are zeroed: torn-tail recovery treats a stale end
+                // marker after a damaged frame as committed data.
+                active.map[offset..offset + HEADER_SIZE].copy_from_slice(&end_marker_bytes());
+                active.map[offset + HEADER_SIZE..frame_end + sentinel_len].fill(0);
+                self.write_offset.store(offset, Ordering::Release);
+                return Err(error);
+            }
             // The frame is on disk and applied in memory by the caller; its pages are only
             // needed again by replay or compaction, which read them back from the file.
             if super::os_memory::release_journal_pages_enabled() {
@@ -719,8 +733,7 @@ impl PersistentArena {
         let file = File::open(&path)?;
         active.sync()?;
         // SAFETY: the segment is sealed by this rotation and never written again.
-        let mmap = unsafe { Mmap::map(&file)? };
-        self.read_segments.write().push(Arc::new(mmap));
+        let sealed = unsafe { Mmap::map(&file)? };
 
         let next_id = current_id + 1;
         let next_path = self.data_path.read().join(format!("seg_{}.bin", next_id));
@@ -738,7 +751,11 @@ impl PersistentArena {
         next_file.set_len(capacity as u64)?;
         next_file.sync_all()?;
         super::durable_file::sync_directory(&self.data_path.read())?;
-        **active = ActiveSegment::new(next_file)?;
+        let next = ActiveSegment::new(next_file)?;
+        // Every fallible step is behind us: a failure above leaves the arena on its current
+        // segment with `read_segments.len() == active_id`, so a retry starts from scratch.
+        self.read_segments.write().push(Arc::new(sealed));
+        **active = next;
         self.active_capacity.store(capacity, Ordering::Release);
         self.active_id.store(next_id, Ordering::SeqCst);
         self.write_offset.store(0, Ordering::SeqCst);
@@ -1008,6 +1025,83 @@ fn compaction_crash_point(phase: &str) {
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    thread_local! {
+        /// Makes the calling thread's next [`ActiveSegment::sync_range`] fail after its bytes
+        /// were written back, as a failed `fsync` does.
+        pub(super) static FAIL_NEXT_SYNC: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    }
+
+    /// The payloads of every frame in log order, as replay walks them.
+    fn replayed(arena: &PersistentArena) -> Result<Vec<Vec<u8>>> {
+        let mut frames = Vec::new();
+        let mut offset = 0;
+        while offset < arena.stats().used_bytes {
+            frames.push(arena.read_frame(offset)?.0);
+            offset = arena.next_offset(offset)?;
+        }
+        Ok(frames)
+    }
+
+    /// A commit whose sync fails is reported as not committed and is not applied by the
+    /// caller, so it must leave the log as it was: not replayed after a restart, and its
+    /// range reused by the next append.
+    #[test]
+    fn failed_commit_sync_leaves_the_log_unchanged() -> Result<()> {
+        for retry in [false, true] {
+            let dir = tempdir()?;
+            {
+                let arena = PersistentArena::new(dir.path())?;
+                arena.write_slice(b"committed")?;
+                let checkpoint = arena.checkpoint();
+                FAIL_NEXT_SYNC.set(true);
+                let failed = arena.write_slice(b"commit whose sync failed");
+                FAIL_NEXT_SYNC.set(false);
+                assert!(failed.is_err());
+                assert_eq!(arena.checkpoint(), checkpoint);
+                if retry {
+                    assert_eq!(arena.write_slice(b"next commit")?, checkpoint.1);
+                }
+            }
+            let expected: &[&[u8]] = if retry {
+                &[b"committed", b"next commit"]
+            } else {
+                &[b"committed"]
+            };
+            assert_eq!(replayed(&PersistentArena::new(dir.path())?)?, expected);
+        }
+        Ok(())
+    }
+
+    /// A rotation that fails part way leaves the arena on its old segment; retrying it must
+    /// not map the old segment a second time, which would serve the new segment's reads.
+    #[test]
+    fn failed_rotation_can_be_retried_without_aliasing_segments() -> Result<()> {
+        let dir = tempdir()?;
+        let arena = PersistentArena::new(dir.path())?;
+        arena.write_slice(b"first segment")?;
+        let blocker = dir.path().join("seg_1.bin");
+        std::fs::create_dir(&blocker)?;
+        assert!(arena
+            .rotate_segment_locked(&mut arena.active_segment.write())
+            .is_err());
+        assert_eq!(arena.stats().segment_count, 1);
+        assert_eq!(arena.read_segments.read().len(), 0);
+        std::fs::remove_dir(&blocker)?;
+        arena.rotate_segment_locked(&mut arena.active_segment.write())?;
+        assert_eq!(arena.read_segments.read().len(), 1);
+        let second = arena.write_slice(b"second segment")?;
+        assert_eq!(second, arena.segment_size);
+        assert_eq!(arena.read_frame(second)?.0, b"second segment");
+        assert_eq!(arena.read_frame(0)?.0, b"first segment");
+        drop(arena);
+        let restored = PersistentArena::new(dir.path())?;
+        assert_eq!(
+            replayed(&restored)?,
+            [b"first segment".to_vec(), b"second segment".to_vec()]
+        );
+        Ok(())
+    }
 
     #[test]
     fn reads_remain_on_the_requested_segment_during_rotation() -> Result<()> {
