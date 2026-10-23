@@ -173,12 +173,70 @@
     "zipper packing": "rejected without a held-out look: two-tenant LongMemEval analog drops at cuts 5 and 10 (all@5 .66 -> .63)"
   },
   "configurations_tried": {
-    "locomo_tuning": 8,
-    "locomo_heldout_looks": 3,
+    "locomo_tuning": 9,
+    "locomo_heldout_looks": 4,
     "longmemeval_dev_runs": 8
   },
   "openai_spend_usd": 0.0,
   "judge_accuracy": "unchanged from locomo_v1.json: no candidate passed the gates, so no reader/judge run",
   "binary_note": "Runs used an hms-server built at 8fddc13f plus the (reverted) episode option; with the option absent or 0 the ranking path is the unchanged one. After the revert, round-robin and cosine tuning runs, the LongMemEval baseline and the two-tenant zipper run were repeated on a server built from this branch and reproduced bit-identically.",
-  "open_domain_note": "primary passes 46.9-51.0 J (sd 1.65), all below Mem0 51.15; of 49 wrong, 15 had all evidence in context, 21 had none"
+  "open_domain_note": "primary passes 46.9-51.0 J (sd 1.65), all below Mem0 51.15; of 49 wrong, 15 had all evidence in context, 21 had none",
+  "captions_variant": {
+    "label": "variant, not the matched protocol: image tag appended to turn text as mem0ai/memory-benchmarks@4b61c5d benchmarks/locomo/run.py session_to_chunks; the paper-era harness (mem0ai/mem0 evaluation/src/memzero/add.py @393a4fd5) ingests turn text only",
+    "config": "#236 primary (hybrid, k=30/speaker, 1764 cap, round-robin) + captions; single pre-registered config",
+    "tuning": {
+      "n": 385,
+      "overall": 0.8491,
+      "context_tokens_mean": 1747.4,
+      "category_1": 0.6408,
+      "category_2": 0.9778,
+      "category_3": 0.6429,
+      "category_4": 0.89
+    },
+    "heldout_once": {
+      "n": 1155,
+      "overall": 0.8022,
+      "context_tokens_mean": 1746.6,
+      "category_1": 0.5778,
+      "category_2": 0.8438,
+      "category_3": 0.5788,
+      "category_4": 0.8861
+    },
+    "all10_weighted": {
+      "overall": 0.8139,
+      "category_1": 0.5943,
+      "category_2": 0.8814,
+      "category_3": 0.5928,
+      "category_4": 0.887
+    },
+    "baseline_all10": {
+      "overall": 0.818,
+      "category_1": 0.6038,
+      "category_2": 0.879,
+      "category_3": 0.5642,
+      "category_4": 0.8956
+    },
+    "memories_per_question": {
+      "tuning": [
+        36.3,
+        32.7
+      ],
+      "heldout": [
+        36.7,
+        32.9
+      ]
+    },
+    "heldout_evidence_turns_in_context": {
+      "text": [
+        "793/1123",
+        "776/1123"
+      ],
+      "image": [
+        "508/719",
+        "510/719"
+      ]
+    },
+    "decision": "held-out evidence recall fell in every category; pre-registered rule (tuning and held-out rise) failed; no reader/judge run",
+    "embedding_spend_usd": 0.0016
+  }
 }
