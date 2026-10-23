@@ -24,7 +24,6 @@ Example (3 LoCoMo questions, $1 cap):
 from __future__ import annotations
 
 import argparse
-import contextlib
 import datetime as dt
 import hashlib
 import json
@@ -213,58 +212,56 @@ def main() -> None:
     config = json.loads(args.config.read_text())
     hms_repo = HERE.parents[2]
     project = args.project_name or f"hms-{args.benchmark}"
-    stack = contextlib.ExitStack()
     procs: list[subprocess.Popen] = []
-    try:
-        logs = {name: stack.enter_context(open(work / f"{name}.log", "ab"))
-                for name in ("hms-server", "shim", "proxy", "harness")}
-        hms_cmd = [str(args.hms_bin), "--no-auth", "--bind", "127.0.0.1:0", "--data-dir", str((args.data_dir or work / "hms-data").resolve()),
-                   "--input-dim", "384", "--max-top-k", str(config.get("max_k", 200)), "--max-tenants", "1024",
-                   "--tenant-idle-seconds", "120", "--max-concurrent-work", "16", "--max-queue", "1024",
-                   "--queue-timeout-ms", "60000"]
-        hms = subprocess.Popen(hms_cmd, stdout=subprocess.PIPE, stderr=logs["hms-server"])
-        procs.append(hms)
-        line = hms.stdout.readline().decode()
-        m = re.search(r"listening on (\S+)", line)
-        if not m:
-            raise RuntimeError(f"hms-server did not start: {line!r}")
-        hms_url = f"http://{m.group(1)}"
+    with open(work / "hms-server.log", "ab") as log_hms, open(work / "shim.log", "ab") as log_shim, \
+            open(work / "proxy.log", "ab") as log_proxy, open(work / "harness.log", "ab") as log_harness:
+        try:
+            hms_cmd = [str(args.hms_bin), "--no-auth", "--bind", "127.0.0.1:0", "--data-dir", str((args.data_dir or work / "hms-data").resolve()),
+                       "--input-dim", "384", "--max-top-k", str(config.get("max_k", 200)), "--max-tenants", "1024",
+                       "--tenant-idle-seconds", "120", "--max-concurrent-work", "16", "--max-queue", "1024",
+                       "--queue-timeout-ms", "60000"]
+            hms = subprocess.Popen(hms_cmd, stdout=subprocess.PIPE, stderr=log_hms)
+            procs.append(hms)
+            line = hms.stdout.readline().decode()
+            m = re.search(r"listening on (\S+)", line)
+            if not m:
+                raise RuntimeError(f"hms-server did not start: {line!r}")
+            hms_url = f"http://{m.group(1)}"
 
-        shim_port, proxy_port = free_port(), free_port()
-        shim_cmd = [sys.executable, str(HERE / "shim.py"), "--hms-url", hms_url, "--config", str(args.config),
-                    "--port", str(shim_port)]
-        procs.append(subprocess.Popen(shim_cmd, stdout=logs["shim"], stderr=logs["shim"]))
-        proxy_log = work / "openai_calls.jsonl"
-        proxy_cmd = [sys.executable, str(HERE / "openai_proxy.py"), "--port", str(proxy_port), "--log", str(proxy_log),
-                     "--max-spend", str(args.max_spend)]
-        procs.append(subprocess.Popen(proxy_cmd, stdout=logs["proxy"], stderr=logs["proxy"]))
-        wait_http(f"http://127.0.0.1:{shim_port}/_shim/stats")
-        wait_http(f"http://127.0.0.1:{proxy_port}/_proxy/health")
+            shim_port, proxy_port = free_port(), free_port()
+            shim_cmd = [sys.executable, str(HERE / "shim.py"), "--hms-url", hms_url, "--config", str(args.config),
+                        "--port", str(shim_port)]
+            procs.append(subprocess.Popen(shim_cmd, stdout=log_shim, stderr=log_shim))
+            proxy_log = work / "openai_calls.jsonl"
+            proxy_cmd = [sys.executable, str(HERE / "openai_proxy.py"), "--port", str(proxy_port), "--log", str(proxy_log),
+                         "--max-spend", str(args.max_spend)]
+            procs.append(subprocess.Popen(proxy_cmd, stdout=log_proxy, stderr=log_proxy))
+            wait_http(f"http://127.0.0.1:{shim_port}/_shim/stats")
+            wait_http(f"http://127.0.0.1:{proxy_port}/_proxy/health")
 
-        out_dir = work / "harness-out"
-        cmd = [args.python, *PROTOCOL[args.benchmark], *COMMON, "--project-name", project,
-               "--output-dir", str(out_dir), "--max-workers", str(args.max_workers),
-               "--mem0-host", f"http://127.0.0.1:{shim_port}"]
-        if args.dataset:
-            cmd += [DATASETS[args.benchmark], str(args.dataset.resolve())]
-        cmd += args.extra
-        env = {k: v for k, v in os.environ.items() if not k.startswith(("MEM0_", "AZURE_"))}
-        env["OPENAI_BASE_URL"] = f"http://127.0.0.1:{proxy_port}/v1"
-        retrieval_before = retrieval_hash(out_dir)
-        started = dt.datetime.now(dt.timezone.utc).isoformat()
-        rc = subprocess.run(cmd, cwd=clone, env=env, stdout=logs["harness"], stderr=subprocess.STDOUT).returncode
-        finished = dt.datetime.now(dt.timezone.utc).isoformat()
-        with urllib.request.urlopen(f"http://127.0.0.1:{shim_port}/_shim/stats", timeout=10) as r:
-            facts = json.loads(r.read())["facts_by_tenant"]
-    finally:
-        for p in reversed(procs):
-            p.terminate()
-        for p in procs:
-            try:
-                p.wait(timeout=60)
-            except subprocess.TimeoutExpired:
-                p.kill()
-        stack.close()
+            out_dir = work / "harness-out"
+            cmd = [args.python, *PROTOCOL[args.benchmark], *COMMON, "--project-name", project,
+                   "--output-dir", str(out_dir), "--max-workers", str(args.max_workers),
+                   "--mem0-host", f"http://127.0.0.1:{shim_port}"]
+            if args.dataset:
+                cmd += [DATASETS[args.benchmark], str(args.dataset.resolve())]
+            cmd += args.extra
+            env = {k: v for k, v in os.environ.items() if not k.startswith(("MEM0_", "AZURE_"))}
+            env["OPENAI_BASE_URL"] = f"http://127.0.0.1:{proxy_port}/v1"
+            retrieval_before = retrieval_hash(out_dir)
+            started = dt.datetime.now(dt.timezone.utc).isoformat()
+            rc = subprocess.run(cmd, cwd=clone, env=env, stdout=log_harness, stderr=subprocess.STDOUT).returncode
+            finished = dt.datetime.now(dt.timezone.utc).isoformat()
+            with urllib.request.urlopen(f"http://127.0.0.1:{shim_port}/_shim/stats", timeout=10) as r:
+                facts = json.loads(r.read())["facts_by_tenant"]
+        finally:
+            for p in reversed(procs):
+                p.terminate()
+            for p in procs:
+                try:
+                    p.wait(timeout=60)
+                except subprocess.TimeoutExpired:
+                    p.kill()
 
     phase = "evaluate" if "--evaluate-only" in args.extra else "predict" if "--predict-only" in args.extra else "full"
     retrieval_after = retrieval_hash(out_dir)
