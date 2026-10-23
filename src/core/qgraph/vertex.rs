@@ -2207,19 +2207,22 @@ impl SearchScratch {
                 let list = &mut self.fresh;
                 g.for_each_neighbour(v, |u| list.push(u));
                 self.survivors.clear();
-                'screen: for b in 0..g.blocks_per_vertex {
+                for (b, ids) in self
+                    .fresh
+                    .chunks(BLOCK)
+                    .take(g.blocks_per_vertex)
+                    .enumerate()
+                {
                     let (codes, scales, offsets) = g.block(v, b);
                     scan32(codes, &self.bq.lut, g.block_m, &mut self.scan);
-                    for i in 0..BLOCK {
-                        let Some(&u) = self.fresh.get(b * BLOCK + i) else {
-                            break 'screen;
-                        };
+                    let (scales, offsets) = (scales.as_chunks::<4>().0, offsets.as_chunks::<4>().0);
+                    for (((&u, &raw), s), o) in ids.iter().zip(&self.scan).zip(scales).zip(offsets)
+                    {
                         if !self.visited.insert(u) {
                             continue;
                         }
-                        let s = le_f32(scales, i);
-                        let ip =
-                            ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
+                        let s = f32::from_le_bytes(*s);
+                        let ip = ip_v + s * (delta * raw as f32 + min_sum) + f32::from_le_bytes(*o);
                         if let Some(w) = worst {
                             let sigma = (g.block_kappa * s * s * d2_v).sqrt();
                             if -(ip + sigmas * sigma) * inv_sq >= w {
@@ -2262,16 +2265,19 @@ impl SearchScratch {
                 self.fresh.clear();
                 let list = &mut self.fresh;
                 g.for_each_neighbour(v, |u| list.push(u));
-                'blocks: for b in 0..g.blocks_per_vertex {
+                for (b, ids) in self
+                    .fresh
+                    .chunks(BLOCK)
+                    .take(g.blocks_per_vertex)
+                    .enumerate()
+                {
                     let (codes, scales, offsets) = g.block(v, b);
                     scan32(codes, &self.bq.lut, g.block_m, &mut self.scan);
-                    for i in 0..BLOCK {
-                        let Some(&u) = self.fresh.get(b * BLOCK + i) else {
-                            break 'blocks;
-                        };
-                        let s = le_f32(scales, i);
-                        let ip =
-                            ip_v + s * (delta * self.scan[i] as f32 + min_sum) + le_f32(offsets, i);
+                    let (scales, offsets) = (scales.as_chunks::<4>().0, offsets.as_chunks::<4>().0);
+                    for (((&u, &raw), s), o) in ids.iter().zip(&self.scan).zip(scales).zip(offsets)
+                    {
+                        let s = f32::from_le_bytes(*s);
+                        let ip = ip_v + s * (delta * raw as f32 + min_sum) + f32::from_le_bytes(*o);
                         if !fuse {
                             // Without fusion the block path keeps the plain path's byte marks
                             // (the per-vertex trace records would not stay in cache).
