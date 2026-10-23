@@ -1,0 +1,836 @@
+{
+  "description": "Development A/B (not a standings run): per-call latency of the holographic-sdk Python client vs raw http.client against a local release hms-server, 10,000 rows, dim 384, top_k 10. One process per SDK build and round, 3 interleaved rounds with rotated order; each process starts its own server and measures raw, sync SDK and async SDK on the same connection pattern.",
+  "machine": "Apple M-series, 10 threads",
+  "hms_commit": "82b42f7b",
+  "sdk_before": "82b42f7b",
+  "server": "hms-server built from 82b42f7b (unchanged by this change), release, --features security,server, default settings",
+  "builds": {
+    "after": {
+      "packages": {
+        "httpx": "0.28.1",
+        "httpcore": "1.0.9",
+        "sniffio": "1.3.1",
+        "orjson": null
+      },
+      "python": "3.14.7",
+      "load_average_per_round": [
+        [
+          6.61181640625,
+          15.66015625,
+          17.36474609375
+        ],
+        [
+          5.08154296875,
+          14.03125,
+          16.6767578125
+        ],
+        [
+          2.7177734375,
+          9.78857421875,
+          14.556640625
+        ]
+      ],
+      "rounds": 3,
+      "variants": {
+        "raw": {
+          "query": {
+            "p50_us_per_round": [
+              324.6,
+              324.8,
+              416.0
+            ],
+            "p99_us_per_round": [
+              577.0,
+              469.5,
+              1036.5
+            ],
+            "p50_us_median": 324.8,
+            "p99_us_median": 577.0,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "add": {
+            "p50_us_per_round": [
+              3986.5,
+              3956.3,
+              3989.8
+            ],
+            "p99_us_per_round": [
+              10975.0,
+              4937.1,
+              5444.5
+            ],
+            "p50_us_median": 3986.5,
+            "p99_us_median": 5444.5,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "replace": {
+            "p50_us_per_round": [
+              3998.7,
+              3975.8,
+              4921.8
+            ],
+            "p99_us_per_round": [
+              5057.4,
+              5063.0,
+              6582.8
+            ],
+            "p50_us_median": 3998.7,
+            "p99_us_median": 5063.0,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "delete": {
+            "p50_us_per_round": [
+              3980.6,
+              3987.7,
+              4951.7
+            ],
+            "p99_us_per_round": [
+              5957.7,
+              8925.5,
+              6194.2
+            ],
+            "p50_us_median": 3987.7,
+            "p99_us_median": 6194.2,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          }
+        },
+        "sdk": {
+          "query": {
+            "p50_us_per_round": [
+              399.1,
+              401.7,
+              477.4
+            ],
+            "p99_us_per_round": [
+              754.3,
+              644.3,
+              1357.0
+            ],
+            "p50_us_median": 401.7,
+            "p99_us_median": 754.3,
+            "p50_over_raw_us_per_round": [
+              74.5,
+              76.9,
+              61.4
+            ],
+            "p50_over_raw_us_median": 74.5
+          },
+          "add": {
+            "p50_us_per_round": [
+              3992.9,
+              3983.5,
+              4013.0
+            ],
+            "p99_us_per_round": [
+              5217.8,
+              5061.1,
+              5511.4
+            ],
+            "p50_us_median": 3992.9,
+            "p99_us_median": 5217.8,
+            "p50_over_raw_us_per_round": [
+              6.4,
+              27.2,
+              23.1
+            ],
+            "p50_over_raw_us_median": 23.1
+          },
+          "replace": {
+            "p50_us_per_round": [
+              3997.2,
+              3985.4,
+              4938.9
+            ],
+            "p99_us_per_round": [
+              5255.9,
+              6548.7,
+              6810.9
+            ],
+            "p50_us_median": 3997.2,
+            "p99_us_median": 6548.7,
+            "p50_over_raw_us_per_round": [
+              -1.4,
+              9.5,
+              17.2
+            ],
+            "p50_over_raw_us_median": 9.5
+          },
+          "delete": {
+            "p50_us_per_round": [
+              3990.9,
+              3990.3,
+              5180.4
+            ],
+            "p99_us_per_round": [
+              6169.3,
+              8173.0,
+              6848.1
+            ],
+            "p50_us_median": 3990.9,
+            "p99_us_median": 6848.1,
+            "p50_over_raw_us_per_round": [
+              10.3,
+              2.7,
+              228.7
+            ],
+            "p50_over_raw_us_median": 10.3
+          }
+        },
+        "sdk-async": {
+          "query": {
+            "p50_us_per_round": [
+              618.1,
+              623.6,
+              677.0
+            ],
+            "p99_us_per_round": [
+              1182.7,
+              1084.0,
+              1978.0
+            ],
+            "p50_us_median": 623.6,
+            "p99_us_median": 1182.7,
+            "p50_over_raw_us_per_round": [
+              293.5,
+              298.8,
+              261.0
+            ],
+            "p50_over_raw_us_median": 293.5
+          },
+          "add": {
+            "p50_us_per_round": [
+              4105.6,
+              4019.1,
+              4876.7
+            ],
+            "p99_us_per_round": [
+              9956.5,
+              5866.1,
+              5742.3
+            ],
+            "p50_us_median": 4105.6,
+            "p99_us_median": 5866.1,
+            "p50_over_raw_us_per_round": [
+              119.1,
+              62.8,
+              886.9
+            ],
+            "p50_over_raw_us_median": 119.1
+          },
+          "replace": {
+            "p50_us_per_round": [
+              4508.6,
+              4020.7,
+              4976.4
+            ],
+            "p99_us_per_round": [
+              11031.8,
+              5153.9,
+              7272.8
+            ],
+            "p50_us_median": 4508.6,
+            "p99_us_median": 7272.8,
+            "p50_over_raw_us_per_round": [
+              509.9,
+              44.8,
+              54.7
+            ],
+            "p50_over_raw_us_median": 54.7
+          },
+          "delete": {
+            "p50_us_per_round": [
+              4029.8,
+              3980.4,
+              5018.1
+            ],
+            "p99_us_per_round": [
+              10471.0,
+              5133.0,
+              10762.5
+            ],
+            "p50_us_median": 4029.8,
+            "p99_us_median": 10471.0,
+            "p50_over_raw_us_per_round": [
+              49.2,
+              -7.3,
+              66.4
+            ],
+            "p50_over_raw_us_median": 49.2
+          }
+        }
+      }
+    },
+    "after-orjson": {
+      "packages": {
+        "httpx": "0.28.1",
+        "httpcore": "1.0.9",
+        "sniffio": "1.3.1",
+        "orjson": "3.13.0"
+      },
+      "python": "3.14.7",
+      "load_average_per_round": [
+        [
+          6.02001953125,
+          14.81396484375,
+          17.009765625
+        ],
+        [
+          4.501953125,
+          13.31640625,
+          16.357421875
+        ],
+        [
+          3.474609375,
+          11.4541015625,
+          15.4541015625
+        ]
+      ],
+      "rounds": 3,
+      "variants": {
+        "raw": {
+          "query": {
+            "p50_us_per_round": [
+              322.9,
+              326.1,
+              411.1
+            ],
+            "p99_us_per_round": [
+              481.7,
+              452.8,
+              983.2
+            ],
+            "p50_us_median": 326.1,
+            "p99_us_median": 481.7,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "add": {
+            "p50_us_per_round": [
+              3981.3,
+              1749.4,
+              3998.6
+            ],
+            "p99_us_per_round": [
+              4995.0,
+              4540.7,
+              5321.3
+            ],
+            "p50_us_median": 3981.3,
+            "p99_us_median": 4995.0,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "replace": {
+            "p50_us_per_round": [
+              3984.2,
+              1908.2,
+              4975.5
+            ],
+            "p99_us_per_round": [
+              4864.1,
+              4942.1,
+              6194.9
+            ],
+            "p50_us_median": 3984.2,
+            "p99_us_median": 4942.1,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "delete": {
+            "p50_us_per_round": [
+              3981.8,
+              3952.2,
+              4951.5
+            ],
+            "p99_us_per_round": [
+              4153.8,
+              4820.5,
+              6224.0
+            ],
+            "p50_us_median": 3981.8,
+            "p99_us_median": 4820.5,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          }
+        },
+        "sdk": {
+          "query": {
+            "p50_us_per_round": [
+              300.5,
+              307.1,
+              408.1
+            ],
+            "p99_us_per_round": [
+              555.8,
+              519.0,
+              1356.9
+            ],
+            "p50_us_median": 307.1,
+            "p99_us_median": 555.8,
+            "p50_over_raw_us_per_round": [
+              -22.5,
+              -19.0,
+              -3.0
+            ],
+            "p50_over_raw_us_median": -19.0
+          },
+          "add": {
+            "p50_us_per_round": [
+              3977.8,
+              1780.2,
+              4008.2
+            ],
+            "p99_us_per_round": [
+              5029.8,
+              4435.7,
+              5453.5
+            ],
+            "p50_us_median": 3977.8,
+            "p99_us_median": 5029.8,
+            "p50_over_raw_us_per_round": [
+              -3.5,
+              30.9,
+              9.6
+            ],
+            "p50_over_raw_us_median": 9.6
+          },
+          "replace": {
+            "p50_us_per_round": [
+              3980.8,
+              3386.4,
+              4995.9
+            ],
+            "p99_us_per_round": [
+              5066.4,
+              4992.2,
+              9033.0
+            ],
+            "p50_us_median": 3980.8,
+            "p99_us_median": 5066.4,
+            "p50_over_raw_us_per_round": [
+              -3.4,
+              1478.2,
+              20.4
+            ],
+            "p50_over_raw_us_median": 20.4
+          },
+          "delete": {
+            "p50_us_per_round": [
+              3982.1,
+              3953.8,
+              5185.2
+            ],
+            "p99_us_per_round": [
+              4648.2,
+              5059.1,
+              7365.2
+            ],
+            "p50_us_median": 3982.1,
+            "p99_us_median": 5059.1,
+            "p50_over_raw_us_per_round": [
+              0.3,
+              1.6,
+              233.8
+            ],
+            "p50_over_raw_us_median": 1.6
+          }
+        },
+        "sdk-async": {
+          "query": {
+            "p50_us_per_round": [
+              531.5,
+              534.6,
+              592.5
+            ],
+            "p99_us_per_round": [
+              976.3,
+              966.1,
+              1686.9
+            ],
+            "p50_us_median": 534.6,
+            "p99_us_median": 976.3,
+            "p50_over_raw_us_per_round": [
+              208.5,
+              208.5,
+              181.3
+            ],
+            "p50_over_raw_us_median": 208.5
+          },
+          "add": {
+            "p50_us_per_round": [
+              3992.0,
+              2110.5,
+              4804.2
+            ],
+            "p99_us_per_round": [
+              6475.8,
+              5103.0,
+              5663.0
+            ],
+            "p50_us_median": 3992.0,
+            "p99_us_median": 5663.0,
+            "p50_over_raw_us_per_round": [
+              10.7,
+              361.1,
+              805.5
+            ],
+            "p50_over_raw_us_median": 361.1
+          },
+          "replace": {
+            "p50_us_per_round": [
+              3993.3,
+              2152.7,
+              4986.7
+            ],
+            "p99_us_per_round": [
+              5242.5,
+              5001.7,
+              7522.0
+            ],
+            "p50_us_median": 3993.3,
+            "p99_us_median": 5242.5,
+            "p50_over_raw_us_per_round": [
+              9.1,
+              244.5,
+              11.3
+            ],
+            "p50_over_raw_us_median": 11.3
+          },
+          "delete": {
+            "p50_us_per_round": [
+              3991.8,
+              3962.0,
+              5027.7
+            ],
+            "p99_us_per_round": [
+              5872.6,
+              4993.9,
+              7445.5
+            ],
+            "p50_us_median": 3991.8,
+            "p99_us_median": 5872.6,
+            "p50_over_raw_us_per_round": [
+              10.0,
+              9.8,
+              76.2
+            ],
+            "p50_over_raw_us_median": 10.0
+          }
+        }
+      }
+    },
+    "before": {
+      "packages": {
+        "httpx": "0.28.1",
+        "httpcore": "1.0.9",
+        "sniffio": null,
+        "orjson": null
+      },
+      "python": "3.14.7",
+      "load_average_per_round": [
+        [
+          8.02783203125,
+          16.6953125,
+          17.77099609375
+        ],
+        [
+          4.01513671875,
+          12.2451171875,
+          15.84521484375
+        ],
+        [
+          3.056640625,
+          10.59521484375,
+          15.00341796875
+        ]
+      ],
+      "rounds": 3,
+      "variants": {
+        "raw": {
+          "query": {
+            "p50_us_per_round": [
+              328.2,
+              334.0,
+              421.7
+            ],
+            "p99_us_per_round": [
+              1140.3,
+              717.0,
+              1008.9
+            ],
+            "p50_us_median": 334.0,
+            "p99_us_median": 1008.9,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "add": {
+            "p50_us_per_round": [
+              4013.7,
+              3981.2,
+              4002.5
+            ],
+            "p99_us_per_round": [
+              50937.8,
+              23891.5,
+              5156.5
+            ],
+            "p50_us_median": 4002.5,
+            "p99_us_median": 23891.5,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "replace": {
+            "p50_us_per_round": [
+              4002.8,
+              4021.0,
+              4974.6
+            ],
+            "p99_us_per_round": [
+              33007.8,
+              31091.6,
+              6242.9
+            ],
+            "p50_us_median": 4021.0,
+            "p99_us_median": 31091.6,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          },
+          "delete": {
+            "p50_us_per_round": [
+              4002.5,
+              4056.1,
+              4844.0
+            ],
+            "p99_us_per_round": [
+              26964.8,
+              21940.9,
+              6216.1
+            ],
+            "p50_us_median": 4056.1,
+            "p99_us_median": 21940.9,
+            "p50_over_raw_us_per_round": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "p50_over_raw_us_median": 0.0
+          }
+        },
+        "sdk": {
+          "query": {
+            "p50_us_per_round": [
+              481.8,
+              486.7,
+              542.9
+            ],
+            "p99_us_per_round": [
+              4647.2,
+              1439.4,
+              1425.9
+            ],
+            "p50_us_median": 486.7,
+            "p99_us_median": 1439.4,
+            "p50_over_raw_us_per_round": [
+              153.6,
+              152.7,
+              121.2
+            ],
+            "p50_over_raw_us_median": 152.7
+          },
+          "add": {
+            "p50_us_per_round": [
+              4013.9,
+              4008.2,
+              4169.7
+            ],
+            "p99_us_per_round": [
+              41948.0,
+              34464.2,
+              5644.7
+            ],
+            "p50_us_median": 4013.9,
+            "p99_us_median": 34464.2,
+            "p50_over_raw_us_per_round": [
+              0.2,
+              27.0,
+              167.2
+            ],
+            "p50_over_raw_us_median": 27.0
+          },
+          "replace": {
+            "p50_us_per_round": [
+              3997.8,
+              4033.7,
+              4981.3
+            ],
+            "p99_us_per_round": [
+              33917.6,
+              27018.3,
+              7127.6
+            ],
+            "p50_us_median": 4033.7,
+            "p99_us_median": 27018.3,
+            "p50_over_raw_us_per_round": [
+              -5.0,
+              12.7,
+              6.7
+            ],
+            "p50_over_raw_us_median": 6.7
+          },
+          "delete": {
+            "p50_us_per_round": [
+              3992.0,
+              4040.7,
+              5269.2
+            ],
+            "p99_us_per_round": [
+              29376.9,
+              22656.6,
+              7178.1
+            ],
+            "p50_us_median": 4040.7,
+            "p99_us_median": 22656.6,
+            "p50_over_raw_us_per_round": [
+              -10.4,
+              -15.4,
+              425.2
+            ],
+            "p50_over_raw_us_median": -10.4
+          }
+        },
+        "sdk-async": {
+          "query": {
+            "p50_us_per_round": [
+              740.2,
+              745.1,
+              777.6
+            ],
+            "p99_us_per_round": [
+              3945.9,
+              1985.1,
+              2272.1
+            ],
+            "p50_us_median": 745.1,
+            "p99_us_median": 2272.1,
+            "p50_over_raw_us_per_round": [
+              412.0,
+              411.1,
+              355.9
+            ],
+            "p50_over_raw_us_median": 411.1
+          },
+          "add": {
+            "p50_us_per_round": [
+              4892.2,
+              4895.8,
+              4979.8
+            ],
+            "p99_us_per_round": [
+              36012.0,
+              28258.0,
+              5912.9
+            ],
+            "p50_us_median": 4895.8,
+            "p99_us_median": 28258.0,
+            "p50_over_raw_us_per_round": [
+              878.5,
+              914.6,
+              977.2
+            ],
+            "p50_over_raw_us_median": 914.6
+          },
+          "replace": {
+            "p50_us_per_round": [
+              4951.5,
+              4988.9,
+              5027.0
+            ],
+            "p99_us_per_round": [
+              46302.3,
+              27015.1,
+              7214.9
+            ],
+            "p50_us_median": 4988.9,
+            "p99_us_median": 27015.1,
+            "p50_over_raw_us_per_round": [
+              948.7,
+              967.8,
+              52.4
+            ],
+            "p50_over_raw_us_median": 948.7
+          },
+          "delete": {
+            "p50_us_per_round": [
+              4039.5,
+              4653.6,
+              5547.9
+            ],
+            "p99_us_per_round": [
+              39461.7,
+              20304.2,
+              8014.0
+            ],
+            "p50_us_median": 4653.6,
+            "p99_us_median": 20304.2,
+            "p50_over_raw_us_per_round": [
+              37.0,
+              597.5,
+              704.0
+            ],
+            "p50_over_raw_us_median": 597.5
+          }
+        }
+      }
+    }
+  },
+  "sdk_after": "branch perf/python-sdk-overhead",
+  "method": "one process per build per round, build order rotated; inside a process raw, sync and async alternate in 20 blocks with rotating order; load_average is os.getloadavg() at process end"
+}

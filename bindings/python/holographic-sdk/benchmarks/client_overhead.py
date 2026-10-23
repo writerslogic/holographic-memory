@@ -188,17 +188,21 @@ def main():
                     time_sync(v, clients[v], warm, args.top_k)
                 warm = make_ops(rng, args.dim, {"query": 50, "write": 20}, f"warm-{v}")
 
+            # Variants alternate in small blocks with a rotating order, so background load on a
+            # shared machine lands on raw and SDK calls alike and the per-call difference stays paired.
+            blocks = 20
+            block = {"query": max(1, n["query"] // blocks), "write": max(1, n["write"] // blocks)}
             for r in range(args.rounds):
-                order = variants[r % len(variants):] + variants[: r % len(variants)]
-                for v in order:
-                    ops = make_ops(rng, args.dim, n, f"r{r}-{v}")
-                    if v.endswith("-async"):
-                        got = loop.run_until_complete(time_async(clients[v], ops, args.top_k))
-                    else:
-                        got = time_sync(v, clients[v], ops, args.top_k)
-                    for k, xs in got.items():
-                        samples[v][k].extend(xs)
-                    print(f"{args.label} round {r} {v}: query p50 {pct(got['query'], 0.5) / 1e3:.0f} us", file=sys.stderr)
+                for b in range(blocks):
+                    s = (r + b) % len(variants)
+                    for v in variants[s:] + variants[:s]:
+                        ops = make_ops(rng, args.dim, block, f"r{r}-b{b}-{v}")
+                        if v.endswith("-async"):
+                            got = loop.run_until_complete(time_async(clients[v], ops, args.top_k))
+                        else:
+                            got = time_sync(v, clients[v], ops, args.top_k)
+                        for k, xs in got.items():
+                            samples[v][k].extend(xs)
         finally:
             proc.terminate()
             proc.wait(timeout=30)
