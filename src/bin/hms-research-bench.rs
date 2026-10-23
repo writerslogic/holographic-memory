@@ -88,9 +88,7 @@ fn main() {
     }
 }
 
-// ============================================================================
 // Real-world knowledge graph dataset
-// ============================================================================
 
 struct KnowledgeGraph {
     entities: Vec<&'static str>,
@@ -380,9 +378,7 @@ fn build_knowledge_graph() -> KnowledgeGraph {
     }
 }
 
-// ============================================================================
 // 1. Knowledge graph retrieval — real facts, Zipfian extension, shared entities
-// ============================================================================
 
 fn bench_knowledge_graph(dim: usize, dd: usize, quick: bool) -> serde_json::Value {
     let kg = build_knowledge_graph();
@@ -542,9 +538,7 @@ fn zipf_sample(i: u64, max: usize) -> usize {
     rank.min(max - 1)
 }
 
-// ============================================================================
 // 2. Analogy completion — "A is to B as C is to ?"
-// ============================================================================
 
 fn bench_analogy(dim: usize, dd: usize) -> serde_json::Value {
     let kg = build_knowledge_graph();
@@ -635,9 +629,7 @@ fn bench_analogy(dim: usize, dd: usize) -> serde_json::Value {
     })
 }
 
-// ============================================================================
 // 3. Interference stress — shared entities across facts
-// ============================================================================
 
 fn bench_interference(dim: usize, dd: usize, quick: bool) -> serde_json::Value {
     let role_arg1 = 2usize;
@@ -815,9 +807,7 @@ fn bench_interference(dim: usize, dd: usize, quick: bool) -> serde_json::Value {
     })
 }
 
-// ============================================================================
 // 4. Multi-hop inference — A->B->C chains
-// ============================================================================
 
 fn bench_multihop(dim: usize, dd: usize) -> serde_json::Value {
     let kg = build_knowledge_graph();
@@ -955,9 +945,7 @@ fn bench_multihop(dim: usize, dd: usize) -> serde_json::Value {
     })
 }
 
-// ============================================================================
 // 5. Sequence encoding — positional retrieval at each slot
-// ============================================================================
 
 fn bench_sequence(dim: usize, dd: usize, quick: bool) -> serde_json::Value {
     let max_len = if quick { 50 } else { 200 };
@@ -1026,9 +1014,7 @@ fn bench_sequence(dim: usize, dd: usize, quick: bool) -> serde_json::Value {
     })
 }
 
-// ============================================================================
 // 6. Head-to-head vs HRR (Plate's Holographic Reduced Representation)
-// ============================================================================
 
 #[derive(Clone)]
 struct HrrVec {
@@ -1296,9 +1282,7 @@ fn bench_head_to_head(hrr_dim: usize, ehv_dim: usize, dd: usize, quick: bool) ->
     })
 }
 
-// ============================================================================
 // Utilities
-// ============================================================================
 
 fn stable_hash(s: &str) -> u64 {
     let mut h: u64 = 0xcbf29ce484222325;
