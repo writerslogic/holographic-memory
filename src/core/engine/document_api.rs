@@ -161,11 +161,37 @@ impl HmsCore {
             options,
             self.config.embedding_space.as_ref().map(|s| s.dimensions),
         )?;
+        Ok(self.run_searches(vec![prepared]).pop().expect("one query"))
+    }
+
+    /// Captures `prepared`, ranks each query with no lock held, then reads the hits' text under
+    /// the mutation gate, which excludes the writes that scrub replaced or deleted text. If a
+    /// hit's text was scrubbed since the capture, the queries run again with the gate held
+    /// throughout, so a result never pairs a version with empty or other text.
+    fn run_searches(&self, prepared: Vec<documents::PreparedSearch>) -> Vec<Vec<DocumentResult>> {
         let captured = {
             let _transaction = self.mutation_gate.read();
-            documents::capture_search(&self.documents.read(), vec![prepared])
+            documents::capture_search(&self.documents.read(), prepared)
         };
-        Ok(documents::execute_search(&captured, 0))
+        let ranked: Vec<_> = (0..captured.len())
+            .map(|i| documents::rank_search(&captured, i))
+            .collect();
+        {
+            let _transaction = self.mutation_gate.read();
+            let read: Option<Vec<_>> = ranked
+                .into_iter()
+                .enumerate()
+                .map(|(i, hits)| documents::read_ranked(&captured, i, hits))
+                .collect();
+            if let Some(results) = read {
+                return results;
+            }
+        }
+        let _transaction = self.mutation_gate.read();
+        let captured = documents::capture_search(&self.documents.read(), captured.into_prepared());
+        (0..captured.len())
+            .map(|i| documents::execute_search(&captured, i))
+            .collect()
     }
 
     /// The number of documents containing at least one word of `text`: every document an
@@ -681,14 +707,10 @@ impl HmsCore {
                 self.config.embedding_space.as_ref().map(|s| s.dimensions),
             )?);
         }
-        let captured = {
-            let _transaction = self.mutation_gate.read();
-            documents::capture_search(&self.documents.read(), prepared)
-        };
         let lists = variants
             .iter()
-            .enumerate()
-            .map(|(i, (_, weight))| (*weight, documents::execute_search(&captured, i)))
+            .map(|(_, weight)| *weight)
+            .zip(self.run_searches(prepared))
             .collect();
         stages.fuse(text, lists, k)
     }
