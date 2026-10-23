@@ -250,6 +250,7 @@ pub(super) fn document_at_a_time(
     let need_document = query.clauses.iter().any(|c| c.phrase)
         || (options.count && !store.multichunk_documents.is_empty());
     let single_phrase = query.clauses.len() == 1 && query.clauses[0].phrase;
+    let phrases_ranked = !options.count && query.clauses.iter().any(|c| c.phrase);
     for form in 0..2 {
         let mut by_word = BTreeMap::new();
         let mut states = Vec::new();
@@ -366,8 +367,10 @@ pub(super) fn document_at_a_time(
             let Some(slot) = candidate else {
                 break;
             };
+            // A candidate's bound costs about what scoring its words costs, so it is checked
+            // only where it can spare a phrase's position check.
             let skip = match pruning.as_mut() {
-                Some(pruning) if !options.count && top.floor() > 0.0 => {
+                Some(pruning) if phrases_ranked && top.floor() > 0.0 => {
                     pruning.at(&mut states, &indices, slot) < top.floor()
                 }
                 _ => false,
