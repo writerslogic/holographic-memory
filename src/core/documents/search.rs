@@ -429,7 +429,7 @@ impl LexicalScratch {
             for word in terms.keys() {
                 if let Some(list) = store.postings[form].get(word) {
                     let df = list.len() as f64;
-                    lists.push(((1.0 + (n - df + 0.5) / (df + 0.5)).ln(), list));
+                    lists.push((Bm25::idf(n, df), list));
                     postings += list.len();
                 }
             }
@@ -779,7 +779,7 @@ fn score_chunks(
                         })
                         .count()
                 } as f64;
-                (word, (1.0 + (n - df + 0.5) / (df + 0.5)).ln())
+                (word, Bm25::idf(n, df))
             })
             .collect()
     });

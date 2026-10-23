@@ -244,6 +244,12 @@ impl Bm25 {
         self.k1 * (self.one_minus_b + self.b * word_count / average)
     }
 
+    /// The inverse document frequency of a term in `df` of `n` chunks.
+    #[inline]
+    pub(crate) fn idf(n: f64, df: f64) -> f64 {
+        (1.0 + (n - df + 0.5) / (df + 0.5)).ln()
+    }
+
     /// The weight of a term with inverse document frequency `idf` seen `tf` times in a chunk
     /// whose length normalization is `norm`.
     #[inline]
@@ -1322,7 +1328,7 @@ fn search_impl(
                         .filter(|(_, c)| c.stemmed == stemmed && c.terms.contains_key(word))
                         .count()
                 } as f64;
-                (word, (1.0 + (n - df + 0.5) / (df + 0.5)).ln())
+                (word, Bm25::idf(n, df))
             })
             .collect()
     });
