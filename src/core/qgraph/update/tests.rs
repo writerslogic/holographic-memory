@@ -1260,3 +1260,45 @@ fn batch_insert_is_atomic_reachable_and_survives_reopen() {
     drop(index);
     check(&UpdatableVGraph::open(&path).unwrap());
 }
+
+#[test]
+fn consolidated_base_matches_static_build_at_equal_params() {
+    // The base a consolidation rebuilds is the graph the static index builds from the same rows
+    // and parameters, so the streaming path serves the static index's recall at every search
+    // budget instead of drifting through build defaults of its own.
+    let dir = tempfile::tempdir().unwrap();
+    let dim = 16;
+    let n = 4000;
+    let all = data(n + 200, dim);
+    let (rows, queries) = all.split_at(n * dim);
+    let build = params();
+    let index = UpdatableVGraph::create(&dir.path().join("index"), &[], dim, &build).unwrap();
+    let ids: Vec<u32> = (0..n as u32).collect();
+    for (chunk, rows) in ids.chunks(1000).zip(rows.chunks(1000 * dim)) {
+        index.insert_batch(chunk, rows).unwrap();
+    }
+    index.consolidate().unwrap();
+    let graph = Graph::build(rows, dim, &build).unwrap();
+    let encoding = Encoding::default();
+    let fixed = VGraph::from_graph_with(
+        &graph,
+        encoding.bits,
+        encoding.residual_bits,
+        encoding.align,
+        encoding.reorder,
+        encoding.id_bytes,
+        encoding.screen,
+    )
+    .unwrap();
+    let mut searcher = fixed.searcher();
+    let search = VSearchParams {
+        ef: 48,
+        rerank: 48,
+        ..Default::default()
+    };
+    let mut out = Vec::new();
+    for query in queries.chunks_exact(dim) {
+        searcher.search(query, 10, search, &mut out).unwrap();
+        assert_eq!(index.search(query, 10, search).unwrap(), out);
+    }
+}
