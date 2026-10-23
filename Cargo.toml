@@ -33,6 +33,7 @@ lz4_flex = "0.14"
 rayon = "1.8"
 parking_lot = { version = "0.12", features = ["arc_lock"] }
 memmap2 = "0.9"
+bytemuck = "1"
 anyhow = "1.0"
 thiserror = "2.0"
 tracing = "0.1"

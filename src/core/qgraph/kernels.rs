@@ -929,24 +929,19 @@ mod x86 {
 }
 
 pub(crate) fn as_f32(w: &[u64]) -> &[f32] {
-    // SAFETY: u64 alignment satisfies f32 alignment, the f32 view covers exactly the same
-    // bytes, every bit pattern is a valid f32, and the lifetime is tied to `w`.
-    unsafe { std::slice::from_raw_parts(w.as_ptr().cast::<f32>(), w.len() * 2) }
+    bytemuck::cast_slice(w)
 }
 
 pub(crate) fn as_f32_mut(w: &mut [u64]) -> &mut [f32] {
-    // SAFETY: as in `as_f32`; the exclusive borrow of `w` is carried over to the view.
-    unsafe { std::slice::from_raw_parts_mut(w.as_mut_ptr().cast::<f32>(), w.len() * 2) }
+    bytemuck::cast_slice_mut(w)
 }
 
 pub(crate) fn as_u32(w: &[u64]) -> &[u32] {
-    // SAFETY: as in `as_f32`; every bit pattern is a valid u32.
-    unsafe { std::slice::from_raw_parts(w.as_ptr().cast::<u32>(), w.len() * 2) }
+    bytemuck::cast_slice(w)
 }
 
 pub(crate) fn as_u32_mut(w: &mut [u64]) -> &mut [u32] {
-    // SAFETY: as in `as_f32_mut`; every bit pattern is a valid u32.
-    unsafe { std::slice::from_raw_parts_mut(w.as_mut_ptr().cast::<u32>(), w.len() * 2) }
+    bytemuck::cast_slice_mut(w)
 }
 
 #[cfg(test)]
