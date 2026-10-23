@@ -870,14 +870,17 @@ impl VGraph {
 
         let screen_rot = screen.then(|| Rotation::new(dim, 0, SCREEN_SEED));
         let screen_words = screen_rot.as_ref().map_or(0, |r| r.padded() / 64);
-        // The centred row of stored vertex `v`, which every code below encodes.
-        let centred = |v: usize| -> Vec<f32> {
+        // The centred row of stored vertex `v`, which every code below encodes, written to a
+        // per-worker buffer.
+        let centred = |v: usize, out: &mut Vec<f32>| {
             let o = old(v);
-            g.vectors[o * g.dim..o * g.dim + dim]
-                .iter()
-                .zip(&mean)
-                .map(|(a, m)| a - m)
-                .collect()
+            out.clear();
+            out.extend(
+                g.vectors[o * g.dim..o * g.dim + dim]
+                    .iter()
+                    .zip(&mean)
+                    .map(|(a, m)| a - m),
+            );
         };
         // Codes are written in place, so no per-vertex buffers sit next to the final arrays.
         let mut codes = Lines::zeroed(n * stride);
@@ -889,12 +892,12 @@ impl VGraph {
             .par_chunks_exact_mut(stride)
             .zip(scales.par_iter_mut())
             .enumerate()
-            .for_each(|(v, (dst, s))| {
-                let x = centred(v);
+            .for_each_init(Vec::<f32>::new, |x, (v, (dst, s))| {
+                centred(v, x);
                 *s = if bits == 8 {
-                    quantize(&x, &mut dst[..cbytes])
+                    quantize(x, &mut dst[..cbytes])
                 } else {
-                    quantize4(&x, &mut dst[..cbytes])
+                    quantize4(x, &mut dst[..cbytes])
                 };
             });
         let mut residual = Vec::with_capacity(n * res_stride);
@@ -907,17 +910,17 @@ impl VGraph {
                 .par_chunks_exact_mut(res_stride)
                 .zip(res_scales.par_iter_mut())
                 .enumerate()
-                .for_each(|(v, (r, sr))| {
-                    let mut x = centred(v);
+                .for_each_init(Vec::<f32>::new, |x, (v, (r, sr))| {
+                    centred(v, x);
                     let c = &code_bytes[v * stride..v * stride + cbytes];
                     let s = scales[v];
                     x.iter_mut()
                         .enumerate()
                         .for_each(|(i, a)| *a -= s * f32::from(code_at(c, bits, i)));
                     *sr = if residual_bits == 8 {
-                        quantize(&x, r)
+                        quantize(x, r)
                     } else {
-                        quantize4(&x, r)
+                        quantize4(x, r)
                     };
                 });
         }
@@ -926,24 +929,26 @@ impl VGraph {
             screen_rows
                 .par_chunks_exact_mut(screen_words + 1)
                 .enumerate()
-                .for_each(|(v, srow)| {
-                    let x = centred(v);
-                    let mut xr = vec![0f32; rot.padded()];
-                    rot.apply(&x, &mut xr);
-                    let (mut norm2, mut abs) = (0f32, 0f32);
-                    let mut pop = 0u32;
-                    for (i, &a) in xr.iter().enumerate() {
-                        norm2 += a * a;
-                        abs += a.abs();
-                        if a >= 0.0 {
-                            srow[i / 64] |= 1u64 << (i % 64);
-                            pop += 1;
+                .for_each_init(
+                    || (Vec::<f32>::new(), vec![0f32; rot.padded()]),
+                    |(x, xr), (v, srow)| {
+                        centred(v, x);
+                        rot.apply(x, xr);
+                        let (mut norm2, mut abs) = (0f32, 0f32);
+                        let mut pop = 0u32;
+                        for (i, &a) in xr.iter().enumerate() {
+                            norm2 += a * a;
+                            abs += a.abs();
+                            if a >= 0.0 {
+                                srow[i / 64] |= 1u64 << (i % 64);
+                                pop += 1;
+                            }
                         }
-                    }
-                    // x_r ~= f * sign(x_r) with f = |x_r|^2 / sum |x_r,i| (the RaBitQ factor).
-                    let f = if abs > 0.0 { norm2 / abs } else { 0.0 };
-                    srow[screen_words] = u64::from(f.to_bits()) | (u64::from(pop) << 32);
-                });
+                        // x_r ~= f * sign(x_r) with f = |x_r|^2 / sum |x_r,i| (the RaBitQ factor).
+                        let f = if abs > 0.0 { norm2 / abs } else { 0.0 };
+                        srow[screen_words] = u64::from(f.to_bits()) | (u64::from(pop) << 32);
+                    },
+                );
         }
 
         let r = g.degree;
