@@ -83,6 +83,7 @@ def timing_lock(path, max_load, wait_seconds):
                     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                     break
                 except BlockingIOError:
+                    # Another timing window owns the lock; retry after the shared delay.
                     pass
             time.sleep(5)
         def expired(_signum, _frame):
