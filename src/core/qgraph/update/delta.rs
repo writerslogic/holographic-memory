@@ -14,7 +14,7 @@ thread_local! { static SEEN: RefCell<BuildVisited> = RefCell::new(BuildVisited::
 
 #[derive(Clone, Default)]
 pub(super) struct Delta {
-    vectors: Vec<f32>,
+    pub(super) vectors: super::delta_rows::DeltaRows,
     norms: Vec<f32>,
     edges: Adjacency,
     first_child: Vec<u32>,
@@ -70,7 +70,12 @@ impl Delta {
     }
 
     fn score(&self, query: &[f32], slot: usize, metric: Metric) -> f32 {
-        let row = self.row(slot, query.len());
+        self.score_from(&self.vectors, query, slot, metric)
+    }
+
+    fn score_from(&self, vectors: &[f32], query: &[f32], slot: usize, metric: Metric) -> f32 {
+        let at = slot * query.len();
+        let row = &vectors[at..at + query.len()];
         match metric {
             Metric::Angular => -dot(query, row),
             Metric::Euclidean => self.norms[slot] * 0.5 - dot(query, row),
@@ -223,7 +228,8 @@ impl Delta {
     ) -> (Vec<(f32, u32)>, usize) {
         seen.reset(self.len());
         seen.insert(0);
-        let score = |slot: usize| self.score(query, slot, metric);
+        let vectors: &[f32] = &self.vectors;
+        let score = |slot: usize| self.score_from(vectors, query, slot, metric);
         let mut pool = vec![(score(0), 0usize, false)];
         let mut visits = usize::from(PROFILE);
         let mut fresh = std::mem::take(&mut seen.fresh);
@@ -248,7 +254,8 @@ impl Delta {
             fresh.clear();
             for u in self.edges[slot].iter().copied().chain(children) {
                 if seen.insert(u) {
-                    prefetch_row(self.row(u as usize, query.len()));
+                    let at = u as usize * query.len();
+                    prefetch_row(&vectors[at..at + query.len()]);
                     fresh.push(u);
                 }
             }
@@ -451,6 +458,47 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+    #[test]
+    #[ignore = "development delta search timing measurement"]
+    fn delta_search_live_set() {
+        use std::hash::{Hash, Hasher};
+        let n = 100_000;
+        let dim = 100;
+        let mut rng = SplitMix(42);
+        let vectors: Vec<f32> = (0..(n + 256) * dim)
+            .map(|_| (rng.next_u64() >> 40) as f32 / (1u32 << 24) as f32)
+            .collect();
+        let params = BuildParams {
+            metric: Metric::Euclidean,
+            degree: 32,
+            build_ef: 64,
+            ..Default::default()
+        };
+        let mut delta = Delta::default();
+        delta.insert_batch(
+            &(0..n as u32).collect::<Vec<_>>(),
+            &vectors[..n * dim],
+            &params,
+        );
+        let queries = &vectors[n * dim..];
+        for q in queries.chunks_exact(dim).take(16) {
+            std::hint::black_box(delta.search(q, 256, params.metric));
+        }
+        for round in 0..5 {
+            let start = std::time::Instant::now();
+            let mut fingerprint = std::collections::hash_map::DefaultHasher::new();
+            for q in queries.chunks_exact(dim) {
+                for (score, id) in delta.search(q, 256, params.metric) {
+                    (score.to_bits(), id).hash(&mut fingerprint);
+                }
+            }
+            println!(
+                "query_round={round} queries=256 elapsed_ns={} fingerprint={}",
+                start.elapsed().as_nanos(),
+                fingerprint.finish()
+            );
         }
     }
 }
