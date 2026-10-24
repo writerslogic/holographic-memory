@@ -1,0 +1,10 @@
+phase input: rss 586 MiB (anon 581, file 5), peak 598 MiB
+phase graph: rss 604 MiB (anon 599, file 5), peak 706 MiB
+phase encode: rss 696 MiB (anon 691, file 5), peak 706 MiB
+phase drop_graph: rss 696 MiB (anon 691, file 5), peak 706 MiB
+built in 238.4s, 189037200 bytes
+phase serve_start: rss 697 MiB (anon 691, file 5), peak 706 MiB
+phase serve_end: rss 697 MiB (anon 691, file 6), peak 706 MiB
+ef=64 rerank=100 patience=0 sigmas=1 recall=0.8389 qps=7141 evals/q=1760 screened/q=0 load=[18.76]
+ef=128 rerank=100 patience=0 sigmas=1 recall=0.8815 qps=3922 evals/q=3047 screened/q=0 load=[18.76]
+ef=256 rerank=100 patience=0 sigmas=1 recall=0.9075 qps=1795 evals/q=5517 screened/q=0 load=[18.76]

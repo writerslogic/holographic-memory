@@ -1,0 +1,226 @@
+{
+  "build": {
+    "build_secs": 238.354224579,
+    "graph_hash": "61eecef7697656f4",
+    "load_1m_after_build": 18.76,
+    "load_1m_before_build": 9.08,
+    "load_gate_met": true,
+    "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 32,
+      "fuse": false,
+      "graph_cache": null,
+      "id_bytes": 4,
+      "index": "vertex",
+      "metric": "angular",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 8
+    },
+    "threads": 6
+  },
+  "dataset": {
+    "dim": 256,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 290000,
+    "name": "nytimes-256-angular",
+    "sha256": "6ad5d2cde6d6a6f21528d541901304ebfd40885d6ce6afae37bccbe278254a93",
+    "source": "https://ann-benchmarks.com/nytimes-256-angular.hdf5"
+  },
+  "environment": {
+    "arch": "x86_64",
+    "cpu": "",
+    "hms_version": "0.6.1",
+    "load_average": "",
+    "os": "linux",
+    "rayon_threads": 6
+  },
+  "first_query_unix_ns": 1792807571336292165,
+  "first_query_us": 540.033,
+  "holdout": {
+    "n_queries": 2000,
+    "note": "Tuning run: queries are train vectors held out of the index (every n/N-th row), truth is exact (cosine or Euclidean, per the metric) over the rest; the test set was not read."
+  },
+  "index_bytes": 189037200,
+  "index_file": {
+    "bytes": null,
+    "cold": false,
+    "loaded": null,
+    "open_secs": null,
+    "residency": null,
+    "saved": null
+  },
+  "k": 10,
+  "max_load": 100.0,
+  "memory_phases": [
+    {
+      "memory": {
+        "RssAnon": 609603584,
+        "RssFile": 4800512,
+        "RssShmem": 0,
+        "VmHWM": 626733056,
+        "VmRSS": 614404096,
+        "smaps_Anonymous": 609607680,
+        "smaps_Pss_File": 2774016,
+        "smaps_Rss": 614404096
+      },
+      "phase": "input"
+    },
+    {
+      "memory": {
+        "RssAnon": 627990528,
+        "RssFile": 5599232,
+        "RssShmem": 0,
+        "VmHWM": 739942400,
+        "VmRSS": 633589760,
+        "smaps_Anonymous": 627990528,
+        "smaps_Pss_File": 3542016,
+        "smaps_Rss": 633589760
+      },
+      "phase": "graph"
+    },
+    {
+      "memory": {
+        "RssAnon": 724660224,
+        "RssFile": 5652480,
+        "RssShmem": 0,
+        "VmHWM": 739942400,
+        "VmRSS": 730312704,
+        "smaps_Anonymous": 724664320,
+        "smaps_Pss_File": 3595264,
+        "smaps_Rss": 730316800
+      },
+      "phase": "encode"
+    },
+    {
+      "memory": {
+        "RssAnon": 724664320,
+        "RssFile": 5652480,
+        "RssShmem": 0,
+        "VmHWM": 739942400,
+        "VmRSS": 730316800,
+        "smaps_Anonymous": 724664320,
+        "smaps_Pss_File": 3595264,
+        "smaps_Rss": 730316800
+      },
+      "phase": "drop_graph"
+    },
+    {
+      "memory": {
+        "RssAnon": 724664320,
+        "RssFile": 5718016,
+        "RssShmem": 0,
+        "VmHWM": 739942400,
+        "VmRSS": 730382336,
+        "smaps_Anonymous": 724664320,
+        "smaps_Pss_File": 3660800,
+        "smaps_Rss": 730382336
+      },
+      "phase": "serve_start"
+    },
+    {
+      "memory": {
+        "RssAnon": 724688896,
+        "RssFile": 5980160,
+        "RssShmem": 0,
+        "VmHWM": 739942400,
+        "VmRSS": 730669056,
+        "smaps_Anonymous": 724688896,
+        "smaps_Pss_File": 3926016,
+        "smaps_Rss": 730669056
+      },
+      "phase": "serve_end"
+    }
+  ],
+  "n_queries": 1997,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": false,
+  "repeats": 1,
+  "residual_bytes": 74880780,
+  "rss_bytes": {
+    "after_build": 730382336,
+    "end": 730669056
+  },
+  "sweep": [
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        18.76
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1760.2889334001002,
+      "params": {
+        "ef": 64,
+        "patience": 0,
+        "rerank": 100,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        7141.421323292067
+      ],
+      "qps_single_thread": 7141.421323292067,
+      "recall_at_10": 0.8389083625438157,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        18.76
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 3047.0265398097144,
+      "params": {
+        "ef": 128,
+        "patience": 0,
+        "rerank": 100,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        3922.4543387227923
+      ],
+      "qps_single_thread": 3922.4543387227923,
+      "recall_at_10": 0.8814722083124688,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        18.76
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 5516.781171757636,
+      "params": {
+        "ef": 256,
+        "patience": 0,
+        "rerank": 100,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        1795.1330647193417
+      ],
+      "qps_single_thread": 1795.1330647193417,
+      "recall_at_10": 0.9075112669003506,
+      "screened_per_query": 0.0
+    }
+  ],
+  "system": "hms qgraph-vertex"
+}

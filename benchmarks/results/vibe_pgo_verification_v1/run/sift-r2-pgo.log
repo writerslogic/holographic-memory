@@ -1,0 +1,8 @@
+phase input: rss 24 MiB (anon 20, file 4), peak 24 MiB
+phase open: rss 414 MiB (anon 24, file 389), peak 414 MiB
+built in 174.6s, 403870624 bytes
+phase serve_start: rss 414 MiB (anon 24, file 389), peak 414 MiB
+phase serve_end: rss 416 MiB (anon 26, file 390), peak 416 MiB
+ef=64 rerank=100 patience=0 sigmas=1 recall=0.9757 qps=19866 evals/q=1554 screened/q=0 load=[0.67]
+ef=128 rerank=100 patience=0 sigmas=1 recall=0.9924 qps=11643 evals/q=2662 screened/q=0 load=[0.67]
+ef=256 rerank=100 patience=0 sigmas=1 recall=0.9969 qps=6809 evals/q=4538 screened/q=0 load=[0.7]

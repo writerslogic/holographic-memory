@@ -1,0 +1,33 @@
+{
+  "build_params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "id_bytes": 4,
+    "index": "vertex",
+    "metric": "angular",
+    "quantized_search": true,
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 8
+  },
+  "build_secs": 213.695012771,
+  "dataset": {
+    "dim": 100,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1183514,
+    "name": "glove-100-angular",
+    "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+    "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+  },
+  "graph_hash": "23f29f1ad177926d"
+}

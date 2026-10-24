@@ -1,0 +1,12 @@
+{
+  "source": "99e84d92f72a42e6f54b2cc48fb30fc86cdfa99c",
+  "source_files_checked": 261,
+  "source_matches": true,
+  "source_manifest_sha256": "c69a5ff9b32e2286dda254ccc85572cb207d287b8517a5921965451a34a50652",
+  "file_sha256": {
+    "src/Cargo.toml": "aac2457b6d231d34a6d2081f090ee0c636acfe73410287f5e91c580d3efffc8a",
+    "src/Cargo.lock": "3c02cccc111102feedfa85402965475f111e0f788db97efa1f609cf276176e37",
+    "merged.profdata": "c2c5cc1d4766542d643a153d2dd415c0497b0798c0e7f78d9fb425167994a909",
+    "train.json": "0339a8e1b5bfedd990dedc2a99cd71073cf4033fdd9bf2a5e2c2d89e50587a3d"
+  }
+}

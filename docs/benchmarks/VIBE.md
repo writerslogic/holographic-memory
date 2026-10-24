@@ -325,6 +325,36 @@ chosen because it faults on run hosts without AVX-512. The Modal runner
 (`benchmarks/vibe/modal_vibe.py`) keeps `target-cpu=native` because it compiles in the container
 that runs the job.
 
+PGO development verification, 2026-10-24 UTC: Intel Core Ultra 9 185H (no AVX-512),
+older HMS source `99e84d92f72a42e6f54b2cc48fb30fc86cdfa99c`, three existing binaries
+(`x86-64-v3`, `native`, and `x86-64-v3` + PGO), and the same saved indexes for all arms.
+The profile used nytimes-256-angular training data (2,000 holdout queries requested,
+1,997 evaluated); glove and sift were evaluation datasets. The fixed protocol used
+`ann-qgraph --index vertex --residual --align-rows --reorder --quantized-search
+--degree 32 --build-ef 200`, k=10, 10,000 queries, ef 64/128/256, rerank 100,
+one thread pinned to CPU 0, and three rotated arm orders. The whole repeat held
+the timing lock for 70 seconds; maximum recorded 1-minute load was 0.70, below
+the strict 3.0 gate. Recall and mean distance-evaluation counts matched across arms.
+Median paired QPS ratios, rounded to six decimals:
+
+| Dataset | ef | native / v3 | PGO / v3 |
+|---|---|---|---|
+| glove-100-angular | 64 | 0.961824 | 1.060390 |
+| glove-100-angular | 128 | 0.966562 | 1.075176 |
+| glove-100-angular | 256 | 0.969372 | 1.071080 |
+| sift-128-euclidean | 64 | 0.996384 | 1.088922 |
+| sift-128-euclidean | 128 | 1.004173 | 1.075363 |
+| sift-128-euclidean | 256 | 1.007048 | 1.087446 |
+
+PGO won all 18 pairs and cleared the pre-registered 3% median development bar at all
+six points. Native lost all nine glove pairs and four of nine sift pairs; the v3
+portability choice is unchanged. All raw measurements, paired ratios, hashes, lock
+receipt, and the earlier contended run (including its two PGO losses) are preserved in
+[`vibe_pgo_verification_v1`](../../benchmarks/results/vibe_pgo_verification_v1/DECISION.md).
+This verifies only the older binaries on these k=10 workloads. The current engine,
+wheel profile training, and image build remain unvalidated, so `image.def` does not
+adopt PGO. This result does not establish VIBE k=100 performance or a leaderboard win.
+
 ## Pre-registered OOD grid, 2026-10-23
 
 Fixed in `benchmarks/vibe/hms/config.yml` before any run of this grid. Build arguments

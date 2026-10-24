@@ -1,0 +1,159 @@
+{
+  "build": {
+    "build_secs": 174.606790572,
+    "graph_hash": "93087c3b8cf829b5",
+    "load_1m_after_build": 36.5,
+    "load_1m_before_build": 32.58,
+    "load_gate_met": true,
+    "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 32,
+      "fuse": false,
+      "graph_cache": null,
+      "id_bytes": 4,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 8
+    },
+    "threads": 8
+  },
+  "dataset": {
+    "dim": 128,
+    "kind": "ann",
+    "metric": "euclidean",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1000000,
+    "name": "sift-128-euclidean",
+    "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+    "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5"
+  },
+  "environment": {
+    "arch": "x86_64",
+    "cpu": "",
+    "hms_version": "0.6.1",
+    "load_average": "",
+    "os": "linux",
+    "rayon_threads": 8
+  },
+  "first_query_unix_ns": null,
+  "first_query_us": null,
+  "holdout": null,
+  "index_bytes": 403870624,
+  "index_file": {
+    "bytes": 404156036,
+    "cold": false,
+    "loaded": null,
+    "open_secs": null,
+    "residency": null,
+    "saved": "/home/davidcondrey/vibe-image-ab/ab/idx-sift"
+  },
+  "k": 10,
+  "max_load": 100.0,
+  "memory_phases": [
+    {
+      "memory": {
+        "RssAnon": 535060480,
+        "RssFile": 4018176,
+        "RssShmem": 0,
+        "VmHWM": 539078656,
+        "VmRSS": 539078656,
+        "smaps_Anonymous": 535060480,
+        "smaps_Pss_File": 2130944,
+        "smaps_Rss": 539078656
+      },
+      "phase": "input"
+    },
+    {
+      "memory": {
+        "RssAnon": 917831680,
+        "RssFile": 4800512,
+        "RssShmem": 0,
+        "VmHWM": 936660992,
+        "VmRSS": 922632192,
+        "smaps_Anonymous": 917835776,
+        "smaps_Pss_File": 2788352,
+        "smaps_Rss": 922636288
+      },
+      "phase": "graph"
+    },
+    {
+      "memory": {
+        "RssAnon": 1132556288,
+        "RssFile": 4866048,
+        "RssShmem": 0,
+        "VmHWM": 1137422336,
+        "VmRSS": 1137422336,
+        "smaps_Anonymous": 1132560384,
+        "smaps_Pss_File": 2853888,
+        "smaps_Rss": 1137426432
+      },
+      "phase": "encode"
+    },
+    {
+      "memory": {
+        "RssAnon": 1132564480,
+        "RssFile": 4866048,
+        "RssShmem": 0,
+        "VmHWM": 1137430528,
+        "VmRSS": 1137430528,
+        "smaps_Anonymous": 1132564480,
+        "smaps_Pss_File": 2853888,
+        "smaps_Rss": 1137430528
+      },
+      "phase": "drop_graph"
+    },
+    {
+      "memory": {
+        "RssAnon": 1134796800,
+        "RssFile": 4931584,
+        "RssShmem": 0,
+        "VmHWM": 1139728384,
+        "VmRSS": 1139728384,
+        "smaps_Anonymous": 1134796800,
+        "smaps_Pss_File": 2919424,
+        "smaps_Rss": 1139728384
+      },
+      "phase": "serve_start"
+    },
+    {
+      "memory": {
+        "RssAnon": 1134813184,
+        "RssFile": 4997120,
+        "RssShmem": 0,
+        "VmHWM": 1139810304,
+        "VmRSS": 1139810304,
+        "smaps_Anonymous": 1134813184,
+        "smaps_Pss_File": 2921472,
+        "smaps_Rss": 1139810304
+      },
+      "phase": "serve_end"
+    }
+  ],
+  "n_queries": 10000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": false,
+  "repeats": 3,
+  "residual_bytes": 132000000,
+  "rss_bytes": {
+    "after_build": 1139810304,
+    "end": 1139810304
+  },
+  "sweep": [],
+  "system": "hms qgraph-vertex"
+}

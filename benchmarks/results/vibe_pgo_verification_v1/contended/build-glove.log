@@ -1,0 +1,7 @@
+phase input: rss 474 MiB (anon 470, file 4), peak 474 MiB
+phase graph: rss 864 MiB (anon 860, file 4), peak 913 MiB
+phase encode: rss 1112 MiB (anon 1108, file 4), peak 1112 MiB
+phase drop_graph: rss 1112 MiB (anon 1108, file 4), peak 1112 MiB
+built in 213.7s, 454908620 bytes
+phase serve_start: rss 1113 MiB (anon 1109, file 4), peak 1113 MiB
+phase serve_end: rss 1113 MiB (anon 1109, file 4), peak 1113 MiB

@@ -1,0 +1,33 @@
+{
+  "build_params": {
+    "align_rows": true,
+    "alpha": 1.0,
+    "block_bits": 0,
+    "build_ef": 200,
+    "code_bits": 0,
+    "degree": 32,
+    "id_bytes": 4,
+    "index": "vertex",
+    "metric": "euclidean",
+    "quantized_search": true,
+    "reorder": true,
+    "residual": true,
+    "residual_bits": 8,
+    "screen": false,
+    "seed": 24301,
+    "vertex_bits": 8
+  },
+  "build_secs": 174.606790572,
+  "dataset": {
+    "dim": 128,
+    "kind": "ann",
+    "metric": "euclidean",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1000000,
+    "name": "sift-128-euclidean",
+    "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+    "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5"
+  },
+  "graph_hash": "93087c3b8cf829b5"
+}

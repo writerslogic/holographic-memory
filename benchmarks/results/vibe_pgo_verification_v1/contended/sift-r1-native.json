@@ -1,0 +1,197 @@
+{
+  "build": {
+    "build_secs": 174.606790572,
+    "graph_hash": "93087c3b8cf829b5",
+    "load_1m_after_build": 17.62,
+    "load_1m_before_build": 18.37,
+    "load_gate_met": true,
+    "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 32,
+      "fuse": false,
+      "graph_cache": null,
+      "id_bytes": 4,
+      "index": "vertex",
+      "metric": "euclidean",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 8
+    },
+    "threads": 1
+  },
+  "dataset": {
+    "dim": 128,
+    "kind": "ann",
+    "metric": "euclidean",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1000000,
+    "name": "sift-128-euclidean",
+    "sha256": "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+    "source": "https://ann-benchmarks.com/sift-128-euclidean.hdf5"
+  },
+  "environment": {
+    "arch": "x86_64",
+    "cpu": "",
+    "hms_version": "0.6.1",
+    "load_average": "",
+    "os": "linux",
+    "rayon_threads": 1
+  },
+  "first_query_unix_ns": 1792809320319730713,
+  "first_query_us": 163.368,
+  "holdout": null,
+  "index_bytes": 403870624,
+  "index_file": {
+    "bytes": 404156036,
+    "cold": false,
+    "loaded": "/home/davidcondrey/vibe-image-ab/ab/idx-sift",
+    "open_secs": 0.028183762,
+    "residency": "prefaulted",
+    "saved": null
+  },
+  "k": 10,
+  "max_load": 100.0,
+  "memory_phases": [
+    {
+      "memory": {
+        "RssAnon": 21262336,
+        "RssFile": 4063232,
+        "RssShmem": 0,
+        "VmHWM": 25325568,
+        "VmRSS": 25325568,
+        "smaps_Anonymous": 21262336,
+        "smaps_Pss_File": 2192384,
+        "smaps_Rss": 25325568
+      },
+      "phase": "input"
+    },
+    {
+      "memory": {
+        "RssAnon": 25456640,
+        "RssFile": 408350720,
+        "RssShmem": 0,
+        "VmHWM": 433807360,
+        "VmRSS": 433807360,
+        "smaps_Anonymous": 25456640,
+        "smaps_Pss_File": 406479872,
+        "smaps_Rss": 433807360
+      },
+      "phase": "open"
+    },
+    {
+      "memory": {
+        "RssAnon": 25456640,
+        "RssFile": 408416256,
+        "RssShmem": 0,
+        "VmHWM": 433872896,
+        "VmRSS": 433872896,
+        "smaps_Anonymous": 25456640,
+        "smaps_Pss_File": 406545408,
+        "smaps_Rss": 433872896
+      },
+      "phase": "serve_start"
+    },
+    {
+      "memory": {
+        "RssAnon": 27553792,
+        "RssFile": 408711168,
+        "RssShmem": 0,
+        "VmHWM": 436363264,
+        "VmRSS": 436264960,
+        "smaps_Anonymous": 27553792,
+        "smaps_Pss_File": 406648832,
+        "smaps_Rss": 436264960
+      },
+      "phase": "serve_end"
+    }
+  ],
+  "n_queries": 10000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": false,
+  "repeats": 1,
+  "residual_bytes": 132000000,
+  "rss_bytes": {
+    "after_build": 434069504,
+    "end": 436264960
+  },
+  "sweep": [
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        17.62
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 1553.8716,
+      "params": {
+        "ef": 64,
+        "patience": 0,
+        "rerank": 100,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        10421.129852041455
+      ],
+      "qps_single_thread": 10421.129852041455,
+      "recall_at_10": 0.97569,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        17.62
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 2662.4848,
+      "params": {
+        "ef": 128,
+        "patience": 0,
+        "rerank": 100,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        4428.801712088292
+      ],
+      "qps_single_thread": 4428.801712088292,
+      "recall_at_10": 0.99237,
+      "screened_per_query": 0.0
+    },
+    {
+      "latency_us": null,
+      "load_1m_before_runs": [
+        17.62
+      ],
+      "load_gate_met": true,
+      "mean_exact_evals_per_query": 4537.5176,
+      "params": {
+        "ef": 256,
+        "patience": 0,
+        "rerank": 100,
+        "screen": false,
+        "screen_sigmas": 1.0
+      },
+      "qps_runs": [
+        2605.1344951626534
+      ],
+      "qps_single_thread": 2605.1344951626534,
+      "recall_at_10": 0.99688,
+      "screened_per_query": 0.0
+    }
+  ],
+  "system": "hms qgraph-vertex"
+}
