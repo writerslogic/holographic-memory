@@ -1507,16 +1507,21 @@ fn build_structure(
 /// The row nearest the mean of the `n` rows (angular: of largest dot product with their sum),
 /// the entry vertex of a build.
 fn medoid(rows: &Rows<'_>, n: usize, metric: Metric) -> u32 {
+    medoid_by(rows, n, |i| i, metric)
+}
+
+fn medoid_by(rows: &Rows<'_>, n: usize, row_at: impl Fn(u32) -> u32 + Sync, metric: Metric) -> u32 {
     let dim = rows.dim;
     let mut centroid = vec![0f32; dim];
-    for x in rows.data.chunks_exact(dim) {
+    for i in 0..n as u32 {
+        let x = rows.row(row_at(i));
         centroid.iter_mut().zip(x).for_each(|(c, v)| *c += v);
     }
     match metric {
         Metric::Angular => {
             (0..n as u32)
                 .into_par_iter()
-                .map(|i| (dot(rows.row(i), &centroid), i))
+                .map(|i| (dot(rows.row(row_at(i)), &centroid), i))
                 .reduce(
                     || (f32::NEG_INFINITY, NONE),
                     |a, b| {
@@ -1537,8 +1542,8 @@ fn medoid(rows: &Rows<'_>, n: usize, metric: Metric) -> u32 {
                 .into_par_iter()
                 .map(|i| {
                     (
-                        rows.norms.expect("Euclidean rows carry norms")[i as usize]
-                            - 2.0 * dot(rows.row(i), &centroid),
+                        rows.norms.expect("Euclidean rows carry norms")[row_at(i) as usize]
+                            - 2.0 * dot(rows.row(row_at(i)), &centroid),
                         i,
                     )
                 })

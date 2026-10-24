@@ -1,0 +1,105 @@
+{
+  "classification": "development kernel measurement, not a leaderboard standing",
+  "cpu": "Intel Core Ultra 9 185H",
+  "threads": 8,
+  "cpu_affinity": "0-7",
+  "rounds": 3,
+  "lock": "hms-timing.lock",
+  "parent_commit": "e3bb3648",
+  "rows": 1000000,
+  "dimensions": 100,
+  "live_rows": 800000,
+  "metric": "Euclidean",
+  "seed": 42,
+  "order": [
+    "base",
+    "candidate",
+    "candidate",
+    "base",
+    "base",
+    "candidate"
+  ],
+  "baseline": "Parent replacement-entry algorithm extracted unchanged into a helper, with the same ignored measurement test.",
+  "candidate": "Indexed selection preserving accumulation and ordinal tie order.",
+  "pairs": [
+    {
+      "round": 1,
+      "base": {
+        "load_average": [
+          1.2,
+          1.09,
+          0.48
+        ],
+        "elapsed_ns": 185071177,
+        "peak_rss_kib": 718856,
+        "entry": 830166
+      },
+      "candidate": {
+        "load_average": [
+          1.18,
+          1.08,
+          0.48
+        ],
+        "elapsed_ns": 40254668,
+        "peak_rss_kib": 403012,
+        "entry": 830166
+      }
+    },
+    {
+      "round": 2,
+      "base": {
+        "load_average": [
+          1.18,
+          1.08,
+          0.48
+        ],
+        "elapsed_ns": 176421978,
+        "peak_rss_kib": 718436,
+        "entry": 830166
+      },
+      "candidate": {
+        "load_average": [
+          1.18,
+          1.08,
+          0.48
+        ],
+        "elapsed_ns": 38791219,
+        "peak_rss_kib": 403148,
+        "entry": 830166
+      }
+    },
+    {
+      "round": 3,
+      "base": {
+        "load_average": [
+          1.18,
+          1.08,
+          0.48
+        ],
+        "elapsed_ns": 182642111,
+        "peak_rss_kib": 718436,
+        "entry": 830166
+      },
+      "candidate": {
+        "load_average": [
+          1.18,
+          1.08,
+          0.48
+        ],
+        "elapsed_ns": 38157850,
+        "peak_rss_kib": 402952,
+        "entry": 830166
+      }
+    }
+  ],
+  "unmeasured": [
+    "Complete consolidation peak RSS and time",
+    "Whether the failed step-673 consolidation deletes the entry vertex",
+    "Final-runbook completion, recall and leaderboard standing"
+  ],
+  "source_sha256": {
+    "base_merge": "475a8778f948fd09bb60a55e64731fa8f19029bf6077cce091043be147842bc8",
+    "candidate_mod": "6c10d416a2a8f9a81105910821fc6adeedf2ea058bda7a7c2012c3c847387bac",
+    "candidate_merge_before_formatting": "83e136fe47e1b1d171b40e3153feeef915f1b3bef17d512f341a368287268465"
+  }
+}

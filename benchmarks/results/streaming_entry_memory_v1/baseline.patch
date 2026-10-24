@@ -1,0 +1,89 @@
+--- a/src/core/qgraph/update/merge.rs
++++ b/src/core/qgraph/update/merge.rs
+@@ -119,25 +119,7 @@
+         let live: Vec<u32> = (0..n as u32)
+             .filter(|&s| plan.new_to_old[s as usize] != NONE)
+             .collect();
+-        let sub: Vec<f32> = live
+-            .iter()
+-            .flat_map(|&s| rows.row(s).iter().copied())
+-            .collect();
+-        let sub_norms: Vec<f32> = rows
+-            .norms
+-            .map(|n| live.iter().map(|&s| n[s as usize]).collect())
+-            .unwrap_or_default();
+-        let sub_rows = Rows {
+-            data: &sub,
+-            dim,
+-            norms: norms_opt(&sub_norms),
+-            codes: None,
+-            quantized: false,
+-        };
+-        match live.get(medoid(&sub_rows, live.len(), params.metric) as usize) {
+-            Some(&s) => s,
+-            None => return Err(super::super::invalid("merge without live base rows".into())),
+-        }
++        replacement_entry(&rows, &live, params.metric)?
+     };
+     let mut order = inserted;
+     shuffle(&mut order, params.seed ^ n as u64);
+@@ -234,3 +216,59 @@
+     }
+     (new_to_old, old_to_new)
+ }
++
++fn replacement_entry(
++    rows: &Rows<'_>,
++    live: &[u32],
++    metric: super::super::Metric,
++) -> Result<u32, HmsError> {
++    let sub: Vec<f32> = live
++        .iter()
++        .flat_map(|&s| rows.row(s).iter().copied())
++        .collect();
++    let sub_norms: Vec<f32> = rows
++        .norms
++        .map(|n| live.iter().map(|&s| n[s as usize]).collect())
++        .unwrap_or_default();
++    let sub_rows = Rows {
++        data: &sub,
++        dim: rows.dim,
++        norms: norms_opt(&sub_norms),
++        codes: None,
++        quantized: false,
++    };
++    match live.get(medoid(&sub_rows, live.len(), metric) as usize) {
++        Some(&s) => Ok(s),
++        None => Err(super::super::invalid("merge without live base rows".into())),
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::super::super::{kernels::dot, Metric};
++    use super::*;
++
++    #[test]
++    #[ignore = "development memory and timing measurement"]
++    fn replacement_entry_large_live_set() {
++        let n = 1_000_000;
++        let dim = 100;
++        let mut rng = SplitMix(42);
++        let data: Vec<f32> = (0..n * dim)
++            .map(|_| (rng.next_u64() % 65536) as f32 / 65536.0)
++            .collect();
++        let norms: Vec<f32> = data.chunks_exact(dim).map(|r| dot(r, r)).collect();
++        let live: Vec<u32> = (0..n as u32).filter(|i| i % 5 != 0).collect();
++        let rows = Rows {
++            data: &data,
++            dim,
++            norms: Some(&norms),
++            codes: None,
++            quantized: false,
++        };
++        let start = std::time::Instant::now();
++        let entry = replacement_entry(&rows, &live, Metric::Euclidean).unwrap();
++        println!("entry={entry} elapsed_ns={}", start.elapsed().as_nanos());
++        assert!(live.binary_search(&entry).is_ok());
++    }
++}
