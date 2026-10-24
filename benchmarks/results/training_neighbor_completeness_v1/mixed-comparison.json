@@ -1,0 +1,235 @@
+{
+  "copyright": "Copyright 2024-2026 WritersLogic Contributors",
+  "spdx_license_identifier": "Apache-2.0",
+  "queries": 6948,
+  "formerly_complete_unchanged": 6264,
+  "formerly_short_repaired": 684,
+  "formerly_complete_changed": 0,
+  "changed_by_block_bits": {
+    "4": 36,
+    "2": 24,
+    "0": 624
+  },
+  "first_divergence_zero_based_query": 3296,
+  "first_before": {
+    "bits": 8,
+    "blocks": 4,
+    "evaluations": 278,
+    "ids": [
+      11,
+      179,
+      4,
+      79,
+      171,
+      53,
+      102,
+      90,
+      182
+    ],
+    "k": 10,
+    "knobs": "SearchKnobs { prefetch: 0, batch_est: false, frontier: 1.0, block_screen: false, rerank_z: 0.0 }",
+    "metric": "Angular",
+    "n": 192,
+    "params": "VSearchParams { ef: 7, reservoir: 0, rerank: 0, patience: 5, screen_sigmas: 1.0, screen: true, fuse: true, neighbour_cap: 0 }",
+    "query": [
+      1056657616,
+      1060733080,
+      1059158389,
+      1049351142,
+      1049062604,
+      1064641945,
+      1051976140,
+      1064301747,
+      1052392142,
+      1055572080,
+      1033966528,
+      1059525904,
+      1051069984,
+      1056580526,
+      1047349508,
+      1049601978
+    ],
+    "residual_bits": 8,
+    "scores": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "screen": false
+  },
+  "first_after": {
+    "bits": 8,
+    "blocks": 4,
+    "evaluations": 306,
+    "ids": [
+      11,
+      179,
+      4,
+      79,
+      171,
+      53,
+      102,
+      90,
+      186,
+      182
+    ],
+    "k": 10,
+    "knobs": "SearchKnobs { prefetch: 0, batch_est: false, frontier: 1.0, block_screen: false, rerank_z: 0.0 }",
+    "metric": "Angular",
+    "n": 192,
+    "params": "VSearchParams { ef: 7, reservoir: 0, rerank: 0, patience: 5, screen_sigmas: 1.0, screen: true, fuse: true, neighbour_cap: 0 }",
+    "query": [
+      1056657616,
+      1060733080,
+      1059158389,
+      1049351142,
+      1049062604,
+      1064641945,
+      1051976140,
+      1064301747,
+      1052392142,
+      1055572080,
+      1033966528,
+      1059525904,
+      1051069984,
+      1056580526,
+      1047349508,
+      1049601978
+    ],
+    "residual_bits": 8,
+    "scores": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "screen": false
+  },
+  "expected_golden_crc32_before": 439463741,
+  "expected_golden_crc32_after": 1364000328,
+  "log_sha256": {
+    "baseline": "f266a95a522c17047f894c5e68ea5a1725209e4b0829f6beae24cc734b92932d",
+    "repaired": "fc65dd44d749eb761d9f17fb05b28e5cb6b616f8d4f04d588043af11fa5508a0"
+  },
+  "comparison_definition": "Every before/after JSON field, including query bits, metric, index geometry, params, knobs, result IDs, result score bits and evaluation counts; only result fields differ for short calls.",
+  "first_row_code_divergence": {
+    "query_index": 4902,
+    "before": {
+      "bits": 8,
+      "blocks": 0,
+      "evaluations": 2,
+      "ids": [
+        0,
+        160
+      ],
+      "k": 10,
+      "knobs": "SearchKnobs { prefetch: 0, batch_est: false, frontier: 1.0, block_screen: false, rerank_z: 0.0 }",
+      "metric": "Euclidean",
+      "n": 162,
+      "params": "VSearchParams { ef: 7, reservoir: 0, rerank: 0, patience: 5, screen_sigmas: 1.0, screen: true, fuse: false, neighbour_cap: 0 }",
+      "query": [
+        1058578277,
+        1064101897,
+        1054118750,
+        1008237184,
+        1052040832,
+        1046635972,
+        1059087536,
+        1002528896,
+        1058168336,
+        1057451968,
+        1065328469,
+        1064384028,
+        1052624164,
+        1049221578,
+        1026298000,
+        1053995136
+      ],
+      "residual_bits": 0,
+      "scores": [
+        0,
+        0
+      ],
+      "screen": false
+    },
+    "after": {
+      "bits": 8,
+      "blocks": 0,
+      "evaluations": 88,
+      "ids": [
+        159,
+        69,
+        0,
+        160,
+        123,
+        8,
+        146,
+        60,
+        2,
+        155
+      ],
+      "k": 10,
+      "knobs": "SearchKnobs { prefetch: 0, batch_est: false, frontier: 1.0, block_screen: false, rerank_z: 0.0 }",
+      "metric": "Euclidean",
+      "n": 162,
+      "params": "VSearchParams { ef: 7, reservoir: 0, rerank: 0, patience: 5, screen_sigmas: 1.0, screen: true, fuse: false, neighbour_cap: 0 }",
+      "query": [
+        1058578277,
+        1064101897,
+        1054118750,
+        1008237184,
+        1052040832,
+        1046635972,
+        1059087536,
+        1002528896,
+        1058168336,
+        1057451968,
+        1065328469,
+        1064384028,
+        1052624164,
+        1049221578,
+        1026298000,
+        1053995136
+      ],
+      "residual_bits": 0,
+      "scores": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "screen": false
+    }
+  },
+  "component_receipts": {
+    "baseline": {
+      "file": "mixed-baseline.jsonl.gz",
+      "sha256": "7a35c13eb370efa50e6903a1521a92ae0d5495da73bb2a10210e43317e557832",
+      "bytes": 236886
+    },
+    "repaired": {
+      "file": "mixed-repaired.jsonl.gz",
+      "sha256": "3fdb91beba519ef8fcf0fed2efc2fed44a128d1e099f21c236eb48306b8fac70",
+      "bytes": 242557
+    }
+  },
+  "comparison_command": "uv run --no-project python benchmarks/results/training_neighbor_completeness_v1/compare_receipts.py"
+}
