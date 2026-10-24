@@ -43,6 +43,14 @@ def test_descendants_follow_ppid_and_skip_unrelated():
     assert mv.descendants(table, 99) == set()
 
 
+def test_memory_observation_must_match_active_container():
+    observation = {"container_id": "old", "cgroup_limit_bytes": 100}
+    assert mv.matching_memory_observation(observation, "old") == observation
+    assert mv.matching_memory_observation(observation, "new") is None
+    assert mv.matching_memory_observation(observation, None) is None
+    assert mv.matching_memory_observation(None, "new") is None
+
+
 def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path):
     rev = "a" * 40
     root = "/vibe/run-s-20261023"

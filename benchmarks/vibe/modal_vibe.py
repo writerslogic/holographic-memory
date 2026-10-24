@@ -1071,6 +1071,10 @@ def status_report(ns: str) -> None:
         print("stop: none recorded")
 
 
+def matching_memory_observation(observation: dict | None, container_id: str | None) -> dict | None:
+    return observation if observation and container_id and observation.get("container_id") == container_id else None
+
+
 def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     root = f"/vibe/{ns}"
     result_dir = Path(__file__).resolve().parents[2] / "benchmarks/results/vibe_live_s_20261023"
@@ -1158,7 +1162,7 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
                                     if hms.get("container_id") else None),
             "validation": hms.get("validation"), "metrics": measured.get("hms"),
             "peak_rss_bytes": None, "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
-            "memory_observation": memory_rows.get(ds),
+            "memory_observation": matching_memory_observation(memory_rows.get(ds), hms.get("container_id")),
             "selected_competitors": selected, "competitors": competitors, "comparison_status": comparison_status,
             "published_leaders_diagnostic": meta.get("leaders"),
             "estimated_cost_usd": round(spent.get(ds, 0.0), 4),
