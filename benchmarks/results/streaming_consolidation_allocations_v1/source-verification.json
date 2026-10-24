@@ -1,0 +1,12 @@
+{
+  "archives_sha256": {
+    "parent": "9b709a20629b6ea1a46db4996aabcc4842935d7815874eed5296fb205b19b011",
+    "candidate": "44a25580a5e142d7654b9d2f6f4cd76fbd493ec6cc1cf03e75a13e64f122496f"
+  },
+  "files_checked": 576,
+  "changed_paths": [
+    "src/core/qgraph/vertex/file.rs"
+  ],
+  "candidate_vertex_sha256": "7b9e5c4343701df9621383c4914e560fdc5872a24a12b4d14f3c5b06cf5078f2",
+  "same_measurement_harness": true
+}

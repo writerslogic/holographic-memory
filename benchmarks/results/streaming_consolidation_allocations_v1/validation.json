@@ -1,0 +1,37 @@
+{
+  "tested_rust_source_base": "861bff74d96868da9fc18521d84f388ce5ff61a1",
+  "toolchain": "1.99.0-aarch64-apple-darwin",
+  "private_target": true,
+  "build_jobs": 2,
+  "commands": [
+    {
+      "command": "cargo +1.99.0 fmt -- --check",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo +1.99.0 clippy --locked --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo +1.99.0 test --locked",
+      "profile": {
+        "dev_opt_level": 1,
+        "test_opt_level": 1,
+        "dev_debug": 0,
+        "test_debug": 0
+      },
+      "exit_code": 0,
+      "passed": 681,
+      "ignored": 13,
+      "failed": 0
+    }
+  ],
+  "gate_log_sha256": "4d919faa6bd2cae982a6b37f223356213766580be36c975d9e13c248b7d1408e",
+  "parser_tests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "source_patches_reconstruct_measured_files": true,
+  "staged_evidence_hashes_verified": true,
+  "native_candidate_retained": false
+}

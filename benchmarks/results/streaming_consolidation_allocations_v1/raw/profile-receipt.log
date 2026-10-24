@@ -1,0 +1,146 @@
+lock_acquired step=profile
+Sat Oct 24 05:09:14 UTC 2026
+0.90 0.86 0.81 1/341 1078009
+MEMORY begin VmHWM:	    2736 kB
+MEMORY begin VmRSS:	    2736 kB
+CGROUP begin memory.current 180600832
+CGROUP begin memory.peak 180768768
+CGROUP begin anon 217088
+CGROUP begin file 174526464
+CGROUP begin file_mapped 0
+CGROUP begin file_dirty 174526464
+CGROUP begin file_writeback 0
+opened       0.96 s      1246686 allocs      283.6 MiB alloc'd      69.3 MiB peak      37.0 MiB live
+MEMORY opened VmHWM:	   88824 kB
+MEMORY opened VmRSS:	   72172 kB
+CGROUP opened memory.current 225062912
+CGROUP opened memory.peak 242548736
+CGROUP opened anon 43429888
+CGROUP opened file 174526464
+CGROUP opened file_mapped 27426816
+CGROUP opened file_dirty 174526464
+CGROUP opened file_writeback 0
+consolidation-start     0.00 s           24 allocs        0.0 MiB alloc'd      37.0 MiB peak      37.0 MiB live
+MEMORY consolidation-start VmHWM:	   72172 kB
+MEMORY consolidation-start VmRSS:	   72172 kB
+CGROUP consolidation-start memory.current 225062912
+CGROUP consolidation-start memory.peak 242548736
+CGROUP consolidation-start anon 43429888
+CGROUP consolidation-start file 174526464
+CGROUP consolidation-start file_mapped 27426816
+CGROUP consolidation-start file_dirty 174526464
+CGROUP consolidation-start file_writeback 0
+rows         0.14 s           61 allocs        9.9 MiB alloc'd      37.0 MiB peak      19.8 MiB live
+MEMORY rows VmHWM:	   71880 kB
+MEMORY rows VmRSS:	   29760 kB
+CGROUP rows memory.current 400162816
+CGROUP rows memory.peak 400162816
+CGROUP rows anon 27426816
+CGROUP rows file 360689664
+CGROUP rows file_mapped 0
+CGROUP rows file_dirty 274415616
+CGROUP rows file_writeback 0
+PHASE rows wall=0.12s greedy_cpu=0.0s prune_cpu=0.0s rev_wall=0.00s fresh=15517106 exact=15517106
+merge-repair     0.30 s         6171 allocs       28.0 MiB alloc'd      46.5 MiB peak      46.5 MiB live
+MEMORY merge-repair VmHWM:	  159064 kB
+MEMORY merge-repair VmRSS:	  159064 kB
+CGROUP merge-repair memory.current 423489536
+CGROUP merge-repair memory.peak 423493632
+CGROUP merge-repair anon 49569792
+CGROUP merge-repair file 361381888
+CGROUP merge-repair file_mapped 110264320
+CGROUP merge-repair file_dirty 190533632
+CGROUP merge-repair file_writeback 0
+PHASE merge-repair wall=0.27s greedy_cpu=0.0s prune_cpu=0.0s rev_wall=0.00s fresh=0 exact=0
+merge-insert     0.24 s        85143 allocs       47.6 MiB alloc'd      51.3 MiB peak      47.0 MiB live
+MEMORY merge-insert VmHWM:	  157788 kB
+MEMORY merge-insert VmRSS:	  139312 kB
+CGROUP merge-insert memory.current 428466176
+CGROUP merge-insert memory.peak 428466176
+CGROUP merge-insert anon 55033856
+CGROUP merge-insert file 361381888
+CGROUP merge-insert file_mapped 84574208
+CGROUP merge-insert file_dirty 190533632
+CGROUP merge-insert file_writeback 0
+PHASE merge-insert wall=0.24s greedy_cpu=1.4s prune_cpu=0.2s rev_wall=0.03s fresh=12111046 exact=12111046
+merge-relink     1.26 s       304514 allocs      246.4 MiB alloc'd      52.3 MiB peak      47.8 MiB live
+MEMORY merge-relink VmHWM:	  157788 kB
+MEMORY merge-relink VmRSS:	  139356 kB
+CGROUP merge-relink memory.current 428466176
+CGROUP merge-relink memory.peak 428466176
+CGROUP merge-relink anon 55033856
+CGROUP merge-relink file 361381888
+CGROUP merge-relink file_mapped 84574208
+CGROUP merge-relink file_dirty 190533632
+CGROUP merge-relink file_writeback 0
+PHASE merge-relink wall=1.26s greedy_cpu=7.5s prune_cpu=1.1s rev_wall=0.12s fresh=67316309 exact=67316309
+fill         0.21 s        14896 allocs        6.6 MiB alloc'd      52.8 MiB peak      47.9 MiB live
+MEMORY fill VmHWM:	  157788 kB
+MEMORY fill VmRSS:	  139436 kB
+CGROUP fill memory.current 428728320
+CGROUP fill memory.peak 428728320
+CGROUP fill anon 55160832
+CGROUP fill file 361381888
+CGROUP fill file_mapped 84574208
+CGROUP fill file_dirty 190533632
+CGROUP fill file_writeback 0
+PHASE fill wall=0.21s greedy_cpu=0.0s prune_cpu=0.0s rev_wall=0.00s fresh=0 exact=0
+upper        0.12 s       161763 allocs       31.8 MiB alloc'd      56.6 MiB peak      49.5 MiB live
+MEMORY upper VmHWM:	  157788 kB
+MEMORY upper VmRSS:	  144612 kB
+CGROUP upper memory.current 433971200
+CGROUP upper memory.peak 433971200
+CGROUP upper anon 60461056
+CGROUP upper file 361385984
+CGROUP upper file_mapped 84574208
+CGROUP upper file_dirty 190537728
+CGROUP upper file_writeback 0
+PHASE upper wall=0.12s greedy_cpu=0.2s prune_cpu=0.1s rev_wall=0.04s fresh=6446583 exact=6446583
+encode       0.13 s       423176 allocs      214.2 MiB alloc'd      49.5 MiB peak      46.7 MiB live
+MEMORY encode VmHWM:	  157788 kB
+MEMORY encode VmRSS:	   62020 kB
+CGROUP encode memory.current 510775296
+CGROUP encode memory.peak 510775296
+CGROUP encode anon 60461056
+CGROUP encode file 435589120
+CGROUP encode file_mapped 0
+CGROUP encode file_dirty 190541824
+CGROUP encode file_writeback 0
+PHASE encode wall=0.13s greedy_cpu=0.0s prune_cpu=0.0s rev_wall=0.00s fresh=0 exact=0
+published     0.04 s        14135 allocs        1.7 MiB alloc'd      46.7 MiB peak       2.1 MiB live
+MEMORY published VmHWM:	  157788 kB
+MEMORY published VmRSS:	   49792 kB
+CGROUP published memory.current 193908736
+CGROUP published memory.peak 510775296
+CGROUP published anon 26046464
+CGROUP published file 160493568
+CGROUP published file_mapped 21893120
+CGROUP published file_dirty 12288
+CGROUP published file_writeback 0
+consolidated mode=Merged live=211428 elapsed=2.429311
+vertex_crc32 2374831506
+	Command being timed: "timeout --kill-after=5s 800 systemd-run --user --scope -q --unit=hms-alloc-profile.scope -p RuntimeMaxSec=790s -p MemoryMax=4G -p MemorySwapMax=0 bash -c set -euo pipefail; cp -a --reflink=never fixture profile-work; taskset -c 0-7 ./parent-profile --consolidate profile-work"
+	User time (seconds): 18.22
+	System time (seconds): 0.67
+	Percent of CPU this job got: 541%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.49
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 157788
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 25959
+	Voluntary context switches: 36956
+	Involuntary context switches: 233
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 850728
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+exit_status=0
+Sat Oct 24 05:09:17 UTC 2026

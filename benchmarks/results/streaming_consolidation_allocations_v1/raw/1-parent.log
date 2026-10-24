@@ -1,0 +1,32 @@
+Sat Oct 24 05:09:37 UTC 2026
+0.64 0.81 0.79 1/341 1078083
+{"cgroup_after":194801664,"cgroup_before":226832384,"elapsed_ns":2396390808,"isolated_cgroup_peak":512008192,"isolated_peak_rss_kib":157936,"lifetime_cgroup_peak":512008192,"live":211428,"load":"0.67 0.81 0.79 1/352 1078098","mode":"Merged","rss_after_kib":49692,"rss_before_kib":71976,"threads":8,"written_bytes":261042176}
+{"files_sha256": {".lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "CURRENT": "910bad8419e3ada56640c327493a8043ff4138c18015d2bba93a3572ac2cc60d", "base-2.vertex": "6e2842bff23a7c391234e9f886710febf1f1c265635ba60e97e0df439b65cf8a", "rows-2.bin": "d01706fc0df305b633b32a99c95e5576cdd4a3be89ec02b771917ba08aa36274", "updates.log": "0bbec66e77149f113ad98c78510891236b0a13ea8564cc316ea2699c639d1a76"}}
+	Command being timed: "timeout --kill-after=10s 400 systemd-run --user --scope -q --unit=hms-alloc-1-parent.scope -p RuntimeMaxSec=390s -p MemoryMax=4G -p MemorySwapMax=0 bash -c set -euo pipefail
+          cp -a --reflink=never fixture "work-$1"
+          taskset -c 0-7 "./$2-run" "work-$1"
+          uv run --no-project python hash-files.py "work-$1" _ 1-parent parent"
+	User time (seconds): 17.84
+	System time (seconds): 0.81
+	Percent of CPU this job got: 526%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.54
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 157936
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 7
+	Minor (reclaiming a frame) page faults: 29628
+	Voluntary context switches: 34166
+	Involuntary context switches: 209
+	Swaps: 0
+	File system inputs: 1936
+	File system outputs: 850720
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+0.67 0.81 0.79 2/341 1078104
+Sat Oct 24 05:09:40 UTC 2026

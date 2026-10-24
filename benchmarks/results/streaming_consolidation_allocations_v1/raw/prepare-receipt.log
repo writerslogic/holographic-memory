@@ -1,0 +1,29 @@
+lock_acquired step=prepare
+Sat Oct 24 05:08:44 UTC 2026
+0.79 0.82 0.79 1/341 1077924
+prepared base=200000 inserted=40000 deleted=28572 live=211428
+	Command being timed: "timeout --kill-after=5s 800 systemd-run --user --scope -q --unit=hms-alloc-prepare.scope -p RuntimeMaxSec=790s -p MemoryMax=4G -p MemorySwapMax=0 taskset -c 0-7 ./parent-profile --synthetic 240000 --dim 100 --metric euclidean --degree 32 --build-ef 64 --prepare-streaming fixture"
+	User time (seconds): 22.37
+	System time (seconds): 0.66
+	Percent of CPU this job got: 702%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.27
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 215572
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 3
+	Minor (reclaiming a frame) page faults: 75853
+	Voluntary context switches: 34653
+	Involuntary context switches: 395
+	Swaps: 0
+	File system inputs: 40
+	File system outputs: 340888
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+exit_status=0
+Sat Oct 24 05:08:47 UTC 2026
