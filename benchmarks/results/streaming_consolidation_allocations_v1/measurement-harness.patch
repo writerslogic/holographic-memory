@@ -1,0 +1,239 @@
+diff --git a/examples/qgraph_build_profile.rs b/examples/qgraph_build_profile.rs
+index 50a62afc..b48de5cb 100644
+--- a/examples/qgraph_build_profile.rs
++++ b/examples/qgraph_build_profile.rs
+@@ -20,0 +21,2 @@ use std::alloc::{GlobalAlloc, Layout, System};
++use std::io::Read;
++use std::path::Path;
+@@ -22 +24 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering::Relaxed};
+-use std::sync::Mutex;
++use std::sync::{Mutex, OnceLock};
+@@ -27 +29,2 @@ use holographic_memory::core::qgraph::{
+-    set_build_phase_hook, BuildParams, Graph, Metric, Residency, VGraph,
++    set_build_phase_hook, BuildParams, ConsolidationMode, Graph, Metric, Residency,
++    UpdatableVGraph, VGraph,
+@@ -89,0 +93 @@ static MARK: Mutex<Option<Mark>> = Mutex::new(None);
++static CGROUP: OnceLock<std::path::PathBuf> = OnceLock::new();
+@@ -119,0 +124,124 @@ fn end_phase(name: &str) {
++fn end_stream_phase(name: &str) {
++    end_phase(name);
++    if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
++        for line in status
++            .lines()
++            .filter(|line| line.starts_with("VmRSS:") || line.starts_with("VmHWM:"))
++        {
++            println!("MEMORY {name} {line}");
++        }
++    }
++    if let Some(cgroup) = CGROUP.get() {
++        for field in ["memory.current", "memory.peak"] {
++            let value = std::fs::read_to_string(cgroup.join(field))
++                .expect("read consolidation cgroup memory");
++            println!("CGROUP {name} {field} {}", value.trim());
++        }
++        let stats = std::fs::read_to_string(cgroup.join("memory.stat"))
++            .expect("read consolidation cgroup memory.stat");
++        for line in stats.lines().filter(|line| {
++            line.split_whitespace().next().is_some_and(|key| {
++                matches!(
++                    key,
++                    "anon" | "file" | "file_mapped" | "file_dirty" | "file_writeback"
++                )
++            })
++        }) {
++            println!("CGROUP {name} {line}");
++        }
++    }
++}
++
++fn prepare_streaming(
++    path: &Path,
++    data: &[f32],
++    dim: usize,
++    params: &BuildParams,
++) -> Result<(), Box<dyn std::error::Error>> {
++    if dim == 0 || !data.len().is_multiple_of(dim) {
++        return Err("invalid row geometry".into());
++    }
++    let total = data.len() / dim;
++    if !(120..u32::MAX as usize).contains(&total) {
++        return Err("streaming fixture requires 120..u32::MAX rows".into());
++    }
++    let base = total / 6 * 5;
++    let index = UpdatableVGraph::create(path, &data[..base * dim], dim, params)?;
++    let capacity = index.batch_capacity();
++    let doomed: Vec<u32> = (0..base as u32).filter(|id| id % 7 == 0).collect();
++    for ids in doomed.chunks(capacity) {
++        index.delete_batch(ids)?;
++        index.commit()?;
++    }
++    for first in (base..total).step_by(capacity) {
++        let end = total.min(first + capacity);
++        let ids: Vec<u32> = (first as u32..end as u32).collect();
++        index.insert_batch(&ids, &data[first * dim..end * dim])?;
++        index.commit()?;
++    }
++    println!(
++        "prepared base={base} inserted={} deleted={} live={}",
++        total - base,
++        doomed.len(),
++        index.len()
++    );
++    Ok(())
++}
++
++fn profile_consolidation(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
++    #[cfg(target_os = "linux")]
++    {
++        let groups = std::fs::read_to_string("/proc/self/cgroup")?;
++        let group = groups
++            .lines()
++            .find_map(|line| line.strip_prefix("0::"))
++            .ok_or("unified cgroup is required for memory attribution")?;
++        CGROUP
++            .set(Path::new("/sys/fs/cgroup").join(group.trim_start_matches('/')))
++            .map_err(|_| "cgroup already initialized")?;
++    }
++    if !set_build_phase_hook(end_stream_phase) {
++        return Err("build phase hook already installed".into());
++    }
++    end_stream_phase("begin");
++    let index = UpdatableVGraph::open(path)?;
++    end_stream_phase("opened");
++    #[cfg(target_os = "linux")]
++    std::fs::write("/proc/self/clear_refs", b"5")?;
++    end_stream_phase("consolidation-start");
++    let start = Instant::now();
++    let how = index.consolidate_with(ConsolidationMode::Merge {
++        rebuild_after: 10.0,
++    })?;
++    let elapsed = start.elapsed().as_secs_f64();
++    end_stream_phase("published");
++    println!(
++        "consolidated mode={how:?} live={} elapsed={elapsed:.6}",
++        index.len()
++    );
++    let mut vertices = Vec::new();
++    for entry in std::fs::read_dir(path)? {
++        let entry = entry?;
++        let name = entry.file_name();
++        let name = name.to_string_lossy();
++        if name.starts_with("base-") && name.ends_with(".vertex") {
++            vertices.push(entry.path());
++        }
++    }
++    if vertices.len() != 1 {
++        return Err("expected one published vertex file".into());
++    }
++    let mut file = std::fs::File::open(&vertices[0])?;
++    let mut buffer = [0u8; 65536];
++    let mut checksum = crc32fast::Hasher::new();
++    loop {
++        let read = file.read(&mut buffer)?;
++        if read == 0 {
++            break;
++        }
++        checksum.update(&buffer[..read]);
++    }
++    println!("vertex_crc32 {}", checksum.finalize());
++    Ok(())
++}
++
+@@ -147,0 +276,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
++    if let Some(path) = opt("--consolidate") {
++        return profile_consolidation(Path::new(&path));
++    }
+@@ -180,0 +312,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
++    if let Some(path) = opt("--prepare-streaming") {
++        return prepare_streaming(Path::new(&path), &data, dim, &params);
++    }
+diff --git a/examples/qgraph_consolidation.rs b/examples/qgraph_consolidation.rs
+new file mode 100644
+index 00000000..4e2426dd
+--- /dev/null
++++ b/examples/qgraph_consolidation.rs
+@@ -0,0 +1,84 @@
++// Copyright 2024-2026 WritersLogic Contributors
++// SPDX-License-Identifier: Apache-2.0
++//! Measures one consolidation with the ordinary allocator and no construction hooks.
++//! Run a copied, committed streaming fixture inside its own Linux memory cgroup.
++
++use std::fs::{File, OpenOptions};
++use std::io::{Read, Seek, Write};
++use std::path::{Path, PathBuf};
++use std::time::Instant;
++
++use holographic_memory::core::qgraph::{ConsolidationMode, UpdatableVGraph};
++use serde_json::json;
++
++fn value(path: &Path, key: Option<&str>) -> Result<u64, Box<dyn std::error::Error>> {
++    let text = std::fs::read_to_string(path)?;
++    let value = match key {
++        Some(key) => text
++            .lines()
++            .find_map(|line| line.strip_prefix(key))
++            .ok_or("missing process statistic")?,
++        None => &text,
++    };
++    Ok(value
++        .split_whitespace()
++        .next()
++        .ok_or("empty process statistic")?
++        .parse()?)
++}
++
++fn read_peak(file: &mut File) -> Result<u64, Box<dyn std::error::Error>> {
++    file.rewind()?;
++    let mut value = String::new();
++    file.read_to_string(&mut value)?;
++    Ok(value.trim().parse()?)
++}
++
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    let mut args = std::env::args_os().skip(1);
++    let path = PathBuf::from(args.next().ok_or("fixture directory is required")?);
++    if args.next().is_some() {
++        return Err("expected only one fixture directory".into());
++    }
++    let groups = std::fs::read_to_string("/proc/self/cgroup")?;
++    let group = groups
++        .lines()
++        .find_map(|line| line.strip_prefix("0::"))
++        .ok_or("unified cgroup is required")?;
++    let cgroup = Path::new("/sys/fs/cgroup").join(group.trim_start_matches('/'));
++    let index = UpdatableVGraph::open(&path)?;
++    let status = Path::new("/proc/self/status");
++    let io = Path::new("/proc/self/io");
++    let before_rss = value(status, Some("VmRSS:"))?;
++    let before_bytes = value(io, Some("write_bytes:"))?;
++    let before_memory = value(&cgroup.join("memory.current"), None)?;
++    std::fs::write("/proc/self/clear_refs", b"5")?;
++    // Linux resets memory.peak for this open file description, not for later opens.
++    let mut peak = OpenOptions::new()
++        .read(true)
++        .write(true)
++        .open(cgroup.join("memory.peak"))?;
++    peak.write_all(b"0")?;
++    let start = Instant::now();
++    let how = index.consolidate_with(ConsolidationMode::Merge {
++        rebuild_after: 10.0,
++    })?;
++    let elapsed_ns = start.elapsed().as_nanos();
++    println!(
++        "{}",
++        json!({
++            "mode": format!("{how:?}"), "live": index.len(), "elapsed_ns": elapsed_ns,
++            "threads": rayon::current_num_threads(),
++            "rss_before_kib": before_rss,
++            "rss_after_kib": value(status, Some("VmRSS:"))?,
++            "isolated_peak_rss_kib": value(status, Some("VmHWM:"))?,
++            "written_bytes": value(io, Some("write_bytes:"))? - before_bytes,
++            "cgroup_before": before_memory,
++            "cgroup_after": value(&cgroup.join("memory.current"), None)?,
++            "isolated_cgroup_peak": read_peak(&mut peak)?,
++            "lifetime_cgroup_peak": value(&cgroup.join("memory.peak"), None)?,
++            "load": std::fs::read_to_string("/proc/loadavg")?.trim(),
++        })
++    );
++    Ok(())
++}

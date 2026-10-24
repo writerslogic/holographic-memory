@@ -1,0 +1,258 @@
+{
+  "arms": {
+    "1-parent": {
+      "metrics": {
+        "cgroup_after": 194801664,
+        "cgroup_before": 226832384,
+        "elapsed_ns": 2396390808,
+        "isolated_cgroup_peak": 512008192,
+        "isolated_peak_rss_kib": 157936,
+        "lifetime_cgroup_peak": 512008192,
+        "live": 211428,
+        "load": "0.67 0.81 0.79 1/352 1078098",
+        "mode": "Merged",
+        "rss_after_kib": 49692,
+        "rss_before_kib": 71976,
+        "threads": 8,
+        "written_bytes": 261042176
+      },
+      "files_sha256": {
+        ".lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "CURRENT": "910bad8419e3ada56640c327493a8043ff4138c18015d2bba93a3572ac2cc60d",
+        "base-2.vertex": "6e2842bff23a7c391234e9f886710febf1f1c265635ba60e97e0df439b65cf8a",
+        "rows-2.bin": "d01706fc0df305b633b32a99c95e5576cdd4a3be89ec02b771917ba08aa36274",
+        "updates.log": "0bbec66e77149f113ad98c78510891236b0a13ea8564cc316ea2699c639d1a76"
+      },
+      "log_sha256": "dd46974a6339e0b1a687bcc2c025b50f9341ce6a9dcc3ec338fe231037cd00ba"
+    },
+    "1-candidate": {
+      "metrics": {
+        "cgroup_after": 193441792,
+        "cgroup_before": 225243136,
+        "elapsed_ns": 2500275318,
+        "isolated_cgroup_peak": 510681088,
+        "isolated_peak_rss_kib": 157816,
+        "lifetime_cgroup_peak": 510681088,
+        "live": 211428,
+        "load": "1.42 0.96 0.84 1/358 1078129",
+        "mode": "Merged",
+        "rss_after_kib": 49728,
+        "rss_before_kib": 72072,
+        "threads": 8,
+        "written_bytes": 261042176
+      },
+      "files_sha256": {
+        ".lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "CURRENT": "910bad8419e3ada56640c327493a8043ff4138c18015d2bba93a3572ac2cc60d",
+        "base-2.vertex": "6e2842bff23a7c391234e9f886710febf1f1c265635ba60e97e0df439b65cf8a",
+        "rows-2.bin": "d01706fc0df305b633b32a99c95e5576cdd4a3be89ec02b771917ba08aa36274",
+        "updates.log": "0bbec66e77149f113ad98c78510891236b0a13ea8564cc316ea2699c639d1a76"
+      },
+      "log_sha256": "e0fb3647b95bd8759387db66fa7d635a8d3a8dc3fbc3525064cd4d93b826c984"
+    },
+    "2-parent": {
+      "metrics": {
+        "cgroup_after": 193589248,
+        "cgroup_before": 225325056,
+        "elapsed_ns": 2376880735,
+        "isolated_cgroup_peak": 510758912,
+        "isolated_peak_rss_kib": 157992,
+        "lifetime_cgroup_peak": 510758912,
+        "live": 211428,
+        "load": "2.51 1.21 0.92 1/356 1078216",
+        "mode": "Merged",
+        "rss_after_kib": 49672,
+        "rss_before_kib": 72040,
+        "threads": 8,
+        "written_bytes": 261042176
+      },
+      "files_sha256": {
+        ".lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "CURRENT": "910bad8419e3ada56640c327493a8043ff4138c18015d2bba93a3572ac2cc60d",
+        "base-2.vertex": "6e2842bff23a7c391234e9f886710febf1f1c265635ba60e97e0df439b65cf8a",
+        "rows-2.bin": "d01706fc0df305b633b32a99c95e5576cdd4a3be89ec02b771917ba08aa36274",
+        "updates.log": "0bbec66e77149f113ad98c78510891236b0a13ea8564cc316ea2699c639d1a76"
+      },
+      "log_sha256": "b301bc7c719fc5dbd8a0db26e2749e637253563fcb08da95c8f3a57b7fd8a673"
+    },
+    "2-candidate": {
+      "metrics": {
+        "cgroup_after": 193822720,
+        "cgroup_before": 225570816,
+        "elapsed_ns": 2369982541,
+        "isolated_cgroup_peak": 511012864,
+        "isolated_peak_rss_kib": 157796,
+        "lifetime_cgroup_peak": 511012864,
+        "live": 211428,
+        "load": "1.95 1.08 0.88 1/353 1078188",
+        "mode": "Merged",
+        "rss_after_kib": 49788,
+        "rss_before_kib": 72140,
+        "threads": 8,
+        "written_bytes": 261042176
+      },
+      "files_sha256": {
+        ".lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "CURRENT": "910bad8419e3ada56640c327493a8043ff4138c18015d2bba93a3572ac2cc60d",
+        "base-2.vertex": "6e2842bff23a7c391234e9f886710febf1f1c265635ba60e97e0df439b65cf8a",
+        "rows-2.bin": "d01706fc0df305b633b32a99c95e5576cdd4a3be89ec02b771917ba08aa36274",
+        "updates.log": "0bbec66e77149f113ad98c78510891236b0a13ea8564cc316ea2699c639d1a76"
+      },
+      "log_sha256": "a245833218c2aa2d7cd00157e6a050504c757c3bb37bd4f54ea3b6a9c1953b23"
+    },
+    "3-parent": {
+      "metrics": {
+        "cgroup_after": 193748992,
+        "cgroup_before": 225259520,
+        "elapsed_ns": 2375671878,
+        "isolated_cgroup_peak": 510939136,
+        "isolated_peak_rss_kib": 157972,
+        "lifetime_cgroup_peak": 510939136,
+        "live": 211428,
+        "load": "2.51 1.21 0.92 1/358 1078307",
+        "mode": "Merged",
+        "rss_after_kib": 49716,
+        "rss_before_kib": 72024,
+        "threads": 8,
+        "written_bytes": 261042176
+      },
+      "files_sha256": {
+        ".lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "CURRENT": "910bad8419e3ada56640c327493a8043ff4138c18015d2bba93a3572ac2cc60d",
+        "base-2.vertex": "6e2842bff23a7c391234e9f886710febf1f1c265635ba60e97e0df439b65cf8a",
+        "rows-2.bin": "d01706fc0df305b633b32a99c95e5576cdd4a3be89ec02b771917ba08aa36274",
+        "updates.log": "0bbec66e77149f113ad98c78510891236b0a13ea8564cc316ea2699c639d1a76"
+      },
+      "log_sha256": "fcb0a0bc0992c69cb4ddd054d761f9ec8d6bd90dca76626af94db5be312cbefb"
+    },
+    "3-candidate": {
+      "metrics": {
+        "cgroup_after": 193515520,
+        "cgroup_before": 224722944,
+        "elapsed_ns": 2371066789,
+        "isolated_cgroup_peak": 510947328,
+        "isolated_peak_rss_kib": 157996,
+        "lifetime_cgroup_peak": 510947328,
+        "live": 211428,
+        "load": "2.39 1.21 0.93 1/354 1078331",
+        "mode": "Merged",
+        "rss_after_kib": 49744,
+        "rss_before_kib": 72116,
+        "threads": 8,
+        "written_bytes": 261042176
+      },
+      "files_sha256": {
+        ".lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "CURRENT": "910bad8419e3ada56640c327493a8043ff4138c18015d2bba93a3572ac2cc60d",
+        "base-2.vertex": "6e2842bff23a7c391234e9f886710febf1f1c265635ba60e97e0df439b65cf8a",
+        "rows-2.bin": "d01706fc0df305b633b32a99c95e5576cdd4a3be89ec02b771917ba08aa36274",
+        "updates.log": "0bbec66e77149f113ad98c78510891236b0a13ea8564cc316ea2699c639d1a76"
+      },
+      "log_sha256": "4dd0a82fe961a66e7d8d9501af2f77262f7d0e2c472514b20889fa5759a703fb"
+    }
+  },
+  "pairs": [
+    {
+      "round": 1,
+      "order": [
+        "parent",
+        "candidate"
+      ],
+      "ratios": {
+        "elapsed_ns": 1.0433504041382553,
+        "isolated_peak_rss_kib": 0.9992401985614426,
+        "isolated_cgroup_peak": 0.9974080414713364,
+        "written_bytes": 1.0
+      },
+      "identical_files": true
+    },
+    {
+      "round": 2,
+      "order": [
+        "candidate",
+        "parent"
+      ],
+      "ratios": {
+        "elapsed_ns": 0.9970977954853086,
+        "isolated_peak_rss_kib": 0.9987594308572586,
+        "isolated_cgroup_peak": 1.0004972052254666,
+        "written_bytes": 1.0
+      },
+      "identical_files": true
+    },
+    {
+      "round": 3,
+      "order": [
+        "parent",
+        "candidate"
+      ],
+      "ratios": {
+        "elapsed_ns": 0.9980615635338173,
+        "isolated_peak_rss_kib": 1.0001519256577114,
+        "isolated_cgroup_peak": 1.0000160332208337,
+        "written_bytes": 1.0
+      },
+      "identical_files": true
+    }
+  ],
+  "median_ratios": {
+    "elapsed_ns": 0.9980615635338173,
+    "isolated_peak_rss_kib": 0.9992401985614426,
+    "isolated_cgroup_peak": 1.0000160332208337,
+    "written_bytes": 1.0
+  },
+  "faster_pairs": 2,
+  "acceptance": {
+    "median_time_below_0_98": false,
+    "at_least_two_faster": true,
+    "median_rss_at_most_1_05": true,
+    "identical_files": true
+  },
+  "decision": "rejected",
+  "limitation": "Development consolidation only; allocation counts do not establish a performance win.",
+  "protocol": {
+    "kind": "paired development consolidation; ordinary system allocator",
+    "cpu": "Intel Core Ultra 9 185H",
+    "source_parent": "6fb34c4000c8d043174906f776f6f866b6015ab3",
+    "source_candidate": "279fe80952d758064d786ad69620a833ad8a3609",
+    "production_parent": "ac235724967cf6c7046ba3c02882a6046d37d075",
+    "rows": 240000,
+    "dim": 100,
+    "metric": "euclidean",
+    "degree": 32,
+    "build_ef": 64,
+    "initial_base_rows": 200000,
+    "deleted": 28572,
+    "inserted": 40000,
+    "live": 211428,
+    "rayon_threads": 8,
+    "affinity": "0-7",
+    "memory_max_bytes": 4294967296,
+    "swap_max_bytes": 0,
+    "round_order": [
+      "parent/candidate",
+      "candidate/parent",
+      "parent/candidate"
+    ],
+    "maximum_lock_hold_seconds": 830,
+    "profile_is_timing_evidence": false
+  },
+  "native_candidate_retained": false,
+  "scaled_validation": "not run because registered240k retention gate failed",
+  "final_native_gate": "not required for rejected native code; evidence-only change",
+  "build_and_binary_sha256": [
+    "62156c0d3583d78675073650babee6b8f1fc877d743ab1d84815d989073e026d  parent-run",
+    "5391542401c4fade68ba6497b7bfe2e32597efee8c43c9eb4c50f7d5b92c96be  candidate-run",
+    "b901884a17a0c2a2bcb795c7194f18cedaf221ed5130e0fd0fea5f37b71eae99  parent-profile",
+    "9b709a20629b6ea1a46db4996aabcc4842935d7815874eed5296fb205b19b011  parent-minimal.tar",
+    "44a25580a5e142d7654b9d2f6f4cd76fbd493ec6cc1cf03e75a13e64f122496f  candidate-minimal.tar"
+  ],
+  "parent_phase_attribution": {
+    "encode_allocations": 423176,
+    "encode_allocated_mib": 214.2,
+    "encode_wall_seconds_instrumented_rounded": 0.13,
+    "full_consolidation_seconds_instrumented": 2.429311,
+    "vertex_crc32": 2374831506,
+    "limitation": "Counting allocator perturbs work; phase time is attribution only."
+  }
+}

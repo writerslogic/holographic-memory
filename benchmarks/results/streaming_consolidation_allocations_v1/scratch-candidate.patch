@@ -1,0 +1,61 @@
+diff --git a/src/core/qgraph/vertex/file.rs b/src/core/qgraph/vertex/file.rs
+index 776166bb..5bd60956 100644
+--- a/src/core/qgraph/vertex/file.rs
++++ b/src/core/qgraph/vertex/file.rs
+@@ -962,23 +962,25 @@ fn save_graph(
+         let count = batch.min(n - start);
+         let mut codes = vec![0i8; count * stride];
+         let mut scales = vec![0f32; count];
+-        let centred = |v: usize| -> Vec<f32> {
+-            g.vectors[old(v) * dim..(old(v) + 1) * dim]
+-                .iter()
+-                .zip(&mean)
+-                .map(|(a, m)| a - m)
+-                .collect()
++        let centred = |v: usize, x: &mut Vec<f32>| {
++            x.clear();
++            x.extend(
++                g.vectors[old(v) * dim..(old(v) + 1) * dim]
++                    .iter()
++                    .zip(&mean)
++                    .map(|(a, m)| a - m),
++            );
+         };
+         codes
+             .par_chunks_exact_mut(stride)
+             .zip(scales.par_iter_mut())
+             .enumerate()
+-            .for_each(|(v, (dst, scale))| {
+-                let x = centred(start + v);
++            .for_each_init(Vec::new, |x, (v, (dst, scale))| {
++                centred(start + v, x);
+                 *scale = if bits == 8 {
+-                    quantize(&x, &mut dst[..cbytes])
++                    quantize(x, &mut dst[..cbytes])
+                 } else {
+-                    quantize4(&x, &mut dst[..cbytes])
++                    quantize4(x, &mut dst[..cbytes])
+                 };
+             });
+         section_write(&mut w, &table, 5, start * stride, &codes)?;
+@@ -990,16 +992,16 @@ fn save_graph(
+                 .par_chunks_exact_mut(res_stride)
+                 .zip(res_scales.par_iter_mut())
+                 .enumerate()
+-                .for_each(|(v, (dst, scale))| {
+-                    let mut x = centred(start + v);
++                .for_each_init(Vec::new, |x, (v, (dst, scale))| {
++                    centred(start + v, x);
+                     let c = &codes[v * stride..v * stride + cbytes];
+                     x.iter_mut()
+                         .enumerate()
+                         .for_each(|(i, a)| *a -= scales[v] * f32::from(code_at(c, bits, i)));
+                     *scale = if residual_bits == 8 {
+-                        quantize(&x, dst)
++                        quantize(x, dst)
+                     } else {
+-                        quantize4(&x, dst)
++                        quantize4(x, dst)
+                     };
+                 });
+             section_write(&mut w, &table, 7, start * res_stride, &residual)?;
