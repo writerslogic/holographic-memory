@@ -254,6 +254,87 @@ fn live_visibility_chunk_deduplication_and_reopen() {
 }
 
 #[test]
+fn phrase_ordinals_follow_replacement_slot_reuse_and_replay() {
+    fn check(core: &HmsCore) {
+        for text in [
+            "\"red red\"",
+            "\"running foxes\"",
+            "\"run fox\"",
+            "+\"red red\" +foxes",
+            "+red -\"running foxes\"",
+        ] {
+            let query = LexicalQuery::parse(text).unwrap();
+            for k in [0, 10] {
+                for count in [false, true] {
+                    let options = LexicalOptions {
+                        k,
+                        count,
+                        ..Default::default()
+                    };
+                    let expected = core
+                        .search_lexical(
+                            &query,
+                            &LexicalOptions {
+                                execution: LexicalExecution::Exhaustive,
+                                ..options.clone()
+                            },
+                        )
+                        .unwrap();
+                    assert_eq!(
+                        core.search_lexical(&query, &options).unwrap(),
+                        expected,
+                        "{text}"
+                    );
+                }
+            }
+        }
+    }
+    for count in [127, 128, 129] {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().display().to_string();
+        let core = HmsCore::new(64, Some(path.clone()), None).unwrap();
+        for unstemmed in [false, true] {
+            let documents = (0..count)
+                .map(|i| input(&format!("{unstemmed}-{i}"), "red red running foxes zebra"))
+                .collect();
+            core.memorize_documents_with(documents, &options(true, unstemmed))
+                .unwrap();
+        }
+        check(&core);
+        for text in [
+            "aardvark red red running foxes",
+            "aardvark running red foxes red",
+        ] {
+            for unstemmed in [false, true] {
+                let documents = (0..count)
+                    .map(|i| input(&format!("{unstemmed}-{i}"), text))
+                    .collect();
+                core.memorize_documents_with(documents, &options(true, unstemmed))
+                    .unwrap();
+            }
+            check(&core);
+        }
+        for i in 0..count {
+            core.delete_document(&format!("false-{i}")).unwrap();
+        }
+        let mut moved = input("true-0", "running foxes red red running foxes");
+        moved.chunk_words = Some(2);
+        core.memorize_documents_with(vec![moved], &options(true, false))
+            .unwrap();
+        let reused = (0..count)
+            .map(|i| input(&format!("reused-{i}"), "zebra red red running foxes"))
+            .collect();
+        core.memorize_documents_with(reused, &options(true, true))
+            .unwrap();
+        check(&core);
+        core.flush().unwrap();
+        drop(core);
+        let core = HmsCore::new(64, Some(path), None).unwrap();
+        check(&core);
+    }
+}
+
+#[test]
 fn ties_and_block_boundary_sizes() {
     for count in [0, 1, 127, 128, 129, 255, 256, 257] {
         let mut store = DocumentStore::default();
