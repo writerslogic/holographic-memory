@@ -1,0 +1,190 @@
+{
+  "rows": [
+    {
+      "dataset": "glove",
+      "ef": 64,
+      "arm": "pgo",
+      "ratios": [
+        1.0783933092614626,
+        1.0468231990178394,
+        1.0603902818821198
+      ],
+      "median_ratio": 1.0603902818821198,
+      "recall_at_10": 0.79739,
+      "mean_exact_evals_per_query": 1953.7173,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "glove",
+      "ef": 64,
+      "arm": "native",
+      "ratios": [
+        0.9796772903806634,
+        0.9538012332033287,
+        0.9618236982541517
+      ],
+      "median_ratio": 0.9618236982541517,
+      "recall_at_10": 0.79739,
+      "mean_exact_evals_per_query": 1953.7173,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "glove",
+      "ef": 128,
+      "arm": "pgo",
+      "ratios": [
+        1.07517642568548,
+        1.0887414711471741,
+        1.0720544172115165
+      ],
+      "median_ratio": 1.07517642568548,
+      "recall_at_10": 0.85884,
+      "mean_exact_evals_per_query": 3334.2992,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "glove",
+      "ef": 128,
+      "arm": "native",
+      "ratios": [
+        0.9526498440225728,
+        0.9851867134519754,
+        0.9665620074298521
+      ],
+      "median_ratio": 0.9665620074298521,
+      "recall_at_10": 0.85884,
+      "mean_exact_evals_per_query": 3334.2992,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "glove",
+      "ef": 256,
+      "arm": "pgo",
+      "ratios": [
+        1.0710800737866495,
+        1.085514786764688,
+        1.0665061097280548
+      ],
+      "median_ratio": 1.0710800737866495,
+      "recall_at_10": 0.90553,
+      "mean_exact_evals_per_query": 5826.2959,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "glove",
+      "ef": 256,
+      "arm": "native",
+      "ratios": [
+        0.9580148656878663,
+        0.9693723916059571,
+        0.9781170356697494
+      ],
+      "median_ratio": 0.9693723916059571,
+      "recall_at_10": 0.90553,
+      "mean_exact_evals_per_query": 5826.2959,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "sift",
+      "ef": 64,
+      "arm": "pgo",
+      "ratios": [
+        1.0889223693570007,
+        1.0893360466927655,
+        1.0683935338205297
+      ],
+      "median_ratio": 1.0889223693570007,
+      "recall_at_10": 0.97569,
+      "mean_exact_evals_per_query": 1553.8716,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "sift",
+      "ef": 64,
+      "arm": "native",
+      "ratios": [
+        1.0078259523398283,
+        0.9963838320682978,
+        0.9940073984635809
+      ],
+      "median_ratio": 0.9963838320682978,
+      "recall_at_10": 0.97569,
+      "mean_exact_evals_per_query": 1553.8716,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "sift",
+      "ef": 128,
+      "arm": "pgo",
+      "ratios": [
+        1.0634324111076419,
+        1.076575541023687,
+        1.0753634563890435
+      ],
+      "median_ratio": 1.0753634563890435,
+      "recall_at_10": 0.99237,
+      "mean_exact_evals_per_query": 2662.4848,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "sift",
+      "ef": 128,
+      "arm": "native",
+      "ratios": [
+        0.9913057421397988,
+        1.0238504471868846,
+        1.0041733531460229
+      ],
+      "median_ratio": 1.0041733531460229,
+      "recall_at_10": 0.99237,
+      "mean_exact_evals_per_query": 2662.4848,
+      "load_max": 0.69970703125,
+      "eligible": true
+    },
+    {
+      "dataset": "sift",
+      "ef": 256,
+      "arm": "pgo",
+      "ratios": [
+        1.0874460501265157,
+        1.0522085451852878,
+        1.088202913797452
+      ],
+      "median_ratio": 1.0874460501265157,
+      "recall_at_10": 0.99688,
+      "mean_exact_evals_per_query": 4537.5176,
+      "load_max": 0.7,
+      "eligible": true
+    },
+    {
+      "dataset": "sift",
+      "ef": 256,
+      "arm": "native",
+      "ratios": [
+        0.9815884315538577,
+        1.0144447678634736,
+        1.007048357220275
+      ],
+      "median_ratio": 1.007048357220275,
+      "recall_at_10": 0.99688,
+      "mean_exact_evals_per_query": 4537.5176,
+      "load_max": 0.69970703125,
+      "eligible": true
+    }
+  ],
+  "passes_development_bar": true,
+  "production_adoption": false,
+  "limitations": [
+    "Older pinned source 99e84d92; current-source and wheel validation remain required.",
+    "k=10 development comparison, not the VIBE k=100 protocol or a leader comparison."
+  ]
+}

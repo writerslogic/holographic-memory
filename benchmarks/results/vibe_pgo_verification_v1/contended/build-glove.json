@@ -1,0 +1,159 @@
+{
+  "build": {
+    "build_secs": 213.695012771,
+    "graph_hash": "23f29f1ad177926d",
+    "load_1m_after_build": 32.58,
+    "load_1m_before_build": 11.45,
+    "load_gate_met": true,
+    "params": {
+      "align_rows": true,
+      "alpha": 1.0,
+      "block_bits": 0,
+      "build_ef": 200,
+      "code_bits": 0,
+      "degree": 32,
+      "fuse": false,
+      "graph_cache": null,
+      "id_bytes": 4,
+      "index": "vertex",
+      "metric": "angular",
+      "neighbour_cap": 0,
+      "quantized_search": true,
+      "reorder": true,
+      "residual": true,
+      "residual_bits": 8,
+      "screen": false,
+      "seed": 24301,
+      "vertex_bits": 8
+    },
+    "threads": 8
+  },
+  "dataset": {
+    "dim": 100,
+    "kind": "ann",
+    "metric": "angular",
+    "n_neighbors": 100,
+    "n_test": 10000,
+    "n_train": 1183514,
+    "name": "glove-100-angular",
+    "sha256": "544af1d5e84e112cd4749571dcfd8ca109818a572f850af75a3a09e093a953c4",
+    "source": "https://ann-benchmarks.com/glove-100-angular.hdf5"
+  },
+  "environment": {
+    "arch": "x86_64",
+    "cpu": "",
+    "hms_version": "0.6.1",
+    "load_average": "",
+    "os": "linux",
+    "rayon_threads": 8
+  },
+  "first_query_unix_ns": null,
+  "first_query_us": null,
+  "holdout": null,
+  "index_bytes": 454908620,
+  "index_file": {
+    "bytes": 455240508,
+    "cold": false,
+    "loaded": null,
+    "open_secs": null,
+    "residency": null,
+    "saved": "/home/davidcondrey/vibe-image-ab/ab/idx-glove"
+  },
+  "k": 10,
+  "max_load": 100.0,
+  "memory_phases": [
+    {
+      "memory": {
+        "RssAnon": 493121536,
+        "RssFile": 4050944,
+        "RssShmem": 0,
+        "VmHWM": 497172480,
+        "VmRSS": 497172480,
+        "smaps_Anonymous": 493121536,
+        "smaps_Pss_File": 2155520,
+        "smaps_Rss": 497172480
+      },
+      "phase": "input"
+    },
+    {
+      "memory": {
+        "RssAnon": 901259264,
+        "RssFile": 4186112,
+        "RssShmem": 0,
+        "VmHWM": 957378560,
+        "VmRSS": 905445376,
+        "smaps_Anonymous": 901263360,
+        "smaps_Pss_File": 2136064,
+        "smaps_Rss": 905449472
+      },
+      "phase": "graph"
+    },
+    {
+      "memory": {
+        "RssAnon": 1162223616,
+        "RssFile": 4292608,
+        "RssShmem": 0,
+        "VmHWM": 1166516224,
+        "VmRSS": 1166516224,
+        "smaps_Anonymous": 1162223616,
+        "smaps_Pss_File": 2242560,
+        "smaps_Rss": 1166516224
+      },
+      "phase": "encode"
+    },
+    {
+      "memory": {
+        "RssAnon": 1162223616,
+        "RssFile": 4300800,
+        "RssShmem": 0,
+        "VmHWM": 1166524416,
+        "VmRSS": 1166524416,
+        "smaps_Anonymous": 1162223616,
+        "smaps_Pss_File": 2250752,
+        "smaps_Rss": 1166524416
+      },
+      "phase": "drop_graph"
+    },
+    {
+      "memory": {
+        "RssAnon": 1162555392,
+        "RssFile": 4497408,
+        "RssShmem": 0,
+        "VmHWM": 1167052800,
+        "VmRSS": 1167052800,
+        "smaps_Anonymous": 1162555392,
+        "smaps_Pss_File": 2447360,
+        "smaps_Rss": 1167052800
+      },
+      "phase": "serve_start"
+    },
+    {
+      "memory": {
+        "RssAnon": 1162563584,
+        "RssFile": 4640768,
+        "RssShmem": 0,
+        "VmHWM": 1167278080,
+        "VmRSS": 1167204352,
+        "smaps_Anonymous": 1162563584,
+        "smaps_Pss_File": 2527232,
+        "smaps_Rss": 1167204352
+      },
+      "phase": "serve_end"
+    }
+  ],
+  "n_queries": 10000,
+  "notes": [
+    "Single-threaded, one query at a time; query rotation and quantization are inside the timer, normalization is outside (as for the other systems).",
+    "qps_single_thread is the median of the repeats; recall is from the first repeat (search is deterministic).",
+    "Edge index: each expanded vertex is scored exactly; mean_exact_evals_per_query counts those plus the upper-layer descent. Vertex index: it counts every code estimate (descent, traversal) plus the re-rank scores."
+  ],
+  "paired_sync": false,
+  "repeats": 3,
+  "residual_bytes": 137287624,
+  "rss_bytes": {
+    "after_build": 1167151104,
+    "end": 1167204352
+  },
+  "sweep": [],
+  "system": "hms qgraph-vertex"
+}

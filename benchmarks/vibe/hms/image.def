@@ -17,8 +17,8 @@ From: base.sif
   # Gold 6230 now, AMD EPYC 9965 next). The qgraph kernels choose AVX2, AVX-VNNI, AVX-512F/VL and
   # AVX-512 VNNI paths at run time (is_x86_feature_detected), so the AVX-512 VNNI kernels still run
   # on both; v3 only sets the code generation of the non-kernel code. aarch64 keeps the default
-  # target (its dotprod kernels are compile-time gated). Flag and profile-guided optimization
-  # measurements: docs/benchmarks/VIBE.md, "Image build flags".
+  # target (its dotprod kernels are compile-time gated). Profile-guided optimization is not used
+  # yet (older-source development verification only): docs/benchmarks/VIBE.md, "Image build flags".
   case "$(uname -m)" in
     x86_64) HMS_RUSTFLAGS="-C target-cpu=x86-64-v3" ;;
     *) HMS_RUSTFLAGS="" ;;

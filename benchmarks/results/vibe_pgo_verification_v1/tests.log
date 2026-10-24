@@ -1,0 +1,10 @@
+test_evaluation_mismatch_rejected (test_paired.SummaryTests.test_evaluation_mismatch_rejected) ... ok
+test_gain_boundary (test_paired.SummaryTests.test_gain_boundary) ... ok
+test_inner_load_gate_rejected (test_paired.SummaryTests.test_inner_load_gate_rejected) ... ok
+test_pairs_and_load_boundary (test_paired.SummaryTests.test_pairs_and_load_boundary) ... ok
+test_recall_mismatch_rejected (test_paired.SummaryTests.test_recall_mismatch_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.043s
+
+OK

@@ -1,0 +1,34 @@
+{
+  "summary_matches_raw": true,
+  "arm_invocations": 18,
+  "ef_points_per_invocation": 3,
+  "binary_hashes_checked_during_run": {
+    "v3": "5d6f39deb003bed7fef3c6f06fca3d03ef989e7026c3f020779fbd87afe7c662",
+    "pgo": "1b9119dced3bcf73b61b9fa91af324de5150d9d6b1c25e98eed1b413ad496968",
+    "native": "a958edc6373e8a0fd65ffda8ad1bce993ccc8d993cba5f0e2b020daac02c5713"
+  },
+  "rust_source_files_verified": 261,
+  "cargo_manifest_and_lock_match_source": true,
+  "recall_and_evaluations_match_all_arms_rounds_and_earlier_run": true,
+  "graph_hash_and_dataset_match_all_arms_rounds_and_earlier_run": true,
+  "tests_command": [
+    "uv",
+    "run",
+    "--no-project",
+    "python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "benchmarks/results/vibe_pgo_verification_v1",
+    "-p",
+    "test_paired.py",
+    "-v"
+  ],
+  "tests_exit_code": 0,
+  "tests_passed": 5,
+  "shell_syntax_exit_code": 0,
+  "diff_check_exit_code": 0,
+  "rust_builds_run": false,
+  "production_adoption": false
+}
