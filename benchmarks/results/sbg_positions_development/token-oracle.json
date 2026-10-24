@@ -1,0 +1,1 @@
+{"documents": 132, "queries": 971, "protocol_answers": 17478, "executions": ["auto", "daat", "wand"], "oracle": "independent token windows", "optimized_vs_exhaustive": "exact", "status": "passed"}

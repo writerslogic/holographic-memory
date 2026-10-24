@@ -1,0 +1,42 @@
+{
+  "documents.text": {
+    "bytes": 8,
+    "sha256": "c17b49f6127f7d3e63df4e09b5a48325c94e2e572b6ec87760fd7bd172d437fe"
+  },
+  "indices.json": {
+    "bytes": 126,
+    "sha256": "9f6d5d545f1ea32e47a44ed4658abb2365e12ba34a5e07b522e49bfafa299430"
+  },
+  "store.json": {
+    "bytes": 225,
+    "sha256": "a88a8883b78cd730af3c37a5a44948ea83522c4ac0ce4483b2135b7988e49335"
+  },
+  "store.json.crc32": {
+    "bytes": 9,
+    "sha256": "ec95a6eebd5e212d66738d5ccbe5007fc1885bb544134fa3a02df5e7ac319b84"
+  },
+  "vectors_data.bin/format.json": {
+    "bytes": 72,
+    "sha256": "8e29b545c982a572ff88b6e848036e82c91265cfb07f0d689fe3d9b02d3d8139"
+  },
+  "vectors_data.bin/format.json.crc32": {
+    "bytes": 9,
+    "sha256": "02dcaf319409edd211bd14220f5a8f8b31de4928f6dde00867b1decf184debec"
+  },
+  "vectors_data.bin/seg_0.bin": {
+    "bytes": 1073741824,
+    "sha256": "5877abf86d39b4e80d3d49656c8bd808a7ffc56e12ec45fb6a282dd44f7a2e11"
+  },
+  "vectors_data.bin/seg_1.bin": {
+    "bytes": 1073741824,
+    "sha256": "438efc8563d0be2e488dcb05a3f53544a4461d2a33f2e6344265f642e665f874"
+  },
+  "vectors_data.bin/seg_2.bin": {
+    "bytes": 1073741824,
+    "sha256": "406b8f1ebc064f0c23f339846510e61c5395d595f78b225b9a4a179cea366c51"
+  },
+  "vectors_data.bin/seg_3.bin": {
+    "bytes": 1073741824,
+    "sha256": "7438f5049aa1998fce73a7be4de45094716f04721a43d7b6220b25fdd5b149eb"
+  }
+}
