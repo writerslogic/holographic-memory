@@ -33,6 +33,7 @@ use super::{invalid, prepare_rows, upper_bytes, BuildParams, Graph, GraphView, M
 use crate::core::error::HmsError;
 
 mod file;
+mod gated;
 pub use file::Residency;
 use file::Slab;
 
@@ -157,6 +158,11 @@ pub struct SearchKnobs {
     pub frontier: f32,
     /// Screen with the neighbour blocks and estimate survivors from their rows.
     pub block_screen: bool,
+    /// Bound-gated re-rank: with `z > 0`, candidates are re-scored in estimate order and the
+    /// re-rank stops at the first whose estimate, corrected by the mean error and lowered by
+    /// `z` standard deviations (both measured on this query's re-scored rows), cannot beat
+    /// the current `k`-th exact distance. `rerank` stays the cap. 0 (or non-finite) is off.
+    pub rerank_z: f32,
 }
 
 impl SearchKnobs {
@@ -166,6 +172,7 @@ impl SearchKnobs {
         batch_est: false,
         frontier: 1.0,
         block_screen: false,
+        rerank_z: 0.0,
     };
 
     /// The knobs set in the environment, read once per process; unset or invalid values
@@ -179,6 +186,9 @@ impl SearchKnobs {
                 .filter(|f| f.is_finite())
                 .map_or(1.0, |f| f.clamp(0.0, 1.0)),
             block_screen: env_knob::<u8>("HMS_QGRAPH_BLOCK_SCREEN").unwrap_or(0) != 0,
+            rerank_z: env_knob::<f32>("HMS_QGRAPH_RERANK_Z")
+                .filter(|z| z.is_finite() && *z > 0.0)
+                .unwrap_or(0.0),
         })
     }
 }
@@ -2653,7 +2663,12 @@ impl SearchScratch {
         }
         self.results.clear();
         let take = take.min(self.keys.len());
-        if params.rerank > 0 {
+        if params.rerank > 0 && knobs.rerank_z > 0.0 && sq > 0.0 && take > k {
+            evals += self.rerank_gated(g, k, take, sq, knobs.rerank_z);
+            if PROFILE {
+                profile.rerank_evaluations = self.results.len();
+            }
+        } else if params.rerank > 0 {
             if PROFILE {
                 profile.rerank_evaluations = take;
             }
@@ -3109,6 +3124,7 @@ mod serving_tests {
                         batch_est: true,
                         frontier: 0.8,
                         block_screen: false,
+                        rerank_z: 0.0,
                     },
                 ] {
                     let mut a = index.searcher_with(knobs);
