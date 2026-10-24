@@ -9,10 +9,13 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import binascii
 import hashlib
 import hmac
 import math
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any
 
@@ -22,6 +25,8 @@ from fastapi import FastAPI, HTTPException, Request
 FACT_BYTES = 60_000
 FACT_WORDS = 4_000
 MAX_BODY = 64 * 1024 * 1024
+MAX_IMAGE = 10 * 1024 * 1024
+MAX_IMAGES = 30 * 1024 * 1024
 MAX_ID = 1_024
 MAX_MESSAGES = 1_000
 
@@ -71,6 +76,45 @@ def split_text(text: str) -> list[str]:
     return parts
 
 
+def _content_text(content: Any, name: str) -> str:
+    if isinstance(content, str):
+        if not content:
+            raise ValueError(f"{name} must be nonempty")
+        return content
+    if not isinstance(content, list) or not content:
+        raise ValueError(f"{name} must be nonempty text or ordered content parts")
+    text: list[str] = []
+    image_bytes = 0
+    for index, part in enumerate(content):
+        if not isinstance(part, dict):
+            raise ValueError(f"{name}[{index}] must be an object")
+        if part.get("type") == "text":
+            value = part.get("text")
+            if not isinstance(value, str) or not value:
+                raise ValueError(f"{name}[{index}].text must be nonempty")
+            text.append(value)
+        elif part.get("type") == "image_url":
+            image = part.get("image_url")
+            url = image.get("url") if isinstance(image, dict) else None
+            if not isinstance(url, str) or not any(url.startswith(f"data:image/{kind};base64,") for kind in ("jpeg", "png", "webp")):
+                raise ValueError(f"{name}[{index}].image_url must be an inline JPEG, PNG, or WebP Data URI")
+            encoded = url.split(",", 1)[1]
+            if len(encoded) > (MAX_IMAGE + 2) // 3 * 4:
+                raise ValueError(f"{name}[{index}].image_url exceeds 10 MiB")
+            try:
+                decoded = base64.b64decode(encoded, validate=True)
+            except (ValueError, binascii.Error) as exc:
+                raise ValueError(f"{name}[{index}].image_url is invalid Base64") from exc
+            if len(decoded) > MAX_IMAGE:
+                raise ValueError(f"{name}[{index}].image_url exceeds 10 MiB")
+            image_bytes += len(decoded)
+            if image_bytes > MAX_IMAGES:
+                raise ValueError(f"{name} images exceed 30 MiB")
+        else:
+            raise ValueError(f"{name}[{index}].type must be text or image_url")
+    return "\n".join(text) if text else "[image content omitted by text-only memory method]"
+
+
 def add_facts(payload: Any) -> tuple[str, str, str, list[dict[str, Any]]]:
     if not isinstance(payload, dict):
         raise ValueError("Add body must be an object")
@@ -84,9 +128,7 @@ def add_facts(payload: Any) -> tuple[str, str, str, list[dict[str, Any]]]:
     for index, message in enumerate(messages):
         if not isinstance(message, dict) or message.get("role") not in ("user", "assistant"):
             raise ValueError(f"messages[{index}].role must be user or assistant")
-        content = message.get("content")
-        if not isinstance(content, str) or not content:
-            raise ValueError(f"messages[{index}].content must be nonempty text")
+        content = _content_text(message.get("content"), f"messages[{index}].content")
         timestamp = message.get("timestamp")
         if timestamp is not None and (type(timestamp) is not int or not 0 <= timestamp <= 253402300799999):
             raise ValueError(f"messages[{index}].timestamp must be Unix milliseconds")
@@ -99,11 +141,12 @@ def add_facts(payload: Any) -> tuple[str, str, str, list[dict[str, Any]]]:
     return request_id, user_id, session_id, facts
 
 
-def search_input(payload: Any) -> tuple[str, str, int]:
+def search_input(payload: Any) -> tuple[str, str, int, bool]:
     if not isinstance(payload, dict):
         raise ValueError("Search body must be an object")
-    query = payload.get("query")
-    if not isinstance(query, str) or not query or len(query.encode()) > 8192:
+    raw_query = payload.get("query")
+    query = _content_text(raw_query, "query")
+    if len(query.encode()) > 8192:
         raise ValueError("query must be nonempty text of at most 8192 bytes")
     user_id = _nonempty(payload.get("user_id"), "user_id")
     top_k = payload.get("top_k")
@@ -112,7 +155,7 @@ def search_input(payload: Any) -> tuple[str, str, int]:
     options = payload.get("options")
     if options is not None and (not isinstance(options, list) or any(not isinstance(x, str) for x in options)):
         raise ValueError("options must be an array of strings")
-    return query, user_id, top_k
+    return query, user_id, top_k, isinstance(raw_query, list)
 
 
 def _token(request: Request) -> str | None:
@@ -127,12 +170,14 @@ def _token(request: Request) -> str | None:
 def create_app(hms_url: str, token: str, commit: Any = None) -> FastAPI:
     if not token:
         raise ValueError("AML_TOKEN is required")
-    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     client = httpx.AsyncClient(base_url=hms_url, timeout=httpx.Timeout(1800))
 
-    @app.on_event("shutdown")
-    async def close_client() -> None:
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        yield
         await client.aclose()
+
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 
     async def require_auth(request: Request) -> None:
         supplied = _token(request)
@@ -183,7 +228,7 @@ def create_app(hms_url: str, token: str, commit: Any = None) -> FastAPI:
         await require_auth(request)
         try:
             payload = await request.json()
-            query, user_id, top_k = search_input(payload)
+            query, user_id, top_k, multimodal = search_input(payload)
         except (ValueError, UnicodeDecodeError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         result = await hms("recall", tenant_for(user_id), {"query": query, "k": top_k})
@@ -196,7 +241,7 @@ def create_app(hms_url: str, token: str, commit: Any = None) -> FastAPI:
             memory_id = hit.get("id")
             if not isinstance(content, str) or not content or not isinstance(memory_id, str) or not memory_id:
                 raise HTTPException(status_code=503, detail="invalid memory engine result")
-            item: dict[str, Any] = {"id": memory_id, "content": content}
+            item: dict[str, Any] = {"id": memory_id, "content": [{"type": "text", "text": content}] if multimodal else content}
             score = hit.get("score")
             if isinstance(score, (float, int)) and math.isfinite(score):
                 item["score"] = score

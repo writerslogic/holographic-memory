@@ -45,6 +45,19 @@ class ContractTests(unittest.TestCase):
                 search_input(bad)
         self.assertNotEqual(tenant_for("user-a"), tenant_for("user-b"))
 
+    def test_multimodal_caption_path_and_media_validation(self) -> None:
+        payload = {"request_id": "r1", "user_id": "u1", "session_id": "s1", "messages": [{"role": "user", "content": [
+            {"type": "text", "text": "blue coat"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,iVBORw0KGgo="}},
+            {"type": "text", "text": "at the station"},
+        ]}]}
+        self.assertEqual(add_facts(payload)[3][0]["text"], "user: blue coat\nat the station")
+        self.assertEqual(search_input({"query": [{"type": "text", "text": "coat"}], "user_id": "u1", "top_k": 100})[3], True)
+        with self.assertRaises(ValueError):
+            add_facts(payload | {"messages": [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "https://example.com/pic.png"}}]}]})
+        with self.assertRaises(ValueError):
+            add_facts(payload | {"messages": [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "data:image/png;base64,%%%"}}]}]})
+
 
 class LiveServerTests(unittest.TestCase):
     def test_auth_idempotence_and_user_isolation(self) -> None:
@@ -69,7 +82,7 @@ class LiveServerTests(unittest.TestCase):
                 async def exercise() -> None:
                     app = create_app("http://127.0.0.1:18897", "secret")
                     transport = httpx.ASGITransport(app=app)
-                    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                    async with app.router.lifespan_context(app), httpx.AsyncClient(transport=transport, base_url="http://test") as client:
                         add = {"request_id": "r", "user_id": "alice", "session_id": "s", "messages": [{"role": "user", "content": "The sapphire key is in the attic."}]}
                         self.assertEqual((await client.post("/add", json=add)).status_code, 401)
                         headers = {"Authorization": "Bearer secret"}
@@ -83,7 +96,6 @@ class LiveServerTests(unittest.TestCase):
                         self.assertIn("sapphire key", response.json()["data"][0]["content"])
                         other = await client.post("/search", json={"query": "sapphire key", "user_id": "bob", "top_k": 100}, headers=headers)
                         self.assertEqual(other.json(), {"data": []})
-                    await app.router.on_shutdown[0]()
 
                 asyncio.run(exercise())
             finally:

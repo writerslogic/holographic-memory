@@ -61,7 +61,7 @@ def api():
         "--tenant-idle-seconds", "30",
         "--max-concurrent-work", "8",
         "--max-queue", "512",
-        "--queue-timeout-ms", "1800000",
+        "--queue-timeout-ms", "600000",
         "--max-body-bytes", "67108864",
         "--log-level", "error",
     ]
