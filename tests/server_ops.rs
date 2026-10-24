@@ -620,7 +620,7 @@ fn shutdown_drains_in_flight_requests_and_flushes_before_exiting() {
     let (head, tail) = body.split_at(body.len() / 2);
     let mut conn = s.connect();
     conn.write_all(
-        format!("POST /api/v1/documents HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{head}", body.len())
+        format!("POST /api/v1/documents HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{head}", body.len())
             .as_bytes(),
     )
     .unwrap();
@@ -815,4 +815,33 @@ fn metrics_for_a_tenant_limited_key_cover_only_its_tenants() {
         "{text}"
     );
     assert!(!text.contains("globex"), "{text}");
+}
+
+#[test]
+fn an_unauthenticated_server_refuses_web_pages_and_rebound_names() {
+    let s = Server::open(&["--cors-origins", "http://localhost:3000"]);
+    let compact = |origin: Option<&str>| {
+        let mut r = s
+            .req("POST", "/api/v1/compaction")
+            .header("Content-Type", "text/plain");
+        if let Some(origin) = origin {
+            r = r.header("Origin", origin);
+        }
+        r.send().status
+    };
+    // A cross-site simple POST needs no preflight; its side effect must not happen.
+    assert_eq!(compact(Some("http://evil.example")), 403);
+    assert_eq!(compact(Some("null")), 403);
+    assert_eq!(compact(Some("http://localhost:3000")), 200);
+    assert_eq!(compact(None), 200);
+    // DNS rebinding: the page's own name arrives in Host.
+    let rebound = s.exchange(
+        b"GET /api/v1/stats HTTP/1.1\r\nHost: evil.example:8080\r\nConnection: close\r\n\r\n",
+    );
+    assert_eq!(rebound.status, 403, "{}", rebound.text());
+    for host in ["127.0.0.1:1", "[::1]:1", "localhost", "app.localhost:1"] {
+        let raw =
+            format!("GET /api/v1/stats HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n");
+        assert_eq!(s.exchange(raw.as_bytes()).status, 200, "{host}");
+    }
 }

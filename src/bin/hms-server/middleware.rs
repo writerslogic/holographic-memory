@@ -185,12 +185,61 @@ pub async fn cors(State(state): State<Arc<AppState>>, req: Request, next: Next) 
     response
 }
 
+/// Without authentication every caller holds every scope, so a web page the developer visits
+/// must not reach the server. A browser marks its requests with `Origin` (simple POSTs need no
+/// preflight, so CORS alone does not stop their side effects) and, after DNS rebinding, with
+/// the attacker's name in `Host`. Clients that are not browsers send neither.
+fn open_request_allowed(state: &AppState, req: &Request) -> bool {
+    let origins = &state.cfg.cors_origins;
+    if let Some(origin) = req.headers().get(header::ORIGIN) {
+        let listed = origin
+            .to_str()
+            .is_ok_and(|o| origins.iter().any(|a| a == "*" || a == o));
+        if !listed {
+            return false;
+        }
+    }
+    if state.cfg.unix_socket.is_some() {
+        return true;
+    }
+    let host = req
+        .headers()
+        .get(header::HOST)
+        .and_then(|v| v.to_str().ok())
+        .or_else(|| req.uri().authority().map(|a| a.as_str()));
+    host.is_none_or(loopback_host)
+}
+
+/// `localhost`, a `*.localhost` name or a loopback address, with an optional port.
+fn loopback_host(host: &str) -> bool {
+    let name = match host.strip_prefix('[') {
+        Some(rest) => rest.split_once(']').map_or(rest, |(ip, _)| ip),
+        None => host.rsplit_once(':').map_or(host, |(name, _)| name),
+    };
+    let name = name.trim_end_matches('.').to_ascii_lowercase();
+    name == "localhost"
+        || name.ends_with(".localhost")
+        || name
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|ip| ip.is_loopback())
+}
+
 pub async fn auth(State(state): State<Arc<AppState>>, mut req: Request, next: Next) -> Response {
     let path = req.uri().path();
     let public =
         routes::is_public(req.method(), path) || (state.cfg.metrics_public && path == "/metrics");
     if public {
         return next.run(req).await;
+    }
+    if state.auth.is_open() && !open_request_allowed(&state, &req) {
+        state.metrics.auth_failures.fetch_add(1, Ordering::Relaxed);
+        return ApiError::new(
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            "this server runs without authentication and serves only same-machine clients: \
+             the request's Origin is not in --cors-origins or its Host is not a loopback name",
+        )
+        .into_response();
     }
     match state.auth.authenticate(req.headers()) {
         Ok(principal) => {
