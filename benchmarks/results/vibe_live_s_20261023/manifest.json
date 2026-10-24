@@ -2,9 +2,9 @@
   "state": "running",
   "final_main_ci": {
     "url": "https://github.com/writerslogic/holographic-memory/actions/runs/40070371238",
-    "observed_at_utc": "2026-10-24T06:54:00Z",
-    "status": "in_progress",
-    "publication_gate": "Withhold verified performance claims and draft PR result updates until CI succeeds; reassess run validity if it fails"
+    "observed_at_utc": "2026-10-24T06:55:13Z",
+    "status": "success",
+    "publication_gate": "Passed; performance claims and draft PR result updates still require complete protocol runs and checked artifacts"
   },
   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
   "official_vibe_commit": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
