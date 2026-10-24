@@ -325,6 +325,33 @@ chosen because it faults on run hosts without AVX-512. The Modal runner
 (`benchmarks/vibe/modal_vibe.py`) keeps `target-cpu=native` because it compiles in the container
 that runs the job.
 
+Development measurement of the flags and profile-guided optimization (PGO), 2026-10-23: Intel Core
+Ultra 9 185H (no AVX-512), HMS 99e84d9, Rust 1.96.0, `public-bench ann-qgraph --index vertex
+--residual --align-rows --reorder --quantized-search --degree 32 --build-ef 200`, one index per
+dataset saved once and served by all three builds (`--load-index`), 1 thread pinned to one core,
+10000 queries, ef 64/128/256 with rerank 100, 3 rounds, arm order rotated per round, each
+round's three arms under one hold of the timing lock. Arms: `x86-64-v3`, `native`, and
+`x86-64-v3` + PGO (profile from nytimes-256-angular, build plus 2000 held-out train queries;
+`llvm-profdata` from the 1.96.0 `llvm-tools` component). Recall is identical across arms. The
+1-minute load average was 18-27 on 22 hardware threads throughout (other jobs outside the lock),
+so per-round ratios vary by up to +-50%; medians of the paired per-round QPS ratios:
+
+| Dataset | ef | native / v3 | PGO / v3 |
+|---|---|---|---|
+| glove-100-angular | 64 | 0.995 | 1.133 |
+| glove-100-angular | 128 | 0.973 | 1.115 |
+| glove-100-angular | 256 | 0.983 | 1.117 |
+| sift-128-euclidean | 64 | 1.123 | 1.173 |
+| sift-128-euclidean | 128 | 1.145 | 1.109 |
+| sift-128-euclidean | 256 | 0.996 | 1.101 |
+
+PGO won 16 of 18 pairs and its medians clear the 3% adoption bar on both sets, but the run was
+taken under heavy contention and an in-image PGO build (instrumented wheel, synthetic training
+workload inside `%post`, `-Cprofile-use` rebuild) has not been built or verified, so `image.def`
+does not use PGO yet. Next step: repeat this A/B at a 1-minute load below 3, then add the two-stage
+build if the gain holds. native vs v3 is within the noise on glove and mixed on sift; it does not
+change the portability argument above.
+
 ## Pre-registered OOD grid, 2026-10-23
 
 Fixed in `benchmarks/vibe/hms/config.yml` before any run of this grid. Build arguments
