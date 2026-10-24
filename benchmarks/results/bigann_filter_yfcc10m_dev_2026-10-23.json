@@ -1,0 +1,200 @@
+{
+ "benchmark": "big-ann-benchmarks NeurIPS23 filter track, yfcc-10M, public queries (100k), k=10, harness --nodocker --runs 3",
+ "status": "development measurement: timing lock held, but host shared with other jobs (load average ~18-23 on 22 threads); not a standings run",
+ "host": "Intel Core Ultra 9 185H, CPUs 0-7 = 4 P-cores x 2 hyperthreads (taskset -c 0-7), 27 GB RAM",
+ "threads": 8,
+ "harness": "harsha-simhadri/big-ann-benchmarks 89a3aba + neurips23/filter/hms (fork branch filter/hms)",
+ "tuning": "parameters chosen on the private query set (query.private.2727415019, with its GT); public queries only through these harness runs",
+ "runs": [
+  {
+   "run": "run1",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 5000, 'copy_min': 50000}, {'brute_max': 5000, 'target': 2000})",
+   "qps": 17530.06717324081,
+   "recall_at_10": 0.8856550000000001,
+   "build_s": 167.28940176963806,
+   "indexsize_kb": 10590076.0,
+   "hms_commit": "372cddb71036ce8c2a760b323149d785f3e28f59",
+   "load_start": [
+    17.41,
+    22.96,
+    19.15
+   ],
+   "load_end": [
+    19.89,
+    20.18,
+    18.82
+   ]
+  },
+  {
+   "run": "run1",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 5000, 'copy_min': 50000}, {'brute_max': 5000, 'target': 2500})",
+   "qps": 14129.686364247491,
+   "recall_at_10": 0.904454,
+   "build_s": 167.28940176963806,
+   "indexsize_kb": 10590076.0,
+   "hms_commit": "372cddb71036ce8c2a760b323149d785f3e28f59",
+   "load_start": [
+    17.41,
+    22.96,
+    19.15
+   ],
+   "load_end": [
+    19.89,
+    20.18,
+    18.82
+   ]
+  },
+  {
+   "run": "run1",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 5000, 'copy_min': 50000}, {'brute_max': 10000, 'target': 2500})",
+   "qps": 16260.026822835347,
+   "recall_at_10": 0.906728,
+   "build_s": 167.28940176963806,
+   "indexsize_kb": 10590076.0,
+   "hms_commit": "372cddb71036ce8c2a760b323149d785f3e28f59",
+   "load_start": [
+    17.41,
+    22.96,
+    19.15
+   ],
+   "load_end": [
+    19.89,
+    20.18,
+    18.82
+   ]
+  },
+  {
+   "run": "run1",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 5000, 'copy_min': 50000}, {'brute_max': 5000, 'target': 3000})",
+   "qps": 14232.464450175852,
+   "recall_at_10": 0.919407,
+   "build_s": 167.28940176963806,
+   "indexsize_kb": 10590076.0,
+   "hms_commit": "372cddb71036ce8c2a760b323149d785f3e28f59",
+   "load_start": [
+    17.41,
+    22.96,
+    19.15
+   ],
+   "load_end": [
+    19.89,
+    20.18,
+    18.82
+   ]
+  },
+  {
+   "run": "run1",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 5000, 'copy_min': 50000}, {'brute_max': 5000, 'target': 4000})",
+   "qps": 12415.61530840385,
+   "recall_at_10": 0.9396869999999999,
+   "build_s": 167.28940176963806,
+   "indexsize_kb": 10590076.0,
+   "hms_commit": "372cddb71036ce8c2a760b323149d785f3e28f59",
+   "load_start": [
+    17.41,
+    22.96,
+    19.15
+   ],
+   "load_end": [
+    19.89,
+    20.18,
+    18.82
+   ]
+  },
+  {
+   "run": "run2",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 20000, 'copy_min': 50000}, {'brute_max': 10000, 'target': 2000})",
+   "qps": 17412.679189906627,
+   "recall_at_10": 0.8891830000000001,
+   "build_s": 178.61769008636475,
+   "indexsize_kb": 9789496.0,
+   "hms_commit": "fb28403a19a8125e19fe659687c876262213c185",
+   "load_start": [
+    17.81,
+    19.16,
+    18.81
+   ],
+   "load_end": [
+    22.76,
+    20.74,
+    19.5
+   ]
+  },
+  {
+   "run": "run2",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 20000, 'copy_min': 50000}, {'brute_max': 5000, 'target': 2500})",
+   "qps": 16204.890384991635,
+   "recall_at_10": 0.904454,
+   "build_s": 178.61769008636475,
+   "indexsize_kb": 9789496.0,
+   "hms_commit": "fb28403a19a8125e19fe659687c876262213c185",
+   "load_start": [
+    17.81,
+    19.16,
+    18.81
+   ],
+   "load_end": [
+    22.76,
+    20.74,
+    19.5
+   ]
+  },
+  {
+   "run": "run2",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 20000, 'copy_min': 50000}, {'brute_max': 10000, 'target': 2500})",
+   "qps": 15504.706875262436,
+   "recall_at_10": 0.906728,
+   "build_s": 178.61769008636475,
+   "indexsize_kb": 9789496.0,
+   "hms_commit": "fb28403a19a8125e19fe659687c876262213c185",
+   "load_start": [
+    17.81,
+    19.16,
+    18.81
+   ],
+   "load_end": [
+    22.76,
+    20.74,
+    19.5
+   ]
+  },
+  {
+   "run": "run2",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 20000, 'copy_min': 50000}, {'brute_max': 20000, 'target': 2500})",
+   "qps": 13801.296076132356,
+   "recall_at_10": 0.910556,
+   "build_s": 178.61769008636475,
+   "indexsize_kb": 9789496.0,
+   "hms_commit": "fb28403a19a8125e19fe659687c876262213c185",
+   "load_start": [
+    17.81,
+    19.16,
+    18.81
+   ],
+   "load_end": [
+    22.76,
+    20.74,
+    19.5
+   ]
+  },
+  {
+   "run": "run2",
+   "parameters": "HMS({'ivf_min': 5000, 'cluster_size': 1000, 'max_lists': 2048, 'bitset_min': 20000, 'copy_min': 50000}, {'brute_max': 10000, 'target': 3000})",
+   "qps": 15939.863111050305,
+   "recall_at_10": 0.9208080000000001,
+   "build_s": 178.61769008636475,
+   "indexsize_kb": 9789496.0,
+   "hms_commit": "fb28403a19a8125e19fe659687c876262213c185",
+   "load_start": [
+    17.81,
+    19.16,
+    18.81
+   ],
+   "load_end": [
+    22.76,
+    20.74,
+    19.5
+   ]
+  }
+ ]
+}
