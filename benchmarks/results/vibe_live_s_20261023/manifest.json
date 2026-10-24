@@ -51,5 +51,17 @@
     "https://github.com/vector-index-bench/vibe/blob/7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c/vibe/runner.py",
     "https://github.com/vector-index-bench/vibe/blob/7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c/vibe/main.py"
   ],
+  "observed_issues": [
+    {
+      "observed_at_utc": "2026-10-24T07:55:00Z",
+      "scope": "yi-128-ip and llama-128-ip / mlann-rf competitor",
+      "state": "running; competitor outcome not yet known",
+      "evidence": "Multiple official MLANN-RF configurations built an index and exited with SIGSEGV (-11) on the first query in each dataset. One Llama configuration also rejected its RF depth. HMS baseline for both datasets and Yi RoarGraph completed; no MLANN-RF measurements are used for comparison.",
+      "logs": [
+        "hms-bench-run:/vibe/run-s-20261023/logs/yi-128-ip/mlann-rf.log",
+        "hms-bench-run:/vibe/run-s-20261023/logs/llama-128-ip/mlann-rf.log"
+      ]
+    }
+  ],
   "draft_pr": "https://github.com/vector-index-bench/vibe/pull/15"
 }
