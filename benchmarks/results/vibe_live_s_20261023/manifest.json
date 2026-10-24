@@ -23,7 +23,11 @@
     "splits": "Official HDF5 train corpus, test queries and truth; OOD learn queries supplied to fit_ood without access to learn neighbors by HMS",
     "preprocessing": "Official VIBE HDF5 data and loader; normalized datasets use VIBE-normalized float32 rows",
     "metrics": "VIBE recall@100 (distance tolerance 0.001), best QPS of five full query passes, build time, index size",
-    "recall_thresholds": [0.9, 0.95, 0.99],
+    "recall_thresholds": [
+      0.9,
+      0.95,
+      0.99
+    ],
     "operation_sequence": "download and verify dataset; build each index; search all test queries for each query configuration five times; export summary",
     "timing_boundaries": "VIBE runner times algo.query for each CPU query with time.perf_counter, excludes post-query truth-distance calculation, and retains best QPS of five passes",
     "threads": "one pinned worker core per index; math-library thread variables set to 1",
@@ -55,12 +59,18 @@
     {
       "observed_at_utc": "2026-10-24T07:55:00Z",
       "scope": "yi-128-ip and llama-128-ip / mlann-rf competitor",
-      "state": "running; competitor outcome not yet known",
+      "state": "failed after three bounded attempts; zero valid groups; HMS/RoarGraph evidence retained",
       "evidence": "Multiple official MLANN-RF configurations built an index and exited with SIGSEGV (-11) on the first query in each dataset. One Llama configuration also rejected its RF depth. HMS baseline for both datasets and Yi RoarGraph completed; no MLANN-RF measurements are used for comparison.",
       "logs": [
         "hms-bench-run:/vibe/run-s-20261023/logs/yi-128-ip/mlann-rf.log",
         "hms-bench-run:/vibe/run-s-20261023/logs/llama-128-ip/mlann-rf.log"
       ]
+    },
+    {
+      "observed_at_utc": "2026-10-24T08:11Z",
+      "scope": "landmark-nomic-768-normalized HMS degree64",
+      "state": "repair queued after active arms finish",
+      "evidence": "45 completed degree64 groups retained across preemption from container ta-01M5PATN6HDQ0YTRZ5XZRNPCSR to ta-01M5PDWQVEXHTNJSV6WPESQA3R. Both report AMD family25 model1, but feature hashes, hypervisor, and BogoMIPS differ. Mixed-container groups are excluded from fair comparisons pending rerun; originals must be archived."
     }
   ],
   "draft_pr": "https://github.com/vector-index-bench/vibe/pull/15"

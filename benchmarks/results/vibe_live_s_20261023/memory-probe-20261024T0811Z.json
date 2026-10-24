@@ -1,0 +1,223 @@
+{
+  "generated_at_utc": "2026-10-24T08:08:10.049706+00:00",
+  "method": "read cgroup v1 memory.limit_in_bytes and memory.usage_in_bytes, plus /proc/meminfo MemAvailable, through modal container exec; no peak metric is exposed",
+  "modal_app": "ap-y0mN2NRbZ8qFkrm5IEPNV6",
+  "rows": [
+    {
+      "dataset": "agnews-mxbai-1024-euclidean",
+      "container_id": "ta-01M5PATH4SPV2PQVY7TXBFWM8R",
+      "requested_memory_gib": 16,
+      "observed_at_utc": "2026-10-24T07:35:04.333656+00:00",
+      "cgroup_limit_bytes": 353621704704,
+      "cgroup_current_bytes": 7472058368,
+      "mem_available_bytes": 346149146624
+    },
+    {
+      "dataset": "arxiv-nomic-768-normalized",
+      "container_id": "ta-01M5PDWKT94KF71BSTSRHMKBCR",
+      "requested_memory_gib": 19,
+      "observed_at_utc": "2026-10-24T08:08:08.293497+00:00",
+      "cgroup_limit_bytes": 425706921984,
+      "cgroup_current_bytes": 10112565248,
+      "mem_available_bytes": 415593857024
+    },
+    {
+      "dataset": "ccnews-nomic-768-normalized",
+      "container_id": "ta-01M5PATHZNQ0Y3256HHNV659GR",
+      "requested_memory_gib": 11,
+      "observed_at_utc": "2026-10-24T07:35:05.926036+00:00",
+      "cgroup_limit_bytes": 726299627520,
+      "cgroup_current_bytes": 3779604480,
+      "mem_available_bytes": 722519556096
+    },
+    {
+      "dataset": "celeba-resnet-2048-cosine",
+      "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+      "requested_memory_gib": 11,
+      "observed_at_utc": "2026-10-24T07:35:06.849507+00:00",
+      "cgroup_limit_bytes": 184499548160,
+      "cgroup_current_bytes": 2979885056,
+      "mem_available_bytes": 181519179776
+    },
+    {
+      "dataset": "coco-nomic-768-normalized",
+      "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+      "requested_memory_gib": 10,
+      "observed_at_utc": "2026-10-24T07:35:07.909262+00:00",
+      "cgroup_limit_bytes": 353621696512,
+      "cgroup_current_bytes": 2337574912,
+      "mem_available_bytes": 351283691520
+    },
+    {
+      "dataset": "codesearchnet-jina-768-cosine",
+      "container_id": "ta-01M5PATHY8AJ6AMZKNZF0PR7NR",
+      "requested_memory_gib": 19,
+      "observed_at_utc": "2026-10-24T07:35:08.763703+00:00",
+      "cgroup_limit_bytes": 425706926080,
+      "cgroup_current_bytes": 9961955328,
+      "mem_available_bytes": 415744471040
+    },
+    {
+      "dataset": "cqadupstack-lemur-2048-ip",
+      "container_id": "ta-01M5PATJ5M46CEM2MS3TQDG47R",
+      "requested_memory_gib": 52,
+      "observed_at_utc": "2026-10-24T07:35:09.997970+00:00",
+      "cgroup_limit_bytes": 425706930176,
+      "cgroup_current_bytes": 27720613888,
+      "mem_available_bytes": 397985816576
+    },
+    {
+      "dataset": "cqadupstack-muvera-5120-ip",
+      "container_id": "ta-01M5PATJXYG4QN3W2RVTQ7XBJR",
+      "requested_memory_gib": 118,
+      "observed_at_utc": "2026-10-24T07:35:11.191333+00:00",
+      "cgroup_limit_bytes": 349610012672,
+      "cgroup_current_bytes": 105402368,
+      "mem_available_bytes": 349504327680
+    },
+    {
+      "dataset": "dpr-jina-768-normalized",
+      "container_id": "ta-01M5PATJMTFB0MNGJ1RP22DS6R",
+      "requested_memory_gib": 200,
+      "observed_at_utc": "2026-10-24T07:35:12.975093+00:00",
+      "cgroup_limit_bytes": 851628572672,
+      "cgroup_current_bytes": 154121515008,
+      "mem_available_bytes": 697506557952
+    },
+    {
+      "dataset": "glove-200-cosine",
+      "container_id": "ta-01M5PATKTP8B8NTMS8P6083N7R",
+      "requested_memory_gib": 9,
+      "observed_at_utc": "2026-10-24T07:35:13.865949+00:00",
+      "cgroup_limit_bytes": 486238380032,
+      "cgroup_current_bytes": 2235686912,
+      "mem_available_bytes": 484002193408
+    },
+    {
+      "dataset": "gooaq-distilroberta-768-normalized",
+      "container_id": "ta-01M5PATKDQTWS2TKRJ5VBRVZMR",
+      "requested_memory_gib": 20,
+      "observed_at_utc": "2026-10-24T07:35:15.031615+00:00",
+      "cgroup_limit_bytes": 349610037248,
+      "cgroup_current_bytes": 10671370240,
+      "mem_available_bytes": 338938167296
+    },
+    {
+      "dataset": "hotpotqa-harrier-640-normalized",
+      "container_id": "ta-01M5PATKV68PKYMXT5EH14P1JR",
+      "requested_memory_gib": 48,
+      "observed_at_utc": "2026-10-24T07:35:16.117180+00:00",
+      "cgroup_limit_bytes": 486238380032,
+      "cgroup_current_bytes": 32457203712,
+      "mem_available_bytes": 453780676608
+    },
+    {
+      "dataset": "imagenet-align-640-normalized",
+      "container_id": "ta-01M5PATMG062BP8EBXE355Q8DR",
+      "requested_memory_gib": 19,
+      "observed_at_utc": "2026-10-24T07:35:47.882873+00:00",
+      "cgroup_limit_bytes": 425706909696,
+      "cgroup_current_bytes": 15261831168,
+      "mem_available_bytes": 410444578816
+    },
+    {
+      "dataset": "imagenet-clip-512-normalized",
+      "container_id": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+      "requested_memory_gib": 14,
+      "observed_at_utc": "2026-10-24T07:35:18.632882+00:00",
+      "cgroup_limit_bytes": 353621692416,
+      "cgroup_current_bytes": 6458339328,
+      "mem_available_bytes": 347162853376
+    },
+    {
+      "dataset": "inaturalist-resnet-2048-cosine",
+      "container_id": "ta-01M5PBN8XKQ2A7T4PXS31T8D1R",
+      "requested_memory_gib": 19,
+      "observed_at_utc": "2026-10-24T07:35:49.128609+00:00",
+      "cgroup_limit_bytes": 425706946560,
+      "cgroup_current_bytes": 9531609088,
+      "mem_available_bytes": 416174837760
+    },
+    {
+      "dataset": "laion-clip-512-normalized",
+      "container_id": "ta-01M5PATN6HWJ5THC80W1W65RAR",
+      "requested_memory_gib": 20,
+      "observed_at_utc": "2026-10-24T07:35:50.385363+00:00",
+      "cgroup_limit_bytes": 353621696512,
+      "cgroup_current_bytes": 11771781120,
+      "mem_available_bytes": 341849415680
+    },
+    {
+      "dataset": "landmark-dino-768-cosine",
+      "container_id": "ta-01M5PATMQKY2AWHG30BA59JVCR",
+      "requested_memory_gib": 14,
+      "observed_at_utc": "2026-10-24T07:35:21.717898+00:00",
+      "cgroup_limit_bytes": 425706921984,
+      "cgroup_current_bytes": 5675208704,
+      "mem_available_bytes": 420031213568
+    },
+    {
+      "dataset": "landmark-nomic-768-normalized",
+      "container_id": "ta-01M5PDWQVEXHTNJSV6WPESQA3R",
+      "requested_memory_gib": 14,
+      "observed_at_utc": "2026-10-24T08:08:09.080532+00:00",
+      "cgroup_limit_bytes": 353621688320,
+      "cgroup_current_bytes": 5673103360,
+      "mem_available_bytes": 347948085248
+    },
+    {
+      "dataset": "llama-128-ip",
+      "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+      "requested_memory_gib": 8,
+      "observed_at_utc": "2026-10-24T07:35:23.128428+00:00",
+      "cgroup_limit_bytes": 425706934272,
+      "cgroup_current_bytes": 1245294592,
+      "mem_available_bytes": 424461103104
+    },
+    {
+      "dataset": "msmarco-qwen-1024-normalized",
+      "container_id": "ta-01M5PATNVBJNVGXBP073M9C58R",
+      "requested_memory_gib": 115,
+      "observed_at_utc": "2026-10-24T07:35:24.379537+00:00",
+      "cgroup_limit_bytes": 851628580864,
+      "cgroup_current_bytes": 83176464384,
+      "mem_available_bytes": 768451616768
+    },
+    {
+      "dataset": "simplewiki-openai-3072-normalized",
+      "container_id": "ta-01M5PATNAXHRNV696SP2HHHP8R",
+      "requested_memory_gib": 16,
+      "observed_at_utc": "2026-10-24T07:35:25.514572+00:00",
+      "cgroup_limit_bytes": 184499568640,
+      "cgroup_current_bytes": 7526580224,
+      "mem_available_bytes": 176972488704
+    },
+    {
+      "dataset": "yahoo-minilm-384-normalized",
+      "container_id": "ta-01M5PATNW9NXKXFBKVZ5T31VPR",
+      "requested_memory_gib": 10,
+      "observed_at_utc": "2026-10-24T07:35:26.445844+00:00",
+      "cgroup_limit_bytes": 353621684224,
+      "cgroup_current_bytes": 2757308416,
+      "mem_available_bytes": 350863876096
+    },
+    {
+      "dataset": "yandex-200-cosine",
+      "container_id": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+      "requested_memory_gib": 13,
+      "observed_at_utc": "2026-10-24T07:35:51.249103+00:00",
+      "cgroup_limit_bytes": 425706921984,
+      "cgroup_current_bytes": 3555020800,
+      "mem_available_bytes": 422151401472
+    },
+    {
+      "dataset": "yi-128-ip",
+      "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+      "requested_memory_gib": 8,
+      "observed_at_utc": "2026-10-24T07:35:28.566864+00:00",
+      "cgroup_limit_bytes": 425706942464,
+      "cgroup_current_bytes": 847638528,
+      "mem_available_bytes": 424858808320
+    }
+  ]
+}
