@@ -1,0 +1,15 @@
+{
+  "observed_at": "2026-10-24T14:39:56.035340+00:00",
+  "apps": [
+    {
+      "app_id": "ap-y0mN2NRbZ8qFkrm5IEPNV6",
+      "functions": [],
+      "error": "UnimplementedError: FunctionCallList is not available via the API"
+    },
+    {
+      "app_id": "ap-OfE3vcEhiilyNzkxav7UnY",
+      "functions": [],
+      "error": "UnimplementedError: FunctionCallList is not available via the API"
+    }
+  ]
+}

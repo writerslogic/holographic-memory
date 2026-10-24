@@ -1,0 +1,22 @@
+{
+  "observed_at": "2026-10-24T14:40:10.357035+00:00",
+  "apps": [
+    {
+      "app_id": "ap-y0mN2NRbZ8qFkrm5IEPNV6",
+      "function_ids": {
+        "plan": "fu-UhPqno5WEweZJbXBWrnoAY",
+        "run_dataset": "fu-hivdztoqaQ8wHyPf4paclV"
+      }
+    },
+    {
+      "app_id": "ap-OfE3vcEhiilyNzkxav7UnY",
+      "function_ids": {
+        "run_dataset_nonpreemptible": "fu-1oXH8bWxHqS7ly7O2eGsss",
+        "plan": "fu-ol5KFzlwwrrEAuBgRR6JAv",
+        "run_dataset": "fu-89xk7Q7WzmzIePgp0nl7h9",
+        "audit_dataset_artifacts": "fu-UXSjeNF3NWCno5SZaBG08J"
+      }
+    }
+  ],
+  "call_id_limitation": "FunctionCallList API unavailable; local launcher logs do not include per-dataset call IDs. App and container IDs, checkpoints, function IDs preserved."
+}
