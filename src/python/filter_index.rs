@@ -37,7 +37,7 @@ fn u8_rows<'py>(x: &PyArrayLike2<'py, u8, AllowTypeChange>) -> (Vec<u8>, usize, 
 
 fn csr(
     indptr: &PyArrayLike1<'_, i64, AllowTypeChange>,
-    indices: &PyArrayLike1<'_, i64, AllowTypeChange>,
+    indices: &PyArrayLike1<'_, i32, AllowTypeChange>,
     rows: usize,
 ) -> PyResult<(Vec<u64>, Vec<u32>)> {
     let p = indptr.readonly();
@@ -76,7 +76,7 @@ impl PyFilteredIndex {
         py: Python<'_>,
         data: PyArrayLike2<'_, u8, AllowTypeChange>,
         indptr: PyArrayLike1<'_, i64, AllowTypeChange>,
-        indices: PyArrayLike1<'_, i64, AllowTypeChange>,
+        indices: PyArrayLike1<'_, i32, AllowTypeChange>,
         labels: usize,
         ivf_min: usize,
         cluster_size: usize,
@@ -150,7 +150,7 @@ impl PyFilteredIndex {
         py: Python<'py>,
         queries: PyArrayLike2<'py, u8, AllowTypeChange>,
         indptr: PyArrayLike1<'py, i64, AllowTypeChange>,
-        indices: PyArrayLike1<'py, i64, AllowTypeChange>,
+        indices: PyArrayLike1<'py, i32, AllowTypeChange>,
         k: usize,
     ) -> PyResult<Bound<'py, PyArray2<i64>>> {
         if k == 0 {
