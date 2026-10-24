@@ -1073,8 +1073,10 @@ def status_report(ns: str) -> None:
 
 def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     root = f"/vibe/{ns}"
-    manifest = read_json(Path(__file__).resolve().parents[2] /
-                         "benchmarks/results/vibe_live_s_20261023/manifest.json", {})
+    result_dir = Path(__file__).resolve().parents[2] / "benchmarks/results/vibe_live_s_20261023"
+    manifest = read_json(result_dir / "manifest.json", {})
+    memory = read_json(result_dir / "memory-probe-20261024T073552Z.json", {})
+    memory_rows = {row["dataset"]: row for row in memory.get("rows", [])}
 
     def remote_json(path: str) -> dict:
         return json.loads(b"".join(VOL.read_file(path)))
@@ -1156,6 +1158,7 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
                                     if hms.get("container_id") else None),
             "validation": hms.get("validation"), "metrics": measured.get("hms"),
             "peak_rss_bytes": None, "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+            "memory_observation": memory_rows.get(ds),
             "selected_competitors": selected, "competitors": competitors, "comparison_status": comparison_status,
             "published_leaders_diagnostic": meta.get("leaders"),
             "estimated_cost_usd": round(spent.get(ds, 0.0), 4),
@@ -1167,6 +1170,7 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     write_json(out, {"generated": iso(), "namespace": ns, "hms_commit": hms_rev,
                      "vibe_commit": VIBE_REV, "estimated_cost_usd": round(sum(spent.values()), 4),
+                     "cost_scope": "estimated CPU and memory list price; excludes Volume, network, credits, discounts",
                      "rows": rows})
     print(f"wrote {len(rows)} dataset rows to {out}")
 

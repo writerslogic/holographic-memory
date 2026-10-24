@@ -30,6 +30,8 @@
     "official_hardware": "Intel Xeon Gold 6230 with AVX-512, one core per algorithm, at least 16 GiB per used core recommended",
     "official_limits": "24-hour timeout per individual algorithm run; no published fixed memory cap",
     "modal_hardware": "Per-container CPU model, AVX-512, allocated memory, and process state are in the ledger and cpu records; VIBE falls back from unavailable numactl to taskset pinning; HMS and competitors are scheduled in one dataset job, with possible container handovers",
+    "modal_memory_note": "Several small-dataset Modal requests are below VIBE's recommendation of 16 GiB per used core; Modal memory requests are soft minimums, with actual usage allowed to burst. These rows are not an exact published-hardware reproduction",
+    "memory_observation": "memory-probe-20261024T073552Z.json records one timestamped read of cgroup v1 limit/current and /proc/meminfo available per running container. These are snapshots, not process peak RSS or proof of memory compliance",
     "comparability": "Cross-hardware published Xeon QPS is diagnostic only; use same-container HMS/competitor measurements when they complete, and verify CPU identity after any handover"
   },
   "launch": {
@@ -39,6 +41,7 @@
     "command": "modal run --detach benchmarks/vibe/modal_vibe.py --resume --hms-rev 12c80decb094d57ee13ba187a01bf1de8788ca2f --cap-usd 300 --hard-cap-usd 325",
     "estimated_spend_cap_usd": 300,
     "hard_spend_cap_usd": 325,
+    "spend_estimate_scope": "CPU and memory at Modal's current list rates ($0.0000131/core-second and $0.00000222/GiB-second); excludes Volume, network, credits and discounts; actual billing is not yet available",
     "console_log": "/Volumes/A/hms-coordination/public-bench/vibe-results/live-s-launch.log",
     "status": "https://modal.com/apps/dcondrey/main/ap-y0mN2NRbZ8qFkrm5IEPNV6"
   },
