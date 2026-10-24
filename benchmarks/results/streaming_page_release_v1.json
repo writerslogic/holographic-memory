@@ -1,0 +1,99 @@
+{
+  "classification": "development consolidation measurement, not a leaderboard standing",
+  "cpu": "Intel Core Ultra 9 185H",
+  "threads": 8,
+  "cpu_affinity": "0-7",
+  "rounds": 3,
+  "lock": "hms-timing.lock",
+  "parent_commit": "e3bb3648",
+  "base_rows": 500000,
+  "dimensions": 100,
+  "degree": 32,
+  "build_ef": 64,
+  "deletes": "every seventh id, preserving the entry",
+  "inserts": 100000,
+  "profiling": "Identical phase timing/counters and Linux VmRSS/VmHWM hooks in both arms; initial fixture construction included in process high-water mark.",
+  "pairs": [
+    {
+      "round": 1,
+      "base": {
+        "load_average": [
+          1.49,
+          1.32,
+          0.83
+        ],
+        "consolidation_ns": 19861150946,
+        "insertion_phase_rss_kib": 444072,
+        "whole_process_peak_rss_kib": 530216,
+        "vertex_crc": 434904111
+      },
+      "candidate": {
+        "load_average": [
+          4.97,
+          2.27,
+          1.17
+        ],
+        "consolidation_ns": 22324557549,
+        "insertion_phase_rss_kib": 381300,
+        "whole_process_peak_rss_kib": 529508,
+        "vertex_crc": 434904111
+      }
+    },
+    {
+      "round": 2,
+      "base": {
+        "load_average": [
+          8.13,
+          4.17,
+          1.98
+        ],
+        "consolidation_ns": 22748749614,
+        "insertion_phase_rss_kib": 441664,
+        "whole_process_peak_rss_kib": 528928,
+        "vertex_crc": 434904111
+      },
+      "candidate": {
+        "load_average": [
+          6.99,
+          3.29,
+          1.59
+        ],
+        "consolidation_ns": 21763440900,
+        "insertion_phase_rss_kib": 381084,
+        "whole_process_peak_rss_kib": 529064,
+        "vertex_crc": 434904111
+      }
+    },
+    {
+      "round": 3,
+      "base": {
+        "load_average": [
+          8.26,
+          4.83,
+          2.33
+        ],
+        "consolidation_ns": 27292367671,
+        "insertion_phase_rss_kib": 441480,
+        "whole_process_peak_rss_kib": 528836,
+        "vertex_crc": 434904111
+      },
+      "candidate": {
+        "load_average": [
+          12.05,
+          6.53,
+          3.08
+        ],
+        "consolidation_ns": 19794738652,
+        "insertion_phase_rss_kib": 381248,
+        "whole_process_peak_rss_kib": 529224,
+        "vertex_crc": 434904111
+      }
+    }
+  ],
+  "interpretation": "Insertion-phase RSS consistently decreased. Whole-process peak unchanged; consolidation timing noisy, no reliable speedup established.",
+  "unmeasured": [
+    "Peak RSS isolated to consolidation",
+    "Final-runbook completion and recall",
+    "An 8 GiB constrained scaled replay"
+  ]
+}

@@ -5,8 +5,7 @@
 //! pass, so the cost follows the rows that changed instead of every live row.
 
 use std::cell::RefCell;
-
-use rayon::prelude::*;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use super::super::{
     adjacency::Adjacency, kernels::SplitMix, medoid, norms_opt, prof, upper_layers, BuildCodes,
@@ -62,6 +61,7 @@ pub(super) fn merge_structure(
     };
     let t = prof::start();
     let mut adj = Adjacency::new(n, r);
+    let again: Vec<_> = (0..n).map(|_| AtomicBool::new(false)).collect();
     // FreshDiskANN's delete consolidation: a list that lost a deleted neighbour takes that
     // neighbour's live out-neighbours as candidates and is pruned again; other lists are
     // renumbered as they are.
@@ -84,6 +84,7 @@ pub(super) fn merge_structure(
                 out.extend(old.iter().map(|&u| plan.old_to_new[u as usize]));
                 return;
             }
+            again[s].store(true, Ordering::Relaxed);
             ids.clear();
             for &u in old.iter() {
                 let mapped = plan.old_to_new[u as usize];
@@ -108,6 +109,9 @@ pub(super) fn merge_structure(
         });
     });
     prof::report("merge-repair", t);
+    plan.old
+        .release_pages()
+        .map_err(|e| super::super::invalid(format!("release previous base pages: {e}")))?;
     let inserted: Vec<u32> = (0..n as u32)
         .filter(|&s| plan.new_to_old[s as usize] == NONE)
         .collect();
@@ -136,34 +140,15 @@ pub(super) fn merge_structure(
     // The build's second pass, over the delta rows and the base rows whose neighbourhood
     // changed: those the delta now links to and those that lost a deleted neighbour. A full
     // rebuild searches again for every row; here only these can have better neighbours.
-    let mut again = vec![false; n];
     for &p in &order {
-        again[p as usize] = true;
+        again[p as usize].store(true, Ordering::Relaxed);
         for &u in adj.get(p as usize) {
-            again[u as usize] = true;
+            again[u as usize].store(true, Ordering::Relaxed);
         }
     }
-    let repaired: Vec<usize> = (0..n)
-        .into_par_iter()
-        .map_init(Vec::new, |list, s| {
-            let o = plan.new_to_old[s];
-            list.clear();
-            if o != NONE {
-                plan.old.neighbours_into(o as usize, list);
-            }
-            let dead = list.iter().any(|&u| plan.old_to_new[u as usize] == NONE);
-            (s, dead)
-        })
-        .filter_map(|(s, dead)| dead.then_some(s))
+    let mut order: Vec<u32> = (0..n as u32)
+        .filter(|&s| again[s as usize].load(Ordering::Relaxed))
         .collect();
-    for s in repaired {
-        again[s] = true;
-    }
-    // The previous graph is not read again: drop its pages before the passes allocate.
-    plan.old
-        .release_pages()
-        .map_err(|e| super::super::invalid(format!("release previous base pages: {e}")))?;
-    let mut order: Vec<u32> = (0..n as u32).filter(|&s| again[s as usize]).collect();
     drop(again);
     shuffle(&mut order, params.seed ^ n as u64 ^ 1);
     let t = prof::start();
