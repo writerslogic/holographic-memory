@@ -1,0 +1,43 @@
+{
+  "kind": "synthetic correctness and logical allocation evidence; no production adoption",
+  "prototype_base_commit": "aa734fe7941c75dd3fb175871db24f6622cade61",
+  "publication_base_commit": "e97298382f0738172f5bb1455fae4401410ba3e0",
+  "raw_artifact_sha256": {
+    "rank/prototype.patch": "f9b74ffd3e82fdaaae0d69214705f064db4045033250a3145e479daf7066ed6c",
+    "rank/payload_probe.rs": "8cfc89440f2dfad407cfc9f19dd71a72ad8e5e481b2f456871efa9ecd6c3e576",
+    "rank/summary.json": "337858fceacee824e848cf808c1ca67112812cc269b6cfd906123ecc49eeafde",
+    "rank/focused.log": "97f79bbc8fd8257dbd231b5a6f75b16ffea2f798e3135f620298b6d15dff5cab",
+    "dense/prototype.patch": "eba534ba2177a2fa5d1c125a52c63bf63ac9bf7e5baf41f2e8df20e8fb036386",
+    "dense/payload_probe.rs": "b516fafda584a233baff48723f4b0407a58dd350a9c2d3f6502bd269c2c7068e",
+    "dense/summary.json": "bef843e3e1a4fd2ea8de980758b19d024d09980efdb495c9f58c49f0d8040f5b",
+    "dense/focused-final.log": "a6ac04ef1b9f3d7867339a5ec5fd498c818e833a12f2f57fec703a6391128e73"
+  },
+  "log_normalization": "Only local worktree/private-target paths and terminal blank lines normalized; all numeric records preserved",
+  "source_publication": "Source snapshots and compressed patches only; no prototype code enters the library",
+  "validation": {
+    "rank_focused_tests": 7,
+    "dense_focused_tests": 4,
+    "native_dense_rank_query_triplets": 6084,
+    "exhaustive_rank_lookups": 62405,
+    "footprint_rows": 25,
+    "clippy": "passed --lib --tests -D warnings for the sealed prototype",
+    "default_publication_gate": {
+      "status": "passed",
+      "exit_code": 0,
+      "commands": [
+        "cargo fmt --all -- --check",
+        "cargo clippy --locked --all-targets -- -D warnings",
+        "cargo test --locked"
+      ],
+      "tests_passed": 687,
+      "tests_failed": 0,
+      "tests_ignored": 13,
+      "raw_log_sha256": "dd6fce8e9fd81b18f255e8946f280196c76342e970a863f75048e95785669607",
+      "receipt": "checks.log",
+      "receipt_scope": "Commands and outcome followed by original completion lines; full raw output retained outside the published package"
+    },
+    "source_reconstruction": "Both decompressed patches apply to the sealed base and reconstruct their exact source snapshots",
+    "arithmetic": "All 25 footprint rows, 6084 query triplets and 20 shared dense/rank ownership comparisons match"
+  },
+  "adoption": false
+}
