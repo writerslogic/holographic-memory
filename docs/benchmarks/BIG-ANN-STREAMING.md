@@ -262,3 +262,46 @@ flock ~/hms-timing.lock systemd-run --user --scope -q \
 
 Require all 1,280 steps, recall averaged over all 640 searches, and memory below 8 GiB.
 The phase-RSS reduction alone does not establish that outcome.
+
+## Delta-row spill (development evidence; incremental comparison pending)
+
+Consolidation moves committed delta rows into a private unlinked read-only mapping before
+building the next generation. Copying rows releases mapped pages in batches. The writer
+serializes mutations; scratch I/O occurs outside the state lock. Failed consolidation can
+still accept subsequent inserts by detaching the mapped backing. Persisted bytes are unchanged.
+
+The completed development comparisons use older parent `e3bb3648`, so they combine
+entry selection, earlier graph-page release and delta spilling. They do **not** isolate this
+PR's benefit over its parent `0880ccda`. On Intel Core Ultra 9 185H, eight threads on CPUs
+0–7 under the timing lock, one 3M-base/600k-insert pair within an 8-GiB cgroup reduced
+isolated consolidation peak RSS from 2,581,784 to 2,348,628 KiB (9.0%). Consolidation took
+185.401 versus 185.642 seconds; both generations had CRC32 2824448824. Linux
+`clear_refs=5` reset the high-water mark before consolidation. Load averages and smaller
+three-pair results are in `benchmarks/results/streaming_delta_spill_v1.json`.
+
+The cached-slice implementation's single-thread query check gave paired median ratios
+0.9939, 1.0263 and 0.9942, with identical result fingerprints; no consistent speed change
+was established. A discarded per-neighbour backing lookup was 0.6–1.0% slower.
+
+Local formatting, clippy, tests, byte-output and interrupted-consolidation recovery checks
+passed. The master session owns the incremental comparison against the current PR parent.
+Build both arms with `cargo test --release --lib --no-run`, adding the candidate's ignored
+measurement fixtures to the parent without its production changes. Under the timing lock,
+run A/B, B/A, A/B with `RAYON_NUM_THREADS=8 HMS_CONSOLIDATION_ROWS=500000`, an 8-GiB
+cgroup and `taskset -c 0-7 <test-executable> consolidation_live_set_peak --ignored
+--nocapture --test-threads=1`; also run `delta_search_live_set` in both arms.
+
+Scaled official-data replay, eight-thread search throughput and final-runbook completion
+and recall remain unmeasured. After the freeze is lifted, pin the tested revision and use
+the R32/L64/alpha1.0/T8 merge configuration, ratios1.0/0.3, ef256:
+
+```sh
+flock ~/hms-timing.lock systemd-run --user --scope -q \
+  -p MemoryMax=8G -p MemorySwapMax=0 taskset -c 0-7 \
+  /usr/bin/time -v timeout 3600 uv run python run.py --nodocker \
+  --neurips23track streaming --algorithm hms --dataset msturing-30M-clustered \
+  --runbook_path neurips23/runbooks/final_runbook.yaml
+```
+
+Require all 1,280 steps within one hour and 8 GiB, and report recall over all 640 searches.
+These development measurements establish no leaderboard standing.

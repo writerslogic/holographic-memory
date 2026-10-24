@@ -1467,6 +1467,41 @@ fn merged_consolidation_interruption_recovers_committed_state() {
 }
 
 #[test]
+fn interrupted_consolidation_keeps_spilled_rows_searchable_and_writable() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("index");
+    let index = UpdatableVGraph::create(&path, &data(64, 4), 4, &params()).unwrap();
+    index
+        .insert_batch(&(100..132).collect::<Vec<_>>(), &data(32, 4))
+        .unwrap();
+    let query = [0.5; 4];
+    let before = index.search(&query, 100, search_params()).unwrap();
+    assert!(index
+        .consolidate_inner(|step| {
+            if step == 6 {
+                Err(UpdateError::Io(std::io::Error::other("interruption")))
+            } else {
+                Ok(())
+            }
+        })
+        .is_err());
+    assert!(!index.state.read().delta.vectors.is_empty());
+    assert!(index.state.read().delta.vectors.spill_source().is_none());
+    assert_eq!(index.search(&query, 100, search_params()).unwrap(), before);
+    index.insert(200, &[1.0; 4]).unwrap();
+    index.commit().unwrap();
+    let after = index.search(&query, 100, search_params()).unwrap();
+    drop(index);
+    let reopened = UpdatableVGraph::open(&path).unwrap();
+    assert_eq!(
+        reopened.search(&query, 100, search_params()).unwrap(),
+        after
+    );
+    reopened.consolidate().unwrap();
+    assert_eq!(reopened.len(), 97);
+}
+
+#[test]
 fn merged_deleted_entry_preserves_the_pinned_generation() {
     let dim = 16;
     let rows = data(1200, dim);
@@ -1517,7 +1552,7 @@ fn consolidation_live_set_peak() {
     let n: usize = std::env::var("HMS_CONSOLIDATION_ROWS")
         .map_or(Ok(100_000), |s| s.parse())
         .unwrap();
-    assert!((1024..=1_000_000).contains(&n));
+    assert!((1024..=3_000_000).contains(&n));
     let dim = 100;
     let rows = data(n + n / 5, dim);
     let dir = tempfile::tempdir().unwrap();
@@ -1548,6 +1583,9 @@ fn consolidation_live_set_peak() {
         index.commit().unwrap();
     }
     drop(rows);
+    if cfg!(target_os = "linux") {
+        std::fs::write("/proc/self/clear_refs", b"5").unwrap();
+    }
     let start = std::time::Instant::now();
     assert_eq!(
         index
@@ -1558,6 +1596,17 @@ fn consolidation_live_set_peak() {
         Consolidation::Merged
     );
     let elapsed = start.elapsed().as_nanos();
+    if cfg!(target_os = "linux") {
+        let status = std::fs::read_to_string("/proc/self/status").unwrap();
+        let peak = status
+            .lines()
+            .find(|line| line.starts_with("VmHWM:"))
+            .unwrap();
+        println!(
+            "consolidation_peak_rss_kib={}",
+            peak.split_whitespace().nth(1).unwrap()
+        );
+    }
     let state = index.state.read();
     let bytes = std::fs::read(state.manifest.vertex_path(&path)).unwrap();
     println!(
