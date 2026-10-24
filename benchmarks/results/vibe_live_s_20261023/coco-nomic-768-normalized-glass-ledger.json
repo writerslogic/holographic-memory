@@ -1,0 +1,46 @@
+{
+ "algorithm": "glass",
+ "attempts": 1,
+ "avx512": false,
+ "child_cpu_s": 5643.9,
+ "chosen_why": [
+  "recall>=0.99: leader at 2622.9 QPS"
+ ],
+ "cleaned": {
+  "removed": []
+ },
+ "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+ "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+ "dataset": "coco-nomic-768-normalized",
+ "end": "2026-10-24T11:17:46Z",
+ "expected": 320,
+ "failures": 0,
+ "flags_sha": "20b972a2324d",
+ "heartbeat": 1792840630.139384,
+ "history": [
+  {
+   "attempt": 1,
+   "container": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+   "end": "2026-10-24T11:17:46Z",
+   "markers": 320,
+   "outcome": "exit 0"
+  }
+ ],
+ "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "job": "glass",
+ "log_path": "/vol/vibe/run-s-20261023/logs/coco-nomic-768-normalized/glass.log",
+ "markers_at_start": 0,
+ "nproc": 8,
+ "result_path": "/vol/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results",
+ "start": "2026-10-24T09:33:35Z",
+ "state": "done",
+ "validation": {
+  "done": true,
+  "expected": 320,
+  "markers": 320,
+  "problems": [],
+  "test_count": 1000,
+  "valid": 320
+ },
+ "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}

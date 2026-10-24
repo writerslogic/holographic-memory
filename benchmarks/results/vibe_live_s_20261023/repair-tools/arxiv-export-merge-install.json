@@ -1,0 +1,8 @@
+{
+  "dataset": "arxiv-nomic-768-normalized",
+  "container_id": "ta-01M5PKP35HA4E538A8D193RJJR",
+  "installed_at": 1792841373.1406393,
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "wrapper_sha256": "e091051304b0727893493bcc70b40f4c449e75a9f4c452e122d317cfa45b46fe",
+  "purpose": "Merge an already completed Glass raw tree before official export; no native benchmark rerun; cross-container results stay diagnostic"
+}

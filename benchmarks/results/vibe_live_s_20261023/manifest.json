@@ -81,13 +81,15 @@
     "vibe-migration-repair-watch-20261024.py": "1580b90aff7c82b7eed1ec7f843d80381ca7462f43c222fdde922228348bc0d2",
     "vibe-repair-migrated-20261024.py": "0908b2296ad4fa4b99a3116cc843dfdb3aea503982db73dcb478eaf5c12a96c3",
     "yahoo-minilm-384-normalized-preexport-hook-v1.py": "218517559149cc7392b524760a23f154fa38134575a9dcc3becbb3766cbf00e1",
-    "yahoo-minilm-384-normalized-preexport-hook.py": "8ad367ca8d60fed9233903b2200aec8a5a707e58524048926cc713b77209abf9"
+    "yahoo-minilm-384-normalized-preexport-hook.py": "8ad367ca8d60fed9233903b2200aec8a5a707e58524048926cc713b77209abf9",
+    "arxiv-export-merge-wrapper.py": "e091051304b0727893493bcc70b40f4c449e75a9f4c452e122d317cfa45b46fe",
+    "arxiv-export-merge-install.json": "0f0d256b298f7c09488232c9c253ee3c0081cd7f0a1ff880808bb502d826973f"
   },
   "draft_pr_verified_utc": "2026-10-24T08:28Z",
   "llama_verified_standing": "llama-128-ip-standing.json",
   "repair_mode": "Pre-export hook in original function; post-return watcher stopped before execution",
   "current_runner_sha256": "f02152415e19d5a0149bb3cc9c4541715738fed9a5f62989c42b9d5951bed8a6",
-  "latest_snapshot": "snapshot-20261024T1100Z.json",
+  "latest_snapshot": "snapshot-20261024T1125Z.json",
   "additional_launches": [
     {
       "app_id": "ap-OfE3vcEhiilyNzkxav7UnY",
@@ -105,5 +107,24 @@
     }
   ],
   "native_build_receipt_coverage": "19 active-container wheel/module hashes captured after measurement began, plus Arxiv pre-index hashes; finished-container install logs retained without inventing binary hashes",
-  "validation": "7 focused VIBE regression tests passed; shell installer syntax passed"
+  "validation": "7 focused VIBE regression tests passed; shell installer syntax passed",
+  "completed_collections": {
+    "yi-128-ip": {
+      "standing": "yi-128-ip-standing.json",
+      "receipt": "yi-128-ip-artifact-receipt.json"
+    },
+    "llama-128-ip": {
+      "standing": "llama-128-ip-standing.json",
+      "receipt": "llama-128-ip-artifact-receipt.json"
+    },
+    "celeba-resnet-2048-cosine": {
+      "standing": "celeba-resnet-2048-cosine-standing.json",
+      "receipt": "celeba-resnet-2048-cosine-artifact-receipt.json"
+    },
+    "coco-nomic-768-normalized": {
+      "standing": "coco-nomic-768-normalized-standing.json",
+      "receipt": "coco-nomic-768-normalized-artifact-receipt.json"
+    }
+  },
+  "collector_sha256": "a2524be34d85e19783011e6c129e2fe80fd69091b91008da32c1ca2e260c0b74"
 }

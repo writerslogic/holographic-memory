@@ -1,0 +1,48 @@
+{
+  "dataset": "coco-nomic-768-normalized",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "final_states": {
+    "glass": "done",
+    "lorann": "done",
+    "hms@12c80decb094": "done",
+    "_download": "done"
+  },
+  "measurement_containers": {
+    "glass": [
+      "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+    ],
+    "lorann": [
+      "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+    ],
+    "hms": [
+      "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+    ]
+  },
+  "generated": "2026-10-24T11:18:31Z",
+  "validations": {
+    "glass": {
+      "done": true,
+      "expected": 320,
+      "markers": 320,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 320
+    },
+    "lorann": {
+      "done": true,
+      "expected": 576,
+      "markers": 576,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 576
+    },
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  }
+}

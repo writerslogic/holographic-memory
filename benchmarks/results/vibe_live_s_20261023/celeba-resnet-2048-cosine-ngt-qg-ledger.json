@@ -1,0 +1,48 @@
+{
+ "algorithm": "ngt-qg",
+ "attempts": 1,
+ "avx512": false,
+ "child_cpu_s": 11861.6,
+ "chosen_why": [
+  "recall>=0.9: leader at 2647.5 QPS",
+  "recall>=0.95: substitute for pag (2426.4 QPS; needs AVX-512, absent here): 2330.1 QPS",
+  "recall>=0.99: substitute for pag (2230.1 QPS; needs AVX-512, absent here): 2013.0 QPS"
+ ],
+ "cleaned": {
+  "removed": []
+ },
+ "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+ "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+ "dataset": "celeba-resnet-2048-cosine",
+ "end": "2026-10-24T11:12:48Z",
+ "expected": 101,
+ "failures": 0,
+ "flags_sha": "ced2924a5f1c",
+ "heartbeat": 1792840315.7828763,
+ "history": [
+  {
+   "attempt": 1,
+   "container": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+   "end": "2026-10-24T11:12:48Z",
+   "markers": 101,
+   "outcome": "exit 0"
+  }
+ ],
+ "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "job": "ngt-qg",
+ "log_path": "/vol/vibe/run-s-20261023/logs/celeba-resnet-2048-cosine/ngt-qg.log",
+ "markers_at_start": 0,
+ "nproc": 8,
+ "result_path": "/vol/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/ngt-qg/results",
+ "start": "2026-10-24T08:20:17Z",
+ "state": "done",
+ "validation": {
+  "done": true,
+  "expected": 101,
+  "markers": 101,
+  "problems": [],
+  "test_count": 1000,
+  "valid": 101
+ },
+ "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}

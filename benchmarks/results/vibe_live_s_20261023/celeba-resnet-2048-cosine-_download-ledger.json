@@ -1,0 +1,7 @@
+{
+ "at": "2026-10-24T06:52:06Z",
+ "dataset": "celeba-resnet-2048-cosine",
+ "job": "_download",
+ "sha256": "168f89ccf8aaa22cc9ce6f81c241fd016eb67a0bc5b5b381b955ffa746a906f4",
+ "state": "done"
+}
