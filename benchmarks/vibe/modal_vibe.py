@@ -1079,8 +1079,10 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     root = f"/vibe/{ns}"
     result_dir = Path(__file__).resolve().parents[2] / "benchmarks/results/vibe_live_s_20261023"
     manifest = read_json(result_dir / "manifest.json", {})
-    memory = read_json(result_dir / "memory-probe-20261024T073552Z.json", {})
-    memory_rows = {row["dataset"]: row for row in memory.get("rows", [])}
+    memory_rows = {}
+    for path in sorted(result_dir.glob("memory-probe-*.json")):
+        memory_rows.update({row["dataset"]: row for row in read_json(path, {}).get("rows", [])
+                            if "error" not in row})
 
     def remote_json(path: str) -> dict:
         return json.loads(b"".join(VOL.read_file(path)))
