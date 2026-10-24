@@ -199,19 +199,13 @@ fn bit(words: &[u64], id: u32) -> bool {
 }
 
 /// The `k` best `(key, id)` pairs seen, kept sorted ascending.
+#[derive(Default)]
 struct TopK {
     k: usize,
     items: Vec<(i64, u32)>,
 }
 
 impl TopK {
-    fn new(k: usize) -> Self {
-        Self {
-            k,
-            items: Vec::with_capacity(k + 1),
-        }
-    }
-
     #[inline]
     fn worst(&self) -> (i64, u32) {
         if self.items.len() < self.k {
@@ -230,6 +224,23 @@ impl TopK {
         self.items.insert(at, (key, id));
         self.items.truncate(self.k);
     }
+}
+
+#[derive(Default)]
+struct IvfScratch {
+    order: Vec<(i64, u32)>,
+    batch: Vec<u32>,
+    cursors: Vec<usize>,
+}
+
+#[derive(Default)]
+struct SearchScratch {
+    labels: Vec<u32>,
+    query: Vec<i8>,
+    top: TopK,
+    matches: Vec<u32>,
+    cursors: Vec<usize>,
+    ivf: IvfScratch,
 }
 
 /// Splitmix64, for deterministic k-means sampling.
@@ -540,6 +551,18 @@ impl FilteredIndex {
         params: &FilterSearchParams,
         out: &mut Vec<(u32, u32)>,
     ) -> Result<(), FilterError> {
+        self.search_with_scratch(query, labels, k, params, out, &mut SearchScratch::default())
+    }
+
+    fn search_with_scratch(
+        &self,
+        query: &[u8],
+        labels: &[u32],
+        k: usize,
+        params: &FilterSearchParams,
+        out: &mut Vec<(u32, u32)>,
+        scratch: &mut SearchScratch,
+    ) -> Result<(), FilterError> {
         out.clear();
         if query.len() != self.dim {
             return Err(FilterError::Invalid(format!(
@@ -551,39 +574,56 @@ impl FilteredIndex {
         if k == 0 || labels.is_empty() || labels.iter().any(|&l| l as usize >= self.labels()) {
             return Ok(());
         }
-        let mut order: Vec<u32> = labels.to_vec();
+        let SearchScratch {
+            labels: order,
+            query: q,
+            top,
+            matches,
+            cursors,
+            ivf: ivf_scratch,
+        } = scratch;
+        order.clear();
+        order.extend_from_slice(labels);
         order.sort_by_key(|&l| (self.label_len(l), l));
         order.dedup();
         let rarest = order[0];
         let others = &order[1..];
 
-        let mut q = vec![0i8; self.stride];
+        q.resize(self.stride, 0);
+        q[self.dim..].fill(0);
         for (o, &v) in q.iter_mut().zip(query) {
             *o = shift(v);
         }
         let qsum: i32 = q.iter().map(|&v| i32::from(v)).sum();
         let qnorm: i64 = q.iter().map(|&v| i64::from(v) * i64::from(v)).sum();
-        let mut top = TopK::new(k);
+        top.k = k;
+        top.items.clear();
+        top.items.reserve(k + 1);
 
         let n_rare = self.label_len(rarest);
         let ivf = self.ivf_slot[rarest as usize];
-        let matches = if n_rare <= params.brute_max
-            || ivf == u32::MAX
-            || (!others.is_empty() && n_rare <= params.intersect_max)
-        {
-            Some(self.intersect(rarest, others))
+        let scored = if n_rare <= params.brute_max || ivf == u32::MAX {
+            self.brute_queries.fetch_add(1, Ordering::Relaxed);
+            self.score_intersection((q, qsum), rarest, others, top, cursors)
         } else {
-            None
-        };
-        let scored = match matches {
-            Some(m) if m.len() <= params.brute_max || ivf == u32::MAX => {
-                self.brute_queries.fetch_add(1, Ordering::Relaxed);
-                self.score_ids(&q, qsum, &m, &mut top);
-                m.len()
+            let intersected = !others.is_empty() && n_rare <= params.intersect_max;
+            if intersected {
+                self.intersect(rarest, others, matches, cursors);
             }
-            _ => {
+            if intersected && matches.len() <= params.brute_max {
+                self.brute_queries.fetch_add(1, Ordering::Relaxed);
+                self.score_ids(q, qsum, matches, top);
+                matches.len()
+            } else {
                 self.ivf_queries.fetch_add(1, Ordering::Relaxed);
-                self.search_ivf(&self.ivfs[ivf as usize], &q, qsum, others, params, &mut top)
+                self.search_ivf(
+                    &self.ivfs[ivf as usize],
+                    (q, qsum),
+                    others,
+                    params,
+                    top,
+                    ivf_scratch,
+                )
             }
         };
         self.scored.fetch_add(scored as u64, Ordering::Relaxed);
@@ -626,13 +666,56 @@ impl FilteredIndex {
     }
 
     /// The live members of `rarest` that hold every label in `others`, ascending.
-    fn intersect(&self, rarest: u32, others: &[u32]) -> Vec<u32> {
-        let mut cursors = vec![0usize; others.len()];
-        self.posting(rarest)
-            .iter()
-            .copied()
-            .filter(|&id| !self.is_deleted(id) && self.holds(id, others, &mut cursors))
-            .collect()
+    fn intersect(
+        &self,
+        rarest: u32,
+        others: &[u32],
+        matches: &mut Vec<u32>,
+        cursors: &mut Vec<usize>,
+    ) {
+        matches.clear();
+        cursors.resize(others.len(), 0);
+        cursors.fill(0);
+        matches.extend(
+            self.posting(rarest)
+                .iter()
+                .copied()
+                .filter(|&id| !self.is_deleted(id) && self.holds(id, others, cursors)),
+        );
+    }
+
+    fn score_intersection(
+        &self,
+        query: (&[i8], i32),
+        rarest: u32,
+        others: &[u32],
+        top: &mut TopK,
+        cursors: &mut Vec<usize>,
+    ) -> usize {
+        let (q, qsum) = query;
+        let posting = self.posting(rarest);
+        if others.is_empty() && self.live == self.n {
+            self.score_ids(q, qsum, posting, top);
+            return posting.len();
+        }
+        cursors.clear();
+        cursors.resize(others.len(), 0);
+        let mut batch = [0u32; 128];
+        let mut used = 0;
+        let mut scored = 0;
+        for &id in posting {
+            if !self.is_deleted(id) && self.holds(id, others, cursors) {
+                batch[used] = id;
+                used += 1;
+                if used == batch.len() {
+                    self.score_ids(q, qsum, &batch, top);
+                    scored += used;
+                    used = 0;
+                }
+            }
+        }
+        self.score_ids(q, qsum, &batch[..used], top);
+        scored + used
     }
 
     /// Scores every id of `ids` (all live and matching) into `top`.
@@ -685,25 +768,49 @@ impl FilteredIndex {
     fn search_ivf(
         &self,
         ivf: &LabelIvf,
-        q: &[i8],
-        qsum: i32,
+        query: (&[i8], i32),
         others: &[u32],
         params: &FilterSearchParams,
         top: &mut TopK,
+        scratch: &mut IvfScratch,
     ) -> usize {
+        let (q, qsum) = query;
         let lists = ivf.centroid_norms.len();
-        let mut order: Vec<(i64, u32)> = (0..lists)
-            .map(|c| {
-                let cent = &ivf.centroids[c * self.stride..(c + 1) * self.stride];
-                let key =
-                    i64::from(ivf.centroid_norms[c]) - 2 * i64::from(dot_i8_query(q, cent, qsum));
-                (key, c as u32)
-            })
-            .collect();
+        let IvfScratch {
+            order,
+            batch,
+            cursors,
+        } = scratch;
+        order.clear();
+        let centroid = |c: usize| &ivf.centroids[c * self.stride..(c + 1) * self.stride];
+        let grouped = lists / 4 * 4;
+        for c in (0..grouped).step_by(4) {
+            let dots = dot_i8_query_x4(
+                q,
+                [
+                    centroid(c),
+                    centroid(c + 1),
+                    centroid(c + 2),
+                    centroid(c + 3),
+                ],
+                qsum,
+            );
+            for (j, dot) in dots.into_iter().enumerate() {
+                let key = i64::from(ivf.centroid_norms[c + j]) - 2 * i64::from(dot);
+                order.push((key, (c + j) as u32));
+            }
+        }
+        for c in grouped..lists {
+            let key = i64::from(ivf.centroid_norms[c])
+                - 2 * i64::from(dot_i8_query(q, centroid(c), qsum));
+            order.push((key, c as u32));
+        }
         order.sort_unstable();
         let mut scored = 0usize;
-        let mut batch: Vec<u32> = Vec::with_capacity(4096);
-        let mut cursors = vec![0usize; others.len()];
+        if batch.capacity() == 0 {
+            batch.reserve(4096);
+        }
+        cursors.resize(others.len(), 0);
         for (probed, &(_, c)) in order.iter().enumerate() {
             if scored >= params.target && probed >= params.min_lists {
                 break;
@@ -720,18 +827,18 @@ impl FilteredIndex {
                     members
                         .iter()
                         .copied()
-                        .filter(|&id| !self.is_deleted(id) && self.holds(id, others, &mut cursors)),
+                        .filter(|&id| !self.is_deleted(id) && self.holds(id, others, cursors)),
                 );
-                self.score_ids(q, qsum, &batch, top);
+                self.score_ids(q, qsum, batch, top);
                 scored += batch.len();
             } else {
                 // Positions (into the copied rows) of the passing members.
                 batch.clear();
                 batch.extend((a as u32..b as u32).filter(|&pos| {
                     let id = ivf.members[pos as usize];
-                    !self.is_deleted(id) && self.holds(id, others, &mut cursors)
+                    !self.is_deleted(id) && self.holds(id, others, cursors)
                 }));
-                self.score_copied(ivf, q, qsum, &batch, top);
+                self.score_copied(ivf, q, qsum, batch, top);
                 scored += batch.len();
             }
         }
@@ -775,15 +882,18 @@ impl FilteredIndex {
         out.par_chunks_mut(k)
             .zip(queries.par_chunks(self.dim))
             .enumerate()
-            .try_for_each_init(Vec::new, |found, (i, (row, q))| {
-                let labels = &label_ids[label_indptr[i] as usize..label_indptr[i + 1] as usize];
-                self.search(q, labels, k, params, found)?;
-                row.fill(-1);
-                for (slot, &(_, id)) in row.iter_mut().zip(found.iter()) {
-                    *slot = i64::from(id);
-                }
-                Ok(())
-            })
+            .try_for_each_init(
+                || (SearchScratch::default(), Vec::new()),
+                |(scratch, found), (i, (row, q))| {
+                    let labels = &label_ids[label_indptr[i] as usize..label_indptr[i + 1] as usize];
+                    self.search_with_scratch(q, labels, k, params, found, scratch)?;
+                    row.fill(-1);
+                    for (slot, &(_, id)) in row.iter_mut().zip(found.iter()) {
+                        *slot = i64::from(id);
+                    }
+                    Ok(())
+                },
+            )
     }
 }
 
@@ -1108,6 +1218,156 @@ mod tests {
     }
 
     #[test]
+    fn reused_scratch_preserves_results_across_routes_and_early_returns() {
+        let f = fixture(1_000, 20, 12, 71);
+        for copy_min in [0, usize::MAX] {
+            let mut idx = FilteredIndex::build(
+                &f.data,
+                f.dim,
+                &f.indptr,
+                &f.ids,
+                0,
+                &FilterBuildParams {
+                    ivf_min: 20,
+                    cluster_size: 17,
+                    max_lists: 32,
+                    bitset_min: 250,
+                    copy_min,
+                    ..small_params()
+                },
+            )
+            .unwrap();
+            let mut scratch = SearchScratch::default();
+            let mut reused = Vec::new();
+            let mut fresh = Vec::new();
+            let mut deleted = vec![false; 1_000];
+            let qs = queries(&f, 30, 12, 72);
+            for round in 0..2 {
+                if round == 1 {
+                    for id in (0..1_000).step_by(7) {
+                        idx.delete(id as u32);
+                        deleted[id] = true;
+                    }
+                }
+                for (i, (q, labels)) in qs.iter().enumerate() {
+                    let mut duplicated = labels.clone();
+                    duplicated.extend_from_slice(labels);
+                    for k in [0, 1, 7, 8, 9, 31] {
+                        for params in [
+                            FilterSearchParams::exact(),
+                            FilterSearchParams {
+                                brute_max: 0,
+                                intersect_max: 0,
+                                target: 80,
+                                min_lists: 2,
+                            },
+                            FilterSearchParams {
+                                brute_max: 0,
+                                ..FilterSearchParams::exact()
+                            },
+                        ] {
+                            idx.reset_stats();
+                            idx.search(q, &duplicated, k, &params, &mut fresh).unwrap();
+                            let fresh_stats = idx.stats();
+                            idx.reset_stats();
+                            idx.search_with_scratch(
+                                q,
+                                &duplicated,
+                                k,
+                                &params,
+                                &mut reused,
+                                &mut scratch,
+                            )
+                            .unwrap();
+                            assert_eq!(reused, fresh, "round {round}, query {i}, k {k}");
+                            assert_eq!(idx.stats(), fresh_stats);
+                            if params.target == usize::MAX && k != 0 {
+                                assert_eq!(reused, brute(&f, &deleted, q, labels, k));
+                            }
+                            for empty_labels in [&[][..], &[u32::MAX][..]] {
+                                idx.search_with_scratch(
+                                    q,
+                                    empty_labels,
+                                    k,
+                                    &params,
+                                    &mut reused,
+                                    &mut scratch,
+                                )
+                                .unwrap();
+                                assert!(reused.is_empty());
+                            }
+                            assert!(idx
+                                .search_with_scratch(
+                                    &q[..19],
+                                    labels,
+                                    k,
+                                    &params,
+                                    &mut reused,
+                                    &mut scratch
+                                )
+                                .is_err());
+                            assert!(reused.is_empty());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn batched_scratch_matches_independent_exact_results_after_deletions() {
+        let f = fixture(600, 17, 10, 81);
+        let mut idx =
+            FilteredIndex::build(&f.data, f.dim, &f.indptr, &f.ids, 0, &small_params()).unwrap();
+        let mut deleted = vec![false; 600];
+        for id in (0..600).step_by(4) {
+            idx.delete(id as u32);
+            deleted[id] = true;
+        }
+        let mut qs = queries(&f, 64, 10, 82);
+        for (i, (_, labels)) in qs.iter_mut().enumerate() {
+            match i % 5 {
+                0 => labels.clear(),
+                1 => labels.push(u32::MAX),
+                2 => labels.extend_from_within(..),
+                _ => {}
+            }
+        }
+        let flat: Vec<u8> = qs.iter().flat_map(|(q, _)| q.iter().copied()).collect();
+        let mut indptr = vec![0u64];
+        let mut label_ids = Vec::new();
+        for (_, labels) in &qs {
+            label_ids.extend_from_slice(labels);
+            indptr.push(label_ids.len() as u64);
+        }
+        for k in [1, 9, 10, 11] {
+            let mut out = vec![-7; qs.len() * k];
+            idx.search_batch(
+                &flat,
+                &indptr,
+                &label_ids,
+                k,
+                &FilterSearchParams::exact(),
+                &mut out,
+            )
+            .unwrap();
+            for ((q, labels), got) in qs.iter().zip(out.chunks(k)) {
+                let expected = if labels.is_empty() {
+                    Vec::new()
+                } else {
+                    brute(&f, &deleted, q, labels, k)
+                };
+                for (slot, &actual) in got.iter().enumerate() {
+                    assert_eq!(
+                        actual,
+                        expected.get(slot).map_or(-1, |&(_, id)| i64::from(id))
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn rejects_malformed_input() {
         let f = fixture(100, 16, 5, 9);
         let p = small_params();
@@ -1119,5 +1379,284 @@ mod tests {
         assert!(idx
             .search(&[0u8; 8], &[0], 3, &FilterSearchParams::default(), &mut out)
             .is_err());
+    }
+    #[test]
+    fn centroid_batches_preserve_probe_order_at_tails_padding_and_ties() {
+        for dim in [15usize, 16, 17, 191, 192, 193] {
+            for lists in [1usize, 2, 3, 4, 5, 7, 8, 9] {
+                let data: Vec<u8> = (0..lists * dim)
+                    .map(|i| ((i * 73 + i / dim * 17) % 256) as u8)
+                    .collect();
+                let indptr: Vec<u64> = (0..=lists as u64).collect();
+                let ids = vec![0u32; lists];
+                let idx = FilteredIndex::build(
+                    &data,
+                    dim,
+                    &indptr,
+                    &ids,
+                    1,
+                    &FilterBuildParams {
+                        ivf_min: usize::MAX,
+                        ..FilterBuildParams::default()
+                    },
+                )
+                .unwrap();
+                let mut q = vec![0i8; idx.stride];
+                for (j, v) in q[..dim].iter_mut().enumerate() {
+                    *v = if j % 2 == 0 { -128 } else { 127 };
+                }
+                let qsum: i32 = q.iter().map(|&v| i32::from(v)).sum();
+                let qnorm: i64 = q.iter().map(|&v| i64::from(v).pow(2)).sum();
+                let mut centroids = vec![0i8; lists * idx.stride];
+                for c in 0..lists {
+                    for (j, v) in centroids[c * idx.stride..c * idx.stride + dim]
+                        .iter_mut()
+                        .enumerate()
+                    {
+                        *v = if c % 3 == 0 {
+                            q[j]
+                        } else if c % 3 == 1 {
+                            0
+                        } else {
+                            !q[j]
+                        };
+                    }
+                }
+                let mut reference: Vec<(i64, usize)> = centroids
+                    .chunks_exact(idx.stride)
+                    .enumerate()
+                    .map(|(c, row)| {
+                        let distance = q
+                            .iter()
+                            .zip(row)
+                            .map(|(&a, &b)| (i64::from(a) - i64::from(b)).pow(2))
+                            .sum();
+                        (distance, c)
+                    })
+                    .collect();
+                reference.sort_unstable();
+                for copied in [false, true] {
+                    let members: Vec<u32> = (0..lists as u32).rev().collect();
+                    let ivf = LabelIvf {
+                        centroid_norms: centroid_norms(&centroids, idx.stride),
+                        centroids: centroids.clone(),
+                        offsets: (0..=lists as u32).collect(),
+                        rows: if copied {
+                            members
+                                .iter()
+                                .flat_map(|&id| idx.row(id).iter().copied())
+                                .collect()
+                        } else {
+                            Vec::new()
+                        },
+                        norms: if copied {
+                            members.iter().map(|&id| idx.norms[id as usize]).collect()
+                        } else {
+                            Vec::new()
+                        },
+                        members,
+                    };
+                    for (target, min_lists) in [(1, 1), (3, 1), (1, 5), (usize::MAX, 1)] {
+                        let count = target.max(min_lists).min(lists);
+                        let mut expected: Vec<(i64, u32)> = reference[..count]
+                            .iter()
+                            .map(|&(_, c)| {
+                                let id = ivf.members[c];
+                                let distance: i64 = q
+                                    .iter()
+                                    .zip(idx.row(id))
+                                    .map(|(&a, &b)| (i64::from(a) - i64::from(b)).pow(2))
+                                    .sum();
+                                (distance - qnorm, id)
+                            })
+                            .collect();
+                        expected.sort_unstable();
+                        expected.truncate(3);
+                        let mut top = TopK {
+                            k: 3,
+                            items: Vec::new(),
+                        };
+                        let scored = idx.search_ivf(
+                            &ivf,
+                            (&q, qsum),
+                            &[],
+                            &FilterSearchParams {
+                                target,
+                                min_lists,
+                                ..FilterSearchParams::default()
+                            },
+                            &mut top,
+                            &mut IvfScratch::default(),
+                        );
+                        assert_eq!(scored, count);
+                        assert_eq!(top.items, expected, "dim={dim}, lists={lists}, copied={copied}, target={target}, min_lists={min_lists}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn streamed_exact_matches_brute_at_batch_boundaries() {
+        for count in [0, 3, 4, 5, 127, 128, 129] {
+            for dim in [16, 20] {
+                for bitset_min in [1, usize::MAX] {
+                    let n = count + 2;
+                    let mut f = Fixture {
+                        data: (0..n * dim).map(|i| ((i / dim) % 9) as u8).collect(),
+                        indptr: vec![0],
+                        ids: Vec::new(),
+                        dim,
+                    };
+                    for id in 0..n {
+                        f.ids.push(0);
+                        if id < count {
+                            f.ids.push(1);
+                        }
+                        f.indptr.push(f.ids.len() as u64);
+                    }
+                    let mut idx = FilteredIndex::build(
+                        &f.data,
+                        dim,
+                        &f.indptr,
+                        &f.ids,
+                        3,
+                        &FilterBuildParams {
+                            ivf_min: usize::MAX,
+                            bitset_min,
+                            ..FilterBuildParams::default()
+                        },
+                    )
+                    .unwrap();
+                    let mut deleted = vec![false; n];
+                    let q = vec![4; dim];
+                    let mut out = Vec::new();
+                    for delete_first in [false, true] {
+                        if delete_first {
+                            assert!(idx.delete(0));
+                            deleted[0] = true;
+                        }
+                        for labels in [vec![1], vec![1, 1], vec![0, 1, 0], vec![2]] {
+                            idx.reset_stats();
+                            idx.search(
+                                &q,
+                                &labels,
+                                7,
+                                &FilterSearchParams {
+                                    brute_max: 0,
+                                    ..FilterSearchParams::default()
+                                },
+                                &mut out,
+                            )
+                            .unwrap();
+                            assert_eq!(out, brute(&f, &deleted, &q, &labels, 7));
+                            let expected_scored = (0..n)
+                                .filter(|&id| !deleted[id])
+                                .filter(|&id| {
+                                    let tags =
+                                        &f.ids[f.indptr[id] as usize..f.indptr[id + 1] as usize];
+                                    labels.iter().all(|label| tags.contains(label))
+                                })
+                                .count();
+                            assert_eq!(
+                                idx.stats(),
+                                FilterStats {
+                                    brute: 1,
+                                    ivf: 0,
+                                    scored: expected_scored as u64,
+                                }
+                            );
+                        }
+                        for labels in [vec![], vec![3]] {
+                            idx.search(&q, &labels, 7, &FilterSearchParams::exact(), &mut out)
+                                .unwrap();
+                            assert!(out.is_empty());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn streamed_exact_keeps_intersection_routing_boundary() {
+        let f = fixture(2_000, 20, 12, 701);
+        let idx =
+            FilteredIndex::build(&f.data, f.dim, &f.indptr, &f.ids, 0, &small_params()).unwrap();
+        let q = &f.data[..f.dim];
+        let labels = [0, 1];
+        let mut order = labels;
+        order.sort_by_key(|&label| (idx.label_len(label), label));
+        let rarest = order[0];
+        assert_ne!(idx.ivf_slot[rarest as usize], u32::MAX);
+        let mut matches = Vec::new();
+        idx.intersect(rarest, &order[1..], &mut matches, &mut Vec::new());
+        assert!(!matches.is_empty());
+        assert!(matches.len() < idx.label_len(rarest));
+        let mut out = Vec::new();
+        for brute_max in [matches.len() - 1, matches.len(), matches.len() + 1] {
+            idx.reset_stats();
+            idx.search(
+                q,
+                &labels,
+                10,
+                &FilterSearchParams {
+                    brute_max,
+                    target: usize::MAX,
+                    min_lists: 1,
+                    intersect_max: usize::MAX,
+                },
+                &mut out,
+            )
+            .unwrap();
+            assert_eq!(out, brute(&f, &vec![false; 2_000], q, &labels, 10));
+            assert_eq!(idx.stats().brute, u64::from(matches.len() <= brute_max));
+            assert_eq!(idx.stats().ivf, u64::from(matches.len() > brute_max));
+            assert_eq!(idx.stats().scored, matches.len() as u64);
+        }
+    }
+    #[test]
+    fn combined_parallel_batch_matches_serial_results_and_work() {
+        let f = fixture(4000, 17, 25, 4367);
+        let mut idx =
+            FilteredIndex::build(&f.data, f.dim, &f.indptr, &f.ids, 0, &small_params()).unwrap();
+        for id in (0..4000).step_by(7) {
+            idx.delete(id);
+        }
+        let qs = queries(&f, 256, 25, 7543);
+        let mut flat = Vec::new();
+        let mut offsets = vec![0];
+        let mut labels = Vec::new();
+        let params = FilterSearchParams {
+            brute_max: 40,
+            target: 128,
+            min_lists: 1,
+            intersect_max: 1000,
+        };
+        let mut expected = Vec::new();
+        let mut found = Vec::new();
+        idx.reset_stats();
+        for (q, ls) in &qs {
+            flat.extend_from_slice(q);
+            labels.extend_from_slice(ls);
+            offsets.push(labels.len() as u64);
+            idx.search(q, ls, 10, &params, &mut found).unwrap();
+            for j in 0..10 {
+                expected.push(found.get(j).map_or(-1, |&(_, id)| i64::from(id)));
+            }
+        }
+        let work = idx.stats();
+        idx.reset_stats();
+        let mut actual = vec![-1; expected.len()];
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(4)
+            .build()
+            .unwrap()
+            .install(|| {
+                idx.search_batch(&flat, &offsets, &labels, 10, &params, &mut actual)
+                    .unwrap();
+            });
+        assert_eq!(actual, expected);
+        assert_eq!(idx.stats(), work);
     }
 }

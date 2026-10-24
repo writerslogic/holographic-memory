@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "scope": "local synthetic filtered-search development; not official BigANN/YFCC scores",
+  "baseline_revision": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "implementation_sha256": "e15c07fcff6ceb2dae4f9d649ef835c425ff50182559a1da96b05a5173eb82ba",
+  "changes": [
+    "centroid-batch",
+    "batch-scratch",
+    "exact-stream"
+  ],
+  "excluded": [
+    "centroid-order",
+    "training-batch",
+    "routing-cutoff",
+    "routing-isolation"
+  ],
+  "measurement": {
+    "cpu": "Apple M4",
+    "threads": 1,
+    "blocks": 5,
+    "repeats_per_block": 5,
+    "fixture": "Synthetic uint8 labeled vectors; seed154499142; paired fresh processes; 512 queries per case.",
+    "full_id_and_work_equality": true,
+    "cases": {
+      "ivf_single": {
+        "paired_ratios": [
+          1.0090163792229752,
+          0.9904306828146248,
+          0.9916467247579176,
+          1.0136109822235546,
+          0.9906671466696167
+        ],
+        "geomean_ratio": 0.9990234222117785,
+        "paired_block_bootstrap_95": [
+          0.990768373828972,
+          1.0080637082860089
+        ],
+        "synthetic_recall": 0.72109375
+      },
+      "ivf_and": {
+        "paired_ratios": [
+          1.0443047053301275,
+          1.0355567877231207,
+          1.030543234385776,
+          1.0889181512335124,
+          1.035329516850748
+        ],
+        "geomean_ratio": 1.0467145008014895,
+        "paired_block_bootstrap_95": [
+          1.033457708107108,
+          1.068011262641941
+        ],
+        "synthetic_recall": 1.0
+      },
+      "exact_single": {
+        "paired_ratios": [
+          1.5512891992432065,
+          1.518532482772312,
+          1.5170062176640262,
+          1.5195489758026086,
+          1.525884582623229
+        ],
+        "geomean_ratio": 1.5263991678716635,
+        "paired_block_bootstrap_95": [
+          1.518124955002844,
+          1.5392794464609587
+        ],
+        "synthetic_recall": 1.0
+      },
+      "exact_and": {
+        "paired_ratios": [
+          1.0615568270647244,
+          1.071195080059837,
+          1.0639693596127453,
+          1.0632066627109582,
+          1.060811302891268
+        ],
+        "geomean_ratio": 1.0641414334986132,
+        "paired_block_bootstrap_95": [
+          1.0615882240780121,
+          1.0678140118744897
+        ],
+        "synthetic_recall": 1.0
+      },
+      "ivf_indirect_padded": {
+        "paired_ratios": [
+          0.9925259284970497,
+          1.0129169736469255,
+          1.0266032150697542,
+          0.987781322823316,
+          1.010955139125497
+        ],
+        "geomean_ratio": 1.006056114354321,
+        "paired_block_bootstrap_95": [
+          0.993709926261471,
+          1.017974652835807
+        ],
+        "synthetic_recall": 0.9927734375
+      },
+      "ivf_exhaustive": {
+        "paired_ratios": [
+          1.036480763085026,
+          1.0457155194825223,
+          1.0350215308259287,
+          0.9061974682376652,
+          1.0550875095336534
+        ],
+        "geomean_ratio": 1.0141147559454327,
+        "paired_block_bootstrap_95": [
+          0.9576488560726468,
+          1.0476050601169493
+        ],
+        "synthetic_recall": 1.0
+      }
+    }
+  },
+  "limits": [
+    "These are same-host synthetic component measurements, not official workload or leaderboard results.",
+    "Some approximate fixtures have recall below0.90; exact paths and IVF-AND have recall1.0.",
+    "Five independent process blocks provide limited uncertainty evidence.",
+    "The faster routing-cutoff experiments remain excluded because their complete regression-control gates failed."
+  ],
+  "evidence_package": "/Volumes/A/hms-coordination/headline-comparator-audit-20261024/improvements",
+  "evidence_sha256": {
+    "combined/change.patch": "030aa4c2f6d88b699e4c526099e634476602c681e37789bb3f1bcbf7c71e394c",
+    "measurements-summary-control-final-combined.json": "8eee394ddc8763882db6faefb29fdc968dbbf00928242a106a528168ea86f038",
+    "combined/final-experiment-plan.json": "7bce842be6bce94b93c5faa8c61cece1a0cbd907b9a30003c33002e5b5ebfa78"
+  },
+  "reproduction": "Use the frozen control-final and combined crate snapshots and campaign.py documented in the evidence package README; no remote work required.",
+  "source_tests": [
+    "centroid_batches_preserve_probe_order_at_tails_padding_and_ties",
+    "reused_scratch_preserves_results_across_routes_and_early_returns",
+    "batched_scratch_matches_independent_exact_results_after_deletions",
+    "streamed_exact_matches_brute_at_batch_boundaries",
+    "streamed_exact_keeps_intersection_routing_boundary",
+    "combined_parallel_batch_matches_serial_results_and_work"
+  ]
+}
