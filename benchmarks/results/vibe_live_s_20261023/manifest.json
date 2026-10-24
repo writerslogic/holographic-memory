@@ -1,0 +1,52 @@
+{
+  "state": "running",
+  "final_main_ci": {
+    "url": "https://github.com/writerslogic/holographic-memory/actions/runs/40070371238",
+    "observed_at_utc": "2026-10-24T06:54:00Z",
+    "status": "in_progress",
+    "publication_gate": "Withhold verified performance claims and draft PR result updates until CI succeeds; reassess run validity if it fails"
+  },
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "official_vibe_commit": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
+  "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "source_sha256": {
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60"
+  },
+  "official_protocol": {
+    "dataset_source": "https://huggingface.co/datasets/vector-index-bench/vibe",
+    "dataset_hashes": "Modal hms-bench-run:/vibe/run-s-20261023/plan.json",
+    "dataset_scope": "24 configured float datasets: 19 current and 5 deprecated; int8, uint8, binary, and chamfer datasets require unsupported HMS interfaces",
+    "splits": "Official HDF5 train corpus, test queries and truth; OOD learn queries supplied to fit_ood without access to learn neighbors by HMS",
+    "preprocessing": "Official VIBE HDF5 data and loader; normalized datasets use VIBE-normalized float32 rows",
+    "metrics": "VIBE recall@100 (distance tolerance 0.001), best QPS of five full query passes, build time, index size",
+    "recall_thresholds": [0.9, 0.95, 0.99],
+    "operation_sequence": "download and verify dataset; build each index; search all test queries for each query configuration five times; export summary",
+    "timing_boundaries": "VIBE runner times algo.query for each CPU query with time.perf_counter, excludes post-query truth-distance calculation, and retains best QPS of five passes",
+    "threads": "one pinned worker core per index; math-library thread variables set to 1",
+    "official_hardware": "Intel Xeon Gold 6230 with AVX-512, one core per algorithm, at least 16 GiB per used core recommended",
+    "official_limits": "24-hour timeout per individual algorithm run; no published fixed memory cap",
+    "modal_hardware": "Per-container CPU model, AVX-512, allocated memory, and process state are in the ledger and cpu records; HMS and competitors are scheduled in one dataset job, with possible container handovers",
+    "comparability": "Cross-hardware published Xeon QPS is diagnostic only; use same-container HMS/competitor measurements when they complete, and verify CPU identity after any handover"
+  },
+  "launch": {
+    "modal_app": "ap-y0mN2NRbZ8qFkrm5IEPNV6",
+    "plan_created_utc": "2026-10-24T06:50:53Z",
+    "volume": "hms-bench-run:/vibe/run-s-20261023",
+    "command": "modal run --detach benchmarks/vibe/modal_vibe.py --resume --hms-rev 12c80decb094d57ee13ba187a01bf1de8788ca2f --cap-usd 300 --hard-cap-usd 325",
+    "estimated_spend_cap_usd": 300,
+    "hard_spend_cap_usd": 325,
+    "console_log": "/Volumes/A/hms-coordination/public-bench/vibe-results/live-s-launch.log",
+    "status": "https://modal.com/apps/dcondrey/main/ap-y0mN2NRbZ8qFkrm5IEPNV6"
+  },
+  "official_sources": [
+    "https://github.com/vector-index-bench/vibe/blob/7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c/README.md",
+    "https://github.com/vector-index-bench/vibe/blob/7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c/docs/NEW_METHOD.md",
+    "https://github.com/vector-index-bench/vibe/blob/7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c/vibe/runner.py",
+    "https://github.com/vector-index-bench/vibe/blob/7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c/vibe/main.py"
+  ],
+  "draft_pr": "https://github.com/vector-index-bench/vibe/pull/15"
+}

@@ -13,7 +13,7 @@ per-run timeout) and single-threaded math libraries. HMS and the competitors are
 container that runs them (target-cpu=native / the image.def flags), because Modal containers land on
 different CPUs; the CPU model and AVX-512 status go into every ledger and result record.
 
-State lives on the "hms-bench-run" Volume under /vibe/<ns>/ (ns = "run", or "test" with --test):
+State lives on the "hms-bench-run" Volume under /vibe/<ns>/ (ns = LIVE_NS, or "test" with --test):
   data/<name>.hdf5 (+ .sha256)          dataset, verified against the Hugging Face LFS sha256
   ledger/<dataset>/<job>.json           one record per job; job = "hms@<rev>" or the competitor name
   results/<dataset>/<job>/results/...   VIBE's result tree for that job, synced every minute
@@ -62,7 +62,8 @@ DATASETS = [
 # Competitors run in addition to the published leaders, with the reason recorded in the ledger.
 NAMED = {"llama-128-ip": ["roargraph"], "yi-128-ip": ["roargraph"]}
 SMOKE = "smoke-64-cosine"  # generated in the container for --test
-MAX_MEM_GIB = 64
+MAX_MEM_GIB = 224
+LIVE_NS = "run-s-20261023"
 THRESHOLDS = ("0.9", "0.95", "0.99")
 # Competitors this image can build: algorithm -> (installer, micromamba env, needs AVX-512).
 INSTALLABLE = {
@@ -933,11 +934,11 @@ class Runner:
         VOL.commit()
 
 
-@app.function(image=image, volumes={"/vol": VOL}, cpu=(CPU_REQ, CPU_LIMIT), memory=MAX_MEM_GIB * 1024, timeout=FN_TIMEOUT_S,
+@app.function(image=image, volumes={"/vol": VOL}, cpu=(CPU_REQ, CPU_LIMIT), memory=8 * 1024, timeout=FN_TIMEOUT_S,
               retries=modal.Retries(max_retries=3, backoff_coefficient=2.0, initial_delay=60.0))
 def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bool, cap: float, hard_cap: float) -> dict:
     """All jobs of one dataset, HMS first. Memory is set per call through with_options."""
-    ns = "test" if test else "run"
+    ns = "test" if test else LIVE_NS
     VOL.reload()
     r = Runner(ns, dataset, hms_rev, test, cap, hard_cap, hms_only)
     r.mem_gib = meta.get("mem_gib", 8)
@@ -1068,7 +1069,7 @@ def status_report(ns: str) -> None:
 @app.local_entrypoint()
 def main(resume: bool = False, status: bool = False, hms_rev: str = "", hms_only: bool = False, retry_failed: bool = False,
          datasets: str = "", test: bool = False, replan: bool = False, cap_usd: float = 140.0, hard_cap_usd: float = 150.0):
-    ns = "test" if test else "run"
+    ns = "test" if test else LIVE_NS
     if status:
         status_report(ns)
         return
