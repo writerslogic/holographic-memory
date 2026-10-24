@@ -1,0 +1,29 @@
+{
+  "source_base_commit": "aa734fe7941c75dd3fb175871db24f6622cade61",
+  "python": "3.14.7",
+  "python_implementation": "CPython",
+  "numpy": "2.5.4",
+  "uv": "0.12.10 (3c979abda 2026-09-04 aarch64-apple-darwin)",
+  "cpu_class": "Apple M-series",
+  "os": "macOS 27.0",
+  "os_build": "26A428",
+  "architecture": "arm64",
+  "blas_backend": "Apple Accelerate",
+  "numpy_reported_blas_version": "unknown",
+  "frameworks": {
+    "Accelerate": "1.11",
+    "vecLib": "3.11"
+  },
+  "blas_version_limit": "NumPy reports no more specific BLAS version; framework versions and OS build identify the system implementation.",
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "2",
+    "MKL_NUM_THREADS": "2",
+    "VECLIB_MAXIMUM_THREADS": "2",
+    "OMP_NUM_THREADS": "2"
+  },
+  "effective_blas_threads": "not independently measured",
+  "load_average_during_runs": "not recorded",
+  "timing_limit": "Concurrent local work; raw timing fields are exploratory observations, not retention, throughput, or production latency evidence.",
+  "environment_recorded_after_runs": true,
+  "official_data_accessed": false
+}

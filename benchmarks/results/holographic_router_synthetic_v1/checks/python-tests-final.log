@@ -1,0 +1,18 @@
+test_interior_neighbors_and_antipodal_shell (test_hybrid.HybridTests.test_interior_neighbors_and_antipodal_shell) ... ok
+test_reserved_witness_slots_and_phase_fill (test_hybrid.HybridTests.test_reserved_witness_slots_and_phase_fill) ... ok
+test_witness_boundaries_ties_and_uniqueness (test_hybrid.HybridTests.test_witness_boundaries_ties_and_uniqueness) ... ok
+test_correlation_matches_complex_phase_readout (test_probe.PhaseTests.test_correlation_matches_complex_phase_readout) ... ok
+test_delete_replace_reuse_matches_full_resummation (test_probe.PhaseTests.test_delete_replace_reuse_matches_full_resummation) ... ok
+test_density_can_reverse_nearest_neighbor_ranking (test_probe.PhaseTests.test_density_can_reverse_nearest_neighbor_ranking) ... ok
+test_invalid_values_are_rejected_before_update (test_probe.PhaseTests.test_invalid_values_are_rejected_before_update) ... ok
+test_oracle_coverage_and_ties (test_probe.PhaseTests.test_oracle_coverage_and_ties) ... ok
+test_population_boundaries_and_failed_update_are_atomic (test_probe.PhaseTests.test_population_boundaries_and_failed_update_are_atomic) ... ok
+test_rare_case_contains_its_registered_true_neighbors (test_probe.PhaseTests.test_rare_case_contains_its_registered_true_neighbors) ... ok
+test_only_documented_import_cleanup_can_match_archived_source (test_recorded_source.RecordedSourceTests.test_only_documented_import_cleanup_can_match_archived_source) ... ok
+test_wrong_archive_or_expected_hash_cannot_authorize_cleanup (test_recorded_source.RecordedSourceTests.test_wrong_archive_or_expected_hash_cannot_authorize_cleanup) ... ok
+test_joint_reference_rotation_preserves_every_block_score (test_reference.ReferenceTests.test_joint_reference_rotation_preserves_every_block_score) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.025s
+
+OK

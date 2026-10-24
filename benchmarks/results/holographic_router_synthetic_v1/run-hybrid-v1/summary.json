@@ -1,0 +1,31 @@
+{
+  "plan_sha256": "166a098acf720d6b0eac40de3b8eb6b9e5d844f3dff0262c6aca2da2a00d5bb4",
+  "source_sha256": "bda5f826e8f723bcaea91a00c74a790581f8827ae069376b377635e53f21011a",
+  "base_probe_sha256": "128ba6a15dd417e6aaf1e79e69451400b68e4f8031fb6720d2378ece9027654a",
+  "cases_sha256": "d7775a5cfbc1113fa57eff7d5fe59394d2ac226f7ce9c9896146d92c6ad4e4b4",
+  "cases": 30,
+  "decision": {
+    "minimum_structured_coverage_at4": 1.0,
+    "worst_delta_vs_better_control_at4": -0.13749999999999996,
+    "mean_delta_vs_better_control_by_scenario": {
+      "coherent": 0.0,
+      "multimodal": 0.0,
+      "mixed": -0.05711805555555555,
+      "rare": 0.0,
+      "interior_rare": 0.0
+    },
+    "eligible": false
+  },
+  "elapsed_seconds_exploratory": 2.090819625009317,
+  "ru_maxrss": 70549504,
+  "ru_maxrss_units": "bytes",
+  "numpy": "2.5.4",
+  "official_data_accessed": false,
+  "timing_scope": "Scoring only; block sorting excluded from all methods; local exploratory timing",
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "2",
+    "MKL_NUM_THREADS": "2",
+    "VECLIB_MAXIMUM_THREADS": "2",
+    "OMP_NUM_THREADS": "2"
+  }
+}

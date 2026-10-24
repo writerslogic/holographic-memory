@@ -1,0 +1,134 @@
+   Compiling holographic-memory v0.6.1 (<worktree>)
+    Finished `test` profile [optimized] target(s) in 52.86s
+     Running unittests src/lib.rs (<private-target>/debug/deps/holographic_memory-a3047d864ef09e46)
+
+running 127 tests
+test core::qgraph::fastscan::tests::block_scan_microbenchmark ... ignored, microbenchmark: run in release with --ignored --nocapture
+test core::qgraph::adjacency::tests::rows_mut_reaches_exactly_the_listed_vertices ... ok
+test core::qgraph::build_kernels::tests::dot4_is_bit_identical_to_dot ... ok
+test core::qgraph::kernels::tests::dot_kernel_microbench ... ignored, microbenchmark: run in release with --ignored --nocapture
+test core::qgraph::kernels::tests::dispatched_and_float_dots_match_scalar ... ok
+test core::qgraph::kernels::tests::dot_matches_naive ... ok
+test core::qgraph::fastscan::tests::scan_matches_direct_sum_at_every_width ... ok
+test core::qgraph::kernels::tests::microbench_fwht ... ignored
+test core::qgraph::kernels::tests::microbench_i8_x4 ... ignored
+test core::qgraph::kernels::tests::dispatched_i8_x4_matches_scalar ... ok
+test core::qgraph::kernels::tests::query_code_reconstructs_bit_sums ... ok
+test core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored, microbenchmark: run in release with --ignored --nocapture
+test core::qgraph::kernels::tests::rotation_preserves_inner_products ... ok
+test core::qgraph::kernels::tests::popcount_kernels_match_scalar_at_every_width ... ok
+test core::qgraph::kernels::tests::fused_fwht_returns_the_reference_bits_at_every_size ... ok
+test core::qgraph::filter::tests::rejects_malformed_input ... ok
+test core::qgraph::projection::tests::invalid_inputs_leave_the_graph_unchanged ... ok
+test core::qgraph::projection::tests::invalid_queries_are_rejected_before_build_including_unused_rows ... ok
+test core::qgraph::projection::tests::absent_queries_preserve_serialized_bytes_even_with_unused_arguments ... ok
+test core::qgraph::adjacency::tests::par_append_reads_the_lists_from_before_any_append ... ok
+test core::qgraph::kernels::tests::every_integer_kernel_matches_scalar ... ok
+test core::qgraph::filter::tests::batch_matches_single_and_pads_with_minus_one ... ok
+test core::qgraph::projection::tests::singleton_training_is_valid_and_adds_no_edges ... ok
+test core::qgraph::projection::tests::query_neighbor_bridge_preserves_old_edges_and_upper_layers ... ok
+test core::qgraph::projection::tests::pooling_is_deterministic_and_independent_of_query_order ... ok
+test core::qgraph::projection::tests::asymmetric_mips_neighbors_match_original_variable_norm_inner_products ... ok
+test core::qgraph::rerank::tests::i4_row_not_half_the_query_panics - should panic ... ok
+test core::qgraph::rerank::tests::i4_row_with_a_partial_block_panics - should panic ... ok
+test core::qgraph::rerank::tests::i8_row_shorter_than_the_query_panics - should panic ... ok
+test core::qgraph::tests::angular_rows_normalize_at_extreme_magnitudes ... ok
+test core::qgraph::projection::tests::neighbor_count_and_projected_degree_bounds ... ok
+test core::qgraph::rerank::tests::rerank_kernels_return_the_scalar_bits ... ok
+test core::qgraph::projection::tests::block_matrix_neighbors_match_scalar_angular_and_euclidean_metrics ... ok
+test core::qgraph::tests::build_visited_records_each_sparse_word_once ... ok
+test core::qgraph::tests::build_visited_reset_workload ... ignored, synthetic visited-reset timing diagnostic; run in isolation with --release
+test core::qgraph::projection::tests::optional_training_matches_projection_of_independent_neighbors ... ok
+test core::qgraph::tests::build_visited_reuses_words_across_resets_and_graph_sizes ... ok
+test core::qgraph::filter::tests::deletes_are_never_returned_and_rest_stays_exact ... ok
+test core::qgraph::tests::prune_merged_matches_prune ... ok
+test core::qgraph::projection::tests::untrained_optional_builds_preserve_legacy_cache_bytes ... ok
+test core::qgraph::projection::tests::trained_graph_cache_is_rejected_and_encoded_index_round_trips ... ok
+test core::qgraph::tests::edge_estimator_is_unbiased_over_rotations ... ok
+test core::qgraph::update::delta::tests::delta_search_live_set ... ignored, development delta search timing measurement
+test core::qgraph::projection::tests::caller_neighbors_match_limited_training_on_any_thread_count ... ok
+test core::qgraph::filter::tests::exact_setting_equals_filtered_brute_force ... ok
+test core::qgraph::update::delta_rows::tests::spilled_rows_keep_bits_and_detach_on_append ... ok
+test core::qgraph::update::merge::tests::replacement_entry_large_live_set ... ignored, development memory and timing measurement
+test core::qgraph::update::format::tests::rows_past_the_last_slot_are_errors ... ok
+test core::qgraph::update::batch_tests::rejected_batches_stage_nothing ... ok
+test core::qgraph::update::delta::tests::frontier_rejection_preserves_ties_and_deleted_routing ... ok
+test core::qgraph::update::delta::tests::cached_norms_preserve_score_bits_and_delta_results ... ok
+test core::qgraph::update::tests::boundaries_and_atomic_replace ... ok
+test core::qgraph::update::merge::tests::replacement_entry_matches_copied_rows_and_tie_order ... ok
+test core::qgraph::tests::exact_budget_caps_work ... ok
+test core::qgraph::update::tests::close_unlocks_even_when_a_descriptor_is_inherited ... ok
+test core::qgraph::update::tests::consolidated_id_width_switches_at_the_three_byte_limit ... ok
+test core::qgraph::update::tests::angular_updates_reopen_and_torn_unpublished_graph ... ok
+test core::qgraph::update::tests::consolidation_live_set_peak ... ignored, development consolidation memory and timing measurement
+test core::qgraph::update::tests::clustered_deletes_retry_without_global_tombstone_budget ... ok
+test core::qgraph::update::tests::buffered_search_matches_owned_results_across_updates_and_consolidation ... ok
+test core::qgraph::update::tests::incomplete_streamed_rows_preserve_the_previous_file ... ok
+test core::qgraph::tests::recall_on_clustered_data ... ok
+test core::qgraph::update::tests::interrupted_consolidation_keeps_spilled_rows_searchable_and_writable ... ok
+test core::qgraph::update::tests::log_and_dimension_limit_boundaries ... ok
+test core::qgraph::update::tests::batch_insert_is_atomic_reachable_and_survives_reopen ... ok
+test core::qgraph::update::tests::killed_commit_and_consolidation_recover_complete_generations ... ok
+test core::qgraph::tests::build_reproduces_the_pinned_graphs ... ok
+test core::qgraph::update::tests::consolidation_interruption_recovers_committed_state ... ok
+test core::qgraph::update::tests::deterministic_streaming_model_survives_generations_and_replay_twice ... ok
+test core::qgraph::update::tests::pending_batch_is_not_persisted_and_empty_base_accepts_inserts ... ok
+test core::qgraph::update::tests::readers_continue_while_consolidation_performs_io ... ok
+test core::qgraph::update::tests::merged_deleted_entry_preserves_the_pinned_generation ... ok
+test core::qgraph::tests::build_and_search_are_deterministic ... ok
+test core::qgraph::update::tests::reordered_compressed_base_preserves_external_ids ... ok
+test core::qgraph::update::tests::streaming_crash_child ... ok
+test core::qgraph::update::tests::streaming_diagnostics_preserve_search_and_measure_live_generations ... ok
+test core::qgraph::update::tests::repeated_replacement_keeps_delta_vertices_reachable ... ok
+test core::qgraph::update::tests::scratch_reuse_distinguishes_dimensions_with_equal_padding ... ok
+test core::qgraph::update::tests::uncertain_append_requires_reopen_and_writer_is_exclusive ... ok
+test core::qgraph::update::tests::untrusted_headers_and_rows_are_rejected ... ok
+test core::qgraph::tests::build_codes_leave_the_graph_unchanged ... ok
+test core::qgraph::vertex::file::tests::a_backing_shorter_than_the_header_is_an_error ... ok
+test core::qgraph::update::tests::vector_format_golden_and_drift_gate ... ok
+test core::qgraph::update::tests::consolidated_base_matches_static_build_at_equal_params ... ok
+test core::qgraph::vertex::file::tests::prepared_rows_reject_incomplete_excess_and_invalid_matrices ... ok
+test core::qgraph::update::tests::torn_last_batch_at_every_byte_and_checksum_corruption ... ok
+test core::qgraph::update::tests::torn_batched_insert_frame_preserves_only_complete_commits ... ok
+test core::qgraph::update::tests::mixed_search_reproduces_pinned_results_and_encoded_generations ... ok
+test core::qgraph::vertex::file::tests::damaged_delta_offsets_are_errors ... ok
+test core::qgraph::vertex::serving_tests::connected_search_fingerprints_and_evaluation_counts ... ok
+test core::qgraph::vertex::serving_tests::direct_ip_preserves_magnitudes_zero_queries_and_topology ... ok
+test core::qgraph::vertex::serving_tests::direct_ip_removes_the_128_dimension_stride_cliff ... ok
+test core::qgraph::vertex::gated::tests::gate_is_a_prefix_of_the_fixed_rerank ... ok
+test core::qgraph::vertex::serving_tests::disconnected_graph_returns_the_requested_number_of_distinct_neighbors ... ok
+test core::qgraph::vertex::serving_tests::recovery_expands_the_seed_and_counts_its_score ... ok
+test core::qgraph::vertex::serving_tests::recovery_reuses_marks_and_fused_traces_across_epoch_rollover ... ok
+test core::qgraph::vertex::serving_tests::reservoir_includes_upper_layer_scores_once ... ok
+test core::qgraph::vertex::serving_tests::reservoir_recovers_a_beam_rejection_without_changing_expansions ... ok
+test core::qgraph::vertex::serving_tests::disconnected_blocks_retain_enough_expansions_with_stopping ... ok
+test core::qgraph::vertex::serving_tests::singleton_search_bounds_k_without_recovery ... ok
+test core::qgraph::vertex::file::tests::damaged_files_are_errors ... ok
+test core::qgraph::vertex::file::tests::save_leaves_a_sibling_temp_name_alone ... ok
+test core::qgraph::vertex::serving_tests::retention_preserves_traversal_with_stopping_and_batch_scoring ... ok
+test core::qgraph::vertex::tests::compact_lists_preserve_order_search_and_persisted_bytes ... ok
+test core::qgraph::vertex::file::tests::saved_index_opens_with_identical_results_in_every_residency ... ok
+test core::qgraph::update::tests::consolidation_recall_on_50k_and_physical_deletion ... ok
+test core::qgraph::update::tests::merged_consolidation_interruption_recovers_committed_state ... ok
+test core::qgraph::vertex::tests::graph_cache_lengths_are_bounded_by_the_file ... ok
+test core::qgraph::vertex::tests::block_estimates_track_exact_inner_products ... ok
+test core::qgraph::vertex::tests::euclidean_index_limits ... ok
+test core::qgraph::vertex::tests::microbench_pool ... ignored
+test core::qgraph::vertex::tests::pool_bits_follow_the_bool_pool ... ok
+test core::qgraph::vertex::tests::quantization_error_is_bounded ... ok
+test core::qgraph::vertex::tests::delta_coded_adjacency_round_trips ... ok
+test core::qgraph::vertex::tests::graph_cache_round_trips_and_rejects_mismatches ... ok
+test core::qgraph::vertex::tests::block_codes_keep_recall ... ok
+test core::qgraph::vertex::tests::invalid_inputs_are_errors_that_name_the_cause ... ok
+test core::qgraph::vertex::tests::visited_bits_reset_between_searches ... ok
+test core::qgraph::vertex::tests::build_and_search_are_deterministic ... ok
+test core::qgraph::vertex::tests::recall_on_clustered_data ... ok
+test core::qgraph::vertex::tests::euclidean_index_finds_euclidean_neighbours ... ok
+test core::qgraph::vertex::tests::reordered_aligned_index_returns_the_same_ids ... ok
+test core::qgraph::vertex::tests::screen_is_transparent_at_a_wide_margin ... ok
+test core::qgraph::vertex::tests::refused_huge_page_advice_changes_nothing_but_the_counter ... ok
+test core::qgraph::vertex::file::tests::streamed_and_mapped_builds_preserve_exact_vertex_bytes ... ok
+test core::qgraph::update::tests::random_updates_match_exact_and_reopen ... ok
+test core::qgraph::update::tests::merged_consolidation_tracks_rebuild_recall_across_churn ... ok
+
+test result: ok. 117 passed; 0 failed; 10 ignored; 0 measured; 456 filtered out; finished in 18.91s
