@@ -89,7 +89,7 @@
   "llama_verified_standing": "llama-128-ip-standing.json",
   "repair_mode": "Pre-export hook in original function; post-return watcher stopped before execution",
   "current_runner_sha256": "f02152415e19d5a0149bb3cc9c4541715738fed9a5f62989c42b9d5951bed8a6",
-  "latest_snapshot": "snapshot-20261024T1200Z.json",
+  "latest_snapshot": "snapshot-20261024T1225Z.json",
   "additional_launches": [
     {
       "app_id": "ap-OfE3vcEhiilyNzkxav7UnY",
@@ -124,8 +124,13 @@
     "coco-nomic-768-normalized": {
       "standing": "coco-nomic-768-normalized-standing.json",
       "receipt": "coco-nomic-768-normalized-artifact-receipt.json"
+    },
+    "yandex-200-cosine": {
+      "standing": "yandex-200-cosine-standing.json",
+      "receipt": "yandex-200-cosine-artifact-receipt.json"
     }
   },
   "collector_sha256": "a2524be34d85e19783011e6c129e2fe80fd69091b91008da32c1ca2e260c0b74",
-  "draft_pr_update_blocker": "Connected integration403 resource inaccessible; gh stored auth401; neither GH_TOKEN nor GITHUB_TOKEN overrides present"
+  "draft_pr_update_blocker": "Connected integration403 resource inaccessible; gh stored auth401; neither GH_TOKEN nor GITHUB_TOKEN overrides present",
+  "arxiv_hms_state": "done180/180;Glass active in different container"
 }

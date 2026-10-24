@@ -1,0 +1,36 @@
+{
+  "dataset": "yandex-200-cosine",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "final_states": {
+    "glass": "done",
+    "hms@12c80decb094": "done",
+    "_download": "done"
+  },
+  "measurement_containers": {
+    "glass": [
+      "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+    ],
+    "hms": [
+      "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+    ]
+  },
+  "generated": "2026-10-24T12:17:59Z",
+  "validations": {
+    "glass": {
+      "done": true,
+      "expected": 320,
+      "markers": 320,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 320
+    },
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+ "avx512": true,
+ "best_qps_at_recall": {
+  "hms": {
+   "0.90": {
+    "build_time": 1759.1556632518768,
+    "index_size": 2206080.0,
+    "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=400, code_bits=8)|64_400",
+    "qps": 6077.765840645543,
+    "recall": 0.98648
+   },
+   "0.95": {
+    "build_time": 1759.1556632518768,
+    "index_size": 2206080.0,
+    "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=400, code_bits=8)|64_400",
+    "qps": 6077.765840645543,
+    "recall": 0.98648
+   },
+   "0.99": {
+    "build_time": 1759.1556632518768,
+    "index_size": 2206080.0,
+    "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=128, rerank=100, code_bits=8)|128_100",
+    "qps": 5154.267696319086,
+    "recall": 0.99302
+   }
+  }
+ },
+ "container": "ta-01M5PKP35HA4E538A8D193RJJR",
+ "cpu_model": "AuthenticAMD family 26 model 2",
+ "dataset": "arxiv-nomic-768-normalized",
+ "flags_sha": "9bb32558a84f",
+ "generated": "2026-10-24T11:58:20Z",
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "k": 100,
+ "nproc": 8,
+ "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}

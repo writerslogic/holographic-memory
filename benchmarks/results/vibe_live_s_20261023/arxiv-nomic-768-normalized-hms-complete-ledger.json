@@ -1,0 +1,79 @@
+{
+ "algorithm": "hms",
+ "attempts": 4,
+ "avx512": true,
+ "child_cpu_s": 8839.3,
+ "chosen_why": [
+  "HMS runs on every dataset"
+ ],
+ "cleaned": {
+  "removed": []
+ },
+ "container_id": "ta-01M5PKP35HA4E538A8D193RJJR",
+ "cpu_model": "AuthenticAMD family 26 model 2",
+ "dataset": "arxiv-nomic-768-normalized",
+ "end": "2026-10-24T11:58:13Z",
+ "expected": 180,
+ "failures": 0,
+ "flags_sha": "9bb32558a84f",
+ "heartbeat": 1792843080.8221579,
+ "history": [
+  {
+   "attempt": 1,
+   "container": "ta-01M5PATHEJWVKG623AM049J08R",
+   "end": "2026-10-24T07:20:09Z",
+   "outcome": "interrupted (heartbeat 1134s old)",
+   "progress": false
+  },
+  {
+   "attempt": 2,
+   "container": "ta-01M5PBDFYBZ61M5ZQESDPGNYRR",
+   "end": "2026-10-24T08:03:11Z",
+   "outcome": "interrupted (heartbeat 1164s old)",
+   "progress": false
+  },
+  {
+   "attempt": 3,
+   "container": "ta-01M5PDWKT94KF71BSTSRHMKBCR",
+   "end": "2026-10-24T09:02:43Z",
+   "outcome": "interrupted (heartbeat 1110s old)",
+   "progress": false
+  },
+  {
+   "attempt": 4,
+   "container": "ta-01M5PKP35HA4E538A8D193RJJR",
+   "end": "2026-10-24T11:58:13Z",
+   "markers": 180,
+   "outcome": "exit 0"
+  }
+ ],
+ "hms_only": true,
+ "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "job": "hms@12c80decb094",
+ "log_path": "/vol/vibe/run-s-20261023/logs/arxiv-nomic-768-normalized/hms@12c80decb094.log",
+ "markers_at_start": 0,
+ "native_build_receipt": "/vol/vibe/run-s-20261023/cpu/native-ta-01M5PKP35HA4E538A8D193RJJR.json",
+ "nonpreemptible": true,
+ "nproc": 8,
+ "price_multiplier": 3,
+ "result_path": "/vol/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results",
+ "retry_resets": [
+  {
+   "at": "2026-10-24T09:28:13Z",
+   "container": "ta-01M5PKP35HA4E538A8D193RJJR",
+   "previous_failures": 3,
+   "price_multiplier": 3
+  }
+ ],
+ "start": "2026-10-24T09:28:15Z",
+ "state": "done",
+ "validation": {
+  "done": true,
+  "expected": 180,
+  "markers": 180,
+  "problems": [],
+  "test_count": 1000,
+  "valid": 180
+ },
+ "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}
