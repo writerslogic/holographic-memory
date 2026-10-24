@@ -1,0 +1,26 @@
+   Compiling subtle v2.6.1
+   Compiling ciborium v0.2.2
+   Compiling curve25519-dalek v5.0.0
+   Compiling rustls-pki-types v1.15.1
+   Compiling holographic-memory v0.6.1 (/Volumes/A/holographic-memory)
+   Compiling rcgen v0.14.10
+   Compiling criterion v0.8.2
+   Compiling nalgebra v0.35.0
+   Compiling ed25519-dalek v3.0.0
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.74s
+     Running unittests src/lib.rs (/Volumes/C/rust-target/debug/deps/holographic_memory-c6c070d5cd7a323f)
+
+running 10 tests
+test core::phase_graph::tests::directed_triple_does_not_assert_its_reverse ... ok
+test core::phase_graph::tests::factored_queries_match_exhaustive_scoring ... ok
+test core::phase_graph::tests::rejects_overflowing_histogram_dimensions - should panic ... ok
+test core::phase_graph::tests::repeated_relation_path_preserves_direction ... ok
+test core::phase_graph::tests::replay_is_bit_exact_and_tamper_evident ... ok
+test core::phase_graph::tests::multi_hop_path_reasoning ... ok
+test core::phase_graph::tests::retrieves_object_and_subject ... ok
+test core::phase_graph::tests::sha256_digest_is_deterministic_and_tamper_evident ... ok
+test core::phase_graph::tests::stored_triple_scores_above_absent ... ok
+test core::phase_graph::tests::retrieval_holds_under_load ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 661 filtered out; finished in 0.08s
+

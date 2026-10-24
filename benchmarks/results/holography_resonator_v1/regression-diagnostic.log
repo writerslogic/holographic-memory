@@ -1,0 +1,24 @@
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-resonator-20261024)
+    Finished `test` profile [optimized + debuginfo] target(s) in 21.64s
+     Running tests/phase_resonator_regression.rs (target/debug/deps/phase_resonator_regression-cdb03eba5abe0a19)
+
+running 1 test
+test packed_phase_width_and_table_cutoff_boundaries_match_baseline ... FAILED
+
+failures:
+
+---- packed_phase_width_and_table_cutoff_boundaries_match_baseline stdout ----
+
+thread 'packed_phase_width_and_table_cutoff_boundaries_match_baseline' (16739192) panicked at tests/../benchmarks/research/phase_resonator/cases.rs:89:9:
+assertion `left == right` failed: similarity: (Scenario { dim: 1, n: 65535, factors: 2, entries: 3, max_iter: 6, seed: 171 }, false, 0, "expanded")
+  left: 4607076912893098678
+ right: 4607076912893098679
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    packed_phase_width_and_table_cutoff_boundaries_match_baseline
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test phase_resonator_regression`

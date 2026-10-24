@@ -1,0 +1,17 @@
+{
+  "baseline": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: aarch64-apple-darwin\nrelease: 1.96.0\nLLVM version: 22.1.2",
+  "driver_sha256": "de1575691d2706b4414cde5232f02d0020fd0806868f5bff43fc3a802085ed4c",
+  "source_sha256": {
+    "before": {
+      "phase_graph": "0988e85d6d9c54a246b25a4fc709557e50b9c67f8199dd587363b806c584b2ae",
+      "entangled": "ff875528ebcb6fcbe1eb289be0a31bfe455ed11543f09a038c284109a9c62d6b"
+    },
+    "after": {
+      "phase_graph": "f2e98f17bfb2bc22d0e7060d8a4aab2698f998453f8277e676270261560947e3",
+      "entangled": "ff875528ebcb6fcbe1eb289be0a31bfe455ed11543f09a038c284109a9c62d6b"
+    }
+  },
+  "note": "Standalone actual graph/hash; FastMap uses std HashMap in both builds. Query loops do not access this membership map. Timings require an otherwise idle host."
+}

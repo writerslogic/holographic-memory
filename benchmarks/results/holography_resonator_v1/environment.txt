@@ -1,0 +1,19 @@
+Recorded: 2026-10-24
+Baseline commit: 12c80dec
+Platform: aarch64-apple-darwin
+CPU: Apple M4
+Model: Mac16,3
+RAM: 34359738368 bytes
+Reported L2 cache: 4194304 bytes
+OS: macOS 27.0 (26A428)
+rustc: 1.96.0 (ac68faa20 2026-05-25)
+rustc commit: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96
+LLVM: 22.1.2
+Cargo: 1.96.0 (30a34c682 2026-05-25)
+Build flags: --edition=2021 -C opt-level=3 -C lto -C codegen-units=1
+Worktree: /Volumes/A/.hms-holography-resonator-20261024
+CARGO_BUILD_JOBS: 2
+CARGO_TARGET_DIR: /Volumes/A/.hms-holography-resonator-20261024/target
+Timing limitation: other agents and unrelated external Rust builds were active
+on this shared host. These agent measurements are exploratory. Even a subsequent
+run serialized within this task does not establish exclusive host access.

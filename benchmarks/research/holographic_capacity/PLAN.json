@@ -1,0 +1,15 @@
+{
+  "purpose": "Audit an existing synthetic capacity claim, including its decoder cost; no production promotion from this screen",
+  "d": 1248,
+  "m": 352,
+  "ell": 64,
+  "column_blocks": 32,
+  "coupling_width": 8,
+  "seeds": [101, 211, 307],
+  "relative_awgn": [0.0, 0.1],
+  "iterations": 300,
+  "methods": ["dense", "coupled", "sharded"],
+  "controls": "Identical labels, signal dimension, number of facts and alphabet. Each encoder uses existing Gaussian builder and existing block AMP. Sharded means width 1 with 32 independent blocks. All allocated matrices and decoder metadata count. Noise vector is shared within a seed and scaled to each signal standard deviation.",
+  "exclusions": "No official data, retrieval quality inference, dropout experiment, tuning, new capacity theorem, or production backend. This is three synthetic seeds, not a deployment evaluation. Existing dropout helper changes d without renormalizing its retained design matrix and is not used here.",
+  "interpretation": "Compare all methods on both accuracy and allocated design bytes. Signal-only storage is not total memory. Count nonzero matrix payload separately as a possible structured-storage optimization, not measured resident memory. Report exact label bit payload as a task-scope reference, not a soft-readout competitor. Latencies are exploratory under concurrent work."
+}

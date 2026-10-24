@@ -1,0 +1,4 @@
+Finished fresh-process trial 1/3
+Finished fresh-process trial 2/3
+Finished fresh-process trial 3/3
+Wrote benchmarks/results/holography_phase_substrate_v1/serial.json

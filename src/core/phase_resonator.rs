@@ -17,9 +17,9 @@
 //! real resonator on a non-self-inverse phase substrate. §20 of
 //! `docs/PREREGISTRATION-binding-readout.md` shows it factors 3-way products across
 //! the capacity knee (search spaces to ~110k at D=1024) at the SAME accuracy as a
-//! float FHRR resonator, down to 4-bit phase -- i.e. deterministic, replay-exact
-//! factorization at no capacity cost. The factorization itself is a float query;
-//! the stored substrate stays integer/replay-verifiable.
+//! float FHRR resonator in those experiments, down to 4-bit phase. Factorization
+//! is a floating-point query; the stored phase substrate stays integer and
+//! replay-verifiable. Cross-platform bitwise float equivalence is not promised.
 //!
 //! Entry points: [`PhaseResonator`] builds a reusable index over a fixed set of
 //! factor codebooks (phasors precomputed once, then decode many composites) and is
@@ -32,6 +32,8 @@ use std::f64::consts::TAU;
 /// Iteration parameters for resonator factorization.
 pub struct ResonatorConfig {
     pub max_iter: usize,
+    /// Reserved for compatibility. Convergence currently requires three rounds
+    /// of unchanged factor indices, independent of this value.
     pub convergence_threshold: f64,
 }
 
@@ -54,6 +56,7 @@ pub struct FactorResult {
 }
 
 /// Complex vector as parallel real/imaginary parts.
+#[derive(Clone)]
 struct Cx {
     re: Vec<f64>,
     im: Vec<f64>,
@@ -68,94 +71,287 @@ impl Cx {
     }
 
     /// Unit phasors for a phase vector.
-    fn from_phases(v: &PhaseHVec) -> Self {
-        let n = v.n() as f64;
-        let re = v
-            .phases()
-            .iter()
-            .map(|&p| (TAU * p as f64 / n).cos())
-            .collect();
-        let im = v
-            .phases()
-            .iter()
-            .map(|&p| (TAU * p as f64 / n).sin())
-            .collect();
-        Self { re, im }
+    fn from_phases(v: &PhaseHVec, table: &PhaseTable) -> Self {
+        if table.values.is_none() {
+            let n = v.n() as f64;
+            return Self {
+                re: v
+                    .phases()
+                    .iter()
+                    .map(|&p| (TAU * p as f64 / n).cos())
+                    .collect(),
+                im: v
+                    .phases()
+                    .iter()
+                    .map(|&p| (TAU * p as f64 / n).sin())
+                    .collect(),
+            };
+        }
+        let mut out = Self::zeros(v.dim());
+        for (d, &p) in v.phases().iter().enumerate() {
+            (out.re[d], out.im[d]) = table.get(p as usize);
+        }
+        out
     }
 
     /// Snap each component to a unit phasor, quantizing its phase to `n` levels
     /// (the qFHRR recover step). Mirrors `PhaseHVec::bundle`'s recovery.
-    fn snap(&mut self, n: u32) {
+    fn snap(&mut self, table: &PhaseTable) {
+        let n = table.n;
         for d in 0..self.re.len() {
             let ang = self.im[d].atan2(self.re[d]);
             let idx = (ang / TAU * n as f64).round() as i64;
-            let p = TAU * idx.rem_euclid(n as i64) as f64 / n as f64;
-            self.re[d] = p.cos();
-            self.im[d] = p.sin();
+            (self.re[d], self.im[d]) = table.get(idx.rem_euclid(n as i64) as usize);
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct CxView<'a> {
+    re: &'a [f64],
+    im: &'a [f64],
+}
+
+#[derive(Clone, Copy)]
+enum EntryView<'a> {
+    Expanded(CxView<'a>),
+    Packed4 {
+        data: &'a [u8],
+        start: usize,
+        dim: usize,
+    },
+    Packed8(&'a [u8]),
+    Packed16(&'a [u16]),
+}
+
+impl EntryView<'_> {
+    fn for_each(self, table: &PhaseTable, mut visit: impl FnMut(usize, f64, f64)) {
+        match self {
+            Self::Expanded(c) => {
+                for d in 0..c.re.len() {
+                    visit(d, c.re[d], c.im[d]);
+                }
+            }
+            Self::Packed4 { data, start, dim } => {
+                let values = table
+                    .values
+                    .as_ref()
+                    .expect("packed codebooks require a phase table");
+                for d in 0..dim {
+                    let i = start + d;
+                    let p = ((data[i / 2] >> ((i % 2) * 4)) & 15) as usize;
+                    visit(d, values.re[p], values.im[p]);
+                }
+            }
+            Self::Packed8(data) => {
+                let values = table
+                    .values
+                    .as_ref()
+                    .expect("packed codebooks require a phase table");
+                for (d, &p) in data.iter().enumerate() {
+                    visit(d, values.re[p as usize], values.im[p as usize]);
+                }
+            }
+            Self::Packed16(data) => {
+                let values = table
+                    .values
+                    .as_ref()
+                    .expect("packed codebooks require a phase table");
+                for (d, &p) in data.iter().enumerate() {
+                    visit(d, values.re[p as usize], values.im[p as usize]);
+                }
+            }
+        }
+    }
+}
+
+struct PhaseTable {
+    n: u32,
+    values: Option<Cx>,
+}
+
+impl PhaseTable {
+    fn new(n: u32, cached: bool) -> Self {
+        let values = cached.then(|| Cx {
+            re: (0..n).map(|p| (TAU * p as f64 / n as f64).cos()).collect(),
+            im: (0..n).map(|p| (TAU * p as f64 / n as f64).sin()).collect(),
+        });
+        Self { n, values }
+    }
+
+    fn get(&self, p: usize) -> (f64, f64) {
+        if let Some(values) = &self.values {
+            (values.re[p], values.im[p])
+        } else {
+            let angle = TAU * p as f64 / self.n as f64;
+            (angle.cos(), angle.sin())
+        }
+    }
+}
+
+enum CodebookData {
+    Expanded(Cx),
+    Packed4(Vec<u8>),
+    Packed8(Vec<u8>),
+    Packed16(Vec<u16>),
+}
+
+struct Codebook {
+    entries: usize,
+    data: CodebookData,
+}
+
+impl Codebook {
+    fn new(book: &[PhaseHVec], table: &PhaseTable, packed: bool) -> Self {
+        let elements = book
+            .len()
+            .checked_mul(book[0].dim())
+            .expect("codebook size overflow");
+        let data = if packed {
+            match table.n {
+                2..=16 => {
+                    let mut data = vec![0; elements.div_ceil(2)];
+                    for (i, &p) in book.iter().flat_map(PhaseHVec::phases).enumerate() {
+                        data[i / 2] |= (p as u8) << ((i % 2) * 4);
+                    }
+                    CodebookData::Packed4(data)
+                }
+                17..=256 => {
+                    let mut data = Vec::with_capacity(elements);
+                    for entry in book {
+                        data.extend(entry.phases().iter().map(|&p| p as u8));
+                    }
+                    CodebookData::Packed8(data)
+                }
+                _ => {
+                    let mut data = Vec::with_capacity(elements);
+                    for entry in book {
+                        data.extend_from_slice(entry.phases());
+                    }
+                    CodebookData::Packed16(data)
+                }
+            }
+        } else {
+            let mut values = Cx::zeros(elements);
+            if let Some(table) = &table.values {
+                for (i, &p) in book.iter().flat_map(PhaseHVec::phases).enumerate() {
+                    values.re[i] = table.re[p as usize];
+                    values.im[i] = table.im[p as usize];
+                }
+            } else {
+                // Keep input conversion in separate passes, as in the baseline;
+                // paired sin/cos calls can round differently on some libm paths.
+                for (i, &p) in book.iter().flat_map(PhaseHVec::phases).enumerate() {
+                    values.re[i] = (TAU * p as f64 / table.n as f64).cos();
+                }
+                for (i, &p) in book.iter().flat_map(PhaseHVec::phases).enumerate() {
+                    values.im[i] = (TAU * p as f64 / table.n as f64).sin();
+                }
+            }
+            CodebookData::Expanded(values)
+        };
+        Self {
+            entries: book.len(),
+            data,
+        }
+    }
+
+    fn for_each(&self, dim: usize, mut visit: impl FnMut(usize, EntryView<'_>)) {
+        match &self.data {
+            CodebookData::Expanded(values) => {
+                for entry in 0..self.entries {
+                    let start = entry * dim;
+                    visit(
+                        entry,
+                        EntryView::Expanded(CxView {
+                            re: &values.re[start..start + dim],
+                            im: &values.im[start..start + dim],
+                        }),
+                    );
+                }
+            }
+            CodebookData::Packed4(data) => {
+                for entry in 0..self.entries {
+                    let start = entry * dim;
+                    visit(entry, EntryView::Packed4 { data, start, dim });
+                }
+            }
+            CodebookData::Packed8(data) => {
+                for entry in 0..self.entries {
+                    let start = entry * dim;
+                    visit(entry, EntryView::Packed8(&data[start..start + dim]));
+                }
+            }
+            CodebookData::Packed16(data) => {
+                for entry in 0..self.entries {
+                    let start = entry * dim;
+                    visit(entry, EntryView::Packed16(&data[start..start + dim]));
+                }
+            }
         }
     }
 }
 
 /// Real part of the Hermitian inner product Re<a, b> = Σ (a̅ · b).
-fn dot(a: &Cx, b: &Cx) -> f64 {
+fn dot(a: EntryView<'_>, b: &Cx, table: &PhaseTable) -> f64 {
     let mut s = 0.0;
-    for d in 0..a.re.len() {
-        s += a.re[d] * b.re[d] + a.im[d] * b.im[d];
-    }
+    a.for_each(table, |d, re, im| s += re * b.re[d] + im * b.im[d]);
     s
 }
 
 /// Project `v` onto `codebook` (similarity-weighted superposition), snap to phasors.
-fn cleanup(codebook: &[Cx], v: &Cx, n: u32) -> Cx {
+fn cleanup(codebook: &Codebook, v: &Cx, table: &PhaseTable, out: &mut Cx) {
     let dim = v.re.len();
-    let mut out = Cx::zeros(dim);
-    for c in codebook {
-        let s = dot(c, v);
-        for d in 0..dim {
-            out.re[d] += s * c.re[d];
-            out.im[d] += s * c.im[d];
-        }
-    }
-    out.snap(n);
-    out
+    out.re.fill(0.0);
+    out.im.fill(0.0);
+    codebook.for_each(dim, |_, c| {
+        let s = dot(c, v, table);
+        c.for_each(table, |d, re, im| {
+            out.re[d] += s * re;
+            out.im[d] += s * im;
+        });
+    });
+    out.snap(table);
 }
 
-fn argmax(codebook: &[Cx], v: &Cx) -> (usize, f64) {
-    let dim = v.re.len().max(1) as f64;
-    (0..codebook.len())
-        .map(|k| (k, dot(&codebook[k], v) / dim))
-        // Similarities are finite here; fall back to Equal rather than panic if a
-        // NaN ever reaches the comparator (empty codebook yields the (0, 0.0) below).
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
-        .unwrap_or((0, 0.0))
+fn argmax(codebook: &Codebook, v: &Cx, table: &PhaseTable) -> (usize, f64) {
+    let scale = v.re.len().max(1) as f64;
+    let mut best: Option<(usize, f64)> = None;
+    codebook.for_each(v.re.len(), |entry, c| {
+        let sim = dot(c, v, table) / scale;
+        if best.is_none_or(|(_, previous)| {
+            sim.partial_cmp(&previous)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                != std::cmp::Ordering::Less
+        }) {
+            best = Some((entry, sim));
+        }
+    });
+    best.unwrap_or((0, 0.0))
 }
 
 /// Core resonator dynamics over codebooks already converted to unit phasors.
 /// Shared by the free [`phase_resonator_factorize`] and the reusable
-/// [`PhaseResonator`] index; `n` is the shared phase resolution used at each snap.
-fn resonate(books: &[Vec<Cx>], n: u32, comp: &Cx, config: &ResonatorConfig) -> Vec<FactorResult> {
+/// [`PhaseResonator`] index.
+fn resonate(index: &PhaseResonator, comp: &Cx, config: &ResonatorConfig) -> Vec<FactorResult> {
+    let books = &index.books;
+    let table = &index.table;
     let k = books.len();
     if k == 0 {
         return Vec::new();
     }
 
-    // Initialize each estimate to the (snapped) superposition of its codebook.
-    let mut est: Vec<Cx> = books
-        .iter()
-        .map(|cb| {
-            let mut acc = Cx::zeros(comp.re.len());
-            for c in cb {
-                for d in 0..acc.re.len() {
-                    acc.re[d] += c.re[d];
-                    acc.im[d] += c.im[d];
-                }
-            }
-            acc.snap(n);
-            acc
+    let mut est = index.initial.clone();
+    let mut ub = Cx::zeros(comp.re.len());
+    let mut results: Vec<FactorResult> = (0..k)
+        .map(|factor_idx| FactorResult {
+            factor_idx,
+            codebook_entry: usize::MAX,
+            similarity: 0.0,
+            converged: false,
+            iterations: 0,
         })
         .collect();
-
-    let mut prev = vec![usize::MAX; k];
     let mut stable = 0;
     let mut iters = 0;
     let mut converged = false;
@@ -163,10 +359,8 @@ fn resonate(books: &[Vec<Cx>], n: u32, comp: &Cx, config: &ResonatorConfig) -> V
         iters += 1;
         for f in 0..k {
             // unbind = composite ⊙ Π_{j≠f} conj(est[j])
-            let mut ub = Cx {
-                re: comp.re.clone(),
-                im: comp.im.clone(),
-            };
+            ub.re.copy_from_slice(&comp.re);
+            ub.im.copy_from_slice(&comp.im);
             for (j, e) in est.iter().enumerate() {
                 if j != f {
                     for d in 0..ub.re.len() {
@@ -177,10 +371,16 @@ fn resonate(books: &[Vec<Cx>], n: u32, comp: &Cx, config: &ResonatorConfig) -> V
                     }
                 }
             }
-            est[f] = cleanup(&books[f], &ub, n);
+            cleanup(&books[f], &ub, table, &mut est[f]);
         }
-        let cur: Vec<usize> = (0..k).map(|f| argmax(&books[f], &est[f]).0).collect();
-        if cur == prev {
+        let mut unchanged = true;
+        for f in 0..k {
+            let (entry, similarity) = argmax(&books[f], &est[f], table);
+            unchanged &= results[f].codebook_entry == entry;
+            results[f].codebook_entry = entry;
+            results[f].similarity = similarity;
+        }
+        if unchanged {
             stable += 1;
             if stable >= 3 {
                 converged = true;
@@ -189,21 +389,18 @@ fn resonate(books: &[Vec<Cx>], n: u32, comp: &Cx, config: &ResonatorConfig) -> V
         } else {
             stable = 0;
         }
-        prev = cur;
     }
 
-    (0..k)
-        .map(|f| {
-            let (idx, sim) = argmax(&books[f], &est[f]);
-            FactorResult {
-                factor_idx: f,
-                codebook_entry: idx,
-                similarity: sim,
-                converged,
-                iterations: iters,
-            }
-        })
-        .collect()
+    for f in 0..k {
+        if iters == 0 {
+            let (entry, similarity) = argmax(&books[f], &est[f], table);
+            results[f].codebook_entry = entry;
+            results[f].similarity = similarity;
+        }
+        results[f].converged = converged;
+        results[f].iterations = iters;
+    }
+    results
 }
 
 /// Factorize `composite` into one entry per factor codebook via the phase resonator.
@@ -215,12 +412,8 @@ pub fn phase_resonator_factorize(
     codebooks: &[Vec<PhaseHVec>],
     config: &ResonatorConfig,
 ) -> Vec<FactorResult> {
-    let books: Vec<Vec<Cx>> = codebooks
-        .iter()
-        .map(|cb| cb.iter().map(Cx::from_phases).collect())
-        .collect();
-    let comp = Cx::from_phases(composite);
-    resonate(&books, composite.n(), &comp, config)
+    let index = PhaseResonator::new(codebooks);
+    index.factorize_with_config(composite, config)
 }
 
 /// A reusable resonator index over a fixed set of factor codebooks.
@@ -256,8 +449,10 @@ pub fn phase_resonator_factorize(
 /// assert_eq!(recovered[2].codebook_entry, 5);
 /// ```
 pub struct PhaseResonator {
-    books: Vec<Vec<Cx>>,
-    n: u32,
+    books: Vec<Codebook>,
+    table: PhaseTable,
+    initial: Vec<Cx>,
+    dim: usize,
     config: ResonatorConfig,
 }
 
@@ -270,18 +465,70 @@ impl PhaseResonator {
     }
 
     /// Build a resonator over `codebooks` with an explicit iteration `config`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a codebook is empty, or entries have different dimensions or
+    /// phase resolutions. An empty outer slice represents zero factors.
     pub fn with_config(codebooks: &[Vec<PhaseHVec>], config: ResonatorConfig) -> Self {
-        let n = codebooks
+        Self::build(codebooks, config, false)
+    }
+
+    /// Build an index with packed codebooks and an explicit iteration `config`.
+    ///
+    /// Codebook coordinates use 4 bits for `n <= 16`, 8 bits for `n <= 256`, and
+    /// 16 bits otherwise, plus a shared `16 * n` byte phasor table and floating
+    /// initial estimates. Queries decode coordinates through the shared table.
+    /// This saves resident memory but may cost query throughput;
+    /// the default constructors retain expanded phasors for faster decoding.
+    /// Factorization arithmetic and stopping rules are identical in both modes.
+    ///
+    /// # Panics
+    ///
+    /// Panics for the same invalid codebooks as [`Self::with_config`].
+    pub fn with_packed_codebooks(codebooks: &[Vec<PhaseHVec>], config: ResonatorConfig) -> Self {
+        Self::build(codebooks, config, true)
+    }
+
+    fn build(codebooks: &[Vec<PhaseHVec>], config: ResonatorConfig, packed: bool) -> Self {
+        let first = codebooks.iter().flatten().next();
+        let (dim, n) = first.map(|v| (v.dim(), v.n())).unwrap_or((0, 2));
+        let mut elements = 0usize;
+        for book in codebooks {
+            assert!(!book.is_empty(), "factor codebooks must not be empty");
+            for entry in book {
+                assert_eq!(entry.dim(), dim, "codebook dimensions must match");
+                assert_eq!(entry.n(), n, "codebook phase resolutions must match");
+                elements = elements.saturating_add(dim);
+            }
+        }
+        // Bound the default cache to 64 KiB and avoid table setup for tiny books.
+        let table = PhaseTable::new(n, packed || (n <= 4096 && elements >= n as usize));
+        let books: Vec<Codebook> = codebooks
             .iter()
-            .flatten()
-            .next()
-            .map(PhaseHVec::n)
-            .unwrap_or(2);
-        let books = codebooks
-            .iter()
-            .map(|cb| cb.iter().map(Cx::from_phases).collect())
+            .map(|cb| Codebook::new(cb, &table, packed))
             .collect();
-        Self { books, n, config }
+        let initial = books
+            .iter()
+            .map(|book| {
+                let mut acc = Cx::zeros(dim);
+                book.for_each(dim, |_, c| {
+                    c.for_each(&table, |d, re, im| {
+                        acc.re[d] += re;
+                        acc.im[d] += im;
+                    });
+                });
+                acc.snap(&table);
+                acc
+            })
+            .collect();
+        Self {
+            books,
+            table,
+            initial,
+            dim,
+            config,
+        }
     }
 
     /// Number of factors (codebooks) this resonator decodes.
@@ -290,18 +537,36 @@ impl PhaseResonator {
     }
 
     /// Recover one entry per factor from `composite`. `composite` must share the
-    /// codebooks' phase resolution.
+    /// codebooks' dimension and phase resolution.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the composite dimension or phase resolution differs from the
+    /// codebooks'. With zero factors, any composite yields an empty result.
     pub fn factorize(&self, composite: &PhaseHVec) -> Vec<FactorResult> {
+        self.factorize_with_config(composite, &self.config)
+    }
+
+    fn factorize_with_config(
+        &self,
+        composite: &PhaseHVec,
+        config: &ResonatorConfig,
+    ) -> Vec<FactorResult> {
         if self.books.is_empty() {
             return Vec::new();
         }
         assert_eq!(
             composite.n(),
-            self.n,
+            self.table.n,
             "composite phase resolution must match the codebooks'"
         );
-        let comp = Cx::from_phases(composite);
-        resonate(&self.books, self.n, &comp, &self.config)
+        assert_eq!(
+            composite.dim(),
+            self.dim,
+            "composite dimension must match the codebooks'"
+        );
+        let comp = Cx::from_phases(composite, &self.table);
+        resonate(self, &comp, config)
     }
 }
 

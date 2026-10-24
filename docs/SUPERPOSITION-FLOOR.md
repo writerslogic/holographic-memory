@@ -1,4 +1,19 @@
-# The superposition-recovery floor is computational, not information-theoretic
+# Observed superposition-recovery limits and encoder tradeoffs
+
+**Scope correction, 2026-10-24.** This document retains exploratory measurements,
+not a proof that no polynomial decoder can cross a universal floor. A successful
+truth-initialized solver establishes a fixed point, not uniqueness or an
+information-theoretic capacity. Historical references to "matched storage" below
+count the signal vector and exclude the design matrix and decoder workspace.
+
+The [new cost audit](../benchmarks/results/holography_capacity_v1/README.md)
+reproduces a coupled-encoder advantage on three additional synthetic seeds against
+both dense Gaussian and independently sharded controls. It also counts the
+224,919,552-byte matrix behind the 9,984-byte signal. This supports the encoder
+experiment, not a deployable database compression claim. Historical dropout
+measurements are provisional: the helper changes the decoder's dimension after
+erasing rows without rescaling the retained matrix, and this audit does not
+revalidate that normalization.
 
 **Question (posed cold).** A VSA memory superposes M key-value pairs into one vector
 `s = Σ bind(k_i, v_i)`. Naive unbind + cleanup recovers reliably only up to
@@ -6,23 +21,13 @@
 some decoder push blind recovery toward `M/D ≈ 1` **while keeping soft/graceful
 readout** (i.e. not by switching to an exact coded store with a hard cliff)?
 
-**Answer (two parts).** With the standard **random** code, no blind decoder crosses
-`M/D ≈ 0.27` — thirteen methods across eight families floor there (see below), because
-it is a statistical-to-computational hard phase of the random ensemble (the solution
-*exists and is verifiable* to ≥1.5·D, but no poly method *finds* it blindly). **But
-the floor is a property of the random code, not a wall:** co-designing the encoder as a
-**spatially-coupled (SC-SPARC) code** — the standard capacity-achieving construction —
-crosses it with a *polynomial* decoder at *matched storage* and preserves soft readout.
-Verified independently here: at `M/D = 0.29`, the random code recovers 0.43 while the
-coupled code recovers **0.92**, with the decoding wave propagating through fully-
-interfering middle blocks (not sharding). And with the coupling width tuned
-(w≈8) it is **noise-robust — it strictly dominates the bundle** across the practical
-corruption range (at 10% dropout, 0.82 vs 0.41; at 10% AWGN, 1.00 vs 0.58), degrading
-gracefully and converging to parity only under heavy corruption. So: capacity beyond the
-floor comes from **code design** — a real ~+33–50% capacity gain that *keeps* graceful
-degradation across the useful noise range, established coding theory (threshold
-saturation) transplanted to the VSA floor. The floor is not fundamental, and the
-capacity/robustness tension is not exclusive.
+**Observed answer.** The tested blind decoders struggle near `M/D ≈ 0.27` for the
+chosen random-code problem. Changing the encoder to a spatially coupled Gaussian
+design improves recovery under the same block-AMP decoder at equal signal width.
+The historical experiment reports 0.43 versus 0.92 accuracy at `M/D = 0.29`;
+the additional cost audit records all new seeds and controls. These finite
+experiments support code design as a useful variable. They do not establish a
+universal threshold, a practical noise range, or an improvement in HMS retrieval.
 
 This corrects a loose earlier reading. §25/§26 of `PREREGISTRATION-binding-readout.md`
 reached `M ≈ D` — but only with **exact coded key-value stores** (pinv / Reed-Solomon /

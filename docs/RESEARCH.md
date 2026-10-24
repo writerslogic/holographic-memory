@@ -67,10 +67,58 @@ The Sparse-Native engine provides a "candidate shortlist" (e.g., Top-1000) for u
 
 The resonator dynamics above run on HMS's quantized-phase substrate (`core::PhaseHVec`), where each dimension is a discrete phase index in $\mathbb{Z}_N$ and binding is phase-addition mod $N$. The stored state is therefore an exact, replay-verifiable integer fold of its inputs, not a lossy float embedding.
 
-A pre-registered experiment (`docs/PREREGISTRATION-binding-readout.md` §20) asked the open question **qFHRR left**: does phase *quantization* cost factorization capacity in a resonator? The measured answer is **no** — phase quantization is free for resonator factorization down to 4 bits/dimension, matching the float FHRR resonator's capacity across the operating range. A 30-seed hardening sweep confirms this holds at 4- and 3-bit resolution and across $D \in \{512, 1024, 2048\}$; 2-bit is the first resolution with a measurable cost near the capacity knee.
+A pre-registered experiment (`docs/PREREGISTRATION-binding-readout.md` §20) compared quantized and continuous-phase factorization. The reported accuracy distributions overlap down to 4 bits/dimension across the tested operating range. A 30-seed follow-up spans 4- and 3-bit resolution and $D \in \{512, 1024, 2048\}$; 2-bit shows a deficit near the capacity knee. Overlapping distributions are evidence for these workloads, not a universal equivalence result.
 
-This is **validation of an established mechanism**, not a new theory: it pairs the published qFHRR substrate (arXiv 2604.25939) with the Frady/Kent resonator network (Frady, Kent, Olshausen & Sommer, *Neural Computation* 32(12), 2020 — the primary source for the dynamics sketched above). The contribution is the combination measured to cost nothing: an integer-only, replay-exact neurosymbolic factorizer.
+This pairs the published qFHRR substrate (arXiv 2604.25939) with the Frady/Kent resonator network (Frady, Kent, Olshausen & Sommer, *Neural Computation* 32(12), 2020). The stored phases are integers; the factorization uses floating-point arithmetic. Public phase vectors use `u16` per coordinate. Expanded resonator codebooks use two `f64` values per coordinate; the optional packed backend uses 4-, 8-, or 16-bit indices plus its lookup table and floating working state. Total allocated memory must include those costs.
 
 * **Numbers, method, chance floor, and exact reproduction command:** `docs/DETERMINISTIC-RESONATOR.md`.
-* **API:** `core::PhaseResonator` (reusable index over fixed factor codebooks) and `core::phase_resonator_factorize` (one-shot), over `core::PhaseHVec`. Gated behind the `experimental` feature.
+* **API:** `core::PhaseResonator` (reusable index over fixed factor codebooks) and `core::phase_resonator_factorize` (one-shot), over `core::PhaseHVec`. These APIs are available with default features; `PhaseGraph` requires `experimental`.
 * **Reproduce the sweeps:** `cargo run --release --bin resonator-factorize` (the §20 table) and `cargo run --release --bin resonator-sweep` (the phase-bit × dimension hardening).
+
+## Supplied-paper implementation review (2026-10-24)
+
+The implementation work separates software algorithms from physical holographic
+hardware. Document retrieval uses lexical and dense retrieval; improvements to
+experimental phase operations do not establish a document-search or LongMemEval
+score improvement.
+
+| Paper | Applicable mechanism and limit |
+|---|---|
+| [Holographic One-Point Functions and Geodesics in SdS3](https://arxiv.org/abs/2603.21425) | A gravitational observable encodes geometric information under a specific model. It supplies no general-purpose memory compression or retrieval algorithm. |
+| [Building Holographic Entanglement by Measurement](https://arxiv.org/abs/2601.21065) | Structured graph interactions and conditional boundary reduction are useful analogies. The constant-time preparation claim concerns a quantum protocol, not a CPU graph query. |
+| [Holographic Banners](https://arxiv.org/abs/2604.02514) | A semiclassical construction relating boundary and interior descriptions; no directly implementable associative-memory shortcut was identified. |
+| [Holographic Knowledge Manifolds](https://arxiv.org/abs/2509.10518) | Withdrawn by its author for significant errors. Its accuracy, speed, and forgetting claims are excluded from implementation evidence. |
+| [Holographic Memory for Zero-Shot Compositional Reasoning in Knowledge Graphs](https://arxiv.org/abs/2606.24948) | An overloaded global bundle can lose second-hop facts even with the correct intermediate entity. This motivates explicit directionality and per-hop accuracy checks; its results do not prove a universal capacity bound. |
+| [Adapting A Vector-Symbolic Memory for Lisp ACT-R](https://arxiv.org/abs/2508.15630) | A partial cue can recover an episode's associated slots. HMS applies this to exact source dependency closure, with budget limits and explicit unresolved links. A separate phase sidecar must beat exact episode indexing before adoption. |
+| [Dense Holographic Associative Memories](https://arxiv.org/abs/2606.18492) | The optical architecture realizes an attention-style associative readout. HMS already has softmax/sparse cleanup; optical material efficiency does not establish CPU speed or eliminate stored codebooks. |
+| [High-Capacity Angularly-Multiplexed Holographic Memory Operating at Single Photon Level](https://arxiv.org/abs/1604.06049) | Independently addressed channels reduce cross-talk while consuming physical degrees of freedom. Software partitions must likewise count their storage and routing cost. |
+| [Divide-Conquer-and-Merge: Memory- and Time-Efficient Holographic Displays](https://arxiv.org/abs/2404.10777) | Partitioned computation motivates bounded working state and streamed codebook access. Its CNN hologram-synthesis measurements are not transferable software speedup estimates. |
+| [Deep-learning-based data page classification for holographic memory](https://arxiv.org/abs/1707.00684) | Robustness to optical page corruption is task-specific. HMS checks corrupted-query parity; introducing a trained image classifier would not solve symbolic factorization. |
+
+The resulting changes optimize exact phase arithmetic, offer packed resonator
+codebooks, preserve directed phase-graph roles, and enrich conversation context
+from canonical source records. The graph originally used the same phase code for
+subject and object, making every asserted edge indistinguishable from its reverse.
+Separate role domains remove that structural ambiguity; query-time cue factoring
+also removes repeated string hashing and repeated known-role work.
+
+Evidence and reproduction commands:
+
+- [Phase graph](../benchmarks/results/holography_phase_graph_v1/README.md): baseline
+  failures, directed chains, per-hop retrieval, timing, and replay checks.
+- [Phase arithmetic](../benchmarks/results/holography_phase_substrate_v1/README.md):
+  exact differential checks, cold lookup costs, and warm kernel timings.
+- [Resonator](../benchmarks/results/holography_resonator_v1/README.md): packed and
+  expanded memory, output parity, corrupted queries, and latency tradeoffs.
+- [Conversation context](../benchmarks/results/holographic_context_v1/README.md):
+  source closure, budget boundaries, and the exact-index versus phase-sidecar screen.
+- [Capacity audit](../benchmarks/results/holography_capacity_v1/README.md): coupled,
+  dense, and independently sharded Gaussian designs with full decoder accounting.
+
+The capacity audit reproduces a useful coupled-code advantage on three synthetic
+seeds, including modest additive noise. Its dense design matrix occupies about
+225 MB for a 9,984-byte signal, so those recovery results do not establish a
+deployable memory-compression improvement. Prior negative
+[phase-routing](../benchmarks/results/holographic_router_synthetic_v1/README.md)
+and [late-interaction](../benchmarks/research/hli/RUN.md) results remain in force;
+renaming their phase operations does not overcome their measured budget limits.

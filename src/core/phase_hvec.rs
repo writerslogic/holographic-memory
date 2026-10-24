@@ -20,9 +20,22 @@
 
 use std::borrow::Borrow;
 use std::f64::consts::TAU;
+use std::sync::OnceLock;
 
 /// Fixed-point unit for the integer cos/sin LUT used in bundling.
 const SCALE: i64 = 1 << 14;
+
+// Caching power-of-two resolutions bounds the initialized table payload to less than 1.51 MiB.
+const CACHED_RESOLUTIONS: usize = 16;
+static COSINES: [OnceLock<Box<[f64]>>; CACHED_RESOLUTIONS] =
+    [const { OnceLock::new() }; CACHED_RESOLUTIONS];
+static BUNDLE_LUTS: [OnceLock<BundleLut>; CACHED_RESOLUTIONS] =
+    [const { OnceLock::new() }; CACHED_RESOLUTIONS];
+
+enum BundleLut {
+    Wide(Box<[[i64; 2]]>),
+    Compact(Box<[[i16; 2]]>),
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PhaseHVec {
@@ -39,15 +52,50 @@ fn mix(x: u64, k: u64) -> u64 {
     h
 }
 
-/// Integer cos/sin lookup tables of length `n`, scaled by `SCALE`.
-fn luts(n: u32) -> (Vec<i64>, Vec<i64>) {
-    let cos = (0..n)
-        .map(|k| (SCALE as f64 * (TAU * k as f64 / n as f64).cos()).round() as i64)
-        .collect();
-    let sin = (0..n)
-        .map(|k| (SCALE as f64 * (TAU * k as f64 / n as f64).sin()).round() as i64)
-        .collect();
-    (cos, sin)
+/// Small tables avoid widening in the inner loop; large tables use exact `i16` components.
+fn luts(n: u32) -> BundleLut {
+    let entries = (0..n).map(|k| {
+        let angle = TAU * k as f64 / n as f64;
+        [
+            (SCALE as f64 * angle.cos()).round() as i64,
+            (SCALE as f64 * angle.sin()).round() as i64,
+        ]
+    });
+    if n <= 256 {
+        BundleLut::Wide(entries.collect())
+    } else {
+        BundleLut::Compact(entries.map(|[re, im]| [re as i16, im as i16]).collect())
+    }
+}
+
+fn accumulate<T: Copy + Into<i64>, V: Borrow<PhaseHVec>>(
+    vectors: &[V],
+    lut: &[[T; 2]],
+    sums: &mut [[i64; 2]],
+) {
+    for v in vectors {
+        for (sum, &phase) in sums.iter_mut().zip(&v.borrow().phases) {
+            let [cos, sin] = lut[phase as usize];
+            sum[0] += cos.into();
+            sum[1] += sin.into();
+        }
+    }
+}
+
+fn cached_resolution(n: u32) -> Option<usize> {
+    n.is_power_of_two().then(|| n.trailing_zeros() as usize - 1)
+}
+
+fn cosine_lut(n: u32, dim: usize) -> Option<&'static [f64]> {
+    let entry = &COSINES[cached_resolution(n)?];
+    if n > 256 && dim < n as usize {
+        return entry.get().map(AsRef::as_ref);
+    }
+    Some(entry.get_or_init(|| {
+        (0..n)
+            .map(|delta| (TAU * delta as f64 / n as f64).cos())
+            .collect()
+    }))
 }
 
 impl PhaseHVec {
@@ -108,7 +156,10 @@ impl PhaseHVec {
             .phases
             .iter()
             .zip(&other.phases)
-            .map(|(&a, &b)| ((a as u32 + b as u32) % n) as u16)
+            .map(|(&a, &b)| {
+                let sum = a as u32 + b as u32;
+                (if sum >= n { sum - n } else { sum }) as u16
+            })
             .collect();
         Self {
             dim: self.dim,
@@ -125,7 +176,14 @@ impl PhaseHVec {
             .phases
             .iter()
             .zip(&other.phases)
-            .map(|(&a, &b)| ((a as u32 + n - b as u32) % n) as u16)
+            .map(|(&a, &b)| {
+                let difference = a as u32 + n - b as u32;
+                (if difference >= n {
+                    difference - n
+                } else {
+                    difference
+                }) as u16
+            })
             .collect();
         Self {
             dim: self.dim,
@@ -141,13 +199,20 @@ impl PhaseHVec {
         if self.dim == 0 {
             return 1.0;
         }
-        let n = self.n as f64;
-        let s: f64 = self
-            .phases
-            .iter()
-            .zip(&other.phases)
-            .map(|(&a, &b)| (TAU * (a as f64 - b as f64) / n).cos())
-            .sum();
+        let s: f64 = if let Some(cos) = cosine_lut(self.n, self.dim) {
+            self.phases
+                .iter()
+                .zip(&other.phases)
+                .map(|(&a, &b)| cos[a.abs_diff(b) as usize])
+                .sum()
+        } else {
+            let n = self.n as f64;
+            self.phases
+                .iter()
+                .zip(&other.phases)
+                .map(|(&a, &b)| (TAU * (a as f64 - b as f64) / n).cos())
+                .sum()
+        };
         s / self.dim as f64
     }
 
@@ -165,21 +230,43 @@ impl PhaseHVec {
         }
         let first = vectors[0].borrow();
         let (dim, n) = (first.dim, first.n);
-        let (cos, sin) = luts(n);
-        let mut re = vec![0i64; dim];
-        let mut im = vec![0i64; dim];
         for v in vectors {
             let v = v.borrow();
             assert_eq!(v.dim, dim, "phase-vector dimension mismatch in bundle");
             assert_eq!(v.n, n, "phase-vector resolution mismatch in bundle");
-            for d in 0..dim {
-                re[d] += cos[v.phases[d] as usize];
-                im[d] += sin[v.phases[d] as usize];
-            }
         }
-        let phases = (0..dim)
-            .map(|d| {
-                let ang = (im[d] as f64).atan2(re[d] as f64);
+        if dim == 0 || vectors.len() == 1 {
+            return first.clone();
+        }
+        if n == 2 {
+            let mut ones = vec![0usize; dim];
+            for v in vectors {
+                for (count, &phase) in ones.iter_mut().zip(&v.borrow().phases) {
+                    *count += phase as usize;
+                }
+            }
+            let phases = ones
+                .into_iter()
+                .map(|count| u16::from(count > vectors.len() / 2))
+                .collect();
+            return Self { dim, n, phases };
+        }
+        let owned;
+        let lut = if let Some(index) = cached_resolution(n) {
+            BUNDLE_LUTS[index].get_or_init(|| luts(n))
+        } else {
+            owned = luts(n);
+            &owned
+        };
+        let mut sums = vec![[0i64; 2]; dim];
+        match lut {
+            BundleLut::Wide(lut) => accumulate(vectors, lut, &mut sums),
+            BundleLut::Compact(lut) => accumulate(vectors, lut, &mut sums),
+        }
+        let phases = sums
+            .into_iter()
+            .map(|[re, im]| {
+                let ang = (im as f64).atan2(re as f64);
                 let idx = (ang / TAU * n as f64).round() as i64;
                 idx.rem_euclid(n as i64) as u16
             })
@@ -303,5 +390,150 @@ mod tests {
                 assert!((a.similarity(&a) - 1.0).abs() < 1e-9, "n={n}");
             }
         }
+    }
+
+    #[test]
+    fn phase_arithmetic_matches_modular_reference_at_wrap_boundaries() {
+        for n in [2, 3, 15, 16, 17, 255, 256, 257, 65535, 65536] {
+            let phases = [0, 1, n / 2, n - 2, n - 1];
+            for a in phases {
+                for b in phases {
+                    let left = PhaseHVec::from_phases(vec![a as u16], n);
+                    let right = PhaseHVec::from_phases(vec![b as u16], n);
+                    assert_eq!(left.bind(&right).phases(), &[((a + b) % n) as u16]);
+                    assert_eq!(left.unbind(&right).phases(), &[((a + n - b) % n) as u16]);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn similarity_matches_direct_cosine_for_all_phase_differences() {
+        for n in [2, 3, 15, 16, 17, 255, 256, 257, 65535, 65536] {
+            let left = PhaseHVec::from_phases((0..n).map(|p| p as u16).collect(), n);
+            let right = PhaseHVec::from_phases(vec![0; n as usize], n);
+            let reference = left
+                .phases()
+                .iter()
+                .map(|&p| (TAU * p as f64 / n as f64).cos())
+                .sum::<f64>()
+                / n as f64;
+            assert_eq!(left.similarity(&right).to_bits(), reference.to_bits());
+            assert_eq!(right.similarity(&left).to_bits(), reference.to_bits());
+            for pivot in [0, 1, n / 2, n - 2, n - 1] {
+                let right = PhaseHVec::from_phases(vec![pivot as u16; n as usize], n);
+                let reference = left
+                    .phases()
+                    .iter()
+                    .map(|&p| (TAU * (p as f64 - pivot as f64) / n as f64).cos())
+                    .sum::<f64>()
+                    / n as f64;
+                assert_eq!(left.similarity(&right).to_bits(), reference.to_bits());
+            }
+        }
+    }
+
+    #[test]
+    fn bundles_match_direct_phasor_sums_at_all_resolutions() {
+        for n in [2, 3, 15, 16, 17, 255, 256, 257, 65535, 65536] {
+            let vectors: Vec<_> = (0..7)
+                .map(|seed| PhaseHVec::new_random(129, n, seed))
+                .collect();
+            for count in [1, 2, 3, 7] {
+                let reference: Vec<u16> = (0..129)
+                    .map(|d| {
+                        let (re, im) = vectors[..count].iter().fold((0i64, 0i64), |(re, im), v| {
+                            let phase = TAU * v.phases()[d] as f64 / n as f64;
+                            (
+                                re + (SCALE as f64 * phase.cos()).round() as i64,
+                                im + (SCALE as f64 * phase.sin()).round() as i64,
+                            )
+                        });
+                        let angle = (im as f64).atan2(re as f64);
+                        ((angle / TAU * n as f64).round() as i64).rem_euclid(n as i64) as u16
+                    })
+                    .collect();
+                assert_eq!(PhaseHVec::bundle(&vectors[..count]).phases(), reference);
+            }
+        }
+    }
+
+    #[test]
+    fn singleton_bundle_matches_fixed_point_roundtrip_for_every_phase() {
+        for n in [2, 3, 16, 256, 257, 65535, 65536] {
+            let phases = PhaseHVec::from_phases((0..n).map(|p| p as u16).collect(), n);
+            let reference: Vec<u16> = phases
+                .phases()
+                .iter()
+                .map(|&p| {
+                    let angle = TAU * p as f64 / n as f64;
+                    let re = (SCALE as f64 * angle.cos()).round() as i64;
+                    let im = (SCALE as f64 * angle.sin()).round() as i64;
+                    (((im as f64).atan2(re as f64) / TAU * n as f64).round() as i64)
+                        .rem_euclid(n as i64) as u16
+                })
+                .collect();
+            assert_eq!(reference, phases.phases());
+            assert_eq!(PhaseHVec::bundle(&[&phases]).phases(), reference);
+        }
+    }
+
+    #[test]
+    fn bundle_keeps_coordinates_independent_at_accumulator_allocation_boundaries() {
+        for n in [16, 257, 65536] {
+            for dim in [511, 512, 513] {
+                let vectors: Vec<_> = (0..32)
+                    .map(|seed| PhaseHVec::new_random(dim, n, seed))
+                    .collect();
+                for count in [2, 8, 32] {
+                    let reference: Vec<_> = (0..dim)
+                        .map(|d| {
+                            let (re, im) =
+                                vectors[..count].iter().fold((0i64, 0i64), |(re, im), v| {
+                                    let phase = TAU * v.phases()[d] as f64 / n as f64;
+                                    (
+                                        re + (SCALE as f64 * phase.cos()).round() as i64,
+                                        im + (SCALE as f64 * phase.sin()).round() as i64,
+                                    )
+                                });
+                            (((im as f64).atan2(re as f64) / TAU * n as f64).round() as i64)
+                                .rem_euclid(n as i64) as u16
+                        })
+                        .collect();
+                    assert_eq!(PhaseHVec::bundle(&vectors[..count]).phases(), reference);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn binary_bundle_matches_phasor_sum_for_every_vote_split() {
+        let zero = PhaseHVec::from_phases(vec![0], 2);
+        let one = PhaseHVec::from_phases(vec![1], 2);
+        for count in [1, 2, 3, 7, 8, 9, 15, 16, 17, 31, 32, 33, 255, 256, 257] {
+            for ones in 0..=count {
+                let mut vectors = vec![&zero; count];
+                vectors[..ones].fill(&one);
+                let (re, im) = vectors.iter().fold((0i64, 0i64), |(re, im), v| {
+                    let phase = TAU * v.phases()[0] as f64 / 2.0;
+                    (
+                        re + (SCALE as f64 * phase.cos()).round() as i64,
+                        im + (SCALE as f64 * phase.sin()).round() as i64,
+                    )
+                });
+                let reference = (((im as f64).atan2(re as f64) / TAU * 2.0).round() as i64)
+                    .rem_euclid(2) as u16;
+                assert_eq!(PhaseHVec::bundle(&vectors).phases(), &[reference]);
+            }
+        }
+    }
+
+    #[test]
+    fn zero_dim_bundles_still_check_resolution() {
+        let vectors = [
+            PhaseHVec::from_phases(Vec::new(), 16),
+            PhaseHVec::from_phases(Vec::new(), 256),
+        ];
+        assert!(std::panic::catch_unwind(|| PhaseHVec::bundle(&vectors)).is_err());
     }
 }

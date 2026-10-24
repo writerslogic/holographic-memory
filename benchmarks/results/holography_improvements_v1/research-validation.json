@@ -1,0 +1,20 @@
+{
+  "context_probe": "All results, hashes, counts and non-timing fields reproduced exactly across Python versions",
+  "original_python": "3.14.7",
+  "parent_python": "3.13.9",
+  "configuration_query_rows": 2048,
+  "official_data_accessed": false,
+  "python_syntax_files": [
+    "benchmarks/research/holographic_capacity/probe.py",
+    "benchmarks/research/holographic_context/probe.py",
+    "benchmarks/research/phase_graph/run.py",
+    "benchmarks/research/phase_substrate/layouts.py",
+    "benchmarks/research/phase_substrate/run.py"
+  ],
+  "failed_phase_sweep_source_preserved": true,
+  "graph_final_rows": 30,
+  "graph_accuracy_checks_per_direction": 480,
+  "graph_final_source_matches": true,
+  "phase_similarity_checks": 64575,
+  "phase_exact_coordinate_checks": 34846464
+}

@@ -1,0 +1,61 @@
+   Compiling serde_core v1.0.229
+   Compiling zerocopy v0.8.63
+   Compiling serde v1.0.229
+   Compiling errno v0.3.14
+   Compiling half v2.7.1
+   Compiling rustix v1.1.5
+   Compiling ciborium-ll v0.2.2
+   Compiling tempfile v3.27.0
+   Compiling serde_json v1.0.154
+   Compiling clap_builder v4.6.7
+   Compiling num-complex v0.4.6
+   Compiling zeroize v1.9.1
+   Compiling rustls-pki-types v1.15.1
+   Compiling rusty-fork v0.3.1
+   Compiling simba v0.10.2
+   Compiling clap v4.6.7
+   Compiling tinytemplate v1.2.1
+   Compiling ciborium v0.2.2
+   Compiling holographic-memory v0.6.1 (/Volumes/A/holographic-memory)
+   Compiling criterion v0.8.2
+   Compiling nalgebra v0.35.0
+   Compiling proptest v1.12.0
+   Compiling bincode v2.0.1
+   Compiling thiserror v2.0.21
+   Compiling rcgen v0.14.10
+   Compiling rust-stemmers v1.2.0
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.76s
+     Running unittests src/lib.rs (/Volumes/C/rust-target/debug/deps/holographic_memory-994ccdba9b4ea48f)
+
+running 7 tests
+test core::phase_graph::tests::directed_triple_does_not_assert_its_reverse ... FAILED
+test core::phase_graph::tests::repeated_relation_path_preserves_direction ... FAILED
+test core::phase_graph::tests::replay_is_bit_exact_and_tamper_evident ... ok
+test core::phase_graph::tests::multi_hop_path_reasoning ... ok
+test core::phase_graph::tests::retrieval_holds_under_load ... ok
+test core::phase_graph::tests::retrieves_object_and_subject ... ok
+test core::phase_graph::tests::stored_triple_scores_above_absent ... ok
+
+failures:
+
+---- core::phase_graph::tests::directed_triple_does_not_assert_its_reverse stdout ----
+
+thread 'core::phase_graph::tests::directed_triple_does_not_assert_its_reverse' (16673532) panicked at src/core/phase_graph.rs:272:9:
+assertion failed: g.score("bob", "parent_of", "alice").abs() < 0.1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- core::phase_graph::tests::repeated_relation_path_preserves_direction stdout ----
+
+thread 'core::phase_graph::tests::repeated_relation_path_preserves_direction' (16673534) panicked at src/core/phase_graph.rs:284:9:
+assertion `left == right` failed
+  left: Some("carol")
+ right: Some("alice")
+
+
+failures:
+    core::phase_graph::tests::directed_triple_does_not_assert_its_reverse
+    core::phase_graph::tests::repeated_relation_path_preserves_direction
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 645 filtered out; finished in 0.27s
+
+error: test failed, to rerun pass `--lib`

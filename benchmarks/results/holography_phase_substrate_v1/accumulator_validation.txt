@@ -1,0 +1,31 @@
+$ CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=/Volumes/A/.hms-holography-substrate-20261024/target cargo test --locked --lib phase_hvec
+Exit status: 0
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-substrate-20261024)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 32.43s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-abeac1f99c6667ab)
+
+running 16 tests
+test core::phase_hvec::tests::bundle_empty_is_zero_dim ... ok
+test core::phase_hvec::tests::bundle_single_element_is_identity ... ok
+test core::phase_hvec::tests::bind_unbind_is_exact_roundtrip ... ok
+test core::phase_hvec::tests::phase_arithmetic_matches_modular_reference_at_wrap_boundaries ... ok
+test core::phase_hvec::tests::binding_is_not_self_inverse ... ok
+test core::phase_hvec::tests::similarity_self_is_one_random_near_zero ... ok
+test core::phase_hvec::tests::bundle_is_deterministic_and_order_free ... ok
+test core::phase_hvec::tests::zero_dim_similarity_is_one ... ok
+test core::phase_hvec::tests::zero_dim_bundles_still_check_resolution ... ok
+test core::phase_hvec::tests::resolution_outside_2_to_65536_is_rejected_and_bounds_roundtrip ... ok
+test core::phase_hvec::tests::bundle_preserves_membership ... ok
+test core::phase_hvec::tests::bundles_match_direct_phasor_sums_at_all_resolutions ... ok
+test core::phase_hvec::tests::singleton_bundle_matches_fixed_point_roundtrip_for_every_phase ... ok
+test core::phase_hvec::tests::bundle_keeps_coordinates_independent_at_accumulator_allocation_boundaries ... ok
+test core::phase_hvec::tests::binary_bundle_matches_phasor_sum_for_every_vote_split ... ok
+test core::phase_hvec::tests::similarity_matches_direct_cosine_for_all_phase_differences ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 577 filtered out; finished in 0.03s
+
+
+$ CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=/Volumes/A/.hms-holography-substrate-20261024/target cargo clippy --locked --lib -- -D warnings
+Exit status: 0
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-substrate-20261024)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.34s

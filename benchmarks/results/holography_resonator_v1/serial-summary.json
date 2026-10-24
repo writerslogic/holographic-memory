@@ -1,0 +1,156 @@
+[
+  {
+    "case": "small_4bit",
+    "clean_recovered": 4,
+    "clean_queries": 4,
+    "baseline": {
+      "milliseconds_per_query": 0.664,
+      "retained_heap_bytes": 591624,
+      "allocations_per_query": 63.0
+    },
+    "expanded": {
+      "milliseconds_per_query": 0.483425,
+      "retained_heap_bytes": 639544,
+      "allocations_per_query": 12.0
+    },
+    "packed": {
+      "milliseconds_per_query": 0.5472,
+      "retained_heap_bytes": 68152,
+      "allocations_per_query": 12.0
+    },
+    "expanded_speedup": 1.3735326058850907,
+    "packed_heap_reduction": 8.680948468130062
+  },
+  {
+    "case": "small_8bit",
+    "clean_recovered": 4,
+    "clean_queries": 4,
+    "baseline": {
+      "milliseconds_per_query": 0.678,
+      "retained_heap_bytes": 591624,
+      "allocations_per_query": 63.0
+    },
+    "expanded": {
+      "milliseconds_per_query": 0.4952666,
+      "retained_heap_bytes": 643384,
+      "allocations_per_query": 12.0
+    },
+    "packed": {
+      "milliseconds_per_query": 0.5230084,
+      "retained_heap_bytes": 90424,
+      "allocations_per_query": 12.0
+    },
+    "expanded_speedup": 1.3689596673791449,
+    "packed_heap_reduction": 6.542776254091834
+  },
+  {
+    "case": "knee_4bit",
+    "clean_recovered": 2,
+    "clean_queries": 3,
+    "baseline": {
+      "milliseconds_per_query": 2.94003125,
+      "retained_heap_bytes": 2366280,
+      "allocations_per_query": 111.75
+    },
+    "expanded": {
+      "milliseconds_per_query": 2.5973125,
+      "retained_heap_bytes": 2409016,
+      "allocations_per_query": 12.0
+    },
+    "packed": {
+      "milliseconds_per_query": 3.2362395,
+      "retained_heap_bytes": 123448,
+      "allocations_per_query": 12.0
+    },
+    "expanded_speedup": 1.1319512958105733,
+    "packed_heap_reduction": 19.168232778173806
+  },
+  {
+    "case": "knee_8bit",
+    "clean_recovered": 1,
+    "clean_queries": 3,
+    "baseline": {
+      "milliseconds_per_query": 3.760229,
+      "retained_heap_bytes": 2366280,
+      "allocations_per_query": 141.0
+    },
+    "expanded": {
+      "milliseconds_per_query": 3.427354,
+      "retained_heap_bytes": 2412856,
+      "allocations_per_query": 12.0
+    },
+    "packed": {
+      "milliseconds_per_query": 3.97259375,
+      "retained_heap_bytes": 201016,
+      "allocations_per_query": 12.0
+    },
+    "expanded_speedup": 1.097123028435347,
+    "packed_heap_reduction": 11.771600270625225
+  },
+  {
+    "case": "large_4bit",
+    "clean_recovered": 1,
+    "clean_queries": 2,
+    "baseline": {
+      "milliseconds_per_query": 90.612111,
+      "retained_heap_bytes": 100700232,
+      "allocations_per_query": 89.0
+    },
+    "expanded": {
+      "milliseconds_per_query": 78.82004166666667,
+      "retained_heap_bytes": 101057080,
+      "allocations_per_query": 12.0
+    },
+    "packed": {
+      "milliseconds_per_query": 93.54204166666668,
+      "retained_heap_bytes": 3539512,
+      "allocations_per_query": 12.0
+    },
+    "expanded_speedup": 1.1496074993616787,
+    "packed_heap_reduction": 28.450315184692126
+  },
+  {
+    "case": "large_8bit",
+    "clean_recovered": 0,
+    "clean_queries": 2,
+    "baseline": {
+      "milliseconds_per_query": 89.04968033333333,
+      "retained_heap_bytes": 100700232,
+      "allocations_per_query": 89.0
+    },
+    "expanded": {
+      "milliseconds_per_query": 78.7725,
+      "retained_heap_bytes": 101060920,
+      "allocations_per_query": 12.0
+    },
+    "packed": {
+      "milliseconds_per_query": 88.94322233333332,
+      "retained_heap_bytes": 6689080,
+      "allocations_per_query": 12.0
+    },
+    "expanded_speedup": 1.130466601076941,
+    "packed_heap_reduction": 15.054421833794782
+  },
+  {
+    "case": "high_resolution",
+    "clean_recovered": 2,
+    "clean_queries": 2,
+    "baseline": {
+      "milliseconds_per_query": 0.7420556666666667,
+      "retained_heap_bytes": 591624,
+      "allocations_per_query": 71.66666666666667
+    },
+    "expanded": {
+      "milliseconds_per_query": 0.673597,
+      "retained_heap_bytes": 639288,
+      "allocations_per_query": 12.0
+    },
+    "packed": {
+      "milliseconds_per_query": 0.8249166666666666,
+      "retained_heap_bytes": 1171768,
+      "allocations_per_query": 12.0
+    },
+    "expanded_speedup": 1.1016314898472925,
+    "packed_heap_reduction": 0.5048985806063999
+  }
+]

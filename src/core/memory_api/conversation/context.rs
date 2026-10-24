@@ -92,6 +92,39 @@ fn premise_id(id: &str) -> bool {
         .is_some_and(|hash| hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit()))
 }
 
+fn premise_closure(
+    manifest: &super::Manifest,
+    positions: &BTreeMap<String, usize>,
+    root: usize,
+) -> Result<Vec<usize>> {
+    let mut pending = vec![root];
+    let mut visited = vec![false; manifest.sources.len()];
+    let mut indices = Vec::new();
+    while let Some(index) = pending.pop() {
+        let entry = manifest
+            .sources
+            .get(index)
+            .ok_or_else(|| invalid("conversation expansion source ordinal differs"))?;
+        if visited[index] {
+            continue;
+        }
+        visited[index] = true;
+        indices.push(index);
+        for id in &entry.premise_record_ids {
+            let premise = positions
+                .get(id.as_str())
+                .copied()
+                .filter(|premise| *premise < index)
+                .ok_or_else(|| invalid("conversation expansion premise is missing or forward"))?;
+            if !visited[premise] {
+                pending.push(premise);
+            }
+        }
+    }
+    indices.sort_unstable();
+    Ok(indices)
+}
+
 impl ConversationMemory {
     /// Opt-in candidate census; returned evidence keeps its original retrieval budget.
     pub fn recall_with_aggregation_context(
@@ -122,7 +155,9 @@ impl ConversationMemory {
     }
 
     /// Experimental enumeration evidence expansion. Retains every seed source, then admits
-    /// whole candidate closures in score order within the compact byte and raw-round limits.
+    /// immediate candidate closures in score order before enriching admitted anchors with
+    /// transitive premises within the remaining compact byte and raw-round limits.
+    /// Exact stored premises may be recovered even when they were not search hits.
     /// Candidate acquisition is caller-controlled. Neither exhausted candidates nor the
     /// returned mention set establishes an exhaustive event count.
     pub fn expand_aggregation_context(
@@ -226,7 +261,7 @@ impl ConversationMemory {
             }
         }
         anchors.sort_by(|(a, x), (b, y)| y.score.total_cmp(&x.score).then(a.cmp(b)));
-        for (_, anchor) in anchors {
+        for (_, anchor) in &anchors {
             if anchor.score == 0.0 || selected.contains_key(&anchor.record_id) {
                 continue;
             }
@@ -243,9 +278,80 @@ impl ConversationMemory {
             if trial.len() > limits.max_sources || trial_rounds.len() > limits.max_rounds {
                 continue;
             }
-            let context = ConversationContext::from_sources(
+            let context = ConversationContext::from_sources_inner(
                 &trial.values().cloned().collect::<Vec<_>>(),
-                MAX_CONVERSATION_BYTES,
+            )?;
+            if serde_json::to_vec(&context)?.len() > limits.max_bytes {
+                continue;
+            }
+            current = context;
+            selected = trial;
+            selected_rounds = trial_rounds;
+        }
+        let mut positions = BTreeMap::new();
+        for (_, anchor) in anchors {
+            if anchor.score == 0.0 || !selected.contains_key(&anchor.record_id) {
+                continue;
+            }
+            let source = available[&anchor.record_id];
+            if manifest
+                .as_ref()
+                .is_none_or(|m| m.session_id != source.session_id || m.version != source.version)
+            {
+                manifest = Some(self.manifest(&source.session_id, &source.version)?);
+                positions.clear();
+            }
+            let manifest = manifest.as_ref().expect("source manifest loaded");
+            if positions.is_empty() {
+                positions.extend(
+                    manifest
+                        .sources
+                        .iter()
+                        .enumerate()
+                        .map(|(index, entry)| (entry.record_id.clone(), index)),
+                );
+            }
+            let additions: Vec<_> = premise_closure(manifest, &positions, source.turn_index)?
+                .into_iter()
+                .filter(|index| !selected.contains_key(&manifest.sources[*index].record_id))
+                .collect();
+            if additions.is_empty() || selected.len() + additions.len() > limits.max_sources {
+                continue;
+            }
+            let mut trial_rounds = selected_rounds.clone();
+            for index in &additions {
+                trial_rounds.insert((
+                    source.session_id.clone(),
+                    source.version.clone(),
+                    round_index(manifest, *index),
+                ));
+            }
+            if trial_rounds.len() > limits.max_rounds {
+                continue;
+            }
+            let mut trial = selected.clone();
+            let mut text_bytes: usize = trial.values().map(|source| source.text.len()).sum();
+            for index in additions {
+                let id = &manifest.sources[index].record_id;
+                let premise = match available.get(id) {
+                    Some(source) => (**source).clone(),
+                    None => self.hydrate(id, manifest)?.ok_or_else(|| {
+                        invalid("conversation expansion anchor premise is missing")
+                    })?,
+                };
+                text_bytes = text_bytes.checked_add(premise.text.len()).ok_or_else(|| {
+                    invalid("conversation expansion source allocation exceeds limit")
+                })?;
+                if text_bytes > limits.max_bytes {
+                    break;
+                }
+                trial.insert(id.clone(), premise);
+            }
+            if text_bytes > limits.max_bytes {
+                continue;
+            }
+            let context = ConversationContext::from_sources_inner(
+                &trial.values().cloned().collect::<Vec<_>>(),
             )?;
             if serde_json::to_vec(&context)?.len() > limits.max_bytes {
                 continue;
@@ -268,9 +374,18 @@ impl ConversationEvidence {
 
 impl ConversationContext {
     pub fn from_sources(sources: &[ConversationSource], max_bytes: usize) -> Result<Self> {
-        if !(2..=MAX_CONVERSATION_BYTES).contains(&max_bytes)
-            || sources.len() > MAX_CONVERSATION_RECORDS
-        {
+        if !(2..=MAX_CONVERSATION_BYTES).contains(&max_bytes) {
+            return Err(invalid("invalid conversation context bounds"));
+        }
+        let context = Self::from_sources_inner(sources)?;
+        if serde_json::to_vec(&context)?.len() > max_bytes {
+            return Err(invalid("conversation context exceeds byte budget"));
+        }
+        Ok(context)
+    }
+
+    fn from_sources_inner(sources: &[ConversationSource]) -> Result<Self> {
+        if sources.len() > MAX_CONVERSATION_RECORDS {
             return Err(invalid("invalid conversation context bounds"));
         }
         let mut bytes = 0usize;
@@ -355,9 +470,6 @@ impl ConversationContext {
             turns,
         };
         context.sources()?;
-        if serde_json::to_vec(&context)?.len() > max_bytes {
-            return Err(invalid("conversation context exceeds byte budget"));
-        }
         Ok(context)
     }
 

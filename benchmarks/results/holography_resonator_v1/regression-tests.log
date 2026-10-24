@@ -1,0 +1,16 @@
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-resonator-20261024)
+    Finished `test` profile [optimized + debuginfo] target(s) in 25.66s
+     Running tests/phase_resonator_regression.rs (target/debug/deps/phase_resonator_regression-cdb03eba5abe0a19)
+
+running 8 tests
+test empty_outer_codebooks_accept_any_composite_in_both_backends ... ok
+test composite_resolution_mismatch_is_rejected_by_all_entry_points ... ok
+test dimension_mismatch_is_rejected_before_factorization ... ok
+test invalid_codebooks_are_rejected_by_both_backends ... ok
+test ties_keep_the_last_entry_including_odd_nibble_boundaries ... ok
+test iteration_limits_and_single_axis_match_baseline ... ok
+test packed_phase_width_and_table_cutoff_boundaries_match_baseline ... ok
+test preserves_factors_through_capacity_knee_and_corrupted_queries ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+

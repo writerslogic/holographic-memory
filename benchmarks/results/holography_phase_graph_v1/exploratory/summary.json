@@ -1,0 +1,98 @@
+[
+  {
+    "shape": [
+      128,
+      512,
+      16
+    ],
+    "medians": {
+      "before": {
+        "build_ns": 2888791,
+        "query_ns": 2824247.40625,
+        "score_ns": 22802.8984375,
+        "forward_correct": 13,
+        "backward_correct": 13,
+        "three_hop_correct": 0,
+        "mean_reverse_score": 0.8975830078125
+      },
+      "after": {
+        "build_ns": 198875,
+        "query_ns": 82539.0625,
+        "score_ns": 1133.30078125,
+        "forward_correct": 32,
+        "backward_correct": 32,
+        "three_hop_correct": 32,
+        "mean_reverse_score": -0.00787353515625
+      }
+    },
+    "speedup": {
+      "build_ns": 14.525661847894407,
+      "query_ns": 34.217100615239,
+      "score_ns": 20.120782421370098
+    }
+  },
+  {
+    "shape": [
+      512,
+      1024,
+      256
+    ],
+    "medians": {
+      "before": {
+        "build_ns": 24303583,
+        "query_ns": 23366988.28125,
+        "score_ns": 62464.03125,
+        "forward_correct": 13,
+        "backward_correct": 14,
+        "three_hop_correct": 2,
+        "mean_reverse_score": 0.990478515625
+      },
+      "after": {
+        "build_ns": 1487791,
+        "query_ns": 679755.203125,
+        "score_ns": 2215.66015625,
+        "forward_correct": 32,
+        "backward_correct": 32,
+        "three_hop_correct": 32,
+        "mean_reverse_score": 0.0020751953125
+      }
+    },
+    "speedup": {
+      "build_ns": 16.335347505126727,
+      "query_ns": 34.375593116207526,
+      "score_ns": 28.19206324300214
+    }
+  },
+  {
+    "shape": [
+      2048,
+      1024,
+      256
+    ],
+    "medians": {
+      "before": {
+        "build_ns": 96870583,
+        "query_ns": 102549988.9375,
+        "score_ns": 63015.7890625,
+        "forward_correct": 13,
+        "backward_correct": 17,
+        "three_hop_correct": 1,
+        "mean_reverse_score": 1.00042724609375
+      },
+      "after": {
+        "build_ns": 5549625,
+        "query_ns": 2737251.296875,
+        "score_ns": 2346.19140625,
+        "forward_correct": 32,
+        "backward_correct": 32,
+        "three_hop_correct": 32,
+        "mean_reverse_score": 0.0006103515625
+      }
+    },
+    "speedup": {
+      "build_ns": 17.45533851386355,
+      "query_ns": 37.46458684833827,
+      "score_ns": 26.85875879292404
+    }
+  }
+]

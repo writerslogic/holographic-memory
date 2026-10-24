@@ -4,20 +4,19 @@
 //! Phasor relational memory: a holographic connection store on a quantized-phase
 //! substrate.
 //!
-//! Each entity is a `dim`-vector of phases in `Z_N`; a relation is a rotation
-//! `theta in Z_N`; binding is phase addition `(phi + theta) mod N`. This gives a
-//! genuine **relation algebra** the sparse-binary `ConnectionGraph` cannot
-//! express — rotations form a group, so an inverse relation is a negated angle
-//! and composition is angle addition. A fact `(subject, relation, object)` is
-//! stored as a **trace phase** `t = (subject + relation + object) mod N`,
-//! accumulated per dimension into an integer **phase histogram** `hist[dim][t]`.
+//! Each entity has distinct subject and object phase vectors in `Z_N`; a
+//! relation contributes a rotation in `Z_N`. A fact `(subject, relation, object)`
+//! is stored as a trace phase `t = (subject_role(s) + relation(r) + object_role(o))
+//! mod N`, accumulated per dimension into an integer phase histogram
+//! `hist[dim][t]`. Separating the entity roles preserves edge direction even
+//! though phase addition itself is commutative.
 //!
-//! The trace is symmetric across its slots, so a single field answers three query
-//! kinds by solving for the missing slot:
+//! A single field answers three query kinds by scoring candidates in their
+//! corresponding roles:
 //!   - [`score`](PhaseGraph::score): verify a full triple.
 //!   - [`retrieve_object`](PhaseGraph::retrieve_object): recover `o` from `(s, r)`.
 //!   - [`retrieve_subject`](PhaseGraph::retrieve_subject): recover `s` from
-//!     `(r, o)` — i.e. the inverse relation, for free.
+//!     `(r, o)`.
 //!
 //! Everything is integer, so the field is a **deterministic fold** of the event
 //! stream: state is bit-exactly replayable and the chain digest is tamper-evident
@@ -36,6 +35,9 @@ use crate::core::entangled::hash_u64;
 
 /// Store weight per asserted fact.
 const W_STORE: u32 = 1;
+const SUBJECT_ROLE: u64 = 0x5355_424A_4543_5400;
+const OBJECT_ROLE: u64 = 0x4F42_4A45_4354_0000;
+const RELATION_ROLE: u64 = 0x0010_7A70;
 
 /// An ordered, replayable state-change event. Facts are referenced by their
 /// string ids so a verifier recomputes the affected phases from scratch.
@@ -63,10 +65,13 @@ impl PhaseGraph {
             dim > 0 && n_phases > 0,
             "phase graph dim/n_phases must be > 0"
         );
+        let cells = dim
+            .checked_mul(n_phases as usize)
+            .expect("phase graph histogram dimensions overflow");
         Self {
             dim,
             n_phases,
-            hist: vec![0u32; dim * n_phases as usize],
+            hist: vec![0u32; cells],
             entities: Vec::new(),
             entity_set: FastMap::default(),
             events: Vec::new(),
@@ -74,19 +79,13 @@ impl PhaseGraph {
         }
     }
 
-    /// Deterministic phase for entity `id` at dimension `d`.
-    fn phase(&self, id: &str, d: usize) -> u32 {
-        (hash_u64(str_seed(id), d as u64) % self.n_phases as u64) as u32
-    }
-
-    /// Deterministic rotation for relation `rel` at dimension `d`.
-    fn rot(&self, rel: &str, d: usize) -> u32 {
-        (hash_u64(str_seed(rel) ^ 0x0010_7A70, d as u64) % self.n_phases as u64) as u32
-    }
-
     /// Trace phase of `(subject, relation, object)` at dimension `d`.
-    fn trace(&self, s: &str, r: &str, o: &str, d: usize) -> u32 {
-        (self.phase(s, d) + self.rot(r, d) + self.phase(o, d)) % self.n_phases
+    fn trace(&self, seeds: [u64; 3], d: usize) -> u32 {
+        let n = self.n_phases as u64;
+        ((hash_u64(seeds[0], d as u64) % n
+            + hash_u64(seeds[1], d as u64) % n
+            + hash_u64(seeds[2], d as u64) % n)
+            % n) as u32
     }
 
     fn track(&mut self, id: &str) {
@@ -97,8 +96,9 @@ impl PhaseGraph {
 
     /// Assert a fact into the memory.
     pub fn relate(&mut self, subject: &str, relation: &str, object: &str) {
+        let seeds = trace_seeds(subject, relation, object);
         for d in 0..self.dim {
-            let t = self.trace(subject, relation, object, d) as usize;
+            let t = self.trace(seeds, d) as usize;
             self.hist[d * self.n_phases as usize + t] += W_STORE;
         }
         self.track(subject);
@@ -115,9 +115,10 @@ impl PhaseGraph {
     /// Raw holographic score of a full triple: how strongly the field agrees with
     /// its trace, summed over dimensions.
     fn raw_score(&self, s: &str, r: &str, o: &str) -> u64 {
+        let seeds = trace_seeds(s, r, o);
         (0..self.dim)
             .map(|d| {
-                let t = self.trace(s, r, o, d) as usize;
+                let t = self.trace(seeds, d) as usize;
                 self.hist[d * self.n_phases as usize + t] as u64
             })
             .sum()
@@ -128,28 +129,56 @@ impl PhaseGraph {
     /// well above an absent one.
     pub fn score(&self, subject: &str, relation: &str, object: &str) -> f64 {
         let raw = self.raw_score(subject, relation, object) as f64;
-        let total: u64 = self.hist.iter().map(|&c| c as u64).sum();
-        let floor = total as f64 / self.n_phases as f64; // expected coincidences
-        (raw - floor) / self.dim as f64
+        let floor = self.events.len() as f64 * W_STORE as f64 / self.n_phases as f64;
+        raw / self.dim as f64 - floor
     }
 
     /// Recover the object of `(subject, relation)` by ranking known entities.
     /// Returns `None` if the memory is empty.
     pub fn retrieve_object(&self, subject: &str, relation: &str) -> Option<&str> {
-        self.rank(|g, cand| g.raw_score(subject, relation, cand))
+        self.rank(
+            [
+                str_seed(subject) ^ SUBJECT_ROLE,
+                str_seed(relation) ^ RELATION_ROLE,
+            ],
+            OBJECT_ROLE,
+        )
     }
 
     /// Recover the subject of `(relation, object)` — the inverse relation query,
     /// answered from the same field.
     pub fn retrieve_subject(&self, relation: &str, object: &str) -> Option<&str> {
-        self.rank(|g, cand| g.raw_score(cand, relation, object))
+        self.rank(
+            [
+                str_seed(relation) ^ RELATION_ROLE,
+                str_seed(object) ^ OBJECT_ROLE,
+            ],
+            SUBJECT_ROLE,
+        )
     }
 
-    fn rank<F: Fn(&Self, &str) -> u64>(&self, score_of: F) -> Option<&str> {
+    fn rank(&self, known: [u64; 2], candidate_role: u64) -> Option<&str> {
+        if self.entities.is_empty() {
+            return None;
+        }
+        let n = self.n_phases as u64;
+        let cue: Vec<u32> = (0..self.dim)
+            .map(|d| {
+                ((hash_u64(known[0], d as u64) % n + hash_u64(known[1], d as u64) % n) % n) as u32
+            })
+            .collect();
         let mut best: Option<&str> = None;
         let mut best_s = 0u64;
         for cand in &self.entities {
-            let s = score_of(self, cand);
+            let seed = str_seed(cand) ^ candidate_role;
+            let s = cue
+                .iter()
+                .enumerate()
+                .map(|(d, &phase)| {
+                    let t = (phase as u64 + hash_u64(seed, d as u64) % n) % n;
+                    self.hist[d * self.n_phases as usize + t as usize] as u64
+                })
+                .sum();
             if best.is_none() || s > best_s {
                 best_s = s;
                 best = Some(cand);
@@ -211,8 +240,9 @@ impl PhaseGraph {
         for ev in &self.events {
             match ev {
                 Event::Store(s, r, o) => {
+                    let seeds = trace_seeds(s, r, o);
                     for d in 0..g.dim {
-                        let t = g.trace(s, r, o, d) as usize;
+                        let t = g.trace(seeds, d) as usize;
                         g.hist[d * g.n_phases as usize + t] += W_STORE;
                     }
                 }
@@ -221,6 +251,14 @@ impl PhaseGraph {
         }
         g.hist == self.hist && g.chain == self.chain
     }
+}
+
+fn trace_seeds(s: &str, r: &str, o: &str) -> [u64; 3] {
+    [
+        str_seed(s) ^ SUBJECT_ROLE,
+        str_seed(r) ^ RELATION_ROLE,
+        str_seed(o) ^ OBJECT_ROLE,
+    ]
 }
 
 /// Deterministic 64-bit seed for a string id (FNV-1a through splitmix).
@@ -262,6 +300,78 @@ mod tests {
         assert_eq!(g.retrieve_object("paris", "capital_of"), Some("france"));
         // inverse (subject recovery from the same field): (?, capital_of, germany) -> berlin
         assert_eq!(g.retrieve_subject("capital_of", "germany"), Some("berlin"));
+    }
+
+    #[test]
+    fn directed_triple_does_not_assert_its_reverse() {
+        let mut g = PhaseGraph::new(1024, 256);
+        g.relate("alice", "parent_of", "bob");
+        assert!(g.score("alice", "parent_of", "bob") > 0.9);
+        assert!(g.score("bob", "parent_of", "alice").abs() < 0.1);
+        assert!(g.verify());
+    }
+
+    #[test]
+    fn repeated_relation_path_preserves_direction() {
+        let mut g = PhaseGraph::new(1024, 256);
+        g.relate("alice", "parent_of", "bob");
+        g.relate("bob", "parent_of", "carol");
+        g.relate("carol", "parent_of", "dave");
+
+        assert_eq!(g.retrieve_object("bob", "parent_of"), Some("carol"));
+        assert_eq!(g.retrieve_subject("parent_of", "bob"), Some("alice"));
+        assert_eq!(
+            g.retrieve_path("alice", &["parent_of", "parent_of", "parent_of"])
+                .as_deref(),
+            Some("dave")
+        );
+        assert!(g.verify());
+    }
+
+    #[test]
+    fn factored_queries_match_exhaustive_scoring() {
+        for dim in [1, 17, 128] {
+            for n_phases in [1, 15, 16, 17, 255, 256, 257] {
+                let mut g = PhaseGraph::new(dim, n_phases);
+                assert_eq!(g.retrieve_object("absent", "rel"), None);
+                assert_eq!(g.score("absent", "rel", "absent"), 0.0);
+                for i in 0..20 {
+                    g.relate(&format!("entity-{i}"), "rel", &format!("entity-{}", i + 1));
+                }
+                for i in [0, 9, 19, 21] {
+                    let id = format!("entity-{i}");
+                    let first_max = |scores: Vec<u64>| {
+                        let maximum = scores.iter().max().unwrap();
+                        g.entities[scores.iter().position(|score| score == maximum).unwrap()]
+                            .as_str()
+                    };
+                    let objects = g
+                        .entities
+                        .iter()
+                        .map(|o| g.raw_score(&id, "rel", o))
+                        .collect();
+                    let subjects = g
+                        .entities
+                        .iter()
+                        .map(|s| g.raw_score(s, "rel", &id))
+                        .collect();
+                    assert_eq!(g.retrieve_object(&id, "rel"), Some(first_max(objects)));
+                    assert_eq!(g.retrieve_subject("rel", &id), Some(first_max(subjects)));
+                    let total: u64 = g.hist.iter().map(|&cell| cell as u64).sum();
+                    let expected = (g.raw_score(&id, "rel", "entity-10") as f64
+                        - total as f64 / n_phases as f64)
+                        / dim as f64;
+                    assert!((g.score(&id, "rel", "entity-10") - expected).abs() < 1e-12);
+                }
+                assert!(g.verify());
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "phase graph histogram dimensions overflow")]
+    fn rejects_overflowing_histogram_dimensions() {
+        PhaseGraph::new(usize::MAX / 2 + 1, 2);
     }
 
     #[test]

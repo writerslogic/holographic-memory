@@ -2,10 +2,10 @@
 
 **What this is.** A validation, not a discovery. It pairs two published mechanisms
 — the quantized-phase FHRR substrate (qFHRR) and the Frady/Kent resonator network —
-and measures whether the pairing costs anything. It does not: phase quantization down
-to 4 bits/dimension is *free* for resonator factorization across the operating range.
-The result is an integer-only, replay-exact factorization capability on a substrate
-whose stored state is a deterministic function of what was written.
+and measures the effect of phase quantization on factorization accuracy. The reported
+experiments found overlapping accuracy distributions down to 4 bits/dimension over
+the tested range. The substrate stores integer phases; factorization uses floating
+point inner products, superpositions, and phase recovery. It is not integer-only.
 
 This document reports numbers produced by a run *in this repository*
 (`resonator-factorize`, 24 seeds). It does not restate figures from memory; every
@@ -16,15 +16,15 @@ number below carries its seed count and standard deviation.
 A resonator network run at finite phase resolution `N` (the qFHRR
 bundle-recover quantization) matches the float FHRR resonator's factorization
 capacity — the size of the search space `F^k` it can decode — across `F` from within
-capacity to past the knee. The quantized capacity knee does **not** shift left of the
-float knee. Down to `N = 16` (4-bit phase) the two curves overlap within ±1σ at every
-`F` tested.
+capacity to past the knee in the experiments below. Down to `N = 16` (4-bit phase)
+the curves overlap within ±1σ at every `F` tested. Overlapping standard deviations
+do not establish statistical equivalence or guarantee the same accuracy on other
+codebooks, dimensions, or query distributions.
 
 The contribution is the *combination plus this measurement*: qFHRR (arXiv 2604.25939)
 explicitly does not do resonators or factorization; Frady/Kent resonator networks are
-float. The open edge is whether quantization costs factorization capacity. It does
-not — so a deterministic, integer-substrate resonator is a real capability, not a
-degraded approximation of the float one.
+float. These measurements support using quantized phases for these factorization
+workloads; they do not establish a universal capacity guarantee.
 
 ## Method
 
@@ -133,22 +133,57 @@ built-in REPRO CHECK still reproduced the §20 table, confirming the code path.
 **Kill did not fire.** At the reference D=1024, 4-bit (N=16) equals or exceeds float at
 every F within ±1σ: 97/90/78/70/60 vs float 97/88/77/67/58 (F=16..48). It holds at
 D=512 and D=2048, and 3-bit (N=8) also tracks float; only 2-bit (N=4) shows the small
-knee deficit. So the minimum stored-phase resolution that matches the float resonator's
-factorization accuracy is **4 bits/dim** (3-bit also matches).
+knee deficit. Thus **4 bits/dim** is a tested phase resolution with overlapping
+factorization accuracy in these experiments (3-bit also overlaps).
 
-**Result:** at matched factorization accuracy, the deterministic quantized resonator
-stores its state in 4 bits/dim vs 32-bit float — an **8× (vs f32) / 16× (vs f64)
-stored-state footprint reduction over the float incumbent**, confirmed on seeds the
-metric never saw. Accuracy is *matched, not beaten*; the win is a tradeoff-free
-footprint reduction. (Scope caveat from §29: this is stored-state footprint; the
-resonator's inner products are float at query time.)
+**Representation budget:** a phase from `N = 16` can be encoded in 4 bits, compared
+with a 32- or 64-bit continuous phase angle. The historical accuracy experiment did
+not measure the library's allocated memory. `PhaseHVec` stores every phase in a
+`u16`, even at `N = 16`; the default `PhaseResonator` caches two `f64` values per
+codebook coordinate (16 bytes). Its footprint was never 4 bits/dimension.
+
+The optional packed index described below now implements 4-, 8-, or 16-bit codebook
+storage. Its shared phasor table, initial estimates, and query workspace must also
+be counted. Packing is a memory/throughput tradeoff, not a tradeoff-free reduction
+of all resonator state.
+
+## Library implementation and packed codebooks
+
+`PhaseResonator::new` and `with_config` retain expanded codebooks. Construction
+precomputes the initial estimates and a bounded phasor lookup table when useful;
+queries reuse their working buffers and retain the final argmax instead of
+recomputing it. The arithmetic order and stopping rule remain unchanged.
+
+`PhaseResonator::with_packed_codebooks(&codebooks, config)` chooses an alternative
+resident representation:
+
+| Phase resolution | Codebook payload per coordinate | Shared lookup table |
+|------------------|---------------------------------|---------------------|
+| `2..=16`         | 4 bits (two coordinates per byte) | `16 * N` bytes     |
+| `17..=256`       | 8 bits                           | `16 * N` bytes     |
+| `257..=65536`    | 16 bits                          | `16 * N` bytes     |
+
+Both backends also retain `16 * factors * D` bytes of floating initial estimates,
+plus vector metadata. Queries keep floating estimates and temporary buffers.
+`PhaseHVec`'s public representation remains `u16`. At large `N` and small codebooks,
+the packed backend's table can outweigh its payload savings; choose the backend
+using total index memory and query latency for the intended workload.
+
+The immutable baseline, exact differential tests, allocation accounting, and timing
+harness are in
+[`benchmarks/results/holography_resonator_v1`](../benchmarks/results/holography_resonator_v1/README.md).
+The baseline comparisons include multiple seeds through the capacity knee, corrupted
+queries, packing boundaries, ties, and iteration limits. They establish output parity
+for those cases on the tested platform, rather than a new factorization algorithm
+or a larger capacity. Empty factor axes and dimension/resolution mismatches now fail
+at the API boundary; zero factors still return an empty result.
 
 ## Interpretation and honest scope
 
-Phase quantization is free for resonator factorization: a deterministic integer
-resonator (down to 4 bits/dim) matches the float resonator's capacity across the range.
-That makes the pairing — qFHRR substrate + Frady/Kent dynamics — an integer-only,
-replay-exact neurosymbolic factorizer.
+The reported experiments support quantized phase storage for resonator
+factorization down to `N = 16` in the tested workloads. The query still uses floating
+point arithmetic, and bitwise equality across platforms or math libraries is not
+promised.
 
 Scope this claim does **not** exceed:
 
@@ -159,10 +194,9 @@ Scope this claim does **not** exceed:
   underpowered and not shipped).
 - **Float readout arithmetic.** The isolated variable is the phase resolution `N` of
   the stored/snapped state. The resonator's inner products are computed in float here;
-  a fully fixed-point resonator (integer LUT arithmetic end to end) is an
-  implementation step, its determinism already validated by qFHRR and the substrate
-  tests. The stored substrate is integer and replay-verifiable; the query is a float
-  computation over it.
+  a fully fixed-point resonator would be a separate implementation requiring its own
+  capacity and numerical validation. Integer substrate tests do not validate that
+  unimplemented algorithm.
 - **Capacity is per-composite factorization, not superposition storage.** This does
   not change HMS's bundle-capacity story (sharding); it is about decoding a single
   bound tuple.
@@ -178,8 +212,9 @@ cargo features are needed. Deterministic: seeds `0..24` are fixed in the binary,
 the table above reproduces exactly. The library-level capability is exercised by:
 
 ```
-cargo test --lib --features experimental phase_resonator
-cargo test --doc --features experimental phase_resonator   # runs the PhaseResonator doctest
+cargo test --lib phase_resonator
+cargo test --test phase_resonator_regression
+cargo test --doc phase_resonator   # runs the PhaseResonator doctest
 ```
 
 Public API: `holographic_memory::core::PhaseResonator` (reusable index over fixed

@@ -1,0 +1,24 @@
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-context-20261024)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.30s
+     Running tests/conversation_context.rs (target/debug/deps/conversation_context-77685df83003963f)
+
+running 1 test
+test expansion_recovers_transitive_exact_premises_of_an_already_selected_anchor ... FAILED
+
+failures:
+
+---- expansion_recovers_transitive_exact_premises_of_an_already_selected_anchor stdout ----
+
+thread 'expansion_recovers_transitive_exact_premises_of_an_already_selected_anchor' (16706882) panicked at tests/conversation_context.rs:132:5:
+assertion `left == right` failed
+  left: 4
+ right: 9
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    expansion_recovers_transitive_exact_premises_of_an_already_selected_anchor
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `--test conversation_context`

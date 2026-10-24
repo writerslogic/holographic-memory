@@ -1,0 +1,11 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-resonator-20261024)
+    Finished `test` profile [optimized + debuginfo] target(s) in 13.46s
+   Doc-tests holographic_memory
+
+running 1 test
+test src/core/phase_resonator.rs - core::phase_resonator::PhaseResonator (line 427) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+

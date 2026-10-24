@@ -1,0 +1,43 @@
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-context-20261024)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.95s
+     Running tests/conversation_context.rs (target/debug/deps/conversation_context-77685df83003963f)
+
+running 14 tests
+test no_evidence_round_trips_without_inventing_a_source_or_a_count ... ok
+test python_golden_context_reconstructs_the_exact_canonical_rust_sources ... ok
+test context_round_trip_preserves_roles_times_conflicts_and_exact_unicode_sources ... ok
+test enumeration_rejects_fabricated_sources_and_invalid_or_missing_anchors ... ok
+test enumeration_admits_whole_sources_at_byte_round_and_source_boundaries ... ok
+test missing_local_forward_duplicate_and_cross_version_premises_are_rejected ... ok
+test enumeration_keeps_seed_conflicts_and_source_identity_without_claiming_a_count ... ok
+test context_byte_budget_is_atomic_at_the_exact_serialized_boundary ... ok
+test altered_source_identity_text_role_or_time_fails_the_source_digest ... ok
+test expansion_recovers_transitive_exact_premises_of_an_already_selected_anchor ... ok
+test immediate_candidate_breadth_precedes_enrichment_and_long_sessions_keep_local_context ... ok
+test transitive_expansion_is_atomic_at_source_round_and_byte_boundaries ... ok
+test source_and_frame_allocation_bounds_cover_limit_minus_one_limit_and_plus_one ... ok
+test transitive_expansion_rejects_deleted_premises_and_forged_dependency_cycles ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+
+     Running tests/conversation_memory.rs (target/debug/deps/conversation_memory-af5a404a09db8d8f)
+
+running 15 tests
+test future_observation_time_does_not_make_reported_memory_not_yet_valid ... ok
+test concurrent_conflicting_writes_choose_one_complete_immutable_session ... ok
+test assistant_only_named_fact_is_searchable_without_becoming_a_user_assertion ... ok
+test a_user_confirmation_and_its_following_answer_retain_the_original_assistant_referent ... ok
+test followup_closes_over_opening_and_nearest_user_premises_in_its_own_session_version ... ok
+test byte_budget_admits_complete_original_sources_at_the_exact_serialized_boundary ... ok
+test assistant_weight_preserves_explicit_assistant_queries_and_role_requests ... ok
+test aggregation_mmr_selects_another_session_before_a_repeated_session ... ok
+test a_keyword_beyond_the_first_document_chunk_hydrates_the_exact_entire_turn ... ok
+test immutable_retry_conflict_and_restart_preserve_one_complete_observation ... ok
+test invalid_query_role_and_capacity_options_leave_valid_recall_unchanged ... ok
+test malformed_scope_source_and_allocation_inputs_never_partially_commit ... ok
+test round_budget_counts_complete_premise_closures_at_the_exact_boundary ... ok
+test source_count_budget_drops_a_followup_instead_of_detaching_its_premises ... ok
+test opaque_id_renaming_preserves_unambiguous_retrieval_and_unrelated_growth_does_not_displace_it ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s
+

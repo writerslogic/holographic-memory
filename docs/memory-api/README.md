@@ -380,7 +380,21 @@ an oversized or incomplete group is reported in `dropped`. Returned originals ar
 clipped. These context links preserve source premises; they do not resolve every discourse
 reference or infer missing facts.
 
-`max_bytes` counts the exact serialized JSON `sources` array, including provenance; it is
+The opt-in `expand_aggregation_context` first admits candidates with their immediate
+premises in score order. It then uses remaining capacity to complete admitted anchors'
+transitive premise links from the exact stored session and version, including anchors
+already present in the seed. This recovers earlier original turns even when their text
+did not match the query. Each added closure must fit
+`ConversationContextLimits.max_sources`, `max_rounds` and the compact context's exact
+serialized UTF-8 `max_bytes`; otherwise the existing local context remains intact.
+Candidate admission precedes enrichment so a long episode cannot displace other
+candidates merely by requiring more premises. A missing stored premise fails expansion
+instead of restoring deleted evidence.
+The default aggregation gate still applies; set `aggregation_only: false` for other
+queries. `unresolved_premise_ids()` reports remaining links when a closure does not fit,
+and the context remains `unverified` rather than asserting an exhaustive answer.
+
+`ConversationRecallOptions.max_bytes` counts the exact serialized JSON `sources` array, including provenance; it is
 not a tokenizer or complete reader-request budget. Callers must count their final prompt
 with the reader's tokenizer. `max_sources` also applies to context turns. Sessions accept
 up to 2 MiB of raw text and 4096 stored records; each serialized source and session manifest

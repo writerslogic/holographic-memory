@@ -1,0 +1,56 @@
+[
+  {
+    "method": "dense",
+    "relative_awgn": 0.0,
+    "mean_accuracy": 0.6789772727272727,
+    "min_accuracy": 0.5056818181818182,
+    "max_accuracy": 1.0,
+    "persistent_array_bytes": 224942344,
+    "nonzero_design_payload_bytes": 224919552
+  },
+  {
+    "method": "dense",
+    "relative_awgn": 0.1,
+    "mean_accuracy": 0.4962121212121212,
+    "min_accuracy": 0.44886363636363635,
+    "max_accuracy": 0.5511363636363636,
+    "persistent_array_bytes": 224942344,
+    "nonzero_design_payload_bytes": 224919552
+  },
+  {
+    "method": "coupled",
+    "relative_awgn": 0.0,
+    "mean_accuracy": 1.0,
+    "min_accuracy": 1.0,
+    "max_accuracy": 1.0,
+    "persistent_array_bytes": 224952320,
+    "nonzero_design_payload_bytes": 46137344
+  },
+  {
+    "method": "coupled",
+    "relative_awgn": 0.1,
+    "mean_accuracy": 1.0,
+    "min_accuracy": 1.0,
+    "max_accuracy": 1.0,
+    "persistent_array_bytes": 224952320,
+    "nonzero_design_payload_bytes": 46137344
+  },
+  {
+    "method": "sharded",
+    "relative_awgn": 0.0,
+    "mean_accuracy": 0.5037878787878788,
+    "min_accuracy": 0.45738636363636365,
+    "max_accuracy": 0.5369318181818182,
+    "persistent_array_bytes": 224950528,
+    "nonzero_design_payload_bytes": 7028736
+  },
+  {
+    "method": "sharded",
+    "relative_awgn": 0.1,
+    "mean_accuracy": 0.4895833333333333,
+    "min_accuracy": 0.45170454545454547,
+    "max_accuracy": 0.5198863636363636,
+    "persistent_array_bytes": 224950528,
+    "nonzero_design_payload_bytes": 7028736
+  }
+]

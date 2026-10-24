@@ -1,0 +1,56 @@
+{"kind":"scenario","case":"small_4bit","dim":1024,"n":16,"entries":12,"factors":3,"max_iter":40,"seed":24301,"clean_queries":4,"corrupted_queries":1,"samples":7}
+{"kind":"build","case":"small_4bit","backend":"baseline","elapsed_ns":568666,"alloc_calls":76,"allocated_bytes":591624,"retained_heap_bytes":591624,"peak_heap_bytes":591624,"index_stack_bytes":48}
+{"kind":"build","case":"small_4bit","backend":"expanded","elapsed_ns":146417,"alloc_calls":16,"allocated_bytes":639544,"retained_heap_bytes":639544,"peak_heap_bytes":639544,"index_stack_bytes":128}
+{"kind":"build","case":"small_4bit","backend":"packed","elapsed_ns":112042,"alloc_calls":13,"allocated_bytes":68152,"retained_heap_bytes":68152,"peak_heap_bytes":68152,"index_stack_bytes":128}
+{"kind":"parity","case":"small_4bit","bitwise_equal":true,"clean_recovered":4,"clean_queries":4,"iterations":[4, 4, 4, 4, 4]}
+{"kind":"query","case":"small_4bit","backend":"baseline","queries":5,"samples_ns":[3262417, 3346042, 3272042, 3231708, 3396500, 3293083, 3242000],"median_ns":3272042,"alloc_calls":315,"allocated_bytes":2295680,"peak_heap_bytes":98472}
+{"kind":"query","case":"small_4bit","backend":"expanded","queries":5,"samples_ns":[2407584, 2244584, 2372625, 2394167, 2462458, 2427458, 2418833],"median_ns":2407584,"alloc_calls":60,"allocated_bytes":410920,"peak_heap_bytes":82184}
+{"kind":"query","case":"small_4bit","backend":"packed","queries":5,"samples_ns":[2661875, 2576666, 2770583, 2631042, 2678667, 2807667, 2689958],"median_ns":2678667,"alloc_calls":60,"allocated_bytes":410920,"peak_heap_bytes":82184}
+{"kind":"scenario","case":"small_8bit","dim":1024,"n":256,"entries":12,"factors":3,"max_iter":40,"seed":24301,"clean_queries":4,"corrupted_queries":1,"samples":7}
+{"kind":"build","case":"small_8bit","backend":"baseline","elapsed_ns":504791,"alloc_calls":76,"allocated_bytes":591624,"retained_heap_bytes":591624,"peak_heap_bytes":591624,"index_stack_bytes":48}
+{"kind":"build","case":"small_8bit","backend":"expanded","elapsed_ns":123708,"alloc_calls":16,"allocated_bytes":643384,"retained_heap_bytes":643384,"peak_heap_bytes":643384,"index_stack_bytes":128}
+{"kind":"build","case":"small_8bit","backend":"packed","elapsed_ns":70583,"alloc_calls":13,"allocated_bytes":90424,"retained_heap_bytes":90424,"peak_heap_bytes":90424,"index_stack_bytes":128}
+{"kind":"parity","case":"small_8bit","bitwise_equal":true,"clean_recovered":4,"clean_queries":4,"iterations":[4, 4, 4, 4, 4]}
+{"kind":"query","case":"small_8bit","backend":"baseline","queries":5,"samples_ns":[3416708, 3421834, 3330875, 3311083, 3406959, 3372833, 3333833],"median_ns":3372833,"alloc_calls":315,"allocated_bytes":2295680,"peak_heap_bytes":98472}
+{"kind":"query","case":"small_8bit","backend":"expanded","queries":5,"samples_ns":[2488917, 2282583, 2440250, 2432833, 2314416, 2450833, 2442916],"median_ns":2440250,"alloc_calls":60,"allocated_bytes":410920,"peak_heap_bytes":82184}
+{"kind":"query","case":"small_8bit","backend":"packed","queries":5,"samples_ns":[2594417, 2504708, 2664875, 2601417, 2555584, 2728625, 2610583],"median_ns":2601417,"alloc_calls":60,"allocated_bytes":410920,"peak_heap_bytes":82184}
+{"kind":"scenario","case":"knee_4bit","dim":1024,"n":16,"entries":48,"factors":3,"max_iter":40,"seed":24301,"clean_queries":3,"corrupted_queries":1,"samples":7}
+{"kind":"build","case":"knee_4bit","backend":"baseline","elapsed_ns":2174083,"alloc_calls":292,"allocated_bytes":2366280,"retained_heap_bytes":2366280,"peak_heap_bytes":2366280,"index_stack_bytes":48}
+{"kind":"build","case":"knee_4bit","backend":"expanded","elapsed_ns":321917,"alloc_calls":16,"allocated_bytes":2409016,"retained_heap_bytes":2409016,"peak_heap_bytes":2409016,"index_stack_bytes":128}
+{"kind":"build","case":"knee_4bit","backend":"packed","elapsed_ns":251416,"alloc_calls":13,"allocated_bytes":123448,"retained_heap_bytes":123448,"peak_heap_bytes":123448,"index_stack_bytes":128}
+{"kind":"parity","case":"knee_4bit","bitwise_equal":true,"clean_recovered":2,"clean_queries":3,"iterations":[6, 13, 6, 6]}
+{"kind":"query","case":"knee_4bit","backend":"baseline","queries":4,"samples_ns":[11722500, 11727958, 11741625, 11665500, 11927125, 11843458, 11725083],"median_ns":11727958,"alloc_calls":447,"allocated_bytes":3311464,"peak_heap_bytes":98472}
+{"kind":"query","case":"knee_4bit","backend":"expanded","queries":4,"samples_ns":[10383208, 10364166, 10411833, 10389166, 10231500, 10459959, 10359792],"median_ns":10383208,"alloc_calls":48,"allocated_bytes":328736,"peak_heap_bytes":82184}
+{"kind":"query","case":"knee_4bit","backend":"packed","queries":4,"samples_ns":[12883083, 12632583, 12876625, 12707834, 12574541, 13397333, 12775666],"median_ns":12775666,"alloc_calls":48,"allocated_bytes":328736,"peak_heap_bytes":82184}
+{"kind":"scenario","case":"knee_8bit","dim":1024,"n":256,"entries":48,"factors":3,"max_iter":40,"seed":24301,"clean_queries":3,"corrupted_queries":1,"samples":7}
+{"kind":"build","case":"knee_8bit","backend":"baseline","elapsed_ns":1955667,"alloc_calls":292,"allocated_bytes":2366280,"retained_heap_bytes":2366280,"peak_heap_bytes":2366280,"index_stack_bytes":48}
+{"kind":"build","case":"knee_8bit","backend":"expanded","elapsed_ns":284542,"alloc_calls":16,"allocated_bytes":2412856,"retained_heap_bytes":2412856,"peak_heap_bytes":2412856,"index_stack_bytes":128}
+{"kind":"build","case":"knee_8bit","backend":"packed","elapsed_ns":148333,"alloc_calls":13,"allocated_bytes":201016,"retained_heap_bytes":201016,"peak_heap_bytes":201016,"index_stack_bytes":128}
+{"kind":"parity","case":"knee_8bit","bitwise_equal":true,"clean_recovered":1,"clean_queries":3,"iterations":[11, 6, 9, 14]}
+{"kind":"query","case":"knee_8bit","backend":"baseline","queries":4,"samples_ns":[14860334, 15288709, 14945792, 15115583, 15238083, 14933041, 14883166],"median_ns":14945792,"alloc_calls":564,"allocated_bytes":4196416,"peak_heap_bytes":98472}
+{"kind":"query","case":"knee_8bit","backend":"expanded","queries":4,"samples_ns":[13460833, 13538583, 13538084, 13694417, 13328166, 13473167, 13479417],"median_ns":13479417,"alloc_calls":48,"allocated_bytes":328736,"peak_heap_bytes":82184}
+{"kind":"query","case":"knee_8bit","backend":"packed","queries":4,"samples_ns":[15798416, 15507166, 15672083, 15563458, 15871125, 15563833, 15531083],"median_ns":15563833,"alloc_calls":48,"allocated_bytes":328736,"peak_heap_bytes":82184}
+{"kind":"scenario","case":"large_4bit","dim":8192,"n":16,"entries":256,"factors":3,"max_iter":6,"seed":24301,"clean_queries":2,"corrupted_queries":1,"samples":7}
+{"kind":"build","case":"large_4bit","backend":"baseline","elapsed_ns":91270125,"alloc_calls":1540,"allocated_bytes":100700232,"retained_heap_bytes":100700232,"peak_heap_bytes":100700232,"index_stack_bytes":48}
+{"kind":"build","case":"large_4bit","backend":"expanded","elapsed_ns":15470417,"alloc_calls":16,"allocated_bytes":101057080,"retained_heap_bytes":101057080,"peak_heap_bytes":101057080,"index_stack_bytes":128}
+{"kind":"build","case":"large_4bit","backend":"packed","elapsed_ns":9367625,"alloc_calls":13,"allocated_bytes":3539512,"retained_heap_bytes":3539512,"peak_heap_bytes":3539512,"index_stack_bytes":128}
+{"kind":"parity","case":"large_4bit","bitwise_equal":true,"clean_recovered":1,"clean_queries":2,"iterations":[6, 6, 6]}
+{"kind":"query","case":"large_4bit","backend":"baseline","queries":3,"samples_ns":[270461792, 269865459, 270407333, 269753250, 270861583, 270006750, 270101000],"median_ns":270101000,"alloc_calls":267,"allocated_bytes":15729936,"peak_heap_bytes":786600}
+{"kind":"query","case":"large_4bit","backend":"expanded","queries":3,"samples_ns":[237906167, 236347667, 235437083, 235792166, 236028791, 235927917, 235501916],"median_ns":235927917,"alloc_calls":36,"allocated_bytes":1966872,"peak_heap_bytes":655624}
+{"kind":"query","case":"large_4bit","backend":"packed","queries":3,"samples_ns":[277353792, 281993917, 277535083, 282218791, 278711916, 280665000, 279225542],"median_ns":279225542,"alloc_calls":36,"allocated_bytes":1966872,"peak_heap_bytes":655624}
+{"kind":"scenario","case":"large_8bit","dim":8192,"n":256,"entries":256,"factors":3,"max_iter":6,"seed":24301,"clean_queries":2,"corrupted_queries":1,"samples":7}
+{"kind":"build","case":"large_8bit","backend":"baseline","elapsed_ns":84005250,"alloc_calls":1540,"allocated_bytes":100700232,"retained_heap_bytes":100700232,"peak_heap_bytes":100700232,"index_stack_bytes":48}
+{"kind":"build","case":"large_8bit","backend":"expanded","elapsed_ns":9707916,"alloc_calls":16,"allocated_bytes":101060920,"retained_heap_bytes":101060920,"peak_heap_bytes":101060920,"index_stack_bytes":128}
+{"kind":"build","case":"large_8bit","backend":"packed","elapsed_ns":5151833,"alloc_calls":13,"allocated_bytes":6689080,"retained_heap_bytes":6689080,"peak_heap_bytes":6689080,"index_stack_bytes":128}
+{"kind":"parity","case":"large_8bit","bitwise_equal":true,"clean_recovered":0,"clean_queries":2,"iterations":[6, 6, 6]}
+{"kind":"query","case":"large_8bit","backend":"baseline","queries":3,"samples_ns":[270275916, 271194459, 270151041, 270311834, 270257625, 269614333, 269581291],"median_ns":270257625,"alloc_calls":267,"allocated_bytes":15729936,"peak_heap_bytes":786600}
+{"kind":"query","case":"large_8bit","backend":"expanded","queries":3,"samples_ns":[238361334, 236826166, 237208125, 235758208, 235280542, 236105083, 235863583],"median_ns":236105083,"alloc_calls":36,"allocated_bytes":1966872,"peak_heap_bytes":655624}
+{"kind":"query","case":"large_8bit","backend":"packed","queries":3,"samples_ns":[266934542, 266745833, 266730500, 267484917, 266973917, 267877458, 270635166],"median_ns":266973917,"alloc_calls":36,"allocated_bytes":1966872,"peak_heap_bytes":655624}
+{"kind":"scenario","case":"high_resolution","dim":1024,"n":65536,"entries":12,"factors":3,"max_iter":20,"seed":24301,"clean_queries":2,"corrupted_queries":1,"samples":7}
+{"kind":"build","case":"high_resolution","backend":"baseline","elapsed_ns":489083,"alloc_calls":76,"allocated_bytes":591624,"retained_heap_bytes":591624,"peak_heap_bytes":591624,"index_stack_bytes":48}
+{"kind":"build","case":"high_resolution","backend":"expanded","elapsed_ns":524958,"alloc_calls":14,"allocated_bytes":639288,"retained_heap_bytes":639288,"peak_heap_bytes":639288,"index_stack_bytes":128}
+{"kind":"build","case":"high_resolution","backend":"packed","elapsed_ns":417250,"alloc_calls":13,"allocated_bytes":1171768,"retained_heap_bytes":1171768,"peak_heap_bytes":1171768,"index_stack_bytes":128}
+{"kind":"parity","case":"high_resolution","bitwise_equal":true,"clean_recovered":2,"clean_queries":2,"iterations":[5, 4, 5]}
+{"kind":"query","case":"high_resolution","backend":"baseline","queries":3,"samples_ns":[2434250, 2311625, 2195666, 2342958, 2276416, 2320250, 2201125],"median_ns":2311625,"alloc_calls":215,"allocated_bytes":1574064,"peak_heap_bytes":98472}
+{"kind":"query","case":"high_resolution","backend":"expanded","queries":3,"samples_ns":[2039667, 1946459, 2034750, 2036584, 1952167, 2033125, 1915750],"median_ns":2033125,"alloc_calls":36,"allocated_bytes":246552,"peak_heap_bytes":82184}
+{"kind":"query","case":"high_resolution","backend":"packed","queries":3,"samples_ns":[2577750, 2452500, 2473625, 2528959, 2438333, 2556417, 2470375],"median_ns":2473625,"alloc_calls":36,"allocated_bytes":246552,"peak_heap_bytes":82184}

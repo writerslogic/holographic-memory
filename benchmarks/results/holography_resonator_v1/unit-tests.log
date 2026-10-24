@@ -1,0 +1,17 @@
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-resonator-20261024)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 09s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-bc2729ea7a0f976d)
+
+running 9 tests
+test core::phase_resonator::tests::reusable_index_derives_resolution_from_codebooks ... ok
+test core::phase_resonator::tests::empty_codebooks_yield_no_factors ... ok
+test core::phase_resonator::tests::single_factor_and_single_entry_boundaries ... ok
+test core::phase_resonator::tests::mismatched_resolution_panics - should panic ... ok
+test core::phase_resonator::tests::recovers_two_factors ... ok
+test core::phase_resonator::tests::factors_at_minimum_phase_resolution ... ok
+test core::phase_resonator::tests::quantized_4bit_still_factors ... ok
+test core::phase_resonator::tests::reusable_index_matches_free_function ... ok
+test core::phase_resonator::tests::factors_above_greedy_capacity ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 577 filtered out; finished in 0.02s
+

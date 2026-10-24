@@ -1,0 +1,34 @@
+Apple M4 / aarch64 / rustc 1.96.0
+Command: rustc --edition=2021 -C opt-level=3 -C lto=true -C codegen-units=1 --emit=asm benchmarks/research/phase_substrate/probe.rs
+
+before_interleaved_accumulators.s
+Phase source SHA-256: 6b95b18702ced57c2ef0ecff327a155b1a6df726453748183c87a0e82ad4d8d5
+LBB29_59:
+	ldrh	w0, [x11], #2
+	cmp	x1, x0
+	b.ls	LBB29_72
+	add	x14, x9, x0, lsl #4
+	ldp	x15, x14, [x14]
+	ldr	x16, [x13]
+	add	x15, x16, x15
+	str	x15, [x13], #8
+	ldr	x15, [x12]
+	add	x14, x15, x14
+	str	x14, [x12], #8
+	subs	x10, x10, #1
+	b.ne	LBB29_59
+	b	LBB29_56
+
+after_interleaved_accumulators.s
+Phase source SHA-256: 23788c7a49322e04fe107845b64300668fee8e60c99bbbdac36d30285fea1e11
+LBB29_45:
+	ldrh	w0, [x10], #2
+	cmp	x1, x0
+	b.ls	LBB29_66
+	ldr	q0, [x8, x0, lsl #4]
+	ldr	q1, [x11]
+	add.2d	v0, v1, v0
+	str	q0, [x11], #16
+	subs	x9, x9, #1
+	b.ne	LBB29_45
+	b	LBB29_42

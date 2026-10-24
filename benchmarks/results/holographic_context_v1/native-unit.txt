@@ -1,0 +1,9 @@
+   Compiling holographic-memory v0.6.1 (/Volumes/A/.hms-holography-context-20261024)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.27s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-7dbe8b900d732dab)
+
+running 1 test
+test core::memory_api::conversation::context::tests::source_capacity_accepts_both_sides_of_the_last_valid_ordinal ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 586 filtered out; finished in 0.51s
+

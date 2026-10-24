@@ -1,0 +1,11 @@
+{
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "python": "3.14.7",
+  "numpy": "2.5.4",
+  "source_sha256": {
+    "benchmarks/research/holographic_capacity/PLAN.json": "ca8b303291e45b209c0c70d34afb4745130c27bef663f03675b0e2ca2a7f6044",
+    "benchmarks/research/holographic_capacity/probe.py": "17ba2a0f6d9f31acf73df539573293273cd4afb16297364538b90d1779943a45",
+    "scripts/superposition_floor_coded.py": "6c0fb31909ea396934edf4542dba63bbe931160083ef031a483798a994cd6f42"
+  },
+  "timings": "exploratory-concurrent; not a speed claim"
+}

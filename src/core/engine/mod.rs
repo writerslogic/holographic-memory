@@ -1810,6 +1810,21 @@ mod connection_graph_tests {
                 .as_deref(),
             Some("berlin")
         );
+        hms.relate_phase("alice", "parent_of", "bob");
+        hms.relate_phase("bob", "parent_of", "carol");
+        assert_eq!(
+            hms.phase_retrieve_object("bob", "parent_of").as_deref(),
+            Some("carol")
+        );
+        assert_eq!(
+            hms.phase_retrieve_subject("parent_of", "bob").as_deref(),
+            Some("alice")
+        );
+        assert_eq!(
+            hms.phase_retrieve_path("alice", &["parent_of", "parent_of"])
+                .as_deref(),
+            Some("carol")
+        );
     }
 }
 

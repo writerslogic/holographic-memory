@@ -1,0 +1,3432 @@
+{
+  "metadata": {
+    "label": "serial-validation",
+    "started_utc": "2026-10-24T21:27:40.438507+00:00",
+    "head": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "compile_command": [
+      "rustc",
+      "--edition=2021",
+      "-C",
+      "opt-level=3",
+      "-C",
+      "lto=true",
+      "-C",
+      "codegen-units=1",
+      "-C",
+      "strip=debuginfo",
+      "benchmarks/research/phase_substrate/probe.rs",
+      "-o",
+      "/Volumes/A/.hms-holography-substrate-20261024/target/holography-phase-substrate/probe"
+    ],
+    "source_sha256": {
+      "src/core/phase_hvec.rs": "23788c7a49322e04fe107845b64300668fee8e60c99bbbdac36d30285fea1e11",
+      "benchmarks/results/holography_phase_substrate_v1/baseline_phase_hvec.rs": "94db2a1aa11139f0162b270383f4fd3f00651f896afd4e623229674fe13e5b05",
+      "benchmarks/research/phase_substrate/probe.rs": "83d14ac7f776a8afeb2f0cbf14bd8ebccf46baf984176b5e72a54da9609f5b41",
+      "benchmarks/research/phase_substrate/run.py": "c77e2810d326afcccb3ca3e13d401bfb14b2cee3aa1c7787142548584abdea8d"
+    },
+    "sample_ms": 5.0,
+    "repeats": 3,
+    "cold_trials": 9,
+    "cases": [
+      [
+        16,
+        511
+      ],
+      [
+        16,
+        512
+      ],
+      [
+        16,
+        513
+      ]
+    ],
+    "fixture_creation_timed": false,
+    "warm_timings_include_result_allocation_and_drop": true,
+    "cold_timings_include_result_allocation_but_not_drop": true,
+    "phase_vector_storage": "unchanged Vec<u16>; two bytes per phase",
+    "max_global_lookup_payload_bytes": 1578928,
+    "concurrent_work_warning": false,
+    "serialization_scope": "this task only; host exclusivity is not asserted",
+    "hardware": {
+      "machdep.cpu.brand_string": "Apple M4",
+      "hw.physicalcpu": "10",
+      "hw.memsize": "34359738368"
+    },
+    "finished_utc": "2026-10-24T21:27:47.970643+00:00"
+  },
+  "runs": [
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 0,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4584,
+      "cold_similarity_current_ns": 750,
+      "cold_bundle8_baseline_ns": 15333,
+      "cold_bundle8_current_ns": 12292,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4201,
+          "current_iterations": 16246,
+          "baseline_ns": [
+            1194.050940252321,
+            1198.11759104975,
+            1193.3668174244228
+          ],
+          "current_ns": [
+            309.6634248430383,
+            317.83208174319833,
+            307.5167425827896
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17397,
+          "current_iterations": 109691,
+          "baseline_ns": [
+            287.1160544921538,
+            287.62619991952636,
+            288.30160372478014
+          ],
+          "current_ns": [
+            45.98599702801506,
+            45.601207027012244,
+            48.689801351068
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 17752,
+          "current_iterations": 92817,
+          "baseline_ns": [
+            286.1884294727355,
+            283.02912347904464,
+            284.67682514646236
+          ],
+          "current_ns": [
+            53.36755120290464,
+            53.21492829977267,
+            53.096857256752536
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1771,
+          "current_iterations": 160959,
+          "baseline_ns": [
+            2813.688311688312,
+            2832.0863918690006,
+            2835.2388481084135
+          ],
+          "current_ns": [
+            30.6089811691176,
+            31.504401742058537,
+            30.956902068228555
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1488,
+          "current_iterations": 1763,
+          "baseline_ns": [
+            3322.16061827957,
+            3336.469758064516,
+            3318.8279569892475
+          ],
+          "current_ns": [
+            2820.263754963131,
+            2801.120249574589,
+            2845.5995462280202
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 871,
+          "current_iterations": 1212,
+          "baseline_ns": [
+            5608.44776119403,
+            5685.7060849598165,
+            5736.030998851895
+          ],
+          "current_ns": [
+            4076.8011551155114,
+            4088.042904290429,
+            4022.3118811881186
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 370,
+          "current_iterations": 658,
+          "baseline_ns": [
+            13542.343243243244,
+            13569.256756756757,
+            13603.491891891892
+          ],
+          "current_ns": [
+            7593.591185410334,
+            7580.800911854103,
+            7597.770516717325
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 0,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 7083,
+      "cold_similarity_current_ns": 1250,
+      "cold_bundle8_baseline_ns": 15125,
+      "cold_bundle8_current_ns": 11500,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4276,
+          "current_iterations": 16181,
+          "baseline_ns": [
+            1166.3938260056127,
+            1171.5680542563143,
+            1178.0869971936388
+          ],
+          "current_ns": [
+            309.120264507756,
+            308.15203015882827,
+            308.4481799641555
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17264,
+          "current_iterations": 105149,
+          "baseline_ns": [
+            291.8935356811863,
+            289.8420412418906,
+            289.85652224281745
+          ],
+          "current_ns": [
+            47.74415353450817,
+            47.71324501421792,
+            46.78915634005079
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18316,
+          "current_iterations": 89442,
+          "baseline_ns": [
+            275.3649268399214,
+            276.277080148504,
+            276.0246232801922
+          ],
+          "current_ns": [
+            55.37341517407929,
+            55.18846850472932,
+            55.173095413787706
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1773,
+          "current_iterations": 160087,
+          "baseline_ns": [
+            2782.501410039481,
+            2801.372250423012,
+            2788.5172024816693
+          ],
+          "current_ns": [
+            30.83062959515763,
+            30.876179827218948,
+            31.357168289742454
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1480,
+          "current_iterations": 1786,
+          "baseline_ns": [
+            3353.9135135135134,
+            3346.9033783783784,
+            3358.0804054054056
+          ],
+          "current_ns": [
+            2838.4888017917133,
+            2839.562150055991,
+            2866.018477043673
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 877,
+          "current_iterations": 1242,
+          "baseline_ns": [
+            5699.5906499429875,
+            5705.3397947548465,
+            5724.438996579247
+          ],
+          "current_ns": [
+            4086.92270531401,
+            4077.026570048309,
+            4021.2359098228662
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 361,
+          "current_iterations": 645,
+          "baseline_ns": [
+            13759.925207756232,
+            13874.423822714682,
+            13678.437673130195
+          ],
+          "current_ns": [
+            7793.66976744186,
+            7886.627906976744,
+            7801.162790697675
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 0,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4458,
+      "cold_similarity_current_ns": 833,
+      "cold_bundle8_baseline_ns": 14750,
+      "cold_bundle8_current_ns": 12959,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4202,
+          "current_iterations": 16157,
+          "baseline_ns": [
+            1165.159447881961,
+            1196.99928605426,
+            1260.2927177534507
+          ],
+          "current_ns": [
+            312.3698087516247,
+            319.59057993439376,
+            313.8345608714489
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18429,
+          "current_iterations": 141294,
+          "baseline_ns": [
+            273.0908350968582,
+            272.2611102067394,
+            275.9690162244289
+          ],
+          "current_ns": [
+            34.529661556754,
+            33.93456197715402,
+            33.560632440160234
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18603,
+          "current_iterations": 124268,
+          "baseline_ns": [
+            271.1815836155459,
+            268.1802935010482,
+            266.9125947427834
+          ],
+          "current_ns": [
+            40.268484243731294,
+            40.11960440338623,
+            40.0344416905398
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1768,
+          "current_iterations": 195556,
+          "baseline_ns": [
+            2798.7839366515836,
+            2897.2239819004526,
+            2808.0927601809954
+          ],
+          "current_ns": [
+            25.700223976763688,
+            25.107043506719304,
+            25.5523584037309
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1394,
+          "current_iterations": 1749,
+          "baseline_ns": [
+            3371.3830703012914,
+            3364.6879483500716,
+            3361.0408895265423
+          ],
+          "current_ns": [
+            2895.9405374499715,
+            3039.9514008004576,
+            3064.941680960549
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 881,
+          "current_iterations": 1244,
+          "baseline_ns": [
+            5667.659477866061,
+            5747.493757094211,
+            6072.502837684449
+          ],
+          "current_ns": [
+            4315.246784565917,
+            4087.587620578778,
+            4090.1993569131832
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 363,
+          "current_iterations": 641,
+          "baseline_ns": [
+            14635.674931129477,
+            14638.658402203857,
+            13924.126721763085
+          ],
+          "current_ns": [
+            7848.413416536661,
+            7957.6193447737905,
+            7807.656786271451
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 1,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4292,
+      "cold_similarity_current_ns": 1416,
+      "cold_bundle8_baseline_ns": 14459,
+      "cold_bundle8_current_ns": 13750,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4169,
+          "current_iterations": 16094,
+          "baseline_ns": [
+            1272.3175821539937,
+            1209.2828016310866,
+            1158.5411369633005
+          ],
+          "current_ns": [
+            317.49148751087364,
+            308.0262830868647,
+            322.8636137691065
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17241,
+          "current_iterations": 98507,
+          "baseline_ns": [
+            288.48871875181254,
+            293.85377878313324,
+            288.19621831680297
+          ],
+          "current_ns": [
+            45.95655131107434,
+            45.49719309287665,
+            46.38587105484889
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 13066,
+          "current_iterations": 94110,
+          "baseline_ns": [
+            288.25126281953163,
+            288.57339660186744,
+            280.2087861625593
+          ],
+          "current_ns": [
+            53.49458080969079,
+            53.50032940176389,
+            52.72465200297524
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 904,
+          "current_iterations": 158618,
+          "baseline_ns": [
+            4643.345132743363,
+            4747.465707964602,
+            4805.4480088495575
+          ],
+          "current_ns": [
+            30.92440328336002,
+            30.908906933639308,
+            30.965117451991578
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 647,
+          "current_iterations": 1749,
+          "baseline_ns": [
+            7587.5842349304485,
+            7776.531684698609,
+            7681.672333848532
+          ],
+          "current_ns": [
+            2842.528873642081,
+            2878.2401372212694,
+            2870.735849056604
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 216,
+          "current_iterations": 1243,
+          "baseline_ns": [
+            23700.037037037036,
+            22866.703703703704,
+            22899.11574074074
+          ],
+          "current_ns": [
+            4015.6878519710376,
+            4073.444891391794,
+            4134.452936444087
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 60,
+          "current_iterations": 647,
+          "baseline_ns": [
+            84220.13333333333,
+            82811.8,
+            82931.25
+          ],
+          "current_ns": [
+            7738.536321483772,
+            7686.437403400309,
+            7769.76970633694
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 1,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4500,
+      "cold_similarity_current_ns": 1208,
+      "cold_bundle8_baseline_ns": 14208,
+      "cold_bundle8_current_ns": 13625,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4281,
+          "current_iterations": 16293,
+          "baseline_ns": [
+            1164.2431674842326,
+            1165.6155103947676,
+            1185.227283345013
+          ],
+          "current_ns": [
+            326.0679432885288,
+            313.0689866813969,
+            310.59350641379734
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17287,
+          "current_iterations": 105578,
+          "baseline_ns": [
+            290.58448545149537,
+            291.8787528200382,
+            289.4708740672181
+          ],
+          "current_ns": [
+            46.26516887988028,
+            47.39071586883631,
+            46.981852279831024
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18331,
+          "current_iterations": 90413,
+          "baseline_ns": [
+            275.4191260705908,
+            273.22797446947794,
+            272.80972123724837
+          ],
+          "current_ns": [
+            55.694424474356566,
+            53.68189309059538,
+            53.58327895324788
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1820,
+          "current_iterations": 162171,
+          "baseline_ns": [
+            2779.464285714286,
+            2744.9406593406593,
+            2750.686813186813
+          ],
+          "current_ns": [
+            31.11119127340893,
+            30.7157753235782,
+            30.72323041727559
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1499,
+          "current_iterations": 1758,
+          "baseline_ns": [
+            3329.5530353569047,
+            3326.690460306871,
+            3342.9232821881255
+          ],
+          "current_ns": [
+            2840.9180887372013,
+            2841.5102389078497,
+            2825.7013651877132
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 883,
+          "current_iterations": 1199,
+          "baseline_ns": [
+            5727.728199320498,
+            5750.0,
+            5590.458663646659
+          ],
+          "current_ns": [
+            4063.698915763136,
+            4023.8740617180983,
+            3939.0809007506255
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 365,
+          "current_iterations": 658,
+          "baseline_ns": [
+            13759.589041095891,
+            13810.27397260274,
+            14691.326027397261
+          ],
+          "current_ns": [
+            7599.796352583587,
+            7640.451367781155,
+            7910.018237082067
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 1,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4250,
+      "cold_similarity_current_ns": 1167,
+      "cold_bundle8_baseline_ns": 13625,
+      "cold_bundle8_current_ns": 12583,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4329,
+          "current_iterations": 16177,
+          "baseline_ns": [
+            1160.9588819588819,
+            1209.2187572187572,
+            1183.2603372603373
+          ],
+          "current_ns": [
+            308.87729492489336,
+            308.5811337083514,
+            308.7408048463868
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18546,
+          "current_iterations": 148773,
+          "baseline_ns": [
+            269.86503828318774,
+            271.7184837700852,
+            270.0380135878357
+          ],
+          "current_ns": [
+            33.56008146639511,
+            33.537947073729775,
+            33.65474245998938
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18552,
+          "current_iterations": 122232,
+          "baseline_ns": [
+            270.2291936179388,
+            268.34486847779215,
+            269.1084519189306
+          ],
+          "current_ns": [
+            40.91263335296813,
+            40.5468698867727,
+            40.47050690490215
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1778,
+          "current_iterations": 198910,
+          "baseline_ns": [
+            2805.3993250843646,
+            2815.804274465692,
+            2833.005624296963
+          ],
+          "current_ns": [
+            25.686662309587252,
+            25.212824895681464,
+            26.286596953396007
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1465,
+          "current_iterations": 1730,
+          "baseline_ns": [
+            3441.8088737201365,
+            3373.122866894198,
+            3385.3808873720136
+          ],
+          "current_ns": [
+            2865.2456647398844,
+            2867.7023121387283,
+            2868.71387283237
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 881,
+          "current_iterations": 1211,
+          "baseline_ns": [
+            5821.745743473326,
+            5725.028376844495,
+            5783.011350737798
+          ],
+          "current_ns": [
+            3989.608587943848,
+            4140.1734104046245,
+            4120.4921552436
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 366,
+          "current_iterations": 643,
+          "baseline_ns": [
+            14162.341530054644,
+            14504.551912568306,
+            13896.969945355191
+          ],
+          "current_ns": [
+            7921.785381026439,
+            7715.656298600311,
+            7746.824261275272
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 2,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4584,
+      "cold_similarity_current_ns": 1000,
+      "cold_bundle8_baseline_ns": 15542.000000000002,
+      "cold_bundle8_current_ns": 12667,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4309,
+          "current_iterations": 16076,
+          "baseline_ns": [
+            1159.5690415409608,
+            1186.634718032026,
+            1170.1478301229984
+          ],
+          "current_ns": [
+            309.68524508584227,
+            311.0226424483702,
+            308.3789499875591
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17283,
+          "current_iterations": 109428,
+          "baseline_ns": [
+            288.2335821327316,
+            292.6960597118556,
+            286.89075970606956
+          ],
+          "current_ns": [
+            46.31661000840735,
+            45.32355521438754,
+            45.72945681178492
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 17523,
+          "current_iterations": 92254,
+          "baseline_ns": [
+            284.8613251155624,
+            291.35279347143756,
+            286.67556925184044
+          ],
+          "current_ns": [
+            53.144481540095825,
+            53.72080343399744,
+            62.2660480846359
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1009,
+          "current_iterations": 161704,
+          "baseline_ns": [
+            4646.184340931615,
+            4609.432111000991,
+            4630.244796828543
+          ],
+          "current_ns": [
+            30.411535892742293,
+            30.537791272943156,
+            31.149507742541928
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 654,
+          "current_iterations": 1745,
+          "baseline_ns": [
+            7569.69877675841,
+            7554.472477064221,
+            7592.954128440367
+          ],
+          "current_ns": [
+            2810.9839541547276,
+            2809.217191977077,
+            2867.669340974212
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 216,
+          "current_iterations": 1218,
+          "baseline_ns": [
+            22657.60185185185,
+            22735.14814814815,
+            22685.574074074073
+          ],
+          "current_ns": [
+            4088.600985221675,
+            4090.8932676518884,
+            4160.783251231527
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 60,
+          "current_iterations": 649,
+          "baseline_ns": [
+            82211.8,
+            82115.96666666666,
+            82211.11666666667
+          ],
+          "current_ns": [
+            7711.671802773498,
+            7731.189522342064,
+            7784.090909090909
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 2,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4708,
+      "cold_similarity_current_ns": 1084,
+      "cold_bundle8_baseline_ns": 15333,
+      "cold_bundle8_current_ns": 12500,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4160,
+          "current_iterations": 16198,
+          "baseline_ns": [
+            1176.2319711538462,
+            1187.3798076923076,
+            1184.425
+          ],
+          "current_ns": [
+            309.54951228546736,
+            311.8929497468823,
+            308.17594764785775
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17206,
+          "current_iterations": 105412,
+          "baseline_ns": [
+            292.3956178077415,
+            293.01795885156344,
+            296.459084040451
+          ],
+          "current_ns": [
+            49.75912609570068,
+            47.14991651804349,
+            48.8013698630137
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18282,
+          "current_iterations": 93914,
+          "baseline_ns": [
+            275.84739087627173,
+            273.0212777595449,
+            274.11978995733506
+          ],
+          "current_ns": [
+            53.5689567050706,
+            53.70338820623123,
+            53.58004131439402
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1794,
+          "current_iterations": 160300,
+          "baseline_ns": [
+            2814.195652173913,
+            2789.831661092531,
+            2788.53121516165
+          ],
+          "current_ns": [
+            30.39638802245789,
+            30.705708047411104,
+            31.147330006238303
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1459,
+          "current_iterations": 1754,
+          "baseline_ns": [
+            3360.1494174091845,
+            3339.2446881425635,
+            3356.9225496915697
+          ],
+          "current_ns": [
+            2874.216077537058,
+            2854.71322690992,
+            2861.6020524515393
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 883,
+          "current_iterations": 1239,
+          "baseline_ns": [
+            5783.408833522084,
+            5723.575311438279,
+            5685.776896942242
+          ],
+          "current_ns": [
+            4359.093623890234,
+            4153.315577078289,
+            4143.799031476998
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 361,
+          "current_iterations": 635,
+          "baseline_ns": [
+            13750.462603878117,
+            13714.335180055401,
+            13875.0
+          ],
+          "current_ns": [
+            7687.007874015748,
+            7676.508661417322,
+            7782.2173228346455
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 2,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4500,
+      "cold_similarity_current_ns": 1125,
+      "cold_bundle8_baseline_ns": 15375.000000000002,
+      "cold_bundle8_current_ns": 16792,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4305,
+          "current_iterations": 15996,
+          "baseline_ns": [
+            1172.3962833914054,
+            1175.1742160278745,
+            1404.4715447154472
+          ],
+          "current_ns": [
+            311.8565891472868,
+            316.5192548137034,
+            424.5748937234309
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17097,
+          "current_iterations": 147208,
+          "baseline_ns": [
+            317.94074983915306,
+            277.6705269930397,
+            288.0987892612739
+          ],
+          "current_ns": [
+            37.707984620401064,
+            62.17704880169556,
+            34.11385930112494
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 15048,
+          "current_iterations": 121923,
+          "baseline_ns": [
+            586.3181818181819,
+            267.71551036682615,
+            269.22454811270603
+          ],
+          "current_ns": [
+            43.475865915372815,
+            42.50906719814965,
+            40.22825881909074
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1805,
+          "current_iterations": 191002,
+          "baseline_ns": [
+            2763.0193905817173,
+            2782.594459833795,
+            3463.8504155124656
+          ],
+          "current_ns": [
+            25.806666945895856,
+            25.44759740735699,
+            24.91924168333316
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1484,
+          "current_iterations": 1755,
+          "baseline_ns": [
+            3383.170485175202,
+            3414.363881401617,
+            3384.799191374663
+          ],
+          "current_ns": [
+            2835.612535612536,
+            2825.9498575498574,
+            2835.327635327635
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 898,
+          "current_iterations": 987,
+          "baseline_ns": [
+            5955.317371937639,
+            5871.890868596882,
+            5768.56013363029
+          ],
+          "current_ns": [
+            4074.2563323201616,
+            4085.4437689969604,
+            4153.959473150962
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 358,
+          "current_iterations": 633,
+          "baseline_ns": [
+            13856.611731843575,
+            13785.5,
+            13970.203910614526
+          ],
+          "current_ns": [
+            7897.183254344392,
+            8137.77093206951,
+            7976.039494470774
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 3,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4292,
+      "cold_similarity_current_ns": 1250,
+      "cold_bundle8_baseline_ns": 14417,
+      "cold_bundle8_current_ns": 13459,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4192,
+          "current_iterations": 15684,
+          "baseline_ns": [
+            1176.8547232824428,
+            1182.7688454198474,
+            1191.1975190839694
+          ],
+          "current_ns": [
+            308.35564906911503,
+            315.0822494261668,
+            316.02805406783983
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17248,
+          "current_iterations": 109697,
+          "baseline_ns": [
+            289.262987012987,
+            291.5313659554731,
+            294.6211154916512
+          ],
+          "current_ns": [
+            45.39169712936543,
+            44.711414168117635,
+            45.238630044577334
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 17827,
+          "current_iterations": 94033,
+          "baseline_ns": [
+            283.2431143770685,
+            283.31788859594997,
+            278.80462220227747
+          ],
+          "current_ns": [
+            53.24948688226473,
+            53.27872129996916,
+            53.35006859294078
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1793,
+          "current_iterations": 162469,
+          "baseline_ns": [
+            2787.669269380926,
+            2787.5303959843836,
+            2909.9972113775793
+          ],
+          "current_ns": [
+            31.129273892250215,
+            30.830496894792237,
+            32.12587632102124
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1487,
+          "current_iterations": 1745,
+          "baseline_ns": [
+            3351.630800268998,
+            3357.2629455279084,
+            3404.0013449899125
+          ],
+          "current_ns": [
+            2870.797134670487,
+            2896.2515759312323,
+            2890.2578796561606
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 868,
+          "current_iterations": 1197,
+          "baseline_ns": [
+            5805.251152073733,
+            5794.258064516129,
+            5700.748847926267
+          ],
+          "current_ns": [
+            4140.5948203842945,
+            4142.300751879699,
+            4117.237259816207
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 367,
+          "current_iterations": 658,
+          "baseline_ns": [
+            13647.365122615804,
+            13690.280653950953,
+            13546.09264305177
+          ],
+          "current_ns": [
+            7636.398176291793,
+            7646.466565349544,
+            7681.61094224924
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 3,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4458,
+      "cold_similarity_current_ns": 1167,
+      "cold_bundle8_baseline_ns": 14167,
+      "cold_bundle8_current_ns": 14416,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4258,
+          "current_iterations": 16048,
+          "baseline_ns": [
+            1176.2564584311883,
+            1175.4539689995304,
+            1176.7750117426021
+          ],
+          "current_ns": [
+            309.81013210368894,
+            309.1662512462612,
+            308.83649052841474
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17093,
+          "current_iterations": 108249,
+          "baseline_ns": [
+            290.1163634236237,
+            290.30398408705315,
+            291.4887380799158
+          ],
+          "current_ns": [
+            46.07471662555774,
+            46.012360391320016,
+            47.15132703304418
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18314,
+          "current_iterations": 91405,
+          "baseline_ns": [
+            275.3039204979797,
+            276.0411160860544,
+            273.0879654908813
+          ],
+          "current_ns": [
+            54.418521962693504,
+            53.86239264810459,
+            53.53645861823752
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1076,
+          "current_iterations": 161787,
+          "baseline_ns": [
+            4634.448884758364,
+            4836.353159851301,
+            4669.532527881041
+          ],
+          "current_ns": [
+            30.787652901654646,
+            31.30324438922781,
+            31.536835468857202
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 649,
+          "current_iterations": 1758,
+          "baseline_ns": [
+            7587.314329738058,
+            7658.576271186441,
+            7665.961479198767
+          ],
+          "current_ns": [
+            2823.094425483504,
+            2809.2764505119453,
+            2817.7377701934015
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 218,
+          "current_iterations": 1243,
+          "baseline_ns": [
+            23038.229357798165,
+            23006.11467889908,
+            22749.619266055044
+          ],
+          "current_ns": [
+            4022.9621882542237,
+            4059.4995977473855,
+            4044.683829444891
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 60,
+          "current_iterations": 646,
+          "baseline_ns": [
+            83518.05,
+            82145.15,
+            82640.96666666666
+          ],
+          "current_ns": [
+            7772.38080495356,
+            7750.0,
+            7789.797213622291
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 3,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4458,
+      "cold_similarity_current_ns": 1417,
+      "cold_bundle8_baseline_ns": 13916,
+      "cold_bundle8_current_ns": 16459,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4142,
+          "current_iterations": 16226,
+          "baseline_ns": [
+            1208.645098985997,
+            1177.1185417672623,
+            1189.5120714630614
+          ],
+          "current_ns": [
+            309.2233452483668,
+            308.52230987304324,
+            308.9229631455688
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18411,
+          "current_iterations": 148680,
+          "baseline_ns": [
+            271.2463201347021,
+            268.33365922546307,
+            272.27608494921515
+          ],
+          "current_ns": [
+            33.703813559322036,
+            33.576304815711595,
+            33.846737960721015
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18677,
+          "current_iterations": 124087,
+          "baseline_ns": [
+            268.93591047812816,
+            270.2655672752583,
+            272.05252449536863
+          ],
+          "current_ns": [
+            40.238566489640334,
+            40.68952428538042,
+            48.596621725079984
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1726,
+          "current_iterations": 186433,
+          "baseline_ns": [
+            2796.180764774044,
+            2797.895133256083,
+            2838.209733487833
+          ],
+          "current_ns": [
+            26.067901069016752,
+            26.827332071038924,
+            26.56584402975868
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1483,
+          "current_iterations": 1750,
+          "baseline_ns": [
+            3363.1995954147,
+            3395.5104517869186,
+            3357.833445718139
+          ],
+          "current_ns": [
+            2847.548,
+            2867.0,
+            2894.666857142857
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 866,
+          "current_iterations": 1242,
+          "baseline_ns": [
+            5721.08429561201,
+            5745.140877598153,
+            5683.698614318707
+          ],
+          "current_ns": [
+            4022.376006441224,
+            4112.587761674718,
+            4147.4774557165865
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 364,
+          "current_iterations": 648,
+          "baseline_ns": [
+            13816.848901098901,
+            13839.857142857143,
+            13702.151098901099
+          ],
+          "current_ns": [
+            7714.441358024691,
+            7804.398148148148,
+            7802.148148148148
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 4,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4291,
+      "cold_similarity_current_ns": 1042,
+      "cold_bundle8_baseline_ns": 15000,
+      "cold_bundle8_current_ns": 12416,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4249,
+          "current_iterations": 16229,
+          "baseline_ns": [
+            1168.0689574017415,
+            1163.7540597787715,
+            1160.7241703930335
+          ],
+          "current_ns": [
+            307.8850206420605,
+            306.9582229342535,
+            311.20728325836467
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17313,
+          "current_iterations": 109381,
+          "baseline_ns": [
+            291.5920406630855,
+            290.083058973026,
+            294.14312944030496
+          ],
+          "current_ns": [
+            46.40659712381492,
+            45.93423903603002,
+            45.7719713661422
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 17717,
+          "current_iterations": 93508,
+          "baseline_ns": [
+            285.74724840548623,
+            284.3266918778574,
+            282.8333239261726
+          ],
+          "current_ns": [
+            53.59434486888822,
+            52.94689224451384,
+            53.30470120203619
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1079,
+          "current_iterations": 161173,
+          "baseline_ns": [
+            4636.275254865616,
+            4592.794253938832,
+            4593.528266913809
+          ],
+          "current_ns": [
+            30.850651163656444,
+            31.137094922846877,
+            31.00783009561155
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 662,
+          "current_iterations": 1781,
+          "baseline_ns": [
+            7540.155589123867,
+            7545.442598187311,
+            7532.351963746223
+          ],
+          "current_ns": [
+            2825.777091521617,
+            2835.555867490174,
+            2806.241437394722
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 212,
+          "current_iterations": 1262,
+          "baseline_ns": [
+            22692.60849056604,
+            22806.79716981132,
+            22723.466981132075
+          ],
+          "current_ns": [
+            4074.352614896989,
+            4049.161648177496,
+            4094.5586370839937
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 60,
+          "current_iterations": 644,
+          "baseline_ns": [
+            82552.78333333334,
+            82356.93333333333,
+            82167.36666666667
+          ],
+          "current_ns": [
+            7915.178571428572,
+            7721.920807453416,
+            7788.173913043478
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 4,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4750,
+      "cold_similarity_current_ns": 1083,
+      "cold_bundle8_baseline_ns": 15291.999999999998,
+      "cold_bundle8_current_ns": 12250,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4122,
+          "current_iterations": 16037,
+          "baseline_ns": [
+            1175.4002911208152,
+            1184.447355652596,
+            1179.4737991266375
+          ],
+          "current_ns": [
+            311.0229469352123,
+            311.51399887759555,
+            313.7640456444472
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17274,
+          "current_iterations": 104819,
+          "baseline_ns": [
+            291.8837559337733,
+            294.64559453513954,
+            294.122148894292
+          ],
+          "current_ns": [
+            48.09361852335932,
+            48.95422585599939,
+            47.295423539625446
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18258,
+          "current_iterations": 93833,
+          "baseline_ns": [
+            274.3911162230255,
+            274.17203417679923,
+            274.5440354912915
+          ],
+          "current_ns": [
+            53.60276235439557,
+            53.64628648769622,
+            52.912269670584976
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1081,
+          "current_iterations": 162402,
+          "baseline_ns": [
+            4659.882516188714,
+            4666.6281221091585,
+            4596.8233117483815
+          ],
+          "current_ns": [
+            31.798660115023214,
+            30.70672159209862,
+            31.28733020529304
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 662,
+          "current_iterations": 1775,
+          "baseline_ns": [
+            7563.570996978852,
+            7644.826283987915,
+            7607.87915407855
+          ],
+          "current_ns": [
+            2872.112676056338,
+            2858.239436619718,
+            2834.5543661971833
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 219,
+          "current_iterations": 1256,
+          "baseline_ns": [
+            22879.187214611873,
+            22803.08219178082,
+            22784.625570776258
+          ],
+          "current_ns": [
+            3970.5079617834394,
+            4006.667993630573,
+            4070.296178343949
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 60,
+          "current_iterations": 639,
+          "baseline_ns": [
+            83177.76666666666,
+            83636.11666666667,
+            82254.16666666667
+          ],
+          "current_ns": [
+            7827.9217527386545,
+            7830.528951486698,
+            7735.784037558686
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 4,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4541,
+      "cold_similarity_current_ns": 958,
+      "cold_bundle8_baseline_ns": 14542,
+      "cold_bundle8_current_ns": 13625,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4261,
+          "current_iterations": 16153,
+          "baseline_ns": [
+            1153.0938746773058,
+            1153.651255573809,
+            1155.7439568176485
+          ],
+          "current_ns": [
+            310.03268742648424,
+            310.12301120534886,
+            311.8177428341485
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18624,
+          "current_iterations": 148922,
+          "baseline_ns": [
+            269.367912371134,
+            268.97417310996565,
+            270.2874248281787
+          ],
+          "current_ns": [
+            33.808530640200914,
+            33.616033896939335,
+            33.566229301244945
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18587,
+          "current_iterations": 122359,
+          "baseline_ns": [
+            268.2946145155216,
+            273.94818959487816,
+            268.8482810566525
+          ],
+          "current_ns": [
+            40.475159162791456,
+            40.50546343137816,
+            39.67253736954372
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1744,
+          "current_iterations": 196544,
+          "baseline_ns": [
+            2878.488532110092,
+            2864.440366972477,
+            2851.251720183486
+          ],
+          "current_ns": [
+            26.041028980788017,
+            27.646903492347768,
+            25.52079432595246
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1469,
+          "current_iterations": 1732,
+          "baseline_ns": [
+            3372.1919673247107,
+            3364.8740639891084,
+            3368.987066031314
+          ],
+          "current_ns": [
+            2875.9624711316396,
+            2877.1651270207853,
+            2923.83545034642
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 870,
+          "current_iterations": 1198,
+          "baseline_ns": [
+            5761.686206896552,
+            5714.990804597701,
+            5703.4
+          ],
+          "current_ns": [
+            4278.171953255426,
+            4209.445742904842,
+            4187.951585976628
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 364,
+          "current_iterations": 639,
+          "baseline_ns": [
+            13862.865384615385,
+            13870.420329670329,
+            13710.967032967033
+          ],
+          "current_ns": [
+            7877.347417840376,
+            7845.2018779342725,
+            7870.241001564945
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 5,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4375,
+      "cold_similarity_current_ns": 1292,
+      "cold_bundle8_baseline_ns": 13333,
+      "cold_bundle8_current_ns": 13667,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4191,
+          "current_iterations": 16172,
+          "baseline_ns": [
+            1285.2741589119541,
+            1204.9830589358148,
+            1165.7518492006682
+          ],
+          "current_ns": [
+            307.52739302498145,
+            307.28524610437796,
+            316.0220133564185
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17414,
+          "current_iterations": 111073,
+          "baseline_ns": [
+            286.7926955323303,
+            287.0918226714138,
+            288.0608131388538
+          ],
+          "current_ns": [
+            45.15423190154223,
+            45.8035886309004,
+            45.353803354550614
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18170,
+          "current_iterations": 94356,
+          "baseline_ns": [
+            284.4340121078701,
+            282.5834892680242,
+            282.3174463401211
+          ],
+          "current_ns": [
+            53.07691084827674,
+            53.126361863580485,
+            53.207183432956036
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1080,
+          "current_iterations": 159387,
+          "baseline_ns": [
+            4705.478703703704,
+            4661.998148148148,
+            4685.416666666667
+          ],
+          "current_ns": [
+            31.132557862309977,
+            31.801790610275617,
+            31.500109795654602
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 653,
+          "current_iterations": 1750,
+          "baseline_ns": [
+            7680.895865237366,
+            7594.309341500766,
+            8083.269525267994
+          ],
+          "current_ns": [
+            2795.6428571428573,
+            2882.7377142857144,
+            3034.4285714285716
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 218,
+          "current_iterations": 1153,
+          "baseline_ns": [
+            23804.66513761468,
+            23991.97247706422,
+            24047.97247706422
+          ],
+          "current_ns": [
+            4459.562012142238,
+            4336.007805724198,
+            4340.994796183868
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 57,
+          "current_iterations": 453,
+          "baseline_ns": [
+            85072.36842105263,
+            81977.35087719298,
+            82081.14035087719
+          ],
+          "current_ns": [
+            8313.834437086092,
+            7644.039735099338,
+            7620.123620309051
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 5,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4375,
+      "cold_similarity_current_ns": 958,
+      "cold_bundle8_baseline_ns": 13334,
+      "cold_bundle8_current_ns": 13791,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4231,
+          "current_iterations": 16110,
+          "baseline_ns": [
+            1199.4604112502955,
+            1197.3824155046088,
+            1181.4384306310565
+          ],
+          "current_ns": [
+            308.1729981378026,
+            310.06101800124145,
+            310.61967721911856
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17253,
+          "current_iterations": 108531,
+          "baseline_ns": [
+            289.6645800730308,
+            289.4327363357097,
+            289.2467976583782
+          ],
+          "current_ns": [
+            46.26865135306963,
+            47.13169509172494,
+            46.15693212077655
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18321,
+          "current_iterations": 93371,
+          "baseline_ns": [
+            275.4625839200917,
+            277.7095682550079,
+            276.5110528901261
+          ],
+          "current_ns": [
+            53.389617761403436,
+            54.384755437983955,
+            54.07460560559488
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1786,
+          "current_iterations": 157173,
+          "baseline_ns": [
+            2793.8829787234044,
+            2867.5341545352744,
+            2797.545352743561
+          ],
+          "current_ns": [
+            31.507746241402785,
+            31.229918624700172,
+            31.14826974098605
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1497,
+          "current_iterations": 1761,
+          "baseline_ns": [
+            3427.88376753507,
+            3338.2317969271876,
+            3355.2384769539076
+          ],
+          "current_ns": [
+            2854.178307779671,
+            2859.4310051107327,
+            2846.938103350369
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 903,
+          "current_iterations": 1268,
+          "baseline_ns": [
+            5591.777408637874,
+            5589.654485049834,
+            5589.794019933554
+          ],
+          "current_ns": [
+            3970.228706624606,
+            3966.0220820189274,
+            3951.9582018927445
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 367,
+          "current_iterations": 641,
+          "baseline_ns": [
+            13704.474114441417,
+            13727.520435967303,
+            13528.83923705722
+          ],
+          "current_ns": [
+            7733.879875195008,
+            8378.446177847114,
+            7748.04992199688
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 5,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4375,
+      "cold_similarity_current_ns": 1125,
+      "cold_bundle8_baseline_ns": 15416,
+      "cold_bundle8_current_ns": 14542,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4336,
+          "current_iterations": 16106,
+          "baseline_ns": [
+            1173.575876383764,
+            1164.5910977859778,
+            1160.420664206642
+          ],
+          "current_ns": [
+            313.73916552837454,
+            309.56115733267103,
+            309.1472122190488
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18618,
+          "current_iterations": 146851,
+          "baseline_ns": [
+            271.4264152970244,
+            271.63454721237514,
+            270.09931249328605
+          ],
+          "current_ns": [
+            34.058896432438324,
+            34.517415611742514,
+            33.892918672668216
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18679,
+          "current_iterations": 122592,
+          "baseline_ns": [
+            269.31313239466783,
+            268.0862465870764,
+            267.499598479576
+          ],
+          "current_ns": [
+            40.66605488123206,
+            40.710919146436964,
+            40.75986198120595
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1805,
+          "current_iterations": 191976,
+          "baseline_ns": [
+            2784.072022160665,
+            2773.4072022160667,
+            2844.275346260388
+          ],
+          "current_ns": [
+            26.786332666583323,
+            25.619957703046214,
+            31.590750927199235
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1489,
+          "current_iterations": 1761,
+          "baseline_ns": [
+            3347.1846877098724,
+            3379.505036937542,
+            3359.1054398925453
+          ],
+          "current_ns": [
+            2875.615559341283,
+            2838.160136286201,
+            2841.165247018739
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 876,
+          "current_iterations": 1248,
+          "baseline_ns": [
+            5757.6107305936075,
+            5718.655251141552,
+            5707.714611872146
+          ],
+          "current_ns": [
+            4007.71233974359,
+            4109.108173076923,
+            4115.051282051282
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 363,
+          "current_iterations": 641,
+          "baseline_ns": [
+            14598.371900826447,
+            14293.044077134986,
+            14973.829201101928
+          ],
+          "current_ns": [
+            7770.475819032761,
+            8182.13728549142,
+            8052.716068642746
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 6,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4667,
+      "cold_similarity_current_ns": 1125,
+      "cold_bundle8_baseline_ns": 15708,
+      "cold_bundle8_current_ns": 12208,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4296,
+          "current_iterations": 16051,
+          "baseline_ns": [
+            1162.0111731843576,
+            1189.953910614525,
+            1195.3463687150838
+          ],
+          "current_ns": [
+            310.7413245280668,
+            310.2454675721139,
+            306.8629991900816
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17384,
+          "current_iterations": 112022,
+          "baseline_ns": [
+            286.73872526461116,
+            288.0066728025771,
+            286.95208237459735
+          ],
+          "current_ns": [
+            45.605256110406884,
+            44.99042152434343,
+            45.35269857706522
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 17710,
+          "current_iterations": 94946,
+          "baseline_ns": [
+            286.3589497459063,
+            281.9757763975155,
+            282.0369847543761
+          ],
+          "current_ns": [
+            52.764202810018325,
+            53.2153329260843,
+            53.54622627598846
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1809,
+          "current_iterations": 155612,
+          "baseline_ns": [
+            2830.1088999447206,
+            2736.847982310669,
+            2740.625207296849
+          ],
+          "current_ns": [
+            30.775794925841193,
+            30.96027941289875,
+            30.644063439837545
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1497,
+          "current_iterations": 1744,
+          "baseline_ns": [
+            3350.812959251837,
+            3313.321309285237,
+            3306.362725450902
+          ],
+          "current_ns": [
+            2822.176032110092,
+            2811.305619266055,
+            2883.3618119266057
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 866,
+          "current_iterations": 1202,
+          "baseline_ns": [
+            5619.852193995381,
+            6086.6050808314085,
+            5831.74480369515
+          ],
+          "current_ns": [
+            4070.992512479201,
+            4243.136439267887,
+            4423.634775374376
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 365,
+          "current_iterations": 648,
+          "baseline_ns": [
+            13721.575342465754,
+            13670.205479452055,
+            13606.619178082192
+          ],
+          "current_ns": [
+            8023.726851851852,
+            7692.771604938272,
+            7709.941358024691
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 6,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4583,
+      "cold_similarity_current_ns": 958,
+      "cold_bundle8_baseline_ns": 15291.999999999998,
+      "cold_bundle8_current_ns": 12583,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4302,
+          "current_iterations": 16160,
+          "baseline_ns": [
+            1158.7633658763366,
+            1159.4414225941423,
+            1161.8916782891679
+          ],
+          "current_ns": [
+            309.05785891089107,
+            308.8516089108911,
+            310.80080445544553
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17136,
+          "current_iterations": 107406,
+          "baseline_ns": [
+            290.5749299719888,
+            291.53046218487395,
+            291.9317226890756
+          ],
+          "current_ns": [
+            46.60819693499432,
+            46.364960989143995,
+            46.717985959816026
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18243,
+          "current_iterations": 92393,
+          "baseline_ns": [
+            273.9361398892726,
+            274.5596667214822,
+            275.61486597599077
+          ],
+          "current_ns": [
+            53.29181864426959,
+            53.534899830073705,
+            53.35269987986103
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1818,
+          "current_iterations": 159506,
+          "baseline_ns": [
+            2795.562706270627,
+            2740.3283828382837,
+            2741.6573157315734
+          ],
+          "current_ns": [
+            30.42518776723133,
+            30.677792684914674,
+            30.489969029378205
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1473,
+          "current_iterations": 1769,
+          "baseline_ns": [
+            3346.5145960624577,
+            3422.040733197556,
+            3406.766463000679
+          ],
+          "current_ns": [
+            2850.009609949124,
+            2820.873374788016,
+            2911.72018089316
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 875,
+          "current_iterations": 1199,
+          "baseline_ns": [
+            5717.714285714285,
+            5675.952,
+            5683.094857142857
+          ],
+          "current_ns": [
+            4113.080066722268,
+            4096.538782318599,
+            4221.8515429524605
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 360,
+          "current_iterations": 651,
+          "baseline_ns": [
+            13706.25,
+            13851.041666666666,
+            13741.897222222222
+          ],
+          "current_ns": [
+            7729.198156682028,
+            7668.84178187404,
+            7743.855606758832
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 6,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4584,
+      "cold_similarity_current_ns": 1084,
+      "cold_bundle8_baseline_ns": 15125,
+      "cold_bundle8_current_ns": 13458,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4311,
+          "current_iterations": 16219,
+          "baseline_ns": [
+            1159.9494316863836,
+            1161.6599396891672,
+            1159.2437949431687
+          ],
+          "current_ns": [
+            310.7748936432579,
+            308.3857204513225,
+            308.46538010974785
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18605,
+          "current_iterations": 149349,
+          "baseline_ns": [
+            269.30706799247514,
+            268.3933888739586,
+            268.6083848427842
+          ],
+          "current_ns": [
+            33.65132675813029,
+            33.78077523116995,
+            33.52773704544389
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18609,
+          "current_iterations": 123008,
+          "baseline_ns": [
+            269.750765758504,
+            267.2721263904562,
+            267.2430006985867
+          ],
+          "current_ns": [
+            40.33918119146722,
+            39.96759560353798,
+            39.79551736472425
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1717,
+          "current_iterations": 194401,
+          "baseline_ns": [
+            2871.917880023296,
+            2862.8666278392543,
+            2867.719860221316
+          ],
+          "current_ns": [
+            25.906934635109902,
+            26.529570321140323,
+            27.633170611262287
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1463,
+          "current_iterations": 1725,
+          "baseline_ns": [
+            3452.1244019138758,
+            3377.2494873547507,
+            3459.1025290498974
+          ],
+          "current_ns": [
+            3031.159420289855,
+            2871.6185507246378,
+            3043.864927536232
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 871,
+          "current_iterations": 1246,
+          "baseline_ns": [
+            5606.199770378875,
+            5599.311136624569,
+            5608.017221584386
+          ],
+          "current_ns": [
+            3999.765650080257,
+            3994.6492776886034,
+            4127.27367576244
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 368,
+          "current_iterations": 631,
+          "baseline_ns": [
+            13679.915760869566,
+            13695.08695652174,
+            13877.03804347826
+          ],
+          "current_ns": [
+            7877.1790808240885,
+            7870.641838351822,
+            7803.684627575278
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 7,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4375,
+      "cold_similarity_current_ns": 3375,
+      "cold_bundle8_baseline_ns": 13875,
+      "cold_bundle8_current_ns": 12292,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4338,
+          "current_iterations": 16262,
+          "baseline_ns": [
+            1176.1562932226832,
+            1193.7431996311664,
+            1185.675195942831
+          ],
+          "current_ns": [
+            307.6727954741114,
+            307.43709260853524,
+            308.9948960767433
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17341,
+          "current_iterations": 110196,
+          "baseline_ns": [
+            289.5714203333141,
+            286.5223458854737,
+            286.2051208119486
+          ],
+          "current_ns": [
+            45.7136193691241,
+            46.11102036371556,
+            46.29364949725943
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 17581,
+          "current_iterations": 92007,
+          "baseline_ns": [
+            293.47022353677266,
+            286.20624537853365,
+            286.1825265912064
+          ],
+          "current_ns": [
+            53.77670177269121,
+            53.9904572478181,
+            53.54438249263643
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1824,
+          "current_iterations": 161548,
+          "baseline_ns": [
+            2765.5564692982457,
+            2753.814692982456,
+            2823.3053728070176
+          ],
+          "current_ns": [
+            30.780579146755144,
+            31.83496545918241,
+            32.03433654393741
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1499,
+          "current_iterations": 1769,
+          "baseline_ns": [
+            3303.230153435624,
+            3296.9199466310874,
+            3372.6377585056703
+          ],
+          "current_ns": [
+            2844.0503109101187,
+            2812.064443188242,
+            2848.5726399095533
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 881,
+          "current_iterations": 1242,
+          "baseline_ns": [
+            5689.227014755959,
+            5754.16231555051,
+            5805.713961407491
+          ],
+          "current_ns": [
+            3988.4597423510468,
+            4111.9500805152975,
+            4095.8462157809986
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 365,
+          "current_iterations": 633,
+          "baseline_ns": [
+            13829.909589041095,
+            13831.961643835617,
+            13664.613698630137
+          ],
+          "current_ns": [
+            7894.944707740916,
+            7920.090047393365,
+            7924.432859399684
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 7,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4583,
+      "cold_similarity_current_ns": 1083,
+      "cold_bundle8_baseline_ns": 14000,
+      "cold_bundle8_current_ns": 13542,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4266,
+          "current_iterations": 16172,
+          "baseline_ns": [
+            1185.4585091420533,
+            1203.6451007969995,
+            1201.340131270511
+          ],
+          "current_ns": [
+            308.29520158298294,
+            307.2826490230027,
+            308.6301014098442
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 16053,
+          "current_iterations": 105711,
+          "baseline_ns": [
+            298.9160904503831,
+            292.98779044415375,
+            290.5090637264063
+          ],
+          "current_ns": [
+            48.06461011626037,
+            46.854556290263076,
+            47.21284445327355
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18303,
+          "current_iterations": 91316,
+          "baseline_ns": [
+            273.72791345681037,
+            272.9697863738185,
+            273.85537889963393
+          ],
+          "current_ns": [
+            54.87446887730518,
+            54.45239607516755,
+            54.43277191291778
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1796,
+          "current_iterations": 160195,
+          "baseline_ns": [
+            2863.237750556793,
+            2940.9103563474387,
+            2792.2238307349667
+          ],
+          "current_ns": [
+            31.24707387871032,
+            30.88891663285371,
+            32.28279284621867
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1503,
+          "current_iterations": 1776,
+          "baseline_ns": [
+            3332.224218230206,
+            3332.4464404524283,
+            3380.71124417831
+          ],
+          "current_ns": [
+            2817.5912162162163,
+            2810.6469594594596,
+            2824.512387387387
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 863,
+          "current_iterations": 1222,
+          "baseline_ns": [
+            5605.4461181923525,
+            5688.876013904983,
+            5675.115874855156
+          ],
+          "current_ns": [
+            4068.5351882160394,
+            4060.5220949263503,
+            4359.656301145663
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 363,
+          "current_iterations": 650,
+          "baseline_ns": [
+            13772.267217630853,
+            13744.374655647383,
+            13701.214876033058
+          ],
+          "current_ns": [
+            7771.153846153846,
+            7914.2307692307695,
+            7770.0
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 7,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4416,
+      "cold_similarity_current_ns": 1250,
+      "cold_bundle8_baseline_ns": 15375.000000000002,
+      "cold_bundle8_current_ns": 13584,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4275,
+          "current_iterations": 16031,
+          "baseline_ns": [
+            1182.85567251462,
+            1170.6334502923976,
+            1168.284678362573
+          ],
+          "current_ns": [
+            311.88790468467346,
+            309.15357744370283,
+            309.1094130122887
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18615,
+          "current_iterations": 148599,
+          "baseline_ns": [
+            268.68342734354013,
+            268.5065807144776,
+            269.1423045930701
+          ],
+          "current_ns": [
+            34.295035632810446,
+            33.49647036655698,
+            33.64507836526491
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18680,
+          "current_iterations": 123910,
+          "baseline_ns": [
+            267.0525695931478,
+            265.9662740899358,
+            266.1290685224839
+          ],
+          "current_ns": [
+            39.81619723993221,
+            39.94902751997417,
+            39.880090388184975
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1740,
+          "current_iterations": 186778,
+          "baseline_ns": [
+            2832.3994252873563,
+            2828.4,
+            2834.003448275862
+          ],
+          "current_ns": [
+            27.254280482712097,
+            25.088607866022766,
+            24.847680133634583
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1491,
+          "current_iterations": 1755,
+          "baseline_ns": [
+            3351.2743125419183,
+            3357.3661971830984,
+            3387.2682763246144
+          ],
+          "current_ns": [
+            2871.153846153846,
+            2861.9185185185183,
+            2857.8581196581194
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 893,
+          "current_iterations": 1241,
+          "baseline_ns": [
+            5652.52967525196,
+            5648.702127659574,
+            5834.920492721165
+          ],
+          "current_ns": [
+            3981.6341659951654,
+            3998.388396454472,
+            4045.058017727639
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 361,
+          "current_iterations": 637,
+          "baseline_ns": [
+            13846.14404432133,
+            14312.5567867036,
+            13919.437673130195
+          ],
+          "current_ns": [
+            7846.41601255887,
+            8111.656200941915,
+            7929.8147566719
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 511,
+      "trial": 8,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34748,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4666,
+      "cold_similarity_current_ns": 1000,
+      "cold_bundle8_baseline_ns": 15084,
+      "cold_bundle8_current_ns": 12500,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4225,
+          "current_iterations": 15776,
+          "baseline_ns": [
+            1177.0710059171597,
+            1169.0236686390533,
+            1163.185325443787
+          ],
+          "current_ns": [
+            309.28568711967546,
+            307.9652003042596,
+            307.4237449290061
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17338,
+          "current_iterations": 109738,
+          "baseline_ns": [
+            287.25198984888686,
+            288.2204983273734,
+            288.1531895258969
+          ],
+          "current_ns": [
+            45.66634165011209,
+            45.43397000127577,
+            45.937824636862345
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 17669,
+          "current_iterations": 92536,
+          "baseline_ns": [
+            309.03231648650177,
+            285.91742600033956,
+            282.56647235270816
+          ],
+          "current_ns": [
+            52.98297959712976,
+            52.73802628166335,
+            53.218931010633696
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1086,
+          "current_iterations": 157889,
+          "baseline_ns": [
+            4587.09300184162,
+            4636.318600368324,
+            4601.59576427256
+          ],
+          "current_ns": [
+            33.03718435103142,
+            32.77038299058199,
+            32.02909639050219
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 660,
+          "current_iterations": 1775,
+          "baseline_ns": [
+            7501.831818181819,
+            7588.636363636364,
+            7617.992424242424
+          ],
+          "current_ns": [
+            2821.9014084507044,
+            2861.6197183098593,
+            2935.8918309859155
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 217,
+          "current_iterations": 1205,
+          "baseline_ns": [
+            23215.824884792626,
+            22839.672811059907,
+            22722.15668202765
+          ],
+          "current_ns": [
+            4097.2340248962655,
+            4023.790041493776,
+            4072.786721991701
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 61,
+          "current_iterations": 644,
+          "baseline_ns": [
+            84016.39344262295,
+            81959.70491803279,
+            83145.4918032787
+          ],
+          "current_ns": [
+            7702.38198757764,
+            7687.369565217391,
+            7661.813664596273
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "trial": 8,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34816,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4625,
+      "cold_similarity_current_ns": 1166,
+      "cold_bundle8_baseline_ns": 15792,
+      "cold_bundle8_current_ns": 12250,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4322,
+          "current_iterations": 16249,
+          "baseline_ns": [
+            1159.0987968533086,
+            1157.633271633503,
+            1157.5080981027302
+          ],
+          "current_ns": [
+            309.7010892978029,
+            308.2035817588775,
+            307.9881838882393
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 17262,
+          "current_iterations": 104040,
+          "baseline_ns": [
+            291.0149461244352,
+            290.8701193372726,
+            289.5787278415016
+          ],
+          "current_ns": [
+            47.967925797770086,
+            48.00156670511342,
+            47.49655901576317
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18195,
+          "current_iterations": 92663,
+          "baseline_ns": [
+            274.8396812311074,
+            274.8923330585326,
+            274.2900796922231
+          ],
+          "current_ns": [
+            54.85873541758846,
+            53.61138750094428,
+            54.52598124386217
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1799,
+          "current_iterations": 161790,
+          "baseline_ns": [
+            2801.83435241801,
+            2861.6364647026126,
+            2802.9688715953307
+          ],
+          "current_ns": [
+            32.338216206193216,
+            32.242926015204894,
+            30.80691019222449
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1486,
+          "current_iterations": 1741,
+          "baseline_ns": [
+            3351.1944818304173,
+            3344.100269179004,
+            3418.965679676985
+          ],
+          "current_ns": [
+            2858.1751866743252,
+            2865.7139574956923,
+            2851.5221137277426
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 850,
+          "current_iterations": 1241,
+          "baseline_ns": [
+            5635.538823529412,
+            5631.421176470588,
+            5645.343529411764
+          ],
+          "current_ns": [
+            4062.282030620467,
+            4051.639000805802,
+            4144.910556003223
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 363,
+          "current_iterations": 636,
+          "baseline_ns": [
+            13760.559228650138,
+            13823.804407713498,
+            13737.831955922866
+          ],
+          "current_ns": [
+            7890.526729559749,
+            7767.885220125786,
+            7868.580188679245
+          ]
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "trial": 8,
+      "similarity_checks": 1025,
+      "exact_phase_checks": 34884,
+      "max_similarity_delta": 0,
+      "cold_similarity_baseline_ns": 4708,
+      "cold_similarity_current_ns": 1000,
+      "cold_bundle8_baseline_ns": 14125,
+      "cold_bundle8_current_ns": 13292,
+      "timings": [
+        {
+          "operation": "similarity",
+          "baseline_iterations": 4272,
+          "current_iterations": 16150,
+          "baseline_ns": [
+            1163.6430243445693,
+            1166.130383895131,
+            1168.5882490636704
+          ],
+          "current_ns": [
+            312.17232198142415,
+            310.6940557275542,
+            308.8338080495356
+          ]
+        },
+        {
+          "operation": "bind",
+          "baseline_iterations": 18640,
+          "current_iterations": 147164,
+          "baseline_ns": [
+            295.3170064377682,
+            269.62628755364807,
+            270.1582618025751
+          ],
+          "current_ns": [
+            33.7177638552907,
+            33.663694925389365,
+            33.3239379195999
+          ]
+        },
+        {
+          "operation": "unbind",
+          "baseline_iterations": 18666,
+          "current_iterations": 123379,
+          "baseline_ns": [
+            270.05871638272794,
+            272.9628736740598,
+            268.6480231436837
+          ],
+          "current_ns": [
+            40.49007529644429,
+            41.02061939227907,
+            40.42084147221164
+          ]
+        },
+        {
+          "operation": "bundle1",
+          "baseline_iterations": 1798,
+          "current_iterations": 187912,
+          "baseline_ns": [
+            2804.4816462736376,
+            2885.6368186874306,
+            2858.963848720801
+          ],
+          "current_ns": [
+            26.80731938354123,
+            30.92116522627613,
+            26.107747243390524
+          ]
+        },
+        {
+          "operation": "bundle2",
+          "baseline_iterations": 1473,
+          "current_iterations": 1743,
+          "baseline_ns": [
+            3364.9864222674814,
+            3360.4039375424304,
+            3374.886625933469
+          ],
+          "current_ns": [
+            2860.083189902467,
+            2852.09868043603,
+            2874.4262765347103
+          ]
+        },
+        {
+          "operation": "bundle8",
+          "baseline_iterations": 884,
+          "current_iterations": 1228,
+          "baseline_ns": [
+            5838.89479638009,
+            5757.117647058823,
+            5814.338235294118
+          ],
+          "current_ns": [
+            4064.2980456026057,
+            4058.937296416938,
+            4170.467426710098
+          ]
+        },
+        {
+          "operation": "bundle32",
+          "baseline_iterations": 363,
+          "current_iterations": 653,
+          "baseline_ns": [
+            13747.24517906336,
+            16256.77134986226,
+            15292.239669421488
+          ],
+          "current_ns": [
+            7769.908116385911,
+            7776.098009188361,
+            8129.721286370597
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": [
+    {
+      "n": 16,
+      "dim": 511,
+      "operations": {
+        "similarity": {
+          "baseline_ns": 1182.7688454198474,
+          "current_ns": 308.9948960767433,
+          "speedup": 3.827794117110885
+        },
+        "bind": {
+          "baseline_ns": 288.19621831680297,
+          "current_ns": 45.7136193691241,
+          "speedup": 6.304384170277633
+        },
+        "unbind": {
+          "baseline_ns": 284.67682514646236,
+          "current_ns": 53.24948688226473,
+          "speedup": 5.346095179769268
+        },
+        "bundle1": {
+          "baseline_ns": 4592.794253938832,
+          "current_ns": 31.00783009561155,
+          "speedup": 148.1172413476568
+        },
+        "bundle2": {
+          "baseline_ns": 7532.351963746223,
+          "current_ns": 2844.0503109101187,
+          "speedup": 2.64845946460624
+        },
+        "bundle8": {
+          "baseline_ns": 22685.574074074073,
+          "current_ns": 4094.5586370839937,
+          "speedup": 5.540419880329268
+        },
+        "bundle32": {
+          "baseline_ns": 81977.35087719298,
+          "current_ns": 7709.941358024691,
+          "speedup": 10.632681504363065
+        },
+        "cold_similarity": {
+          "baseline_ns": 4375,
+          "current_ns": 1125,
+          "speedup": 3.888888888888889
+        },
+        "cold_bundle8": {
+          "baseline_ns": 15000,
+          "current_ns": 12500,
+          "speedup": 1.2
+        }
+      }
+    },
+    {
+      "n": 16,
+      "dim": 512,
+      "operations": {
+        "similarity": {
+          "baseline_ns": 1176.2564584311883,
+          "current_ns": 309.1662512462612,
+          "speedup": 3.8046082122147964
+        },
+        "bind": {
+          "baseline_ns": 291.0149461244352,
+          "current_ns": 47.15132703304418,
+          "speedup": 6.171935435040643
+        },
+        "unbind": {
+          "baseline_ns": 274.5596667214822,
+          "current_ns": 53.70338820623123,
+          "speedup": 5.112520380783439
+        },
+        "bundle1": {
+          "baseline_ns": 2801.372250423012,
+          "current_ns": 31.11119127340893,
+          "speedup": 90.04387603818228
+        },
+        "bundle2": {
+          "baseline_ns": 3356.9225496915697,
+          "current_ns": 2846.938103350369,
+          "speedup": 1.1791343639473701
+        },
+        "bundle8": {
+          "baseline_ns": 5699.5906499429875,
+          "current_ns": 4062.282030620467,
+          "speedup": 1.4030514393094564
+        },
+        "bundle32": {
+          "baseline_ns": 13760.559228650138,
+          "current_ns": 7771.153846153846,
+          "speedup": 1.7707227911155834
+        },
+        "cold_similarity": {
+          "baseline_ns": 4583,
+          "current_ns": 1084,
+          "speedup": 4.227859778597786
+        },
+        "cold_bundle8": {
+          "baseline_ns": 15125,
+          "current_ns": 12583,
+          "speedup": 1.202018596519113
+        }
+      }
+    },
+    {
+      "n": 16,
+      "dim": 513,
+      "operations": {
+        "similarity": {
+          "baseline_ns": 1168.5882490636704,
+          "current_ns": 310.03268742648424,
+          "speedup": 3.7692420717437063
+        },
+        "bind": {
+          "baseline_ns": 270.1582618025751,
+          "current_ns": 33.703813559322036,
+          "speedup": 8.015658564187994
+        },
+        "unbind": {
+          "baseline_ns": 268.8482810566525,
+          "current_ns": 40.47050690490215,
+          "speedup": 6.643066806363308
+        },
+        "bundle1": {
+          "baseline_ns": 2833.005624296963,
+          "current_ns": 26.041028980788017,
+          "speedup": 108.7900799306754
+        },
+        "bundle2": {
+          "baseline_ns": 3372.1919673247107,
+          "current_ns": 2868.71387283237,
+          "speedup": 1.1755065568791778
+        },
+        "bundle8": {
+          "baseline_ns": 5745.140877598153,
+          "current_ns": 4090.1993569131832,
+          "speedup": 1.4046114568689216
+        },
+        "bundle32": {
+          "baseline_ns": 13896.969945355191,
+          "current_ns": 7870.241001564945,
+          "speedup": 1.7657616764965485
+        },
+        "cold_similarity": {
+          "baseline_ns": 4458,
+          "current_ns": 1125,
+          "speedup": 3.962666666666667
+        },
+        "cold_bundle8": {
+          "baseline_ns": 14750,
+          "current_ns": 13584,
+          "speedup": 1.085836277974087
+        }
+      }
+    }
+  ]
+}

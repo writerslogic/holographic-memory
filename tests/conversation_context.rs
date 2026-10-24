@@ -48,6 +48,298 @@ fn decode(value: &Value) -> anyhow::Result<ConversationContext> {
     ConversationContext::from_json(&serde_json::to_vec(value)?)
 }
 
+fn episode_fixture() -> (tempfile::TempDir, ConversationMemory, ConversationEvidence) {
+    let dir = tempfile::tempdir().unwrap();
+    let memory = ConversationMemory::new(
+        HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
+    )
+    .unwrap();
+    for (session_id, version, marker, cue) in [
+        ("episode", "v0", "WRONG_VERSION", "obsoletecue"),
+        ("other-episode", "v1", "WRONG_SESSION", "othercue"),
+        (
+            "episode",
+            "v1",
+            "orchid station, gate seven",
+            "episodeneedle",
+        ),
+    ] {
+        let texts = [
+            "I need to arrange a journey.".to_owned(),
+            "There are several destinations.".into(),
+            "Suggest a quiet departure location.".into(),
+            format!("The rare departure location is {marker}."),
+            "I choose that location.".into(),
+            "That choice is available this evening.".into(),
+            "Use that departure time as well.".into(),
+            "The chosen location and time are confirmed.".into(),
+            format!("{cue} records my final confirmation."),
+        ];
+        memory
+            .remember(ConversationInput {
+                session_id: session_id.into(),
+                version: version.into(),
+                turns: texts
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, text)| ConversationTurn {
+                        source_id: format!("turn-{index}"),
+                        role: if index % 2 == 0 {
+                            ConversationRole::User
+                        } else {
+                            ConversationRole::Assistant
+                        },
+                        text,
+                        observation_time: 1_704_067_200_000 + index as i64,
+                    })
+                    .collect(),
+            })
+            .unwrap();
+    }
+    let seed = memory
+        .recall(
+            "episodeneedle",
+            &ConversationRecallOptions {
+                roles: vec![ConversationRole::User],
+                k: 1,
+                max_rounds: None,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(seed.anchors.len(), 1);
+    assert_eq!(seed.anchors[0].source_id, "turn-8");
+    assert_eq!(seed.sources.len(), 4);
+    (dir, memory, seed)
+}
+
+#[test]
+fn expansion_recovers_transitive_exact_premises_of_an_already_selected_anchor() {
+    let (_dir, memory, seed) = episode_fixture();
+    let limits = ConversationContextLimits {
+        aggregation_only: false,
+        ..Default::default()
+    };
+    let before = seed.pack_context(limits.max_bytes).unwrap();
+    assert!(!before.unresolved_premise_ids().unwrap().is_empty());
+    assert!(!seed.sources.iter().any(|source| source.turn_index == 3));
+    let mut candidates = seed.clone();
+    candidates.anchors.push(candidates.anchors[0].clone());
+    let context = memory
+        .expand_aggregation_context("episodeneedle", &seed, &candidates, &limits)
+        .unwrap();
+    let sources = context.sources().unwrap();
+    assert_eq!(sources.len(), 9);
+    assert!(context.unresolved_premise_ids().unwrap().is_empty());
+    assert!(sources
+        .iter()
+        .all(|source| source.session_id == "episode" && source.version == "v1"));
+    assert!(sources[3].text.contains("orchid station, gate seven"));
+    assert!(seed.sources.iter().all(|source| sources.contains(source)));
+    let replay = ConversationEvidence {
+        sources,
+        ..seed.clone()
+    };
+    assert_eq!(
+        memory
+            .expand_aggregation_context("episodeneedle", &replay, &candidates, &limits)
+            .unwrap(),
+        context
+    );
+}
+
+#[test]
+fn transitive_expansion_is_atomic_at_source_round_and_byte_boundaries() {
+    let (_dir, memory, seed) = episode_fixture();
+    let limits = ConversationContextLimits {
+        aggregation_only: false,
+        ..Default::default()
+    };
+    let before = seed.pack_context(limits.max_bytes).unwrap();
+    let after = memory
+        .expand_aggregation_context("episodeneedle", &seed, &seed, &limits)
+        .unwrap();
+    let bytes = serde_json::to_vec(&after).unwrap().len();
+    for offset in [-1isize, 0, 1] {
+        for bounded in [
+            ConversationContextLimits {
+                max_sources: (9isize + offset) as usize,
+                ..limits.clone()
+            },
+            ConversationContextLimits {
+                max_rounds: (5isize + offset) as usize,
+                ..limits.clone()
+            },
+            ConversationContextLimits {
+                max_bytes: (bytes as isize + offset) as usize,
+                ..limits.clone()
+            },
+        ] {
+            let actual = memory
+                .expand_aggregation_context("episodeneedle", &seed, &seed, &bounded)
+                .unwrap();
+            assert_eq!(actual, if offset < 0 { &before } else { &after }.clone());
+        }
+    }
+    let empty = ConversationEvidence {
+        sources: vec![],
+        anchors: vec![],
+        dropped: vec![],
+        serialized_bytes: 2,
+    };
+    assert_eq!(
+        memory
+            .expand_aggregation_context("episodeneedle", &empty, &seed, &limits)
+            .unwrap(),
+        after
+    );
+    assert_eq!(
+        memory
+            .expand_aggregation_context(
+                "episodeneedle",
+                &empty,
+                &seed,
+                &ConversationContextLimits {
+                    max_sources: 8,
+                    ..limits
+                },
+            )
+            .unwrap(),
+        before
+    );
+}
+
+#[test]
+fn immediate_candidate_breadth_precedes_enrichment_and_long_sessions_keep_local_context() {
+    let dir = tempfile::tempdir().unwrap();
+    let memory = ConversationMemory::new(
+        HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
+    )
+    .unwrap();
+    for (session_id, count) in [("early-priority", 9), ("long-session", 69)] {
+        memory
+            .remember(ConversationInput {
+                session_id: session_id.into(),
+                version: "v1".into(),
+                turns: (0..count)
+                    .map(|index| ConversationTurn {
+                        source_id: format!("turn-{index}"),
+                        role: if index % 2 == 0 {
+                            ConversationRole::User
+                        } else {
+                            ConversationRole::Assistant
+                        },
+                        text: if index + 1 == count {
+                            "lateanchorneedle confirmation".into()
+                        } else {
+                            format!("Original observation {index} from {session_id}.")
+                        },
+                        observation_time: 1_704_067_200_000 + index as i64,
+                    })
+                    .collect(),
+            })
+            .unwrap();
+    }
+    let mut candidates = memory
+        .recall(
+            "How many lateanchorneedle confirmations?",
+            &ConversationRecallOptions {
+                roles: vec![ConversationRole::User],
+                k: 2,
+                max_rounds: None,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(candidates.anchors.len(), 2);
+    assert_eq!(candidates.sources.len(), 8);
+    for anchor in &mut candidates.anchors {
+        anchor.score = if anchor.session_id == "early-priority" {
+            1.0
+        } else {
+            0.5
+        };
+    }
+    let empty = ConversationEvidence {
+        sources: vec![],
+        anchors: vec![],
+        dropped: vec![],
+        serialized_bytes: 2,
+    };
+    for (max_sources, expected_sources) in [(9, 8), (64, 13)] {
+        let context = memory
+            .expand_aggregation_context(
+                "How many lateanchorneedle confirmations?",
+                &empty,
+                &candidates,
+                &ConversationContextLimits {
+                    max_sources,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let sources = context.sources().unwrap();
+        assert_eq!(sources.len(), expected_sources);
+        assert!(candidates
+            .sources
+            .iter()
+            .all(|source| sources.contains(source)));
+        assert!(candidates.anchors.iter().all(|anchor| sources
+            .iter()
+            .any(|source| source.record_id == anchor.record_id)));
+        assert!(!context.unresolved_premise_ids().unwrap().is_empty());
+    }
+}
+
+#[test]
+fn transitive_expansion_rejects_deleted_premises_and_forged_dependency_cycles() {
+    use holographic_memory::core::memory_api::{ForgetOptions, ForgetScope, Memory};
+    use std::sync::Arc;
+
+    let (dir, memory, seed) = episode_fixture();
+    let limits = ConversationContextLimits {
+        aggregation_only: false,
+        ..Default::default()
+    };
+    let mut forged = seed.clone();
+    let last = forged.sources.last_mut().unwrap();
+    last.premise_record_ids = vec![last.record_id.clone()];
+    assert!(memory
+        .expand_aggregation_context("episodeneedle", &seed, &forged, &limits)
+        .is_err());
+    let complete = memory
+        .expand_aggregation_context("episodeneedle", &seed, &seed, &limits)
+        .unwrap()
+        .sources()
+        .unwrap();
+    let missing_id = complete[3].record_id.clone();
+    assert!(!seed
+        .sources
+        .iter()
+        .any(|source| source.record_id == missing_id));
+    drop(memory);
+    let core = Arc::new(HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap());
+    let memory = Memory::new(core.clone());
+    let report = memory
+        .forget(
+            &ForgetScope::Ids {
+                ids: vec![missing_id.clone()],
+            },
+            &ForgetOptions::default(),
+        )
+        .unwrap();
+    assert_eq!(report.forgotten, vec![missing_id]);
+    drop(memory);
+    let memory = ConversationMemory::new(Arc::try_unwrap(core).ok().unwrap()).unwrap();
+    let error = memory
+        .expand_aggregation_context("episodeneedle", &seed, &seed, &limits)
+        .unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "conversation expansion anchor premise is missing"
+    );
+}
+
 #[test]
 fn context_round_trip_preserves_roles_times_conflicts_and_exact_unicode_sources() {
     let packet = evidence();
