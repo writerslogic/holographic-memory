@@ -318,6 +318,38 @@ mod neon {
         vaddvq_s32(vaddq_s32(s0, s1))
     }
 
+    /// [`sdot`] of one row `a` against four rows, `a` loaded once per 16 bytes and one
+    /// accumulator per row. The same integer sums as four single calls.
+    ///
+    /// # Safety
+    /// The CPU supports `dotprod`; `a` and every row have the same length, a multiple of 16.
+    #[target_feature(enable = "dotprod")]
+    #[inline]
+    pub(super) unsafe fn sdot_x4(a: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
+        let mut s = [vdupq_n_s32(0); 4];
+        let mut i = 0;
+        // SAFETY (all loads): `i + 16 <= len` for `a` and every row, whose lengths are equal and
+        // a multiple of 16 (asserted by the caller).
+        while i + 16 <= a.len() {
+            let x = vld1q_s8(a.as_ptr().add(i));
+            let y = rows.map(|r| vld1q_s8(r.as_ptr().add(i)));
+            let [mut s0, mut s1, mut s2, mut s3] = s;
+            std::arch::asm!(
+                "sdot {s0:v}.4s, {x:v}.16b, {y0:v}.16b",
+                "sdot {s1:v}.4s, {x:v}.16b, {y1:v}.16b",
+                "sdot {s2:v}.4s, {x:v}.16b, {y2:v}.16b",
+                "sdot {s3:v}.4s, {x:v}.16b, {y3:v}.16b",
+                s0 = inout(vreg) s0, s1 = inout(vreg) s1, s2 = inout(vreg) s2, s3 = inout(vreg) s3,
+                x = in(vreg) x, y0 = in(vreg) y[0], y1 = in(vreg) y[1], y2 = in(vreg) y[2],
+                y3 = in(vreg) y[3],
+                options(pure, nomem, nostack, preserves_flags)
+            );
+            s = [s0, s1, s2, s3];
+            i += 16;
+        }
+        s.map(|v| vaddvq_s32(v))
+    }
+
     /// [`super::dot_i4_inline`] with SDOT: each 16 packed bytes become the 16 even and the 16 odd
     /// coordinates of a 32-wide block, matched with the query laid out by
     /// [`super::interleave_for_i4`].
@@ -655,6 +687,43 @@ pub(crate) fn dot_i8_query(a: &[i8], b: &[i8], qsum: i32) -> i32 {
     dot_i8_inline(a, b)
 }
 
+/// [`dot_i8_query`] of one row `a` against four rows of its length: `a` is loaded once per
+/// chunk for all four, and the four row loads are in flight together. The same integers as
+/// four single calls, on every tier.
+#[must_use]
+#[inline(always)]
+pub(crate) fn dot_i8_query_x4(a: &[i8], rows: [&[i8]; 4], qsum: i32) -> [i32; 4] {
+    assert!(a.len().is_multiple_of(16) && rows.iter().all(|r| r.len() == a.len()));
+    #[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
+    {
+        let _ = qsum;
+        // SAFETY: `dotprod` is enabled for the whole build; the lengths are checked above.
+        unsafe { neon::sdot_x4(a, rows) }
+    }
+    #[cfg(not(all(target_arch = "aarch64", target_feature = "dotprod")))]
+    {
+        #[cfg(target_arch = "aarch64")]
+        if std::arch::is_aarch64_feature_detected!("dotprod") {
+            // SAFETY: `dotprod` was detected at runtime; the lengths are checked above.
+            return unsafe { neon::sdot_x4(a, rows) };
+        }
+        #[cfg(target_arch = "x86_64")]
+        match tier::get() {
+            // SAFETY: the tier is AVXVNNI only after detecting `avx2` and `avxvnni`; the
+            // lengths are checked above.
+            tier::AVXVNNI => return unsafe { super::vnni::avx::dot_i8_x4(a, rows, qsum) },
+            // SAFETY: the tier is VNNI only after detecting `avx2`, `avx512f`, `avx512vl` and
+            // `avx512vnni`; the lengths are checked above.
+            tier::VNNI => return unsafe { super::vnni::evex::dot_i8_x4(a, rows, qsum) },
+            // SAFETY: the tier is AVX2 only after detecting `avx2`; the lengths are checked.
+            tier::AVX2 => return unsafe { x86::dot_i8_avx2_x4(a, rows) },
+            _ => {}
+        }
+        let _ = qsum;
+        rows.map(|r| dot_i8_inline(a, r))
+    }
+}
+
 /// [`dot_i4_inline`] with the query sum precomputed, as [`dot_i8_query`].
 #[must_use]
 #[inline(always)]
@@ -884,6 +953,28 @@ mod x86 {
             i += 16;
         }
         horizontal_sum(acc)
+    }
+
+    /// [`dot_i8_avx2`] of one row `a` against four rows: `a` is loaded and widened once per
+    /// 16 bytes and each row keeps its own accumulator, so the four row loads are in flight
+    /// together. Lane by lane the same integer sums as four single calls.
+    ///
+    /// # Safety
+    /// The CPU supports AVX2; `a` and every row have the same length.
+    #[target_feature(enable = "avx2")]
+    pub(super) unsafe fn dot_i8_avx2_x4(a: &[i8], rows: [&[i8]; 4]) -> [i32; 4] {
+        let mut acc = [_mm256_setzero_si256(); 4];
+        let mut i = 0;
+        // SAFETY (all loads): `i + 16 <= len` for `a` and every row, whose lengths are equal.
+        while i + 16 <= a.len() {
+            let x = _mm256_cvtepi8_epi16(_mm_loadu_si128(a.as_ptr().add(i).cast()));
+            for (s, row) in acc.iter_mut().zip(rows) {
+                let y = _mm256_cvtepi8_epi16(_mm_loadu_si128(row.as_ptr().add(i).cast()));
+                *s = _mm256_add_epi32(*s, _mm256_madd_epi16(x, y));
+            }
+            i += 16;
+        }
+        acc.map(|s| horizontal_sum(s))
     }
 
     /// [`super::dot_i4_inline`]: each 16 packed bytes become the 16 even and the 16 odd
@@ -1178,6 +1269,75 @@ mod tests {
                     fast,
                     raw_one_scalar(code, &planes, words),
                     "row {row}, words {words}"
+                );
+            }
+        }
+    }
+
+    /// The four-row i8 entry point on the tier this process runs (`HMS_QGRAPH_KERNEL` pins it)
+    /// against the scalar sums: every width up to 800 and the extremes of the i8 range.
+    #[test]
+    fn dispatched_i8_x4_matches_scalar() {
+        let mut rng = SplitMix(29);
+        for len in (0..=800).step_by(16) {
+            for extreme in [false, true] {
+                let mut row = |sign: i8| -> Vec<i8> {
+                    if extreme {
+                        (0..len)
+                            .map(|i| if i % 3 == 0 { -128 } else { 127 * sign })
+                            .collect()
+                    } else {
+                        random_i8(&mut rng, len)
+                    }
+                };
+                let a = row(1);
+                let bs = [row(1), row(-1), row(1), row(-1)];
+                let four = [&bs[0][..], &bs[1][..], &bs[2][..], &bs[3][..]];
+                let want = four.map(|b| dot_i8_scalar(&a, b));
+                let qsum = super::super::vnni::query_sum(&a);
+                assert_eq!(dot_i8_query_x4(&a, four, qsum), want, "len {len}");
+                assert_eq!(four.map(|b| dot_i8_query(&a, b, qsum)), want, "len {len}");
+            }
+        }
+    }
+
+    /// Development microbenchmark (`--ignored`): ns per row of [`dot_i8_query`] and
+    /// [`dot_i8_query_x4`] at the construction widths, over rows that fit in L2 (4,096) and
+    /// over a 256 MiB set read at random ids, as construction reads them.
+    #[test]
+    #[ignore]
+    fn microbench_i8_x4() {
+        use std::hint::black_box;
+        use std::time::Instant;
+        let mut rng = SplitMix(5);
+        for dim in [128usize, 784] {
+            for n in [4096usize, (256 << 20) / dim] {
+                let data = random_i8(&mut rng, n * dim);
+                let q = random_i8(&mut rng, dim);
+                let qs = super::super::vnni::query_sum(&q);
+                let ids: Vec<usize> = (0..1 << 16).map(|_| rng.next_u64() as usize % n).collect();
+                let row = |i: usize| &data[i * dim..(i + 1) * dim];
+                let best = |f: &dyn Fn() -> i32| {
+                    (0..7)
+                        .map(|_| {
+                            let t = Instant::now();
+                            black_box(f());
+                            t.elapsed().as_nanos() as f64 / ids.len() as f64
+                        })
+                        .fold(f64::INFINITY, f64::min)
+                };
+                let one = best(&|| {
+                    ids.iter()
+                        .fold(0i32, |a, &i| a.wrapping_add(dot_i8_query(&q, row(i), qs)))
+                });
+                let four = best(&|| {
+                    ids.as_chunks::<4>().0.iter().fold(0i32, |a, c| {
+                        let r = dot_i8_query_x4(&q, c.map(row), qs);
+                        a.wrapping_add(r[0] ^ r[1] ^ r[2] ^ r[3])
+                    })
+                });
+                println!(
+                    "{{\"dim\": {dim}, \"rows\": {n}, \"x1_ns\": {one:.2}, \"x4_ns\": {four:.2}}}"
                 );
             }
         }

@@ -54,6 +54,39 @@ macro_rules! kernels {
                 total.wrapping_sub(128i32.wrapping_mul(qsum))
             }
 
+            /// [`dot_i8`] of one query against four rows of its length, sharing the query loads.
+            ///
+            /// # Safety
+            /// As [`dot_i8`], for every row.
+            #[target_feature(enable = $features)]
+            pub(crate) unsafe fn dot_i8_x4(a: &[i8], rows: [&[i8]; 4], qsum: i32) -> [i32; 4] {
+                let flip = _mm256_set1_epi8(-128);
+                let mut acc = [_mm256_setzero_si256(); 4];
+                let mut i = 0;
+                // SAFETY (all loads): as in `dot_i8`, every row having the length of `a`.
+                while i + 32 <= a.len() {
+                    let q = _mm256_loadu_si256(a.as_ptr().add(i).cast());
+                    for (s, row) in acc.iter_mut().zip(rows) {
+                        let r =
+                            _mm256_xor_si256(_mm256_loadu_si256(row.as_ptr().add(i).cast()), flip);
+                        *s = $dp256(*s, r, q);
+                    }
+                    i += 32;
+                }
+                let mut out = acc.map(|s| hsum256(s));
+                if i < a.len() {
+                    let q = _mm_loadu_si128(a.as_ptr().add(i).cast());
+                    for (o, row) in out.iter_mut().zip(rows) {
+                        let r = _mm_xor_si128(
+                            _mm_loadu_si128(row.as_ptr().add(i).cast()),
+                            _mm_set1_epi8(-128),
+                        );
+                        *o = o.wrapping_add(hsum128($dp128(_mm_setzero_si128(), r, q)));
+                    }
+                }
+                out.map(|o| o.wrapping_sub(128i32.wrapping_mul(qsum)))
+            }
+
             /// The two nibble planes of 16 packed bytes at `p`, each biased to `signed nibble + 8`.
             #[target_feature(enable = "avx2")]
             #[inline]
@@ -195,20 +228,27 @@ mod tests {
         unsafe fn(&[i8], &[i8], i32) -> i32,
         unsafe fn(&[i8], &[i8], i32) -> i32,
         unsafe fn(&[i8], [&[i8]; 4], i32) -> [i32; 4],
+        unsafe fn(&[i8], [&[i8]; 4], i32) -> [i32; 4],
     );
 
     /// The encodings this CPU runs.
     fn available() -> Vec<(&'static str, Kernels)> {
         let mut out: Vec<(&'static str, Kernels)> = Vec::new();
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("avxvnni") {
-            out.push(("avx", (avx::dot_i8, avx::dot_i4, avx::dot_i4_x4)));
+            out.push((
+                "avx",
+                (avx::dot_i8, avx::dot_i4, avx::dot_i4_x4, avx::dot_i8_x4),
+            ));
         }
         if is_x86_feature_detected!("avx2")
             && is_x86_feature_detected!("avx512f")
             && is_x86_feature_detected!("avx512vl")
             && is_x86_feature_detected!("avx512vnni")
         {
-            out.push(("evex", (evex::dot_i8, evex::dot_i4, evex::dot_i4_x4)));
+            out.push((
+                "evex",
+                (evex::dot_i8, evex::dot_i4, evex::dot_i4_x4, evex::dot_i8_x4),
+            ));
         }
         out
     }
@@ -248,7 +288,7 @@ mod tests {
             eprintln!("neither VNNI encoding available; skipped");
             return;
         }
-        for (name, (dot_i8, dot_i4, dot_i4_x4)) in kernels {
+        for (name, (dot_i8, dot_i4, dot_i4_x4, dot_i8_x4)) in kernels {
             let mut rng = SplitMix(41);
             for len in (0..=512).step_by(16) {
                 for extreme in [false, true] {
@@ -258,6 +298,12 @@ mod tests {
                     // SAFETY: the encoding's features were detected; equal lengths, multiples of 16.
                     let got = unsafe { dot_i8(&a, &b, query_sum(&a)) };
                     assert_eq!(got, scalar_i8(&a, &b), "{name} i8 len {len}");
+                    let bs: Vec<Vec<i8>> = (0..4).map(|_| rows(&mut rng, len, !extreme)).collect();
+                    let four = [&bs[0][..], &bs[1][..], &bs[2][..], &bs[3][..]];
+                    let want: Vec<i32> = bs.iter().map(|b| scalar_i8(&a, b)).collect();
+                    // SAFETY: as above, every row of length `len`.
+                    let got = unsafe { dot_i8_x4(&a, four, query_sum(&a)) };
+                    assert_eq!(got.to_vec(), want, "{name} i8 x4 len {len}");
                     // 4-bit rows of `len` packed bytes against a `2 len` query.
                     let q = rows(&mut rng, 2 * len, extreme);
                     let mut ql = vec![0i8; 2 * len];
