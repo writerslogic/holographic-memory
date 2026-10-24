@@ -70,6 +70,8 @@ def main() -> None:
                 points[-1]["raw_result"] = native["file"]
                 if "query_ef" in native:
                     points[-1]["query_ef"] = native["query_ef"]
+                if row["algorithm"] == "scann":
+                    points[-1]["query_arguments"] = [int(value) for value in Path(native["file"]).stem.rsplit("_", 2)[-2:]]
     if raw_metadata is not None and any(identities.values()):
         raise ValueError("some raw result identities are absent from the official CSV")
     expected_algorithms = {

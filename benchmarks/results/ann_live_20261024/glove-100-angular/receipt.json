@@ -1,0 +1,11 @@
+{
+  "dataset": "glove-100-angular",
+  "outcomes": {
+    "hms-d32": "done",
+    "hms-d48": "done",
+    "hms-d64": "done",
+    "scann": "done"
+  },
+  "elapsed_s": 10316.964585088,
+  "estimated_usd": 1.8180784257721745
+}

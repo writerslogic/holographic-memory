@@ -1,0 +1,10 @@
+{
+  "dataset": "glove-100-angular",
+  "raw_files": 192,
+  "csv": "/vol/ann-live-20261024/glove-100-angular/results.csv",
+  "elapsed_s": 74.424760877,
+  "estimated_usd": 0.0032788241875256114,
+  "purpose": "Official data export and hashing only; benchmark query hardware is recorded in manifest",
+  "export_container_id": "ta-01M5PQC36V8NK0579K97WTZ2QR",
+  "metadata_only": false
+}

@@ -2,11 +2,11 @@
   "source_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
   "runner_sha256": {
     "ann-live-modal-20261024.py": "1ea557f87cc9f2b62d440ec55a47689c92fd85d22ad67c897040f7af511133ce",
-    "ann-live-export-20261024.py": "c0b23182762fe0badb54573737274eb105a4bf46675e436de13ab5826e7197f8",
+    "ann-live-export-20261024.py": "a682f6441d04890a2de8e89d1817803730a1c3c7f3594ef4d08d16833e58dce4",
     "test_ann_live_export_20261024.py": "7dfaafd8c95cee07a113599e14da36829b3ad334417f98d0b4641ff78d144d20",
     "ann-sift-d32-repair-20261024.py": "d495faea262c905139d67ffe276f0530bed4a497b4f114fa977de5343132c7af"
   },
-  "state": "SIFT and Fashion complete; GloVe comparator running",
+  "state": "complete",
   "apps": [
     "ap-7L5mqGLMUK9NEoBmyRpBHk",
     "ap-wtq8PwX1NcL0rRhDGaGmtQ"
@@ -17,5 +17,12 @@
   "publication": "none; local harness comparison only",
   "cost_note": "Per-run estimates use rounded Modal resource rates; actual billing unavailable. Original and repaired Fashion must be added, preserving cancelled attempts.",
   "sift_scope": "108 native points retained;72 same-container d48/d64 comparison points,36 diagnostic old-CPU d32 points; no full-grid fairness claim",
-  "validation": "8 CSV integrity regression tests pass, including full-grid cardinality, raw-file identity bijection, Glass aliased labels, and diagnostic-point exclusion"
+  "validation": "8 CSV integrity regression tests pass, including full-grid cardinality, raw-file identity bijection, Glass aliased labels, and diagnostic-point exclusion",
+  "native_points": {
+    "hms": 324,
+    "comparators": 378,
+    "total": 702,
+    "diagnostic_old_cpu_hms": 36
+  },
+  "completed_at_utc": "2026-10-24T10:39:23.597760+00:00"
 }

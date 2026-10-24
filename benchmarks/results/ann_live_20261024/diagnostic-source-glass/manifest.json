@@ -1,0 +1,19 @@
+{
+  "source_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "harness_rev": "2e081ad32c1eccab72dcb739ad886c310b90f715",
+  "dataset": "fashion-mnist-784-euclidean",
+  "dataset_sha256": "7f24e5122b71346346686a6ea80e08d9145b9c020f9f2db4c4c799dfcfc96a07",
+  "wheel_sha256": "c974b3de71928e12f5b9b946309323585edaf01774a6c30e1b661c4283722829",
+  "hms_adapter_sha256": "27e2c689be665dca2145fff57d48491791f561339ef3fc60e01121b056465375",
+  "hms_config_sha256": "da931a3ff7018f3c56a54c7af0dca2bb604efc8798f7511163536a339d16c2e1",
+  "competitor_config_sha256": "43a7c2bf141b851fe0ebdf6ac1f3d1ad5e8fa51ea613852fd70985f9be66f24d",
+  "cpu": "unknown",
+  "cpu_affinity": 0,
+  "cpu_request": 8,
+  "memory_mib": 32768,
+  "runs": 5,
+  "k": 10,
+  "mode": "upstream --local, one pinned CPU; official Docker/AWS hardware differs",
+  "started": 1792825676.053862,
+  "cap_usd": 8.0
+}
