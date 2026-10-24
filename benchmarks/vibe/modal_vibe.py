@@ -169,6 +169,25 @@ hms() {
   RUSTFLAGS="-C target-cpu=native" CARGO_BUILD_JOBS="$(nproc)" maturin build --release --locked --out /work/hms-dist
   pip install --no-cache-dir --force-reinstall --no-deps /work/hms-dist/*.whl
   cd / && python -c 'from holographic_memory import VectorIndex; print(VectorIndex)'
+  python - <<'PY'
+import datetime, hashlib, json, os, subprocess
+from pathlib import Path
+import holographic_memory
+source = subprocess.run(['git', '-C', '/work/build/hms', 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
+assert source == os.environ['HMS_REV']
+module = Path(holographic_memory.__file__)
+native = [module] if module.suffix == '.so' else list(module.parent.glob('*.so'))
+wheels = list(Path('/work/hms-dist').glob('*.whl'))
+assert native and len(wheels) == 1
+files = {str(path): {'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'bytes': path.stat().st_size} for path in native + wheels}
+receipt = {'container_id': os.environ['MODAL_TASK_ID'], 'dataset': os.environ['HMS_DATASET'], 'hms_commit': source,
+           'observed_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'files': files,
+           'observation_scope': 'Pinned source, installed native module and wheel verified before benchmark data access',
+           'build_flags': 'RUSTFLAGS=-C target-cpu=native; maturin --release --locked'}
+path = Path(os.environ['HMS_RUN_ROOT']) / 'cpu' / ('native-' + os.environ['MODAL_TASK_ID'] + '.json')
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text(json.dumps(receipt, indent=2) + '\n')
+PY
 }
 """
 
@@ -425,6 +444,14 @@ def usd(rec: dict) -> float:
     return rec.get("usd", 0.0)
 
 
+def accrue_spend(record: dict, timestamp: float, cores: float, memory_gib: float, multiplier: int) -> None:
+    if multiplier not in (1, 3):
+        raise ValueError("unsupported resource price multiplier")
+    record["usd"] += (timestamp - record["last"]) / 3600 * (cores * USD_CORE_H + memory_gib * USD_GIB_H) * multiplier
+    record["last"] = timestamp
+    record["price_multiplier"] = multiplier
+
+
 def spend_records(ns: str, vol_root: Path | None) -> dict:
     """Container spend records: the live Dict, plus Volume mirrors for entries the Dict has dropped."""
     recs = {}
@@ -606,6 +633,8 @@ class Runner:
         self.cid = os.environ.get("MODAL_TASK_ID", f"local-{os.getpid()}")
         self.started = now()
         self.phase_cores = CPU_LIMIT
+        self.price_multiplier = 1
+        self.hms_only = hms_only
         self.mem_gib = 8
         self.main_beat = now()  # the main thread's last sign of life; the lease lapses without it
         self.long_phase = False  # builds and the export may block the main thread for hours
@@ -622,8 +651,7 @@ class Runner:
         while True:
             t = now()
             # Billing is the larger of request and use; builds may burst to the core limit.
-            rec["usd"] += (t - rec["last"]) / 3600 * (self.phase_cores * USD_CORE_H + self.mem_gib * USD_GIB_H)
-            rec["last"] = t
+            accrue_spend(rec, t, self.phase_cores, self.mem_gib, self.price_multiplier)
             try:
                 SPEND[f"{self.ns}:{self.cid}"] = rec
                 if not self.released.is_set() and (self.long_phase or t - self.main_beat < STALE_S):
@@ -668,7 +696,8 @@ class Runner:
     # ---- setup ----
     def sh(self, script: str, env_name: str, log: Path, extra: dict | None = None, timeout: int = 7200) -> int:
         env = {**os.environ, "PATH": f"{ENV_BIN[env_name]}:/root/.cargo/bin:{os.environ['PATH']}",
-               "HMS_REPO": HMS_REPO, "HMS_REV": self.rev, **(extra or {})}
+               "HMS_REPO": HMS_REPO, "HMS_REV": self.rev, "HMS_RUN_ROOT": str(self.root),
+               "HMS_DATASET": self.ds, **(extra or {})}
         with log.open("a") as fh:
             return subprocess.run(["bash", "-c", INSTALL_SH + "\n" + script], env=env, stdout=fh, stderr=subprocess.STDOUT,
                                   timeout=timeout).returncode
@@ -773,6 +802,8 @@ class Runner:
             print(f"{self.ds}/{job}: running in live container {rec.get('container_id')}, skipped", flush=True)
             return "busy"
         if rec["state"] == "failed" and self.retry_failed:
+            rec.setdefault("retry_resets", []).append({"at": iso(), "previous_failures": rec["failures"],
+                                                       "container": self.cid, "price_multiplier": self.price_multiplier})
             rec |= {"state": "pending", "failures": 0}
         if rec["state"] not in ("done", "failed") and not rec.get("orphan_reset") and any(
                 str(h.get("outcome", "")).startswith("hung") for h in rec["history"]):
@@ -821,6 +852,9 @@ class Runner:
             rec["attempts"] += 1
             rec |= {"state": "running", "start": iso(), "container_id": self.cid, "heartbeat": now(), "cleaned": cleaned,
                     "markers_at_start": status.get("markers", 0), "expected": status.get("expected"), **self.cpu,
+                    "nonpreemptible": self.price_multiplier == 3, "price_multiplier": self.price_multiplier,
+                    "hms_only": self.hms_only,
+                    "native_build_receipt": str(self.root / "cpu" / f"native-{self.cid}.json") if algo == "hms" else None,
                     "result_path": str(self.vol_results(job) / "results"), "log_path": str(log_vol)}
             self.save(rec)
             outcome = self.attempt(job, algo, env_name, rec, log_vol)
@@ -947,6 +981,7 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
     VOL.reload()
     r = Runner(ns, dataset, hms_rev, test, cap, hard_cap, hms_only)
     r.mem_gib = meta.get("mem_gib", 8)
+    r.price_multiplier = 3 if meta.get("nonpreemptible") else 1
     r.retry_failed = bool(meta.get("retry_failed"))
     if not r.acquire():
         return {"dataset": dataset, "status": "busy"}
@@ -1030,7 +1065,8 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
             break
     if any(v == "handover" for v in results.values()):
         r.release()
-        call = run_dataset.with_options(memory=r.mem_gib * 1024).spawn(dataset, meta, hms_rev, hms_only, test, cap, hard_cap)
+        runner = run_dataset_nonpreemptible if meta.get("nonpreemptible") else run_dataset
+        call = runner.with_options(memory=r.mem_gib * 1024).spawn(dataset, meta, hms_rev, hms_only, test, cap, hard_cap)
         return {"dataset": dataset, "container": r.cid, "jobs": results, "handed_over_to": call.object_id}
     if not test or results.get(hms_job) == "done":
         r.long_phase = True
@@ -1039,6 +1075,13 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
     r.release()
     return {"dataset": dataset, "container": r.cid, **r.cpu, "jobs": results,
             "spend_usd": round(spend_total(ns, r.root), 2)}
+
+
+@app.function(image=image, volumes={"/vol": VOL}, cpu=(CPU_REQ, CPU_LIMIT), memory=8 * 1024,
+              timeout=FN_TIMEOUT_S, nonpreemptible=True, retries=1)
+def run_dataset_nonpreemptible(dataset: str, meta: dict, hms_rev: str, hms_only: bool,
+                              test: bool, cap: float, hard_cap: float) -> dict:
+    return run_dataset.local(dataset, meta | {"nonpreemptible": True}, hms_rev, hms_only, test, cap, hard_cap)
 
 
 def status_report(ns: str) -> None:
@@ -1136,6 +1179,9 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
         download = records.get("_download", {})
         selected, _ = (choose(meta.get("leaders", {}), hms["avx512"], NAMED.get(ds, []))
                        if "avx512" in hms else ([], {}))
+        actual_competitors = sorted(job for job in records if job != "_download" and not job.startswith("hms@"))
+        if actual_competitors:
+            selected = actual_competitors
         standing = standings.get(ds, {})
         measured = standing.get("best_qps_at_recall", {})
         hms_containers = measurement_containers(hms)
@@ -1173,7 +1219,11 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
             "state": run_state, "hms_state": hms.get("state", "pending"),
             "attempts": hms.get("attempts", 0),
             "failures": hms.get("failures", 0), "hms_commit": hms_rev,
+            "cumulative_failures": hms.get("failures", 0) + sum(event["previous_failures"] for event in hms.get("retry_resets", [])),
+            "retry_resets": hms.get("retry_resets", []),
             "vibe_fork_commit": VIBE_REV, "source_sha256": manifest.get("source_sha256"),
+            "nonpreemptible": hms.get("nonpreemptible", False), "price_multiplier": hms.get("price_multiplier", 1),
+            "native_build_receipt": hms.get("native_build_receipt"),
             "query_threads": 1, "cpu_model": hms.get("cpu_model"), "avx512": hms.get("avx512"),
             "nproc": hms.get("nproc"), "container_id": hms.get("container_id"),
             "measurement_containers": hms_containers,
@@ -1198,10 +1248,44 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     print(f"wrote {len(rows)} dataset rows to {out}")
 
 
+@app.function(image=plan_image, volumes={"/vol": VOL}, cpu=2, memory=4096, timeout=3600)
+def audit_dataset_artifacts(dataset: str, hms_rev: str) -> dict:
+    if dataset not in DATASETS or len(hms_rev) != 40 or any(c not in "0123456789abcdef" for c in hms_rev):
+        raise ValueError("a configured dataset and full lowercase source commit are required")
+    started = now()
+    root = Path("/vol/vibe") / LIVE_NS
+    records = [read_json(path) for path in (root / "ledger" / dataset).glob("*.json")]
+    if not records or any(record.get("state") not in ("done", "failed") for record in records):
+        raise ValueError("artifact export requires final arm states")
+    hms = next((record for record in records if record.get("job") == f"hms@{hms_rev[:12]}"), None)
+    if not hms or hms.get("hms_rev") != hms_rev:
+        raise ValueError("artifact source does not match the requested commit")
+    hashes = {}
+    for path in sorted((root / "results" / dataset).rglob("*.hdf5")):
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            for block in iter(lambda: source.read(16 << 20), b""):
+                digest.update(block)
+        hashes[str(path.relative_to(root))] = {"sha256": digest.hexdigest(), "bytes": path.stat().st_size}
+    artifact = root / "artifacts" / f"{dataset}@{hms_rev[:12]}"
+    write_json(artifact / "raw-results.sha256.json", hashes)
+    receipt = {"dataset": dataset, "hms_commit": hms_rev, "purpose": "artifact hashing only; no benchmark rerun",
+               "started": iso(started), "ended": iso(), "raw_hdf5_files": len(hashes),
+               "raw_hdf5_bytes": sum(row["bytes"] for row in hashes.values()), "ledgers": records,
+               "query_threads": 1, "measurement_containers": measurement_containers(hms),
+               "hashing_container": os.environ.get("MODAL_TASK_ID"), "hashing_cpus": 2, "hashing_memory_gib": 4,
+               "estimated_hashing_usd": (now() - started) / 3600 * (2 * USD_CORE_H + 4 * USD_GIB_H),
+               "cost_scope": "requested CPU/memory estimate for this artifact export only; excludes image and storage",
+               "raw_hashes": str(artifact / "raw-results.sha256.json")}
+    write_json(artifact / "receipt.json", receipt)
+    VOL.commit()
+    return receipt
+
+
 @app.local_entrypoint()
 def main(resume: bool = False, status: bool = False, hms_rev: str = "", hms_only: bool = False, retry_failed: bool = False,
          datasets: str = "", test: bool = False, replan: bool = False, cap_usd: float = 140.0, hard_cap_usd: float = 150.0,
-         snapshot: str = ""):
+         snapshot: str = "", nonpreemptible: bool = False):
     ns = "test" if test else LIVE_NS
     if snapshot:
         if not hms_rev:
@@ -1236,7 +1320,10 @@ def main(resume: bool = False, status: bool = False, hms_rev: str = "", hms_only
     calls = []
     for d in targets:
         meta = meta_all[d] | ({"retry_failed": True} if retry_failed else {})
-        calls.append((d, run_dataset.with_options(memory=meta["mem_gib"] * 1024).spawn(d, meta, hms_rev, hms_only, test, cap_usd, hard_cap_usd)))
+        if nonpreemptible:
+            meta["nonpreemptible"] = True
+        runner = run_dataset_nonpreemptible if nonpreemptible else run_dataset
+        calls.append((d, runner.with_options(memory=meta["mem_gib"] * 1024).spawn(d, meta, hms_rev, hms_only, test, cap_usd, hard_cap_usd)))
     for d, call in calls:
         try:
             print(json.dumps(call.get(), default=str))

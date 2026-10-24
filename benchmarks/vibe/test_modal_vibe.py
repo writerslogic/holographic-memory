@@ -5,6 +5,7 @@ process exiting must not look like the job stopping."""
 import importlib.util
 import json
 import sys
+import pytest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -28,6 +29,15 @@ def test_progress_survives_config_process_exit():
 
 def test_progress_counts_only_gains():
     assert mv.cpu_progress({CFG1: 10.0}, {CFG1: 10.5, CFG2: 0.0}) == 0.5
+
+
+def test_nonpreemptible_ledger_counts_build_and_query_prices():
+    ledger = {"usd": 0.0, "last": 0.0}
+    mv.accrue_spend(ledger, 1800, 8, 32, 3)
+    mv.accrue_spend(ledger, 3600, 2, 32, 3)
+    assert ledger["usd"] == pytest.approx(1.474632)
+    assert ledger["last"] == 3600
+    assert ledger["price_multiplier"] == 3
 
 
 def test_descendants_follow_ppid_and_skip_unrelated():
@@ -108,6 +118,7 @@ def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path)
     assert a["competitors"]["other"]["fair_comparison"] is False
     assert a["competitors"]["mixed"]["fair_comparison"] is False
     assert a["comparison_status"] == "comparable"
+    assert a["selected_competitors"] == ["mixed", "other", "same"]
     assert a["metrics"]["0.95"]["qps"] == 42
     assert a["estimated_cost_usd"] == 2.0
     assert a["peak_rss_bytes"] is None

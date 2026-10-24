@@ -1,0 +1,18 @@
+{
+  "container_id": "ta-01M5PATNVBJNVGXBP073M9C58R",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "observed_at_utc": "2026-10-24T09:13:19.060035+00:00",
+  "observation_scope": "Captured after measurement began; build/install logs establish original pinned install, not a retroactive pre-launch hash",
+  "files": {
+    "/opt/env/micromamba/lib/python3.11/site-packages/holographic_memory/holographic_memory.abi3.so": {
+      "sha256": "b61afafe1d7ae0879b9743751ad230b1f60dd5728f955671a56fccd2b2081cb0",
+      "bytes": 8205416
+    },
+    "/work/hms-dist/holographic_vsa-0.6.1-cp39-abi3-manylinux_2_34_x86_64.whl": {
+      "sha256": "3340e5dcb2bc2d407f674e6b4d58814e071beae6ff3bde7ca5ae4cf52cb310fc",
+      "bytes": 3562104
+    }
+  },
+  "module_file": "/opt/env/micromamba/lib/python3.11/site-packages/holographic_memory/__init__.py",
+  "build_flags": "RUSTFLAGS=-C target-cpu=native; cargo --release --locked"
+}

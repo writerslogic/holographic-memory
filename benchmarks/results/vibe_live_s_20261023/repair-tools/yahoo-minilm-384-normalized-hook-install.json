@@ -1,0 +1,11 @@
+{
+  "dataset": "yahoo-minilm-384-normalized",
+  "container_id": "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R",
+  "installed_at": 1792831705.4346626,
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "wrapper_sha256": "bcc32c8001201ee5c18a300852e31cf2a5a81bf78047d37db08bf0dfbf3f4115",
+  "hook_payload_sha256": "8ad367ca8d60fed9233903b2200aec8a5a707e58524048926cc713b77209abf9",
+  "mode": "pre-export inside original function, no post-return benchmark",
+  "updated_at": 1792832368.1103141,
+  "revision": 2
+}

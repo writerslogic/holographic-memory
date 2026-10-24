@@ -1,0 +1,9 @@
+{
+  "dataset": "landmark-nomic-768-normalized",
+  "container_id": "ta-01M5PDWQVEXHTNJSV6WPESQA3R",
+  "installed_at": 1792831703.3960254,
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "wrapper_sha256": "bcc32c8001201ee5c18a300852e31cf2a5a81bf78047d37db08bf0dfbf3f4115",
+  "hook_payload_sha256": "8e171bb470d837661e4ff9a00077de554b88d4c2efd6b0cdefc494cd5db46c67",
+  "mode": "pre-export inside original function, no post-return benchmark"
+}
