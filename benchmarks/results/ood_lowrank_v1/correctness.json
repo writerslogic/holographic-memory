@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "original_numerical_tests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "added_regressions_before_fix": {
+    "passed": 0,
+    "failed": 2,
+    "findings": [
+      "equal scores returned cluster order rather than original IDs",
+      "rank larger than dimension was accepted"
+    ]
+  },
+  "focused_rust_after_fix": {
+    "command": "cargo test --locked --release --lib --features experimental core::qgraph::lowrank::tests",
+    "passed": 5,
+    "failed": 0
+  },
+  "harness_tests": {
+    "command": "python -m unittest discover -s benchmarks/vibe -p test_ood_ivf_ab.py",
+    "passed": 3,
+    "failed": 0
+  },
+  "python_lint": "passed",
+  "production_gate": "not applicable: rejected prototype is archived as a patch, no production source changes",
+  "prototype_clippy": {
+    "measured_source": "failed nonminimal_bool",
+    "equivalent_guard_variant": "passed python,experimental all-targets release",
+    "variant_measured": false
+  }
+}

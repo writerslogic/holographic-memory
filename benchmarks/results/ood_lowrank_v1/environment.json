@@ -1,0 +1,33 @@
+{
+  "cpu": "Intel(R) Core(TM) Ultra 9 185H",
+  "os": "Linux 6.18.33.2-microsoft-standard-WSL2",
+  "rustc": "1.99.1 (58cf8f9c3 2026-10-13)",
+  "python": "3.11.16",
+  "numpy": "2.4.4",
+  "h5py": "3.16.0",
+  "rustflags": "-C target-cpu=x86-64-v3",
+  "cargo_build_jobs": 2,
+  "experiment_initial_affinity": [
+    0,
+    1
+  ],
+  "query_affinity": [
+    0
+  ],
+  "OPENBLAS_NUM_THREADS": 1,
+  "OMP_NUM_THREADS": 1,
+  "MKL_NUM_THREADS": 1,
+  "RAYON_NUM_THREADS": 2,
+  "process_timeout_seconds": 1500,
+  "timing_window_timeout_seconds": 720,
+  "timing_lock_wait_seconds": 600,
+  "maximum_load1": 3.0,
+  "wheel_build_affinity": [
+    18,
+    19
+  ],
+  "index_build_affinity": [
+    0,
+    1
+  ]
+}
