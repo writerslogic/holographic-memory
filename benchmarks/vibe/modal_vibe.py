@@ -1114,7 +1114,8 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
         records = ledgers.get(ds, {})
         hms = records.get(f"hms@{hms_rev[:12]}", {})
         download = records.get("_download", {})
-        selected, _ = choose(meta.get("leaders", {}), bool(hms.get("avx512")), NAMED.get(ds, []))
+        selected, _ = (choose(meta.get("leaders", {}), hms["avx512"], NAMED.get(ds, []))
+                       if "avx512" in hms else ([], {}))
         standing = standings.get(ds, {})
         measured = standing.get("best_qps_at_recall", {})
         competitors = {}
@@ -1160,7 +1161,7 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
             "estimated_cost_usd": round(spent.get(ds, 0.0), 4),
             "ledger_prefix": f"hms-bench-run:{root}/ledger/{ds}",
             "results_prefix": f"hms-bench-run:{root}/results/{ds}",
-            "hms_log": hms.get("log_path"),
+            "log_prefix": f"hms-bench-run:{root}/logs/{ds}",
             "error": hms.get("error_tail") or download.get("error"),
         })
     out.parent.mkdir(parents=True, exist_ok=True)
