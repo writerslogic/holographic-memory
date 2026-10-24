@@ -20,6 +20,7 @@ use crate::core::durable_file::{atomic_write, sync_directory, sync_mapped_file};
 use crate::core::error::HmsError;
 
 mod delta;
+mod delta_rows;
 mod diagnostics;
 mod format;
 mod merge;
@@ -861,6 +862,27 @@ impl UpdatableVGraph {
         self.consolidate_mode(ConsolidationMode::Rebuild, checkpoint)
             .map(drop)
     }
+    fn spill_delta_rows(&self, _writer: &Writer<'_>) -> Result<(), UpdateError> {
+        let source = {
+            let state = self.state.read();
+            if state.manifest.encoding.screen || state.manifest.encoding.block_bits != 0 {
+                None
+            } else {
+                state.delta.vectors.spill_source()
+            }
+        };
+        if let Some(source) = source {
+            let mapped = source.mapped()?;
+            let mut state = self.state.write();
+            assert!(
+                state.delta.vectors.same_backing(&source),
+                "delta changed while its writer was held"
+            );
+            state.delta.vectors = mapped;
+        }
+        Ok(())
+    }
+
     fn consolidate_mode(
         &self,
         mode: ConsolidationMode,
@@ -869,6 +891,7 @@ impl UpdatableVGraph {
         let writer = self.writer()?;
         self.commit_with(&writer)?;
         checkpoint(0)?;
+        self.spill_delta_rows(&writer)?;
         // The writer flag excludes every other mutation, so a read guard sees the same state
         // a clone would, without copying the delta.
         let snapshot = self.state.read();
@@ -978,6 +1001,7 @@ impl UpdatableVGraph {
         mut checkpoint: impl FnMut(u8) -> Result<(), UpdateError>,
     ) -> Result<(), UpdateError> {
         checkpoint(6)?;
+        let delta_rows = self.state.read().delta.vectors.clone();
         let t = super::prof::start();
         let mut output = BaseRowsWriter::new(&manifest.rows_path(&self.dir), manifest, ids)?;
         let mut prepared = PreparedRows::new(ids.len(), manifest.dim)?;
@@ -1010,6 +1034,7 @@ impl UpdatableVGraph {
             output.append(&rows)?;
             prepared.append(&rows)?;
             base.rows.release_pages()?;
+            delta_rows.release_pages()?;
         }
         output.finish()?;
         super::prof::report("rows", t);

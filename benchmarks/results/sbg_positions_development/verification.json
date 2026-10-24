@@ -1,0 +1,62 @@
+{
+  "production_sha": "7e216c6a5afd5a0f518c619fb95b1bb990e08aab",
+  "machine": "Apple M4",
+  "rustc": "1.96.0 (ac68faa20 2026-05-25)",
+  "clippy": "0.1.96 (ac68faa20 2026-05-25)",
+  "focused": {
+    "passed": 93,
+    "ignored": 1,
+    "failed": 0
+  },
+  "final_gate": {
+    "cargo fmt --check": "passed",
+    "cargo clippy --all-targets -- -D warnings": "passed",
+    "cargo test": "passed",
+    "unit_tests": {
+      "passed": 553,
+      "ignored": 12,
+      "failed": 0
+    },
+    "integration_tests": "all passed, including golden files, format layout, upgrades, replay and document mutations",
+    "doc_tests": {
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "durable_format_changed": false,
+  "new_dependencies": false,
+  "postings_source_sha256": "b895641c0059e8288ff2cf0ecef7a64eed61ed9e68cf4118dd2639144d1c4c27",
+  "ci": {
+    "production_sha": "7e216c6a5afd5a0f518c619fb95b1bb990e08aab",
+    "passed": 68,
+    "skipped": 3,
+    "failed": 0,
+    "review_comments": 0
+  },
+  "exhaustive600": {
+    "checked": 2886,
+    "mismatches": 0,
+    "mode": "exhaustive600",
+    "queries": 962,
+    "reference": "one independent exhaustive top100+count per query; prefixes and count reused"
+  },
+  "full_count": {
+    "mode": "full-count",
+    "checked": 962,
+    "mismatches": 0,
+    "machine": "Apple M4",
+    "architecture": "arm64",
+    "slot_bits": 64,
+    "threads": 4,
+    "nice": 19,
+    "source_sha": "7e216c6a5afd5a0f518c619fb95b1bb990e08aab",
+    "correctness_only": true,
+    "open_elapsed_s": 272.64468479156494,
+    "elapsed_s": 277.03174781799316,
+    "peak_rss_kib": 13311792,
+    "query_sha256": "a8e8f2c1a4bede53063de22fb13be83b585683da1c28208da4921de73ce254bd",
+    "reference_sha256": "a3bff380d26e47e5f057b97d97809eca3602017c03abe656133ef7b5659b7647",
+    "binary_sha256": "5243203aa73ab4554d0fddd0659cf23835d7782db1f30942f8f37678377cd1f8",
+    "fixture_manifest": "index-manifest.json"
+  }
+}

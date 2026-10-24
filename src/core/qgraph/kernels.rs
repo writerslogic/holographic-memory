@@ -1274,6 +1274,40 @@ mod tests {
         }
     }
 
+    /// The dispatched tier is the best one this CPU supports at or below the pin, with the two
+    /// `vpdpbusd` encodings detected separately: AVX512-VNNI without AVX-VNNI (Cascade Lake)
+    /// takes the EVEX tier and never the VEX one, and a pin the CPU lacks falls back below it.
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn tier_is_the_best_supported_at_or_below_the_pin() {
+        let avx2 = is_x86_feature_detected!("avx2");
+        let evex = avx2
+            && is_x86_feature_detected!("avx512f")
+            && is_x86_feature_detected!("avx512vl")
+            && is_x86_feature_detected!("avx512vnni");
+        let vex = avx2 && is_x86_feature_detected!("avxvnni");
+        let pin = match std::env::var("HMS_QGRAPH_KERNEL").as_deref() {
+            Ok("scalar") => tier::SCALAR,
+            Ok("avx2") => tier::AVX2,
+            Ok("avxvnni") => tier::AVXVNNI,
+            _ => tier::VNNI,
+        };
+        let want = if pin >= tier::VNNI && evex {
+            tier::VNNI
+        } else if pin >= tier::AVXVNNI && vex {
+            tier::AVXVNNI
+        } else if pin >= tier::AVX2 && avx2 {
+            tier::AVX2
+        } else {
+            tier::SCALAR
+        };
+        let got = tier::get();
+        eprintln!(
+            "qgraph kernel tier {got} (1 scalar, 2 avx2, 3 avxvnni, 4 vnni); avx512vnni {evex}, avxvnni {vex}"
+        );
+        assert_eq!(got, want);
+    }
+
     /// The four-row i8 entry point on the tier this process runs (`HMS_QGRAPH_KERNEL` pins it)
     /// against the scalar sums: every width up to 800 and the extremes of the i8 range.
     #[test]

@@ -221,6 +221,60 @@ fn combine(maxima: impl Iterator<Item = (u32, u32)>) -> (u32, u32) {
     })
 }
 
+fn positional_frequency(
+    chunk: &StoredChunk,
+    indices: &[Option<usize>],
+    states: &[TermState<'_>],
+    exact: bool,
+) -> u32 {
+    let positions = chunk
+        .terms
+        .positions
+        .as_ref()
+        .expect("phrase capability checked");
+    let lead = indices
+        .iter()
+        .enumerate()
+        .min_by_key(|(_, index)| {
+            states[index.expect("present phrase term")]
+                .cursor
+                .peek()
+                .expect("phrase candidate")
+                .1
+        })
+        .expect("nonempty phrase")
+        .0;
+    let term_index = |index: Option<usize>| {
+        states[index.expect("present phrase term")]
+            .cursor
+            .term_index()
+    };
+    let mut cursors: Vec<_> = indices
+        .iter()
+        .map(|&index| positions.iter(term_index(index)).peekable())
+        .collect();
+    let mut count = 0;
+    for position in positions.iter(term_index(indices[lead])) {
+        let Some(start) = position.checked_sub(lead as u32) else {
+            continue;
+        };
+        let matched = cursors.iter_mut().enumerate().all(|(offset, iter)| {
+            let Some(target) = start.checked_add(offset as u32) else {
+                return false;
+            };
+            while iter.peek().is_some_and(|&position| position < target) {
+                iter.next();
+            }
+            iter.peek() == Some(&target)
+        });
+        count += u32::from(matched);
+        if matched && !exact {
+            break;
+        }
+    }
+    count
+}
+
 pub(super) fn document_at_a_time(
     store: &DocumentStore,
     query: &LexicalQuery,
@@ -340,7 +394,6 @@ pub(super) fn document_at_a_time(
         };
         let mut frequencies = vec![0; query.clauses.len()];
         let mut pending: Vec<Option<u32>> = vec![None; query.clauses.len()];
-        let mut ids = word_ids(query);
         // Optional words not yet required of every ranked candidate, by clause.
         let mut optional: Vec<(usize, usize)> = query
             .clauses
@@ -497,19 +550,19 @@ pub(super) fn document_at_a_time(
                     scorable = exact;
                     // Below the floor and uncounted, the phrase's positions are not read.
                     let needed = exact || options.count;
-                    for (((clause, frequency_value), pending), ids) in query
+                    for (((clause, frequency_value), pending), indices) in query
                         .clauses
                         .iter()
                         .zip(&mut frequencies)
                         .zip(&pending)
-                        .zip(&mut ids)
+                        .zip(&indices)
                     {
                         if pending.is_some() && needed {
-                            *frequency_value = frequency(
-                                clause,
+                            *frequency_value = positional_frequency(
                                 chunk,
+                                indices,
+                                &states,
                                 exact && clause.occur != Occur::MustNot,
-                                ids,
                             );
                         }
                     }

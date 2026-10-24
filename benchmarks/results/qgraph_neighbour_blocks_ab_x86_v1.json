@@ -1,0 +1,429 @@
+{
+ "schema_version": 1,
+ "kind": "development measurement (benchmark freeze): paired, interleaved, locked",
+ "hms_commit": "8e66e387",
+ "machine": "Intel Core Ultra 9 185H (WSL2), no AVX-512; timing under the host timing lock, 1 thread pinned to one CPU",
+ "protocol": "public-bench ann-qgraph --count 100 --index vertex --degree 32 --build-ef 500 --alpha 1.0 --vertex-bits 8 --residual --residual-bits 8 --align-rows --reorder --rerank 400; arms --block-bits 0 (per-row path), 1, 2 (neighbour blocks, residual codes, fast-scan); indexes encoded outside the lock (--save-index), served with --load-index; 3 rounds, arms interleaved per round; QPS = median over rounds; ef below k=100 is raised to 100 by the search, so those points are dropped",
+ "datasets": {
+  "arxiv-768-100k": "arxiv-nomic-768-normalized first 100k rows (VIBE in-distribution set, n100000 slice), 256 test queries, exact ground truth on the slice, recall@100",
+  "glove-100-angular": "ann-benchmarks glove-100-angular, 1.18M rows, 10k queries, recall@100 (degree 32 does not reach 0.95)"
+ },
+ "status_log": [
+  "built 01:48:21",
+  "r0 arxiv-768-100k bb0 start 01:48:21 load=9.76 7.04 5.10",
+  "r0 arxiv-768-100k bb0 rc=0 01:48:22 load=9.76 7.04 5.10",
+  "r0 arxiv-768-100k bb1 start 01:48:22 load=9.76 7.04 5.10",
+  "r0 arxiv-768-100k bb1 rc=0 01:48:24 load=9.76 7.04 5.10",
+  "r0 arxiv-768-100k bb2 start 01:48:24 load=9.76 7.04 5.10",
+  "r0 arxiv-768-100k bb2 rc=0 01:48:25 load=9.30 6.98 5.10",
+  "r0 glove-100-angular bb0 start 01:48:25 load=9.30 6.98 5.10",
+  "r0 glove-100-angular bb0 rc=0 01:49:24 load=8.67 7.21 5.29",
+  "r0 glove-100-angular bb1 start 01:49:34 load=8.62 7.22 5.31",
+  "r0 glove-100-angular bb1 rc=0 01:50:42 load=10.26 8.03 5.73",
+  "r0 glove-100-angular bb2 start 01:50:42 load=10.26 8.03 5.73",
+  "r0 glove-100-angular bb2 rc=0 01:51:48 load=9.83 8.36 6.00",
+  "r1 arxiv-768-100k bb0 start 01:51:59 load=9.77 8.40 6.04",
+  "r1 arxiv-768-100k bb0 rc=0 01:52:00 load=9.79 8.43 6.06",
+  "r1 arxiv-768-100k bb1 start 01:52:00 load=9.79 8.43 6.06",
+  "r1 arxiv-768-100k bb1 rc=0 01:52:01 load=9.79 8.43 6.06",
+  "r1 arxiv-768-100k bb2 start 01:52:01 load=9.79 8.43 6.06",
+  "r1 arxiv-768-100k bb2 rc=0 01:52:03 load=9.79 8.43 6.06",
+  "r1 glove-100-angular bb0 start 01:52:03 load=9.79 8.43 6.06",
+  "r1 glove-100-angular bb0 rc=0 01:52:55 load=8.23 8.17 6.10",
+  "r1 glove-100-angular bb1 start 01:54:39 load=5.79 7.23 5.97",
+  "r1 glove-100-angular bb1 rc=0 01:55:32 load=7.30 7.50 6.15",
+  "r1 glove-100-angular bb2 start 01:55:44 load=7.45 7.53 6.17",
+  "r1 glove-100-angular bb2 rc=0 01:56:44 load=8.18 7.68 6.30",
+  "r2 arxiv-768-100k bb0 start 01:56:44 load=8.18 7.68 6.30",
+  "r2 arxiv-768-100k bb0 rc=0 01:56:45 load=8.18 7.68 6.30",
+  "r2 arxiv-768-100k bb1 start 01:56:45 load=8.18 7.68 6.30",
+  "r2 arxiv-768-100k bb1 rc=0 01:56:46 load=8.18 7.68 6.30",
+  "r2 arxiv-768-100k bb2 start 01:56:46 load=8.18 7.68 6.30",
+  "r2 arxiv-768-100k bb2 rc=0 01:56:47 load=8.01 7.65 6.30",
+  "r2 glove-100-angular bb0 start 01:56:47 load=8.01 7.65 6.30",
+  "r2 glove-100-angular bb0 rc=0 01:57:41 load=5.22 6.94 6.13",
+  "r2 glove-100-angular bb1 start 01:59:32 load=5.08 6.37 6.01",
+  "r2 glove-100-angular bb1 rc=0 02:00:26 load=6.53 6.58 6.11",
+  "r2 glove-100-angular bb2 start 02:00:26 load=6.53 6.58 6.11",
+  "r2 glove-100-angular bb2 rc=0 02:01:25 load=7.51 6.91 6.25",
+  "all-done"
+ ],
+ "qps_at_recall": {
+  "arxiv-768-100k": {
+   "0.90": {
+    "bb0": {
+     "qps": 4013,
+     "vs_bb0": 1.0
+    },
+    "bb1": {
+     "qps": 3618,
+     "vs_bb0": 0.902
+    },
+    "bb2": {
+     "qps": 3716,
+     "vs_bb0": 0.926
+    }
+   },
+   "0.95": {
+    "bb0": {
+     "qps": 4013,
+     "vs_bb0": 1.0
+    },
+    "bb1": {
+     "qps": 2974,
+     "vs_bb0": 0.741
+    },
+    "bb2": {
+     "qps": 3082,
+     "vs_bb0": 0.768
+    }
+   },
+   "0.99": {
+    "bb0": {
+     "qps": 2979,
+     "vs_bb0": 1.0
+    },
+    "bb1": {
+     "qps": 2002,
+     "vs_bb0": 0.672
+    },
+    "bb2": {
+     "qps": 2374,
+     "vs_bb0": 0.797
+    }
+   }
+  },
+  "glove-100-angular": {
+   "0.90": {
+    "bb0": {
+     "qps": 1353,
+     "vs_bb0": 1.0
+    },
+    "bb1": {
+     "qps": null,
+     "vs_bb0": null
+    },
+    "bb2": {
+     "qps": 1021,
+     "vs_bb0": 0.755
+    }
+   },
+   "0.95": {
+    "bb0": {
+     "qps": null,
+     "vs_bb0": null
+    },
+    "bb1": {
+     "qps": null,
+     "vs_bb0": null
+    },
+    "bb2": {
+     "qps": null,
+     "vs_bb0": null
+    }
+   },
+   "0.99": {
+    "bb0": {
+     "qps": null,
+     "vs_bb0": null
+    },
+    "bb1": {
+     "qps": null,
+     "vs_bb0": null
+    },
+    "bb2": {
+     "qps": null,
+     "vs_bb0": null
+    }
+   }
+  }
+ },
+ "points": {
+  "arxiv-768-100k": {
+   "bb0": {
+    "100": {
+     "recall": 0.9768,
+     "evals_per_query": 1968.0,
+     "qps_rounds": [
+      4245.0,
+      4013.0,
+      3214.0
+     ]
+    },
+    "150": {
+     "recall": 0.9918,
+     "evals_per_query": 2680.0,
+     "qps_rounds": [
+      3298.0,
+      2860.0,
+      2287.0
+     ]
+    },
+    "200": {
+     "recall": 0.9957,
+     "evals_per_query": 3328.0,
+     "qps_rounds": [
+      2529.0,
+      2198.0,
+      2411.0
+     ]
+    },
+    "300": {
+     "recall": 0.9989,
+     "evals_per_query": 4513.0,
+     "qps_rounds": [
+      1732.0,
+      1175.0,
+      1756.0
+     ]
+    }
+   },
+   "bb1": {
+    "100": {
+     "recall": 0.807,
+     "evals_per_query": 2097.0,
+     "qps_rounds": [
+      5063.0,
+      3983.0,
+      5060.0
+     ]
+    },
+    "150": {
+     "recall": 0.9284,
+     "evals_per_query": 2878.0,
+     "qps_rounds": [
+      3266.0,
+      2541.0,
+      3737.0
+     ]
+    },
+    "200": {
+     "recall": 0.9691,
+     "evals_per_query": 3593.0,
+     "qps_rounds": [
+      2737.0,
+      2038.0,
+      3008.0
+     ]
+    },
+    "300": {
+     "recall": 0.9923,
+     "evals_per_query": 4917.0,
+     "qps_rounds": [
+      1934.0,
+      1374.0,
+      2029.0
+     ]
+    }
+   },
+   "bb2": {
+    "100": {
+     "recall": 0.8988,
+     "evals_per_query": 2076.0,
+     "qps_rounds": [
+      3993.0,
+      2086.0,
+      3733.0
+     ]
+    },
+    "150": {
+     "recall": 0.9845,
+     "evals_per_query": 2840.0,
+     "qps_rounds": [
+      2708.0,
+      1879.0,
+      2820.0
+     ]
+    },
+    "200": {
+     "recall": 0.9946,
+     "evals_per_query": 3546.0,
+     "qps_rounds": [
+      2126.0,
+      1425.0,
+      2211.0
+     ]
+    },
+    "300": {
+     "recall": 0.9984,
+     "evals_per_query": 4840.0,
+     "qps_rounds": [
+      1465.0,
+      1329.0,
+      1507.0
+     ]
+    }
+   }
+  },
+  "glove-100-angular": {
+   "bb0": {
+    "300": {
+     "recall": 0.8492,
+     "evals_per_query": 6950.0,
+     "qps_rounds": [
+      2697.0,
+      2028.0,
+      2317.0
+     ]
+    },
+    "400": {
+     "recall": 0.8729,
+     "evals_per_query": 8891.0,
+     "qps_rounds": [
+      1971.0,
+      2409.0,
+      1784.0
+     ]
+    },
+    "600": {
+     "recall": 0.9023,
+     "evals_per_query": 12437.0,
+     "qps_rounds": [
+      1090.0,
+      1699.0,
+      1311.0
+     ]
+    },
+    "800": {
+     "recall": 0.9208,
+     "evals_per_query": 15845.0,
+     "qps_rounds": [
+      896.0,
+      1063.0,
+      1010.0
+     ]
+    },
+    "1000": {
+     "recall": 0.9334,
+     "evals_per_query": 19154.0,
+     "qps_rounds": [
+      720.0,
+      836.0,
+      858.0
+     ]
+    },
+    "1200": {
+     "recall": 0.9427,
+     "evals_per_query": 22382.0,
+     "qps_rounds": [
+      628.0,
+      689.0,
+      704.0
+     ]
+    }
+   },
+   "bb1": {
+    "300": {
+     "recall": 0.6389,
+     "evals_per_query": 7852.0,
+     "qps_rounds": [
+      1983.0,
+      2443.0,
+      2434.0
+     ]
+    },
+    "400": {
+     "recall": 0.6885,
+     "evals_per_query": 10076.0,
+     "qps_rounds": [
+      1493.0,
+      2015.0,
+      1794.0
+     ]
+    },
+    "600": {
+     "recall": 0.7508,
+     "evals_per_query": 14207.0,
+     "qps_rounds": [
+      1123.0,
+      1267.0,
+      1285.0
+     ]
+    },
+    "800": {
+     "recall": 0.7894,
+     "evals_per_query": 18225.0,
+     "qps_rounds": [
+      844.0,
+      1010.0,
+      1037.0
+     ]
+    },
+    "1000": {
+     "recall": 0.8168,
+     "evals_per_query": 22160.0,
+     "qps_rounds": [
+      682.0,
+      878.0,
+      833.0
+     ]
+    },
+    "1200": {
+     "recall": 0.8373,
+     "evals_per_query": 26025.0,
+     "qps_rounds": [
+      559.0,
+      731.0,
+      684.0
+     ]
+    }
+   },
+   "bb2": {
+    "300": {
+     "recall": 0.8173,
+     "evals_per_query": 7425.0,
+     "qps_rounds": [
+      1888.0,
+      2178.0,
+      1906.0
+     ]
+    },
+    "400": {
+     "recall": 0.8502,
+     "evals_per_query": 9514.0,
+     "qps_rounds": [
+      1444.0,
+      1756.0,
+      1541.0
+     ]
+    },
+    "600": {
+     "recall": 0.887,
+     "evals_per_query": 13367.0,
+     "qps_rounds": [
+      1037.0,
+      1232.0,
+      1181.0
+     ]
+    },
+    "800": {
+     "recall": 0.9086,
+     "evals_per_query": 17095.0,
+     "qps_rounds": [
+      828.0,
+      927.0,
+      960.0
+     ]
+    },
+    "1000": {
+     "recall": 0.9233,
+     "evals_per_query": 20725.0,
+     "qps_rounds": [
+      673.0,
+      753.0,
+      818.0
+     ]
+    },
+    "1200": {
+     "recall": 0.9338,
+     "evals_per_query": 24279.0,
+     "qps_rounds": [
+      577.0,
+      633.0,
+      695.0
+     ]
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,602 @@
+{
+  "classification": "paired development kernel measurement; not a leaderboard standing",
+  "parent_commit": "7db61aa01b19d4ac6e4b5fec15526025a30fd17c",
+  "measured_production_commit": "5c8e8ecef09d19029e2f8f4f2b00b854acd9c9eb",
+  "machine": "Intel Core Ultra 9 185H, Linux x86_64, 22 logical CPUs",
+  "rustc": "1.99.1 (58cf8f9c3 2026-10-13)",
+  "build_profile": "release, default features, repository profile, two build jobs",
+  "cpu_affinity": "0-7",
+  "timing_lock": "flock ~/hms-timing.lock",
+  "build_threads": 8,
+  "query_threads": [1, 8],
+  "metric": "Euclidean",
+  "dimensions": 100,
+  "degree": 32,
+  "build_ef": 64,
+  "alpha": 1.0,
+  "search_ef": [256, 512],
+  "queries": 256,
+  "pairs": 3,
+  "order": [
+    [
+      "base",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "base"
+    ],
+    [
+      "base",
+      "candidate"
+    ]
+  ],
+  "warmup_batches_per_configuration": 1,
+  "timed_batches_per_arm_configuration": 5,
+  "summary_method": "Median of the three candidate/base ratios; each arm uses its median of five timed batches. Result hashing occurs outside timing.",
+  "baseline_instrumentation": "Same tests and measurement fixture as candidate; only the six-line frontier rejection is removed.",
+  "fixtures": {
+    "synthetic": {
+      "rows": 100000,
+      "generator": "SplitMix seed42; uniform f32 in [0,1); queries follow rows"
+    },
+    "official": {
+      "rows": 1000000,
+      "base": "first1M rows of msturing-30M-clustered",
+      "queries": "first256 rows of official testQuery10K.fbin",
+      "downloaded_prefix_rows": 3000000,
+      "prefix_file_sha256": "721a8ed1bc372bcc6ca628aeab0a631dc54bea17e2740ae937680b71eb6bc754",
+      "query_file_sha256": "4785fe3c90c94c5f004f9cd84dca4cc398fc83280517a8d3acb6bc693d6ccd29",
+      "base_url": "https://comp21storage.z5.web.core.windows.net/comp23/clustered_data/msturing-30M-clustered/30M-clustered64.fbin",
+      "query_url": "https://comp21storage.z5.web.core.windows.net/comp23/clustered_data/msturing-30M-clustered/testQuery10K.fbin"
+    }
+  },
+  "validation": [
+    "identical full-frontier score-bit/ID fingerprints across all arms, pairs and thread counts",
+    "sort-based traversal oracle: both metrics, score ties, deleted routing, ef boundaries, identical visit counts",
+    "local cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test: passed",
+    "38 Linux streaming update tests per arm: passed"
+  ],
+  "limits": [
+    "isolated live delta search only; excludes base traversal, insert, delete and consolidation",
+    "256 official queries; no hyperparameter tuning or recall estimate",
+    "shared host load recorded per arm; no full30M replay or leaderboard standing"
+  ],
+  "development_command": "RAYON_NUM_THREADS=8 HMS_DELTA_ROWS=1000000 HMS_DELTA_DATA=/path/to/prefix.fbin HMS_DELTA_QUERIES=/path/to/testQuery10K.fbin cargo test --release --lib delta_search_live_set -- --ignored --nocapture --test-threads=1",
+  "paired_results": [
+    {
+      "fixture": "synthetic",
+      "pair": 1,
+      "threads": 1,
+      "ef": 256,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 152918405,
+      "candidate_ns": 119423000,
+      "candidate_over_base": 0.7809589695890432,
+      "result_fingerprint": 13727077145971949608
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 1,
+      "threads": 1,
+      "ef": 512,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 276766980,
+      "candidate_ns": 230831468,
+      "candidate_over_base": 0.8340282066885291,
+      "result_fingerprint": 4921654488400250498
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 1,
+      "threads": 8,
+      "ef": 256,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 28378292,
+      "candidate_ns": 21084910,
+      "candidate_over_base": 0.742994328199879,
+      "result_fingerprint": 13727077145971949608
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 1,
+      "threads": 8,
+      "ef": 512,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 48879481,
+      "candidate_ns": 40559061,
+      "candidate_over_base": 0.8297768341689226,
+      "result_fingerprint": 4921654488400250498
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 2,
+      "threads": 1,
+      "ef": 256,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 155124971,
+      "candidate_ns": 128385150,
+      "candidate_over_base": 0.8276240064534807,
+      "result_fingerprint": 13727077145971949608
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 2,
+      "threads": 1,
+      "ef": 512,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 285732503,
+      "candidate_ns": 232921182,
+      "candidate_over_base": 0.8151721612154148,
+      "result_fingerprint": 4921654488400250498
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 2,
+      "threads": 8,
+      "ef": 256,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 25956797,
+      "candidate_ns": 22859051,
+      "candidate_over_base": 0.8806576173477798,
+      "result_fingerprint": 13727077145971949608
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 2,
+      "threads": 8,
+      "ef": 512,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 48509072,
+      "candidate_ns": 41080486,
+      "candidate_over_base": 0.8468619230646177,
+      "result_fingerprint": 4921654488400250498
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 3,
+      "threads": 1,
+      "ef": 256,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 153952991,
+      "candidate_ns": 127567305,
+      "candidate_over_base": 0.8286120598982062,
+      "result_fingerprint": 13727077145971949608
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 3,
+      "threads": 1,
+      "ef": 512,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 287256250,
+      "candidate_ns": 244161703,
+      "candidate_over_base": 0.8499787315332564,
+      "result_fingerprint": 4921654488400250498
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 3,
+      "threads": 8,
+      "ef": 256,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 26846555,
+      "candidate_ns": 23595549,
+      "candidate_over_base": 0.8789041647987982,
+      "result_fingerprint": 13727077145971949608
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 3,
+      "threads": 8,
+      "ef": 512,
+      "rows": 100000,
+      "queries": 256,
+      "base_ns": 54151026,
+      "candidate_ns": 43991230,
+      "candidate_over_base": 0.8123803600692626,
+      "result_fingerprint": 4921654488400250498
+    },
+    {
+      "fixture": "official",
+      "pair": 1,
+      "threads": 1,
+      "ef": 256,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 624414398,
+      "candidate_ns": 439381508,
+      "candidate_over_base": 0.7036697254376892,
+      "result_fingerprint": 9830477370062438134
+    },
+    {
+      "fixture": "official",
+      "pair": 1,
+      "threads": 1,
+      "ef": 512,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 985840508,
+      "candidate_ns": 753608724,
+      "candidate_over_base": 0.7644327027389708,
+      "result_fingerprint": 13700830901452371349
+    },
+    {
+      "fixture": "official",
+      "pair": 1,
+      "threads": 8,
+      "ef": 256,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 66689259,
+      "candidate_ns": 53981124,
+      "candidate_over_base": 0.8094425520607449,
+      "result_fingerprint": 9830477370062438134
+    },
+    {
+      "fixture": "official",
+      "pair": 1,
+      "threads": 8,
+      "ef": 512,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 105546875,
+      "candidate_ns": 87365396,
+      "candidate_over_base": 0.8277402433752775,
+      "result_fingerprint": 13700830901452371349
+    },
+    {
+      "fixture": "official",
+      "pair": 2,
+      "threads": 1,
+      "ef": 256,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 549496675,
+      "candidate_ns": 386174590,
+      "candidate_over_base": 0.7027787565775534,
+      "result_fingerprint": 9830477370062438134
+    },
+    {
+      "fixture": "official",
+      "pair": 2,
+      "threads": 1,
+      "ef": 512,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 880719597,
+      "candidate_ns": 637539800,
+      "candidate_over_base": 0.7238851073277526,
+      "result_fingerprint": 13700830901452371349
+    },
+    {
+      "fixture": "official",
+      "pair": 2,
+      "threads": 8,
+      "ef": 256,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 58581893,
+      "candidate_ns": 43798754,
+      "candidate_over_base": 0.747650028994454,
+      "result_fingerprint": 9830477370062438134
+    },
+    {
+      "fixture": "official",
+      "pair": 2,
+      "threads": 8,
+      "ef": 512,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 90881283,
+      "candidate_ns": 68815070,
+      "candidate_over_base": 0.7571973868370674,
+      "result_fingerprint": 13700830901452371349
+    },
+    {
+      "fixture": "official",
+      "pair": 3,
+      "threads": 1,
+      "ef": 256,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 522472362,
+      "candidate_ns": 395734367,
+      "candidate_over_base": 0.7574264129209576,
+      "result_fingerprint": 9830477370062438134
+    },
+    {
+      "fixture": "official",
+      "pair": 3,
+      "threads": 1,
+      "ef": 512,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 934353206,
+      "candidate_ns": 688493887,
+      "candidate_over_base": 0.7368668321345707,
+      "result_fingerprint": 13700830901452371349
+    },
+    {
+      "fixture": "official",
+      "pair": 3,
+      "threads": 8,
+      "ef": 256,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 56666057,
+      "candidate_ns": 46254697,
+      "candidate_over_base": 0.8162681409084102,
+      "result_fingerprint": 9830477370062438134
+    },
+    {
+      "fixture": "official",
+      "pair": 3,
+      "threads": 8,
+      "ef": 512,
+      "rows": 1000000,
+      "queries": 256,
+      "base_ns": 89575863,
+      "candidate_ns": 75430080,
+      "candidate_over_base": 0.8420804162389147,
+      "result_fingerprint": 13700830901452371349
+    }
+  ],
+  "summary": [
+    {
+      "fixture": "synthetic",
+      "threads": 1,
+      "ef": 256,
+      "median_ratio": 0.8276240064534807,
+      "min_ratio": 0.7809589695890432,
+      "max_ratio": 0.8286120598982062
+    },
+    {
+      "fixture": "synthetic",
+      "threads": 1,
+      "ef": 512,
+      "median_ratio": 0.8340282066885291,
+      "min_ratio": 0.8151721612154148,
+      "max_ratio": 0.8499787315332564
+    },
+    {
+      "fixture": "synthetic",
+      "threads": 8,
+      "ef": 256,
+      "median_ratio": 0.8789041647987982,
+      "min_ratio": 0.742994328199879,
+      "max_ratio": 0.8806576173477798
+    },
+    {
+      "fixture": "synthetic",
+      "threads": 8,
+      "ef": 512,
+      "median_ratio": 0.8297768341689226,
+      "min_ratio": 0.8123803600692626,
+      "max_ratio": 0.8468619230646177
+    },
+    {
+      "fixture": "official",
+      "threads": 1,
+      "ef": 256,
+      "median_ratio": 0.7036697254376892,
+      "min_ratio": 0.7027787565775534,
+      "max_ratio": 0.7574264129209576
+    },
+    {
+      "fixture": "official",
+      "threads": 1,
+      "ef": 512,
+      "median_ratio": 0.7368668321345707,
+      "min_ratio": 0.7238851073277526,
+      "max_ratio": 0.7644327027389708
+    },
+    {
+      "fixture": "official",
+      "threads": 8,
+      "ef": 256,
+      "median_ratio": 0.8094425520607449,
+      "min_ratio": 0.747650028994454,
+      "max_ratio": 0.8162681409084102
+    },
+    {
+      "fixture": "official",
+      "threads": 8,
+      "ef": 512,
+      "median_ratio": 0.8277402433752775,
+      "min_ratio": 0.7571973868370674,
+      "max_ratio": 0.8420804162389147
+    }
+  ],
+  "runs": [
+    {
+      "fixture": "synthetic",
+      "pair": 1,
+      "arm": "base",
+      "started_utc": "Sat Oct 24 01:33:24 UTC 2026",
+      "load_average_start": [1.8, 2.7, 3.14],
+      "load_average_end": [1.82, 2.69, 3.14],
+      "timings_ns": {
+        "t1_ef256": [152782225, 152918405, 156945953, 162622675, 149946489],
+        "t1_ef512": [276766980, 276537473, 283526725, 279180572, 272977165],
+        "t8_ef256": [33833065, 28378292, 27370648, 27124600, 28868535],
+        "t8_ef512": [47529779, 48633049, 48904734, 48879481, 49314002]
+      }
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 1,
+      "arm": "candidate",
+      "started_utc": "Sat Oct 24 01:33:29 UTC 2026",
+      "load_average_start": [1.82, 2.69, 3.14],
+      "load_average_end": [1.84, 2.68, 3.13],
+      "timings_ns": {
+        "t1_ef256": [119200309, 115334491, 119629150, 119423000, 119698277],
+        "t1_ef512": [226600175, 226087742, 230831468, 233324341, 232435522],
+        "t8_ef256": [20583207, 23630548, 21028230, 22432937, 21084910],
+        "t8_ef512": [41506710, 40559061, 40055436, 39979625, 40695504]
+      }
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 2,
+      "arm": "base",
+      "started_utc": "Sat Oct 24 01:33:38 UTC 2026",
+      "load_average_start": [2.41, 2.78, 3.16],
+      "load_average_end": [2.41, 2.78, 3.16],
+      "timings_ns": {
+        "t1_ef256": [149874108, 156229653, 153731127, 156635281, 155124971],
+        "t1_ef512": [285732503, 285783211, 282750778, 286373744, 285151575],
+        "t8_ef256": [24398424, 26528977, 25956797, 26384873, 25327560],
+        "t8_ef512": [48509072, 47719232, 48993175, 49773799, 48368235]
+      }
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 2,
+      "arm": "candidate",
+      "started_utc": "Sat Oct 24 01:33:33 UTC 2026",
+      "load_average_start": [1.84, 2.68, 3.13],
+      "load_average_end": [2.41, 2.78, 3.16],
+      "timings_ns": {
+        "t1_ef256": [129038230, 129666385, 123477302, 128385150, 123425100],
+        "t1_ef512": [235489046, 235720290, 232921182, 230318578, 227632964],
+        "t8_ef256": [21655968, 24547212, 21431669, 22859051, 23085618],
+        "t8_ef512": [42628339, 38568211, 42520445, 41080486, 40304646]
+      }
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 3,
+      "arm": "base",
+      "started_utc": "Sat Oct 24 01:33:43 UTC 2026",
+      "load_average_start": [2.41, 2.78, 3.16],
+      "load_average_end": [2.54, 2.8, 3.17],
+      "timings_ns": {
+        "t1_ef256": [150519516, 156098563, 154530850, 153851366, 153952991],
+        "t1_ef512": [287832443, 284550376, 287256250, 294845203, 285340228],
+        "t8_ef256": [25777796, 28325027, 27752222, 26846555, 26454816],
+        "t8_ef512": [50011186, 54151026, 61091302, 56666547, 50848229]
+      }
+    },
+    {
+      "fixture": "synthetic",
+      "pair": 3,
+      "arm": "candidate",
+      "started_utc": "Sat Oct 24 01:33:47 UTC 2026",
+      "load_average_start": [2.54, 2.8, 3.17],
+      "load_average_end": [3.13, 2.92, 3.21],
+      "timings_ns": {
+        "t1_ef256": [138026995, 129077930, 127567305, 126496434, 127441909],
+        "t1_ef512": [245282698, 242287393, 247131381, 244161703, 238890752],
+        "t8_ef256": [23999951, 21111203, 21385888, 25730786, 23595549],
+        "t8_ef512": [46037508, 40607443, 43991230, 43262596, 45853953]
+      }
+    },
+    {
+      "fixture": "official",
+      "pair": 1,
+      "arm": "base",
+      "started_utc": "Sat Oct 24 01:36:27 UTC 2026",
+      "load_average_start": [2.16, 2.59, 3.03],
+      "load_average_end": [4.67, 3.18, 3.21],
+      "timings_ns": {
+        "t1_ef256": [638397230, 629588430, 622632925, 624414398, 595815941],
+        "t1_ef512": [985267841, 984727903, 985840508, 1026531896, 1049666803],
+        "t8_ef256": [71063491, 66689259, 68147123, 66629507, 64386061],
+        "t8_ef512": [109537896, 101648229, 103672975, 117358592, 105546875]
+      }
+    },
+    {
+      "fixture": "official",
+      "pair": 1,
+      "arm": "candidate",
+      "started_utc": "Sat Oct 24 01:36:57 UTC 2026",
+      "load_average_start": [4.67, 3.18, 3.21],
+      "load_average_end": [6.39, 3.72, 3.39],
+      "timings_ns": {
+        "t1_ef256": [417305325, 439381508, 431069281, 449872468, 445076253],
+        "t1_ef512": [755963081, 757481401, 753608724, 751519496, 734648437],
+        "t8_ef256": [50393845, 57539755, 54322091, 53435501, 53981124],
+        "t8_ef512": [86385997, 92623056, 86460900, 87365396, 92557450]
+      }
+    },
+    {
+      "fixture": "official",
+      "pair": 2,
+      "arm": "base",
+      "started_utc": "Sat Oct 24 01:37:49 UTC 2026",
+      "load_average_start": [7.29, 4.17, 3.55],
+      "load_average_end": [7.45, 4.52, 3.69],
+      "timings_ns": {
+        "t1_ef256": [552671510, 549496675, 553299019, 523115697, 532388700],
+        "t1_ef512": [880719597, 873935592, 872378252, 890101006, 890376499],
+        "t8_ef256": [57037626, 59075747, 58824972, 58581893, 56649898],
+        "t8_ef512": [84082852, 90881283, 87146809, 94351599, 102811503]
+      }
+    },
+    {
+      "fixture": "official",
+      "pair": 2,
+      "arm": "candidate",
+      "started_utc": "Sat Oct 24 01:37:24 UTC 2026",
+      "load_average_start": [6.39, 3.72, 3.39],
+      "load_average_end": [7.29, 4.17, 3.55],
+      "timings_ns": {
+        "t1_ef256": [375607344, 389301485, 386174590, 397413810, 378432015],
+        "t1_ef512": [641692802, 629671603, 626201957, 637539800, 646375218],
+        "t8_ef256": [49604910, 47045823, 43798754, 43202663, 42919468],
+        "t8_ef512": [68815070, 67948958, 68345916, 70749036, 69501324]
+      }
+    },
+    {
+      "fixture": "official",
+      "pair": 3,
+      "arm": "base",
+      "started_utc": "Sat Oct 24 01:38:16 UTC 2026",
+      "load_average_start": [7.45, 4.52, 3.69],
+      "load_average_end": [7.04, 4.68, 3.77],
+      "timings_ns": {
+        "t1_ef256": [525542565, 540378185, 510135070, 519014522, 522472362],
+        "t1_ef512": [917105824, 886350224, 955938940, 935699672, 934353206],
+        "t8_ef256": [56666057, 56737438, 55321142, 56605853, 57400574],
+        "t8_ef512": [88608804, 89841158, 88566152, 89575863, 91210754]
+      }
+    },
+    {
+      "fixture": "official",
+      "pair": 3,
+      "arm": "candidate",
+      "started_utc": "Sat Oct 24 01:38:42 UTC 2026",
+      "load_average_start": [7.04, 4.68, 3.77],
+      "load_average_end": [7.19, 4.92, 3.87],
+      "timings_ns": {
+        "t1_ef256": [398263789, 387889809, 395734367, 382190533, 404818634],
+        "t1_ef512": [645901350, 673022113, 688493887, 706834099, 690328488],
+        "t8_ef256": [46887072, 47497812, 45725581, 46254697, 45951773],
+        "t8_ef512": [72744578, 72288757, 76526203, 76572660, 75430080]
+      }
+    }
+  ],
+  "fingerprints": {
+    "synthetic": {
+      "256": 13727077145971949608,
+      "512": 4921654488400250498
+    },
+    "official": {
+      "256": 9830477370062438134,
+      "512": 13700830901452371349
+    }
+  }
+}

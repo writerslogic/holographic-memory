@@ -6,7 +6,8 @@
 //! one `u32` list id per term, and a small overlay map for terms added since the base was
 //! built; the overlay folds into the base when it outgrows a quarter of it. A posting list is
 //! a sequence of blocks of at most 128 slots, with independent bit widths for gaps and
-//! frequencies, block endpoints, maximum frequency and a conservative minimum word count.
+//! frequencies, positional term ordinals, block endpoints, maximum frequency and a
+//! conservative minimum word count.
 //! Postings are rebuilt from journal term tables, so these bytes are never persisted.
 //!
 //! Bulk indexing ([`index_chunks`]) takes a batch of chunks in ascending slot order and
@@ -24,7 +25,7 @@
 //!    with the overlay when there are many, or added to the overlay when there are few.
 //!
 //! Single-chunk inserts and the per-term replacement path take the same append-or-merge step
-//! through [`PostingLists::insert`], so one document at a time and one batch reach the same
+//! through [`PostingLists::insert_with_ordinal`], so one document at a time and one batch reach the same
 //! lists.
 
 use std::collections::{hash_map::Entry, BTreeMap, HashMap};
@@ -278,6 +279,8 @@ struct Block {
     count: u16,
     doc_bits: u8,
     frequency_bits: u8,
+    /// Packed chunk-term ordinal plus one; zero denotes a non-positional posting.
+    ordinal_bits: u8,
     max_frequency: u32,
     min_words: u32,
     frontier: Option<Box<[(u32, u32)]>>,
@@ -531,12 +534,22 @@ fn unpack_into(bytes: &[u8], count: usize, bits: u8, mut emit: impl FnMut(usize,
 /// would pass the end of `bytes` read it zero-padded.
 #[inline(always)]
 fn unpack_fixed<const BITS: usize>(bytes: &[u8], count: usize, out: &mut [u64; BLOCK_LEN]) {
+    let out = &mut out[..count];
+    #[cfg(not(target_arch = "x86_64"))]
+    let decoded = 0;
+    #[cfg(target_arch = "x86_64")]
+    let decoded = if BITS <= 25 && count >= 32 && is_x86_feature_detected!("avx2") {
+        // SAFETY: AVX2 was detected; the decoder bounds every input load and output store.
+        unsafe { unpack_avx2::<BITS>(bytes, out) }
+    } else {
+        0
+    };
     let mask = (1u64 << BITS) - 1;
     let whole = match bytes.len().checked_sub(8) {
         Some(spare) => ((spare * 8 + 7) / BITS + 1).min(count),
         None => 0,
     };
-    for (index, value) in out[..whole].iter_mut().enumerate() {
+    for (index, value) in out[..whole].iter_mut().enumerate().skip(decoded) {
         let bit = index * BITS;
         let window: [u8; 8] = bytes[bit / 8..bit / 8 + 8].try_into().expect("eight bytes");
         *value = (u64::from_le_bytes(window) >> (bit % 8)) & mask;
@@ -547,6 +560,46 @@ fn unpack_fixed<const BITS: usize>(bytes: &[u8], count: usize, out: &mut [u64; B
         let tail = &bytes[bit / 8..(bit / 8 + 8).min(bytes.len())];
         window[..tail.len()].copy_from_slice(tail);
         *value = (u64::from_le_bytes(window) >> (bit % 8)) & mask;
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn unpack_avx2<const BITS: usize>(bytes: &[u8], out: &mut [u64]) -> usize {
+    use std::arch::x86_64::*;
+    assert!((1..=25).contains(&BITS));
+    let shuffle = std::array::from_fn::<_, 32, _>(|i| {
+        let lane = i / 4;
+        (lane * BITS / 8 - (lane / 4) * (BITS / 2) + i % 4) as u8
+    });
+    let shifts = std::array::from_fn::<_, 8, _>(|i| (i * BITS % 8) as u32);
+    // SAFETY: lookup arrays span 32 bytes. Each iteration checks both 16-byte
+    // input windows and eight output slots. Unaligned intrinsics impose no alignment.
+    unsafe {
+        let shuffle = _mm256_loadu_si256(shuffle.as_ptr().cast());
+        let shifts = _mm256_loadu_si256(shifts.as_ptr().cast());
+        let mask = _mm256_set1_epi32(((1u32 << BITS) - 1) as i32);
+        let mut done = 0;
+        while done + 8 <= out.len() && done * BITS / 8 + BITS / 2 + 16 <= bytes.len() {
+            let first = bytes.as_ptr().add(done * BITS / 8);
+            let lo = _mm_loadu_si128(first.cast());
+            let hi = _mm_loadu_si128(first.add(BITS / 2).cast());
+            let word = _mm256_inserti128_si256::<1>(_mm256_castsi128_si256(lo), hi);
+            let values = _mm256_and_si256(
+                _mm256_srlv_epi32(_mm256_shuffle_epi8(word, shuffle), shifts),
+                mask,
+            );
+            _mm256_storeu_si256(
+                out.as_mut_ptr().add(done).cast(),
+                _mm256_cvtepu32_epi64(_mm256_castsi256_si128(values)),
+            );
+            _mm256_storeu_si256(
+                out.as_mut_ptr().add(done + 4).cast(),
+                _mm256_cvtepu32_epi64(_mm256_extracti128_si256::<1>(values)),
+            );
+            done += 8;
+        }
+        done
     }
 }
 
@@ -814,9 +867,31 @@ impl PostingList {
         }
     }
 
+    fn ordinal_bytes(&self, block: &Block) -> &[u8] {
+        let count = usize::from(block.count);
+        let start = block.offset
+            + (count * usize::from(block.doc_bits)).div_ceil(8)
+            + (count * usize::from(block.frequency_bits)).div_ceil(8);
+        &self.data[start..start + (count * usize::from(block.ordinal_bits)).div_ceil(8)]
+    }
+
+    fn decode_ordinals(&self, block: &Block, out: &mut [u32]) {
+        let mut values = [0; BLOCK_LEN];
+        unpack_values(
+            self.ordinal_bytes(block),
+            usize::from(block.count),
+            block.ordinal_bits,
+            &mut values,
+        );
+        for (out, value) in out.iter_mut().zip(values) {
+            *out = value as u32;
+        }
+    }
+
     fn append_block(
         &mut self,
         postings: &[Posting],
+        ordinals: &[u32],
         min_words: u32,
         frontier: Option<Box<[(u32, u32)]>>,
     ) {
@@ -843,6 +918,16 @@ impl PostingList {
             postings.iter().map(|p| u64::from(p.1)),
             frequency_bits,
         );
+        let maximum = ordinals.iter().copied().max().unwrap_or(0);
+        let ordinal_bits = (32 - maximum.leading_zeros()) as u8;
+        if ordinal_bits > 0 {
+            assert_eq!(ordinals.len(), postings.len());
+            pack(
+                &mut self.data,
+                ordinals.iter().map(|&n| u64::from(n)),
+                ordinal_bits,
+            );
+        }
         self.blocks.push(Block {
             offset,
             first: postings[0].0,
@@ -850,6 +935,7 @@ impl PostingList {
             count: postings.len() as u16,
             doc_bits,
             frequency_bits,
+            ordinal_bits,
             max_frequency,
             min_words,
             frontier,
@@ -860,12 +946,24 @@ impl PostingList {
     /// Rewrites the list as `postings`, with each block's length bounds taken from `words`
     /// as appends take them, so a rewrite keeps block-max pruning as tight as a fresh build.
     fn encode(&mut self, postings: &[Posting], words: impl Fn(usize) -> u32) {
+        self.encode_with_ordinals(postings, &[], words);
+    }
+
+    fn encode_with_ordinals(
+        &mut self,
+        postings: &[Posting],
+        ordinals: &[u32],
+        words: impl Fn(usize) -> u32,
+    ) {
+        assert!(ordinals.is_empty() || ordinals.len() == postings.len());
         self.data.clear();
         self.blocks.clear();
         self.touch();
-        for block in postings.chunks(BLOCK_LEN) {
+        for (index, block) in postings.chunks(BLOCK_LEN).enumerate() {
+            let start = index * BLOCK_LEN;
             self.append_block(
                 block,
+                ordinals.get(start..start + block.len()).unwrap_or(&[]),
                 block.iter().map(|p| words(p.0)).min().unwrap_or(0),
                 frontier(block.iter().map(|p| (p.1, words(p.0)))),
             );
@@ -881,7 +979,18 @@ impl PostingList {
         self.append_run_with_lengths(run, |_| 0);
     }
 
+    #[cfg(test)]
     fn append_run_with_lengths(&mut self, run: &[Posting], words: impl Fn(usize) -> u32) {
+        self.append_run_with_ordinals(run, &[], words);
+    }
+
+    fn append_run_with_ordinals(
+        &mut self,
+        run: &[Posting],
+        ordinals: &[u32],
+        words: impl Fn(usize) -> u32,
+    ) {
+        assert!(ordinals.is_empty() || ordinals.len() == run.len());
         debug_assert!(
             run.windows(2).all(|p| p[0].0 < p[1].0),
             "unsorted posting run"
@@ -895,21 +1004,41 @@ impl PostingList {
         if self.count > 0 && first as u64 <= self.last {
             if let [posting] = run {
                 // A replacement's posting returns to its slot: one block takes it.
-                self.insert(*posting, words);
+                self.insert(*posting, ordinals.first().copied().unwrap_or(0), words);
                 return;
             }
             let merged = merge_sorted(&self.decode(), run);
-            self.encode(&merged, words);
+            let mut cursor = self.iter();
+            let mut next = 0;
+            let merged_ordinals: Vec<_> = merged
+                .iter()
+                .map(|&(slot, _)| {
+                    if next < run.len() && run[next].0 == slot {
+                        let ordinal = ordinals.get(next).copied().unwrap_or(0);
+                        next += 1;
+                        ordinal
+                    } else {
+                        assert_eq!(cursor.advance(slot).map(|p| p.0), Some(slot));
+                        cursor.ordinal()
+                    }
+                })
+                .collect();
+            self.encode_with_ordinals(&merged, &merged_ordinals, words);
             return;
         }
         let mut start = 0;
         if let Some(block) = self.blocks.pop_if(|b| usize::from(b.count) < BLOCK_LEN) {
             let mut decoded = [(0, 0); BLOCK_LEN];
             self.decode_values(&block, &mut decoded);
+            let mut block_ordinals = [0; BLOCK_LEN];
+            self.decode_ordinals(&block, &mut block_ordinals);
             self.data.truncate(block.offset);
             let old_len = usize::from(block.count);
             let take = (BLOCK_LEN - old_len).min(run.len());
             decoded[old_len..old_len + take].copy_from_slice(&run[..take]);
+            if !ordinals.is_empty() {
+                block_ordinals[old_len..old_len + take].copy_from_slice(&ordinals[..take]);
+            }
             let min_words = run[..take]
                 .iter()
                 .map(|p| words(p.0))
@@ -927,12 +1056,19 @@ impl PostingList {
                     .copied()
                     .chain(run[..take].iter().map(|p| (p.1, words(p.0)))),
             );
-            self.append_block(&decoded[..old_len + take], min_words, frontier);
+            self.append_block(
+                &decoded[..old_len + take],
+                &block_ordinals[..old_len + take],
+                min_words,
+                frontier,
+            );
             start = take;
         }
-        for block in run[start..].chunks(BLOCK_LEN) {
+        for (index, block) in run[start..].chunks(BLOCK_LEN).enumerate() {
+            let offset = start + index * BLOCK_LEN;
             self.append_block(
                 block,
+                ordinals.get(offset..offset + block.len()).unwrap_or(&[]),
                 block.iter().map(|p| words(p.0)).min().unwrap_or(0),
                 frontier(block.iter().map(|p| (p.1, words(p.0)))),
             );
@@ -953,7 +1089,13 @@ impl PostingList {
     /// they overflow a block. The later blocks keep their encoding and bounds and only move,
     /// so an edit recomputes one block's bounds rather than the list's; blocks other than the
     /// last may then hold fewer than [`BLOCK_LEN`] postings.
-    fn rewrite_block(&mut self, index: usize, postings: &[Posting], words: impl Fn(usize) -> u32) {
+    fn rewrite_block(
+        &mut self,
+        index: usize,
+        postings: &[Posting],
+        ordinals: &[u32],
+        words: impl Fn(usize) -> u32,
+    ) {
         let start = self.blocks[index].offset;
         let end = self
             .blocks
@@ -965,9 +1107,10 @@ impl PostingList {
         } else {
             BLOCK_LEN
         };
-        for run in postings.chunks(size) {
+        for (part, run) in postings.chunks(size).enumerate() {
             scratch.append_block(
                 run,
+                &ordinals[part * size..part * size + run.len()],
                 run.iter().map(|p| words(p.0)).min().unwrap_or(0),
                 frontier(run.iter().map(|p| (p.1, words(p.0)))),
             );
@@ -985,7 +1128,7 @@ impl PostingList {
     }
 
     /// Inserts one posting before the list's last into its block.
-    fn insert(&mut self, posting: Posting, words: impl Fn(usize) -> u32) {
+    fn insert(&mut self, posting: Posting, ordinal: u32, words: impl Fn(usize) -> u32) {
         let mut decoded = [(0, 0); BLOCK_LEN + 1];
         let block = self.blocks.partition_point(|b| b.last < posting.0);
         let count = {
@@ -997,9 +1140,13 @@ impl PostingList {
             Ok(_) => panic!("duplicate document slot in posting"),
             Err(at) => at,
         };
+        let mut ordinals = [0; BLOCK_LEN + 1];
+        self.decode_ordinals(&self.blocks[block], &mut ordinals[..BLOCK_LEN]);
+        ordinals.copy_within(at..count, at + 1);
+        ordinals[at] = ordinal;
         decoded.copy_within(at..count, at + 1);
         decoded[at] = posting;
-        self.rewrite_block(block, &decoded[..count + 1], words);
+        self.rewrite_block(block, &decoded[..count + 1], &ordinals[..count + 1], words);
         self.count += 1;
         self.positive_count += u32::from(posting.1 > 0);
     }
@@ -1013,16 +1160,26 @@ impl PostingList {
             let index = postings
                 .binary_search_by_key(&slot, |p| p.0)
                 .expect("document missing from posting");
+            let mut cursor = self.iter();
+            let mut ordinals = Vec::with_capacity(postings.len());
+            while cursor.peek().is_some() {
+                ordinals.push(cursor.ordinal());
+                cursor.next();
+            }
             postings.remove(index);
-            self.encode(&postings, words);
+            ordinals.remove(index);
+            self.encode_with_ordinals(&postings, &ordinals, words);
             return;
         }
         let index = decoded[..count]
             .binary_search_by_key(&slot, |p| p.0)
             .expect("document missing from posting");
         let (_, frequency) = decoded[index];
+        let mut ordinals = [0; BLOCK_LEN];
+        self.decode_ordinals(&self.blocks[block], &mut ordinals);
+        ordinals.copy_within(index + 1..count, index);
         decoded.copy_within(index + 1..count, index);
-        self.rewrite_block(block, &decoded[..count - 1], words);
+        self.rewrite_block(block, &decoded[..count - 1], &ordinals[..count - 1], words);
         self.count -= 1;
         self.positive_count -= u32::from(frequency > 0);
         self.last = self.blocks.last().map_or(0, |b| b.last as u64);
@@ -1033,16 +1190,35 @@ impl PostingList {
         }
     }
 
+    #[cfg(test)]
     fn set_frequency(&mut self, slot: usize, frequency: u32, words: impl Fn(usize) -> u32) {
+        self.set_entry(slot, frequency, None, words);
+    }
+
+    fn set_entry(
+        &mut self,
+        slot: usize,
+        frequency: u32,
+        ordinal: Option<u32>,
+        words: impl Fn(usize) -> u32,
+    ) {
         let mut decoded = [(0, 0); BLOCK_LEN];
         let (block, count) = self.block_of(slot, &mut decoded);
         let index = decoded[..count]
             .binary_search_by_key(&slot, |p| p.0)
             .expect("document missing from posting");
+        let mut ordinals = [0; BLOCK_LEN];
+        self.decode_ordinals(&self.blocks[block], &mut ordinals);
+        if frequency == decoded[index].1 && ordinal.is_none_or(|n| n == ordinals[index]) {
+            return;
+        }
+        if let Some(ordinal) = ordinal {
+            ordinals[index] = ordinal;
+        }
         let previous = std::mem::replace(&mut decoded[index].1, frequency);
         self.positive_count =
             self.positive_count - u32::from(previous > 0) + u32::from(frequency > 0);
-        self.rewrite_block(block, &decoded[..count], words);
+        self.rewrite_block(block, &decoded[..count], &ordinals[..count], words);
     }
 
     /// Whether every block's bounds hold for its postings under the lengths `words`: the
@@ -1183,6 +1359,27 @@ impl<'a> PostingCursor<'a> {
         (self.index < self.length).then(|| self.decoded[self.index])
     }
 
+    fn ordinal(&self) -> u32 {
+        let block = &self.list.blocks[self.block];
+        let bits = usize::from(block.ordinal_bits);
+        let start = self.index * bits;
+        let bytes = self.list.ordinal_bytes(block);
+        let mut value = 0u64;
+        for (offset, &byte) in bytes[start / 8..(start + bits).div_ceil(8)]
+            .iter()
+            .enumerate()
+        {
+            value |= u64::from(byte) << (offset * 8);
+        }
+        ((value >> (start % 8)) & ((1u64 << bits) - 1)) as u32
+    }
+
+    pub(super) fn term_index(&self) -> usize {
+        self.ordinal()
+            .checked_sub(1)
+            .expect("positional posting lacks term ordinal") as usize
+    }
+
     /// Moves to the first block that can hold `target` without decoding it, so the block's
     /// bounds can be read first; `false` once no block can. The cursor's posting may then
     /// still precede `target` until [`Self::advance`].
@@ -1270,6 +1467,7 @@ impl Iterator for PostingCursor<'_> {
 pub(super) struct TermRun<'a> {
     term: &'a str,
     postings: Vec<Posting>,
+    ordinals: Vec<u32>,
 }
 
 /// The postings of one term form (stemmed or not).
@@ -1412,7 +1610,19 @@ impl PostingLists {
     }
 
     /// Adds a `(term, slot)` posting absent from the lists; `words` holds each slot's length.
+    #[cfg(test)]
     pub(super) fn insert(&mut self, term: &str, slot: usize, frequency: u32, words: &[u32]) {
+        self.insert_with_ordinal(term, slot, frequency, 0, words);
+    }
+
+    pub(super) fn insert_with_ordinal(
+        &mut self,
+        term: &str,
+        slot: usize,
+        frequency: u32,
+        ordinal: u32,
+        words: &[u32],
+    ) {
         let id = match self.dictionary.get(term) {
             Some(id) => id,
             None => {
@@ -1421,9 +1631,11 @@ impl PostingLists {
                 id
             }
         };
-        self.lists[id as usize].append_run_with_lengths(&[(slot, frequency)], |slot| {
-            words.get(slot).copied().unwrap_or(0)
-        });
+        self.lists[id as usize].append_run_with_ordinals(
+            &[(slot, frequency)],
+            &[ordinal],
+            |slot| words.get(slot).copied().unwrap_or(0),
+        );
     }
 
     /// Adds one run per distinct term, each absent from that term's list.
@@ -1451,9 +1663,11 @@ impl PostingLists {
                 new_terms.push((run.term, id));
                 id
             });
-            self.lists[id as usize].append_run_with_lengths(&run.postings, |slot| {
-                word_counts.get(slot).copied().unwrap_or(0)
-            });
+            self.lists[id as usize].append_run_with_ordinals(
+                &run.postings,
+                &run.ordinals,
+                |slot| word_counts.get(slot).copied().unwrap_or(0),
+            );
         }
         self.dictionary.insert_many(new_terms);
     }
@@ -1491,12 +1705,24 @@ impl PostingLists {
         self.lists[id as usize].invalidate_length(slot);
     }
 
+    #[cfg(test)]
     pub(super) fn set_frequency(&mut self, term: &str, slot: usize, frequency: u32, words: &[u32]) {
+        self.set_entry(term, slot, frequency, None, words);
+    }
+
+    pub(super) fn set_entry(
+        &mut self,
+        term: &str,
+        slot: usize,
+        frequency: u32,
+        ordinal: Option<u32>,
+        words: &[u32],
+    ) {
         let id = self
             .dictionary
             .get(term)
             .expect("document term missing posting");
-        self.lists[id as usize].set_frequency(slot, frequency, |slot| {
+        self.lists[id as usize].set_entry(slot, frequency, ordinal, |slot| {
             words.get(slot).copied().unwrap_or(0)
         });
     }
@@ -1539,7 +1765,7 @@ impl PostingLists {
 }
 
 /// Per-range accumulator: a term's postings in the order its chunks were scanned.
-type RunMap<'a> = HashMap<&'a str, Vec<Posting>, FixedState>;
+type RunMap<'a> = HashMap<&'a str, TermRun<'a>, FixedState>;
 
 /// Merge bucket of a term: FNV-1a over its bytes, deliberately not the maps' hash, so the
 /// keys that share a bucket do not also share the low hash bits their map probes by.
@@ -1556,16 +1782,29 @@ fn scan_range<'a>(range: &[(usize, &'a StoredChunk)], buckets: usize) -> [Vec<Ru
         std::array::from_fn(|_| (0..buckets).map(|_| RunMap::default()).collect());
     for &(slot, chunk) in range {
         let form = &mut maps[usize::from(chunk.stemmed)];
-        for (term, &frequency) in &chunk.terms {
+        for (index, (term, &frequency)) in (&chunk.terms).into_iter().enumerate() {
             let bucket = if buckets == 1 {
                 0
             } else {
                 bucket_of(term, buckets)
             };
-            form[bucket]
-                .entry(term)
-                .or_default()
-                .push((slot, frequency));
+            let run = form[bucket].entry(term).or_insert_with(|| TermRun {
+                term,
+                postings: Vec::new(),
+                ordinals: Vec::new(),
+            });
+            let ordinal = if chunk.terms.positions.is_some() {
+                index as u32 + 1
+            } else {
+                0
+            };
+            if ordinal > 0 && run.ordinals.is_empty() {
+                run.ordinals.resize(run.postings.len(), 0);
+            }
+            if ordinal > 0 || !run.ordinals.is_empty() {
+                run.ordinals.push(ordinal);
+            }
+            run.postings.push((slot, frequency));
         }
     }
     maps
@@ -1582,12 +1821,22 @@ fn merge_bucket<'a>(maps: Vec<RunMap<'a>>) -> Vec<TermRun<'a>> {
         for (term, run) in map {
             match merged.entry(term) {
                 Entry::Occupied(entry) => {
-                    let postings = entry.into_mut();
+                    let previous = entry.into_mut();
                     debug_assert!(
-                        postings.last().is_some_and(|last| last.0 < run[0].0),
+                        previous
+                            .postings
+                            .last()
+                            .is_some_and(|last| last.0 < run.postings[0].0),
                         "chunk ranges merged out of slot order"
                     );
-                    postings.extend(run);
+                    if !previous.ordinals.is_empty() || !run.ordinals.is_empty() {
+                        previous.ordinals.resize(previous.postings.len(), 0);
+                        previous.ordinals.extend_from_slice(&run.ordinals);
+                        previous
+                            .ordinals
+                            .resize(previous.postings.len() + run.postings.len(), 0);
+                    }
+                    previous.postings.extend(run.postings);
                 }
                 Entry::Vacant(entry) => {
                     entry.insert(run);
@@ -1595,10 +1844,7 @@ fn merge_bucket<'a>(maps: Vec<RunMap<'a>>) -> Vec<TermRun<'a>> {
             }
         }
     }
-    let mut runs: Vec<TermRun<'a>> = merged
-        .into_iter()
-        .map(|(term, postings)| TermRun { term, postings })
-        .collect();
+    let mut runs: Vec<TermRun<'a>> = merged.into_values().collect();
     runs.sort_unstable_by(|a, b| a.term.cmp(b.term));
     runs
 }
@@ -1653,6 +1899,56 @@ pub(super) fn index_chunks<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn positional_ordinals_survive_block_edits_without_changing_checkpoint_bytes() {
+        for count in [127, 128, 129] {
+            let mut list = PostingList::default();
+            let mut model = BTreeMap::new();
+            let ordinals = [0, 1, 127, 128, 129, 255, 256, 257, 65_535, 65_536, 65_537];
+            let check = |list: &PostingList, model: &BTreeMap<usize, (u32, u32)>| {
+                let mut cursor = list.iter();
+                for (&slot, &(frequency, ordinal)) in model {
+                    assert_eq!(cursor.peek(), Some((slot, frequency)));
+                    assert_eq!(cursor.ordinal(), ordinal);
+                    cursor.next();
+                }
+                assert!(cursor.peek().is_none());
+                let mut plain = PostingList::default();
+                plain.append_run(&model.iter().map(|(&s, &(f, _))| (s, f)).collect::<Vec<_>>());
+                let (mut actual, mut expected) = (Vec::new(), Vec::new());
+                pack_checkpoint(list, &mut actual);
+                pack_checkpoint(&plain, &mut expected);
+                assert_eq!(actual, expected);
+            };
+            for i in 0..count {
+                let (slot, frequency, ordinal) =
+                    (i * 2, 1 + i as u32 % 3, ordinals[i % ordinals.len()]);
+                list.append_run_with_ordinals(&[(slot, frequency)], &[ordinal], |_| 100);
+                model.insert(slot, (frequency, ordinal));
+            }
+            check(&list, &model);
+            for i in 0..100 {
+                list.remove(i * 2, |_| 100);
+                model.remove(&(i * 2));
+            }
+            check(&list, &model);
+            list.append_run_with_ordinals(&[(1, 2)], &[255], |_| 100);
+            model.insert(1, (2, 255));
+            let run: Vec<_> = (0..100).map(|i| (i * 2, 3)).collect();
+            let ordinals: Vec<_> = (0..100).map(|i| i * 1024 + 1).collect();
+            list.append_run_with_ordinals(&run, &ordinals, |_| 100);
+            for (&(slot, frequency), &ordinal) in run.iter().zip(&ordinals) {
+                model.insert(slot, (frequency, ordinal));
+            }
+            check(&list, &model);
+            for slot in [0, 1, 128, 200] {
+                list.set_entry(slot, 4, Some(65_537), |_| 100);
+                model.insert(slot, (4, 65_537));
+            }
+            check(&list, &model);
+        }
+    }
 
     /// An edit of one posting in a long list recomputes one block's frontier (two when the
     /// block splits), where re-encoding the list computes one per block.
@@ -1720,6 +2016,33 @@ mod tests {
                     );
                     for (index, &value) in values.iter().enumerate() {
                         assert_eq!(unpack(&bytes, index, bits), value);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn block_unpacking_preserves_output_after_short_and_unaligned_blocks() {
+        for bits in 1..=32u8 {
+            let mask = (1u64 << bits) - 1;
+            for count in [31, 32, 33, 127, 128] {
+                let values: Vec<u64> = (0..count)
+                    .map(|i| match i % 3 {
+                        0 => mask,
+                        1 => 0,
+                        _ => (i as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) & mask,
+                    })
+                    .collect();
+                for offset in 0..32 {
+                    for slack in [0, 7, 8, 15, 16] {
+                        let mut bytes = vec![0xcc; offset];
+                        pack(&mut bytes, values.iter().copied(), bits);
+                        bytes.extend(std::iter::repeat_n(0xff, slack));
+                        let mut out = [u64::MAX; BLOCK_LEN];
+                        unpack_values(&bytes[offset..], count, bits, &mut out);
+                        assert_eq!(&out[..count], values, "bits={bits}, count={count}");
+                        assert!(out[count..].iter().all(|&value| value == u64::MAX));
                     }
                 }
             }
@@ -1981,7 +2304,11 @@ mod tests {
                 if postings.is_empty() {
                     continue;
                 }
-                runs.push(TermRun { term, postings });
+                runs.push(TermRun {
+                    term,
+                    postings,
+                    ordinals: Vec::new(),
+                });
             }
             for run in &runs {
                 for &(slot, frequency) in &run.postings {

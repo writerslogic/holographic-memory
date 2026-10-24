@@ -283,23 +283,39 @@ fn replace_postings(
     slot: usize,
     words: &[u32],
 ) {
-    for (term, &old_frequency) in &old.terms {
-        if let Some(&frequency) = new.terms.get(term).filter(|_| old.stemmed == new.stemmed) {
-            // Unchanged terms (a deferred encoding landing, a re-memorized document) leave
-            // the list alone; rewriting it would decode and encode the whole list.
-            if new.word_count < old.word_count {
-                postings[usize::from(old.stemmed)].invalidate_length(term, slot);
-            }
-            if frequency != old_frequency {
-                postings[usize::from(old.stemmed)].set_frequency(term, slot, frequency, words);
-            }
-        } else {
+    for term in old.terms.keys() {
+        if old.stemmed != new.stemmed || !new.terms.contains_key(term) {
             postings[usize::from(old.stemmed)].remove(term, slot, words);
         }
     }
-    for (term, &frequency) in &new.terms {
-        if old.stemmed != new.stemmed || !old.terms.contains_key(term) {
-            postings[usize::from(new.stemmed)].insert(term, slot, frequency, words);
+    let mut old_terms = (&old.terms).into_iter().enumerate().peekable();
+    for (index, (term, &frequency)) in (&new.terms).into_iter().enumerate() {
+        while old_terms.peek().is_some_and(|(_, (old, _))| *old < term) {
+            old_terms.next();
+        }
+        let ordinal = if new.terms.positions.is_some() {
+            index as u32 + 1
+        } else {
+            0
+        };
+        let list = &mut postings[usize::from(new.stemmed)];
+        let previous = old_terms
+            .peek()
+            .filter(|(_, (old_term, _))| old.stemmed == new.stemmed && *old_term == term);
+        if let Some(&(old_index, (_, &old_frequency))) = previous {
+            if new.word_count < old.word_count {
+                list.invalidate_length(term, slot);
+            }
+            let old_ordinal = if old.terms.positions.is_some() {
+                old_index as u32 + 1
+            } else {
+                0
+            };
+            if frequency != old_frequency || ordinal != old_ordinal {
+                list.set_entry(term, slot, frequency, Some(ordinal), words);
+            }
+        } else {
+            list.insert_with_ordinal(term, slot, frequency, ordinal, words);
         }
     }
 }

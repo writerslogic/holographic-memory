@@ -1,0 +1,7 @@
+{
+  "status": "pass",
+  "files": 10,
+  "method": "rsync exit0 plus source/destination SHA256 for all index files; query/reference SHA256 also match",
+  "source_index": "hms-sbg-codec/index-full",
+  "copied_index": "index-full"
+}
