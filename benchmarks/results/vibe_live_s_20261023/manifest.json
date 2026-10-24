@@ -29,7 +29,7 @@
     "threads": "one pinned worker core per index; math-library thread variables set to 1",
     "official_hardware": "Intel Xeon Gold 6230 with AVX-512, one core per algorithm, at least 16 GiB per used core recommended",
     "official_limits": "24-hour timeout per individual algorithm run; no published fixed memory cap",
-    "modal_hardware": "Per-container CPU model, AVX-512, allocated memory, and process state are in the ledger and cpu records; HMS and competitors are scheduled in one dataset job, with possible container handovers",
+    "modal_hardware": "Per-container CPU model, AVX-512, allocated memory, and process state are in the ledger and cpu records; VIBE falls back from unavailable numactl to taskset pinning; HMS and competitors are scheduled in one dataset job, with possible container handovers",
     "comparability": "Cross-hardware published Xeon QPS is diagnostic only; use same-container HMS/competitor measurements when they complete, and verify CPU identity after any handover"
   },
   "launch": {
