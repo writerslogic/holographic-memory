@@ -1076,6 +1076,11 @@ def matching_memory_observation(observation: dict | None, container_id: str | No
 
 
 def measurement_containers(record: dict) -> list[str]:
+    repair = record.get("provenance_repair", {})
+    validation = repair.get("validation", {})
+    if (repair.get("state") == "done" and repair.get("container_id") == record.get("container_id")
+            and validation.get("done") and validation.get("valid") == validation.get("expected") == 180):
+        return [record["container_id"]]
     containers = {record["container_id"]} if record.get("container_id") else set()
     containers.update(h["container"] for h in record.get("history", [])
                       if h.get("container") and (h.get("markers", 0) > 0 or h.get("progress")))

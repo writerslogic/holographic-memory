@@ -58,6 +58,13 @@ def test_measurement_provenance_retains_completed_groups_after_preemption():
     assert mv.measurement_containers(record) == ["new", "old"]
     record["history"][0] = {"container": "old", "progress": True}
     assert mv.measurement_containers(record) == ["new", "old"]
+    record["provenance_repair"] = {"state": "done", "container_id": "new",
+                                    "validation": {"done": True, "valid": 179, "expected": 180}}
+    assert mv.measurement_containers(record) == ["new", "old"]
+    record["provenance_repair"]["validation"]["valid"] = 180
+    assert mv.measurement_containers(record) == ["new"]
+    record["provenance_repair"]["container_id"] = "wrong"
+    assert mv.measurement_containers(record) == ["new", "old"]
 
 
 def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path):

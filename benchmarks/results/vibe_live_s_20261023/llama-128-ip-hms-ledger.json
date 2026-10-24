@@ -1,0 +1,46 @@
+{
+ "algorithm": "hms",
+ "attempts": 1,
+ "avx512": false,
+ "child_cpu_s": 2068.9,
+ "chosen_why": [
+  "HMS runs on every dataset"
+ ],
+ "cleaned": {
+  "removed": []
+ },
+ "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+ "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+ "dataset": "llama-128-ip",
+ "end": "2026-10-24T07:31:38Z",
+ "expected": 180,
+ "failures": 0,
+ "flags_sha": "ec7ab2242885",
+ "heartbeat": 1792827030.011822,
+ "history": [
+  {
+   "attempt": 1,
+   "container": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+   "end": "2026-10-24T07:31:38Z",
+   "markers": 180,
+   "outcome": "exit 0"
+  }
+ ],
+ "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "job": "hms@12c80decb094",
+ "log_path": "/vol/vibe/run-s-20261023/logs/llama-128-ip/hms@12c80decb094.log",
+ "markers_at_start": 0,
+ "nproc": 8,
+ "result_path": "/vol/vibe/run-s-20261023/results/llama-128-ip/hms@12c80decb094/results",
+ "start": "2026-10-24T06:54:37Z",
+ "state": "done",
+ "validation": {
+  "done": true,
+  "expected": 180,
+  "markers": 180,
+  "problems": [],
+  "test_count": 1000,
+  "valid": 180
+ },
+ "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}
