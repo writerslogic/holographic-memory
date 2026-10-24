@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "source": "eb32e65267b40419d13d6f75eee5465e937ca95d",
+  "verified_cells": 309,
+  "tuning_batches": 927,
+  "selected": {
+    "graph": {
+      "arm": "graph",
+      "build": "graph-R64",
+      "args": [
+        160,
+        400
+      ],
+      "qps": [
+        6827.008939143357,
+        7133.573611610761,
+        7195.225587538105
+      ],
+      "val_recall": 0.95119
+    },
+    "lowrank": {
+      "arm": "lowrank",
+      "build": "lowrank-C1024-r32",
+      "args": [
+        256,
+        400
+      ],
+      "qps": [
+        2055.8259876390794,
+        2052.5292816766323,
+        2007.3433034140062
+      ],
+      "val_recall": 0.95236
+    }
+  },
+  "official_test_read": true,
+  "confirmation": {
+    "graph": {
+      "recall": 0.9501600000000001,
+      "qps": [
+        6733.781821093793,
+        7121.820504911689,
+        7020.6373748516935
+      ],
+      "answers_sha256": "e128293e19fd98a5f6328f45e19f5802295c02158f75db270e341f03db92a11b"
+    },
+    "lowrank": {
+      "recall": 0.9512,
+      "qps": [
+        1826.0620828472368,
+        2061.99677447082,
+        1998.4032517787005
+      ],
+      "answers_sha256": "0c85c68fabf48b3deed8f235ee9cf439944b05f7501d843baa5ccb7d48c2ac4c"
+    }
+  },
+  "paired_speedups": [
+    0.27117927657338664,
+    0.28953225836690605,
+    0.28464698361107355
+  ],
+  "verdict": "FAIL"
+}

@@ -1,0 +1,799 @@
+diff --git a/src/core/qgraph/lowrank.rs b/src/core/qgraph/lowrank.rs
+new file mode 100644
+index 00000000..24be898d
+--- /dev/null
++++ b/src/core/qgraph/lowrank.rs
+@@ -0,0 +1,633 @@
++// Copyright 2024-2026 WritersLogic Contributors
++// SPDX-License-Identifier: Apache-2.0
++//! Experimental cluster index for out-of-distribution queries: k-means lists whose
++//! query-point inner products are approximated by a per-cluster reduced-rank regression fitted
++//! on training queries, scored with 8-bit codes, and the best candidates re-scored exactly.
++//!
++//! For cluster `c` with rows `X_c` and the training queries `Q_c` routed to it, the target is
++//! `Y = Q_c X_c^T`. Its rank-`r` fit is `Q_c X_c^T V V^T` with `V` the top `r` right singular
++//! vectors of `Y`, so a query is scored as `z = B^T q` (`B = X_c^T V`, `r` floats) followed by
++//! `V z` (one `r`-wide integer dot per row). Inner product is scored directly; angular rows and
++//! queries are normalized first.
++
++use nalgebra::{Cholesky, DMatrix, SymmetricEigen};
++use rayon::prelude::*;
++
++use super::invalid;
++use super::kernels::{dot, dot_i8_query};
++use super::vnni::query_sum;
++use crate::core::error::HmsError;
++
++/// Code width; `rank` is rounded up to it so the integer kernels need no tail.
++const LANES: usize = 16;
++const KMEANS_ITERATIONS: usize = 10;
++/// Ridge added to the query second moment, relative to its mean diagonal.
++const RIDGE: f64 = 1e-3;
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum LowRankMetric {
++    InnerProduct,
++    Angular,
++}
++
++#[derive(Clone, Copy, Debug)]
++pub struct LowRankParams {
++    pub clusters: usize,
++    pub rank: usize,
++    /// Each training query trains the regressions of its `train_top` best-ranked clusters.
++    pub train_top: usize,
++    pub seed: u64,
++}
++
++#[derive(Clone, Copy, Debug)]
++pub struct LowRankSearchParams {
++    pub nprobe: usize,
++    /// Candidates re-scored exactly (at least `k`).
++    pub rerank: usize,
++}
++
++pub struct LowRankIvf {
++    dim: usize,
++    rank: usize,
++    metric: LowRankMetric,
++    centers: Vec<f32>,
++    offsets: Vec<u32>,
++    ids: Vec<u32>,
++    /// Per cluster, `rank` rows of `dim` floats: the columns of `B`.
++    basis: Vec<f32>,
++    /// Per row (cluster order), `rank` signed codes of its row of `V`, and their scale.
++    codes: Vec<i8>,
++    code_scales: Vec<f32>,
++    /// Float rows in cluster order for the exact re-score.
++    rows: Vec<f32>,
++}
++
++/// Reusable per-query buffers.
++#[derive(Default)]
++pub struct LowRankScratch {
++    query: Vec<f32>,
++    center_scores: Vec<(f32, u32)>,
++    z: Vec<f32>,
++    z_code: Vec<i8>,
++    candidates: Vec<(f32, u32)>,
++}
++
++fn normalize(row: &mut [f32]) {
++    let norm = dot(row, row).sqrt();
++    if norm > 0.0 {
++        row.iter_mut().for_each(|v| *v /= norm);
++    }
++}
++
++struct Rng(u64);
++impl Rng {
++    fn next(&mut self) -> u64 {
++        self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
++        let mut z = self.0;
++        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
++        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
++        z ^ (z >> 31)
++    }
++}
++
++/// Lloyd's k-means (squared Euclidean) seeded from distinct random rows.
++fn kmeans(rows: &[f32], dim: usize, k: usize, seed: u64) -> Vec<f32> {
++    let n = rows.len() / dim;
++    let mut rng = Rng(seed);
++    let mut order: Vec<usize> = (0..n).collect();
++    for i in 0..k {
++        let j = i + (rng.next() % (n - i) as u64) as usize;
++        order.swap(i, j);
++    }
++    let mut centers: Vec<f32> = order[..k]
++        .iter()
++        .flat_map(|&i| rows[i * dim..(i + 1) * dim].iter().copied())
++        .collect();
++    for _ in 0..KMEANS_ITERATIONS {
++        let assignments = assign(rows, dim, &centers);
++        let mut sums = vec![0f64; k * dim];
++        let mut counts = vec![0usize; k];
++        for (i, &c) in assignments.iter().enumerate() {
++            counts[c as usize] += 1;
++            for (s, &x) in sums[c as usize * dim..(c as usize + 1) * dim]
++                .iter_mut()
++                .zip(&rows[i * dim..(i + 1) * dim])
++            {
++                *s += f64::from(x);
++            }
++        }
++        for c in 0..k {
++            if counts[c] == 0 {
++                // Re-seed an empty cluster from a random row.
++                let i = (rng.next() % n as u64) as usize;
++                centers[c * dim..(c + 1) * dim].copy_from_slice(&rows[i * dim..(i + 1) * dim]);
++                continue;
++            }
++            for (x, &s) in centers[c * dim..(c + 1) * dim]
++                .iter_mut()
++                .zip(&sums[c * dim..(c + 1) * dim])
++            {
++                *x = (s / counts[c] as f64) as f32;
++            }
++        }
++    }
++    centers
++}
++
++fn assign(rows: &[f32], dim: usize, centers: &[f32]) -> Vec<u32> {
++    let half_norms: Vec<f32> = centers.chunks_exact(dim).map(|c| 0.5 * dot(c, c)).collect();
++    rows.par_chunks_exact(dim)
++        .map(|row| {
++            let mut best = (f32::NEG_INFINITY, 0u32);
++            for (c, (center, &h)) in centers.chunks_exact(dim).zip(&half_norms).enumerate() {
++                let s = dot(row, center) - h;
++                if s > best.0 {
++                    best = (s, c as u32);
++                }
++            }
++            best.1
++        })
++        .collect()
++}
++
++/// Indices of the `top` largest scores, best first.
++fn top_clusters(centers: &[f32], dim: usize, q: &[f32], top: usize, out: &mut Vec<(f32, u32)>) {
++    out.clear();
++    out.extend(
++        centers
++            .chunks_exact(dim)
++            .enumerate()
++            .map(|(c, center)| (dot(q, center), c as u32)),
++    );
++    let top = top.min(out.len());
++    if top < out.len() {
++        out.select_nth_unstable_by(top, |a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
++        out.truncate(top);
++    }
++    out.sort_unstable_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
++}
++
++/// Symmetric integer codes of `x`; returns the scale (0 for a zero vector).
++fn quantize_i8(x: &[f32], out: &mut [i8]) -> f32 {
++    let max = x.iter().fold(0f32, |m, v| m.max(v.abs()));
++    if max == 0.0 {
++        out.fill(0);
++        return 0.0;
++    }
++    let scale = max / 127.0;
++    for (o, &v) in out.iter_mut().zip(x) {
++        *o = (v / scale).round() as i8;
++    }
++    scale
++}
++
++/// Top `rank` right singular vectors (as an `n x rank` matrix, zero-padded) of `Y = Q X^T`,
++/// given `X` (`n x dim`) and `M = Q^T Q` (`dim x dim`).
++fn right_singular_vectors(x: &DMatrix<f64>, m: &DMatrix<f64>, rank: usize) -> DMatrix<f64> {
++    let (n, dim) = x.shape();
++    let mut v = DMatrix::<f64>::zeros(n, rank);
++    let trace = (0..dim).map(|i| m[(i, i)]).sum::<f64>() / dim as f64;
++    let mut ridged = m.clone();
++    for i in 0..dim {
++        ridged[(i, i)] += RIDGE * trace.max(f64::MIN_POSITIVE);
++    }
++    let Some(chol) = Cholesky::new(ridged) else {
++        return v;
++    };
++    // Y^T Y = X M X^T = S S^T with S = X L.
++    let s = x * chol.l();
++    let take = rank.min(n).min(dim);
++    if n <= dim {
++        let eig = SymmetricEigen::new(&s * s.transpose());
++        let mut order: Vec<usize> = (0..n).collect();
++        order.sort_by(|&a, &b| eig.eigenvalues[b].total_cmp(&eig.eigenvalues[a]));
++        for (j, &e) in order[..take].iter().enumerate() {
++            v.set_column(j, &eig.eigenvectors.column(e));
++        }
++    } else {
++        let eig = SymmetricEigen::new(s.transpose() * &s);
++        let mut order: Vec<usize> = (0..dim).collect();
++        order.sort_by(|&a, &b| eig.eigenvalues[b].total_cmp(&eig.eigenvalues[a]));
++        for (j, &e) in order[..take].iter().enumerate() {
++            let lambda = eig.eigenvalues[e];
++            if lambda <= f64::EPSILON * eig.eigenvalues[order[0]].abs() {
++                break;
++            }
++            let col = &s * eig.eigenvectors.column(e) / lambda.sqrt();
++            v.set_column(j, &col);
++        }
++    }
++    v
++}
++
++impl LowRankIvf {
++    /// `rows` are `n x dim` base vectors, `training` `m x dim` training queries (the learn
++    /// split only; may be empty, in which case the rows stand in for the queries).
++    pub fn build(
++        rows: &[f32],
++        dim: usize,
++        training: &[f32],
++        metric: LowRankMetric,
++        params: &LowRankParams,
++    ) -> Result<Self, HmsError> {
++        if dim == 0 || rows.is_empty() || !rows.len().is_multiple_of(dim) {
++            return Err(invalid(
++                "low-rank IVF input does not contain complete rows".into(),
++            ));
++        }
++        if !training.len().is_multiple_of(dim) {
++            return Err(invalid(
++                "training queries do not contain complete rows".into(),
++            ));
++        }
++        if rows.iter().chain(training).any(|v| !v.is_finite()) {
++            return Err(invalid(
++                "low-rank IVF input contains non-finite values".into(),
++            ));
++        }
++        let n = rows.len() / dim;
++        if n > u32::MAX as usize
++            || training.len() / dim > u32::MAX as usize
++            || dim > 4096
++            || params.clusters == 0
++            || params.clusters > n
++            || params.rank == 0
++            || params.rank > dim
++            || params.train_top == 0
++        {
++            return Err(invalid("low-rank IVF shape is out of range".into()));
++        }
++        let clusters = params.clusters;
++        let rank = params.rank.next_multiple_of(LANES);
++        let cells = clusters
++            .checked_mul(rank)
++            .and_then(|v| v.checked_mul(dim))
++            .and_then(|v| v.checked_add(n.checked_mul(rank)?))
++            .and_then(|v| v.checked_add(rows.len()))
++            .and_then(|v| v.checked_add(training.len()));
++        if !cells.is_some_and(|v| v <= (1 << 30)) {
++            return Err(invalid(
++                "low-rank IVF allocation exceeds the 4 GiB element budget".into(),
++            ));
++        }
++        let mut data = rows.to_vec();
++        let mut queries = training.to_vec();
++        if metric == LowRankMetric::Angular {
++            data.chunks_exact_mut(dim).for_each(normalize);
++            queries.chunks_exact_mut(dim).for_each(normalize);
++        }
++        if queries.is_empty() {
++            queries.clone_from(&data);
++        }
++        let centers = kmeans(&data, dim, clusters, params.seed);
++        let assignments = assign(&data, dim, &centers);
++        let mut offsets = vec![0u32; clusters + 1];
++        for &c in &assignments {
++            offsets[c as usize + 1] += 1;
++        }
++        for c in 1..=clusters {
++            offsets[c] += offsets[c - 1];
++        }
++        let mut cursor = offsets[..clusters].to_vec();
++        let mut ids = vec![0u32; n];
++        for (i, &c) in assignments.iter().enumerate() {
++            ids[cursor[c as usize] as usize] = i as u32;
++            cursor[c as usize] += 1;
++        }
++        // Route every training query to its best `train_top` clusters.
++        let train_top = params.train_top.clamp(1, clusters);
++        let routes: Vec<Vec<u32>> = queries
++            .par_chunks_exact(dim)
++            .map_init(Vec::new, |buf, q| {
++                top_clusters(&centers, dim, q, train_top, buf);
++                buf.iter().map(|&(_, c)| c).collect()
++            })
++            .collect();
++        let mut routed: Vec<Vec<u32>> = vec![Vec::new(); clusters];
++        for (qi, route) in routes.iter().enumerate() {
++            for &c in route {
++                routed[c as usize].push(qi as u32);
++            }
++        }
++        let fitted: Vec<(Vec<f32>, Vec<i8>, Vec<f32>)> = (0..clusters)
++            .into_par_iter()
++            .map(|c| {
++                let members = &ids[offsets[c] as usize..offsets[c + 1] as usize];
++                let size = members.len();
++                let x = DMatrix::<f64>::from_fn(size, dim, |i, j| {
++                    f64::from(data[members[i] as usize * dim + j])
++                });
++                let mut m = DMatrix::<f64>::zeros(dim, dim);
++                let use_rows = routed[c].is_empty();
++                let sources: Vec<&[f32]> = if use_rows {
++                    members
++                        .iter()
++                        .map(|&i| &data[i as usize * dim..(i as usize + 1) * dim])
++                        .collect()
++                } else {
++                    routed[c]
++                        .iter()
++                        .map(|&q| &queries[q as usize * dim..(q as usize + 1) * dim])
++                        .collect()
++                };
++                let q =
++                    DMatrix::<f64>::from_fn(sources.len(), dim, |i, j| f64::from(sources[i][j]));
++                m.gemm_tr(1.0, &q, &q, 0.0);
++                let v = right_singular_vectors(&x, &m, rank);
++                // B = X^T V, stored as `rank` rows of `dim`.
++                let b = x.transpose() * &v;
++                let mut basis = vec![0f32; rank * dim];
++                for j in 0..rank {
++                    for i in 0..dim {
++                        basis[j * dim + i] = b[(i, j)] as f32;
++                    }
++                }
++                let mut codes = vec![0i8; size * rank];
++                let mut scales = vec![0f32; size];
++                let mut row = vec![0f32; rank];
++                for i in 0..size {
++                    for (j, r) in row.iter_mut().enumerate() {
++                        *r = v[(i, j)] as f32;
++                    }
++                    scales[i] = quantize_i8(&row, &mut codes[i * rank..(i + 1) * rank]);
++                }
++                (basis, codes, scales)
++            })
++            .collect();
++        let mut basis = Vec::with_capacity(clusters * rank * dim);
++        let mut codes = Vec::with_capacity(n * rank);
++        let mut code_scales = Vec::with_capacity(n);
++        for (b, c, s) in fitted {
++            basis.extend_from_slice(&b);
++            codes.extend_from_slice(&c);
++            code_scales.extend_from_slice(&s);
++        }
++        let mut ordered = Vec::with_capacity(n * dim);
++        for &i in &ids {
++            ordered.extend_from_slice(&data[i as usize * dim..(i as usize + 1) * dim]);
++        }
++        Ok(Self {
++            dim,
++            rank,
++            metric,
++            centers,
++            offsets,
++            ids,
++            basis,
++            codes,
++            code_scales,
++            rows: ordered,
++        })
++    }
++
++    pub fn len(&self) -> usize {
++        self.ids.len()
++    }
++
++    pub fn is_empty(&self) -> bool {
++        self.ids.is_empty()
++    }
++
++    pub fn dim(&self) -> usize {
++        self.dim
++    }
++
++    pub fn clusters(&self) -> usize {
++        self.offsets.len() - 1
++    }
++
++    /// The `k` best ids (largest inner product or cosine first) into `out`.
++    pub fn search(
++        &self,
++        query: &[f32],
++        k: usize,
++        params: LowRankSearchParams,
++        scratch: &mut LowRankScratch,
++        out: &mut Vec<u32>,
++    ) -> Result<(), HmsError> {
++        out.clear();
++        if query.len() != self.dim {
++            return Err(invalid(format!(
++                "the query has {} dimensions, the index has {}",
++                query.len(),
++                self.dim
++            )));
++        }
++        if query.iter().any(|v| !v.is_finite()) {
++            return Err(invalid("the query contains non-finite values".into()));
++        }
++        if params.nprobe == 0 {
++            return Err(invalid("nprobe must be positive".into()));
++        }
++        if k == 0 {
++            return Ok(());
++        }
++        let compare = |a: &(f32, u32), b: &(f32, u32)| {
++            b.0.total_cmp(&a.0)
++                .then(self.ids[a.1 as usize].cmp(&self.ids[b.1 as usize]))
++        };
++        let (dim, rank) = (self.dim, self.rank);
++        let LowRankScratch {
++            query: q,
++            center_scores,
++            z,
++            z_code,
++            candidates,
++        } = scratch;
++        q.clear();
++        q.extend_from_slice(query);
++        if self.metric == LowRankMetric::Angular {
++            normalize(q);
++        }
++        top_clusters(&self.centers, dim, q, params.nprobe.max(1), center_scores);
++        z.resize(rank, 0.0);
++        z_code.resize(rank, 0);
++        candidates.clear();
++        for &(_, c) in center_scores.iter() {
++            let c = c as usize;
++            let basis = &self.basis[c * rank * dim..(c + 1) * rank * dim];
++            for (zj, b) in z.iter_mut().zip(basis.chunks_exact(dim)) {
++                *zj = dot(q, b);
++            }
++            let z_scale = quantize_i8(z, z_code);
++            let qsum = query_sum(z_code);
++            for slot in self.offsets[c] as usize..self.offsets[c + 1] as usize {
++                let code = &self.codes[slot * rank..(slot + 1) * rank];
++                let raw = dot_i8_query(z_code, code, qsum);
++                candidates.push((z_scale * self.code_scales[slot] * raw as f32, slot as u32));
++            }
++        }
++        let depth = params.rerank.max(k).min(candidates.len());
++        if depth < candidates.len() {
++            candidates.select_nth_unstable_by(depth, compare);
++            candidates.truncate(depth);
++        }
++        for cand in candidates.iter_mut() {
++            let slot = cand.1 as usize;
++            cand.0 = dot(q, &self.rows[slot * dim..(slot + 1) * dim]);
++        }
++        let take = k.min(candidates.len());
++        if take < candidates.len() {
++            candidates.select_nth_unstable_by(take, compare);
++            candidates.truncate(take);
++        }
++        candidates.sort_unstable_by(compare);
++        out.extend(candidates.iter().map(|&(_, slot)| self.ids[slot as usize]));
++        Ok(())
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn ties_use_original_ids_across_cluster_order() {
++        let rows = [1.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, -1.0];
++        let params = LowRankParams {
++            clusters: 4,
++            rank: 2,
++            train_top: 4,
++            seed: 7,
++        };
++        let index = LowRankIvf::build(&rows, 2, &[], LowRankMetric::InnerProduct, &params).unwrap();
++        let mut scratch = LowRankScratch::default();
++        let mut out = Vec::new();
++        for k in [0, 1, 3, 4, 5] {
++            index
++                .search(
++                    &[0.0, 0.0],
++                    k,
++                    LowRankSearchParams {
++                        nprobe: 4,
++                        rerank: 4,
++                    },
++                    &mut scratch,
++                    &mut out,
++                )
++                .unwrap();
++            assert_eq!(out, (0..k.min(4) as u32).collect::<Vec<_>>());
++        }
++    }
++
++    #[test]
++    fn invalid_rank_is_rejected_before_allocation() {
++        for rank in [0, 3, usize::MAX] {
++            let params = LowRankParams {
++                clusters: 1,
++                rank,
++                train_top: 1,
++                seed: 7,
++            };
++            assert!(
++                LowRankIvf::build(&[1.0, 0.0], 2, &[], LowRankMetric::InnerProduct, &params)
++                    .is_err()
++            );
++        }
++    }
++
++    fn data(n: usize, dim: usize, seed: u64) -> Vec<f32> {
++        let mut rng = Rng(seed);
++        (0..n * dim)
++            .map(|_| (rng.next() >> 40) as f32 / (1u64 << 24) as f32 - 0.5)
++            .collect()
++    }
++
++    fn exact(rows: &[f32], dim: usize, q: &[f32], k: usize) -> Vec<u32> {
++        let mut s: Vec<(f32, u32)> = rows
++            .chunks_exact(dim)
++            .enumerate()
++            .map(|(i, r)| (dot(q, r), i as u32))
++            .collect();
++        s.sort_unstable_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
++        s.into_iter().take(k).map(|x| x.1).collect()
++    }
++
++    #[test]
++    fn all_lists_and_full_rerank_are_exact() {
++        let (n, dim, k) = (2000, 32, 10);
++        let rows = data(n, dim, 1);
++        let training = data(300, dim, 2);
++        let params = LowRankParams {
++            clusters: 16,
++            rank: 8,
++            train_top: 4,
++            seed: 3,
++        };
++        let index =
++            LowRankIvf::build(&rows, dim, &training, LowRankMetric::InnerProduct, &params).unwrap();
++        let mut scratch = LowRankScratch::default();
++        let mut out = Vec::new();
++        for q in data(20, dim, 4).chunks_exact(dim) {
++            let all = LowRankSearchParams {
++                nprobe: index.clusters(),
++                rerank: n,
++            };
++            index.search(q, k, all, &mut scratch, &mut out).unwrap();
++            assert_eq!(out, exact(&rows, dim, q, k));
++        }
++    }
++
++    #[test]
++    fn recall_with_full_rerank_never_falls_as_nprobe_grows() {
++        let (n, dim, k) = (3000, 24, 20);
++        let rows = data(n, dim, 5);
++        let training = data(500, dim, 6);
++        let params = LowRankParams {
++            clusters: 32,
++            rank: 16,
++            train_top: 8,
++            seed: 7,
++        };
++        let index =
++            LowRankIvf::build(&rows, dim, &training, LowRankMetric::Angular, &params).unwrap();
++        let mut normalized = rows.clone();
++        normalized.chunks_exact_mut(dim).for_each(normalize);
++        let mut scratch = LowRankScratch::default();
++        let mut out = Vec::new();
++        for q in data(20, dim, 8).chunks_exact(dim) {
++            let mut nq = q.to_vec();
++            normalize(&mut nq);
++            let truth = exact(&normalized, dim, &nq, k);
++            let mut previous = 0;
++            for nprobe in 1..=index.clusters() {
++                let p = LowRankSearchParams { nprobe, rerank: n };
++                index.search(q, k, p, &mut scratch, &mut out).unwrap();
++                let hits = out.iter().filter(|i| truth.contains(i)).count();
++                assert!(hits >= previous, "recall fell at nprobe {nprobe}");
++                previous = hits;
++            }
++            assert_eq!(previous, k);
++        }
++    }
++
++    #[test]
++    fn low_rank_scores_rank_the_true_neighbours_first() {
++        // Without re-scoring beyond k, the regression alone must find most true neighbours.
++        let (n, dim, k) = (2000, 32, 10);
++        let rows = data(n, dim, 9);
++        let training = data(2000, dim, 10);
++        let params = LowRankParams {
++            clusters: 8,
++            rank: 32,
++            train_top: 8,
++            seed: 11,
++        };
++        let index =
++            LowRankIvf::build(&rows, dim, &training, LowRankMetric::InnerProduct, &params).unwrap();
++        let mut scratch = LowRankScratch::default();
++        let mut out = Vec::new();
++        let mut hits = 0;
++        let queries = data(50, dim, 12);
++        for q in queries.chunks_exact(dim) {
++            let p = LowRankSearchParams {
++                nprobe: 8,
++                rerank: 3 * k,
++            };
++            index.search(q, k, p, &mut scratch, &mut out).unwrap();
++            let truth = exact(&rows, dim, q, k);
++            hits += out.iter().filter(|i| truth.contains(i)).count();
++        }
++        assert!(hits as f64 / (50 * k) as f64 > 0.9, "hits {hits}");
++    }
++}
+diff --git a/src/core/qgraph/mod.rs b/src/core/qgraph/mod.rs
+index 8cd329ef..c8496998 100644
+--- a/src/core/qgraph/mod.rs
++++ b/src/core/qgraph/mod.rs
+@@ -50,0 +51,3 @@ pub mod ivf;
++#[cfg(feature = "experimental")]
++pub mod lowrank;
++
+diff --git a/src/python.rs b/src/python.rs
+index fd58c1f5..a8741b7c 100644
+--- a/src/python.rs
++++ b/src/python.rs
+@@ -21,0 +22,2 @@ mod embed;
++#[cfg(feature = "experimental")]
++mod lowrank_ivf;
+@@ -145,0 +148,2 @@ fn holographic_memory(m: &Bound<'_, PyModule>) -> PyResult<()> {
++    #[cfg(feature = "experimental")]
++    m.add_class::<lowrank_ivf::PyLowRankIvf>()?;
+diff --git a/src/python/lowrank_ivf.rs b/src/python/lowrank_ivf.rs
+new file mode 100644
+index 00000000..54681c30
+--- /dev/null
++++ b/src/python/lowrank_ivf.rs
+@@ -0,0 +1,136 @@
++// Copyright 2024-2026 WritersLogic Contributors
++// SPDX-License-Identifier: Apache-2.0
++//! Experimental `LowRankIvf`: the cluster index with low-rank score regression, for
++//! measurement against `VectorIndex` on out-of-distribution queries. Not persisted.
++
++use numpy::{
++    AllowTypeChange, IntoPyArray, PyArray1, PyArrayLike1, PyArrayLike2, PyUntypedArrayMethods,
++};
++use pyo3::exceptions::{PyRuntimeError, PyValueError};
++use pyo3::prelude::*;
++
++use crate::core::qgraph::lowrank::{
++    LowRankIvf, LowRankMetric, LowRankParams, LowRankScratch, LowRankSearchParams,
++};
++
++#[pyclass(name = "LowRankIvf", unsendable)]
++pub(super) struct PyLowRankIvf {
++    metric: LowRankMetric,
++    params: LowRankParams,
++    search: LowRankSearchParams,
++    index: Option<LowRankIvf>,
++    scratch: LowRankScratch,
++    out: Vec<u32>,
++}
++
++fn matrix(x: &PyArrayLike2<'_, f32, AllowTypeChange>) -> Vec<f32> {
++    match x.as_slice() {
++        Ok(s) if x.is_c_contiguous() => s.to_vec(),
++        _ => x.as_array().iter().copied().collect(),
++    }
++}
++
++#[pymethods]
++impl PyLowRankIvf {
++    /// `metric` is "ip" or "angular"; `train_top` is how many best-ranked clusters each
++    /// training query trains.
++    #[new]
++    #[pyo3(signature = (metric, n_clusters, rank, train_top=32, seed=24301))]
++    fn new(
++        metric: &str,
++        n_clusters: usize,
++        rank: usize,
++        train_top: usize,
++        seed: u64,
++    ) -> PyResult<Self> {
++        let metric = match metric {
++            "ip" => LowRankMetric::InnerProduct,
++            "angular" => LowRankMetric::Angular,
++            other => return Err(PyValueError::new_err(format!("unsupported metric {other}"))),
++        };
++        Ok(Self {
++            metric,
++            params: LowRankParams {
++                clusters: n_clusters,
++                rank,
++                train_top,
++                seed,
++            },
++            search: LowRankSearchParams {
++                nprobe: 16,
++                rerank: 200,
++            },
++            index: None,
++            scratch: LowRankScratch::default(),
++            out: Vec::new(),
++        })
++    }
++
++    #[pyo3(signature = (x, training_queries=None))]
++    fn fit(
++        &mut self,
++        py: Python<'_>,
++        x: PyArrayLike2<'_, f32, AllowTypeChange>,
++        training_queries: Option<PyArrayLike2<'_, f32, AllowTypeChange>>,
++    ) -> PyResult<()> {
++        let dim = x.shape()[1];
++        let rows = matrix(&x);
++        let training = match training_queries {
++            Some(q) if q.shape()[1] != dim => {
++                return Err(PyValueError::new_err(
++                    "training queries have the wrong dimension",
++                ))
++            }
++            Some(q) => matrix(&q),
++            None => Vec::new(),
++        };
++        let (metric, params) = (self.metric, self.params);
++        let index = py
++            .detach(|| LowRankIvf::build(&rows, dim, &training, metric, &params))
++            .map_err(|e| PyValueError::new_err(e.to_string()))?;
++        self.index = Some(index);
++        Ok(())
++    }
++
++    fn set_query_arguments(&mut self, nprobe: usize, rerank: usize) -> PyResult<()> {
++        if nprobe == 0 {
++            return Err(PyValueError::new_err("nprobe must be positive"));
++        }
++        self.search = LowRankSearchParams { nprobe, rerank };
++        Ok(())
++    }
++
++    fn query<'py>(
++        &mut self,
++        py: Python<'py>,
++        v: PyArrayLike1<'py, f32, AllowTypeChange>,
++        k: usize,
++    ) -> PyResult<Bound<'py, PyArray1<i64>>> {
++        let Self {
++            index,
++            scratch,
++            out,
++            search,
++            ..
++        } = self;
++        let index = index
++            .as_ref()
++            .ok_or_else(|| PyRuntimeError::new_err("the index is not fitted; call fit first"))?;
++        let q: Vec<f32>;
++        let slice = match v.as_slice() {
++            Ok(s) => s,
++            Err(_) => {
++                q = v.as_array().iter().copied().collect();
++                &q
++            }
++        };
++        index
++            .search(slice, k, *search, scratch, out)
++            .map_err(|e| PyValueError::new_err(e.to_string()))?;
++        Ok(out
++            .iter()
++            .map(|&i| i64::from(i))
++            .collect::<Vec<_>>()
++            .into_pyarray(py))
++    }
++}
