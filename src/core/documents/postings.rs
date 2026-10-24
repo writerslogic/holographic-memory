@@ -531,12 +531,22 @@ fn unpack_into(bytes: &[u8], count: usize, bits: u8, mut emit: impl FnMut(usize,
 /// would pass the end of `bytes` read it zero-padded.
 #[inline(always)]
 fn unpack_fixed<const BITS: usize>(bytes: &[u8], count: usize, out: &mut [u64; BLOCK_LEN]) {
+    let out = &mut out[..count];
+    #[cfg(not(target_arch = "x86_64"))]
+    let decoded = 0;
+    #[cfg(target_arch = "x86_64")]
+    let decoded = if BITS <= 25 && count >= 32 && is_x86_feature_detected!("avx2") {
+        // SAFETY: AVX2 was detected; the decoder bounds every input load and output store.
+        unsafe { unpack_avx2::<BITS>(bytes, out) }
+    } else {
+        0
+    };
     let mask = (1u64 << BITS) - 1;
     let whole = match bytes.len().checked_sub(8) {
         Some(spare) => ((spare * 8 + 7) / BITS + 1).min(count),
         None => 0,
     };
-    for (index, value) in out[..whole].iter_mut().enumerate() {
+    for (index, value) in out[..whole].iter_mut().enumerate().skip(decoded) {
         let bit = index * BITS;
         let window: [u8; 8] = bytes[bit / 8..bit / 8 + 8].try_into().expect("eight bytes");
         *value = (u64::from_le_bytes(window) >> (bit % 8)) & mask;
@@ -547,6 +557,46 @@ fn unpack_fixed<const BITS: usize>(bytes: &[u8], count: usize, out: &mut [u64; B
         let tail = &bytes[bit / 8..(bit / 8 + 8).min(bytes.len())];
         window[..tail.len()].copy_from_slice(tail);
         *value = (u64::from_le_bytes(window) >> (bit % 8)) & mask;
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn unpack_avx2<const BITS: usize>(bytes: &[u8], out: &mut [u64]) -> usize {
+    use std::arch::x86_64::*;
+    assert!((1..=25).contains(&BITS));
+    let shuffle = std::array::from_fn::<_, 32, _>(|i| {
+        let lane = i / 4;
+        (lane * BITS / 8 - (lane / 4) * (BITS / 2) + i % 4) as u8
+    });
+    let shifts = std::array::from_fn::<_, 8, _>(|i| (i * BITS % 8) as u32);
+    // SAFETY: lookup arrays span 32 bytes. Each iteration checks both 16-byte
+    // input windows and eight output slots. Unaligned intrinsics impose no alignment.
+    unsafe {
+        let shuffle = _mm256_loadu_si256(shuffle.as_ptr().cast());
+        let shifts = _mm256_loadu_si256(shifts.as_ptr().cast());
+        let mask = _mm256_set1_epi32(((1u32 << BITS) - 1) as i32);
+        let mut done = 0;
+        while done + 8 <= out.len() && done * BITS / 8 + BITS / 2 + 16 <= bytes.len() {
+            let first = bytes.as_ptr().add(done * BITS / 8);
+            let lo = _mm_loadu_si128(first.cast());
+            let hi = _mm_loadu_si128(first.add(BITS / 2).cast());
+            let word = _mm256_inserti128_si256::<1>(_mm256_castsi128_si256(lo), hi);
+            let values = _mm256_and_si256(
+                _mm256_srlv_epi32(_mm256_shuffle_epi8(word, shuffle), shifts),
+                mask,
+            );
+            _mm256_storeu_si256(
+                out.as_mut_ptr().add(done).cast(),
+                _mm256_cvtepu32_epi64(_mm256_castsi256_si128(values)),
+            );
+            _mm256_storeu_si256(
+                out.as_mut_ptr().add(done + 4).cast(),
+                _mm256_cvtepu32_epi64(_mm256_extracti128_si256::<1>(values)),
+            );
+            done += 8;
+        }
+        done
     }
 }
 
@@ -1720,6 +1770,33 @@ mod tests {
                     );
                     for (index, &value) in values.iter().enumerate() {
                         assert_eq!(unpack(&bytes, index, bits), value);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn block_unpacking_preserves_output_after_short_and_unaligned_blocks() {
+        for bits in 1..=32u8 {
+            let mask = (1u64 << bits) - 1;
+            for count in [31, 32, 33, 127, 128] {
+                let values: Vec<u64> = (0..count)
+                    .map(|i| match i % 3 {
+                        0 => mask,
+                        1 => 0,
+                        _ => (i as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) & mask,
+                    })
+                    .collect();
+                for offset in 0..32 {
+                    for slack in [0, 7, 8, 15, 16] {
+                        let mut bytes = vec![0xcc; offset];
+                        pack(&mut bytes, values.iter().copied(), bits);
+                        bytes.extend(std::iter::repeat_n(0xff, slack));
+                        let mut out = [u64::MAX; BLOCK_LEN];
+                        unpack_values(&bytes[offset..], count, bits, &mut out);
+                        assert_eq!(&out[..count], values, "bits={bits}, count={count}");
+                        assert!(out[count..].iter().all(|&value| value == u64::MAX));
                     }
                 }
             }
