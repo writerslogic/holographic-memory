@@ -421,9 +421,9 @@ impl Graph {
             })
             .collect::<Result<Vec<_>, HmsError>>()?;
         let mut reverse_candidates = lists(self.n)?;
-        for vertex in 0..self.n {
-            stats.forward_edges = add_edges(stats.forward_edges, forward[vertex].len())?;
-            for &neighbor in &forward[vertex] {
+        for (vertex, outgoing) in forward.iter().enumerate() {
+            stats.forward_edges = add_edges(stats.forward_edges, outgoing.len())?;
+            for &neighbor in outgoing {
                 let incoming = &mut reverse_candidates[neighbor as usize];
                 incoming
                     .try_reserve(1)
