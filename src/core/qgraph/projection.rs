@@ -802,6 +802,53 @@ mod tests {
         assert_eq!(borrowed.structure_hash(), reordered.structure_hash());
     }
 
+    /// The limited exact path equals projecting caller-supplied exact lists for the first
+    /// `limit` queries, and the parallel selection gives the same graph on 1 and 4 threads.
+    #[test]
+    fn caller_neighbors_match_limited_training_on_any_thread_count() {
+        let (n, dim) = (400usize, 4usize);
+        let data: Vec<f32> = (0..n * dim)
+            .map(|i| ((i * 7919 % 1009) as f32 / 1009.0 - 0.5) * (1.0 + (i % dim) as f32))
+            .collect();
+        let queries: Vec<f32> = (0..40 * dim)
+            .map(|i| ((i * 104_729 % 997) as f32 / 997.0 - 0.3) * 1.5)
+            .collect();
+        let params = BuildParams {
+            metric: Metric::Euclidean,
+            degree: 8,
+            build_ef: 32,
+            ..Default::default()
+        };
+        let (limit, k, pd) = (30, 12, 4);
+        let base = Graph::build(&data, dim, &params).unwrap();
+        let ids = scalar_neighbors(&base, &queries[..limit * dim], k);
+        let hashes: Vec<(u64, u64)> = [1, 4]
+            .into_iter()
+            .map(|threads| {
+                let pool = rayon::ThreadPoolBuilder::new()
+                    .num_threads(threads)
+                    .build()
+                    .unwrap();
+                pool.install(|| {
+                    let mut exact = Graph::build(&data, dim, &params).unwrap();
+                    exact
+                        .apply_training_queries_with(&queries, limit, k, pd)
+                        .unwrap();
+                    let mut supplied = Graph::build(&data, dim, &params).unwrap();
+                    let stats = supplied
+                        .project_training_neighbors(&queries[..limit * dim], &ids, k, pd)
+                        .unwrap();
+                    assert_eq!(stats.training_queries, limit);
+                    assert!(stats.added_edges > 0);
+                    (exact.structure_hash(), supplied.structure_hash())
+                })
+            })
+            .collect();
+        assert_eq!(hashes[0].0, hashes[0].1);
+        assert_eq!(hashes[0], hashes[1]);
+        assert_ne!(hashes[0].0, base.structure_hash());
+    }
+
     #[test]
     fn invalid_queries_are_rejected_before_build_including_unused_rows() {
         let data = graph().vectors;

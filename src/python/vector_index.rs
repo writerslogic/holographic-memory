@@ -422,7 +422,13 @@ impl PyVectorIndex {
                                 } else {
                                     (&lifted, graph_dim)
                                 };
-                                approximate_neighbors(&untrained, served, served_dim, k, training_ef)?
+                                approximate_neighbors(
+                                    &untrained,
+                                    served,
+                                    served_dim,
+                                    k,
+                                    training_ef,
+                                )?
                             };
                             if k >= 2 && pd < n {
                                 g.project_training_neighbors(&lifted, &ids, k, pd)?;
