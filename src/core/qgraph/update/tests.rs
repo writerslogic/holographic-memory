@@ -1465,3 +1465,103 @@ fn merged_consolidation_interruption_recovers_committed_state() {
         assert_eq!(UpdatableVGraph::open(&path).unwrap().len(), 600 - 39 + 1);
     }
 }
+
+#[test]
+fn merged_deleted_entry_preserves_the_pinned_generation() {
+    let dim = 16;
+    let rows = data(1200, dim);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let index = UpdatableVGraph::create(&path, &rows[..1024 * dim], dim, &params()).unwrap();
+    let entry = index
+        .state
+        .read()
+        .base
+        .graph
+        .as_ref()
+        .unwrap()
+        .entry_vertex();
+    let doomed: Vec<u32> = (0..1024).filter(|&id| id % 7 == 0 || id == entry).collect();
+    index.delete_batch(&doomed).unwrap();
+    index
+        .insert_batch(&(1024..1200).collect::<Vec<_>>(), &rows[1024 * dim..])
+        .unwrap();
+    assert_eq!(
+        index
+            .consolidate_with(ConsolidationMode::Merge {
+                rebuild_after: 10.0
+            })
+            .unwrap(),
+        Consolidation::Merged
+    );
+    let state = index.state.read();
+    let bytes = std::fs::read(state.manifest.vertex_path(&path)).unwrap();
+    assert_eq!(crc32fast::hash(&bytes), 832_240_014);
+}
+
+#[test]
+#[ignore = "development consolidation memory and timing measurement"]
+fn consolidation_live_set_peak() {
+    super::super::prof::HOOK
+        .set(|phase| {
+            if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+                for line in status
+                    .lines()
+                    .filter(|s| s.starts_with("VmRSS:") || s.starts_with("VmHWM:"))
+                {
+                    println!("MEMORY {phase} {line}");
+                }
+            }
+        })
+        .unwrap();
+    let n: usize = std::env::var("HMS_CONSOLIDATION_ROWS")
+        .map_or(Ok(100_000), |s| s.parse())
+        .unwrap();
+    assert!((1024..=1_000_000).contains(&n));
+    let dim = 100;
+    let rows = data(n + n / 5, dim);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("index");
+    let index = UpdatableVGraph::create(&path, &rows[..n * dim], dim, &params()).unwrap();
+    let entry = index
+        .state
+        .read()
+        .base
+        .graph
+        .as_ref()
+        .unwrap()
+        .entry_vertex();
+    let doomed: Vec<u32> = (0..n as u32)
+        .filter(|&id| id % 7 == 0 && id != entry)
+        .collect();
+    let capacity = index.batch_capacity();
+    for ids in doomed.chunks(capacity) {
+        index.delete_batch(ids).unwrap();
+        index.commit().unwrap();
+    }
+    let fresh: Vec<u32> = (n as u32..(n + n / 5) as u32).collect();
+    for ids in fresh.chunks(capacity) {
+        let begin = ids[0] as usize * dim;
+        index
+            .insert_batch(ids, &rows[begin..begin + ids.len() * dim])
+            .unwrap();
+        index.commit().unwrap();
+    }
+    drop(rows);
+    let start = std::time::Instant::now();
+    assert_eq!(
+        index
+            .consolidate_with(ConsolidationMode::Merge {
+                rebuild_after: 10.0
+            })
+            .unwrap(),
+        Consolidation::Merged
+    );
+    let elapsed = start.elapsed().as_nanos();
+    let state = index.state.read();
+    let bytes = std::fs::read(state.manifest.vertex_path(&path)).unwrap();
+    println!(
+        "consolidation_ns={elapsed} vertex_crc={}",
+        crc32fast::hash(&bytes)
+    );
+}

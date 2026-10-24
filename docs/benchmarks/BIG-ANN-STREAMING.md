@@ -224,3 +224,41 @@ flock ~/hms-timing.lock systemd-run --user --scope -q \
 Record all 1,280 steps, mean recall across all 640 searches and peak RSS. A kernel
 improvement does not establish that the one-hour/8-GiB limits or a leaderboard target
 have been met.
+
+## Earlier graph-page release (development measurement)
+
+Consolidation now marks rows that lose deleted neighbours while repairing their adjacency,
+then releases the old graph pages before inserting delta rows. This removes a second scan
+of the old adjacency. The encoded generation remains byte-identical.
+
+Three locked interleaved pairs on Intel Core Ultra 9 185H, eight threads pinned to CPUs 0–7,
+used a 500k-row 100D base, degree32/build-ef64, every seventh row deleted except the entry,
+and 100k inserted rows. At the end of the insertion phase, RSS was 441,480–444,072 KiB on
+the parent versus 381,084–381,300 KiB with earlier release. All six encoded generations
+had CRC32 434904111. Whole-process peak RSS stayed approximately 516–518 MiB
+(528,836–530,216 KiB); that high-water mark includes fixture construction. Consolidation
+times varied 19.86–27.29 s versus 19.79–22.32 s; no reliable speedup is established.
+
+`benchmarks/results/streaming_page_release_v1.json` records each pair and load average.
+Apply its sibling directory's `baseline.patch` to the recorded parent to add the same
+fixture and generation test. Build both test executables with
+`cargo test --release --lib consolidation_live_set_peak --no-run`. Hold the timing lock,
+set `RAYON_NUM_THREADS=8 HMS_CONSOLIDATION_ROWS=500000`, and run A/B, B/A, A/B with
+`/usr/bin/time -v taskset -c 0-7 <test-executable> consolidation_live_set_peak --ignored
+--nocapture --test-threads=1`. Phase instrumentation is enabled identically in both arms.
+
+An isolated consolidation peak, an 8-GiB constrained scaled replay, and final-runbook
+completion/recall remain unmeasured. After the standings freeze is lifted, pin the adapter
+to this revision with R32/L64/alpha1.0/T8, merge enabled, delta/deleted ratios 1.0/0.3,
+ef256, and run in the prepared harness checkout:
+
+```sh
+flock ~/hms-timing.lock systemd-run --user --scope -q \
+  -p MemoryMax=8G -p MemorySwapMax=0 taskset -c 0-7 \
+  /usr/bin/time -v timeout 3600 uv run python run.py --nodocker \
+  --neurips23track streaming --algorithm hms --dataset msturing-30M-clustered \
+  --runbook_path neurips23/runbooks/final_runbook.yaml
+```
+
+Require all 1,280 steps, recall averaged over all 640 searches, and memory below 8 GiB.
+The phase-RSS reduction alone does not establish that outcome.
