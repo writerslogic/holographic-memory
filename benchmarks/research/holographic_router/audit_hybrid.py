@@ -11,6 +11,7 @@ import statistics
 import numpy as np
 
 from hybrid_probe import make_case
+from recorded_source import verify_source
 
 
 HERE = Path(__file__).resolve().parent
@@ -31,8 +32,8 @@ def audit(directory):
     plan = json.loads((HERE / "hybrid_PLAN.json").read_text())
     summary = json.loads((directory / "summary.json").read_text())
     cases = [json.loads(line) for line in (directory / "cases.jsonl").read_text().splitlines()]
+    verify_source(HERE / "hybrid_probe.py", summary["source_sha256"])
     for key, path in [("plan_sha256", HERE / "hybrid_PLAN.json"),
-                      ("source_sha256", HERE / "hybrid_probe.py"),
                       ("base_probe_sha256", HERE / "probe.py"),
                       ("cases_sha256", directory / "cases.jsonl")]:
         assert summary[key] == hashlib.sha256(path.read_bytes()).hexdigest()

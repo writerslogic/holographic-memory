@@ -15,7 +15,7 @@ import time
 
 import numpy as np
 
-from probe import PhaseSketch, coverage, generate, ordering, record, reservoir_scores, squared_l2, timed
+from probe import PhaseSketch, generate, ordering, record, reservoir_scores, squared_l2, timed
 
 HERE = Path(__file__).resolve().parent
 

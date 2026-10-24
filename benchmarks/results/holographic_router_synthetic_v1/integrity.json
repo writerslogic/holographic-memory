@@ -1,5 +1,6 @@
 {
-  "sealed_sources_unchanged": true,
+  "sealed_source_artifacts_unchanged": true,
   "result_hashes_match": true,
+  "active_hybrid_source_change": "Remove unused coverage import only; exact original archived",
   "all_aggregates_and_negative_comparisons_recomputed": true
 }

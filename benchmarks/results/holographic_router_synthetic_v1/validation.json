@@ -1,7 +1,7 @@
 {
   "scope": "Synthetic Python research and evidence only; no native production edits.",
   "correctness_tests": {
-    "passed": 11,
+    "passed": 13,
     "log": "checks/python-tests-final.log"
   },
   "independent_recomputation": {
@@ -49,5 +49,13 @@
   "log_sanitization": "Local worktree and private-target paths replaced by placeholders; no test output or outcomes removed.",
   "decision": "Reject both frozen routing candidates; no official development proposal.",
   "python_compile": "pass",
-  "evidence_hash_checks": "pass"
+  "evidence_hash_checks": "pass",
+  "review_cleanup": {
+    "change": "Remove unused coverage import from active hybrid_probe.py only",
+    "recorded_hybrid_source_sha256": "bda5f826e8f723bcaea91a00c74a790581f8827ae069376b377635e53f21011a",
+    "active_hybrid_source_sha256": "1aaa053e072df3d51b5f0040d3bb2101c0713457019f927e26f8bcc2962e5cd0",
+    "archive_and_exact_cleanup_checks": "pass",
+    "hybrid_metric_audit_unchanged": true,
+    "experiment_rerun": false
+  }
 }
