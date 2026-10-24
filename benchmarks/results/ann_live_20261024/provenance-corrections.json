@@ -1,0 +1,14 @@
+{
+  "observed_at_utc": "2026-10-24T08:10Z",
+  "sift_preemption": {
+    "original_container": "ta-01M5PBSD0QM7SJ1WDAQT916KBR",
+    "original_cpu": "AMD family25 model1 AVX2",
+    "replacement_container": "ta-01M5PDWGY5JF6G29DRNPS32RMR",
+    "replacement_cpu": "AMD family25 model17 AVX512",
+    "replacement_started_utc": "2026-10-24T07:44:30Z",
+    "affected_results": "HMS degree32 completed on original container, d48/d64 and comparator on replacement. Degree32 must be separately archived and rerun on replacement before a full-grid matched comparison.",
+    "entrypoint_shim_reapplied": "2026-10-24T08:10Z before comparator launch",
+    "entrypoint_sha256": "a8ae755a787ec25c4cd78696658e2766e7cf5da13572b0edfac32c4dbb8958d7",
+    "action": "wait for active HMS/comparator to finish, then rerun only degree32 on replacement within original dataset cap; preserve original raw points as diagnostic"
+  }
+}
