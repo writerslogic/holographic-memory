@@ -1,0 +1,1635 @@
+{
+  "at": "2026-10-24T15:01:40.214043+00:00",
+  "source": "Rescued immutable ledger files and original Volume inventory; no new Modal calls",
+  "marker_scope": "Observed committed completion-marker files, not new benchmark validation of partial query groups",
+  "rows": [
+    {
+      "dataset": "agnews-mxbai-1024-euclidean",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATH4SPV2PQVY7TXBFWM8R",
+      "start": "2026-10-24T06:55:25Z",
+      "end": "2026-10-24T10:43:59Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATH4SPV2PQVY7TXBFWM8R",
+          "end": "2026-10-24T10:43:59Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "agnews-mxbai-1024-euclidean",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "running",
+      "expected": 101,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATH4SPV2PQVY7TXBFWM8R",
+      "start": "2026-10-24T10:48:11Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 2,
+      "raw_bytes": 32488240,
+      "committed_markers": 40,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "arxiv-nomic-768-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PHAGA31Q2YJYZDKHJ3N4MR",
+      "start": "2026-10-24T09:03:40Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 7,
+      "raw_bytes": 90967464,
+      "committed_markers": 112,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "arxiv-nomic-768-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 4,
+      "failures": 0,
+      "container_id": "ta-01M5PKP35HA4E538A8D193RJJR",
+      "start": "2026-10-24T09:28:15Z",
+      "end": "2026-10-24T11:58:13Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATHEJWVKG623AM049J08R",
+          "end": "2026-10-24T07:20:09Z",
+          "outcome": "interrupted (heartbeat 1134s old)",
+          "progress": false
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5PBDFYBZ61M5ZQESDPGNYRR",
+          "end": "2026-10-24T08:03:11Z",
+          "outcome": "interrupted (heartbeat 1164s old)",
+          "progress": false
+        },
+        {
+          "attempt": 3,
+          "container": "ta-01M5PDWKT94KF71BSTSRHMKBCR",
+          "end": "2026-10-24T09:02:43Z",
+          "outcome": "interrupted (heartbeat 1110s old)",
+          "progress": false
+        },
+        {
+          "attempt": 4,
+          "container": "ta-01M5PKP35HA4E538A8D193RJJR",
+          "end": "2026-10-24T11:58:13Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "ccnews-nomic-768-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 2,
+      "failures": 1,
+      "container_id": "ta-01M5Q2C4P0PWT509AMTFQSFZ9R",
+      "start": "2026-10-24T13:57:57Z",
+      "end": null,
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PYHHJ1VVKQYCWZ64XR3QVR",
+          "end": "2026-10-24T13:57:55Z",
+          "outcome": "interrupted (heartbeat 937s old)",
+          "progress": false
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 3,
+      "raw_bytes": 38986056,
+      "committed_markers": 48,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "ccnews-nomic-768-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATHZNQ0Y3256HHNV659GR",
+      "start": "2026-10-24T06:53:44Z",
+      "end": "2026-10-24T08:17:04Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATHZNQ0Y3256HHNV659GR",
+          "end": "2026-10-24T08:17:04Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "ccnews-nomic-768-normalized",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "done",
+      "expected": 101,
+      "validation": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      },
+      "attempts": 4,
+      "failures": 1,
+      "container_id": "ta-01M5PYHHJ1VVKQYCWZ64XR3QVR",
+      "start": "2026-10-24T12:55:04Z",
+      "end": "2026-10-24T13:38:11Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATHZNQ0Y3256HHNV659GR",
+          "end": "2026-10-24T08:51:55Z",
+          "outcome": "interrupted (heartbeat 1165s old)",
+          "progress": false
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5PGP4JKDE7HMXCG7X9VKDGR",
+          "end": "2026-10-24T10:53:33Z",
+          "outcome": "interrupted (heartbeat 1143s old)",
+          "progress": true
+        },
+        {
+          "attempt": 3,
+          "container": "ta-01M5PQN38EGVXVMZ66TVE6B1AR",
+          "end": "2026-10-24T12:55:02Z",
+          "outcome": "interrupted (heartbeat 1224s old)",
+          "progress": true
+        },
+        {
+          "attempt": 4,
+          "container": "ta-01M5PYHHJ1VVKQYCWZ64XR3QVR",
+          "end": "2026-10-24T13:38:11Z",
+          "markers": 101,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 5,
+      "raw_bytes": 82032792,
+      "committed_markers": 101,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "celeba-resnet-2048-cosine",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+      "start": "2026-10-24T06:55:00Z",
+      "end": "2026-10-24T08:16:28Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+          "end": "2026-10-24T08:16:28Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "celeba-resnet-2048-cosine",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "done",
+      "expected": 101,
+      "validation": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+      "start": "2026-10-24T08:20:17Z",
+      "end": "2026-10-24T11:12:48Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+          "end": "2026-10-24T11:12:48Z",
+          "markers": 101,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 5,
+      "raw_bytes": 82032792,
+      "committed_markers": 101,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "coco-nomic-768-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "done",
+      "expected": 320,
+      "validation": {
+        "done": true,
+        "expected": 320,
+        "markers": 320,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 320
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+      "start": "2026-10-24T09:33:35Z",
+      "end": "2026-10-24T11:17:46Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+          "end": "2026-10-24T11:17:46Z",
+          "markers": 320,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 20,
+      "raw_bytes": 259907040,
+      "committed_markers": 320,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "coco-nomic-768-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+      "start": "2026-10-24T06:54:21Z",
+      "end": "2026-10-24T08:16:17Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+          "end": "2026-10-24T08:16:17Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "coco-nomic-768-normalized",
+      "job": "lorann",
+      "algorithm": "lorann",
+      "state": "done",
+      "expected": 576,
+      "validation": {
+        "done": true,
+        "expected": 576,
+        "markers": 576,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 576
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+      "start": "2026-10-24T08:17:37Z",
+      "end": "2026-10-24T09:32:37Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+          "end": "2026-10-24T09:32:37Z",
+          "markers": 576,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 16,
+      "raw_bytes": 467827072,
+      "committed_markers": 576,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "codesearchnet-jina-768-cosine",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATHY8AJ6AMZKNZF0PR7NR",
+      "start": "2026-10-24T12:05:21Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 51981408,
+      "committed_markers": 64,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "codesearchnet-jina-768-cosine",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATHY8AJ6AMZKNZF0PR7NR",
+      "start": "2026-10-24T06:55:56Z",
+      "end": "2026-10-24T12:04:13Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATHY8AJ6AMZKNZF0PR7NR",
+          "end": "2026-10-24T12:04:13Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "cqadupstack-lemur-2048-ip",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATJ5M46CEM2MS3TQDG47R",
+      "start": "2026-10-24T13:18:02Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 51981408,
+      "committed_markers": 64,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "cqadupstack-lemur-2048-ip",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATJ5M46CEM2MS3TQDG47R",
+      "start": "2026-10-24T06:58:33Z",
+      "end": "2026-10-24T13:16:50Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATJ5M46CEM2MS3TQDG47R",
+          "end": "2026-10-24T13:16:50Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "cqadupstack-muvera-5120-ip",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "running",
+      "expected": 180,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATJXYG4QN3W2RVTQ7XBJR",
+      "start": "2026-10-24T07:51:41Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 2,
+      "raw_bytes": 60914960,
+      "committed_markers": 75,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "dpr-jina-768-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "running",
+      "expected": 180,
+      "validation": null,
+      "attempts": 2,
+      "failures": 1,
+      "container_id": "ta-01M5Q3AHPPA7P3QECHJ1JGPTCR",
+      "start": "2026-10-24T14:16:33Z",
+      "end": null,
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATJMTFB0MNGJ1RP22DS6R",
+          "end": "2026-10-24T14:16:31Z",
+          "outcome": "interrupted (heartbeat 1096s old)",
+          "progress": false
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 0,
+      "raw_bytes": 0,
+      "committed_markers": 0,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "glove-200-cosine",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATKTP8B8NTMS8P6083N7R",
+      "start": "2026-10-24T06:55:31Z",
+      "end": "2026-10-24T09:32:07Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATKTP8B8NTMS8P6083N7R",
+          "end": "2026-10-24T09:32:07Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "glove-200-cosine",
+      "job": "pag",
+      "algorithm": "pag",
+      "state": "running",
+      "expected": 108,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATKTP8B8NTMS8P6083N7R",
+      "start": "2026-10-24T09:33:12Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 5,
+      "raw_bytes": 36550040,
+      "committed_markers": 45,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "gooaq-distilroberta-768-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATKDQTWS2TKRJ5VBRVZMR",
+      "start": "2026-10-24T06:55:07Z",
+      "end": "2026-10-24T11:13:55Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATKDQTWS2TKRJ5VBRVZMR",
+          "end": "2026-10-24T11:13:55Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "gooaq-distilroberta-768-normalized",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "running",
+      "expected": 101,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATKDQTWS2TKRJ5VBRVZMR",
+      "start": "2026-10-24T11:17:26Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 2,
+      "raw_bytes": 31676048,
+      "committed_markers": 39,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "hotpotqa-harrier-640-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "running",
+      "expected": 180,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATKV68PKYMXT5EH14P1JR",
+      "start": "2026-10-24T07:04:30Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 1,
+      "raw_bytes": 36548920,
+      "committed_markers": 45,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "imagenet-align-640-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATMG062BP8EBXE355Q8DR",
+      "start": "2026-10-24T11:46:16Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 8,
+      "raw_bytes": 103962816,
+      "committed_markers": 128,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "imagenet-align-640-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATMG062BP8EBXE355Q8DR",
+      "start": "2026-10-24T06:55:09Z",
+      "end": "2026-10-24T11:45:13Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATMG062BP8EBXE355Q8DR",
+          "end": "2026-10-24T11:45:13Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "imagenet-clip-512-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+      "start": "2026-10-24T13:32:55Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 1,
+      "raw_bytes": 12995352,
+      "committed_markers": 16,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "imagenet-clip-512-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+      "start": "2026-10-24T06:55:01Z",
+      "end": "2026-10-24T10:16:41Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+          "end": "2026-10-24T10:16:41Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "imagenet-clip-512-normalized",
+      "job": "symphonyqg",
+      "algorithm": "symphonyqg",
+      "state": "done",
+      "expected": 52,
+      "validation": {
+        "done": true,
+        "expected": 52,
+        "markers": 52,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 52
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+      "start": "2026-10-24T10:19:39Z",
+      "end": "2026-10-24T13:31:48Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+          "end": "2026-10-24T13:31:48Z",
+          "markers": 52,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 42235104,
+      "committed_markers": 52,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "inaturalist-resnet-2048-cosine",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 3,
+      "failures": 1,
+      "container_id": "ta-01M5PJEQJ7DFNRVEWT7QM2VQRR",
+      "start": "2026-10-24T09:22:07Z",
+      "end": "2026-10-24T09:56:22Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATMG0A6CYR18Z1V11TGQR",
+          "end": "2026-10-24T07:23:34Z",
+          "outcome": "interrupted (heartbeat 1108s old)",
+          "progress": false
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5PBN8XKQ2A7T4PXS31T8D1R",
+          "end": "2026-10-24T09:22:04Z",
+          "outcome": "interrupted (heartbeat 1107s old)",
+          "progress": true
+        },
+        {
+          "attempt": 3,
+          "container": "ta-01M5PJEQJ7DFNRVEWT7QM2VQRR",
+          "end": "2026-10-24T09:56:22Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "inaturalist-resnet-2048-cosine",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "running",
+      "expected": 101,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PJEQJ7DFNRVEWT7QM2VQRR",
+      "start": "2026-10-24T10:00:27Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 3,
+      "raw_bytes": 48732360,
+      "committed_markers": 60,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "laion-clip-512-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATN6HWJ5THC80W1W65RAR",
+      "start": "2026-10-24T11:43:15Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 9,
+      "raw_bytes": 116958168,
+      "committed_markers": 144,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "laion-clip-512-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATN6HWJ5THC80W1W65RAR",
+      "start": "2026-10-24T06:55:25Z",
+      "end": "2026-10-24T11:42:14Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATN6HWJ5THC80W1W65RAR",
+          "end": "2026-10-24T11:42:14Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "landmark-dino-768-cosine",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATMQKY2AWHG30BA59JVCR",
+      "start": "2026-10-24T06:55:36Z",
+      "end": "2026-10-24T09:13:28Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATMQKY2AWHG30BA59JVCR",
+          "end": "2026-10-24T09:13:28Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "landmark-dino-768-cosine",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "running",
+      "expected": 101,
+      "validation": null,
+      "attempts": 2,
+      "failures": 0,
+      "container_id": "ta-01M5PRC9NA5XVBE3S714B6NDGR",
+      "start": "2026-10-24T11:07:36Z",
+      "end": null,
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATMQKY2AWHG30BA59JVCR",
+          "end": "2026-10-24T11:07:34Z",
+          "outcome": "interrupted (heartbeat 1216s old)",
+          "progress": true
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 3,
+      "raw_bytes": 44671400,
+      "committed_markers": 55,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "landmark-nomic-768-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PDWQVEXHTNJSV6WPESQA3R",
+      "start": "2026-10-24T12:27:14Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 8,
+      "raw_bytes": 103962816,
+      "committed_markers": 128,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "landmark-nomic-768-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 2,
+      "failures": 0,
+      "container_id": "ta-01M5PDWQVEXHTNJSV6WPESQA3R",
+      "start": "2026-10-24T08:02:47Z",
+      "end": "2026-10-24T09:17:16Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATN6HDQ0YTRZ5XZRNPCSR",
+          "end": "2026-10-24T08:02:45Z",
+          "outcome": "interrupted (heartbeat 1136s old)",
+          "progress": true
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5PDWQVEXHTNJSV6WPESQA3R",
+          "end": "2026-10-24T09:17:16Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "landmark-nomic-768-normalized",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "done",
+      "expected": 101,
+      "validation": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PDWQVEXHTNJSV6WPESQA3R",
+      "start": "2026-10-24T09:21:23Z",
+      "end": "2026-10-24T12:26:16Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PDWQVEXHTNJSV6WPESQA3R",
+          "end": "2026-10-24T12:26:16Z",
+          "markers": 101,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 5,
+      "raw_bytes": 82032792,
+      "committed_markers": 101,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "llama-128-ip",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+      "start": "2026-10-24T06:54:37Z",
+      "end": "2026-10-24T07:31:38Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+          "end": "2026-10-24T07:31:38Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "llama-128-ip",
+      "job": "mlann-rf",
+      "algorithm": "mlann-rf",
+      "state": "failed",
+      "expected": 380,
+      "validation": {
+        "done": false,
+        "expected": 380,
+        "markers": 0,
+        "problems": [
+          "ip_RF_10_14.hdf5:0_0075: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_0025: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_00125: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_0005: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_00025: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_000125: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_0001: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:7_5e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:5e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:2_5e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_75e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_25e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:7_5e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:5e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:2_5e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_75e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_25e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:7_5e_07: ValueError: no completion marker"
+        ],
+        "test_count": 1000,
+        "valid": 0
+      },
+      "attempts": 3,
+      "failures": 3,
+      "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+      "start": "2026-10-24T08:01:11Z",
+      "end": "2026-10-24T08:01:24Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+          "end": "2026-10-24T07:57:32Z",
+          "markers": 0,
+          "outcome": "exit -15"
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+          "end": "2026-10-24T07:59:08Z",
+          "markers": 0,
+          "outcome": "exit -15"
+        },
+        {
+          "attempt": 3,
+          "container": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+          "end": "2026-10-24T08:01:24Z",
+          "markers": 0,
+          "outcome": "exit -15"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 0,
+      "raw_bytes": 0,
+      "committed_markers": 0,
+      "effective_state": "failed"
+    },
+    {
+      "dataset": "llama-128-ip",
+      "job": "roargraph",
+      "algorithm": "roargraph",
+      "state": "done",
+      "expected": 108,
+      "validation": {
+        "done": true,
+        "expected": 108,
+        "markers": 108,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 108
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+      "start": "2026-10-24T08:02:03Z",
+      "end": "2026-10-24T08:24:29Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+          "end": "2026-10-24T08:24:29Z",
+          "markers": 108,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 6,
+      "raw_bytes": 87718416,
+      "committed_markers": 108,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "msmarco-qwen-1024-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "running",
+      "expected": 180,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATNVBJNVGXBP073M9C58R",
+      "start": "2026-10-24T07:22:16Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 0,
+      "raw_bytes": 0,
+      "committed_markers": 0,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "simplewiki-openai-3072-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATNAXHRNV696SP2HHHP8R",
+      "start": "2026-10-24T06:54:30Z",
+      "end": "2026-10-24T09:07:43Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATNAXHRNV696SP2HHHP8R",
+          "end": "2026-10-24T09:07:43Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "simplewiki-openai-3072-normalized",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "running",
+      "expected": 101,
+      "validation": null,
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATNAXHRNV696SP2HHHP8R",
+      "start": "2026-10-24T09:11:23Z",
+      "end": null,
+      "history": [],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 62539904,
+      "committed_markers": 77,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "yahoo-minilm-384-normalized",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "running",
+      "expected": 320,
+      "validation": null,
+      "attempts": 3,
+      "failures": 1,
+      "container_id": "ta-01M5Q1ZAXYSJDXHRKQM001KQRR",
+      "start": "2026-10-24T13:51:07Z",
+      "end": null,
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R",
+          "end": "2026-10-24T13:25:29Z",
+          "outcome": "interrupted (heartbeat 1049s old)",
+          "progress": true
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5Q0ES3E8VYE1M4N9J0X1RFR",
+          "end": "2026-10-24T13:51:04Z",
+          "outcome": "interrupted (heartbeat 957s old)",
+          "progress": false
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 15,
+      "raw_bytes": 194930280,
+      "committed_markers": 240,
+      "effective_state": "interrupted"
+    },
+    {
+      "dataset": "yahoo-minilm-384-normalized",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 2,
+      "failures": 0,
+      "container_id": "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R",
+      "start": "2026-10-24T08:11:31Z",
+      "end": "2026-10-24T08:56:02Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATNW9NXKXFBKVZ5T31VPR",
+          "end": "2026-10-24T08:11:29Z",
+          "outcome": "interrupted (heartbeat 1116s old)",
+          "progress": true
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R",
+          "end": "2026-10-24T08:56:02Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "yahoo-minilm-384-normalized",
+      "job": "ngt-qg",
+      "algorithm": "ngt-qg",
+      "state": "done",
+      "expected": 101,
+      "validation": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R",
+      "start": "2026-10-24T08:59:22Z",
+      "end": "2026-10-24T11:41:28Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R",
+          "end": "2026-10-24T11:41:28Z",
+          "markers": 101,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 5,
+      "raw_bytes": 82032792,
+      "committed_markers": 101,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "yandex-200-cosine",
+      "job": "glass",
+      "algorithm": "glass",
+      "state": "done",
+      "expected": 320,
+      "validation": {
+        "done": true,
+        "expected": 320,
+        "markers": 320,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 320
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+      "start": "2026-10-24T09:05:47Z",
+      "end": "2026-10-24T12:17:25Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+          "end": "2026-10-24T12:17:25Z",
+          "markers": 320,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 20,
+      "raw_bytes": 259907040,
+      "committed_markers": 320,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "yandex-200-cosine",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+      "start": "2026-10-24T06:55:15Z",
+      "end": "2026-10-24T09:04:44Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+          "end": "2026-10-24T09:04:44Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "yi-128-ip",
+      "job": "hms@12c80decb094",
+      "algorithm": "hms",
+      "state": "done",
+      "expected": 180,
+      "validation": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+      "start": "2026-10-24T06:55:05Z",
+      "end": "2026-10-24T07:21:27Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+          "end": "2026-10-24T07:21:27Z",
+          "markers": 180,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 4,
+      "raw_bytes": 146195680,
+      "committed_markers": 180,
+      "effective_state": "done"
+    },
+    {
+      "dataset": "yi-128-ip",
+      "job": "mlann-rf",
+      "algorithm": "mlann-rf",
+      "state": "failed",
+      "expected": 380,
+      "validation": {
+        "done": false,
+        "expected": 380,
+        "markers": 0,
+        "problems": [
+          "ip_RF_10_14.hdf5:0_0075: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_0025: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_00125: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_0005: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_00025: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_000125: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:0_0001: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:7_5e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:5e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:2_5e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_75e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_25e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1e_05: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:7_5e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:5e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:2_5e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_75e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1_25e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:1e_06: ValueError: no completion marker",
+          "ip_RF_10_14.hdf5:7_5e_07: ValueError: no completion marker"
+        ],
+        "test_count": 1000,
+        "valid": 0
+      },
+      "attempts": 3,
+      "failures": 3,
+      "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+      "start": "2026-10-24T08:01:03Z",
+      "end": "2026-10-24T08:01:23Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+          "end": "2026-10-24T07:57:33Z",
+          "markers": 0,
+          "outcome": "exit -15"
+        },
+        {
+          "attempt": 2,
+          "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+          "end": "2026-10-24T07:59:00Z",
+          "markers": 0,
+          "outcome": "exit -15"
+        },
+        {
+          "attempt": 3,
+          "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+          "end": "2026-10-24T08:01:23Z",
+          "markers": 0,
+          "outcome": "exit -15"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 0,
+      "raw_bytes": 0,
+      "committed_markers": 0,
+      "effective_state": "failed"
+    },
+    {
+      "dataset": "yi-128-ip",
+      "job": "roargraph",
+      "algorithm": "roargraph",
+      "state": "done",
+      "expected": 108,
+      "validation": {
+        "done": true,
+        "expected": 108,
+        "markers": 108,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 108
+      },
+      "attempts": 1,
+      "failures": 0,
+      "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+      "start": "2026-10-24T07:22:07Z",
+      "end": "2026-10-24T07:41:38Z",
+      "history": [
+        {
+          "attempt": 1,
+          "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+          "end": "2026-10-24T07:41:38Z",
+          "markers": 108,
+          "outcome": "exit 0"
+        }
+      ],
+      "provenance_repair": null,
+      "raw_files": 6,
+      "raw_bytes": 87718416,
+      "committed_markers": 108,
+      "effective_state": "done"
+    }
+  ]
+}
