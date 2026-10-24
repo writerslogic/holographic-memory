@@ -1,0 +1,38 @@
+{
+  "cases": 24,
+  "validated_method_records": 1128,
+  "coordinatewise_truth_matches": true,
+  "all_routing_coverages_recomputed": true,
+  "frozen_decisions_match": true,
+  "eligible_configurations": 0,
+  "mutation_roundoff": [
+    {
+      "state": "initial",
+      "live": 10240,
+      "cos_max_abs_error": 0.0,
+      "sin_max_abs_error": 0.0,
+      "query_max_abs_error": 0.0
+    },
+    {
+      "state": "deleted",
+      "live": 10234,
+      "cos_max_abs_error": 6.821210263296962e-13,
+      "sin_max_abs_error": 4.547473508864641e-13,
+      "query_max_abs_error": 5.684341886080802e-14
+    },
+    {
+      "state": "replaced",
+      "live": 10234,
+      "cos_max_abs_error": 9.094947017729282e-13,
+      "sin_max_abs_error": 6.821210263296962e-13,
+      "query_max_abs_error": 2.2737367544323206e-13
+    },
+    {
+      "state": "reused",
+      "live": 10240,
+      "cos_max_abs_error": 9.094947017729282e-13,
+      "sin_max_abs_error": 6.821210263296962e-13,
+      "query_max_abs_error": 1.1368683772161603e-13
+    }
+  ]
+}

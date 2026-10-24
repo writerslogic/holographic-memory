@@ -1,0 +1,12 @@
+{
+  "sealed_utc": "2026-10-24T05:54:49.794862+00:00",
+  "files_sha256": {
+    "hybrid_PLAN.json": "166a098acf720d6b0eac40de3b8eb6b9e5d844f3dff0262c6aca2da2a00d5bb4",
+    "hybrid_probe.py": "bda5f826e8f723bcaea91a00c74a790581f8827ae069376b377635e53f21011a",
+    "test_hybrid.py": "8cc45ee539c15ab475f7b0390819ce1b5e98333efe2dfa8a888d672c4767f8c2",
+    "probe.py": "128ba6a15dd417e6aaf1e79e69451400b68e4f8031fb6720d2378ece9027654a"
+  },
+  "synthetic_tests_passed": 3,
+  "data_seeds_fresh": true,
+  "official_data_accessed": false
+}

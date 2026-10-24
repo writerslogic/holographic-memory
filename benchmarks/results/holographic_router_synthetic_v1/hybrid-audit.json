@@ -1,0 +1,21 @@
+{
+  "cases": 30,
+  "validated_method_records": 330,
+  "coordinatewise_truth_matches": true,
+  "witness_ids_independently_recomputed": true,
+  "all_scores_and_routing_coverages_recomputed": true,
+  "combined_memory_budget_matches": true,
+  "frozen_decision_matches": true,
+  "decision": {
+    "minimum_structured_coverage_at4": 1.0,
+    "worst_delta_vs_better_control_at4": -0.13749999999999996,
+    "mean_delta_vs_better_control_by_scenario": {
+      "coherent": 0.0,
+      "multimodal": 0.0,
+      "mixed": -0.05711805555555555,
+      "rare": 0.0,
+      "interior_rare": 0.0
+    },
+    "eligible": false
+  }
+}

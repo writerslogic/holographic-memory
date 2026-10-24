@@ -1,0 +1,53 @@
+{
+  "scope": "Synthetic Python research and evidence only; no native production edits.",
+  "correctness_tests": {
+    "passed": 11,
+    "log": "checks/python-tests-final.log"
+  },
+  "independent_recomputation": {
+    "phase_records": 1128,
+    "hybrid_records": 330,
+    "all_matched": true,
+    "reports": [
+      "audit.json",
+      "hybrid-audit.json",
+      "integrity.json"
+    ]
+  },
+  "rust": {
+    "toolchain": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "private_target": true,
+    "build_jobs": 2,
+    "rayon_threads": 2,
+    "test_opt_level": 1,
+    "test_debug": 0,
+    "dev_opt_level": 1,
+    "dev_debug": 0,
+    "full_default_gate": {
+      "base_commit": "aa734fe7941c75dd3fb175871db24f6622cade61",
+      "fmt": "pass",
+      "clippy_locked_all_targets": "pass",
+      "test_locked": {
+        "passed": 681,
+        "failed": 0,
+        "ignored": 13
+      }
+    },
+    "rebase_gate": {
+      "base_commit": "e97298382f0738172f5bb1455fae4401410ba3e0",
+      "fmt": "pass",
+      "clippy_locked_all_targets": "pass",
+      "test_locked_lib_core_qgraph": {
+        "passed": 117,
+        "failed": 0,
+        "ignored": 10,
+        "filtered_out": 456
+      }
+    },
+    "features": "No changed Rust features; all-features and MSRV are left to CI, not claimed as local checks."
+  },
+  "log_sanitization": "Local worktree and private-target paths replaced by placeholders; no test output or outcomes removed.",
+  "decision": "Reject both frozen routing candidates; no official development proposal.",
+  "python_compile": "pass",
+  "evidence_hash_checks": "pass"
+}

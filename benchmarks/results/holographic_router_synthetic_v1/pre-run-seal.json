@@ -1,0 +1,11 @@
+{
+  "sealed_utc": "2026-10-24T05:43:21.124211+00:00",
+  "files_sha256": {
+    "PLAN.json": "36832a2f8c92255bc2c4ceaeedd744b4ae0c5781cc8e32aa4eb19765ed860bed",
+    "probe.py": "128ba6a15dd417e6aaf1e79e69451400b68e4f8031fb6720d2378ece9027654a",
+    "test_probe.py": "a1053f19b904ec5778d67c284f19a8c3cf650e2e72921af68e1c41e1550e0cd7"
+  },
+  "synthetic_tests_passed": 7,
+  "official_data_accessed": false,
+  "grid_and_seeds_frozen": true
+}
