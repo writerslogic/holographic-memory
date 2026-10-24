@@ -181,7 +181,7 @@ impl Default for SparseBuildParams {
             postings_per_term: 4000,
             block_fraction: 0.1,
             summary_energy: 0.4,
-            transpose_budget: 1 << 28,
+            transpose_budget: 1 << 26,
             seed: 0x5eed,
             half_values: true,
         }
@@ -292,14 +292,23 @@ impl SparseImpactIndex {
         fwd_offsets.push(0u64);
         let nnz = csr.data.iter().filter(|&&v| v > 0.0).count();
         let mut fwd_ids = Vec::with_capacity(nnz);
-        let mut fwd_vals = Vec::with_capacity(nnz);
+        // Exactly one of the value arrays is filled: half floats never pass through f32 storage.
+        let (mut fwd_vals, mut fwd_half) = if params.half_values {
+            (Vec::new(), Vec::with_capacity(nnz))
+        } else {
+            (Vec::with_capacity(nnz), Vec::new())
+        };
         let mut df = vec![0u64; n_dims];
         for r in 0..n_docs {
             let (ids, vals) = csr.row(r);
             for (&c, &v) in ids.iter().zip(vals) {
                 if v > 0.0 {
                     fwd_ids.push(c as u16);
-                    fwd_vals.push(v);
+                    if params.half_values {
+                        fwd_half.push(f16_bits(v));
+                    } else {
+                        fwd_vals.push(v);
+                    }
                     df[c as usize] += 1;
                 }
             }
@@ -312,7 +321,7 @@ impl SparseImpactIndex {
             fwd_offsets,
             fwd_ids,
             fwd_vals,
-            fwd_half: Vec::new(),
+            fwd_half,
             term_blocks: Vec::with_capacity(n_dims + 1),
             block_doc_offsets: vec![0],
             block_docs: Vec::new(),
@@ -341,8 +350,7 @@ impl SparseImpactIndex {
             let mut cursor = starts.clone();
             let mut postings = vec![(0u32, 0f32); total as usize];
             for d in 0..n_docs {
-                let (ids, vals) = index.row(d as u32);
-                for (&c, &v) in ids.iter().zip(vals) {
+                for (c, v) in index.entries(d as u32) {
                     let c = c as usize;
                     if (lo..hi).contains(&c) {
                         let slot = &mut cursor[c - lo];
@@ -375,19 +383,24 @@ impl SparseImpactIndex {
             }
             lo = hi;
         }
-        if params.half_values {
-            index.fwd_half = index.fwd_vals.par_iter().map(|&v| f16_bits(v)).collect();
-            index.fwd_vals = Vec::new();
-        }
         Ok(index)
     }
 
-    fn row(&self, d: u32) -> (&[u16], &[f32]) {
+    /// Coordinates and stored values of document `d`.
+    fn entries(&self, d: u32) -> impl Iterator<Item = (u16, f32)> + '_ {
         let (a, b) = (
             self.fwd_offsets[d as usize] as usize,
             self.fwd_offsets[d as usize + 1] as usize,
         );
-        (&self.fwd_ids[a..b], &self.fwd_vals[a..b])
+        let half = !self.fwd_half.is_empty();
+        (a..b).map(move |i| {
+            let v = if half {
+                f16_value(self.fwd_half[i])
+            } else {
+                self.fwd_vals[i]
+            };
+            (self.fwd_ids[i], v)
+        })
     }
 
     /// Inner product of document `d` (after `build`) with a dense query.
@@ -533,8 +546,10 @@ impl SparseImpactIndex {
         // Inverted map of the centroids: coordinate -> (centroid, value).
         let mut entries: Vec<(u16, u32, f32)> = Vec::new();
         for (c, &p) in pos[..n_blocks].iter().enumerate() {
-            let (ids, vals) = self.row(list[p as usize].0);
-            entries.extend(ids.iter().zip(vals).map(|(&t, &v)| (t, c as u32, v)));
+            entries.extend(
+                self.entries(list[p as usize].0)
+                    .map(|(t, v)| (t, c as u32, v)),
+            );
         }
         entries.sort_unstable_by_key(|e| (e.0, e.1));
         let starts = &mut scratch.starts;
@@ -550,8 +565,7 @@ impl SparseImpactIndex {
         let mut assign = Vec::with_capacity(list.len());
         for &(doc, _) in list {
             scores.iter_mut().for_each(|s| *s = 0.0);
-            let (ids, vals) = self.row(doc);
-            for (&t, &v) in ids.iter().zip(vals) {
+            for (t, v) in self.entries(doc) {
                 let s = starts[t as usize];
                 if s == u32::MAX {
                     continue;
@@ -585,8 +599,7 @@ impl SparseImpactIndex {
     ) {
         let BuildScratch { dense, touched, .. } = scratch;
         for d in docs {
-            let (ids, vals) = self.row(d);
-            for (&t, &v) in ids.iter().zip(vals) {
+            for (t, v) in self.entries(d) {
                 let slot = &mut dense[t as usize];
                 if *slot == 0.0 {
                     touched.push(t);
@@ -668,6 +681,7 @@ impl SparseImpactIndex {
             visited: vec![0; self.n_docs.div_ceil(64)],
             touched: Vec::new(),
             heap: BinaryHeap::new(),
+            skipped_blocks: 0,
         }
     }
 
@@ -827,6 +841,8 @@ pub struct SparseSearcher<'a> {
     visited: Vec<u64>,
     touched: Vec<u32>,
     heap: BinaryHeap<Hit>,
+    /// Blocks passed over by the summary test, over the searcher's lifetime.
+    skipped_blocks: u64,
 }
 
 impl SparseSearcher<'_> {
@@ -882,6 +898,7 @@ impl SparseSearcher<'_> {
                     bound *= index.block_scales[b];
                     let threshold = heap.peek().map_or(f32::MIN, |h| h.score);
                     if bound * params.heap_factor < threshold {
+                        self.skipped_blocks += 1;
                         continue;
                     }
                 }
@@ -938,17 +955,24 @@ impl SparseImpactIndex {
         if k == 0 {
             return Ok(out);
         }
-        out.par_chunks_mut(k).enumerate().for_each_init(
-            || (self.searcher(), Vec::new()),
-            |(searcher, ids), (q, row)| {
-                let (qi, qv) = queries.row(q);
-                ids.clear();
-                ids.extend(qi.iter().map(|&c| c as u32));
-                for (slot, (doc, _)) in row.iter_mut().zip(searcher.search(ids, qv, k, params)) {
-                    *slot = doc;
-                }
-            },
-        );
+        // A searcher holds dense query arrays and a visited bitset over all documents: give each
+        // task several queries so the per-task setup is amortized.
+        let min_len = nq.div_ceil(rayon::current_num_threads() * 4).max(1);
+        out.par_chunks_mut(k)
+            .enumerate()
+            .with_min_len(min_len)
+            .for_each_init(
+                || (self.searcher(), Vec::new()),
+                |(searcher, ids), (q, row)| {
+                    let (qi, qv) = queries.row(q);
+                    ids.clear();
+                    ids.extend(qi.iter().map(|&c| c as u32));
+                    for (slot, (doc, _)) in row.iter_mut().zip(searcher.search(ids, qv, k, params))
+                    {
+                        *slot = doc;
+                    }
+                },
+            );
         Ok(out)
     }
 }
@@ -1037,6 +1061,11 @@ mod tests {
                     assert_eq!(got, want, "rows {rows} query {q} k {k}");
                 }
             }
+            // The bound must actually prune, or this compares brute force with itself.
+            assert!(
+                searcher.skipped_blocks > 0,
+                "rows {rows}: no block was skipped"
+            );
         }
     }
 

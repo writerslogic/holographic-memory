@@ -90,8 +90,8 @@ impl PySparseIndex {
             },
             index: None,
             search: SparseSearchParams {
-                query_cut: 10,
-                heap_factor: 0.8,
+                query_cut: 4,
+                heap_factor: 1.1,
             },
             pool: thread_pool(threads)?,
         })
@@ -113,7 +113,7 @@ impl PySparseIndex {
     }
 
     /// Query coordinates walked per query (`0` walks all) and the block threshold factor.
-    #[pyo3(signature = (query_cut=10, heap_factor=0.8))]
+    #[pyo3(signature = (query_cut=4, heap_factor=1.1))]
     fn set_search(&mut self, query_cut: usize, heap_factor: f32) -> PyResult<()> {
         if !(heap_factor > 0.0 && heap_factor.is_finite()) {
             return Err(value_err("heap_factor must be positive"));
