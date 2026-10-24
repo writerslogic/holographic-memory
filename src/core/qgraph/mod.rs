@@ -63,8 +63,8 @@ use kernels::{
 #[cfg(feature = "experimental")]
 pub use vertex::QueryProfile;
 pub use vertex::{
-    huge_page_status, HugePageStatus, Residency, SearchKnobs, VGraph, VMetric, VSearchParams,
-    VSearcher,
+    huge_page_status, HugePageStatus, Residency, SearchKnobs, VGraph, VGraphMemoryBreakdown,
+    VMetric, VSearchParams, VSearcher,
 };
 
 /// Default out-degree of every vertex; one batch of edge codes per expansion.
@@ -178,6 +178,26 @@ struct Candidate {
     dist: f32,
     id: u32,
     done: bool,
+}
+
+#[cfg(feature = "experimental-build-search")]
+#[inline(always)]
+fn insert_build_candidate(
+    pool: &mut Vec<Candidate>,
+    candidate: Candidate,
+    limit: usize,
+) -> Option<usize> {
+    debug_assert!(limit > 0 && pool.len() <= limit);
+    if pool.len() == limit && candidate.dist >= pool[limit - 1].dist {
+        return None;
+    }
+    let pos = pool.partition_point(|c| c.dist <= candidate.dist);
+    if pool.len() == limit {
+        // The bound check guarantees that this tail cannot survive the insertion.
+        let _ = pool.pop();
+    }
+    pool.insert(pos, candidate);
+    Some(pos)
 }
 
 /// Visited marks with an 8-bit epoch, as the vertex index keeps them: a quarter of the cache
@@ -723,19 +743,35 @@ impl Rows<'_> {
             }
             let mut best = usize::MAX;
             for (&u, &du) in fresh.iter().zip(&dists) {
-                if pool.len() >= l && du >= pool[l - 1].dist {
-                    continue;
-                }
-                let pos = pool.partition_point(|c| c.dist <= du);
-                pool.insert(
-                    pos,
+                #[cfg(feature = "experimental-build-search")]
+                let Some(pos) = insert_build_candidate(
+                    &mut pool,
                     Candidate {
                         dist: du,
                         id: u,
                         done: false,
                     },
-                );
-                pool.truncate(l);
+                    l,
+                ) else {
+                    continue;
+                };
+                #[cfg(not(feature = "experimental-build-search"))]
+                let pos = {
+                    if pool.len() >= l && du >= pool[l - 1].dist {
+                        continue;
+                    }
+                    let pos = pool.partition_point(|c| c.dist <= du);
+                    pool.insert(
+                        pos,
+                        Candidate {
+                            dist: du,
+                            id: u,
+                            done: false,
+                        },
+                    );
+                    pool.truncate(l);
+                    pos
+                };
                 best = best.min(pos);
                 // The list header of a pooled vertex is read when it is expanded.
                 build_kernels::prefetch_meta(graph.len_word(u as usize));
@@ -1850,6 +1886,82 @@ fn push_top(top: &mut Vec<(f32, u32)>, k: usize, dist: f32, id: u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "experimental-build-search")]
+    #[test]
+    fn build_pool_retirement_matches_ordered_merge_without_growth() {
+        for limit in [
+            1usize, 2, 3, 7, 8, 9, 31, 32, 33, 63, 64, 65, 199, 200, 201, 499, 500, 501,
+        ] {
+            for len in [0, limit - 1, limit] {
+                let original: Vec<_> = (0..len)
+                    .map(|id| Candidate {
+                        dist: (id / 3) as f32,
+                        id: id as u32,
+                        done: id % 3 == 0,
+                    })
+                    .collect();
+                let bound = original.last().map_or(0.0, |c| c.dist);
+                for dist in [
+                    f32::NEG_INFINITY,
+                    -1.0,
+                    -0.0,
+                    0.0,
+                    0.25,
+                    1.0,
+                    bound - 0.25,
+                    bound,
+                    bound + 0.25,
+                    f32::INFINITY,
+                    f32::from_bits(0x7fc0_1234),
+                ] {
+                    let candidate = Candidate {
+                        dist,
+                        id: limit as u32,
+                        done: false,
+                    };
+                    let expected_pos = if len == limit && dist >= bound {
+                        None
+                    } else {
+                        Some(original.iter().take_while(|c| c.dist <= dist).count())
+                    };
+                    let expected: Vec<_> = match expected_pos {
+                        Some(pos) => original[..pos]
+                            .iter()
+                            .copied()
+                            .chain(std::iter::once(candidate))
+                            .chain(original[pos..].iter().copied())
+                            .take(limit)
+                            .collect(),
+                        None => original.clone(),
+                    };
+                    let mut pool = Vec::with_capacity(limit);
+                    pool.extend_from_slice(&original);
+                    let capacity = pool.capacity();
+                    assert_eq!(
+                        insert_build_candidate(&mut pool, candidate, limit),
+                        expected_pos
+                    );
+                    assert_eq!(
+                        pool.capacity(),
+                        capacity,
+                        "limit={limit}, len={len}, dist={dist}"
+                    );
+                    let bits = |entries: &[Candidate]| {
+                        entries
+                            .iter()
+                            .map(|c| (c.dist.to_bits(), c.id, c.done))
+                            .collect::<Vec<_>>()
+                    };
+                    assert_eq!(
+                        bits(&pool),
+                        bits(&expected),
+                        "limit={limit}, len={len}, dist={dist}"
+                    );
+                }
+            }
+        }
+    }
 
     /// Angular rows normalize to unit length in direction for finite magnitudes whose squared
     /// norm overflows or underflows f32.

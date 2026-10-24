@@ -256,6 +256,109 @@ def test_traversal_code_width_boundaries(code_bits):
             hm.VectorIndex(code_bits=code_bits)
 
 
+@pytest.mark.parametrize("residual_bits", [-1, 0, 1, 3, 4, 5, 7, 8, 9, 255, 256])
+def test_residual_code_width_boundaries(residual_bits):
+    if residual_bits in (0, 4, 8):
+        index = hm.VectorIndex("euclidean", degree=4, build_ef=16, threads=1,
+                               code_bits=8, residual_bits=residual_bits)
+        rows = np.array([[0, 0], [1, 0], [3, 0], [7, 0], [15, 0]], dtype=np.float32)
+        index.fit(rows)
+        index.set_query_arguments(ef=len(rows), rerank=len(rows))
+        np.testing.assert_array_equal(index.query(rows[0], len(rows)), np.arange(len(rows)))
+        assert (index.memory_breakdown["residual_codes_bytes"] == 0) == (residual_bits == 0)
+    elif residual_bits < 0 or residual_bits > 255:
+        with pytest.raises(OverflowError):
+            hm.VectorIndex(residual_bits=residual_bits)
+    else:
+        with pytest.raises(ValueError, match="residual_bits must be 0, 4 or 8"):
+            hm.VectorIndex(residual_bits=residual_bits)
+
+
+@pytest.mark.parametrize("code_bits", [4, 8])
+@pytest.mark.parametrize("dim", [15, 16, 17, 31, 32, 33])
+def test_residual_layout_load_and_refit_preserve_codes(tmp_path, code_bits, dim):
+    rows = clustered(33, dim, 91)
+    probes = clustered(3, dim, 92)
+    multiple = 32 if code_bits == 4 else 16
+    padded = ((dim + multiple - 1) // multiple) * multiple
+    sizes = {}
+    for residual_bits in (0, 4, 8):
+        index = hm.VectorIndex("euclidean", degree=8, build_ef=32, threads=1,
+                               code_bits=code_bits, residual_bits=residual_bits)
+        index.fit(rows)
+        index.set_query_arguments(ef=32, rerank=32)
+        parts = index.memory_breakdown
+        assert sum(parts.values()) == index.index_bytes
+        assert parts["residual_codes_bytes"] == len(rows) * padded * residual_bits // 8
+        assert parts["residual_scales_bytes"] == (len(rows) * 4 if residual_bits else 0)
+        assert parts["norms_bytes"] == len(rows) * 4
+        assert parts["adjacency_offsets_bytes"] == 0
+        sizes[residual_bits] = index.index_bytes
+        expected = index.batch_query_array(probes, K)
+        path = tmp_path / f"vectors-{code_bits}-{residual_bits}-{dim}.hms"
+        index.save(path)
+        loaded = hm.VectorIndex("euclidean", degree=8, build_ef=32, threads=1,
+                                code_bits=12 - code_bits, residual_bits=8 - residual_bits)
+        loaded.load(path)
+        loaded.set_query_arguments(ef=32, rerank=32)
+        assert (loaded.code_bits, loaded.residual_bits) == (code_bits, residual_bits)
+        assert loaded.memory_breakdown == parts
+        np.testing.assert_array_equal(loaded.batch_query_array(probes, K), expected)
+        loaded.fit(rows)
+        assert loaded.memory_breakdown == parts
+        np.testing.assert_array_equal(loaded.batch_query_array(probes, K), expected)
+    assert sizes[8] - sizes[4] == len(rows) * padded // 2
+    assert sizes[4] - sizes[0] == len(rows) * (padded // 2 + 4)
+
+
+@pytest.mark.parametrize("metric,direct_ip", [("angular", False), ("ip", False), ("ip", True)])
+@pytest.mark.parametrize("residual_bits", [0, 4])
+def test_residual_options_preserve_query_paths(tmp_path, metric, direct_ip, residual_bits):
+    rows = clustered(33, 17, 95)
+    probes = clustered(3, 17, 96)
+    index = hm.VectorIndex(metric, degree=8, build_ef=32, threads=1,
+                           direct_ip=direct_ip, residual_bits=residual_bits)
+    index.fit(rows)
+    index.set_query_arguments(ef=32, rerank=32)
+    expected = index.batch_query_array(probes, K)
+    for query, ids in zip(probes, expected):
+        assert len(np.unique(ids)) == K
+        assert np.all((ids >= 0) & (ids < len(rows)))
+        np.testing.assert_array_equal(index.query(query, K), ids)
+    path = tmp_path / "vectors.hms"
+    index.save(path)
+    loaded = hm.VectorIndex(metric, threads=1, direct_ip=direct_ip)
+    loaded.load(path)
+    loaded.set_query_arguments(ef=32, rerank=32)
+    assert loaded.memory_breakdown == index.memory_breakdown
+    np.testing.assert_array_equal(loaded.batch_query_array(probes, K), expected)
+
+
+def test_default_residual_codes_match_explicit_eight_bits(tmp_path):
+    rows = clustered(65, 17, 93)
+    default = hm.VectorIndex(degree=8, build_ef=32, threads=1)
+    explicit = hm.VectorIndex(degree=8, build_ef=32, threads=1, residual_bits=8)
+    for name, index in (("default", default), ("explicit", explicit)):
+        index.fit(rows)
+        index.save(tmp_path / name)
+    assert (tmp_path / "default").read_bytes() == (tmp_path / "explicit").read_bytes()
+
+
+def test_failed_load_preserves_residual_configuration_and_results(tmp_path):
+    rows = clustered(65, 17, 94)
+    index = hm.VectorIndex(degree=8, build_ef=32, threads=1, code_bits=8, residual_bits=4)
+    index.fit(rows)
+    expected = index.query(rows[0], K)
+    parts = index.memory_breakdown
+    path = tmp_path / "invalid.hms"
+    path.write_bytes(b"not an index")
+    with pytest.raises(RuntimeError, match="load"):
+        index.load(path)
+    assert (index.code_bits, index.residual_bits) == (8, 4)
+    assert index.memory_breakdown == parts
+    np.testing.assert_array_equal(index.query(rows[0], K), expected)
+
+
 @pytest.mark.parametrize("metric", ["angular", "euclidean", "ip"])
 def test_omitted_training_queries_match_explicit_none(metric):
     rows = clustered(128, 7, 41)

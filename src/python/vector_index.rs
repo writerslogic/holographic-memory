@@ -22,8 +22,6 @@ use crate::core::qgraph::{
     UpdatableVGraph, UpdateError, VGraph, VSearchParams, VSearcher,
 };
 
-/// Residual code bits per coordinate, read by the re-rank.
-const RESIDUAL_BITS: u8 = 8;
 /// Graphs below this many vertices store neighbour ids in three bytes.
 const THREE_BYTE_IDS_BELOW: usize = (1 << 24) - 1;
 
@@ -123,6 +121,7 @@ struct PyVectorIndex {
     degree: usize,
     build_ef: usize,
     code_bits: u8,
+    residual_bits: u8,
     compact_adjacency: bool,
     direct_ip: bool,
     pool: Option<rayon::ThreadPool>,
@@ -224,10 +223,13 @@ impl PyVectorIndex {
     /// `degree` is the out-degree of the graph (even),
     /// `build_ef` the construction search width, `threads` the build and batch-query threads
     /// (0 = one per core). `code_bits` selects 4-bit traversal codes (default) or 8-bit
-    /// traversal codes for higher routing precision; residual reranking remains 8-bit.
+    /// traversal codes for higher routing precision. `residual_bits` selects 8-bit (default),
+    /// 4-bit or no residual storage (0); smaller codes may reduce recall. Reranking still
+    /// scores the primary codes with a float query when no residual is stored.
     /// `direct_ip` serves original coordinates with negative-IP scores on the lifted graph.
     #[new]
-    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4, compact_adjacency=false, direct_ip=false))]
+    #[pyo3(signature = (metric="angular", degree=64, build_ef=500, threads=0, code_bits=4, compact_adjacency=false, direct_ip=false, residual_bits=8))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         metric: &str,
         degree: usize,
@@ -236,6 +238,7 @@ impl PyVectorIndex {
         code_bits: u8,
         compact_adjacency: bool,
         direct_ip: bool,
+        residual_bits: u8,
     ) -> PyResult<Self> {
         let metric = match metric {
             "angular" => Distance::Angular,
@@ -263,6 +266,11 @@ impl PyVectorIndex {
                 "code_bits must be 4 or 8, not {code_bits}"
             )));
         }
+        if !matches!(residual_bits, 0 | 4 | 8) {
+            return Err(PyValueError::new_err(format!(
+                "residual_bits must be 0, 4 or 8, not {residual_bits}"
+            )));
+        }
         let pool = match threads {
             0 => None,
             n => Some(
@@ -277,6 +285,7 @@ impl PyVectorIndex {
             degree,
             build_ef,
             code_bits,
+            residual_bits,
             compact_adjacency,
             direct_ip,
             pool,
@@ -370,6 +379,7 @@ impl PyVectorIndex {
         let id_bytes = if n < THREE_BYTE_IDS_BELOW { 3 } else { 4 };
         let metric = self.metric;
         let code_bits = self.code_bits;
+        let residual_bits = self.residual_bits;
         let compact_adjacency = self.compact_adjacency;
         let direct_ip = self.direct_ip;
         let graph = py
@@ -380,7 +390,7 @@ impl PyVectorIndex {
                             VGraph::from_lifted_ip_graph(
                                 g,
                                 code_bits,
-                                RESIDUAL_BITS,
+                                residual_bits,
                                 true,
                                 true,
                                 id_bytes,
@@ -389,7 +399,7 @@ impl PyVectorIndex {
                             VGraph::from_graph_with(
                                 g,
                                 code_bits,
-                                RESIDUAL_BITS,
+                                residual_bits,
                                 true,
                                 true,
                                 id_bytes,
@@ -632,7 +642,8 @@ impl PyVectorIndex {
     }
 
     /// Replaces the index with one written by `save` from a `VectorIndex` of the same metric
-    /// and `direct_ip` setting, read into memory.
+    /// and `direct_ip` setting, read into memory. Restores the serialized code widths;
+    /// subsequent `fit` calls reuse those widths.
     fn load(&mut self, py: Python<'_>, path: std::path::PathBuf) -> PyResult<()> {
         let graph = py
             .detach(|| VGraph::open(&path, Residency::Heap))
@@ -644,15 +655,54 @@ impl PyVectorIndex {
                 "the saved index does not match this metric",
             ));
         }
+        self.code_bits = graph.code_bits();
+        self.residual_bits = graph.residual_bits();
         self.dim = dim;
         self.built = Some(Built::new(graph));
         Ok(())
     }
 
-    /// Bytes of the encoded index (codes, residuals, adjacency, upper layers).
+    /// Logical payload bytes of the encoded index, including row padding. Excludes allocator
+    /// overhead, capacities, slab rounding, rotations and query scratch; not RSS/PSS/USS.
     #[getter]
     fn index_bytes(&self) -> usize {
         self.built.as_ref().map_or(0, |b| b.graph.index_bytes())
+    }
+
+    /// Component logical payload bytes whose sum is `index_bytes`, or all zeros before fit.
+    #[getter]
+    fn memory_breakdown(&self) -> std::collections::BTreeMap<String, usize> {
+        let bytes = self
+            .built
+            .as_ref()
+            .map_or_else(Default::default, |b| b.graph.memory_breakdown());
+        [
+            ("adjacency_ids_bytes", bytes.adjacency_ids_bytes),
+            ("adjacency_offsets_bytes", bytes.adjacency_offsets_bytes),
+            ("traversal_codes_bytes", bytes.traversal_codes_bytes),
+            ("traversal_scales_bytes", bytes.traversal_scales_bytes),
+            ("residual_codes_bytes", bytes.residual_codes_bytes),
+            ("residual_scales_bytes", bytes.residual_scales_bytes),
+            ("mean_bytes", bytes.mean_bytes),
+            ("norms_bytes", bytes.norms_bytes),
+            ("original_ids_bytes", bytes.original_ids_bytes),
+            ("screen_bytes", bytes.screen_bytes),
+            ("neighbor_blocks_bytes", bytes.neighbor_blocks_bytes),
+            ("upper_layers_bytes", bytes.upper_layers_bytes),
+        ]
+        .into_iter()
+        .map(|(name, value)| (name.to_owned(), value))
+        .collect()
+    }
+
+    #[getter]
+    fn code_bits(&self) -> u8 {
+        self.code_bits
+    }
+
+    #[getter]
+    fn residual_bits(&self) -> u8 {
+        self.residual_bits
     }
 
     /// Dimension of the fitted vectors (0 before `fit`).
@@ -667,7 +717,7 @@ impl PyVectorIndex {
 
     fn __repr__(&self) -> String {
         format!(
-            "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, direct_ip={}, reservoir={}, n={})",
+            "VectorIndex(metric='{}', degree={}, build_ef={}, ef={}, rerank={}, direct_ip={}, reservoir={}, code_bits={}, residual_bits={}, n={})",
             self.metric.name(),
             self.degree,
             self.build_ef,
@@ -675,6 +725,8 @@ impl PyVectorIndex {
             self.rerank,
             self.direct_ip,
             self.reservoir,
+            self.code_bits,
+            self.residual_bits,
             self.__len__()
         )
     }
