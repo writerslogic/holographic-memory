@@ -22,12 +22,18 @@ fn rows(path: &Path, count: usize) -> Result<(Vec<f32>, u32)> {
     let bytes = fs::read(path)?;
     let crc = crc32fast::hash(&bytes);
     let values: Vec<_> = bytes
-        .chunks_exact(4)
-        .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
         .collect();
     ensure!(values.iter().all(|x| x.is_finite()), "nonfinite matrix");
     ensure!(
-        values.chunks_exact(D).all(|r| r.iter().any(|&x| x != 0.0)),
+        values
+            .as_chunks::<D>()
+            .0
+            .iter()
+            .all(|r| r.iter().any(|&x| x != 0.0)),
         "zero angular row"
     );
     Ok((values, crc))
@@ -61,7 +67,9 @@ fn order(len: usize, seed: u64) -> Vec<usize> {
 
 fn exact_truth(base: &[f32], queries: &[f32]) -> Vec<Vec<u32>> {
     let normalized: Vec<f64> = base
-        .chunks_exact(D)
+        .as_chunks::<D>()
+        .0
+        .iter()
         .flat_map(|row| {
             let norm = row
                 .iter()
@@ -72,7 +80,9 @@ fn exact_truth(base: &[f32], queries: &[f32]) -> Vec<Vec<u32>> {
         })
         .collect();
     queries
-        .chunks_exact(D)
+        .as_chunks::<D>()
+        .0
+        .iter()
         .map(|query| {
             let norm = query
                 .iter()
@@ -81,7 +91,9 @@ fn exact_truth(base: &[f32], queries: &[f32]) -> Vec<Vec<u32>> {
                 .sqrt();
             let q: Vec<_> = query.iter().map(|&x| f64::from(x) / norm).collect();
             let mut scores: Vec<_> = normalized
-                .chunks_exact(D)
+                .as_chunks::<D>()
+                .0
+                .iter()
                 .enumerate()
                 .map(|(id, row)| {
                     (
@@ -109,7 +121,7 @@ fn main() -> Result<()> {
     let mut efs = vec![10usize, 20, 40, 80, 120, 160, 240, 400, 640];
     let mut knob_mode = "off";
     ensure!((args.len() - 4) % 2 == 0, "options require values");
-    for pair in args[4..].chunks_exact(2) {
+    for pair in args[4..].as_chunks::<2>().0 {
         let value = pair[1].to_str().context("option is not UTF-8")?;
         match pair[0].to_str() {
             Some("--repeats") => repeats = value.parse()?,
@@ -170,7 +182,7 @@ fn main() -> Result<()> {
     let mut searcher = index.searcher_with(knobs);
     let mut out = Vec::with_capacity(K);
     for &ef in &efs {
-        for query in queries.chunks_exact(D) {
+        for query in queries.as_chunks::<D>().0 {
             searcher.search(
                 query,
                 K,
@@ -260,7 +272,7 @@ mod tests {
     #[test]
     fn exact_cosine_ignores_scale_and_breaks_ties_by_local_id() {
         let mut base = vec![0.0f32; 12 * D];
-        for (id, row) in base.chunks_exact_mut(D).enumerate() {
+        for (id, row) in base.as_chunks_mut::<D>().0.iter_mut().enumerate() {
             row[0] = if id == 11 { -1.0 } else { (id + 1) as f32 };
             row[1] = if id < 2 || id == 11 {
                 0.0

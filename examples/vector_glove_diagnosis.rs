@@ -12,13 +12,17 @@ fn rows(path: &Path, count: usize) -> Result<Vec<f32>> {
     );
     let bytes = fs::read(path)?;
     let values: Vec<_> = bytes
-        .chunks_exact(4)
-        .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
         .collect();
     ensure!(values.iter().all(|x| x.is_finite()), "nonfinite matrix");
     ensure!(
         values
-            .chunks_exact(100)
+            .as_chunks::<100>()
+            .0
+            .iter()
             .all(|r| r.iter().any(|&x| x != 0.0)),
         "zero angular row"
     );
@@ -84,7 +88,7 @@ fn main() -> Result<()> {
         };
         let mut ids = Vec::new();
         let mut work = Vec::new();
-        for query in queries.chunks_exact(100) {
+        for query in queries.as_chunks::<100>().0 {
             searcher.search(query, 10, params, &mut out)?;
             ensure!(
                 out.len() == 10 && out.iter().all(|&x| x < 65536),

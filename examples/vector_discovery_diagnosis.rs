@@ -89,8 +89,10 @@ fn read_matrix(path: &Path, rows: usize, dim: usize, expected: &str) -> Result<V
     let bytes = read_bounded(path, size, expected)?;
     ensure!(bytes.len() == size, "wrong matrix size");
     let values: Vec<_> = bytes
-        .chunks_exact(4)
-        .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
         .collect();
     ensure!(values.iter().all(|x| x.is_finite()), "nonfinite matrix");
     ensure!(
@@ -106,8 +108,10 @@ fn read_ids(path: &Path, count: usize, expected: &str) -> Result<HashSet<u32>> {
     let bytes = read_bounded(path, count * 4, expected)?;
     ensure!(bytes.len() == count * 4, "wrong ID matrix size");
     let ids: HashSet<_> = bytes
-        .chunks_exact(4)
-        .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| u32::from_le_bytes(*b))
         .collect();
     ensure!(ids.len() == count, "duplicate partition ID");
     Ok(ids)
