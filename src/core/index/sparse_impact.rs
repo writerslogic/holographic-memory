@@ -659,7 +659,7 @@ impl SparseImpactIndex {
         (self.block_scales.len(), self.block_docs.len())
     }
 
-    /// Scratch for [`SparseImpactIndex::search`]; one per thread.
+    /// Scratch for [`SparseSearcher::search`]; one per thread.
     pub fn searcher(&self) -> SparseSearcher<'_> {
         SparseSearcher {
             index: self,
