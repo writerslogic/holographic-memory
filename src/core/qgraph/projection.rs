@@ -182,8 +182,8 @@ impl Graph {
             .map(|_| ())
     }
 
-    /// [`Graph::apply_training_queries`] with the number of construction queries used (the
-    /// first `limit` rows), the exact neighbours scored per query and the projected degree
+    /// Applies the first `limit` construction queries, with the exact neighbours scored
+    /// per query and the projected degree
     /// as arguments; each is capped by the graph size. The neighbours are found by exact
     /// scoring of every base row, so the cost grows with `limit * n`.
     pub fn apply_training_queries_with(
