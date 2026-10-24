@@ -265,6 +265,12 @@ impl Delta {
             for &u in &fresh {
                 let u = u as usize;
                 let d = score(u);
+                if pool.len() == ef {
+                    let worst = pool.last().unwrap();
+                    if worst.0.total_cmp(&d).then(worst.1.cmp(&u)).is_lt() {
+                        continue;
+                    }
+                }
                 let at = pool.partition_point(|p| p.0.total_cmp(&d).then(p.1.cmp(&u)).is_lt());
                 if at < ef {
                     pool.insert(at, (d, u, false));
@@ -393,8 +399,102 @@ mod tests {
     use super::*;
     use crate::core::qgraph::{kernels::SplitMix, prepare_rows};
 
+    fn search_by_sorting(
+        delta: &Delta,
+        query: &[f32],
+        ef: usize,
+        metric: Metric,
+    ) -> (Vec<(f32, u32)>, usize) {
+        let mut seen = vec![false; delta.len()];
+        seen[0] = true;
+        let mut visits = 1;
+        let mut pool = vec![(delta.score(query, 0, metric), 0usize, false)];
+        while let Some(at) = pool.iter().position(|p| !p.2) {
+            pool[at].2 = true;
+            let slot = pool[at].1;
+            let mut neighbors = delta.edges[slot].to_vec();
+            let mut child = delta.first_child[slot];
+            while child != NONE {
+                neighbors.push(child);
+                child = delta.next_sibling[child as usize];
+            }
+            for slot in neighbors.into_iter().map(|s| s as usize) {
+                if !seen[slot] {
+                    seen[slot] = true;
+                    visits += 1;
+                    pool.push((delta.score(query, slot, metric), slot, false));
+                }
+            }
+            pool.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+            pool.truncate(ef);
+        }
+        (
+            pool.into_iter()
+                .filter_map(|(score, slot, _)| {
+                    delta.alive[slot].then_some((score, delta.ids[slot]))
+                })
+                .collect(),
+            visits,
+        )
+    }
+
+    #[test]
+    fn frontier_rejection_preserves_ties_and_deleted_routing() {
+        for metric in [Metric::Angular, Metric::Euclidean] {
+            for dim in [1, 4, 17] {
+                let params = BuildParams {
+                    metric,
+                    degree: 8,
+                    build_ef: 16,
+                    ..Default::default()
+                };
+                let mut random = SplitMix(7654);
+                let mut rows: Vec<f32> = (0..65 * dim)
+                    .map(|_| (random.next_u64() % 5) as f32 - 2.0)
+                    .collect();
+                rows[..dim].fill(-0.0);
+                if metric == Metric::Angular {
+                    for row in rows.chunks_exact_mut(dim) {
+                        row[0] = 1.0;
+                    }
+                }
+                prepare_rows(&mut rows, dim, metric);
+                let mut delta = Delta::default();
+                delta.insert_batch(
+                    &(0..64).rev().collect::<Vec<_>>(),
+                    &rows[..64 * dim],
+                    &params,
+                );
+                delta.insert(0, &rows[64 * dim..], &params);
+                for id in [63, 7, 15, 23, 31] {
+                    delta.remove(id);
+                }
+                for query in rows.chunks_exact(dim).take(8) {
+                    for ef in [1, 2, 7, 8, 9, delta.len() - 1] {
+                        let expected = search_by_sorting(&delta, query, ef, metric);
+                        let found = delta.search_profiled(query, ef, metric);
+                        let bits = |results: Vec<(f32, u32)>| {
+                            results
+                                .into_iter()
+                                .map(|(d, id)| (d.to_bits(), id))
+                                .collect::<Vec<_>>()
+                        };
+                        assert_eq!(found.1, expected.1, "{metric:?}, dim={dim}, ef={ef}");
+                        assert_eq!(
+                            bits(found.0),
+                            bits(expected.0),
+                            "{metric:?}, dim={dim}, ef={ef}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn cached_norms_preserve_score_bits_and_delta_results() {
+        use std::hash::{Hash, Hasher};
+        let mut fingerprint = std::collections::hash_map::DefaultHasher::new();
         for metric in [Metric::Angular, Metric::Euclidean] {
             for dim in [1, 15, 16, 17, 31, 32, 33, 99, 100, 101, 127, 128, 129] {
                 let params = BuildParams {
@@ -443,6 +543,9 @@ mod tests {
                     expected.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
                     for ef in [1, 16, delta.len() - 1, delta.len(), delta.len() + 1] {
                         let found = delta.search(query, ef, metric);
+                        for &(score, id) in &found {
+                            (score.to_bits(), id).hash(&mut fingerprint);
+                        }
                         assert_eq!(found, delta.search_profiled(query, ef, metric).0);
                         for &(score, id) in &found {
                             let slot = delta.live[&id];
@@ -459,17 +562,51 @@ mod tests {
                 }
             }
         }
+        println!("search_fingerprint={}", fingerprint.finish());
     }
     #[test]
     #[ignore = "development delta search timing measurement"]
     fn delta_search_live_set() {
+        use rayon::prelude::*;
         use std::hash::{Hash, Hasher};
-        let n = 100_000;
+        use std::io::Read;
+
+        let n = std::env::var("HMS_DELTA_ROWS")
+            .map(|s| s.parse::<usize>().unwrap())
+            .unwrap_or(100_000);
+        assert!((1_000..=3_000_000).contains(&n));
         let dim = 100;
-        let mut rng = SplitMix(42);
-        let vectors: Vec<f32> = (0..(n + 256) * dim)
-            .map(|_| (rng.next_u64() >> 40) as f32 / (1u32 << 24) as f32)
-            .collect();
+        let read_rows = |path: String, count: usize| {
+            let mut file = std::fs::File::open(path).unwrap();
+            let mut header = [0u8; 8];
+            file.read_exact(&mut header).unwrap();
+            assert!(u32::from_le_bytes(header[..4].try_into().unwrap()) as usize >= count);
+            assert_eq!(
+                u32::from_le_bytes(header[4..].try_into().unwrap()),
+                dim as u32
+            );
+            let mut bytes = vec![0; count * dim * 4];
+            file.read_exact(&mut bytes).unwrap();
+            bytes
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_le_bytes(*b))
+                .collect::<Vec<_>>()
+        };
+        let (vectors, queries) = if let Ok(path) = std::env::var("HMS_DELTA_DATA") {
+            (
+                read_rows(path, n),
+                read_rows(std::env::var("HMS_DELTA_QUERIES").unwrap(), 256),
+            )
+        } else {
+            let mut rng = SplitMix(42);
+            let mut rows: Vec<f32> = (0..(n + 256) * dim)
+                .map(|_| (rng.next_u64() >> 40) as f32 / (1u32 << 24) as f32)
+                .collect();
+            let queries = rows.split_off(n * dim);
+            (rows, queries)
+        };
         let params = BuildParams {
             metric: Metric::Euclidean,
             degree: 32,
@@ -477,28 +614,38 @@ mod tests {
             ..Default::default()
         };
         let mut delta = Delta::default();
-        delta.insert_batch(
-            &(0..n as u32).collect::<Vec<_>>(),
-            &vectors[..n * dim],
-            &params,
-        );
-        let queries = &vectors[n * dim..];
-        for q in queries.chunks_exact(dim).take(16) {
-            std::hint::black_box(delta.search(q, 256, params.metric));
-        }
-        for round in 0..5 {
-            let start = std::time::Instant::now();
-            let mut fingerprint = std::collections::hash_map::DefaultHasher::new();
-            for q in queries.chunks_exact(dim) {
-                for (score, id) in delta.search(q, 256, params.metric) {
-                    (score.to_bits(), id).hash(&mut fingerprint);
+        delta.insert_batch(&(0..n as u32).collect::<Vec<_>>(), &vectors, &params);
+        for threads in [1, 8] {
+            let pool = rayon::ThreadPoolBuilder::new()
+                .num_threads(threads)
+                .build()
+                .unwrap();
+            for ef in [256, 512] {
+                let search = || {
+                    pool.install(|| {
+                        queries
+                            .par_chunks(dim)
+                            .map(|q| delta.search(q, ef, params.metric))
+                            .collect::<Vec<_>>()
+                    })
+                };
+                std::hint::black_box(search());
+                for round in 0..5 {
+                    let start = std::time::Instant::now();
+                    let results = search();
+                    let elapsed = start.elapsed().as_nanos();
+                    let mut fingerprint = std::collections::hash_map::DefaultHasher::new();
+                    for result in results {
+                        for (score, id) in result {
+                            (score.to_bits(), id).hash(&mut fingerprint);
+                        }
+                    }
+                    println!(
+                        "query_round={round} rows={n} queries=256 threads={threads} ef={ef} elapsed_ns={elapsed} fingerprint={}",
+                        fingerprint.finish()
+                    );
                 }
             }
-            println!(
-                "query_round={round} queries=256 elapsed_ns={} fingerprint={}",
-                start.elapsed().as_nanos(),
-                fingerprint.finish()
-            );
         }
     }
 }

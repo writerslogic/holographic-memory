@@ -305,3 +305,18 @@ flock ~/hms-timing.lock systemd-run --user --scope -q \
 
 Require all 1,280 steps within one hour and 8 GiB, and report recall over all 640 searches.
 These development measurements establish no leaderboard standing.
+
+The delta frontier now rejects a noncompetitive scored neighbour before searching
+for its insertion position. Three alternating development pairs on an Intel Core
+Ultra 9 185H (CPUs 0–7, timing lock, five measured batches per arm) compared
+`7db61aa0` with `5c8e8ec`. On the first 1M official clustered rows and 256 official
+queries, median query-time ratios were 0.704/0.737 with one thread and 0.809/0.828
+with eight threads at ef256/512; every pair improved. The synthetic 100k-row
+control ratios were 0.828/0.834 and 0.879/0.830. One-minute load averages ranged
+2.16–7.45 on official data and 1.80–3.13 on synthetic data. All full-frontier score
+bits and IDs matched across arms, pairs and thread counts. The sort-based oracle
+also preserves traversal visit counts, including tied scores and deleted routing
+vertices. Per-arm timings, fingerprints and commands are in
+[`streaming_frontier_v1.json`](../../benchmarks/results/streaming_frontier_v1.json).
+This measures live delta queries; total streaming throughput and the final-runbook
+recall still require the post-freeze command above.
