@@ -1,0 +1,46 @@
+{
+ "algorithm": "roargraph",
+ "attempts": 1,
+ "avx512": false,
+ "child_cpu_s": 992.9,
+ "chosen_why": [
+  "recall>=0.9: leader at 4403.7 QPS"
+ ],
+ "cleaned": {
+  "removed": []
+ },
+ "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+ "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+ "dataset": "yi-128-ip",
+ "end": "2026-10-24T07:41:38Z",
+ "expected": 108,
+ "failures": 0,
+ "flags_sha": "ec7ab2242885",
+ "heartbeat": 1792827663.19882,
+ "history": [
+  {
+   "attempt": 1,
+   "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+   "end": "2026-10-24T07:41:38Z",
+   "markers": 108,
+   "outcome": "exit 0"
+  }
+ ],
+ "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "job": "roargraph",
+ "log_path": "/vol/vibe/run-s-20261023/logs/yi-128-ip/roargraph.log",
+ "markers_at_start": 0,
+ "nproc": 8,
+ "result_path": "/vol/vibe/run-s-20261023/results/yi-128-ip/roargraph/results",
+ "start": "2026-10-24T07:22:07Z",
+ "state": "done",
+ "validation": {
+  "done": true,
+  "expected": 108,
+  "markers": 108,
+  "problems": [],
+  "test_count": 1000,
+  "valid": 108
+ },
+ "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}
