@@ -24,8 +24,8 @@ use rayon::prelude::*;
 use super::adjacency::Adjacency;
 use super::fastscan::{pack32, scan32, BLOCK};
 use super::kernels::{
-    dot_i4_query, dot_i4_query_x4, dot_i8_query, interleave_for_i4, prefetch, prefetch_bytes,
-    raw_one, QueryCode, Rotation, SplitMix,
+    dot_i4_query, dot_i4_query_x4, dot_i8_query, dot_i8_query_x4, interleave_for_i4, prefetch,
+    prefetch_bytes, raw_one, QueryCode, Rotation, SplitMix,
 };
 use super::rerank::{dot_f32_i4, dot_f32_i8};
 use super::vnni::query_sum;
@@ -371,6 +371,42 @@ impl Lines {
         let lines = self.lines.as_mut_slice();
         // SAFETY: as in `bytes`, with the exclusive borrow of `lines`.
         unsafe { std::slice::from_raw_parts_mut(lines.as_mut_ptr().cast::<i8>(), len) }
+    }
+}
+
+/// Logical payload bytes counted by [`VGraph::index_bytes`], including row padding.
+/// Excludes allocation capacity, slab rounding, object/allocator metadata, rotations and
+/// query scratch. These are not resident, unique, proportional, or peak memory measures.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
+pub struct VGraphMemoryBreakdown {
+    pub adjacency_ids_bytes: usize,
+    pub adjacency_offsets_bytes: usize,
+    pub traversal_codes_bytes: usize,
+    pub traversal_scales_bytes: usize,
+    pub residual_codes_bytes: usize,
+    pub residual_scales_bytes: usize,
+    pub mean_bytes: usize,
+    pub norms_bytes: usize,
+    pub original_ids_bytes: usize,
+    pub screen_bytes: usize,
+    pub neighbor_blocks_bytes: usize,
+    pub upper_layers_bytes: usize,
+}
+
+impl VGraphMemoryBreakdown {
+    pub fn total_bytes(&self) -> usize {
+        self.adjacency_ids_bytes
+            + self.adjacency_offsets_bytes
+            + self.traversal_codes_bytes
+            + self.traversal_scales_bytes
+            + self.residual_codes_bytes
+            + self.residual_scales_bytes
+            + self.mean_bytes
+            + self.norms_bytes
+            + self.original_ids_bytes
+            + self.screen_bytes
+            + self.neighbor_blocks_bytes
+            + self.upper_layers_bytes
     }
 }
 
@@ -1477,22 +1513,35 @@ impl VGraph {
         self.res_bits > 0
     }
 
-    /// Bytes held by the index, residual and id map included.
+    pub fn code_bits(&self) -> u8 {
+        self.bits
+    }
+
+    pub fn residual_bits(&self) -> u8 {
+        self.res_bits
+    }
+
+    /// Logical payload bytes, residual and id map included. See [`VGraphMemoryBreakdown`]
+    /// for the accounting boundary and exclusions.
     pub fn index_bytes(&self) -> usize {
-        self.adj.len() * 4
-            + self.adj3.len()
-            + self.adj_off.len() * 4
-            + self.adjv.len()
-            + self.adjv_off.len() * 4
-            + self.n * self.stride
-            + self.scales.len() * 4
-            + self.residual_bytes()
-            + self.mean.len() * 4
-            + self.half_norms.len() * 4
-            + self.ids.len() * 4
-            + self.screen_bytes()
-            + self.block_bytes()
-            + upper_bytes(&self.upper_ids, &self.layers)
+        self.memory_breakdown().total_bytes()
+    }
+
+    pub fn memory_breakdown(&self) -> VGraphMemoryBreakdown {
+        VGraphMemoryBreakdown {
+            adjacency_ids_bytes: self.adj.len() * 4 + self.adj3.len() + self.adjv.len(),
+            adjacency_offsets_bytes: (self.adj_off.len() + self.adjv_off.len()) * 4,
+            traversal_codes_bytes: self.n * self.stride,
+            traversal_scales_bytes: self.scales.len() * 4,
+            residual_codes_bytes: self.residual.len(),
+            residual_scales_bytes: self.res_scales.len() * 4,
+            mean_bytes: self.mean.len() * 4,
+            norms_bytes: self.half_norms.len() * 4,
+            original_ids_bytes: self.ids.len() * 4,
+            screen_bytes: self.screen_bytes(),
+            neighbor_blocks_bytes: self.block_bytes(),
+            upper_layers_bytes: upper_bytes(&self.upper_ids, &self.layers),
+        }
     }
 
     /// Bytes of the residual codes and their scales, which only `rerank` reads.
@@ -1539,6 +1588,54 @@ impl VGraph {
                 f(u);
             }
         }
+    }
+
+    #[cfg(feature = "experimental-neighbor-admission")]
+    #[inline(always)]
+    fn admit_neighbour<const SCREEN: bool>(
+        &self,
+        u: u32,
+        visited: &mut Marks,
+        fresh: &mut Vec<u32>,
+    ) {
+        if visited.insert(u) {
+            if SCREEN {
+                self.prefetch_screen(u);
+            } else {
+                prefetch_bytes(self.code(u));
+                self.prefetch_scale(u);
+            }
+            fresh.push(u);
+        }
+    }
+
+    #[cfg(feature = "experimental-neighbor-admission")]
+    #[inline(always)]
+    fn admit_neighbours<const PROFILE: bool, const SCREEN: bool>(
+        &self,
+        v: usize,
+        cap: usize,
+        visited: &mut Marks,
+        fresh: &mut Vec<u32>,
+    ) -> usize {
+        let mut neighbors_read = 0;
+        if cap == 0 {
+            self.for_each_neighbour(v, |u| {
+                if PROFILE {
+                    neighbors_read += 1;
+                }
+                self.admit_neighbour::<SCREEN>(u, visited, fresh);
+            });
+        } else {
+            let mut seen = 0usize;
+            self.for_each_neighbour(v, |u| {
+                seen += 1;
+                if seen <= cap {
+                    self.admit_neighbour::<SCREEN>(u, visited, fresh);
+                }
+            });
+        }
+        neighbors_read
     }
 
     #[inline]
@@ -1694,9 +1791,13 @@ impl VGraph {
     /// [`VGraph::est`] of four vertices with shared query loads; the same integer sums, so
     /// the same values.
     #[inline]
-    fn est4(&self, qc: &[i8], qsum: i32, v: [u32; 4], w: f32) -> [f32; 4] {
+    fn est4<const QUERY_X4: bool>(&self, qc: &[i8], qsum: i32, v: [u32; 4], w: f32) -> [f32; 4] {
         let dots = if self.bits == 8 {
-            v.map(|u| dot_i8_query(qc, self.code(u), qsum))
+            if QUERY_X4 {
+                dot_i8_query_x4(qc, v.map(|u| self.code(u)), qsum)
+            } else {
+                v.map(|u| dot_i8_query(qc, self.code(u), qsum))
+            }
         } else {
             dot_i4_query_x4(qc, v.map(|u| self.code(u)), qsum)
         };
@@ -1794,6 +1895,10 @@ impl VGraph {
                 pool: Pool {
                     keys: Vec::new(),
                     expanded: Vec::new(),
+                    #[cfg(feature = "experimental-batch-pool")]
+                    merge_keys: Vec::new(),
+                    #[cfg(feature = "experimental-batch-pool")]
+                    merge_expanded: Vec::new(),
                     cap: 1,
                     cursor: 0,
                 },
@@ -1951,6 +2056,10 @@ struct Pool {
     keys: Vec<u64>,
     /// Expanded flags, bit `i` for `keys[i]`, in words; bits at `keys.len()` and above are 0.
     expanded: Vec<u64>,
+    #[cfg(feature = "experimental-batch-pool")]
+    merge_keys: Vec<u64>,
+    #[cfg(feature = "experimental-batch-pool")]
+    merge_expanded: Vec<u64>,
     cap: usize,
     cursor: usize,
 }
@@ -2029,6 +2138,53 @@ impl Pool {
             self.cursor = pos;
         }
         Some((pos, evicted))
+    }
+
+    /// `pending` has distinct vertex IDs absent from this pool, enforced by visited marks
+    /// before row-code scoring. Re-admission through the fused path uses `insert` instead.
+    #[cfg(feature = "experimental-batch-pool")]
+    fn insert_batch(&mut self, pending: &mut Vec<u64>, k: usize) -> bool {
+        debug_assert!(pending.iter().enumerate().all(|(position, &candidate)| {
+            let id = key_id(candidate);
+            pending[..position].iter().all(|&other| key_id(other) != id)
+                && self.keys.iter().all(|&other| key_id(other) != id)
+        }));
+        if let Some(worst) = self.worst() {
+            pending.retain(|&key| key < worst);
+        }
+        if pending.len() < 8 {
+            let mut improved = false;
+            for &key in pending.iter() {
+                if let Some((pos, _)) = self.insert(key) {
+                    improved |= pos < k;
+                }
+            }
+            return improved;
+        }
+        pending.sort_unstable();
+        // Sequential insertions reset patience if any new key enters the initial top-k.
+        let improved = k > 0 && (self.keys.len() < k || pending[0] <= self.keys[k - 1]);
+        let len = self.cap.min(self.keys.len().saturating_add(pending.len()));
+        self.merge_keys.clear();
+        self.merge_keys.reserve(len);
+        self.merge_expanded.clear();
+        self.merge_expanded.resize(len.div_ceil(64), 0);
+        let (mut old, mut new) = (0, 0);
+        for pos in 0..len {
+            if new < pending.len() && (old == self.keys.len() || pending[new] <= self.keys[old]) {
+                self.merge_keys.push(pending[new]);
+                self.cursor = self.cursor.min(pos);
+                new += 1;
+            } else {
+                self.merge_keys.push(self.keys[old]);
+                let flag = self.expanded[old / 64] >> (old % 64) & 1;
+                self.merge_expanded[pos / 64] |= flag << (pos % 64);
+                old += 1;
+            }
+        }
+        std::mem::swap(&mut self.keys, &mut self.merge_keys);
+        std::mem::swap(&mut self.expanded, &mut self.merge_expanded);
+        improved
     }
 
     /// Drops `key` if present (a re-admitted vertex's older entry).
@@ -2195,7 +2351,7 @@ impl SearchScratch {
     /// number of estimates. `stale` resets on an insert among the `k` best when `patience`
     /// is on.
     #[inline]
-    fn score_fresh(
+    fn score_fresh<const BATCH_POOL: bool, const QUERY_X4: bool>(
         &mut self,
         g: &VGraph,
         k: usize,
@@ -2203,10 +2359,14 @@ impl SearchScratch {
         stale: &mut usize,
         w: f32,
     ) -> usize {
+        #[cfg(feature = "experimental-batch-pool")]
+        if BATCH_POOL {
+            return self.score_fresh_batch::<QUERY_X4>(g, k, patience, stale, w);
+        }
         let qc = &self.qc[..];
         let n = self.fresh.len();
         let mut i = 0;
-        if self.knobs.batch_est {
+        if self.knobs.batch_est || (QUERY_X4 && g.bits == 8) {
             while i + 4 <= n {
                 let ids = [
                     self.fresh[i],
@@ -2214,7 +2374,11 @@ impl SearchScratch {
                     self.fresh[i + 2],
                     self.fresh[i + 3],
                 ];
-                for (e, u) in g.est4(qc, self.qsum, ids, w).into_iter().zip(ids) {
+                for (e, u) in g
+                    .est4::<QUERY_X4>(qc, self.qsum, ids, w)
+                    .into_iter()
+                    .zip(ids)
+                {
                     let kk = key(e, u);
                     self.reservoir.offer(kk);
                     if let Some((pos, _)) = self.pool.insert(kk) {
@@ -2234,6 +2398,52 @@ impl SearchScratch {
                     *stale = 0;
                 }
             }
+        }
+        n
+    }
+
+    #[cfg(feature = "experimental-batch-pool")]
+    fn score_fresh_batch<const QUERY_X4: bool>(
+        &mut self,
+        g: &VGraph,
+        k: usize,
+        patience: usize,
+        stale: &mut usize,
+        w: f32,
+    ) -> usize {
+        let qc = &self.qc[..];
+        let n = self.fresh.len();
+        let (reservoir, pending) = (&mut self.reservoir, &mut self.keys);
+        pending.clear();
+        let mut offer = |estimate, id| {
+            let key = key(estimate, id);
+            reservoir.offer(key);
+            pending.push(key);
+        };
+        let mut i = 0;
+        if self.knobs.batch_est || (QUERY_X4 && g.bits == 8) {
+            while i + 4 <= n {
+                let ids = [
+                    self.fresh[i],
+                    self.fresh[i + 1],
+                    self.fresh[i + 2],
+                    self.fresh[i + 3],
+                ];
+                for (estimate, id) in g
+                    .est4::<QUERY_X4>(qc, self.qsum, ids, w)
+                    .into_iter()
+                    .zip(ids)
+                {
+                    offer(estimate, id);
+                }
+                i += 4;
+            }
+        }
+        for &id in &self.fresh[i..] {
+            offer(g.est(qc, self.qsum, id, w), id);
+        }
+        if self.pool.insert_batch(pending, k) && patience > 0 {
+            *stale = 0;
         }
         n
     }
@@ -2283,10 +2493,21 @@ impl SearchScratch {
         params: VSearchParams,
         out: &mut Vec<u32>,
     ) -> Result<usize, HmsError> {
-        self.search_inner::<false>(g, query, k, params, out, &mut QueryProfile::default())
+        self.search_inner::<
+            false,
+            { cfg!(feature = "experimental-batch-pool") },
+            { cfg!(feature = "experimental-query-x4") },
+        >(
+            g,
+            query,
+            k,
+            params,
+            out,
+            &mut QueryProfile::default(),
+        )
     }
 
-    fn search_inner<const PROFILE: bool>(
+    fn search_inner<const PROFILE: bool, const BATCH_POOL: bool, const QUERY_X4: bool>(
         &mut self,
         g: &VGraph,
         query: &[f32],
@@ -2531,7 +2752,7 @@ impl SearchScratch {
                     }
                 }
                 std::mem::swap(&mut self.fresh, &mut self.survivors);
-                evals += self.score_fresh(g, k, patience, &mut stale, w);
+                evals += self.score_fresh::<BATCH_POOL, QUERY_X4>(g, k, patience, &mut stale, w);
                 continue;
             }
             if blocks {
@@ -2627,34 +2848,54 @@ impl SearchScratch {
             }
             self.fresh.clear();
             let (visited, fresh) = (&mut self.visited, &mut self.fresh);
-            let mut neighbors_read = 0;
-            let admit = |u: u32, visited: &mut Marks, fresh: &mut Vec<u32>| {
-                if visited.insert(u) {
-                    if screen {
-                        g.prefetch_screen(u);
-                    } else {
-                        prefetch_bytes(g.code(u));
-                        g.prefetch_scale(u);
-                    }
-                    fresh.push(u);
-                }
-            };
-            if params.neighbour_cap == 0 {
-                g.for_each_neighbour(key_id(c) as usize, |u| {
-                    if PROFILE {
-                        neighbors_read += 1;
-                    }
-                    admit(u, visited, fresh);
-                });
+            #[cfg(feature = "experimental-neighbor-admission")]
+            let neighbors_read = if screen {
+                g.admit_neighbours::<PROFILE, true>(
+                    key_id(c) as usize,
+                    params.neighbour_cap,
+                    visited,
+                    fresh,
+                )
             } else {
-                let mut seen = 0usize;
-                g.for_each_neighbour(key_id(c) as usize, |u| {
-                    seen += 1;
-                    if seen <= params.neighbour_cap {
-                        admit(u, visited, fresh);
+                g.admit_neighbours::<PROFILE, false>(
+                    key_id(c) as usize,
+                    params.neighbour_cap,
+                    visited,
+                    fresh,
+                )
+            };
+            #[cfg(not(feature = "experimental-neighbor-admission"))]
+            let neighbors_read = {
+                let mut neighbors_read = 0;
+                let admit = |u: u32, visited: &mut Marks, fresh: &mut Vec<u32>| {
+                    if visited.insert(u) {
+                        if screen {
+                            g.prefetch_screen(u);
+                        } else {
+                            prefetch_bytes(g.code(u));
+                            g.prefetch_scale(u);
+                        }
+                        fresh.push(u);
                     }
-                });
-            }
+                };
+                if params.neighbour_cap == 0 {
+                    g.for_each_neighbour(key_id(c) as usize, |u| {
+                        if PROFILE {
+                            neighbors_read += 1;
+                        }
+                        admit(u, visited, fresh);
+                    });
+                } else {
+                    let mut seen = 0usize;
+                    g.for_each_neighbour(key_id(c) as usize, |u| {
+                        seen += 1;
+                        if seen <= params.neighbour_cap {
+                            admit(u, visited, fresh);
+                        }
+                    });
+                }
+                neighbors_read
+            };
             if screen {
                 // A neighbour whose optimistic 1-bit estimate cannot enter the full pool is
                 // skipped (it stays visited); the rest get the 8-bit estimate.
@@ -2678,7 +2919,7 @@ impl SearchScratch {
                 profile.neighbors_read += neighbors_read;
             }
             let scoring_started = PROFILE.then(Instant::now);
-            let count = self.score_fresh(g, k, patience, &mut stale, w);
+            let count = self.score_fresh::<BATCH_POOL, QUERY_X4>(g, k, patience, &mut stale, w);
             evals += count;
             if let Some(started) = scoring_started {
                 profile.scoring_pool_ns += started.elapsed().as_nanos() as u64;
@@ -2782,7 +3023,18 @@ impl VSearcher<'_> {
         SearchScratch::validate_query(g, query)?;
         let mut profile = QueryProfile::default();
         self.scratch
-            .search_inner::<true>(g, query, k, params, out, &mut profile)?;
+            .search_inner::<
+                true,
+                { cfg!(feature = "experimental-batch-pool") },
+                { cfg!(feature = "experimental-query-x4") },
+            >(
+                g,
+                query,
+                k,
+                params,
+                out,
+                &mut profile,
+            )?;
         Ok(profile)
     }
 }
@@ -3014,6 +3266,10 @@ impl VGraph {
         let mut pool = Pool {
             keys: Vec::new(),
             expanded: Vec::new(),
+            #[cfg(feature = "experimental-batch-pool")]
+            merge_keys: Vec::new(),
+            #[cfg(feature = "experimental-batch-pool")]
+            merge_expanded: Vec::new(),
             cap: params.ef.max(k).max(1),
             cursor: 0,
         };
@@ -3947,6 +4203,281 @@ mod tests {
     use super::super::tests::{brute_force, clustered, gaussian};
     use super::*;
 
+    #[test]
+    #[cfg(feature = "experimental-query-x4")]
+    fn query_x4_estimates_match_serial_at_padding_boundaries() {
+        for dim in [
+            15, 16, 17, 31, 32, 33, 63, 64, 65, 111, 112, 113, 127, 128, 129,
+        ] {
+            let data = clustered(40, dim, 173);
+            let queries = clustered(2, dim, 174);
+            for metric in [Metric::Angular, Metric::Euclidean] {
+                let graph = Graph::build(
+                    &data,
+                    dim,
+                    &BuildParams {
+                        metric,
+                        degree: 8,
+                        build_ef: 16,
+                        quantized_search: true,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+                for bits in [4, 8] {
+                    for align in [false, true] {
+                        let index = VGraph::from_graph_with(&graph, bits, 8, align, true, 3, false)
+                            .unwrap();
+                        let mut searcher = index.searcher_with(SearchKnobs::OFF);
+                        let scratch = &mut searcher.scratch;
+                        for query in queries.chunks_exact(dim) {
+                            scratch.qf[..dim].copy_from_slice(query);
+                            index.encode_query(
+                                &scratch.qf,
+                                &mut scratch.qc,
+                                &mut scratch.qtmp,
+                                &mut scratch.qrot,
+                                &mut scratch.qs,
+                            );
+                            let qsum = query_sum(&scratch.qc);
+                            for ids in [[0, 1, 2, 3], [39, 16, 31, 0], [5, 5, 5, 5]] {
+                                for w in [0.0, 1.0, 3.25] {
+                                    let expected =
+                                        ids.map(|u| index.est(&scratch.qc, qsum, u, w).to_bits());
+                                    let actual = index
+                                        .est4::<true>(&scratch.qc, qsum, ids, w)
+                                        .map(f32::to_bits);
+                                    assert_eq!(actual, expected, "dim {dim}, bits {bits}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "experimental-query-x4")]
+    fn query_x4_preserves_admission_state_at_batch_boundaries() {
+        let dim = 17;
+        let data = clustered(48, dim, 175);
+        let query = clustered(1, dim, 176);
+        for metric in [Metric::Angular, Metric::Euclidean] {
+            let graph = Graph::build(
+                &data,
+                dim,
+                &BuildParams {
+                    metric,
+                    degree: 8,
+                    build_ef: 16,
+                    quantized_search: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            for bits in [4, 8] {
+                let index = VGraph::from_graph_with(&graph, bits, 8, true, true, 3, false).unwrap();
+                for count in (0..=9).chain(15..=17) {
+                    for cap in [3, 4, 5, 8] {
+                        for batch_est in [false, true] {
+                            for patience in [0, 4] {
+                                for reservoir in [0, 12] {
+                                    let knobs = SearchKnobs {
+                                        batch_est,
+                                        ..SearchKnobs::OFF
+                                    };
+                                    let mut serial = index.searcher_with(knobs);
+                                    let mut fused = index.searcher_with(knobs);
+                                    for s in [&mut serial.scratch, &mut fused.scratch] {
+                                        s.qf[..dim].copy_from_slice(&query);
+                                        index.encode_query(
+                                            &s.qf,
+                                            &mut s.qc,
+                                            &mut s.qtmp,
+                                            &mut s.qrot,
+                                            &mut s.qs,
+                                        );
+                                        s.qsum = query_sum(&s.qc);
+                                        s.pool.reset(cap);
+                                        s.reservoir.reset(reservoir);
+                                        for id in 32..48 {
+                                            let kk = key(index.est(&s.qc, s.qsum, id, 1.0), id);
+                                            s.pool.insert(kk);
+                                            s.reservoir.offer(kk);
+                                        }
+                                        s.pool.next();
+                                        s.fresh.extend(0..count);
+                                    }
+                                    let (mut a, mut b) = (patience, patience);
+                                    let expected = serial.scratch.score_fresh::<{
+                                        cfg!(feature = "experimental-batch-pool")
+                                    }, false>(
+                                        &index,
+                                        cap.min(3),
+                                        patience,
+                                        &mut a,
+                                        1.0,
+                                    );
+                                    let actual = fused.scratch.score_fresh::<{
+                                        cfg!(feature = "experimental-batch-pool")
+                                    }, true>(
+                                        &index,
+                                        cap.min(3),
+                                        patience,
+                                        &mut b,
+                                        1.0,
+                                    );
+                                    assert_eq!(actual, count as usize);
+                                    assert_eq!(actual, expected);
+                                    assert_eq!(a, b);
+                                    assert_eq!(serial.scratch.pool.keys, fused.scratch.pool.keys);
+                                    assert_eq!(
+                                        serial.scratch.pool.expanded,
+                                        fused.scratch.pool.expanded
+                                    );
+                                    assert_eq!(
+                                        serial.scratch.pool.cursor,
+                                        fused.scratch.pool.cursor
+                                    );
+                                    assert_eq!(
+                                        serial.scratch.reservoir.keys,
+                                        fused.scratch.reservoir.keys
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "experimental-query-x4")]
+    fn query_x4_preserves_search_results_work_and_reopening() {
+        let directory = tempfile::tempdir().unwrap();
+        for dim in [17, 33] {
+            let mut data = clustered(80, dim, 177);
+            let first = data[..dim].to_vec();
+            data[7 * dim..8 * dim].copy_from_slice(&first);
+            data[19 * dim..20 * dim].copy_from_slice(&first);
+            let queries = clustered(2, dim, 178);
+            for metric in [Metric::Angular, Metric::Euclidean] {
+                let graph = Graph::build(
+                    &data,
+                    dim,
+                    &BuildParams {
+                        metric,
+                        degree: 16,
+                        build_ef: 32,
+                        quantized_search: true,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+                for bits in [4, 8] {
+                    for mode in 0..3 {
+                        if mode > 0 && metric != Metric::Angular {
+                            continue;
+                        }
+                        let mut index =
+                            VGraph::from_graph_with(&graph, bits, 8, true, true, 3, mode == 1)
+                                .unwrap();
+                        if mode == 2 {
+                            index = index.with_blocks(&graph, 4).unwrap();
+                        }
+                        let path = directory.path().join("query-x4.hms");
+                        index.save(&path).unwrap();
+                        let reopened = VGraph::open(&path, Residency::Mapped).unwrap();
+                        let knobs = SearchKnobs {
+                            block_screen: mode == 2,
+                            ..SearchKnobs::OFF
+                        };
+                        let mut serial = index.searcher_with(knobs);
+                        let mut fused = reopened.searcher_with(knobs);
+                        for (ef, neighbour_cap, patience, reservoir) in
+                            [(3, 0, 0, 0), (4, 3, 1, 0), (5, 4, 4, 0), (17, 5, 0, 24)]
+                        {
+                            if mode > 0 && reservoir > 0 {
+                                continue;
+                            }
+                            let params = VSearchParams {
+                                ef,
+                                rerank: 24,
+                                neighbour_cap,
+                                patience,
+                                reservoir,
+                                ..Default::default()
+                            };
+                            for k in [0, 1, 5] {
+                                for query in queries.chunks_exact(dim) {
+                                    let (mut expected, mut actual) = (Vec::new(), Vec::new());
+                                    let (mut a, mut b) =
+                                        (QueryProfile::default(), QueryProfile::default());
+                                    let ea = serial
+                                        .scratch
+                                        .search_inner::<
+                                            true,
+                                            { cfg!(feature = "experimental-batch-pool") },
+                                            false,
+                                        >(&index, query, k, params, &mut expected, &mut a)
+                                        .unwrap();
+                                    let eb = fused
+                                        .scratch
+                                        .search_inner::<
+                                            true,
+                                            { cfg!(feature = "experimental-batch-pool") },
+                                            true,
+                                        >(&reopened, query, k, params, &mut actual, &mut b)
+                                        .unwrap();
+                                    assert_eq!(expected, actual);
+                                    assert_eq!(ea, eb);
+                                    let work = |p: QueryProfile| {
+                                        (
+                                            p.expansions,
+                                            p.neighbors_read,
+                                            p.entry_evaluations,
+                                            p.traversal_evaluations,
+                                            p.rerank_evaluations,
+                                            p.beam_retained,
+                                            p.retained,
+                                        )
+                                    };
+                                    assert_eq!(work(a), work(b));
+                                    assert_eq!(serial.scratch.pool.keys, fused.scratch.pool.keys);
+                                    assert_eq!(
+                                        serial.scratch.pool.expanded,
+                                        fused.scratch.pool.expanded
+                                    );
+                                    assert_eq!(
+                                        serial.scratch.pool.cursor,
+                                        fused.scratch.pool.cursor
+                                    );
+                                    assert_eq!(
+                                        serial.scratch.visited.words,
+                                        fused.scratch.visited.words
+                                    );
+                                    assert_eq!(
+                                        serial.scratch.reservoir.keys,
+                                        fused.scratch.reservoir.keys
+                                    );
+                                    assert_eq!(serial.last_screened(), fused.last_screened());
+                                    let mut ordinary = Vec::new();
+                                    assert_eq!(
+                                        fused.search(query, k, params, &mut ordinary).unwrap(),
+                                        eb
+                                    );
+                                    assert_eq!(ordinary, actual);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// A refused huge-page advice falls back to base pages with identical arrays and results,
     /// and is counted. Runs the build twice in one process: advice failing, then as configured.
     #[test]
@@ -4016,6 +4547,124 @@ mod tests {
         }
     }
 
+    #[test]
+    #[cfg(feature = "experimental-neighbor-admission")]
+    fn neighbor_admission_matches_ordered_set_model_at_boundaries() {
+        fn check<const PROFILE: bool, const SCREEN: bool>(
+            index: &VGraph,
+            vertex: usize,
+            list: &[u32],
+            cap: usize,
+        ) {
+            let mut visited = Marks::new(index.n, false);
+            for initial in [&[][..], &[0, 63, 64, 127, 128, 130][..], list] {
+                visited.next();
+                let mut seen = std::collections::HashSet::new();
+                for &u in initial {
+                    visited.insert(u);
+                    seen.insert(u);
+                }
+                let limit = if cap == 0 { list.len() } else { cap };
+                let expected: Vec<_> = list
+                    .iter()
+                    .take(limit)
+                    .copied()
+                    .filter(|&u| seen.insert(u))
+                    .collect();
+                let mut fresh = Vec::new();
+                let read = index.admit_neighbours::<PROFILE, SCREEN>(
+                    vertex,
+                    cap,
+                    &mut visited,
+                    &mut fresh,
+                );
+                assert_eq!(fresh, expected, "cap={cap}, vertex={vertex}");
+                // The existing profile counts all uncapped list entries, including duplicates.
+                assert_eq!(read, if PROFILE && cap == 0 { list.len() } else { 0 });
+                for u in 0..index.n as u32 {
+                    assert_eq!(visited.seen(u), seen.contains(&u));
+                }
+                let mut words = std::collections::HashSet::new();
+                let touched: Vec<_> = initial
+                    .iter()
+                    .chain(&expected)
+                    .map(|&u| u >> 6)
+                    .filter(|&word| words.insert(word))
+                    .collect();
+                assert_eq!(visited.touched, touched);
+                visited.next();
+                assert!(visited.words.iter().all(|&word| word == 0));
+                assert!(visited.touched.is_empty());
+            }
+        }
+
+        let dim = 17;
+        let data = clustered(131, dim, 91);
+        let lists = [
+            Vec::new(),
+            vec![130],
+            vec![63, 64, 65, 127, 128, 129, 130, 63, 64, 0, 0],
+            (0..63).rev().collect(),
+            (0..64).rev().collect(),
+            (0..65).rev().collect(),
+        ];
+        for metric in [Metric::Angular, Metric::Euclidean] {
+            let mut graph = Graph::build(
+                &data,
+                dim,
+                &BuildParams {
+                    metric,
+                    degree: 66,
+                    build_ef: 80,
+                    ..BuildParams::default()
+                },
+            )
+            .unwrap();
+            for bytes in [3, 4, 0] {
+                let ordered: Vec<Vec<u32>> = lists
+                    .iter()
+                    .map(|list| {
+                        let mut list = list.clone();
+                        if bytes == 0 {
+                            list.sort_unstable();
+                            list.dedup();
+                        }
+                        list
+                    })
+                    .collect();
+                for v in 0..graph.n {
+                    graph.adj.set(v, &ordered[v % ordered.len()]);
+                }
+                let mut index = VGraph::from_graph_with(
+                    &graph,
+                    8,
+                    8,
+                    true,
+                    false,
+                    bytes,
+                    metric == Metric::Angular,
+                )
+                .unwrap();
+                for compact in [false, true] {
+                    if compact {
+                        index.compact_adjacency().unwrap();
+                        assert!(bytes == 0 || !index.adj_off.is_empty());
+                    }
+                    for (vertex, list) in ordered.iter().enumerate() {
+                        for cap in [0, 1, 2, 63, 64, 65, 66, usize::MAX] {
+                            check::<false, false>(&index, vertex, list, cap);
+                            check::<true, false>(&index, vertex, list, cap);
+                            if metric == Metric::Angular {
+                                check::<false, true>(&index, vertex, list, cap);
+                                check::<true, true>(&index, vertex, list, cap);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// The pool before its flags became bits: one `bool` per key, moved with the keys.
     struct ReferencePool {
         keys: Vec<u64>,
@@ -4080,6 +4729,10 @@ mod tests {
         let mut pool = Pool {
             keys: Vec::new(),
             expanded: Vec::new(),
+            #[cfg(feature = "experimental-batch-pool")]
+            merge_keys: Vec::new(),
+            #[cfg(feature = "experimental-batch-pool")]
+            merge_expanded: Vec::new(),
             cap: 1,
             cursor: 0,
         };
@@ -4122,6 +4775,277 @@ mod tests {
         }
     }
 
+    #[test]
+    #[cfg(feature = "experimental-batch-pool")]
+    fn batch_pool_matches_sequential_insertion() {
+        fn check(pool: &Pool, model: &ReferencePool) {
+            assert_eq!(pool.keys, model.keys);
+            assert_eq!(pool.cursor, model.cursor);
+            let flags: Vec<_> = (0..pool.keys.len()).map(|i| pool.is_expanded(i)).collect();
+            assert_eq!(flags, model.expanded);
+            assert_eq!(
+                pool.expanded
+                    .iter()
+                    .map(|word| word.count_ones())
+                    .sum::<u32>() as usize,
+                flags.iter().filter(|&&flag| flag).count()
+            );
+            for next in [0, 1, 2] {
+                assert_eq!(pool.peek_unexpanded(next), model.peek_unexpanded(next));
+            }
+        }
+
+        let mut rng = SplitMix(539365412);
+        for cap in [1usize, 2, 7, 8, 9, 63, 64, 65, 127, 128, 129] {
+            for k in [0, 1, cap - 1, cap, cap + 1] {
+                for count in [0, 1, 7, 8, 9, cap + 1] {
+                    for fill in [0, cap / 2, cap] {
+                        let mut pool = Pool {
+                            keys: Vec::new(),
+                            expanded: Vec::new(),
+                            #[cfg(feature = "experimental-batch-pool")]
+                            merge_keys: Vec::new(),
+                            #[cfg(feature = "experimental-batch-pool")]
+                            merge_expanded: Vec::new(),
+                            cap,
+                            cursor: 0,
+                        };
+                        let mut model = ReferencePool {
+                            keys: Vec::new(),
+                            expanded: Vec::new(),
+                            cap,
+                            cursor: 0,
+                        };
+                        let mut id = 0;
+                        for _ in 0..fill {
+                            let candidate = key(1000.0 + (rng.next_u64() % 16) as f32, id);
+                            id += 1;
+                            assert_eq!(pool.insert(candidate), model.insert(candidate));
+                        }
+                        for _ in 0..=fill {
+                            assert_eq!(pool.next(), model.next());
+                        }
+                        for round in 0..8 {
+                            let size = if round == 0 {
+                                count
+                            } else {
+                                (rng.next_u64() % 17) as usize
+                            };
+                            let mut pending = Vec::new();
+                            for _ in 0..size {
+                                let distance = if round == 0 {
+                                    (rng.next_u64() % 16) as f32
+                                } else {
+                                    (rng.next_u64() % 32) as f32 - 8.0
+                                };
+                                pending.push(key(distance, id));
+                                id += 1;
+                            }
+                            let mut improved = false;
+                            for &candidate in &pending {
+                                if let Some((position, _)) = model.insert(candidate) {
+                                    improved |= position < k;
+                                }
+                            }
+                            assert_eq!(pool.insert_batch(&mut pending, k), improved);
+                            check(&pool, &model);
+                            for _ in 0..3 {
+                                assert_eq!(pool.next(), model.next());
+                            }
+                            if round % 2 == 1 && !model.keys.is_empty() {
+                                let removed =
+                                    model.keys[(rng.next_u64() % model.keys.len() as u64) as usize];
+                                pool.remove(removed);
+                                model.remove(removed);
+                            }
+                            check(&pool, &model);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "experimental-batch-pool")]
+    fn batch_pool_equal_distances_preserve_distinct_ids_and_flags() {
+        for cap in [1usize, 2, 7, 8, 9, 63, 64, 65, 127, 128, 129] {
+            for fill in [cap - 1, cap] {
+                for first_id in [10, 1000] {
+                    let mut pool = Pool {
+                        keys: Vec::new(),
+                        expanded: Vec::new(),
+                        #[cfg(feature = "experimental-batch-pool")]
+                        merge_keys: Vec::new(),
+                        #[cfg(feature = "experimental-batch-pool")]
+                        merge_expanded: Vec::new(),
+                        cap,
+                        cursor: 0,
+                    };
+                    let mut model = ReferencePool {
+                        keys: Vec::new(),
+                        expanded: Vec::new(),
+                        cap,
+                        cursor: 0,
+                    };
+                    for id in first_id..first_id + fill as u32 {
+                        assert_eq!(pool.insert(key(1.0, id)), model.insert(key(1.0, id)));
+                    }
+                    for _ in 0..=fill {
+                        assert_eq!(pool.next(), model.next());
+                    }
+                    let mut pending: Vec<_> = [0, 200, 201, 202, 203, 204, 205, 206, 207]
+                        .map(|id| key(1.0, id))
+                        .to_vec();
+                    let mut improved = false;
+                    for &candidate in &pending {
+                        if let Some((position, _)) = model.insert(candidate) {
+                            improved |= position < 1;
+                        }
+                    }
+                    assert_eq!(pool.insert_batch(&mut pending, 1), improved);
+                    assert_eq!(pool.keys, model.keys);
+                    assert_eq!(pool.cursor, model.cursor);
+                    for (position, &expanded) in model.expanded.iter().enumerate() {
+                        assert_eq!(pool.is_expanded(position), expanded);
+                    }
+                    while let Some(expected) = model.next() {
+                        assert_eq!(pool.next(), Some(expected));
+                    }
+                    assert_eq!(pool.next(), None);
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "experimental-batch-pool")]
+    fn batch_pool_preserves_search_results_work_and_reopening() {
+        let dim = 16;
+        let data = clustered(160, dim, 53);
+        let queries = clustered(3, dim, 54);
+        let directory = tempfile::tempdir().unwrap();
+        for metric in [Metric::Angular, Metric::Euclidean] {
+            let graph = Graph::build(
+                &data,
+                dim,
+                &BuildParams {
+                    metric,
+                    degree: 32,
+                    build_ef: 64,
+                    quantized_search: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            for bits in [4, 8] {
+                let index = VGraph::from_graph_with(&graph, bits, 8, true, true, 3, false).unwrap();
+                let path = directory.path().join("batch-pool.hms");
+                index.save(&path).unwrap();
+                let reopened = VGraph::open(&path, Residency::Mapped).unwrap();
+                for batch_est in [false, true] {
+                    let knobs = SearchKnobs {
+                        batch_est,
+                        ..SearchKnobs::OFF
+                    };
+                    let mut plain = index.searcher_with(knobs);
+                    let mut batched = reopened.searcher_with(knobs);
+                    for ef in [7, 8, 9, 64, 129] {
+                        for k in [0, 1, 7, 8, 9, 64] {
+                            for patience in [0, 1, 4] {
+                                for reservoir in [0, 80] {
+                                    let params = VSearchParams {
+                                        ef,
+                                        rerank: 80,
+                                        patience,
+                                        reservoir,
+                                        ..Default::default()
+                                    };
+                                    for query in queries.chunks_exact(dim) {
+                                        let (mut expected, mut actual) = (Vec::new(), Vec::new());
+                                        let (mut a, mut b) =
+                                            (QueryProfile::default(), QueryProfile::default());
+                                        let ea = plain
+                                            .scratch
+                                            .search_inner::<true, false, { cfg!(feature = "experimental-query-x4") }>(
+                                                &index,
+                                                query,
+                                                k,
+                                                params,
+                                                &mut expected,
+                                                &mut a,
+                                            )
+                                            .unwrap();
+                                        let eb = batched
+                                            .scratch
+                                            .search_inner::<true, true, { cfg!(feature = "experimental-query-x4") }>(
+                                                &reopened,
+                                                query,
+                                                k,
+                                                params,
+                                                &mut actual,
+                                                &mut b,
+                                            )
+                                            .unwrap();
+                                        assert_eq!(expected, actual);
+                                        assert_eq!(ea, eb);
+                                        let work = |p: QueryProfile| {
+                                            (
+                                                p.expansions,
+                                                p.neighbors_read,
+                                                p.entry_evaluations,
+                                                p.traversal_evaluations,
+                                                p.rerank_evaluations,
+                                                p.beam_retained,
+                                                p.retained,
+                                            )
+                                        };
+                                        assert_eq!(work(a), work(b));
+                                        assert_eq!(
+                                            plain.scratch.pool.keys,
+                                            batched.scratch.pool.keys
+                                        );
+                                        assert_eq!(
+                                            plain.scratch.pool.expanded,
+                                            batched.scratch.pool.expanded
+                                        );
+                                        assert_eq!(
+                                            plain.scratch.pool.cursor,
+                                            batched.scratch.pool.cursor
+                                        );
+                                        assert_eq!(
+                                            plain.scratch.visited.words,
+                                            batched.scratch.visited.words
+                                        );
+                                        assert_eq!(
+                                            plain.scratch.reservoir.keys,
+                                            batched.scratch.reservoir.keys
+                                        );
+                                        let mut unprofiled = Vec::new();
+                                        assert_eq!(
+                                            plain
+                                                .search(query, k, params, &mut unprofiled)
+                                                .unwrap(),
+                                            ea
+                                        );
+                                        assert_eq!(unprofiled, expected);
+                                        assert_eq!(
+                                            batched
+                                                .search(query, k, params, &mut unprofiled)
+                                                .unwrap(),
+                                            eb
+                                        );
+                                        assert_eq!(unprofiled, actual);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// Development microbenchmark (`--ignored`): a search-shaped stream (one expansion, then
     /// 20 inserts of keys drawn near the pool's range) on the bit pool and the bool pool.
     #[test]
@@ -4141,6 +5065,10 @@ mod tests {
                     let mut pool = Pool {
                         keys: Vec::new(),
                         expanded: Vec::new(),
+                        #[cfg(feature = "experimental-batch-pool")]
+                        merge_keys: Vec::new(),
+                        #[cfg(feature = "experimental-batch-pool")]
+                        merge_expanded: Vec::new(),
                         cap: 1,
                         cursor: 0,
                     };
@@ -4221,6 +5149,7 @@ mod tests {
                 let after = directory.path().join("after");
                 index.save(&before).unwrap();
                 let old_bytes = index.index_bytes();
+                let old_memory = index.memory_breakdown();
                 let params = VSearchParams {
                     ef: 32,
                     rerank: 16,
@@ -4239,6 +5168,23 @@ mod tests {
                 };
                 index.compact_adjacency().unwrap();
                 assert!(index.index_bytes() < old_bytes);
+                let memory = index.memory_breakdown();
+                assert_eq!(
+                    old_memory.adjacency_ids_bytes,
+                    graph.n * graph.degree * bytes as usize
+                );
+                assert_eq!(old_memory.adjacency_offsets_bytes, 0);
+                assert_eq!(
+                    memory.adjacency_ids_bytes,
+                    lists.iter().map(Vec::len).sum::<usize>() * bytes as usize
+                );
+                assert_eq!(memory.adjacency_offsets_bytes, (graph.n + 1) * 4);
+                assert_eq!(
+                    old_bytes - index.index_bytes(),
+                    old_memory.adjacency_ids_bytes
+                        - memory.adjacency_ids_bytes
+                        - memory.adjacency_offsets_bytes
+                );
                 for (v, want) in lists.iter().enumerate() {
                     let mut actual = Vec::new();
                     index.for_each_neighbour(v, |u| actual.push(u));

@@ -138,6 +138,10 @@ provenance-scitt = ["provenance", "ureq"]
 # text encoder and the experiment binaries that exercise them. Off by default so
 # they are not part of the published public API.
 experimental = []
+experimental-batch-pool = ["experimental"]
+experimental-neighbor-admission = ["experimental"]
+experimental-query-x4 = ["experimental"]
+experimental-build-search = ["experimental"]
 # On-device embedding, re-ranking, fact extraction and query rewriting (candle, Qwen3).
 # Weights load from local directories only; the library never downloads.
 local-models = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers"]
@@ -243,6 +247,28 @@ codegen-units = 1
 # "debuginfo" keeps the symbol table: a fully stripped .node/.dylib fails to load on macOS 27 (mis-aligned LINKEDIT)
 strip = "debuginfo"
 opt-level = 3
+
+[[example]]
+name = "vector_glove_diagnosis"
+required-features = ["experimental"]
+
+[[example]]
+name = "batched_vector_search"
+required-features = ["experimental-batch-pool"]
+
+[[example]]
+name = "vector_discovery_diagnosis"
+required-features = ["experimental", "sha2"]
+
+[[bin]]
+name = "vector-glove-diagnosis"
+path = "benchmarks/public/vector_glove_diagnosis.rs"
+required-features = ["experimental"]
+
+[[bin]]
+name = "vector-glove-development"
+path = "benchmarks/public/vector_glove_development.rs"
+required-features = ["experimental"]
 
 # Shipped executables (the benchmark drivers the comparison measures, release binaries): the
 # release build without the symbol table, which only backtraces and profilers read.
