@@ -1,0 +1,46 @@
+{
+  "files": {
+    "README.md": "445f000d7269938c474ba318ca13801d33a7850aba7c3e88dd55a949a1f1c48b",
+    "confirm.py": "4c02185d23a2265c01bad7dca75a26919a06be24a701d40be12d3a4121ac85ac",
+    "confirmation-driver.sh": "4bfafcb3cd9c46f9aeb5873958008e46b6b989d5162fddbbf5637c7e5fa66fe5",
+    "confirmation-evidence.tar.gz": "66ce423353c7a3a2ca47b5fb948d87c5cb7df450ac7614fa15d1f7ea96e534d1",
+    "confirmation-summary.json": "2a9e9b5af0b3ba83c479e1f7f18bac3bcc0575c42a7452019c76d7740a433dca",
+    "decision.json": "b05f15e39f3f92e3f9e1442f4fb2244700587ff06f6a1fe992e385e369d726f1",
+    "evidence-final-gate.log": "06022023a0ffbe3bd2ad7fe6ed8e631db7bb3609797eb933d94c27664fc3d064",
+    "final-gate.log": "b2a5fb9fe7b487e862759b0dbc08cc3c0bd84149e11432dcb0c008d408e3d3cb",
+    "focused-linux.log": "ce3e40a7f1166d8da039ad125c823e6bfa13418da7262fd46a53020bf59b21ce",
+    "frozen-harness.patch": "28071503d79678b597b686f656608641aafed698a9dc96f345330c98b5195d7f",
+    "frozen-partitioned_probe.rs": "66005c7c2c58c6900a647b97a7bb4d5b19e7781d7c445a95f36cea0120235c0b",
+    "heldout-truth.tar.gz": "9f2774c4357cbcd50e1e5cd5bc74f7d24f91b853e3f1ea832eaaec8d0c5be3a5",
+    "input-queries.json": "8c40f955bf2ebc7c74b3ee6002bbeceac3fd256be1273c7250826de2651b7ab9",
+    "input-rows.json": "69d1455151653fd258248fa32dc102f81e307a2b7fcce57d15de988addea10b7",
+    "machine.json": "10692190bcc7b564b5c8167fd3e957c6b30e8df76f41c428f67f10ebe72176d2",
+    "oracle.py": "47ef18615c754160ef6ccc45bbebf6c3252e7e122de9cc8a00c61c255907b21a",
+    "protocol.md": "f9b0fe506dacc350ea32f8d8ef4f6959b7369b76167819b04ea07f5566a69475",
+    "query-overhead.md": "2fd2384dc67d0f6f9dddf8ad43e4a006924846dacf31174139db1e20318a09ce",
+    "score.py": "bf8d6fc01632cf91be6e5af1642d3181fa556ef6c9b98476fa1939cf20564309",
+    "selection-verification.json": "2a53b3a5e612b58797eab4e962b590f62b2251224c26483e98f454a156ef3dd8",
+    "selection.json": "333989b9df3a859ad8b853024e6a31a451e435d90a8eb1981d48ce6a28b8d6f4",
+    "summary-tune.json": "b012d607f71d2ed395875e3d2b66f0fdf1648a7232e144b5b01491771feb637f",
+    "test_confirm.py": "80de0db70b35f27f784c57b81728dbff67e64f1f4f38dd1d4762e68c208c50d3",
+    "tuning-evidence.tar.gz": "1b73cbb133cff67740443ed48eec347a54a705fed648720f5f2a7f55d6727dc7",
+    "validation.json": "dc4f39d9193697c79e47b8055cb4ff3e9515335be61407d4028c35b7da6dafe7"
+  },
+  "log_path_normalization": {
+    "final-gate.log": {
+      "original_sha256": "7de366e729f62b4c92aa759216ae4dbcd5eae86f398a4977714554ace9b02a85",
+      "published_sha256": "b2a5fb9fe7b487e862759b0dbc08cc3c0bd84149e11432dcb0c008d408e3d3cb",
+      "rule": "Local worktree/private-target paths replaced with placeholders; terminal blank lines trimmed; canonical originals preserved"
+    },
+    "focused-linux.log": {
+      "original_sha256": "fa4d89d5b4ad2d2aa28f87994a5d96a2ab038f0b6a6102046b287939123df6dd",
+      "published_sha256": "ce3e40a7f1166d8da039ad125c823e6bfa13418da7262fd46a53020bf59b21ce",
+      "rule": "Local worktree/private-target paths replaced with placeholders; terminal blank lines trimmed; canonical originals preserved"
+    },
+    "evidence-final-gate.log": {
+      "original_sha256": "308906fa436f2d5c7161956fd3c91aeb7a15d2abd894cdfde9f55f0d95e01764",
+      "published_sha256": "06022023a0ffbe3bd2ad7fe6ed8e631db7bb3609797eb933d94c27664fc3d064",
+      "rule": "Local worktree/private-target paths replaced with placeholders; terminal blank lines trimmed; canonical originals preserved"
+    }
+  }
+}

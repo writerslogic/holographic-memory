@@ -1,0 +1,11 @@
+{
+  "raw_results_recomputed": true,
+  "runs": 12,
+  "pairs": 6,
+  "selected_capacity": 250000,
+  "selected_ef": 128,
+  "selected_mean_query_ms": 13.671770333333333,
+  "selection_digest_matches": true,
+  "heldout_queries_examined": false,
+  "raw_archive_sha256": "1b73cbb133cff67740443ed48eec347a54a705fed648720f5f2a7f55d6727dc7"
+}

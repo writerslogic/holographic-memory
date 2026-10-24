@@ -1,0 +1,9 @@
+    Blocking waiting for file lock on build directory
+   Compiling holographic-memory v0.6.1 (/home/davidcondrey/hms-streaming-bounded/source)
+    Finished `release` profile [optimized] target(s) in 7m 44s
+     Running unittests src/lib.rs (/home/davidcondrey/hms-streaming-bounded/target/release/deps/holographic_memory-443ac0d07546eb7f)
+
+running 1 test
+test core::qgraph::update::partitioned_probe::segment_merge_matches_live_rows_across_boundaries_and_reopen ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 570 filtered out; finished in 0.59s
