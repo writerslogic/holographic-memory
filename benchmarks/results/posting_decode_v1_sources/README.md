@@ -44,3 +44,10 @@ thread to CPU 0. They record load averages and every returned result fingerprint
 The initial results, including losses, remain in the result JSON. Background
 load and outliers preclude a blanket no-regression claim or a phrase-throughput
 claim. Full-corpus standings remain unmeasured.
+
+`correctness.py` uses the same driver to compare all 962 queries against exhaustive
+evaluation on the 600k fixture for TOP_10, TOP_100_COUNT and COUNT. Run it with
+`uv run --no-project python correctness.py`. With the `full` argument, it copies
+the existing full index from `~/sbg-hms/sbg/engines/hms-before/idx` and checks all
+962 COUNT answers against `~/sbg-hms/res/COUNT-tantivy-0.26.json`. These untimed
+checks passed with zero mismatches; their result hashes are in the measurement JSON.

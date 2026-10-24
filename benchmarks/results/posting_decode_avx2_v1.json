@@ -1219,7 +1219,20 @@
     "result_fingerprints": "All 246 cells identical across 6 initial runs and 10 confirmation arms.",
     "decoder_oracles": "Exact production decoder source passed both native AVX2 oracle tests, including every width and unaligned/tail boundaries.",
     "token_protocol": "17478 independent token-window and optimized/exhaustive answers passed across auto/daat/wand.",
-    "local_gate": "Apple M4 rustc1.96: cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test, including golden/upgrade tests."
+    "local_gate": "Apple M4 rustc1.96: cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test, including golden/upgrade tests.",
+    "exhaustive_600k": {
+      "mode": "exhaustive600",
+      "checked": 2886,
+      "mismatches": 0,
+      "results_sha256": "c14f805d33ef0a8bc3da602d54aff3ecf577628b2cc677b6bc1c506f270b9ad0"
+    },
+    "full_corpus_count": {
+      "mode": "full-count",
+      "checked": 962,
+      "mismatches": 0,
+      "results_sha256": "1c0e89ff7f39ad2a6b079f17eb76a7bcd58101efd19d144b52c32569bbbcd711",
+      "reference": "Saved full-corpus Tantivy 0.26 COUNT answers for all 962 upstream queries"
+    }
   },
   "sources": "benchmarks/results/posting_decode_v1_sources/"
 }
