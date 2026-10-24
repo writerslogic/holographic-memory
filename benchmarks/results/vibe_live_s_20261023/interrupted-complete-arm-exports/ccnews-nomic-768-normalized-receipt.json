@@ -1,0 +1,52 @@
+{
+  "dataset": "ccnews-nomic-768-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    },
+    "ngt-qg": {
+      "done": true,
+      "expected": 101,
+      "markers": 101,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 101
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "c9ab9083430c5ad7f23850503193111e95680de377d787c7e3490aec188c4878",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "e7005c601c0482d3f6e0a370da577b857e150a51c8fe34cd4ef0dd0b6ea9baf5",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "9b0d5b3d4aaa56bbb7d432348aa851f999310f9b7d4cde906efb30bcdc45c62f",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "ac7d32f4b159b4f12e495d7eb541665b808d6c671b4b8e2a2b0672ceae3b0b11"
+    },
+    "ngt-qg": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": "51b2582585f4d5cc6804093884b2c8d0626d11f927deda7cb1a29d2b5645c3c0",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": "4927712010f03370eab0c92ab40393efadf8a7c1a8992ee8a3764fc9478c3065",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": "aea81f7a73147e96fd4a6add25398bb4d5d348c15acce22ba97367c5ff221868",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": "ab4ae64daafc51cc7da0033f1ee44a882712e0831350efadf87b23a786b1aebd",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": "d7f9f69372c1399f5873a8bc8b5649a14c9cc09cda3fec70457a947ec06140c6"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATHZNQ0Y3256HHNV659GR"
+    ],
+    "ngt-qg": [
+      "ta-01M5PGP4JKDE7HMXCG7X9VKDGR",
+      "ta-01M5PQN38EGVXVMZ66TVE6B1AR",
+      "ta-01M5PYHHJ1VVKQYCWZ64XR3QVR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "9331debb443377367fc5bf816b262a1f32d2307a8d37888971f5736163d916dd",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/ccnews-nomic-768-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 281,
+  "same_as_prior_official_points": false
+}

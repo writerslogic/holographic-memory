@@ -139,5 +139,13 @@
   "collector_sha256": "a2524be34d85e19783011e6c129e2fe80fd69091b91008da32c1ca2e260c0b74",
   "draft_pr_update_blocker": "Connected integration403 resource inaccessible; gh stored auth401; neither GH_TOKEN nor GITHUB_TOKEN overrides present",
   "arxiv_hms_state": "done180/180;Glass active in different container",
-  "interruption_receipt": "workspace-interruption.json"
+  "interruption_receipt": "workspace-interruption.json",
+  "local_completed_arm_export": "interrupted-complete-arm-exports/local-export-environment.json",
+  "rescue_receipt": "interruption-rescue-receipt.json",
+  "partial_provider_metering": {
+    "scope": "2026-10-24T06:00-14:00UTC beforecredits,nonnvoice,partialcampaign,excludesauxiliaryauditapps",
+    "main_app_usd": "59.67864329",
+    "arxiv_recovery_app_usd": "1.88107247",
+    "source": "/Volumes/A/hms-coordination/reports/modal-metered-app-costs-06-14.json"
+  }
 }

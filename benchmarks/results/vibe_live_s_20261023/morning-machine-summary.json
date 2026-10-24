@@ -1,0 +1,1506 @@
+{
+  "generated_at": "2026-10-24T14:58:38.947935+00:00",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "engine_baseline": "currentmainS",
+  "native_runs_repeated_for_export": 0,
+  "functions_launched_for_rescue_export": 0,
+  "active_containers_observed": 0,
+  "provider_state": "workspace-disabled; cause unknown; manual dispatch paused",
+  "last_cost_estimate_usd": 66.5144,
+  "cost_observed_at": "2026-10-24T14:40:09Z",
+  "metered_partial06_14_utc_beforecredits_usd": {
+    "main": "59.67864329",
+    "arxiv_recovery": "1.88107247"
+  },
+  "metering_scope": "Partialwindow,nonnvoice,notfullcampaign,excludesauxiliaryauditapps",
+  "rescue": {
+    "observed_at": "2026-10-24T14:54:21.362898+00:00",
+    "files": 7461,
+    "bytes": 5590265460,
+    "raw_hdf5_files": 253,
+    "raw_hdf5_bytes": 5578205496,
+    "failed_attempt_records": 0,
+    "hash_cross_check": "All priority/main overlapping hashes match; all sizes match saved Volume inventory",
+    "input_data_not_duplicated": true,
+    "remote_input_files_retained": 48,
+    "remote_input_bytes_retained": 215211712656,
+    "egress_cost": "unknown; not included in CPU/RAM estimates",
+    "root": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z",
+    "read_only": true,
+    "functions_launched": 0
+  },
+  "export": {
+    "python": "3.14.7",
+    "packages": {
+      "h5py": "3.16.0",
+      "numpy": "2.5.4",
+      "polars": "2.0.0",
+      "tqdm": "4.70.1",
+      "modal": "1.6.2"
+    },
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--with",
+      "h5py",
+      "--with",
+      "polars",
+      "--with",
+      "tqdm",
+      "--with",
+      "modal",
+      "python",
+      "-u",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/export-rescued-complete-arms-20261024.py"
+    ],
+    "official_source_commit": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "exported_complete_datasets": 20,
+    "exported_groups": 5488,
+    "hms_groups": 3600,
+    "truth_transferred_bytes": 19678656,
+    "validation": "All5existing official standing point sets exactly reproduce to1e-9; complete arm group counts,1000queryrows,run_count5 and original marker inventory verified",
+    "partial_arms_excluded_from_metrics": true,
+    "no_native_measurement_repeated": true
+  },
+  "rows": [
+    {
+      "dataset": "agnews-mxbai-1024-euclidean",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.7212,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 1995.2922754837423,
+          "recall": 0.9680700000000002,
+          "params": "HMS(metric=euclidean, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+          "build_time": 3075.3031318187714,
+          "index_size": 1639792.0
+        },
+        "0.95": {
+          "qps": 1995.2922754837423,
+          "recall": 0.9680700000000002,
+          "params": "HMS(metric=euclidean, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+          "build_time": 3075.3031318187714,
+          "index_size": 1639792.0
+        },
+        "0.99": {
+          "qps": 1416.4494721504766,
+          "recall": 0.99351,
+          "params": "HMS(metric=euclidean, degree=64, build_ef=500, ef=128, rerank=200, code_bits=8)|128_200",
+          "build_time": 2537.244638442993,
+          "index_size": 1714968.0
+        }
+      },
+      "comparators": {
+        "ngt-qg": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATH4SPV2PQVY7TXBFWM8R"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-standing.json"
+    },
+    {
+      "dataset": "arxiv-nomic-768-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 4.0268,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 6077.765840645543,
+          "recall": 0.98648,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=400, code_bits=8)|64_400",
+          "build_time": 1759.1556632518768,
+          "index_size": 2206080.0
+        },
+        "0.95": {
+          "qps": 6077.765840645543,
+          "recall": 0.98648,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=400, code_bits=8)|64_400",
+          "build_time": 1759.1556632518768,
+          "index_size": 2206080.0
+        },
+        "0.99": {
+          "qps": 5154.267696319086,
+          "recall": 0.99302,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=128, rerank=100, code_bits=8)|128_100",
+          "build_time": 1759.1556632518768,
+          "index_size": 2206080.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PKP35HA4E538A8D193RJJR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/arxiv-nomic-768-normalized-standing.json"
+    },
+    {
+      "dataset": "ccnews-nomic-768-normalized",
+      "deprecated": true,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.7375,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 4297.971966918037,
+          "recall": 0.9836699999999999,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+          "build_time": 856.1746602058411,
+          "index_size": 810632.0
+        },
+        "0.95": {
+          "qps": 4297.971966918037,
+          "recall": 0.9836699999999999,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+          "build_time": 856.1746602058411,
+          "index_size": 810632.0
+        },
+        "0.99": {
+          "qps": 3530.136102910845,
+          "recall": 0.99074,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=128, rerank=100, code_bits=8)|128_100",
+          "build_time": 856.1746602058411,
+          "index_size": 810632.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        },
+        "ngt-qg": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 5014.761049475864,
+              "recall": 0.91759,
+              "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.0,1.2)|1_2_1_0",
+              "build_time": 1486.3904466629028,
+              "index_size": 4674164.0
+            },
+            "0.95": {
+              "qps": 4353.329774589538,
+              "recall": 0.9573900000000001,
+              "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.01,1.5)|1_5_1_01",
+              "build_time": 1486.3904466629028,
+              "index_size": 4674164.0
+            },
+            "0.99": {
+              "qps": 3160.552522023492,
+              "recall": 0.99222,
+              "params": "QG-NGT(20,0.06,20:40,20:40,96,4000,2000:2,f96,1:60,0,1.04,2.0)|2_0_1_04",
+              "build_time": 1582.441398382187,
+              "index_size": 5030520.0
+            }
+          },
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATHZNQ0Y3256HHNV659GR"
+        ],
+        "ngt-qg": [
+          "ta-01M5PGP4JKDE7HMXCG7X9VKDGR",
+          "ta-01M5PQN38EGVXVMZ66TVE6B1AR",
+          "ta-01M5PYHHJ1VVKQYCWZ64XR3QVR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "ngt-qg": {
+          "done": true,
+          "expected": 101,
+          "markers": 101,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 101
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/ccnews-nomic-768-normalized-standing.json"
+    },
+    {
+      "dataset": "celeba-resnet-2048-cosine",
+      "deprecated": true,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "complete",
+      "estimated_cpu_ram_usd": 0.837,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 1685.240315281898,
+          "recall": 0.9880599999999999,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=200, code_bits=8)|100_200",
+          "build_time": 769.8399486541748,
+          "index_size": 834112.0
+        },
+        "0.95": {
+          "qps": 1685.240315281898,
+          "recall": 0.9880599999999999,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=200, code_bits=8)|100_200",
+          "build_time": 769.8399486541748,
+          "index_size": 834112.0
+        },
+        "0.99": {
+          "qps": 1515.1532461231013,
+          "recall": 0.9928,
+          "params": "HMS(metric=cosine, degree=48, build_ef=500, ef=50, rerank=200, code_bits=8)|50_200",
+          "build_time": 779.9117920398712,
+          "index_size": 853840.0
+        }
+      },
+      "comparators": {
+        "ngt-qg": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 3166.7723495144282,
+              "recall": 0.91825,
+              "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.0,1.2)|1_2_1_0",
+              "build_time": 1534.065086364746,
+              "index_size": 5138324.0
+            },
+            "0.95": {
+              "qps": 2989.8609303664193,
+              "recall": 0.97013,
+              "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.0,1.5)|1_5_1_0",
+              "build_time": 1534.065086364746,
+              "index_size": 5138324.0
+            },
+            "0.99": {
+              "qps": 2194.0906065072213,
+              "recall": 0.99432,
+              "params": "QG-NGT(40,0.1,20:50,30:50,96,4000,4000:2,f96,1:80,0,1.02,2.0)|2_0_1_02",
+              "build_time": 2140.1271579265594,
+              "index_size": 5968516.0
+            }
+          },
+          "fair_complete_pair": true
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATJBNDETJ3AZBBEEYNXPR"
+        ],
+        "ngt-qg": [
+          "ta-01M5PATJBNDETJ3AZBBEEYNXPR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "ngt-qg": {
+          "done": true,
+          "expected": 101,
+          "markers": 101,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 101
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/celeba-resnet-2048-cosine-standing.json"
+    },
+    {
+      "dataset": "coco-nomic-768-normalized",
+      "deprecated": true,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "complete",
+      "estimated_cpu_ram_usd": 0.8069,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 3247.0249426611363,
+          "recall": 0.99779,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8, learn_queries=32768)|40_100",
+          "build_time": 992.1780178546906,
+          "index_size": 567944.0
+        },
+        "0.95": {
+          "qps": 3247.0249426611363,
+          "recall": 0.99779,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8, learn_queries=32768)|40_100",
+          "build_time": 992.1780178546906,
+          "index_size": 567944.0
+        },
+        "0.99": {
+          "qps": 3247.0249426611363,
+          "recall": 0.99779,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8, learn_queries=32768)|40_100",
+          "build_time": 992.1780178546906,
+          "index_size": 567944.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 3593.6919421379457,
+              "recall": 0.97696,
+              "params": "Glass(L=400, R=16, efQuery=20, quant=SQ8U, search_quant=SQ8U, refine_quant=FP16)|20",
+              "build_time": 220.7417290210724,
+              "index_size": 671188.0
+            },
+            "0.95": {
+              "qps": 3593.6919421379457,
+              "recall": 0.97696,
+              "params": "Glass(L=400, R=16, efQuery=20, quant=SQ8U, search_quant=SQ8U, refine_quant=FP16)|20",
+              "build_time": 220.7417290210724,
+              "index_size": 671188.0
+            },
+            "0.99": {
+              "qps": 2936.5962525603454,
+              "recall": 0.99202,
+              "params": "Glass(L=400, R=32, efQuery=20, quant=SQ8U, search_quant=SQ8U, refine_quant=FP16)|20",
+              "build_time": 329.43437600135803,
+              "index_size": 690012.0
+            }
+          },
+          "fair_complete_pair": true
+        },
+        "lorann": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 7339.07835874033,
+              "recall": 0.9163100000000001,
+              "params": "Lorann(quant_bits=8, n_clusters=2048, global_dim=256, rank=32, train_size=5, n_probe=16, rerank=200)|16_200",
+              "build_time": 61.88783288002014,
+              "index_size": 41472.0
+            },
+            "0.95": {
+              "qps": 6195.121904137111,
+              "recall": 0.95027,
+              "params": "Lorann(quant_bits=8, n_clusters=2048, global_dim=128, rank=32, train_size=5, n_probe=24, rerank=400)|24_400",
+              "build_time": 33.013962745666504,
+              "index_size": 29672.0
+            },
+            "0.99": {
+              "qps": 3312.745975361062,
+              "recall": 0.99386,
+              "params": "Lorann(quant_bits=8, n_clusters=2048, global_dim=256, rank=32, train_size=5, n_probe=48, rerank=800)|48_800",
+              "build_time": 61.88783288002014,
+              "index_size": 41472.0
+            }
+          },
+          "fair_complete_pair": true
+        }
+      },
+      "measurement_containers": {
+        "glass": [
+          "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+        ],
+        "hms": [
+          "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+        ],
+        "lorann": [
+          "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+        ]
+      },
+      "validation": {
+        "glass": {
+          "done": true,
+          "expected": 320,
+          "markers": 320,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 320
+        },
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "lorann": {
+          "done": true,
+          "expected": 576,
+          "markers": 576,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 576
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/coco-nomic-768-normalized-standing.json"
+    },
+    {
+      "dataset": "codesearchnet-jina-768-cosine",
+      "deprecated": true,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.8946,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 2266.6442435757804,
+          "recall": 0.9666399999999999,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=64, rerank=100, code_bits=8)|64_100",
+          "build_time": 3427.7888300418854,
+          "index_size": 2241988.0
+        },
+        "0.95": {
+          "qps": 2266.6442435757804,
+          "recall": 0.9666399999999999,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=64, rerank=100, code_bits=8)|64_100",
+          "build_time": 3427.7888300418854,
+          "index_size": 2241988.0
+        },
+        "0.99": {
+          "qps": 1700.1832347120476,
+          "recall": 0.9904100000000001,
+          "params": "HMS(metric=cosine, degree=64, build_ef=500, ef=100, rerank=200, code_bits=8)|100_200",
+          "build_time": 4514.17692565918,
+          "index_size": 2396564.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATHY8AJ6AMZKNZF0PR7NR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-standing.json"
+    },
+    {
+      "dataset": "cqadupstack-lemur-2048-ip",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 3.9017,
+      "hms_metrics": {
+        "0.90": null,
+        "0.95": null,
+        "0.99": null
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATJ5M46CEM2MS3TQDG47R"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-standing.json"
+    },
+    {
+      "dataset": "cqadupstack-muvera-5120-ip",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "running",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 8.1429,
+      "hms_metrics": null,
+      "comparators": {}
+    },
+    {
+      "dataset": "dpr-jina-768-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "running",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 12.944,
+      "hms_metrics": null,
+      "comparators": {}
+    },
+    {
+      "dataset": "glove-200-cosine",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.2842,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 824.6927300234914,
+          "recall": 0.90906,
+          "params": "HMS(metric=cosine, degree=96, build_ef=500, ef=320, rerank=200, code_bits=8)|320_200",
+          "build_time": 2861.9940621852875,
+          "index_size": 990648.0
+        },
+        "0.95": {
+          "qps": 461.5411391141897,
+          "recall": 0.95398,
+          "params": "HMS(metric=cosine, degree=96, build_ef=500, ef=640, rerank=100, code_bits=8)|640_100",
+          "build_time": 2861.9940621852875,
+          "index_size": 990648.0
+        },
+        "0.99": null
+      },
+      "comparators": {
+        "pag": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATKTP8B8NTMS8P6083N7R"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/glove-200-cosine-standing.json"
+    },
+    {
+      "dataset": "gooaq-distilroberta-768-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.9589,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 2890.975455562193,
+          "recall": 0.9870399999999999,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+          "build_time": 3166.1761033535004,
+          "index_size": 2406280.0
+        },
+        "0.95": {
+          "qps": 2890.975455562193,
+          "recall": 0.9870399999999999,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+          "build_time": 3166.1761033535004,
+          "index_size": 2406280.0
+        },
+        "0.99": {
+          "qps": 2478.5346935747684,
+          "recall": 0.99357,
+          "params": "HMS(metric=normalized, degree=48, build_ef=500, ef=100, rerank=200, code_bits=8)|100_200",
+          "build_time": 3524.132312774658,
+          "index_size": 2495336.0
+        }
+      },
+      "comparators": {
+        "ngt-qg": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATKDQTWS2TKRJ5VBRVZMR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-standing.json"
+    },
+    {
+      "dataset": "hotpotqa-harrier-640-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "running",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 3.6851,
+      "hms_metrics": null,
+      "comparators": {}
+    },
+    {
+      "dataset": "imagenet-align-640-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.8851,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 3451.8402317299233,
+          "recall": 0.95572,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=200, code_bits=8, learn_queries=32768)|64_200",
+          "build_time": 4036.843714237213,
+          "index_size": 2032912.0
+        },
+        "0.95": {
+          "qps": 3451.8402317299233,
+          "recall": 0.95572,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=200, code_bits=8, learn_queries=32768)|64_200",
+          "build_time": 4036.843714237213,
+          "index_size": 2032912.0
+        },
+        "0.99": {
+          "qps": 1756.0278385520403,
+          "recall": 0.99138,
+          "params": "HMS(metric=normalized, degree=64, build_ef=500, ef=200, rerank=200, code_bits=8, learn_queries=32768)|200_200",
+          "build_time": 4164.684488296509,
+          "index_size": 2156232.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATMG062BP8EBXE355Q8DR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/imagenet-align-640-normalized-standing.json"
+    },
+    {
+      "dataset": "imagenet-clip-512-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.5946,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 3573.0120024786215,
+          "recall": 0.99161,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=200, code_bits=8)|40_200",
+          "build_time": 2625.118451356888,
+          "index_size": 1450152.0
+        },
+        "0.95": {
+          "qps": 3573.0120024786215,
+          "recall": 0.99161,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=200, code_bits=8)|40_200",
+          "build_time": 2625.118451356888,
+          "index_size": 1450152.0
+        },
+        "0.99": {
+          "qps": 3573.0120024786215,
+          "recall": 0.99161,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=200, code_bits=8)|40_200",
+          "build_time": 2625.118451356888,
+          "index_size": 1450152.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        },
+        "symphonyqg": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 1879.2751572507707,
+              "recall": 0.9011600000000001,
+              "params": "SymphonyQG(max_degree=64, efConstruction=400, quantization_bits=8, ef=600)|600",
+              "build_time": 4483.4918620586395,
+              "index_size": 11266200.0
+            },
+            "0.95": {
+              "qps": 781.3653723035387,
+              "recall": 0.95477,
+              "params": "SymphonyQG(max_degree=64, efConstruction=400, quantization_bits=0, ef=1500)|1500",
+              "build_time": 2616.819615840912,
+              "index_size": 12493044.0
+            },
+            "0.99": null
+          },
+          "fair_complete_pair": true
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+        ],
+        "symphonyqg": [
+          "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "symphonyqg": {
+          "done": true,
+          "expected": 52,
+          "markers": 52,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 52
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/imagenet-clip-512-normalized-standing.json"
+    },
+    {
+      "dataset": "inaturalist-resnet-2048-cosine",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 2.057,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 2099.5329930993066,
+          "recall": 0.98684,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+          "build_time": 1361.8167700767517,
+          "index_size": 2062088.0
+        },
+        "0.95": {
+          "qps": 2099.5329930993066,
+          "recall": 0.98684,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+          "build_time": 1361.8167700767517,
+          "index_size": 2062088.0
+        },
+        "0.99": {
+          "qps": 1792.7640454128173,
+          "recall": 0.99089,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=128, rerank=100, code_bits=8)|128_100",
+          "build_time": 1361.8167700767517,
+          "index_size": 2062088.0
+        }
+      },
+      "comparators": {
+        "ngt-qg": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PBN8XKQ2A7T4PXS31T8D1R",
+          "ta-01M5PJEQJ7DFNRVEWT7QM2VQRR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-standing.json"
+    },
+    {
+      "dataset": "laion-clip-512-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.9476,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 2401.589335794684,
+          "recall": 0.9203300000000001,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=128, rerank=400, code_bits=8, learn_queries=32768)|128_400",
+          "build_time": 3610.8209688663483,
+          "index_size": 1420352.0
+        },
+        "0.95": {
+          "qps": 1670.3563896768228,
+          "recall": 0.95352,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=200, rerank=400, code_bits=8, learn_queries=32768)|200_400",
+          "build_time": 3610.8209688663483,
+          "index_size": 1420352.0
+        },
+        "0.99": {
+          "qps": 663.9500155852702,
+          "recall": 0.99061,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=640, rerank=200, code_bits=8, learn_queries=32768)|640_200",
+          "build_time": 3610.8209688663483,
+          "index_size": 1420352.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATN6HWJ5THC80W1W65RAR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/laion-clip-512-normalized-standing.json"
+    },
+    {
+      "dataset": "landmark-dino-768-cosine",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.6958,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 3215.059999614404,
+          "recall": 0.97604,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+          "build_time": 1661.7207391262054,
+          "index_size": 1242424.0
+        },
+        "0.95": {
+          "qps": 3215.059999614404,
+          "recall": 0.97604,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+          "build_time": 1661.7207391262054,
+          "index_size": 1242424.0
+        },
+        "0.99": {
+          "qps": 2307.3190987914845,
+          "recall": 0.9946200000000002,
+          "params": "HMS(metric=cosine, degree=48, build_ef=500, ef=128, rerank=400, code_bits=8)|128_400",
+          "build_time": 1589.2487525939941,
+          "index_size": 1279568.0
+        }
+      },
+      "comparators": {
+        "ngt-qg": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATMQKY2AWHG30BA59JVCR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/landmark-dino-768-cosine-standing.json"
+    },
+    {
+      "dataset": "landmark-nomic-768-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.6893,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 4056.7135367185797,
+          "recall": 0.9997999999999999,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=400, code_bits=8)|40_400",
+          "build_time": 1244.60360455513,
+          "index_size": 1241636.0
+        },
+        "0.95": {
+          "qps": 4056.7135367185797,
+          "recall": 0.9997999999999999,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=400, code_bits=8)|40_400",
+          "build_time": 1244.60360455513,
+          "index_size": 1241636.0
+        },
+        "0.99": {
+          "qps": 4056.7135367185797,
+          "recall": 0.9997999999999999,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=400, code_bits=8)|40_400",
+          "build_time": 1244.60360455513,
+          "index_size": 1241636.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        },
+        "ngt-qg": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 6745.822918159731,
+              "recall": 0.92152,
+              "params": "QG-NGT(20,0.06,20:40,20:40,96,4000,2000:2,f96,1:60,0,1.0,0.0)|0_0_1_0",
+              "build_time": 1796.403158903122,
+              "index_size": 7307308.0
+            },
+            "0.95": {
+              "qps": 4804.432269489275,
+              "recall": 0.9678,
+              "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.0,1.1)|1_1_1_0",
+              "build_time": 1457.0982975959778,
+              "index_size": 7032096.0
+            },
+            "0.99": {
+              "qps": 4174.516845442529,
+              "recall": 0.9950999999999999,
+              "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.0,1.5)|1_5_1_0",
+              "build_time": 1457.0982975959778,
+              "index_size": 7032096.0
+            }
+          },
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATN6HDQ0YTRZ5XZRNPCSR",
+          "ta-01M5PDWQVEXHTNJSV6WPESQA3R"
+        ],
+        "ngt-qg": [
+          "ta-01M5PDWQVEXHTNJSV6WPESQA3R"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "ngt-qg": {
+          "done": true,
+          "expected": 101,
+          "markers": 101,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 101
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/landmark-nomic-768-normalized-standing.json"
+    },
+    {
+      "dataset": "llama-128-ip",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "failed_partial",
+      "estimated_cpu_ram_usd": 0.2642,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 6293.074640663291,
+          "recall": 0.9084,
+          "params": "HMS(metric=ip, degree=32, build_ef=500, ef=100, rerank=200, code_bits=8, learn_queries=32768)|100_200",
+          "build_time": 327.7096393108368,
+          "index_size": 182240.0
+        },
+        "0.95": {
+          "qps": 5162.219761942779,
+          "recall": 0.9574000000000001,
+          "params": "HMS(metric=ip, degree=32, build_ef=500, ef=128, rerank=200, code_bits=8, learn_queries=32768)|128_200",
+          "build_time": 327.7096393108368,
+          "index_size": 182240.0
+        },
+        "0.99": {
+          "qps": 2585.3057838028876,
+          "recall": 0.99034,
+          "params": "HMS(metric=ip, degree=32, build_ef=500, ef=320, rerank=200, code_bits=8, learn_queries=32768)|320_200",
+          "build_time": 327.7096393108368,
+          "index_size": 182240.0
+        }
+      },
+      "comparators": {
+        "mlann-rf": {
+          "state": "failed",
+          "metrics": null,
+          "fair_complete_pair": false
+        },
+        "roargraph": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 8555.527366255155,
+              "recall": 0.90054,
+              "params": "RoarGraph(M_sq=100, M_pjbp=48, L_pjpq=500, L_pq=100)|100",
+              "build_time": 163.0549566745758,
+              "index_size": 569220.0
+            },
+            "0.95": {
+              "qps": 5913.690107154069,
+              "recall": 0.95223,
+              "params": "RoarGraph(M_sq=100, M_pjbp=64, L_pjpq=500, L_pq=130)|130",
+              "build_time": 208.6183021068573,
+              "index_size": 665620.0
+            },
+            "0.99": {
+              "qps": 1305.5127299723272,
+              "recall": 0.9911300000000001,
+              "params": "RoarGraph(M_sq=100, M_pjbp=96, L_pjpq=500, L_pq=800)|800",
+              "build_time": 317.61427903175354,
+              "index_size": 858288.0
+            }
+          },
+          "fair_complete_pair": true
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR"
+        ],
+        "roargraph": [
+          "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "roargraph": {
+          "done": true,
+          "expected": 108,
+          "markers": 108,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 108
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/llama-128-ip-standing.json"
+    },
+    {
+      "dataset": "msmarco-qwen-1024-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "running",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 7.8266,
+      "hms_metrics": null,
+      "comparators": {}
+    },
+    {
+      "dataset": "simplewiki-openai-3072-normalized",
+      "deprecated": true,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.717,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 1313.8333141623937,
+          "recall": 0.9819200000000001,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+          "build_time": 1036.4664630889893,
+          "index_size": 1598116.0
+        },
+        "0.95": {
+          "qps": 1313.8333141623937,
+          "recall": 0.9819200000000001,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+          "build_time": 1036.4664630889893,
+          "index_size": 1598116.0
+        },
+        "0.99": {
+          "qps": 1031.0817139029405,
+          "recall": 0.99127,
+          "params": "HMS(metric=normalized, degree=48, build_ef=500, ef=80, rerank=100, code_bits=8)|80_100",
+          "build_time": 1217.2273125648499,
+          "index_size": 1610996.0
+        }
+      },
+      "comparators": {
+        "ngt-qg": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATNAXHRNV696SP2HHHP8R"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-standing.json"
+    },
+    {
+      "dataset": "yahoo-minilm-384-normalized",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "interrupted",
+      "estimated_cpu_ram_usd": 1.5726,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 4201.33769846677,
+          "recall": 0.96601,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8)|40_100",
+          "build_time": 969.3628604412079,
+          "index_size": 605228.0
+        },
+        "0.95": {
+          "qps": 4201.33769846677,
+          "recall": 0.96601,
+          "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8)|40_100",
+          "build_time": 969.3628604412079,
+          "index_size": 605228.0
+        },
+        "0.99": {
+          "qps": 2760.413176299332,
+          "recall": 0.99146,
+          "params": "HMS(metric=normalized, degree=48, build_ef=500, ef=128, rerank=200, code_bits=8)|128_200",
+          "build_time": 1340.4383828639984,
+          "index_size": 640940.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "interrupted",
+          "metrics": null,
+          "fair_complete_pair": false
+        },
+        "ngt-qg": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 6778.293042405484,
+              "recall": 0.9120999999999999,
+              "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.0,0.0)|0_0_1_0",
+              "build_time": 1420.9361407756805,
+              "index_size": 5817168.0
+            },
+            "0.95": {
+              "qps": 4509.640639949125,
+              "recall": 0.9673100000000001,
+              "params": "QG-NGT(40,0.1,20:50,30:50,96,4000,4000:2,f96,1:80,0,1.0,1.2)|1_2_1_0",
+              "build_time": 2860.996760368347,
+              "index_size": 7048636.0
+            },
+            "0.99": {
+              "qps": 2986.4927917485966,
+              "recall": 0.99278,
+              "params": "QG-NGT(40,0.1,20:50,30:50,96,4000,4000:2,f96,1:80,0,1.04,1.5)|1_5_1_04",
+              "build_time": 2860.996760368347,
+              "index_size": 7048636.0
+            }
+          },
+          "fair_complete_pair": false
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATNW9NXKXFBKVZ5T31VPR",
+          "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R"
+        ],
+        "ngt-qg": [
+          "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "ngt-qg": {
+          "done": true,
+          "expected": 101,
+          "markers": 101,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 101
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/yahoo-minilm-384-normalized-standing.json"
+    },
+    {
+      "dataset": "yandex-200-cosine",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "complete",
+      "estimated_cpu_ram_usd": 1.1095,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 6224.2212587394,
+          "recall": 0.9219700000000001,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=64, rerank=400, code_bits=8, learn_queries=32768)|64_400",
+          "build_time": 1567.4295625686646,
+          "index_size": 801016.0
+        },
+        "0.95": {
+          "qps": 4189.077971885376,
+          "recall": 0.96497,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=160, rerank=400, code_bits=8, learn_queries=32768)|160_400",
+          "build_time": 1567.4295625686646,
+          "index_size": 801016.0
+        },
+        "0.99": {
+          "qps": 2142.9773394954286,
+          "recall": 0.9926100000000001,
+          "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=400, rerank=100, code_bits=8, learn_queries=32768)|400_100",
+          "build_time": 1567.4295625686646,
+          "index_size": 801016.0
+        }
+      },
+      "comparators": {
+        "glass": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 4309.383018081118,
+              "recall": 0.9151500000000001,
+              "params": "Glass(L=400, R=32, efQuery=50, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|50",
+              "build_time": 571.4705064296722,
+              "index_size": 1231172.0
+            },
+            "0.95": {
+              "qps": 3022.0280310759786,
+              "recall": 0.9681500000000001,
+              "params": "Glass(L=400, R=48, efQuery=200, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|200",
+              "build_time": 725.8821291923523,
+              "index_size": 1290612.0
+            },
+            "0.99": {
+              "qps": 1691.840912704298,
+              "recall": 0.9905600000000001,
+              "params": "Glass(L=400, R=48, efQuery=400, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|400",
+              "build_time": 725.8821291923523,
+              "index_size": 1290612.0
+            }
+          },
+          "fair_complete_pair": true
+        }
+      },
+      "measurement_containers": {
+        "glass": [
+          "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+        ],
+        "hms": [
+          "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+        ]
+      },
+      "validation": {
+        "glass": {
+          "done": true,
+          "expected": 320,
+          "markers": 320,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 320
+        },
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/yandex-200-cosine-standing.json"
+    },
+    {
+      "dataset": "yi-128-ip",
+      "deprecated": false,
+      "hms_state_at_checkpoint": "done",
+      "pipeline_state": "failed_partial",
+      "estimated_cpu_ram_usd": 0.2143,
+      "hms_metrics": {
+        "0.90": {
+          "qps": 6197.529814600491,
+          "recall": 0.92325,
+          "params": "HMS(metric=ip, degree=32, build_ef=500, ef=128, rerank=400, code_bits=8, learn_queries=32768)|128_400",
+          "build_time": 210.77056789398193,
+          "index_size": 143608.0
+        },
+        "0.95": {
+          "qps": 4264.20737203793,
+          "recall": 0.95335,
+          "params": "HMS(metric=ip, degree=32, build_ef=500, ef=200, rerank=200, code_bits=8, learn_queries=32768)|200_200",
+          "build_time": 210.77056789398193,
+          "index_size": 143608.0
+        },
+        "0.99": {
+          "qps": 1517.2279450376095,
+          "recall": 0.99146,
+          "params": "HMS(metric=ip, degree=48, build_ef=500, ef=640, rerank=200, code_bits=8, learn_queries=32768)|640_200",
+          "build_time": 208.46477246284485,
+          "index_size": 152768.0
+        }
+      },
+      "comparators": {
+        "mlann-rf": {
+          "state": "failed",
+          "metrics": null,
+          "fair_complete_pair": false
+        },
+        "roargraph": {
+          "state": "done",
+          "metrics": {
+            "0.90": {
+              "qps": 5319.616835843471,
+              "recall": 0.90083,
+              "params": "RoarGraph(M_sq=100, M_pjbp=48, L_pjpq=500, L_pq=140)|140",
+              "build_time": 116.6600329875946,
+              "index_size": 416040.0
+            },
+            "0.95": {
+              "qps": 3618.980501710716,
+              "recall": 0.95125,
+              "params": "RoarGraph(M_sq=100, M_pjbp=96, L_pjpq=500, L_pq=140)|140",
+              "build_time": 251.92826867103577,
+              "index_size": 627320.0
+            },
+            "0.99": null
+          },
+          "fair_complete_pair": true
+        }
+      },
+      "measurement_containers": {
+        "hms": [
+          "ta-01M5PATPDV47G640F4XD2E0RPR"
+        ],
+        "roargraph": [
+          "ta-01M5PATPDV47G640F4XD2E0RPR"
+        ]
+      },
+      "validation": {
+        "hms": {
+          "done": true,
+          "expected": 180,
+          "markers": 180,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 180
+        },
+        "roargraph": {
+          "done": true,
+          "expected": 108,
+          "markers": 108,
+          "problems": [],
+          "test_count": 1000,
+          "valid": 108
+        }
+      },
+      "artifact_standing": "/Volumes/A/.win-vibe-live/benchmarks/results/vibe_live_s_20261023/interrupted-complete-arm-exports/yi-128-ip-standing.json"
+    }
+  ],
+  "draft_pr": "https://github.com/vector-index-bench/vibe/pull/15",
+  "draft_pr_write_state": "Blocked403integration/401CLI,body unchanged since08:28Z; preparedbodyonly",
+  "full_pipeline_complete": 3,
+  "failed_partial_pipeline": 2,
+  "interrupted_pipeline": 19,
+  "hms_complete": 20,
+  "hms_interrupted": 4
+}

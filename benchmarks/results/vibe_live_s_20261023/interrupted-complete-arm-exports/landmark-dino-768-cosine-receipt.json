@@ -1,0 +1,32 @@
+{
+  "dataset": "landmark-dino-768-cosine",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_32_500_8_true.hdf5": "fc88417f7474f25a8326e5e0a36bf577875e9580dfa726adbf5978cb8568c636",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_48_500_8_true.hdf5": "8b426e7c6cd91b8f9d6eba3b1970582ad7c1874760148bd133e5bb3f0fc2ab4b",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_64_500_8_true.hdf5": "61ea839555d9be432a7ddb08688f0952305eaff662568eb86c1dd94a1a69568a",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_96_500_8_true.hdf5": "e55b057eafa2db7f54da0b41d8d88b889aae368e62b9430bfb3b932e74c6dc73"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATMQKY2AWHG30BA59JVCR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "9a225b07075553ae08e5f1b1a4fc74b9be2e5629000e61466873f9513694de2b",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/landmark-dino-768-cosine/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

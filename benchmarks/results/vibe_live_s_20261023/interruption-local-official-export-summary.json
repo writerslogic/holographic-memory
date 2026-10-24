@@ -1,0 +1,869 @@
+[
+  {
+    "dataset": "agnews-mxbai-1024-euclidean",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_32_500_8_true.hdf5": "ee0471afe96d3c87d7171c59199efd3192956033b087cf4ed85b01bb4f0d681f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_48_500_8_true.hdf5": "d2c142130f836143deb98e66deacb8adef4fc7bbbd0235239794aa2fe4ea0694",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_64_500_8_true.hdf5": "42d501eaf8cf7ffcec47b3e893eb02433d029c4e579d68dfb28e4d2cb206a4b1",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_96_500_8_true.hdf5": "ba95950c0344b597d0146c2014b4c53f1f68090a377bfb7f990747f66b773e6f"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATH4SPV2PQVY7TXBFWM8R"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "d3c4a0c99feb3466213f4ed7543e7b7b88d623b6ebbceeeba2703fcff4d8aacd",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/agnews-mxbai-1024-euclidean/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "arxiv-nomic-768-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "fa5b11aa75056180febc6868322e0c0e30001b2619c31c8472ed224a1b492c68",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "ba2781d1dfc14ce3ad504a046eb5b682339e64bbce9bcf1b00fa716565e3cae0",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "fe3b69243784f7c10858a7a90d7e85208e036e35606c3ea34d272fcdbf12e6e4",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "f0014b3dac54d686153a69a327ed80edf9c9f34e75126dab031d514c6fa4d17a"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PKP35HA4E538A8D193RJJR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "c6baf6b788415bbdf211eb23b269b25a851279c82a88a06dde21d08b1a9e0f32",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/arxiv-nomic-768-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "ccnews-nomic-768-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "ngt-qg": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "c9ab9083430c5ad7f23850503193111e95680de377d787c7e3490aec188c4878",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "e7005c601c0482d3f6e0a370da577b857e150a51c8fe34cd4ef0dd0b6ea9baf5",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "9b0d5b3d4aaa56bbb7d432348aa851f999310f9b7d4cde906efb30bcdc45c62f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/hms@12c80decb094/results/ccnews-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "ac7d32f4b159b4f12e495d7eb541665b808d6c671b4b8e2a2b0672ceae3b0b11"
+      },
+      "ngt-qg": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": "51b2582585f4d5cc6804093884b2c8d0626d11f927deda7cb1a29d2b5645c3c0",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": "4927712010f03370eab0c92ab40393efadf8a7c1a8992ee8a3764fc9478c3065",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": "aea81f7a73147e96fd4a6add25398bb4d5d348c15acce22ba97367c5ff221868",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": "ab4ae64daafc51cc7da0033f1ee44a882712e0831350efadf87b23a786b1aebd",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/ccnews-nomic-768-normalized/ngt-qg/results/ccnews-nomic-768-normalized/100/ngt-qg/normalized_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": "d7f9f69372c1399f5873a8bc8b5649a14c9cc09cda3fec70457a947ec06140c6"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATHZNQ0Y3256HHNV659GR"
+      ],
+      "ngt-qg": [
+        "ta-01M5PGP4JKDE7HMXCG7X9VKDGR",
+        "ta-01M5PQN38EGVXVMZ66TVE6B1AR",
+        "ta-01M5PYHHJ1VVKQYCWZ64XR3QVR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "9331debb443377367fc5bf816b262a1f32d2307a8d37888971f5736163d916dd",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/ccnews-nomic-768-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 281,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "celeba-resnet-2048-cosine",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "ngt-qg": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_32_500_8_true.hdf5": "d14b2bd2d4922fda33c04df09419ae5a125058f21e6b60b9a872a17a9f8bf60a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_48_500_8_true.hdf5": "774773c5d53b43878813813a66fcc3cf5ad54998b0ae1f2b6bba1779cc4bb138",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_64_500_8_true.hdf5": "74e19bee28b1e188fef86684bdb2929066643c94e7c8b1da2c7834ad643f6cb7",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_96_500_8_true.hdf5": "82921a995472eca8441f57dbf990a6866988e9f1fb78901354fa0e0918a08098"
+      },
+      "ngt-qg": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": "1b4ca09ddc023b9694b40779fd681688dec099f49bc3720854ab2014eec2508f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": "e77e0d190f942b21f3ac5fe66734309479aa9f3d378ff6a50730e31169bb1b69",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": "31ae213709df317b6a7625bf60ed745f701eb36c605096f611ec73665e5310c4",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": "00acd7f9cbd1ade5bfff6cf54b32b4d58b3a5a58020b4753c6ef98c586a408f1",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": "2e85ffdd7adfd159cb1b7bc48004c14272b3225b4c3281d351a489be691cd7af"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATJBNDETJ3AZBBEEYNXPR"
+      ],
+      "ngt-qg": [
+        "ta-01M5PATJBNDETJ3AZBBEEYNXPR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "29f74cbc2ad7128db23f91093f626ecbb42f50f0ad3c4b4f9bdba189cabc1770",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/celeba-resnet-2048-cosine/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 281,
+    "same_as_prior_official_points": true
+  },
+  {
+    "dataset": "coco-nomic-768-normalized",
+    "validation": {
+      "glass": {
+        "done": true,
+        "expected": 320,
+        "markers": 320,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 320
+      },
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "lorann": {
+        "done": true,
+        "expected": 576,
+        "markers": 576,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 576
+      }
+    },
+    "raw_original_sha256": {
+      "glass": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ4U_FP16.hdf5": "9fd9601826c7ae927ba95b9903db83e649b5fe608184756bd0d3f7ca9396e6e4",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ4U_FP32.hdf5": "494da22a9fbb89001186cc3047e85179e098a28cbc431f890331101b96b83a92",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ8U_FP16.hdf5": "f03297da734127eb6fee6bff8223df4007281770bf6a469fe975bb0f94db744f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ8U_FP32.hdf5": "93b3724b7feb738858e6737fff44794e819f8c83bbbfd9a31d1f4017af530190",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ4U_FP16.hdf5": "18a2d6bceb494de574ec110acfd150e6bc5b75ec452afba0ffaf516a6d6d427d",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ4U_FP32.hdf5": "4db6f7134a48f5434f5684a392d7772e89c79a06192b95d20387f6d3c306783c",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ8U_FP16.hdf5": "9d55edef86ac4f503e59901899cea85a7458632a3cc18c7cb6b026b7b0872470",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ8U_FP32.hdf5": "9883d5b845e1b57957fe12207fc0b187debe071147b9036869c8dd00d9f48c32",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ4U_FP16.hdf5": "13a4c6d37e0b03e7d51bdd01ec2719d88f8887216d96a3242171b8e958123d69",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ4U_FP32.hdf5": "dc724a5c95042b4e9f7c258acd0303934688bfd33678798f37b4619200177e03",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ8U_FP16.hdf5": "e5a9c1aeb73c1b8629684114bcd66acd7e503067fe1dc0acd36f6d015cab4df8",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ8U_FP32.hdf5": "c4d6d824145cd5107fdfe8dcd7e986dea941b268b1284453cfe41635e28abee2",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ4U_FP16.hdf5": "d6b61ed89ad91f7f37cefeb1074df06552d0ee4d14eb6416c350c8d101ca8a1b",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ4U_FP32.hdf5": "1874a2831a81efb489aa951c5cbafd9e318e3296d77ae24588322c7fd408b173",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ8U_FP16.hdf5": "a4259c84a6d2db774190fd809789a7a4767c63580330521c154c5c62aaa7131c",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ8U_FP32.hdf5": "b855fa5d98fc42743b5e4697b9df980bee304fecec5a7b65702e07ce80197108",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ4U_FP16.hdf5": "8dde88af524c379d0abf88d523706db692cdc50b55b4f8a6deb95e9423fdaab7",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ4U_FP32.hdf5": "4eeabe8c7ac634e35fb51a569115bef166ba3da0bdc365231d69d4bdcdd125ee",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ8U_FP16.hdf5": "2b2900e10c8531d3dd9069af6c13554a884b250086bcf3ca0f9c159d2a82466a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ8U_FP32.hdf5": "e689ae36936cb8149ebb5b693e3d62e88607d61e87ed030b6ce2e7e5e4ce10bf"
+      },
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "a14c2b2064f879e1ea2b2a5d7c4fc9ca49690919cac3273b8293b03f3b60ca68",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "507a62f7682c83e1ce563cd5a334a949ca7d159c98e7268c79338b9be044029f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "71c8859a3c5baeed9ca56c18d9399219fc7378b44473ac8c54660fefc85334e3",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "8fb1414cfa032d5bdaaa7456a246662a76c3d3564df05e268243a4d54fc9b1c7"
+      },
+      "lorann": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_128_32_5.hdf5": "5dc39e784408490884f1c591487c3ce140ad22f5325072707fa130f3c9f7bf95",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_128_64_5.hdf5": "0cb2db50ffa9580dd24774ea8d255a0400030dc634ac2c6c685fa2a5cd27f6de",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_256_32_5.hdf5": "11add0edc837805558a2761cfd9d01fe43855105c7a22513e8201f9920ce3711",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_256_64_5.hdf5": "1522fac9896cfab85b6d156ecfdde804322e66f0135f2c1bb69e142e34f49e9a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_384_32_5.hdf5": "ef77a8c2672a7d666befd39978798828954a89f0fd865b9bcdc469633642a0f5",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_384_64_5.hdf5": "dbc627ffc5a7f33d0c4b6f810e601e17abc94391d9ddb29e9ac9360a78560693",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_512_32_5.hdf5": "88f4c0f144d03d5569192b1f9707ee1f1bdf16a7f17ba76177b88bba58c3fca6",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_512_64_5.hdf5": "c635f3f2c2c3e1a3391ae38c02497ace07086c0df8f339c93d471ffc83f39afb",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_128_32_5.hdf5": "0e7c0a2fa792ef8b8e4ec3ee9825be5e480b1af82758afa9f6d8da552c7e37f0",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_128_64_5.hdf5": "ffd064f23e3791c5e0f2f209c6d8b259c3751d759605534b9a158517f802471f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_256_32_5.hdf5": "51737fd0dae91b4509be01f29f20380896f4cd53dd06a06cd8d0369529946cef",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_256_64_5.hdf5": "998519c54b7af910161b62fa948c4a453b1fbf3127e2aad28a02c3295a4ec574",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_384_32_5.hdf5": "4e5ed5b9401b04ac96993ac1334980ba66cefe8bf5fb7ffb670193ba02d18ec0",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_384_64_5.hdf5": "fabd64303fef261b010d7988e6d1b5147ebcd0dde3e53e11e5955ef15a1f0636",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_512_32_5.hdf5": "85f347e052e1208d3f43e7644f85b9b6973b8792b022e00d312966a5faeda594",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_512_64_5.hdf5": "6823494cf399b5d72b88fb682a1f4fc42210d6655dad03c1bf43c2b9641229fb"
+      }
+    },
+    "measurement_containers": {
+      "glass": [
+        "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+      ],
+      "hms": [
+        "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+      ],
+      "lorann": [
+        "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "354ad44e3658abee61fbbdd5374bd5c6a8933a9910ac44769bf04f864c52f41a",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/coco-nomic-768-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 1076,
+    "same_as_prior_official_points": true
+  },
+  {
+    "dataset": "codesearchnet-jina-768-cosine",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_32_500_8_true.hdf5": "17e4049841d11fe0b5dc2755e86be2499c91763ca65bc2eadf1eeec9b7622f36",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_48_500_8_true.hdf5": "962afe2f4c32ecf9a3ae6532c2d82afaf3b88fb6bb097ca5447ab383812f1efa",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_64_500_8_true.hdf5": "de6f8d53b11c81a284aa514294d8e7387b7f5a04af851cfdb142d1b42173228c",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_96_500_8_true.hdf5": "fad7d46d26e014a424a12a3949503b14cd3db1394fab3bac86df71e7d0876686"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATHY8AJ6AMZKNZF0PR7NR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "d14058808d02feed15ae26b93b59354364db737149cc864f9e964abb9c0f49d1",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/codesearchnet-jina-768-cosine/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "cqadupstack-lemur-2048-ip",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_32_500_8_true.hdf5": "65a1171ba50b2f37e17a26662cbbf8b1d8e83de7951b70bac81d011984c08429",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_48_500_8_true.hdf5": "c08d8ea21267d49ba8589bbfd8bbc5c0c301b428f4a42fd8fc1c335237e0f894",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_64_500_8_true.hdf5": "8ad55a8ec5c3ef4f35b42d9c67dce2373d3dc02b429626389aac90e7a0099beb",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_96_500_8_true.hdf5": "b0316acb50c08cac61085665a7a43a947bb0994887674a727f8732b6aa616238"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATJ5M46CEM2MS3TQDG47R"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "cc032b9b3ba1765b499633e7929af93293912ba3820a821d6d2733d8978f603e",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/cqadupstack-lemur-2048-ip/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "glove-200-cosine",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_32_500_8_true.hdf5": "c14201c71faf962ad1d552882c04d0bcbbc1ba701580b3f9e988689ed0de5477",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_48_500_8_true.hdf5": "eb1a63df10b42ac0f5ba7a0d9adad3a80e826bf1efa78247fb2076a5ed0f0e77",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_64_500_8_true.hdf5": "5df1e117f59b28fc526b84f1c97020501fc40966a76d9ca649fffde25fac527a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_96_500_8_true.hdf5": "3b485451e6bdc0880050b78f47bc414da06fdf6836a80fd620b23c73adb29eb5"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATKTP8B8NTMS8P6083N7R"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "0b250aad847d7144e9b9fd781c1a0621bd656e460cd0a94546a49cc6062c16f5",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/glove-200-cosine/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "gooaq-distilroberta-768-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "977f5c6fdd4ddbb360867566e49250fbe8648aef040deef28c369d3302b23eb1",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "474f9c7841590030a119a8b105aff658985d5343d0a090788fa992e1dff34d73",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "d17f47e203de48901610a97ac82258ef534ae8ef2f9249aabd31626e05c4777a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "b2cc4bf987784bd55456ab7ac0f7f8d48e374a4c10550f85d6f52a7be221fc4c"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATKDQTWS2TKRJ5VBRVZMR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "316ae018a9b1d279f7cafc953526e1d27a1268f94d4295977c89ba6201217ac1",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/gooaq-distilroberta-768-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "imagenet-align-640-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_32_500_8_true.hdf5": "ed89efe60410c79a6b9e5a76c6e8b6a629d1c1eeeee1490184c28e37e9692681",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_48_500_8_true.hdf5": "0c5b53b42206a807bb2a7131a0591d97641df337e317b1bc1ee40499563f4f96",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_64_500_8_true.hdf5": "a3b00d2a330517afe1763298d61e43c14d0fe387c09aa998ad915e23ba5b8d15",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_96_500_8_true.hdf5": "fb14c839ccfd0dc8d60d28d5d757b121b03c0e1b45d07f6593bf77aa6746a775"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATMG062BP8EBXE355Q8DR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "bcfd56d436541de4f65e04b8815323849b0501048826a3c18486f1798fe57019",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/imagenet-align-640-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "imagenet-clip-512-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "symphonyqg": {
+        "done": true,
+        "expected": 52,
+        "markers": 52,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 52
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_32_500_8_true.hdf5": "fe14facb1f117da8b831852467f4a5cd3e66f995a6fc303827e3c0018216ac2c",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_48_500_8_true.hdf5": "a73d1cc80d149b76a7e932efc7960666681644bb9e38f67998f5037f781d832a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_64_500_8_true.hdf5": "dcba04419abded0b7614789ab464d000f2683dc5d08df7398143dfb9042aa3ee",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_96_500_8_true.hdf5": "6aa15835357e02f232a96adabae25da0081a45146c29b32b56f804d717487751"
+      },
+      "symphonyqg": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_32_400_0.hdf5": "abb0b9d2614c7e16e7c4a7af2c9ded6dadfcf1341ac754e81c0c052f2c584f93",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_32_400_8.hdf5": "fbd8e4eb3098ef392d43f8e61d524306931cd0a5ca81973bc356db9b2ec85908",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_64_400_0.hdf5": "a2e0559aaf31375e0e1ca1b7a95c13122e085ee73f9ce505a88c35939263598f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_64_400_8.hdf5": "449872ec03e45b0941e452a7f2d765e408a788d83c7f7a54fe84b91a32662967"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+      ],
+      "symphonyqg": [
+        "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "85bfc96c482650393fa52afb2569e703752868efef1cf5ae8b176a7fb1a29b26",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/imagenet-clip-512-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 232,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "inaturalist-resnet-2048-cosine",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_32_500_8_true.hdf5": "839dc883fb76a7deac579877eb0bb0542a3fe9384e65ddeadeb4a42d064b6efd",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_48_500_8_true.hdf5": "db940884cd7f24143a90d0893051b1518c4206e2413e27640d96f462b04681f7",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_64_500_8_true.hdf5": "6ff531e6624b112b07ed8f8b07706d091cb62b4bd51d602e56a33cc86b881836",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_96_500_8_true.hdf5": "4b2ecd04eaff97aa6dec075c2097018e8f3820a3a39cdc05de8c2a20ffabd419"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PBN8XKQ2A7T4PXS31T8D1R",
+        "ta-01M5PJEQJ7DFNRVEWT7QM2VQRR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "a478a7499f39ede93c17bc7d3ae8f4e1c38342b80ba339a0a43dfe79e6aff9af",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/inaturalist-resnet-2048-cosine/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "laion-clip-512-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_32_500_8_true.hdf5": "ea08bf758b24c52b539ad06b7d394b6114aec37c89a5b02eb8133a662ac48da5",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_48_500_8_true.hdf5": "778e466d23e771cb73ea7b730d48612715f61dd7108b475a7423081d0bc368bd",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_64_500_8_true.hdf5": "090508a77af99f7aa17d4a20f7137dac22a807b1822d2d28c9bd1affbfd290d8",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_96_500_8_true.hdf5": "c5413e9b15171c23527141775dad8486fea9c801657f975195840abf85926676"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATN6HWJ5THC80W1W65RAR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "f322a9bf4418a435db74d146756678aaecab119c80ec08fca7b0dec3b28e297b",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/laion-clip-512-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "landmark-dino-768-cosine",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_32_500_8_true.hdf5": "fc88417f7474f25a8326e5e0a36bf577875e9580dfa726adbf5978cb8568c636",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_48_500_8_true.hdf5": "8b426e7c6cd91b8f9d6eba3b1970582ad7c1874760148bd133e5bb3f0fc2ab4b",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_64_500_8_true.hdf5": "61ea839555d9be432a7ddb08688f0952305eaff662568eb86c1dd94a1a69568a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-dino-768-cosine/hms@12c80decb094/results/landmark-dino-768-cosine/100/hms/cosine_96_500_8_true.hdf5": "e55b057eafa2db7f54da0b41d8d88b889aae368e62b9430bfb3b932e74c6dc73"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATMQKY2AWHG30BA59JVCR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "9a225b07075553ae08e5f1b1a4fc74b9be2e5629000e61466873f9513694de2b",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/landmark-dino-768-cosine/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "landmark-nomic-768-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "ngt-qg": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "a4a36fb5d0bacc5cf38ce827d70830b6b49c0602185227c9ec990160835a5381",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "abe8a0b69cfdf43d63ecae6212e81ccc54d563f29460f42358283a012fdf3b63",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "e94d9792860dea02acae9b0837361aa71fd30cd248347c81a0bc1e59c398fd20",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "6c5ad78712f345fe34aee4efe4946a5e1f16aebe2d4fa551ce41265ea8636b3f"
+      },
+      "ngt-qg": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": "ae99dc4a0c819f4d6cc1d1127863a728e1ee4bdebff090d41e7d1406bf94b2c0",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": "28c37623b4f771fcb0a9bf94028b288fd47ad99321e7bacba520d37e98ab019c",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": "58fb240e4542b2f2be2f0d76e19cd034906504493722fd456de2144201efd304",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": "2160c1549d49602bcbbbc31d718a3c9acc9d7c66ed4ed623e16c61b80723b10c",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": "b12c359cea5f2c650e9bebd3619769456c5281dfa990e9721215c77e0a8de00a"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATN6HDQ0YTRZ5XZRNPCSR",
+        "ta-01M5PDWQVEXHTNJSV6WPESQA3R"
+      ],
+      "ngt-qg": [
+        "ta-01M5PDWQVEXHTNJSV6WPESQA3R"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "069084c20453e997d3830d853b3432dbc4b3c5d1187939980e3d5a7d75c09903",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/landmark-nomic-768-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 281,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "llama-128-ip",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "roargraph": {
+        "done": true,
+        "expected": 108,
+        "markers": 108,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 108
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_32_500_8_true.hdf5": "e4e0237b96b7a6931bd996825b654ace3b90b5eed740c39e7d8f465c167f58e8",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_48_500_8_true.hdf5": "7112d59d0836e635e1d6fde8294fc4994ce777e388df34d7dcbfc83551283004",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_64_500_8_true.hdf5": "c6b1f4de125facdd2b5bbe56b09a87c28493d2e3aa9bb30e4a6adb555b867cc1",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_96_500_8_true.hdf5": "eaa4716783fdc3707b92c7d2943442e11527091488a777226d2ab0fd928cc80e"
+      },
+      "roargraph": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_16_500.hdf5": "b38aafe8631201ff18da82bccd7c197b84840ecedf68d40b1f9aa98c8d4d9c2a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_24_500.hdf5": "28a9ca9cf54f58f47a5616eaf3ee24390ab500229804e7b04880554afe0cfd3a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_32_500.hdf5": "e98c7d9bc60535387ba12d23956aa867ee749fea2b362a0daf82d6b780f98bfd",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_48_500.hdf5": "a9050eff88f5405a9483d3e5f538d33f76ba627d1e0f16ac1a471b447554f535",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_64_500.hdf5": "6feb5a39bd87cf25228280be546652360cbab906c069ab5d286a8bc963b47bf3",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_96_500.hdf5": "f5dcb07812286c92d34d573be75a1418a5fc9cb10c90f4bbb0f2128833840dba"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR"
+      ],
+      "roargraph": [
+        "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "ee42c67afe7c9525903969ae616f054beebb791b534535e8f755a9fed2504e44",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/llama-128-ip/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 288,
+    "same_as_prior_official_points": true
+  },
+  {
+    "dataset": "simplewiki-openai-3072-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_32_500_8_true.hdf5": "c8e767ffb7d4fafc5634dbd6b65ff71d2aec681441fb5b078857f9d6f7db78b8",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_48_500_8_true.hdf5": "aa5a34266543f2521fdf4b63d2a2265e4ae769b6e4309898bc6105d3dda0385d",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_64_500_8_true.hdf5": "76b5d58c58caaad8b5e801d475cd189bcdf58a7101889cecbb80d778b845ac55",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_96_500_8_true.hdf5": "554f7f15092647c925f8914a2d7046b4712ab9e1839f37f5fc3aaf0012ca0b05"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATNAXHRNV696SP2HHHP8R"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "3884718fa3defbebea8cf6377cff7173a4b548f50c3c9ecbff482c2f8a78c7d4",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/simplewiki-openai-3072-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 180,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "yahoo-minilm-384-normalized",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "ngt-qg": {
+        "done": true,
+        "expected": 101,
+        "markers": 101,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 101
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_32_500_8_true.hdf5": "30660e80349496518b0b87f723ef06f2a52596a6aeef55bf0930580b21c8a677",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_48_500_8_true.hdf5": "7d168b33f4dbfedf56363d8594a6329daa242059df8c01722c241e505b7acb4e",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_64_500_8_true.hdf5": "f98e485d029cae5cb6994b0dc67c1bffcc49c52e0c9dffa1a44b455f5574695a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_96_500_8_true.hdf5": "4619e9269670fab40a8c42cc296630b13e358798c4cc13961a91e95ca843993b"
+      },
+      "ngt-qg": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": "dfbc83b08f2df89c3f24e624e1c18c1f80c7a516b9130f05124091e386687b50",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": "214d9b67ceab4c8b8018bb78b1cef84a1b4c3649b6d884c02bf90a947f228803",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": "72f9e95038976edcaa6e908590a5fea54693488fafdd1fe9ccd2636d9de85164",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": "a96f5ca29e97a664a50b762886277fed0f7f707533e5178ca2fa1ed5b5991949",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": "787421391f9d892a616aee265831be8f902f1bb3c0b7ffa8c60b5457ff9884e2"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATNW9NXKXFBKVZ5T31VPR",
+        "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R"
+      ],
+      "ngt-qg": [
+        "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "8f8fbde11ef961ee5caada4274dd7caf1a2b5c8551e2398a95a9bcbed67d7e25",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/yahoo-minilm-384-normalized/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 281,
+    "same_as_prior_official_points": false
+  },
+  {
+    "dataset": "yandex-200-cosine",
+    "validation": {
+      "glass": {
+        "done": true,
+        "expected": 320,
+        "markers": 320,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 320
+      },
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      }
+    },
+    "raw_original_sha256": {
+      "glass": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ4U_FP16.hdf5": "2f3d2cbc84007a1137957865c26db4bbf1cd734a7d2e231ec629300f09a1360d",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ4U_FP32.hdf5": "80c288c9676359b5d7342a91e4ce4c4d755773c4f6c35a9b2f51f0a9154cee83",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ8U_FP16.hdf5": "10dac3ee9268f57770ef42f02a4aa3a12cf484b7f07b0d6ed039700e6fd86864",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ8U_FP32.hdf5": "6c4f07a482a680279f3e36d51e112cc1aa4f9a6ce7cba574713c01a8d2927c6f",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ4U_FP16.hdf5": "de11453462e0a4c71858c7588ba2486acdf9f78bcc547567f123fc19393a8d7a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ4U_FP32.hdf5": "b10b5616e11676eeedca674a0cda65c91428df7f928525a270b9c7626b48f227",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ8U_FP16.hdf5": "de69dbe8e0bb3ff39e72a57c6c7cc976d890d24841098fb0d5d5895fcc018440",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ8U_FP32.hdf5": "e5337b979bf7513c773e60c1ce61a28e61464c63fad930f9dd832da2e9528327",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ4U_FP16.hdf5": "6263baf4b7163b65929cf0f0ce30fee69268f3fa7c9899df72e2de33547f4495",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ4U_FP32.hdf5": "53e1209a14c04280db0e6e7836295ca9222a15b9509162fc5e2a4878d23603ee",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ8U_FP16.hdf5": "6c37451cc144630cb94ecc8533c3ffc62d124a84c32d545774d4d22c90cdc748",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ8U_FP32.hdf5": "29106d510404836cd2d609b2d8d931c25218ec74fe0397e1cf135f150dfcec65",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ4U_FP16.hdf5": "1a79e146e863e5b210ec94b8a7c3ff8a1fc34aa5f0ba340c86d02c0e9755bfb2",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ4U_FP32.hdf5": "fc4bf6bef0794aebcd5dbe3aa86d2fd56ed9a319da04bed49545ac2b6fa1dd9b",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ8U_FP16.hdf5": "48038a7cef9eca1f1ece301731de8d15d13f9f32c3113f23563d4ca8f51103e9",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ8U_FP32.hdf5": "d3348a745775846a4ad271187d4f871bc86e2b49470265514a56baaecc43ec2c",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ4U_FP16.hdf5": "d0b87a0c07b9c5135928d4ca5b4d6cf399abb87827b06a1d4502c528b5d0dc21",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ4U_FP32.hdf5": "27a150ea06c17cdd5304d3a718f50eb192ff9e25cedf39e23efa6a9b55b463f7",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ8U_FP16.hdf5": "ee740ac3251300fb76cb54a93a4029e2973de926011a1d142cc26ee8d78f19fb",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ8U_FP32.hdf5": "4861f1da56b7070d320fd068615aa7a852949fefd285bc73200f45ed1194657a"
+      },
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_32_500_8_true.hdf5": "77368f046b16bff5de342753842d0d6c439a6ec1c3ab142f2cebc38870429c30",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_48_500_8_true.hdf5": "c309137684a3da04969f0d0cf151995181d450fa409a52d9a3a5fe3df5f26eb8",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_64_500_8_true.hdf5": "03c681b3cd9f21862301c480144028d6ad8a17cd63dce12d64f30dfe34f30d6b",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_96_500_8_true.hdf5": "3e43f432665bf8da93aaae112bf5f5bc501bef4aeabd433101334a352d9d0f9f"
+      }
+    },
+    "measurement_containers": {
+      "glass": [
+        "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+      ],
+      "hms": [
+        "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "4795df6991e0ce1a6961b4fa1da953c6a59945e452bc5791e9e99e38a78c4cc0",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/yandex-200-cosine/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 500,
+    "same_as_prior_official_points": true
+  },
+  {
+    "dataset": "yi-128-ip",
+    "validation": {
+      "hms": {
+        "done": true,
+        "expected": 180,
+        "markers": 180,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 180
+      },
+      "roargraph": {
+        "done": true,
+        "expected": 108,
+        "markers": 108,
+        "problems": [],
+        "test_count": 1000,
+        "valid": 108
+      }
+    },
+    "raw_original_sha256": {
+      "hms": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_32_500_8_true.hdf5": "756b22914013affa161fef60236d56c0033510c74719fd664449df444ca4ee0e",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_48_500_8_true.hdf5": "7f002e722e22e20e8f97cb0d9c241188492dc34405b69ae7264ecb990baa7827",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_64_500_8_true.hdf5": "2ac3793f4a36a43f74b010eeba47d997f45f8c3bb8bd3cc3ef2d86884a8fe81a",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_96_500_8_true.hdf5": "15a0ee05a335112c1917151181806c335218c90fee98b014fddcc2b7eaf0d904"
+      },
+      "roargraph": {
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_16_500.hdf5": "a8675f18c6102ef9d9d458ca5f0faab31d5ded52b3146e060a27338975b33e39",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_24_500.hdf5": "62b7ad65964a81b7b33e2fb4930294a26189a69888712f71b4d066cb049fe2d5",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_32_500.hdf5": "a1a52d79b7e5bbe8fc878f3a42ab8d51f62f8f240d88c080969d0bbbdd5bf1d6",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_48_500.hdf5": "c930b7f1d22e55ba9f66a054530a9b658ef8c1313247f2c6993678489955a066",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_64_500.hdf5": "2fb1d325bdfc5b60cf9027297fdf7b597ae8cd54582c7b6a32bedaadb938da53",
+        "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_96_500.hdf5": "544d1a579ac907fc535045f985fc7edceb9b7e1e3771a09aeeb1464c2ed096ea"
+      }
+    },
+    "measurement_containers": {
+      "hms": [
+        "ta-01M5PATPDV47G640F4XD2E0RPR"
+      ],
+      "roargraph": [
+        "ta-01M5PATPDV47G640F4XD2E0RPR"
+      ]
+    },
+    "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+    "summary_sha256": "d34b36e86eb3d1f478e60dfadfe4fd508c9723a2879fbeb2d175e62c81b4553d",
+    "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/yi-128-ip/receipt.json",
+    "no_fit_query_function_launch": true,
+    "groups_exported": 288,
+    "same_as_prior_official_points": true
+  }
+]

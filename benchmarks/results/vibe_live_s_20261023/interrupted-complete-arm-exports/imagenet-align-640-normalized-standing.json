@@ -1,0 +1,38 @@
+{
+  "dataset": "imagenet-align-640-normalized",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:54:58.985382+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATMG062BP8EBXE355Q8DR"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": {
+        "qps": 3451.8402317299233,
+        "recall": 0.95572,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=200, code_bits=8, learn_queries=32768)|64_200",
+        "build_time": 4036.843714237213,
+        "index_size": 2032912.0
+      },
+      "0.95": {
+        "qps": 3451.8402317299233,
+        "recall": 0.95572,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=64, rerank=200, code_bits=8, learn_queries=32768)|64_200",
+        "build_time": 4036.843714237213,
+        "index_size": 2032912.0
+      },
+      "0.99": {
+        "qps": 1756.0278385520403,
+        "recall": 0.99138,
+        "params": "HMS(metric=normalized, degree=64, build_ef=500, ef=200, rerank=200, code_bits=8, learn_queries=32768)|200_200",
+        "build_time": 4164.684488296509,
+        "index_size": 2156232.0
+      }
+    }
+  }
+}

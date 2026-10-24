@@ -1,0 +1,32 @@
+{
+  "dataset": "agnews-mxbai-1024-euclidean",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_32_500_8_true.hdf5": "ee0471afe96d3c87d7171c59199efd3192956033b087cf4ed85b01bb4f0d681f",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_48_500_8_true.hdf5": "d2c142130f836143deb98e66deacb8adef4fc7bbbd0235239794aa2fe4ea0694",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_64_500_8_true.hdf5": "42d501eaf8cf7ffcec47b3e893eb02433d029c4e579d68dfb28e4d2cb206a4b1",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean/hms@12c80decb094/results/agnews-mxbai-1024-euclidean/100/hms/euclidean_96_500_8_true.hdf5": "ba95950c0344b597d0146c2014b4c53f1f68090a377bfb7f990747f66b773e6f"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATH4SPV2PQVY7TXBFWM8R"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "d3c4a0c99feb3466213f4ed7543e7b7b88d623b6ebbceeeba2703fcff4d8aacd",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/agnews-mxbai-1024-euclidean/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

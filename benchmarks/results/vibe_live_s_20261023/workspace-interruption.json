@@ -14,5 +14,8 @@
   "source_evidence": "/Volumes/A/hms-coordination/reports/owned-workspace-disabled-containers.json",
   "rescue_root": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z",
   "input_data_policy": "48official input files215211712656bytes retained remotely; inventory+planURLs/digests local; no duplicate dataset download",
-  "rescue_egress_cost": "unknown, separate from CPU/RAM estimates"
+  "rescue_egress_cost": "unknown, separate from CPU/RAM estimates",
+  "unique_artifact_rescue": "complete7461files5590265460bytes,zero failed attempts",
+  "raw_hdf5_rescued": "253files5578205496bytes",
+  "local_completed_arm_export": "20HMS grids+completecomparators5488groups,unchangedofficialfunction"
 }

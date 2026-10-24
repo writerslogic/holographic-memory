@@ -1,0 +1,32 @@
+{
+  "dataset": "imagenet-align-640-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_32_500_8_true.hdf5": "ed89efe60410c79a6b9e5a76c6e8b6a629d1c1eeeee1490184c28e37e9692681",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_48_500_8_true.hdf5": "0c5b53b42206a807bb2a7131a0591d97641df337e317b1bc1ee40499563f4f96",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_64_500_8_true.hdf5": "a3b00d2a330517afe1763298d61e43c14d0fe387c09aa998ad915e23ba5b8d15",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-align-640-normalized/hms@12c80decb094/results/imagenet-align-640-normalized/100/hms/normalized_96_500_8_true.hdf5": "fb14c839ccfd0dc8d60d28d5d757b121b03c0e1b45d07f6593bf77aa6746a775"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATMG062BP8EBXE355Q8DR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "bcfd56d436541de4f65e04b8815323849b0501048826a3c18486f1798fe57019",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/imagenet-align-640-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

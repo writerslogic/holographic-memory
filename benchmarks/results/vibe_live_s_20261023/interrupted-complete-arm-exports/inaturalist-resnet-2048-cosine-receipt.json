@@ -1,0 +1,33 @@
+{
+  "dataset": "inaturalist-resnet-2048-cosine",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_32_500_8_true.hdf5": "839dc883fb76a7deac579877eb0bb0542a3fe9384e65ddeadeb4a42d064b6efd",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_48_500_8_true.hdf5": "db940884cd7f24143a90d0893051b1518c4206e2413e27640d96f462b04681f7",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_64_500_8_true.hdf5": "6ff531e6624b112b07ed8f8b07706d091cb62b4bd51d602e56a33cc86b881836",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine/hms@12c80decb094/results/inaturalist-resnet-2048-cosine/100/hms/cosine_96_500_8_true.hdf5": "4b2ecd04eaff97aa6dec075c2097018e8f3820a3a39cdc05de8c2a20ffabd419"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PBN8XKQ2A7T4PXS31T8D1R",
+      "ta-01M5PJEQJ7DFNRVEWT7QM2VQRR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "a478a7499f39ede93c17bc7d3ae8f4e1c38342b80ba339a0a43dfe79e6aff9af",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/inaturalist-resnet-2048-cosine/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

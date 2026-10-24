@@ -1,0 +1,32 @@
+{
+  "dataset": "codesearchnet-jina-768-cosine",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_32_500_8_true.hdf5": "17e4049841d11fe0b5dc2755e86be2499c91763ca65bc2eadf1eeec9b7622f36",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_48_500_8_true.hdf5": "962afe2f4c32ecf9a3ae6532c2d82afaf3b88fb6bb097ca5447ab383812f1efa",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_64_500_8_true.hdf5": "de6f8d53b11c81a284aa514294d8e7387b7f5a04af851cfdb142d1b42173228c",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine/hms@12c80decb094/results/codesearchnet-jina-768-cosine/100/hms/cosine_96_500_8_true.hdf5": "fad7d46d26e014a424a12a3949503b14cd3db1394fab3bac86df71e7d0876686"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATHY8AJ6AMZKNZF0PR7NR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "d14058808d02feed15ae26b93b59354364db737149cc864f9e964abb9c0f49d1",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/codesearchnet-jina-768-cosine/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

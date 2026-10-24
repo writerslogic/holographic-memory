@@ -1,0 +1,32 @@
+{
+  "dataset": "simplewiki-openai-3072-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_32_500_8_true.hdf5": "c8e767ffb7d4fafc5634dbd6b65ff71d2aec681441fb5b078857f9d6f7db78b8",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_48_500_8_true.hdf5": "aa5a34266543f2521fdf4b63d2a2265e4ae769b6e4309898bc6105d3dda0385d",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_64_500_8_true.hdf5": "76b5d58c58caaad8b5e801d475cd189bcdf58a7101889cecbb80d778b845ac55",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized/hms@12c80decb094/results/simplewiki-openai-3072-normalized/100/hms/normalized_96_500_8_true.hdf5": "554f7f15092647c925f8914a2d7046b4712ab9e1839f37f5fc3aaf0012ca0b05"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATNAXHRNV696SP2HHHP8R"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "3884718fa3defbebea8cf6377cff7173a4b548f50c3c9ecbff482c2f8a78c7d4",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/simplewiki-openai-3072-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}
