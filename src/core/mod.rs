@@ -92,6 +92,8 @@ pub(crate) mod role;
 pub(crate) mod rules;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod security;
+#[cfg(not(target_arch = "wasm32"))]
+pub use index::sparse_impact;
 #[cfg(feature = "security")]
 pub use security::scrub_stack;
 pub(crate) mod os_memory;
