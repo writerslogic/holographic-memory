@@ -56,7 +56,8 @@ use crate::core::error::HmsError;
 use adjacency::Adjacency;
 
 use kernels::{
-    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_inline, QueryCode, Rotation, SplitMix,
+    as_f32, as_f32_mut, as_u32, as_u32_mut, dot, dot_i8_query, dot_i8_query_x4, QueryCode,
+    Rotation, SplitMix,
 };
 #[cfg(feature = "experimental")]
 pub use vertex::QueryProfile;
@@ -372,6 +373,9 @@ struct BuildCodes {
     q: Vec<i8>,
     /// Per-row factors, side by side so that one cache line load serves a row.
     meta: Vec<CodeMeta>,
+    /// Per-row sum of the code, the correction the VNNI kernels take for a row scored as the
+    /// probe ([`vnni::query_sum`]).
+    sums: Vec<i32>,
     /// Euclidean rows: `meta` carries the squared norm the exact distance uses and the norm.
     euclidean: bool,
     /// Euclidean rows: relative f32 rounding slack of the computed distance.
@@ -420,10 +424,12 @@ impl BuildCodes {
                 (m.n2, m.n) = (n2, n2.sqrt());
             }
         }
+        let sums = q.par_chunks(width).map(vnni::query_sum).collect();
         Self {
             width,
             q,
             meta,
+            sums,
             euclidean: norms.is_some(),
             // The computed dot product and squared norms are each within `dim * 2^-24` of the
             // magnitudes summed; twice that, and at least the unit-row slack, covers them.
@@ -452,12 +458,29 @@ impl BuildCodes {
         self.d2_bounds(p, u).0
     }
 
-    /// `(lower, upper)` bounds on the computed `d2` of the unit rows `p` and `u`, from the
-    /// two-sided form of the inequality in [`Self::d2_lower`].
-    /// The 8-bit estimate of the computed `d2` of the unit rows `p` and `u`.
+    /// The integer dot product of the codes of rows `p` and `u`.
+    #[inline]
+    fn raw(&self, p: u32, u: u32) -> i32 {
+        dot_i8_query(self.code(p), self.code(u), self.sums[p as usize])
+    }
+
+    /// The 8-bit estimate of the computed `d2` of the rows `p` and `u`.
     #[inline]
     fn d2_est(&self, p: u32, u: u32) -> f32 {
-        let raw = dot_i8_inline(self.code(p), self.code(u)) as f32;
+        self.est_from_raw(p, u, self.raw(p, u))
+    }
+
+    /// [`Self::d2_est`] of row `p` and four rows, from one four-row kernel call; each value
+    /// equals the single call's.
+    #[inline]
+    fn d2_est4(&self, p: u32, u: [u32; 4]) -> [f32; 4] {
+        let raw = dot_i8_query_x4(self.code(p), u.map(|u| self.code(u)), self.sums[p as usize]);
+        [0, 1, 2, 3].map(|i| self.est_from_raw(p, u[i], raw[i]))
+    }
+
+    #[inline]
+    fn est_from_raw(&self, p: u32, u: u32, raw: i32) -> f32 {
+        let raw = raw as f32;
         let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
         if self.euclidean {
             (mp.n2 + mu.n2 - 2.0 * mp.scale * mu.scale * raw).max(0.0)
@@ -466,6 +489,8 @@ impl BuildCodes {
         }
     }
 
+    /// `(lower, upper)` bounds on the computed `d2` of the unit rows `p` and `u`, from the
+    /// two-sided form of the inequality in [`Self::d2_lower`].
     /// For rows of any norm the same inequality reads
     /// `|<p, u> - s_p s_u <q_p, q_u>| <= |e_p| |u| + (|p| + |e_p|) |e_u|`, and the computed
     /// distance `|p|^2 + |u|^2 - 2 <p, u>` gets a slack relative to the magnitudes it sums.
@@ -474,7 +499,7 @@ impl BuildCodes {
     fn d2_bounds(&self, p: u32, u: u32) -> (f32, f32) {
         const SLACK: f32 = 1e-4;
         let (mp, mu) = (&self.meta[p as usize], &self.meta[u as usize]);
-        let raw = dot_i8_inline(self.code(p), self.code(u)) as f32;
+        let raw = self.raw(p, u) as f32;
         let ep = mp.err;
         let est = mp.scale * mu.scale * raw;
         if !self.euclidean {
@@ -684,7 +709,11 @@ impl Rows<'_> {
             match self.codes.filter(|_| self.quantized) {
                 Some(codes) => {
                     dists.clear();
-                    dists.extend(fresh.iter().map(|&u| codes.d2_est(p, u)));
+                    let (quads, rest) = fresh.as_chunks::<4>();
+                    for &q in quads {
+                        dists.extend(codes.d2_est4(p, q));
+                    }
+                    dists.extend(rest.iter().map(|&u| codes.d2_est(p, u)));
                 }
                 None => {
                     n_exact += fresh.len() as u64;
