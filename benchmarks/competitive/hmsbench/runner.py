@@ -260,10 +260,14 @@ def _hms_ann_build(directory, meta, threads, workdir):
     out = WORK / "hms-ann-build.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
-    cmd = [*_hms_ann_command(directory, meta, out), "--save-updates", str(workdir / "index.updates")]
+    static_index = workdir / "index.vertex"
+    cmd = [*_hms_ann_command(directory, meta, out), "--save-index", str(static_index),
+           "--save-updates", str(workdir / "index.updates")]
     stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
     raw = json.loads(out.read_text())
     out.unlink()
+    static_index.unlink()
+    static_index.with_suffix(".vertex.json").unlink()
     return {"build_s": raw["build"]["build_secs"], "peak_rss_bytes": peak, "wall_s": wall, "n": meta["n_train"],
             "in_memory_index_bytes": raw["index_bytes"], "residual_bytes": raw["residual_bytes"], "graph_hash": raw["build"]["graph_hash"],
             "memory_phases": raw["memory_phases"], "hms_threads": raw["build"]["threads"]}
