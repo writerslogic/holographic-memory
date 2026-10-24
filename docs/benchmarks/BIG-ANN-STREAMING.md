@@ -186,3 +186,41 @@ base spends more on inserts than rebuilding at doubling. The configured point me
 rebuild thresholds (1.0 / 0.3): by construction a delta-triggered consolidation there usually falls back to a rebuild (the delta is then at least as large as the surviving base), so the merges replace the tombstone-triggered rebuilds.
 
 Final runbook (msturing-30M-clustered), ef 256: no recall was recorded. With the image of 9b26418 at ef 256, merging at the rebuild thresholds (1.0 / 0.3) reached step 672 of 1,280 in 1,926 s of runbook steps (searches averaged about 1.0 s; the #238 run at ef 512 needed 3,599 s for its first 541 steps), then the launcher's 8 GiB guard on the summed benchmark and parent RSS stopped it at 8.60 GB during the step-673 consolidation (a merge after deletes, 8.42M live rows; the same step at which earlier rebuild-based candidates ran out of time or memory). Merging at 0.25 / 0.15 reached step 638 in 2,838 s before the same guard (8.61 GB). The ef 512 run at 0.25 / 0.15 was stopped at step 214 (1,461 s of steps against the #238 run's 976 s for the same steps) once it could not finish. The merge read the previous base's adjacency back into memory and kept those pages through the insertion passes; 50017d4 drops them as soon as the last list is read.
+
+## Replacement entry memory (development measurement)
+
+When consolidation deletes the previous entry vertex, it now selects the surviving row
+nearest the mean directly from the prepared rows. Previously it copied all surviving
+vectors and norms first. Accumulation order and ties remain identical; stored formats
+and search parameters are unchanged.
+
+A locked, interleaved three-pair kernel experiment on Intel Core Ultra 9 185H, eight
+threads pinned to CPUs 0–7, load average 1.18–1.20, used 1M synthetic 100-dimensional
+rows with 800k survivors. Median process peak RSS fell from 718,436 to 403,012 KiB;
+median selection time fell from 182.64 to 38.79 ms. All six runs selected row 830166.
+Raw values and source hashes are in `benchmarks/results/streaming_entry_memory_v1.json`.
+These are development measurements, not streaming standings or full-consolidation costs.
+
+To reproduce the parent arm, check out the recorded parent commit and apply
+`benchmarks/results/streaming_entry_memory_v1/baseline.patch` from this revision. Build
+both arms separately with `cargo test --release --lib replacement_entry_large_live_set
+--no-run`. Under one `flock ~/hms-timing.lock`, run their test executables in A/B, B/A,
+A/B order with `RAYON_NUM_THREADS=8 /usr/bin/time -v taskset -c 0-7 <test-executable>
+replacement_entry_large_live_set --ignored --nocapture --test-threads=1`.
+
+Whether step 673 deletes the previous entry, total consolidation RSS, and final-runbook
+recall/completion remain unmeasured. After the standings freeze is lifted, pin the adapter
+to the tested revision with R32/L64/alpha 1.0/T8, merge enabled, delta/deleted ratios
+1.0/0.3 and ef256, then run in the harness checkout with its dataset and ground truth:
+
+```sh
+flock ~/hms-timing.lock systemd-run --user --scope -q \
+  -p MemoryMax=8G -p MemorySwapMax=0 taskset -c 0-7 \
+  /usr/bin/time -v timeout 3600 uv run python run.py --nodocker \
+  --neurips23track streaming --algorithm hms --dataset msturing-30M-clustered \
+  --runbook_path neurips23/runbooks/final_runbook.yaml
+```
+
+Record all 1,280 steps, mean recall across all 640 searches and peak RSS. A kernel
+improvement does not establish that the one-hour/8-GiB limits or a leaderboard target
+have been met.
