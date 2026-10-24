@@ -12,7 +12,7 @@ from pathlib import Path
 
 import modal
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[3] if modal.is_local() else Path("/work/src")
 SOURCE_SHA = "12c80decb094d57ee13ba187a01bf1de8788ca2f"
 APP_NAME = "hms-aml-cycle2-text-s"
 
