@@ -327,6 +327,7 @@ mod tests {
                     );
                 }
             }
+            eprintln!("{name}: every width matches the scalar sums");
         }
     }
 
