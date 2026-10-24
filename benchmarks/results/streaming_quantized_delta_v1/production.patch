@@ -1,0 +1,1176 @@
+diff --git a/src/core/qgraph/update.rs b/src/core/qgraph/update.rs
+index 4120328c..474a9129 100644
+--- a/src/core/qgraph/update.rs
++++ b/src/core/qgraph/update.rs
+@@ -534,6 +534,29 @@ impl UpdatableVGraph {
+     pub fn dim(&self) -> usize {
+         self.state.read().manifest.dim
+     }
++    /// Enables approximate i8 traversal of the mutable delta, followed by exact reranking
++    /// of its final live beam. This can change recall and retains the original float rows.
++    /// The derived cache is off by default, survives consolidation, and must be enabled
++    /// again after opening an index. Supported dimensions are 1 through 65536.
++    pub fn set_delta_quantized(&self, enabled: bool) -> Result<(), UpdateError> {
++        let _writer = self.writer()?;
++        let source = {
++            let s = self.state.read();
++            if s.delta.codes.is_some() == enabled {
++                return Ok(());
++            }
++            enabled.then(|| (s.delta.vectors.clone(), s.manifest.dim))
++        };
++        let codes = source
++            .map(|(rows, dim)| delta::codes::Codes::from_rows(&rows, dim))
++            .transpose()?;
++        let previous = {
++            let mut s = self.state.write();
++            std::mem::replace(&mut s.delta.codes, codes)
++        };
++        drop(previous);
++        Ok(())
++    }
+     /// Stages a new id in the current batch.
+     pub fn insert(&self, id: u32, vector: &[f32]) -> Result<(), UpdateError> {
+         self.stage(id, Some(vector), 1)
+@@ -571,6 +594,7 @@ impl UpdatableVGraph {
+             _ => Operation::Replace(id, vector.expect("replace vector").to_vec()),
+         };
+         s.validate_op(&op)?;
++        s.delta.reserve_codes(usize::from(op.vector().is_some()))?;
+         s.apply(&op);
+         s.touched.insert(id);
+         s.pending_bytes += size;
+@@ -622,6 +646,8 @@ impl UpdatableVGraph {
+             }
+             s.validate_op(op)?;
+         }
++        s.delta
++            .reserve_codes(ops.iter().filter(|op| op.vector().is_some()).count())?;
+         for op in ops {
+             s.apply(&op);
+             s.touched.insert(op.id());
+@@ -669,6 +695,7 @@ impl UpdatableVGraph {
+         let mut rows = vectors.to_vec();
+         super::prepare_rows(&mut rows, dim, s.manifest.build.metric);
+         let build = s.manifest.build.clone();
++        s.delta.reserve_codes(ids.len())?;
+         s.delta.insert_batch(ids, &rows, &build);
+         for (&id, row) in ids.iter().zip(vectors.chunks_exact(dim)) {
+             s.pending.push(Operation::Insert(id, row.to_vec()));
+@@ -899,6 +926,11 @@ impl UpdatableVGraph {
+             return Ok(Consolidation::Unchanged);
+         }
+         let mut manifest = snapshot.manifest.clone();
++        let codes = snapshot
++            .delta
++            .codes
++            .as_ref()
++            .map(delta::codes::Codes::empty_like);
+         manifest.sequence = snapshot.sequence;
+         let mut ids: Vec<_> = snapshot
+             .base
+@@ -975,7 +1007,9 @@ impl UpdatableVGraph {
+             writer.uncertain();
+             return Err(e);
+         }
+-        *self.state.write() = State::new(base, manifest.clone());
++        let mut state = State::new(base, manifest.clone());
++        state.delta.codes = codes;
++        *self.state.write() = state;
+         if merge {
+             self.churn.fetch_add(changed, Ordering::Relaxed);
+         } else {
+diff --git a/src/core/qgraph/update/delta.rs b/src/core/qgraph/update/delta.rs
+index fb6d8b4e..5ff42e39 100644
+--- a/src/core/qgraph/update/delta.rs
++++ b/src/core/qgraph/update/delta.rs
+@@ -12,9 +12,17 @@ use super::Metric;
+ 
+ thread_local! { static SEEN: RefCell<BuildVisited> = RefCell::new(BuildVisited::default()); }
+ 
++#[path = "delta_codes.rs"]
++pub(super) mod codes;
++
++#[cfg(test)]
++#[path = "delta_quantized_tests.rs"]
++mod quantized_tests;
++
+ #[derive(Clone, Default)]
+ pub(super) struct Delta {
+     pub(super) vectors: super::delta_rows::DeltaRows,
++    pub(super) codes: Option<codes::Codes>,
+     norms: Vec<f32>,
+     edges: Adjacency,
+     first_child: Vec<u32>,
+@@ -28,6 +36,13 @@ pub(super) struct Delta {
+ }
+ 
+ impl Delta {
++    pub(super) fn reserve_codes(&mut self, additional: usize) -> Result<(), super::UpdateError> {
++        if let Some(codes) = &mut self.codes {
++            codes.reserve(additional)?;
++        }
++        Ok(())
++    }
++
+     #[cfg(test)]
+     pub fn assert_invariants(&self, degree: usize) {
+         for slot in 0..self.len() {
+@@ -87,6 +102,9 @@ impl Delta {
+         self.ids.push(id);
+         self.alive.push(true);
+         self.vectors.extend_from_slice(row);
++        if let Some(codes) = &mut self.codes {
++            codes.append_reserved(row);
++        }
+         if params.metric == Metric::Euclidean {
+             self.norms.push(dot(row, row));
+         }
+@@ -146,6 +164,9 @@ impl Delta {
+         self.ids.extend_from_slice(ids);
+         self.alive.resize(self.ids.len(), true);
+         self.vectors.extend_from_slice(rows);
++        if let Some(codes) = &mut self.codes {
++            codes.append_reserved(rows);
++        }
+         if params.metric == Metric::Euclidean {
+             self.norms.extend(rows.chunks_exact(dim).map(|r| dot(r, r)));
+         }
+@@ -216,7 +237,11 @@ impl Delta {
+             all.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+             return (all, if PROFILE { self.live.len() } else { 0 });
+         }
+-        SEEN.with(|seen| self.search_with::<PROFILE>(&mut seen.borrow_mut(), query, ef, metric))
++        if let Some(codes) = &self.codes {
++            codes.search::<PROFILE>(self, query, ef, metric)
++        } else {
++            SEEN.with(|seen| self.search_with::<PROFILE>(&mut seen.borrow_mut(), query, ef, metric))
++        }
+     }
+ 
+     fn search_with<const PROFILE: bool>(
+diff --git a/src/core/qgraph/update/delta_codes.rs b/src/core/qgraph/update/delta_codes.rs
+new file mode 100644
+index 00000000..8cc678f0
+--- /dev/null
++++ b/src/core/qgraph/update/delta_codes.rs
+@@ -0,0 +1,254 @@
++// Copyright 2024-2026 WritersLogic Contributors
++// SPDX-License-Identifier: Apache-2.0
++
++use super::*;
++use crate::core::qgraph::{kernels, vertex::quantize, vnni};
++use rayon::prelude::*;
++
++const MAX_WIDTH: usize = 65536;
++
++#[derive(Clone)]
++pub(in crate::core::qgraph::update) struct Codes {
++    dim: usize,
++    width: usize,
++    bytes: Vec<i8>,
++    scales: Vec<f32>,
++}
++
++impl Codes {
++    #[cfg(test)]
++    pub(in crate::core::qgraph::update) fn storage_bytes(&self) -> usize {
++        self.bytes.capacity() + self.scales.capacity() * 4
++    }
++
++    pub(in crate::core::qgraph::update) fn from_rows(
++        rows: &[f32],
++        dim: usize,
++    ) -> Result<Self, super::super::UpdateError> {
++        // The unsigned VNNI intermediate is bounded by width * 255 * 127.
++        if dim == 0 || dim > MAX_WIDTH {
++            return Err(super::super::UpdateError::InvalidVector(
++                "quantized delta search requires a dimension from 1 through 65536",
++            ));
++        }
++        let mut codes = Self {
++            dim,
++            width: dim.next_multiple_of(16),
++            bytes: Vec::new(),
++            scales: Vec::new(),
++        };
++        codes.reserve(rows.len() / dim)?;
++        codes.append_reserved(rows);
++        Ok(codes)
++    }
++
++    pub(in crate::core::qgraph::update) fn empty_like(&self) -> Self {
++        Self {
++            dim: self.dim,
++            width: self.width,
++            bytes: Vec::new(),
++            scales: Vec::new(),
++        }
++    }
++
++    pub(super) fn reserve(&mut self, additional: usize) -> Result<(), super::super::UpdateError> {
++        let capacity = || super::super::UpdateError::Capacity;
++        let needed = self
++            .scales
++            .len()
++            .checked_add(additional)
++            .ok_or_else(capacity)?;
++        if needed <= self.scales.capacity() && needed <= self.bytes.capacity() / self.width {
++            return Ok(());
++        }
++        let grown = self
++            .scales
++            .capacity()
++            .checked_add(self.scales.capacity() / 8)
++            .ok_or_else(capacity)?;
++        let slots = needed.max(grown);
++        let bytes = slots.checked_mul(self.width).ok_or_else(capacity)?;
++        self.bytes
++            .try_reserve_exact(bytes - self.bytes.len())
++            .map_err(|_| capacity())?;
++        self.scales
++            .try_reserve_exact(slots - self.scales.len())
++            .map_err(|_| capacity())?;
++        Ok(())
++    }
++
++    pub(super) fn append_reserved(&mut self, rows: &[f32]) {
++        let first = self.scales.len();
++        let count = rows.len() / self.dim;
++        assert_eq!(rows.len() % self.dim, 0);
++        assert!(self.scales.capacity() >= first + count);
++        assert!(self.bytes.capacity() >= (first + count) * self.width);
++        self.scales.resize(first + count, 0.0);
++        self.bytes.resize((first + count) * self.width, 0);
++        let bytes = &mut self.bytes[first * self.width..];
++        let scales = &mut self.scales[first..];
++        if count < 64 {
++            for ((code, scale), row) in bytes
++                .chunks_mut(self.width)
++                .zip(scales)
++                .zip(rows.chunks(self.dim))
++            {
++                *scale = quantize(row, code);
++            }
++        } else {
++            bytes
++                .par_chunks_mut(self.width)
++                .zip(scales.par_iter_mut())
++                .zip(rows.par_chunks(self.dim))
++                .for_each(|((code, scale), row)| *scale = quantize(row, code));
++        }
++    }
++
++    pub(in crate::core::qgraph::update) fn search<const PROFILE: bool>(
++        &self,
++        delta: &Delta,
++        query: &[f32],
++        ef: usize,
++        metric: Metric,
++    ) -> (Vec<(f32, u32)>, usize) {
++        let mut query_code = vec![0; self.width];
++        let scale = quantize(query, &mut query_code);
++        let sum = vnni::query_sum(&query_code);
++        let code = |u: usize| &self.bytes[u * self.width..(u + 1) * self.width];
++        let estimate = |u: usize, raw: i32| {
++            let dot = scale * self.scales[u] * raw as f32;
++            let score = match metric {
++                Metric::Angular => -dot,
++                Metric::Euclidean => delta.norms[u] * 0.5 - dot,
++            };
++            if score.is_finite() {
++                score
++            } else {
++                delta.score(query, u, metric)
++            }
++        };
++        SEEN.with(|seen| {
++            let mut seen = seen.borrow_mut();
++            seen.reset(delta.len());
++            seen.insert(0);
++            let mut pool = vec![(
++                estimate(0, kernels::dot_i8_query(&query_code, code(0), sum)),
++                0usize,
++                false,
++            )];
++            let mut fresh = std::mem::take(&mut seen.fresh);
++            let mut scores = std::mem::take(&mut seen.dists);
++            let mut visits = usize::from(PROFILE);
++            let mut cur = 0;
++            loop {
++                while cur < pool.len() && pool[cur].2 {
++                    cur += 1;
++                }
++                if cur == pool.len() {
++                    break;
++                }
++                pool[cur].2 = true;
++                let slot = pool[cur].1;
++                fresh.clear();
++                let mut add = |u: u32| {
++                    if seen.insert(u) {
++                        let slot = u as usize;
++                        kernels::prefetch_bytes(code(slot));
++                        crate::core::qgraph::build_kernels::prefetch_meta(&self.scales[slot]);
++                        if metric == Metric::Euclidean {
++                            crate::core::qgraph::build_kernels::prefetch_meta(&delta.norms[slot]);
++                        }
++                        fresh.push(u);
++                    }
++                };
++                for &u in &delta.edges[slot] {
++                    add(u);
++                }
++                let mut child = delta.first_child[slot];
++                while child != NONE {
++                    add(child);
++                    child = delta.next_sibling[child as usize];
++                }
++                if PROFILE {
++                    visits += fresh.len();
++                }
++                scores.clear();
++                let (quads, tail) = fresh.as_chunks::<4>();
++                for &quad in quads {
++                    let raw =
++                        kernels::dot_i8_query_x4(&query_code, quad.map(|u| code(u as usize)), sum);
++                    scores.extend((0..4).map(|i| estimate(quad[i] as usize, raw[i])));
++                }
++                scores.extend(tail.iter().map(|&u| {
++                    estimate(
++                        u as usize,
++                        kernels::dot_i8_query(&query_code, code(u as usize), sum),
++                    )
++                }));
++                for (&u, &d) in fresh.iter().zip(&scores) {
++                    let u = u as usize;
++                    if pool.len() == ef {
++                        let worst = pool.last().unwrap();
++                        if worst.0.total_cmp(&d).then(worst.1.cmp(&u)).is_lt() {
++                            continue;
++                        }
++                    }
++                    let at = pool.partition_point(|p| p.0.total_cmp(&d).then(p.1.cmp(&u)).is_lt());
++                    if at < ef {
++                        pool.insert(at, (d, u, false));
++                        pool.truncate(ef);
++                        cur = cur.min(at);
++                    }
++                }
++            }
++            seen.fresh = fresh;
++            seen.dists = scores;
++            let vectors: &[f32] = &delta.vectors;
++            for &(_, slot, _) in &pool {
++                if delta.alive[slot] {
++                    prefetch_row(&vectors[slot * query.len()..(slot + 1) * query.len()]);
++                }
++            }
++            let mut found: Vec<_> = pool
++                .into_iter()
++                .filter(|(_, slot, _)| delta.alive[*slot])
++                .map(|(_, slot, _)| {
++                    (
++                        delta.score_from(vectors, query, slot, metric),
++                        delta.ids[slot],
++                    )
++                })
++                .collect();
++            found.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
++            (found, visits)
++        })
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn integer_width_and_allocation_boundaries() {
++        for dim in [MAX_WIDTH - 1, MAX_WIDTH] {
++            let codes = Codes::from_rows(&vec![1.0; dim], dim).unwrap();
++            let q = vec![127; codes.width];
++            let expected = (dim as i32) * 127 * 127;
++            assert_eq!(
++                kernels::dot_i8_query(&q, &codes.bytes, vnni::query_sum(&q)),
++                expected
++            );
++            let mut codes = codes;
++            let before = codes.bytes.clone();
++            assert!(matches!(
++                codes.reserve(usize::MAX),
++                Err(super::super::super::UpdateError::Capacity)
++            ));
++            assert_eq!(codes.bytes, before);
++        }
++        for dim in [0, MAX_WIDTH + 1, usize::MAX] {
++            assert!(Codes::from_rows(&[], dim).is_err());
++        }
++    }
++}
+diff --git a/src/core/qgraph/update/delta_quantized_tests.rs b/src/core/qgraph/update/delta_quantized_tests.rs
+new file mode 100644
+index 00000000..649b2e0e
+--- /dev/null
++++ b/src/core/qgraph/update/delta_quantized_tests.rs
+@@ -0,0 +1,595 @@
++// Copyright 2024-2026 WritersLogic Contributors
++// SPDX-License-Identifier: Apache-2.0
++
++use super::*;
++use crate::core::qgraph::{
++    edge_factors,
++    kernels::{dot_i8_query_x4, raw_one, QueryCode, Rotation},
++    vertex::quantize,
++    vnni,
++};
++use rayon::prelude::*;
++use std::io::{Read, Seek, SeekFrom};
++use std::time::Instant;
++
++#[derive(Clone, Copy, Debug)]
++enum Mode {
++    Int8,
++    Rotated8,
++    Binary,
++}
++
++struct Codes {
++    mode: Mode,
++    width: usize,
++    rotation: Option<Rotation>,
++    bytes: Vec<i8>,
++    bits: Vec<u64>,
++    scales: Vec<f32>,
++    pops: Vec<f32>,
++}
++
++impl Codes {
++    fn new(dim: usize, mode: Mode) -> Self {
++        let rotation = (!matches!(mode, Mode::Int8)).then(|| Rotation::new(dim, 0, 0x5eed));
++        let width = rotation
++            .as_ref()
++            .map_or(dim.next_multiple_of(16), Rotation::padded);
++        Self {
++            mode,
++            width,
++            rotation,
++            bytes: Vec::new(),
++            bits: Vec::new(),
++            scales: Vec::new(),
++            pops: Vec::new(),
++        }
++    }
++
++    fn append(&mut self, rows: &[f32], dim: usize) {
++        let first = self.scales.len();
++        let count = rows.len() / dim;
++        self.scales.reserve_exact(count);
++        self.scales.resize(first + count, 0.0);
++        let width = self.width;
++        if matches!(self.mode, Mode::Binary) {
++            let words = width / 64;
++            self.bits.reserve_exact(count * words);
++            self.bits.resize((first + count) * words, 0);
++            self.pops.reserve_exact(count);
++            self.pops.resize(first + count, 0.0);
++            let rotation = self.rotation.as_ref().unwrap();
++            self.bits[first * words..]
++                .par_chunks_mut(words)
++                .zip(self.scales[first..].par_iter_mut())
++                .zip(self.pops[first..].par_iter_mut())
++                .zip(rows.par_chunks(dim))
++                .for_each_init(
++                    || (vec![0.0; width], vec![0.0; width]),
++                    |(rotated, zero), (((code, scale), pop), row)| {
++                        rotation.apply(row, rotated);
++                        let (_, m, p) = edge_factors(zero, rotated, code);
++                        (*scale, *pop) = (m, p);
++                    },
++                );
++        } else {
++            self.bytes.reserve_exact(count * width);
++            self.bytes.resize((first + count) * width, 0);
++            self.bytes[first * width..]
++                .par_chunks_mut(width)
++                .zip(self.scales[first..].par_iter_mut())
++                .zip(rows.par_chunks(dim))
++                .for_each_init(
++                    || vec![0.0; width],
++                    |rotated, ((code, scale), row)| {
++                        *scale = if let Some(rotation) = &self.rotation {
++                            rotation.apply(row, rotated);
++                            quantize(rotated, code)
++                        } else {
++                            quantize(row, code)
++                        };
++                    },
++                );
++        }
++    }
++
++    fn storage_bytes(&self) -> usize {
++        self.bytes.capacity()
++            + self.bits.capacity() * 8
++            + (self.scales.capacity() + self.pops.capacity()) * 4
++            + self.rotation.as_ref().map_or(0, |r| r.padded() * 12)
++    }
++
++    fn search(&self, delta: &Delta, query: &[f32], ef: usize) -> Vec<(f32, u32)> {
++        let mut rotated = vec![0.0; self.width];
++        let q = if let Some(rotation) = &self.rotation {
++            rotation.apply(query, &mut rotated);
++            rotated.as_slice()
++        } else {
++            query
++        };
++        if matches!(self.mode, Mode::Binary) {
++            let words = self.width / 64;
++            let mut query_code = QueryCode::new(words);
++            query_code.encode(q);
++            self.walk(
++                delta,
++                query,
++                ef,
++                |u| {
++                    crate::core::qgraph::kernels::prefetch(&self.bits[u * words..(u + 1) * words]);
++                    crate::core::qgraph::build_kernels::prefetch_meta(&self.scales[u]);
++                    crate::core::qgraph::build_kernels::prefetch_meta(&self.pops[u]);
++                    crate::core::qgraph::build_kernels::prefetch_meta(&delta.norms[u]);
++                },
++                |ids, scores| {
++                    scores.extend(ids.iter().map(|&u| {
++                        let u = u as usize;
++                        let raw = raw_one(
++                            &self.bits[u * words..(u + 1) * words],
++                            &query_code.planes,
++                            words,
++                        );
++                        let dot = self.scales[u]
++                            * (2.0 * query_code.lo * self.pops[u]
++                                + 2.0 * query_code.delta * raw as f32
++                                - query_code.sum);
++                        delta.norms[u] * 0.5 - dot
++                    }));
++                },
++            )
++        } else {
++            let mut query_code = vec![0; self.width];
++            let scale = quantize(q, &mut query_code);
++            let sum = vnni::query_sum(&query_code);
++            let code = |u: usize| &self.bytes[u * self.width..(u + 1) * self.width];
++            self.walk(
++                delta,
++                query,
++                ef,
++                |u| {
++                    crate::core::qgraph::kernels::prefetch_bytes(code(u));
++                    crate::core::qgraph::build_kernels::prefetch_meta(&self.scales[u]);
++                    crate::core::qgraph::build_kernels::prefetch_meta(&delta.norms[u]);
++                },
++                |ids, scores| {
++                    let (quads, tail) = ids.as_chunks::<4>();
++                    for &quad in quads {
++                        let raw = dot_i8_query_x4(&query_code, quad.map(|u| code(u as usize)), sum);
++                        scores.extend((0..4).map(|i| {
++                            let u = quad[i] as usize;
++                            delta.norms[u] * 0.5 - scale * self.scales[u] * raw[i] as f32
++                        }));
++                    }
++                    scores.extend(tail.iter().map(|&u| {
++                        let u = u as usize;
++                        let raw =
++                            crate::core::qgraph::kernels::dot_i8_query(&query_code, code(u), sum);
++                        delta.norms[u] * 0.5 - scale * self.scales[u] * raw as f32
++                    }));
++                },
++            )
++        }
++    }
++
++    fn walk(
++        &self,
++        delta: &Delta,
++        query: &[f32],
++        ef: usize,
++        prefetch: impl Fn(usize),
++        score: impl Fn(&[u32], &mut Vec<f32>),
++    ) -> Vec<(f32, u32)> {
++        SEEN.with(|seen| {
++            let mut seen = seen.borrow_mut();
++            seen.reset(delta.len());
++            seen.insert(0);
++            let mut scores = std::mem::take(&mut seen.dists);
++            scores.clear();
++            score(&[0], &mut scores);
++            let mut pool = vec![(scores[0], 0usize, false)];
++            let mut fresh = std::mem::take(&mut seen.fresh);
++            let mut cur = 0;
++            loop {
++                while cur < pool.len() && pool[cur].2 {
++                    cur += 1;
++                }
++                if cur == pool.len() {
++                    break;
++                }
++                pool[cur].2 = true;
++                let slot = pool[cur].1;
++                fresh.clear();
++                let mut add = |u: u32| {
++                    if seen.insert(u) {
++                        prefetch(u as usize);
++                        fresh.push(u);
++                    }
++                };
++                for &u in &delta.edges[slot] {
++                    add(u);
++                }
++                let mut child = delta.first_child[slot];
++                while child != NONE {
++                    add(child);
++                    child = delta.next_sibling[child as usize];
++                }
++                scores.clear();
++                score(&fresh, &mut scores);
++                for (&u, &d) in fresh.iter().zip(&scores) {
++                    let u = u as usize;
++                    if pool.len() == ef {
++                        let worst = pool.last().unwrap();
++                        if worst.0.total_cmp(&d).then(worst.1.cmp(&u)).is_lt() {
++                            continue;
++                        }
++                    }
++                    let at = pool.partition_point(|p| p.0.total_cmp(&d).then(p.1.cmp(&u)).is_lt());
++                    if at < ef {
++                        pool.insert(at, (d, u, false));
++                        pool.truncate(ef);
++                        cur = cur.min(at);
++                    }
++                }
++            }
++            seen.fresh = fresh;
++            seen.dists = scores;
++            let vectors: &[f32] = &delta.vectors;
++            for &(_, slot, _) in &pool {
++                if delta.alive[slot] {
++                    prefetch_row(&vectors[slot * query.len()..(slot + 1) * query.len()]);
++                }
++            }
++            let mut found: Vec<_> = pool
++                .into_iter()
++                .filter(|(_, slot, _)| delta.alive[*slot])
++                .map(|(_, slot, _)| {
++                    (
++                        delta.score_from(vectors, query, slot, Metric::Euclidean),
++                        delta.ids[slot],
++                    )
++                })
++                .collect();
++            found.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
++            found
++        })
++    }
++}
++
++fn read_rows(path: &str, first: usize, count: usize, dim: usize) -> Vec<f32> {
++    let mut file = std::fs::File::open(path).unwrap();
++    let mut header = [0; 8];
++    file.read_exact(&mut header).unwrap();
++    assert_eq!(
++        u32::from_le_bytes(header[4..].try_into().unwrap()) as usize,
++        dim
++    );
++    assert!(u32::from_le_bytes(header[..4].try_into().unwrap()) as usize >= first + count);
++    file.seek(SeekFrom::Start((8 + first * dim * 4) as u64))
++        .unwrap();
++    let mut bytes = vec![0; count * dim * 4];
++    file.read_exact(&mut bytes).unwrap();
++    bytes
++        .as_chunks::<4>()
++        .0
++        .iter()
++        .map(|b| f32::from_le_bytes(*b))
++        .collect()
++}
++
++fn truth(delta: &Delta, queries: &[f32], dim: usize) -> Vec<Vec<u32>> {
++    queries
++        .par_chunks(dim)
++        .map(|q| {
++            let mut scored: Vec<_> = (0..delta.len())
++                .filter(|&u| delta.alive[u])
++                .map(|u| (delta.score(q, u, Metric::Euclidean), delta.ids[u]))
++                .collect();
++            scored.select_nth_unstable_by(9, |a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
++            scored.truncate(10);
++            scored.iter().map(|(_, id)| *id).collect()
++        })
++        .collect()
++}
++
++fn query_batch(
++    delta: &Delta,
++    codes: Option<&Codes>,
++    queries: &[f32],
++    ef: usize,
++) -> Vec<Vec<(f32, u32)>> {
++    queries
++        .par_chunks(100)
++        .map(|q| {
++            codes.map_or_else(
++                || delta.search(q, ef, Metric::Euclidean),
++                |codes| codes.search(delta, q, ef),
++            )
++        })
++        .collect()
++}
++
++fn recall(found: &[Vec<(f32, u32)>], truth: &[Vec<u32>]) -> usize {
++    found
++        .iter()
++        .zip(truth)
++        .map(|(hits, gt)| hits.iter().take(10).filter(|h| gt.contains(&h.1)).count())
++        .sum()
++}
++
++#[test]
++fn compact_codes_append_and_rerank_original_rows() {
++    for dim in [1, 15, 16, 17, 31, 32, 33, 100, 128, 129] {
++        let mut random = crate::core::qgraph::kernels::SplitMix(42);
++        let mut rows: Vec<_> = (0..9 * dim).map(|_| random.next_f32() - 0.5).collect();
++        rows[..dim].fill(-0.0);
++        let params = BuildParams {
++            metric: Metric::Euclidean,
++            degree: 8,
++            build_ef: 16,
++            ..Default::default()
++        };
++        let mut delta = Delta::default();
++        delta.insert_batch(&(0..9).rev().collect::<Vec<_>>(), &rows, &params);
++        delta.remove(0);
++        delta.insert(2, &rows[..dim], &params);
++        for mode in [Mode::Int8, Mode::Rotated8, Mode::Binary] {
++            let mut split = Codes::new(dim, mode);
++            split.append(&delta.vectors[..4 * dim], dim);
++            split.append(&delta.vectors[4 * dim..], dim);
++            let mut whole = Codes::new(dim, mode);
++            whole.append(&delta.vectors, dim);
++            assert_eq!(split.bytes, whole.bytes);
++            assert_eq!(split.bits, whole.bits);
++            assert_eq!(split.scales, whole.scales);
++            assert_eq!(split.pops, whole.pops);
++            for query in rows.chunks_exact(dim).take(3) {
++                let actual = split.search(&delta, query, delta.len());
++                let expected = delta.search(query, delta.len(), Metric::Euclidean);
++                let bits = |v: Vec<(f32, u32)>| {
++                    v.into_iter()
++                        .map(|(d, id)| (d.to_bits(), id))
++                        .collect::<Vec<_>>()
++                };
++                assert_eq!(bits(actual), bits(expected), "{mode:?}, dim={dim}");
++                if matches!(mode, Mode::Int8) {
++                    let production = super::codes::Codes::from_rows(&delta.vectors, dim).unwrap();
++                    for ef in [0, 1, 2, delta.len() - 1, delta.len(), delta.len() + 1] {
++                        let (actual, visits) =
++                            production.search::<true>(&delta, query, ef, Metric::Euclidean);
++                        assert_eq!(bits(actual), bits(split.search(&delta, query, ef)));
++                        assert!((1..=delta.len()).contains(&visits));
++                    }
++                }
++            }
++        }
++    }
++}
++
++#[test]
++#[ignore = "development quantized delta recall and cost grid"]
++fn quantized_delta_grid() {
++    let base = std::env::var("HMS_DELTA_DATA").unwrap();
++    let query_path = std::env::var("HMS_DELTA_QUERIES").unwrap();
++    let n: usize = std::env::var("HMS_DELTA_ROWS")
++        .unwrap_or_else(|_| "1000000".into())
++        .parse()
++        .unwrap();
++    assert!((1000..=3_000_000).contains(&n));
++    let queries = read_rows(&query_path, 256, 128, 100);
++    let rows = read_rows(&base, 0, n, 100);
++    let params = BuildParams {
++        metric: Metric::Euclidean,
++        degree: 32,
++        build_ef: 64,
++        ..Default::default()
++    };
++    let mut delta = Delta::default();
++    let start = Instant::now();
++    delta.insert_batch(&(0..n as u32).collect::<Vec<_>>(), &rows, &params);
++    drop(rows);
++    println!("graph_build_ns={}", start.elapsed().as_nanos());
++    for deleted in [false, true] {
++        if deleted {
++            for id in (0..n as u32).step_by(5) {
++                delta.remove(id);
++            }
++        }
++        let truth = truth(&delta, &queries, 100);
++        for mode in [Mode::Int8, Mode::Rotated8, Mode::Binary] {
++            let mut codes = Codes::new(100, mode);
++            let start = Instant::now();
++            codes.append(&delta.vectors, 100);
++            println!(
++                "encode mode={mode:?} deleted={deleted} rows={n} ns={} code_bytes={}",
++                start.elapsed().as_nanos(),
++                codes.storage_bytes()
++            );
++            let widths = if matches!(mode, Mode::Binary) {
++                [512, 1024]
++            } else {
++                [256, 512]
++            };
++            for ef in widths {
++                for threads in [1, 8] {
++                    let pool = rayon::ThreadPoolBuilder::new()
++                        .num_threads(threads)
++                        .build()
++                        .unwrap();
++                    for (arm, active, width) in [
++                        ("base256", None, 256),
++                        ("base512", None, 512),
++                        ("candidate", Some(&codes), ef),
++                    ] {
++                        let found = pool.install(|| query_batch(&delta, active, &queries, width));
++                        println!("recall mode={mode:?} arm={arm} deleted={deleted} threads={threads} ef={ef} width={width} hits={} total=1280",recall(&found,&truth));
++                    }
++                    for pair in 0..3 {
++                        let arms = if pair == 1 {
++                            [true, false]
++                        } else {
++                            [false, true]
++                        };
++                        for candidate in arms {
++                            let active = candidate.then_some(&codes);
++                            let width = if candidate || !matches!(mode, Mode::Binary) {
++                                ef
++                            } else {
++                                ef / 2
++                            };
++                            std::hint::black_box(
++                                pool.install(|| query_batch(&delta, active, &queries, width)),
++                            );
++                            for repeat in 0..5 {
++                                let start = Instant::now();
++                                let found =
++                                    pool.install(|| query_batch(&delta, active, &queries, width));
++                                let elapsed = start.elapsed().as_nanos();
++                                std::hint::black_box(found);
++                                println!("timing mode={mode:?} deleted={deleted} threads={threads} ef={ef} pair={pair} candidate={candidate} repeat={repeat} ns={elapsed}");
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
++
++#[test]
++#[ignore = "selected production delta configuration: tune verification or heldout"]
++fn quantized_delta_selected() {
++    let base = std::env::var("HMS_DELTA_DATA").unwrap();
++    let query_path = std::env::var("HMS_DELTA_QUERIES").unwrap();
++    let n: usize = std::env::var("HMS_DELTA_ROWS").unwrap().parse().unwrap();
++    let first: usize = std::env::var("HMS_DELTA_QUERY_FIRST")
++        .unwrap()
++        .parse()
++        .unwrap();
++    assert!(matches!(n, 1_000_000 | 3_000_000));
++    assert!(matches!(first, 256 | 384));
++    let queries = read_rows(&query_path, first, 128, 100);
++    let rows = read_rows(&base, 0, n, 100);
++    let params = BuildParams {
++        metric: Metric::Euclidean,
++        degree: 32,
++        build_ef: 64,
++        ..Default::default()
++    };
++    let mut delta = Delta::default();
++    let start = Instant::now();
++    delta.insert_batch(&(0..n as u32).collect::<Vec<_>>(), &rows, &params);
++    drop(rows);
++    println!("graph_build_ns={}", start.elapsed().as_nanos());
++    let start = Instant::now();
++    let mut codes = Some(super::codes::Codes::from_rows(&delta.vectors, 100).unwrap());
++    println!(
++        "encode mode=Production8 rows={n} ns={} code_bytes={}",
++        start.elapsed().as_nanos(),
++        codes.as_ref().unwrap().storage_bytes()
++    );
++    for deleted in [false, true] {
++        if deleted {
++            for id in (0..n as u32).step_by(5) {
++                delta.remove(id);
++            }
++        }
++        let truth = truth(&delta, &queries, 100);
++        if first == 256 {
++            let mut prototype = Codes::new(100, Mode::Int8);
++            prototype.append(&delta.vectors, 100);
++            queries.par_chunks(100).for_each(|query| {
++                let actual = codes
++                    .as_ref()
++                    .unwrap()
++                    .search::<false>(&delta, query, 256, Metric::Euclidean)
++                    .0;
++                let expected = prototype.search(&delta, query, 256);
++                let bits = |v: Vec<(f32, u32)>| {
++                    v.into_iter()
++                        .map(|(score, id)| (score.to_bits(), id))
++                        .collect::<Vec<_>>()
++                };
++                assert_eq!(bits(actual), bits(expected));
++            });
++            println!("prototype_bits_identical deleted={deleted} queries=128");
++        }
++        let mut checksums = [None, None];
++        for threads in [1, 8] {
++            let pool = rayon::ThreadPoolBuilder::new()
++                .num_threads(threads)
++                .build()
++                .unwrap();
++            for pair in 0..3 {
++                for candidate in if pair == 1 {
++                    [true, false]
++                } else {
++                    [false, true]
++                } {
++                    if candidate {
++                        delta.codes = codes.take();
++                    }
++                    let found = pool.install(|| query_batch(&delta, None, &queries, 256));
++                    let checksum =
++                        found
++                            .iter()
++                            .flatten()
++                            .fold(0xcbf29ce484222325u64, |h, &(score, id)| {
++                                (h ^ u64::from(score.to_bits()))
++                                    .wrapping_mul(0x100000001b3)
++                                    .wrapping_add(u64::from(id))
++                            });
++                    let previous = &mut checksums[usize::from(candidate)];
++                    assert!(previous.is_none_or(|v| v == checksum));
++                    *previous = Some(checksum);
++                    let arm = if candidate { "candidate" } else { "base256" };
++                    if pair == 0 {
++                        println!("recall mode=Production8 arm={arm} deleted={deleted} threads={threads} ef=256 width=256 hits={} total=1280 checksum={checksum:016x}", recall(&found, &truth));
++                    }
++                    std::hint::black_box(found);
++                    for repeat in 0..5 {
++                        let start = Instant::now();
++                        let found = pool.install(|| query_batch(&delta, None, &queries, 256));
++                        let elapsed = start.elapsed().as_nanos();
++                        std::hint::black_box(found);
++                        println!("timing mode=Production8 deleted={deleted} threads={threads} ef=256 pair={pair} candidate={candidate} repeat={repeat} ns={elapsed}");
++                    }
++                    if candidate {
++                        codes = delta.codes.take();
++                    }
++                }
++            }
++        }
++    }
++    if n == 1_000_000 {
++        let append = read_rows(&base, n, 100_000, 100);
++        let ids: Vec<_> = (n as u32..n as u32 + 100_000).collect();
++        let mut graph_checksum = None;
++        for pair in 0..3 {
++            for candidate in if pair == 1 {
++                [true, false]
++            } else {
++                [false, true]
++            } {
++                let mut updated = delta.clone();
++                updated.vectors = super::super::delta_rows::DeltaRows::default();
++                updated.vectors.extend_from_slice(&delta.vectors);
++                if candidate {
++                    updated.codes = codes.clone();
++                }
++                let start = Instant::now();
++                updated.reserve_codes(ids.len()).unwrap();
++                updated.insert_batch(&ids, &append, &params);
++                let elapsed = start.elapsed().as_nanos();
++                let checksum = (0..updated.len())
++                    .flat_map(|slot| updated.edges[slot].iter().copied())
++                    .fold(0xcbf29ce484222325u64, |h, id| {
++                        (h ^ u64::from(id)).wrapping_mul(0x100000001b3)
++                    });
++                assert!(graph_checksum.is_none_or(|v| v == checksum));
++                graph_checksum = Some(checksum);
++                println!("append pair={pair} candidate={candidate} rows=100000 ns={elapsed} code_bytes={} graph_checksum={checksum:016x}", updated.codes.as_ref().map_or(0, super::codes::Codes::storage_bytes));
++            }
++        }
++    }
++}
+diff --git a/src/core/qgraph/update/tests.rs b/src/core/qgraph/update/tests.rs
+index d2307187..1296e560 100644
+--- a/src/core/qgraph/update/tests.rs
++++ b/src/core/qgraph/update/tests.rs
+@@ -45,6 +45,104 @@ fn copy_store(from: &Path, to: &Path) {
+     }
+ }
+ 
++#[test]
++fn quantized_delta_updates_recovery_and_exact_defaults() {
++    for metric in [Metric::Euclidean, Metric::Angular] {
++        let dir = tempfile::tempdir().unwrap();
++        let path = dir.path().join("index");
++        let build = BuildParams { metric, ..params() };
++        let rows = data(192, 17);
++        let index = UpdatableVGraph::create(&path, &[], 17, &build).unwrap();
++        index.set_delta_quantized(true).unwrap();
++        assert!(index
++            .search(&rows[..17], 10, search_params())
++            .unwrap()
++            .is_empty());
++        index
++            .insert_batch(&(0..128).collect::<Vec<_>>(), &rows[..128 * 17])
++            .unwrap();
++        index.commit().unwrap();
++        index.set_delta_quantized(false).unwrap();
++        let original = index.search(&rows[..17], 10, search_params()).unwrap();
++        index.set_delta_quantized(true).unwrap();
++        assert_eq!(
++            index.search(&rows[..17], 10, search_params()).unwrap(),
++            original
++        );
++        index
++            .insert_batch(&(128..192).collect::<Vec<_>>(), &rows[128 * 17..])
++            .unwrap();
++        index.commit().unwrap();
++        index.replace(0, &rows[17..34]).unwrap();
++        index.commit().unwrap();
++        index.replace_batch(&[2, 3], &rows[68..102]).unwrap();
++        index.commit().unwrap();
++        index.delete_batch(&[1, 4, 5]).unwrap();
++        index.commit().unwrap();
++        let before = index.len();
++        assert!(matches!(
++            index.replace_batch(&[2, 9999], &rows[..34]),
++            Err(UpdateError::UnknownId(9999))
++        ));
++        assert_eq!(index.len(), before);
++        assert!(index
++            .consolidate_inner(|step| if step == 1 {
++                Err(std::io::Error::other("injected before publication").into())
++            } else {
++                Ok(())
++            })
++            .is_err());
++        {
++            let state = index.state.read();
++            let delta = &state.delta;
++            let fresh = delta::codes::Codes::from_rows(&delta.vectors, 17).unwrap();
++            for ef in [1, 2, 16, delta.len() - 1] {
++                let query = delta.row(3, 17);
++                let (actual, visits) = delta.search_profiled(query, ef, metric);
++                assert_eq!(actual, delta.search(query, ef, metric));
++                assert_eq!(actual, fresh.search::<false>(delta, query, ef, metric).0);
++                assert!((1..=delta.len()).contains(&visits));
++                for &(score, id) in &actual {
++                    assert!(score.is_finite());
++                    assert!(delta.live.contains_key(&id));
++                }
++            }
++        }
++        index.consolidate().unwrap();
++        assert!(index.state.read().delta.codes.is_some());
++        index.insert(500, &rows[..17]).unwrap();
++        index.commit().unwrap();
++        let expected = index.search(&rows[..17], 10, search_params()).unwrap();
++        drop(index);
++        let index = UpdatableVGraph::open(&path).unwrap();
++        assert!(index.state.read().delta.codes.is_none());
++        assert_eq!(
++            index.search(&rows[..17], 10, search_params()).unwrap(),
++            expected
++        );
++        index.set_delta_quantized(true).unwrap();
++        assert_eq!(
++            index.search(&rows[..17], 10, search_params()).unwrap(),
++            expected
++        );
++    }
++}
++
++#[test]
++fn quantized_delta_rejects_unsupported_width_without_mutation() {
++    let dir = tempfile::tempdir().unwrap();
++    let index = UpdatableVGraph::create(&dir.path().join("index"), &[], 65537, &params()).unwrap();
++    assert!(matches!(
++        index.set_delta_quantized(true),
++        Err(UpdateError::InvalidVector(_))
++    ));
++    assert!(index.state.read().delta.codes.is_none());
++    assert!(index.is_empty());
++    index.insert(0, &vec![1.0; 65537]).unwrap();
++    index.commit().unwrap();
++    assert_eq!(index.len(), 1);
++}
++
+ #[test]
+ fn streaming_diagnostics_preserve_search_and_measure_live_generations() {
+     let dir = tempfile::tempdir().unwrap();
+diff --git a/src/python/vector_index.rs b/src/python/vector_index.rs
+index fd892f90..b16659b7 100644
+--- a/src/python/vector_index.rs
++++ b/src/python/vector_index.rs
+@@ -666,6 +666,13 @@ impl PyUpdatableIndex {
+         Ok(())
+     }
+ 
++    /// Enables approximate i8 delta traversal with exact final-beam reranking.
++    /// Keeps float rows; defaults off and must be enabled again after open.
++    fn set_delta_quantized(&self, py: Python<'_>, enabled: bool) -> PyResult<()> {
++        py.detach(|| self.run(|| self.index.set_delta_quantized(enabled)))
++            .map_err(update_err)
++    }
++
+     /// Adds rows under new `ids` and commits. Ids must not be live.
+     fn insert(
+         &self,
+diff --git a/tests/python/test_vector_index.py b/tests/python/test_vector_index.py
+index 2dfb2bf3..bc1c5d49 100644
+--- a/tests/python/test_vector_index.py
++++ b/tests/python/test_vector_index.py
+@@ -13,6 +13,32 @@ import holographic_memory as hm
+ N, DIM, K = 4000, 48, 10
+ 
+ 
++@pytest.mark.parametrize("metric", ["angular", "euclidean"])
++def test_updatable_quantized_delta_opt_in(tmp_path, metric):
++    rows = np.random.default_rng(42).normal(size=(64, 17)).astype(np.float32)
++    ids = np.arange(len(rows), dtype=np.int64)
++    path = tmp_path / metric
++    index = hm.UpdatableIndex.create(path, 17, metric, degree=8, build_ef=32, threads=2)
++    index.set_delta_quantized(True)
++    index.insert(rows, ids)
++    index.set_query_arguments(8, 0)
++    found = index.search(rows[:4], 3)
++    assert found.shape == (4, 3)
++    assert all(len(set(row)) == 3 for row in found)
++    index.delete(ids[:2])
++    assert not np.isin(index.search(rows[:4], 3), ids[:2]).any()
++    index.set_query_arguments(128, 128)
++    expected = index.search(rows[:4], 10)
++    index.set_delta_quantized(False)
++    np.testing.assert_array_equal(index.search(rows[:4], 10), expected)
++    del index
++    index = hm.UpdatableIndex.open(path, threads=2)
++    index.set_query_arguments(128, 128)
++    np.testing.assert_array_equal(index.search(rows[:4], 10), expected)
++    index.set_delta_quantized(True)
++    np.testing.assert_array_equal(index.search(rows[:4], 10), expected)
++
++
+ @pytest.mark.parametrize("metric", ["angular", "euclidean", "ip"])
+ @pytest.mark.parametrize("bits", [4, 8])
+ def test_compact_adjacency_preserves_trained_results(metric, bits):

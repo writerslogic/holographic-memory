@@ -1,0 +1,170 @@
+Sat Oct 24 04:13:20 UTC 2026
+3.14 1.24 2.11 2/356 1069031
+f6c1fd7f25358c0e444b0209930b021c5c8ecfac
+e88f2f81f5815e935501ac262271a254c96d657e042d2ff9af7c0a4c43ea4e26  grid-test
+dd9fe7644cbb8cc5224bcc4839373e3920a9217b5c476cb254de2243d7e98960  source/src/core/qgraph/update/delta.rs
+e536a3731457ffa0f693181731f66178a37b2e28429ed02a3e3fe87b0fe333b2  source/src/core/qgraph/update/delta_codes.rs
+1c7ff1c549a23070c40f3d1a2a47bfefef30ef20fcfe68baaa6ab9a5141108d7  source/src/core/qgraph/update/delta_quantized_tests.rs
+
+running 1 test
+test core::qgraph::update::delta::quantized_tests::quantized_delta_selected ... graph_build_ns=44222037134
+encode mode=Production8 rows=3000000 ns=210318587 code_bytes=348000000
+recall mode=Production8 arm=base256 deleted=false threads=1 ef=256 width=256 hits=886 total=1280 checksum=40b381dac8c8a213
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=false repeat=0 ns=267388645
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=false repeat=1 ns=267362351
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=false repeat=2 ns=268530821
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=false repeat=3 ns=278330580
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=false repeat=4 ns=268771513
+recall mode=Production8 arm=candidate deleted=false threads=1 ef=256 width=256 hits=878 total=1280 checksum=e8b3f792ff3dd096
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=true repeat=0 ns=129351163
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=true repeat=1 ns=124790598
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=true repeat=2 ns=141319273
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=true repeat=3 ns=125683073
+timing mode=Production8 deleted=false threads=1 ef=256 pair=0 candidate=true repeat=4 ns=133632306
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=true repeat=0 ns=130782385
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=true repeat=1 ns=125979461
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=true repeat=2 ns=125783309
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=true repeat=3 ns=126808886
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=true repeat=4 ns=127005151
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=false repeat=0 ns=275164196
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=false repeat=1 ns=270107715
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=false repeat=2 ns=286791359
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=false repeat=3 ns=275055962
+timing mode=Production8 deleted=false threads=1 ef=256 pair=1 candidate=false repeat=4 ns=271391221
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=false repeat=0 ns=274347420
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=false repeat=1 ns=334024010
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=false repeat=2 ns=313234815
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=false repeat=3 ns=286212193
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=false repeat=4 ns=278160374
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=true repeat=0 ns=137434175
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=true repeat=1 ns=133888842
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=true repeat=2 ns=134027783
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=true repeat=3 ns=130824028
+timing mode=Production8 deleted=false threads=1 ef=256 pair=2 candidate=true repeat=4 ns=130906821
+recall mode=Production8 arm=base256 deleted=false threads=8 ef=256 width=256 hits=886 total=1280 checksum=40b381dac8c8a213
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=false repeat=0 ns=47950052
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=false repeat=1 ns=47136188
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=false repeat=2 ns=45553260
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=false repeat=3 ns=46567748
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=false repeat=4 ns=51190992
+recall mode=Production8 arm=candidate deleted=false threads=8 ef=256 width=256 hits=878 total=1280 checksum=e8b3f792ff3dd096
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=true repeat=0 ns=20826743
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=true repeat=1 ns=20795492
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=true repeat=2 ns=21136830
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=true repeat=3 ns=20765588
+timing mode=Production8 deleted=false threads=8 ef=256 pair=0 candidate=true repeat=4 ns=21408696
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=true repeat=0 ns=21905587
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=true repeat=1 ns=21868589
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=true repeat=2 ns=21981171
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=true repeat=3 ns=21615895
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=true repeat=4 ns=21796985
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=false repeat=0 ns=50874731
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=false repeat=1 ns=51666868
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=false repeat=2 ns=45170010
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=false repeat=3 ns=46418611
+timing mode=Production8 deleted=false threads=8 ef=256 pair=1 candidate=false repeat=4 ns=47058028
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=false repeat=0 ns=48570133
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=false repeat=1 ns=50637581
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=false repeat=2 ns=48786043
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=false repeat=3 ns=48559604
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=false repeat=4 ns=47767339
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=true repeat=0 ns=21218508
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=true repeat=1 ns=21321334
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=true repeat=2 ns=21393780
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=true repeat=3 ns=21222650
+timing mode=Production8 deleted=false threads=8 ef=256 pair=2 candidate=true repeat=4 ns=21580233
+recall mode=Production8 arm=base256 deleted=true threads=1 ef=256 width=256 hits=884 total=1280 checksum=b21cc8bc47163d14
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=false repeat=0 ns=301905329
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=false repeat=1 ns=294764926
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=false repeat=2 ns=308076684
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=false repeat=3 ns=287973669
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=false repeat=4 ns=277838778
+recall mode=Production8 arm=candidate deleted=true threads=1 ef=256 width=256 hits=877 total=1280 checksum=bb42986e8e38129a
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=true repeat=0 ns=139583480
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=true repeat=1 ns=130472814
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=true repeat=2 ns=131987366
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=true repeat=3 ns=128843993
+timing mode=Production8 deleted=true threads=1 ef=256 pair=0 candidate=true repeat=4 ns=128697949
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=true repeat=0 ns=129033846
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=true repeat=1 ns=127518356
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=true repeat=2 ns=131332945
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=true repeat=3 ns=129673526
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=true repeat=4 ns=127767984
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=false repeat=0 ns=278269794
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=false repeat=1 ns=276137028
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=false repeat=2 ns=265229416
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=false repeat=3 ns=273080041
+timing mode=Production8 deleted=true threads=1 ef=256 pair=1 candidate=false repeat=4 ns=287340727
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=false repeat=0 ns=269295438
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=false repeat=1 ns=278757909
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=false repeat=2 ns=279311350
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=false repeat=3 ns=267690129
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=false repeat=4 ns=270630285
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=true repeat=0 ns=134609113
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=true repeat=1 ns=128976455
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=true repeat=2 ns=127066098
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=true repeat=3 ns=126685853
+timing mode=Production8 deleted=true threads=1 ef=256 pair=2 candidate=true repeat=4 ns=136132527
+recall mode=Production8 arm=base256 deleted=true threads=8 ef=256 width=256 hits=884 total=1280 checksum=b21cc8bc47163d14
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=false repeat=0 ns=50838127
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=false repeat=1 ns=46975635
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=false repeat=2 ns=45453573
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=false repeat=3 ns=47454280
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=false repeat=4 ns=48634901
+recall mode=Production8 arm=candidate deleted=true threads=8 ef=256 width=256 hits=877 total=1280 checksum=bb42986e8e38129a
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=true repeat=0 ns=20583828
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=true repeat=1 ns=20347887
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=true repeat=2 ns=21204985
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=true repeat=3 ns=20589520
+timing mode=Production8 deleted=true threads=8 ef=256 pair=0 candidate=true repeat=4 ns=20488134
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=true repeat=0 ns=20748598
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=true repeat=1 ns=20526481
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=true repeat=2 ns=20776031
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=true repeat=3 ns=20579655
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=true repeat=4 ns=21014840
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=false repeat=0 ns=50302491
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=false repeat=1 ns=49344903
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=false repeat=2 ns=47496240
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=false repeat=3 ns=49146929
+timing mode=Production8 deleted=true threads=8 ef=256 pair=1 candidate=false repeat=4 ns=46287020
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=false repeat=0 ns=49643499
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=false repeat=1 ns=51930502
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=false repeat=2 ns=46545345
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=false repeat=3 ns=49883008
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=false repeat=4 ns=51074419
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=true repeat=0 ns=20415366
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=true repeat=1 ns=20628228
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=true repeat=2 ns=22069527
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=true repeat=3 ns=21241126
+timing mode=Production8 deleted=true threads=8 ef=256 pair=2 candidate=true repeat=4 ns=20698659
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 575 filtered out; finished in 68.97s
+
+	Command being timed: "timeout --kill-after=5s 225 systemd-run --user --scope --unit=hms-quantized-production-heldout-3m.scope -q -p MemoryMax=6G -p MemorySwapMax=0 taskset -c 0-7 ./grid-test quantized_delta_selected --ignored --nocapture --test-threads=1"
+	User time (seconds): 461.39
+	System time (seconds): 5.02
+	Percent of CPU this job got: 623%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:14.86
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2941880
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 2542453
+	Voluntary context switches: 19423
+	Involuntary context switches: 953
+	Swaps: 0
+	File system inputs: 1442296
+	File system outputs: 32
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+SCOPE_EMPTY hms-quantized-production-heldout-3m.scope
+5.06 2.28 2.41 1/356 1069152
+Sat Oct 24 04:14:35 UTC 2026
+EXIT_STATUS 0
