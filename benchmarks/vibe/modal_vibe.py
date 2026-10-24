@@ -1075,6 +1075,13 @@ def matching_memory_observation(observation: dict | None, container_id: str | No
     return observation if observation and container_id and observation.get("container_id") == container_id else None
 
 
+def measurement_containers(record: dict) -> list[str]:
+    containers = {record["container_id"]} if record.get("container_id") else set()
+    containers.update(h["container"] for h in record.get("history", [])
+                      if h.get("container") and (h.get("markers", 0) > 0 or h.get("progress")))
+    return sorted(containers)
+
+
 def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     root = f"/vibe/{ns}"
     result_dir = Path(__file__).resolve().parents[2] / "benchmarks/results/vibe_live_s_20261023"
@@ -1126,15 +1133,19 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
                        if "avx512" in hms else ([], {}))
         standing = standings.get(ds, {})
         measured = standing.get("best_qps_at_recall", {})
+        hms_containers = measurement_containers(hms)
         competitors = {}
         for algo, record in records.items():
             if algo in ("_download", f"hms@{hms_rev[:12]}"):
                 continue
             same_container = bool(hms.get("container_id")) and record.get("container_id") == hms.get("container_id")
+            provenance_matches = (hms_containers == measurement_containers(record) == [hms.get("container_id")])
             competitors[algo] = {
                 "state": record.get("state"), "cpu_model": record.get("cpu_model"),
                 "container_id": record.get("container_id"), "same_container_as_hms": same_container,
-                "fair_comparison": bool(hms.get("state") == "done" and record.get("state") == "done" and same_container),
+                "measurement_containers": measurement_containers(record),
+                "fair_comparison": bool(hms.get("state") == "done" and record.get("state") == "done"
+                                        and same_container and provenance_matches),
                 "metrics": measured.get(algo), "error": record.get("error_tail") or record.get("error"),
             }
         comparison_status = ("comparable" if any(r["fair_comparison"] for r in competitors.values()) else
@@ -1160,6 +1171,7 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
             "vibe_fork_commit": VIBE_REV, "source_sha256": manifest.get("source_sha256"),
             "query_threads": 1, "cpu_model": hms.get("cpu_model"), "avx512": hms.get("avx512"),
             "nproc": hms.get("nproc"), "container_id": hms.get("container_id"),
+            "measurement_containers": hms_containers,
             "hardware_cpu_record": (f"hms-bench-run:{root}/cpu/{hms['container_id']}.json"
                                     if hms.get("container_id") else None),
             "validation": hms.get("validation"), "metrics": measured.get("hms"),

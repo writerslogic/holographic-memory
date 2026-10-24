@@ -51,6 +51,15 @@ def test_memory_observation_must_match_active_container():
     assert mv.matching_memory_observation(None, "new") is None
 
 
+def test_measurement_provenance_retains_completed_groups_after_preemption():
+    record = {"container_id": "new", "history": [{"container": "old", "markers": 0}]}
+    assert mv.measurement_containers(record) == ["new"]
+    record["history"][0]["markers"] = 1
+    assert mv.measurement_containers(record) == ["new", "old"]
+    record["history"][0] = {"container": "old", "progress": True}
+    assert mv.measurement_containers(record) == ["new", "old"]
+
+
 def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path):
     rev = "a" * 40
     root = "/vibe/run-s-20261023"
@@ -65,6 +74,9 @@ def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path)
                                          "container_id": "c1", "cpu_model": "CPU A"},
         f"{root}/ledger/a/other.json": {"dataset": "a", "job": "other", "state": "done",
                                           "container_id": "c2", "cpu_model": "CPU A"},
+        f"{root}/ledger/a/mixed.json": {"dataset": "a", "job": "mixed", "state": "done",
+                                          "container_id": "c1", "cpu_model": "CPU A",
+                                          "history": [{"container": "c0", "markers": 1}]},
         f"{root}/ledger/b/_download.json": {"dataset": "b", "job": "_download", "state": "failed",
                                               "error": "download failed"},
         f"{root}/standings/a@{rev[:12]}.json": {"dataset": "a", "hms_commit": rev,
@@ -87,6 +99,7 @@ def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path)
     a, b = report["rows"]
     assert a["competitors"]["same"]["fair_comparison"] is True
     assert a["competitors"]["other"]["fair_comparison"] is False
+    assert a["competitors"]["mixed"]["fair_comparison"] is False
     assert a["comparison_status"] == "comparable"
     assert a["metrics"]["0.95"]["qps"] == 42
     assert a["estimated_cost_usd"] == 2.0
