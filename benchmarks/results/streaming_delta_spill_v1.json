@@ -1,0 +1,270 @@
+{
+  "classification": "development consolidation measurement, not a leaderboard standing",
+  "cpu": "Intel Core Ultra 9 185H",
+  "threads": 8,
+  "cpu_affinity": "0-7",
+  "rounds": 3,
+  "lock": "hms-timing.lock",
+  "parent_commit": "e3bb3648",
+  "base_rows": 500000,
+  "dimensions": 100,
+  "degree": 32,
+  "build_ef": 64,
+  "deletes": "every seventh id, preserving the entry",
+  "inserts": 100000,
+  "temporary_filesystem": "ext4",
+  "pairs": [
+    {
+      "round": 1,
+      "base": {
+        "load_average": [
+          1.0,
+          1.5,
+          1.93
+        ],
+        "consolidation_ns": 19504061408,
+        "insertion_phase_rss_kib": 443764,
+        "whole_process_peak_rss_kib": 529436,
+        "vertex_crc": 434904111
+      },
+      "candidate": {
+        "load_average": [
+          4.7,
+          2.41,
+          2.22
+        ],
+        "consolidation_ns": 19213501245,
+        "insertion_phase_rss_kib": 405152,
+        "whole_process_peak_rss_kib": 529992,
+        "vertex_crc": 434904111
+      }
+    },
+    {
+      "round": 2,
+      "base": {
+        "load_average": [
+          7.29,
+          3.93,
+          2.79
+        ],
+        "consolidation_ns": 19332683180,
+        "insertion_phase_rss_kib": 441560,
+        "whole_process_peak_rss_kib": 529124,
+        "vertex_crc": 434904111
+      },
+      "candidate": {
+        "load_average": [
+          6.49,
+          3.21,
+          2.5
+        ],
+        "consolidation_ns": 19590368748,
+        "insertion_phase_rss_kib": 404764,
+        "whole_process_peak_rss_kib": 528864,
+        "vertex_crc": 434904111
+      }
+    },
+    {
+      "round": 3,
+      "base": {
+        "load_average": [
+          7.72,
+          4.52,
+          3.04
+        ],
+        "consolidation_ns": 19412794378,
+        "insertion_phase_rss_kib": 442964,
+        "whole_process_peak_rss_kib": 529792,
+        "vertex_crc": 434904111
+      },
+      "candidate": {
+        "load_average": [
+          7.61,
+          4.95,
+          3.26
+        ],
+        "consolidation_ns": 19542853867,
+        "insertion_phase_rss_kib": 404316,
+        "whole_process_peak_rss_kib": 529068,
+        "vertex_crc": 434904111
+      }
+    }
+  ],
+  "unmeasured": [
+    "Incremental delta-spill benefit versus current PR parent 0880ccda",
+    "8 GiB constrained scaled official-data replay",
+    "Final-runbook completion and recall",
+    "Eight-thread query throughput"
+  ],
+  "query_check": {
+    "rows": 100000,
+    "dimensions": 100,
+    "ef": 256,
+    "query_threads": 1,
+    "queries_per_sample": 256,
+    "warmup_queries": 16,
+    "samples_per_process": 5,
+    "pairs": [
+      {
+        "round": 1,
+        "base": {
+          "elapsed_ns": [
+            115189774,
+            116676678,
+            114561842,
+            117226381,
+            118012709
+          ],
+          "median_ns": 116676678,
+          "fingerprints": [
+            "13727077145971949608"
+          ],
+          "load_average": [
+            1.99,
+            2.0,
+            2.51
+          ]
+        },
+        "candidate": {
+          "elapsed_ns": [
+            115256263,
+            115961381,
+            117936619,
+            118166754,
+            114540709
+          ],
+          "median_ns": 115961381,
+          "fingerprints": [
+            "13727077145971949608"
+          ],
+          "load_average": [
+            1.91,
+            1.99,
+            2.5
+          ]
+        }
+      },
+      {
+        "round": 2,
+        "base": {
+          "elapsed_ns": [
+            115771843,
+            116005686,
+            115760037,
+            115230855,
+            116513398
+          ],
+          "median_ns": 115771843,
+          "fingerprints": [
+            "13727077145971949608"
+          ],
+          "load_average": [
+            2.4,
+            2.09,
+            2.53
+          ]
+        },
+        "candidate": {
+          "elapsed_ns": [
+            121025086,
+            120359770,
+            115058962,
+            118187281,
+            118811420
+          ],
+          "median_ns": 118811420,
+          "fingerprints": [
+            "13727077145971949608"
+          ],
+          "load_average": [
+            1.91,
+            1.99,
+            2.5
+          ]
+        }
+      },
+      {
+        "round": 3,
+        "base": {
+          "elapsed_ns": [
+            115139455,
+            114840449,
+            114869075,
+            113427637,
+            118470848
+          ],
+          "median_ns": 114869075,
+          "fingerprints": [
+            "13727077145971949608"
+          ],
+          "load_average": [
+            2.4,
+            2.09,
+            2.53
+          ]
+        },
+        "candidate": {
+          "elapsed_ns": [
+            114197572,
+            113072161,
+            112790394,
+            114546735,
+            116055552
+          ],
+          "median_ns": 114197572,
+          "fingerprints": [
+            "13727077145971949608"
+          ],
+          "load_average": [
+            2.4,
+            2.09,
+            2.53
+          ]
+        }
+      }
+    ],
+    "interpretation": "No consistent query-time change: paired medians -0.6%, +2.6%, -0.6%; all result fingerprints identical."
+  },
+  "discarded_variant": {
+    "change": "Dereference shared row backing for each neighbor instead of caching its slice once per search",
+    "paired_query_median_ratios": [
+      1.0098,
+      1.0057,
+      1.0079
+    ],
+    "decision": "Replaced by once-per-search slice selection."
+  },
+  "candidate_source_commit": "ee8b2c3",
+  "comparison_scope": "Combined entry-selection, old-page-release and delta-spill changes versus e3bb3648; NOT incremental delta-spill benefit versus PR parent 0880ccda. Master session will validate that comparison.",
+  "pr_parent_commit": "0880ccda",
+  "pr_code_commit": "ae02c08d",
+  "combined_3m_comparison": {
+    "rounds": 1,
+    "base_rows": 3000000,
+    "inserts": 600000,
+    "memory_max_bytes": 8589934592,
+    "swap_max_bytes": 0,
+    "peak_method": "Linux /proc/self/clear_refs=5 immediately before consolidation; VmHWM immediately after consolidation, before reading vertex bytes for CRC",
+    "comparison_scope": "Combined entry-selection, old-page-release and delta-spill changes versus e3bb3648; NOT incremental delta-spill benefit versus PR parent 0880ccda. Master session will validate that comparison.",
+    "base": {
+      "load_average": [
+        0.26,
+        1.19,
+        2.02
+      ],
+      "isolated_peak_rss_kib": 2581784,
+      "consolidation_ns": 185401427192,
+      "vertex_crc": 2824448824
+    },
+    "candidate": {
+      "load_average": [
+        7.41,
+        6.33,
+        4.27
+      ],
+      "isolated_peak_rss_kib": 2348628,
+      "consolidation_ns": 185641995099,
+      "vertex_crc": 2824448824
+    }
+  }
+}
