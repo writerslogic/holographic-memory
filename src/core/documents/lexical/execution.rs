@@ -222,16 +222,11 @@ fn combine(maxima: impl Iterator<Item = (u32, u32)>) -> (u32, u32) {
 }
 
 fn positional_frequency(
-    chunk: &StoredChunk,
+    positions: &crate::core::documents::positions::Positions,
     indices: &[Option<usize>],
     states: &[TermState<'_>],
     exact: bool,
 ) -> u32 {
-    let positions = chunk
-        .terms
-        .positions
-        .as_ref()
-        .expect("phrase capability checked");
     let lead = indices
         .iter()
         .enumerate()
@@ -300,8 +295,7 @@ pub(super) fn document_at_a_time(
         Vec::new()
     };
     let average = (store.word_count as f64 / (store.chunk_count as f64).max(1.0)).max(1.0);
-    let need_document = query.clauses.iter().any(|c| c.phrase)
-        || (options.count && !store.multichunk_documents.is_empty());
+    let need_document = options.count && !store.multichunk_documents.is_empty();
     let single_phrase = query.clauses.len() == 1 && query.clauses[0].phrase;
     let phrases_ranked = !options.count && query.clauses.iter().any(|c| c.phrase);
     for form in 0..2 {
@@ -520,8 +514,7 @@ pub(super) fn document_at_a_time(
                     }
                 }
                 if phrases {
-                    let (document, chunk_index) = document_chunk.expect("phrase owner");
-                    let chunk = &document.chunks[chunk_index];
+                    let positions = store.slot_positions(slot);
                     // The positions of a phrase are counted only where the count can
                     // change the ranking; otherwise its first occurrence settles the match.
                     let exact = options.k > 0
@@ -559,7 +552,7 @@ pub(super) fn document_at_a_time(
                     {
                         if pending.is_some() && needed {
                             *frequency_value = positional_frequency(
-                                chunk,
+                                positions,
                                 indices,
                                 &states,
                                 exact && clause.occur != Occur::MustNot,
