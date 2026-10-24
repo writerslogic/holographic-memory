@@ -1,0 +1,6354 @@
+{
+ "cost_scope": "estimated CPU and memory list price; excludes Volume, network, credits, discounts",
+ "estimated_cost_usd": 9.0802,
+ "generated": "2026-10-24T07:47:06Z",
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "namespace": "run-s-20261023",
+ "rows": [
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATH4SPV2PQVY7TXBFWM8R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "agnews-mxbai-1024-euclidean",
+   "dataset_bytes": 3157100864,
+   "dataset_sha256": "acb2712c1717e1309e316c20701e534bc4d3015917e6b7667baed2b3592218d0",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2259,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATH4SPV2PQVY7TXBFWM8R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/agnews-mxbai-1024-euclidean",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/agnews-mxbai-1024-euclidean",
+   "memory_observation": {
+    "cgroup_current_bytes": 7472058368,
+    "cgroup_limit_bytes": 353621704704,
+    "container_id": "ta-01M5PATH4SPV2PQVY7TXBFWM8R",
+    "dataset": "agnews-mxbai-1024-euclidean",
+    "mem_available_bytes": 346149146624,
+    "observed_at_utc": "2026-10-24T07:35:04.333656+00:00",
+    "requested_memory_gib": 16
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      4523.9
+     ],
+     [
+      "glass",
+      4059.0
+     ],
+     [
+      "symphonyqg",
+      3824.9
+     ],
+     [
+      "pag",
+      3684.0
+     ],
+     [
+      "symqg",
+      3110.0
+     ],
+     [
+      "lorann",
+      2141.5
+     ],
+     [
+      "rabitq-hnsw",
+      1897.5
+     ],
+     [
+      "pynndescent",
+      1839.6
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1830.4
+     ],
+     [
+      "hnswlib",
+      1771.6
+     ],
+     [
+      "flatnav",
+      1398.2
+     ],
+     [
+      "vamana-lvq(svs)",
+      1382.0
+     ],
+     [
+      "nsg(faiss)",
+      1299.3
+     ],
+     [
+      "scann",
+      1223.6
+     ],
+     [
+      "rabitq-ivf",
+      1162.5
+     ],
+     [
+      "ivfpqfs(faiss)",
+      823.2
+     ],
+     [
+      "vamana(diskann)",
+      636.7
+     ],
+     [
+      "ivf(faiss)",
+      247.5
+     ],
+     [
+      "mrpt",
+      221.0
+     ],
+     [
+      "annoy",
+      156.3
+     ]
+    ],
+    "0.95": [
+     [
+      "ngt-qg",
+      3776.0
+     ],
+     [
+      "pag",
+      3684.0
+     ],
+     [
+      "symphonyqg",
+      3068.4
+     ],
+     [
+      "glass",
+      2877.1
+     ],
+     [
+      "symqg",
+      2502.3
+     ],
+     [
+      "rabitq-hnsw",
+      1897.5
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1495.9
+     ],
+     [
+      "vamana-lvq(svs)",
+      1268.0
+     ],
+     [
+      "hnswlib",
+      1219.7
+     ],
+     [
+      "lorann",
+      1123.3
+     ],
+     [
+      "pynndescent",
+      1091.7
+     ],
+     [
+      "flatnav",
+      1091.5
+     ],
+     [
+      "nsg(faiss)",
+      890.4
+     ],
+     [
+      "rabitq-ivf",
+      771.5
+     ],
+     [
+      "scann",
+      738.7
+     ],
+     [
+      "vamana(diskann)",
+      636.7
+     ],
+     [
+      "ivfpqfs(faiss)",
+      474.3
+     ],
+     [
+      "mrpt",
+      121.0
+     ],
+     [
+      "ivf(faiss)",
+      101.5
+     ],
+     [
+      "annoy",
+      94.0
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      2528.2
+     ],
+     [
+      "symqg",
+      2075.6
+     ],
+     [
+      "glass",
+      1897.6
+     ],
+     [
+      "ngt-qg",
+      1887.0
+     ],
+     [
+      "symphonyqg",
+      1841.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1275.3
+     ],
+     [
+      "rabitq-hnsw",
+      988.6
+     ],
+     [
+      "vamana-lvq(svs)",
+      923.2
+     ],
+     [
+      "vamana(diskann)",
+      556.0
+     ],
+     [
+      "flatnav",
+      542.7
+     ],
+     [
+      "hnswlib",
+      529.5
+     ],
+     [
+      "pynndescent",
+      444.0
+     ],
+     [
+      "nsg(faiss)",
+      407.7
+     ],
+     [
+      "lorann",
+      309.7
+     ],
+     [
+      "rabitq-ivf",
+      268.2
+     ],
+     [
+      "scann",
+      252.1
+     ],
+     [
+      "ivfpqfs(faiss)",
+      93.6
+     ],
+     [
+      "mrpt",
+      54.8
+     ],
+     [
+      "annoy",
+      31.1
+     ],
+     [
+      "ivf(faiss)",
+      26.0
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 16,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/agnews-mxbai-1024-euclidean",
+   "selected_competitors": [
+    "ngt-qg",
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 2,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PBDFYBZ61M5ZQESDPGNYRR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "arxiv-nomic-768-normalized",
+   "dataset_bytes": 4135431488,
+   "dataset_sha256": "8be0993b978b0d0ef023d21d878251a5ed09e058adb25994553c08388d37d414",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.3115,
+   "failures": 1,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PBDFYBZ61M5ZQESDPGNYRR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/arxiv-nomic-768-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/arxiv-nomic-768-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 9850970112,
+    "cgroup_limit_bytes": 425706930176,
+    "container_id": "ta-01M5PBDFYBZ61M5ZQESDPGNYRR",
+    "dataset": "arxiv-nomic-768-normalized",
+    "mem_available_bytes": 415855460352,
+    "observed_at_utc": "2026-10-24T07:35:05.288844+00:00",
+    "requested_memory_gib": 19
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "glass",
+      5139.1
+     ],
+     [
+      "symphonyqg",
+      4900.8
+     ],
+     [
+      "ngt-qg",
+      4846.2
+     ],
+     [
+      "symqg",
+      3950.1
+     ],
+     [
+      "pag",
+      3539.8
+     ],
+     [
+      "lorann",
+      2809.2
+     ],
+     [
+      "hnswlib",
+      2610.4
+     ],
+     [
+      "flatnav",
+      2415.9
+     ],
+     [
+      "rabitq-hnsw",
+      2311.3
+     ],
+     [
+      "pynndescent",
+      2181.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2048.9
+     ],
+     [
+      "nsg(faiss)",
+      1801.7
+     ],
+     [
+      "vamana-lvq(svs)",
+      1670.6
+     ],
+     [
+      "scann",
+      1608.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1519.2
+     ],
+     [
+      "rabitq-ivf",
+      1228.1
+     ],
+     [
+      "vamana(diskann)",
+      798.7
+     ],
+     [
+      "ivf(faiss)",
+      284.2
+     ],
+     [
+      "annoy",
+      259.3
+     ],
+     [
+      "mrpt",
+      244.2
+     ],
+     [
+      "puffinn",
+      63.6
+     ],
+     [
+      "falconnpp",
+      62.7
+     ]
+    ],
+    "0.95": [
+     [
+      "symphonyqg",
+      4199.9
+     ],
+     [
+      "ngt-qg",
+      4144.1
+     ],
+     [
+      "glass",
+      4125.3
+     ],
+     [
+      "symqg",
+      3950.1
+     ],
+     [
+      "pag",
+      3539.8
+     ],
+     [
+      "rabitq-hnsw",
+      2311.3
+     ],
+     [
+      "hnswlib",
+      2001.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1905.1
+     ],
+     [
+      "lorann",
+      1900.5
+     ],
+     [
+      "flatnav",
+      1697.9
+     ],
+     [
+      "vamana-lvq(svs)",
+      1670.6
+     ],
+     [
+      "pynndescent",
+      1650.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1239.0
+     ],
+     [
+      "nsg(faiss)",
+      1232.5
+     ],
+     [
+      "scann",
+      1179.1
+     ],
+     [
+      "rabitq-ivf",
+      983.0
+     ],
+     [
+      "vamana(diskann)",
+      798.7
+     ],
+     [
+      "ivf(faiss)",
+      246.3
+     ],
+     [
+      "mrpt",
+      154.2
+     ],
+     [
+      "annoy",
+      117.0
+     ],
+     [
+      "falconnpp",
+      39.6
+     ],
+     [
+      "puffinn",
+      12.5
+     ]
+    ],
+    "0.99": [
+     [
+      "ngt-qg",
+      3495.9
+     ],
+     [
+      "symphonyqg",
+      3275.2
+     ],
+     [
+      "pag",
+      3134.9
+     ],
+     [
+      "glass",
+      2881.5
+     ],
+     [
+      "symqg",
+      2598.2
+     ],
+     [
+      "rabitq-hnsw",
+      1801.8
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1575.8
+     ],
+     [
+      "vamana-lvq(svs)",
+      1318.8
+     ],
+     [
+      "pynndescent",
+      901.1
+     ],
+     [
+      "flatnav",
+      867.9
+     ],
+     [
+      "hnswlib",
+      833.6
+     ],
+     [
+      "vamana(diskann)",
+      798.7
+     ],
+     [
+      "lorann",
+      774.7
+     ],
+     [
+      "nsg(faiss)",
+      710.5
+     ],
+     [
+      "rabitq-ivf",
+      633.0
+     ],
+     [
+      "ivfpqfs(faiss)",
+      582.2
+     ],
+     [
+      "scann",
+      536.3
+     ],
+     [
+      "mrpt",
+      101.9
+     ],
+     [
+      "ivf(faiss)",
+      82.3
+     ],
+     [
+      "annoy",
+      64.0
+     ],
+     [
+      "falconnpp",
+      33.6
+     ],
+     [
+      "puffinn",
+      12.5
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 19,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/arxiv-nomic-768-normalized",
+   "selected_competitors": [
+    "glass",
+    "symphonyqg",
+    "ngt-qg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": true,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATHZNQ0Y3256HHNV659GR",
+   "cpu_model": "AMD EPYC 9004 (Zen 4, Genoa; family 25 model 17)",
+   "dataset": "ccnews-nomic-768-normalized",
+   "dataset_bytes": 1526335808,
+   "dataset_sha256": "c3a498239eea772b7b736f31c25f8dff089f349352ec523b0d9cb694c71f1df3",
+   "deprecated": true,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.179,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATHZNQ0Y3256HHNV659GR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/ccnews-nomic-768-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/ccnews-nomic-768-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 3779604480,
+    "cgroup_limit_bytes": 726299627520,
+    "container_id": "ta-01M5PATHZNQ0Y3256HHNV659GR",
+    "dataset": "ccnews-nomic-768-normalized",
+    "mem_available_bytes": 722519556096,
+    "observed_at_utc": "2026-10-24T07:35:05.926036+00:00",
+    "requested_memory_gib": 11
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      5040.4
+     ],
+     [
+      "glass",
+      4916.1
+     ],
+     [
+      "symphonyqg",
+      4013.6
+     ],
+     [
+      "symqg",
+      3537.9
+     ],
+     [
+      "pag",
+      3475.4
+     ],
+     [
+      "lorann",
+      2948.3
+     ],
+     [
+      "rabitq-hnsw",
+      2625.0
+     ],
+     [
+      "pynndescent",
+      2539.9
+     ],
+     [
+      "flatnav",
+      2530.1
+     ],
+     [
+      "hnswlib",
+      2480.6
+     ],
+     [
+      "nsg(faiss)",
+      2085.9
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2010.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1951.3
+     ],
+     [
+      "rabitq-ivf",
+      1888.8
+     ],
+     [
+      "scann",
+      1831.7
+     ],
+     [
+      "vamana-lvq(svs)",
+      1731.1
+     ],
+     [
+      "vamana(diskann)",
+      839.9
+     ],
+     [
+      "ivf(faiss)",
+      379.0
+     ],
+     [
+      "annoy",
+      298.4
+     ],
+     [
+      "mrpt",
+      197.6
+     ],
+     [
+      "puffinn",
+      85.9
+     ],
+     [
+      "falconnpp",
+      84.2
+     ]
+    ],
+    "0.95": [
+     [
+      "glass",
+      4916.1
+     ],
+     [
+      "ngt-qg",
+      4083.9
+     ],
+     [
+      "pag",
+      3475.4
+     ],
+     [
+      "symphonyqg",
+      3114.2
+     ],
+     [
+      "symqg",
+      2763.8
+     ],
+     [
+      "rabitq-hnsw",
+      2625.0
+     ],
+     [
+      "pynndescent",
+      1965.4
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1953.1
+     ],
+     [
+      "hnswlib",
+      1907.6
+     ],
+     [
+      "flatnav",
+      1776.0
+     ],
+     [
+      "lorann",
+      1772.4
+     ],
+     [
+      "vamana-lvq(svs)",
+      1731.1
+     ],
+     [
+      "nsg(faiss)",
+      1682.4
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1394.4
+     ],
+     [
+      "rabitq-ivf",
+      1301.8
+     ],
+     [
+      "scann",
+      1250.7
+     ],
+     [
+      "vamana(diskann)",
+      839.9
+     ],
+     [
+      "ivf(faiss)",
+      252.2
+     ],
+     [
+      "mrpt",
+      135.6
+     ],
+     [
+      "annoy",
+      117.7
+     ],
+     [
+      "falconnpp",
+      65.1
+     ],
+     [
+      "puffinn",
+      21.8
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      3297.7
+     ],
+     [
+      "glass",
+      3037.5
+     ],
+     [
+      "ngt-qg",
+      2839.3
+     ],
+     [
+      "symqg",
+      2294.4
+     ],
+     [
+      "symphonyqg",
+      1859.0
+     ],
+     [
+      "rabitq-hnsw",
+      1734.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1588.6
+     ],
+     [
+      "vamana-lvq(svs)",
+      1401.4
+     ],
+     [
+      "pynndescent",
+      1143.3
+     ],
+     [
+      "hnswlib",
+      1011.8
+     ],
+     [
+      "flatnav",
+      944.6
+     ],
+     [
+      "nsg(faiss)",
+      942.5
+     ],
+     [
+      "vamana(diskann)",
+      839.9
+     ],
+     [
+      "lorann",
+      742.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      599.5
+     ],
+     [
+      "rabitq-ivf",
+      569.0
+     ],
+     [
+      "scann",
+      533.1
+     ],
+     [
+      "ivf(faiss)",
+      87.8
+     ],
+     [
+      "mrpt",
+      86.9
+     ],
+     [
+      "annoy",
+      62.2
+     ],
+     [
+      "puffinn",
+      11.9
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 11,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/ccnews-nomic-768-normalized",
+   "selected_competitors": [
+    "ngt-qg",
+    "glass",
+    "pag"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "celeba-resnet-2048-cosine",
+   "dataset_bytes": 1661307200,
+   "dataset_sha256": "168f89ccf8aaa22cc9ce6f81c241fd016eb67a0bc5b5b381b955ffa746a906f4",
+   "deprecated": true,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.1822,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATJBNDETJ3AZBBEEYNXPR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/celeba-resnet-2048-cosine",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/celeba-resnet-2048-cosine",
+   "memory_observation": {
+    "cgroup_current_bytes": 2979885056,
+    "cgroup_limit_bytes": 184499548160,
+    "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+    "dataset": "celeba-resnet-2048-cosine",
+    "mem_available_bytes": 181519179776,
+    "observed_at_utc": "2026-10-24T07:35:06.849507+00:00",
+    "requested_memory_gib": 11
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      2647.5
+     ],
+     [
+      "pag",
+      2426.4
+     ],
+     [
+      "lorann",
+      1947.8
+     ],
+     [
+      "glass",
+      1894.3
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1625.8
+     ],
+     [
+      "rabitq-hnsw",
+      1424.0
+     ],
+     [
+      "scann",
+      1195.7
+     ],
+     [
+      "nsg(faiss)",
+      1126.3
+     ],
+     [
+      "hnswlib",
+      1105.9
+     ],
+     [
+      "flatnav",
+      1022.4
+     ],
+     [
+      "rabitq-ivf",
+      961.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      935.1
+     ],
+     [
+      "pynndescent",
+      872.5
+     ],
+     [
+      "vamana(diskann)",
+      464.0
+     ],
+     [
+      "ivf(faiss)",
+      219.8
+     ],
+     [
+      "mrpt",
+      158.9
+     ],
+     [
+      "annoy",
+      101.2
+     ],
+     [
+      "puffinn",
+      95.1
+     ],
+     [
+      "falconnpp",
+      67.6
+     ]
+    ],
+    "0.95": [
+     [
+      "pag",
+      2426.4
+     ],
+     [
+      "ngt-qg",
+      2330.1
+     ],
+     [
+      "glass",
+      1894.3
+     ],
+     [
+      "rabitq-hnsw",
+      1424.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1390.8
+     ],
+     [
+      "lorann",
+      1122.8
+     ],
+     [
+      "flatnav",
+      886.6
+     ],
+     [
+      "pynndescent",
+      872.5
+     ],
+     [
+      "scann",
+      860.8
+     ],
+     [
+      "hnswlib",
+      854.9
+     ],
+     [
+      "nsg(faiss)",
+      837.1
+     ],
+     [
+      "rabitq-ivf",
+      705.9
+     ],
+     [
+      "ivfpqfs(faiss)",
+      623.8
+     ],
+     [
+      "vamana(diskann)",
+      464.0
+     ],
+     [
+      "ivf(faiss)",
+      157.6
+     ],
+     [
+      "mrpt",
+      129.1
+     ],
+     [
+      "annoy",
+      70.0
+     ],
+     [
+      "falconnpp",
+      56.3
+     ],
+     [
+      "puffinn",
+      38.2
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      2230.1
+     ],
+     [
+      "ngt-qg",
+      2013.0
+     ],
+     [
+      "rabitq-hnsw",
+      1424.0
+     ],
+     [
+      "glass",
+      1334.1
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1077.0
+     ],
+     [
+      "lorann",
+      712.8
+     ],
+     [
+      "hnswlib",
+      660.3
+     ],
+     [
+      "pynndescent",
+      608.4
+     ],
+     [
+      "scann",
+      590.5
+     ],
+     [
+      "nsg(faiss)",
+      546.9
+     ],
+     [
+      "rabitq-ivf",
+      535.1
+     ],
+     [
+      "flatnav",
+      531.2
+     ],
+     [
+      "vamana(diskann)",
+      464.0
+     ],
+     [
+      "ivfpqfs(faiss)",
+      428.4
+     ],
+     [
+      "ivf(faiss)",
+      78.3
+     ],
+     [
+      "mrpt",
+      59.4
+     ],
+     [
+      "falconnpp",
+      37.5
+     ],
+     [
+      "annoy",
+      28.2
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 11,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/celeba-resnet-2048-cosine",
+   "selected_competitors": [
+    "ngt-qg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "coco-nomic-768-normalized",
+   "dataset_bytes": 1268093600,
+   "dataset_sha256": "dd6391da4e010071832346e65ceb2e86adfd08ca83d7e0513d9ffac74e5e9131",
+   "deprecated": true,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.1765,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATHQ0DF3TDTCC4S1PBKJR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/coco-nomic-768-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/coco-nomic-768-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 2337574912,
+    "cgroup_limit_bytes": 353621696512,
+    "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+    "dataset": "coco-nomic-768-normalized",
+    "mem_available_bytes": 351283691520,
+    "observed_at_utc": "2026-10-24T07:35:07.909262+00:00",
+    "requested_memory_gib": 10
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "lorann",
+      4575.1
+     ],
+     [
+      "glass",
+      3341.2
+     ],
+     [
+      "pag",
+      3129.7
+     ],
+     [
+      "hnswlib",
+      2520.7
+     ],
+     [
+      "flatnav",
+      2405.9
+     ],
+     [
+      "nsg(faiss)",
+      2242.3
+     ],
+     [
+      "scann",
+      2173.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      2137.6
+     ],
+     [
+      "symqg",
+      1784.6
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1703.2
+     ],
+     [
+      "symphonyqg",
+      1693.4
+     ],
+     [
+      "rabitq-hnsw",
+      1496.9
+     ],
+     [
+      "rabitq-ivf",
+      1474.1
+     ],
+     [
+      "roargraph",
+      1469.8
+     ],
+     [
+      "vamana-lvq(svs)",
+      1409.3
+     ],
+     [
+      "mlann-rf",
+      1189.7
+     ],
+     [
+      "ivf(faiss)",
+      938.4
+     ],
+     [
+      "vamana(diskann)",
+      901.4
+     ],
+     [
+      "pynndescent",
+      713.3
+     ],
+     [
+      "annoy",
+      27.3
+     ],
+     [
+      "mrpt",
+      17.3
+     ],
+     [
+      "puffinn",
+      5.0
+     ],
+     [
+      "ngt-qg",
+      2.9
+     ]
+    ],
+    "0.95": [
+     [
+      "lorann",
+      3405.5
+     ],
+     [
+      "glass",
+      3341.2
+     ],
+     [
+      "pag",
+      3129.7
+     ],
+     [
+      "flatnav",
+      2120.3
+     ],
+     [
+      "hnswlib",
+      1983.7
+     ],
+     [
+      "nsg(faiss)",
+      1843.8
+     ],
+     [
+      "scann",
+      1776.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1709.3
+     ],
+     [
+      "roargraph",
+      1469.8
+     ],
+     [
+      "vamana-lvq(svs)",
+      1409.3
+     ],
+     [
+      "rabitq-hnsw",
+      1385.7
+     ],
+     [
+      "symphonyqg",
+      1382.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1297.8
+     ],
+     [
+      "symqg",
+      1176.6
+     ],
+     [
+      "rabitq-ivf",
+      1018.1
+     ],
+     [
+      "vamana(diskann)",
+      901.4
+     ],
+     [
+      "ivf(faiss)",
+      868.3
+     ],
+     [
+      "pynndescent",
+      713.3
+     ],
+     [
+      "mlann-rf",
+      610.1
+     ],
+     [
+      "annoy",
+      24.3
+     ],
+     [
+      "mrpt",
+      17.3
+     ],
+     [
+      "puffinn",
+      4.2
+     ],
+     [
+      "ngt-qg",
+      2.9
+     ]
+    ],
+    "0.99": [
+     [
+      "glass",
+      2622.9
+     ],
+     [
+      "pag",
+      2005.1
+     ],
+     [
+      "lorann",
+      1748.4
+     ],
+     [
+      "flatnav",
+      1320.8
+     ],
+     [
+      "roargraph",
+      1287.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1247.3
+     ],
+     [
+      "hnswlib",
+      1242.8
+     ],
+     [
+      "nsg(faiss)",
+      1158.2
+     ],
+     [
+      "scann",
+      1133.8
+     ],
+     [
+      "vamana-lvq(svs)",
+      1053.5
+     ],
+     [
+      "rabitq-hnsw",
+      1037.8
+     ],
+     [
+      "symphonyqg",
+      989.8
+     ],
+     [
+      "vamana(diskann)",
+      901.4
+     ],
+     [
+      "vamana-leanvec(svs)",
+      861.4
+     ],
+     [
+      "symqg",
+      718.9
+     ],
+     [
+      "pynndescent",
+      713.3
+     ],
+     [
+      "rabitq-ivf",
+      676.5
+     ],
+     [
+      "ivf(faiss)",
+      403.1
+     ],
+     [
+      "mlann-rf",
+      182.7
+     ],
+     [
+      "mrpt",
+      12.9
+     ],
+     [
+      "puffinn",
+      3.0
+     ],
+     [
+      "ngt-qg",
+      2.5
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 10,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/coco-nomic-768-normalized",
+   "selected_competitors": [
+    "lorann",
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATHY8AJ6AMZKNZF0PR7NR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "codesearchnet-jina-768-cosine",
+   "dataset_bytes": 4225822016,
+   "dataset_sha256": "f705c39ddf51f1332970a7c87342dfd46c05737ebda9de4626ba44dac2431229",
+   "deprecated": true,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2488,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATHY8AJ6AMZKNZF0PR7NR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/codesearchnet-jina-768-cosine",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/codesearchnet-jina-768-cosine",
+   "memory_observation": {
+    "cgroup_current_bytes": 9961955328,
+    "cgroup_limit_bytes": 425706926080,
+    "container_id": "ta-01M5PATHY8AJ6AMZKNZF0PR7NR",
+    "dataset": "codesearchnet-jina-768-cosine",
+    "mem_available_bytes": 415744471040,
+    "observed_at_utc": "2026-10-24T07:35:08.763703+00:00",
+    "requested_memory_gib": 19
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "glass",
+      4789.4
+     ],
+     [
+      "symphonyqg",
+      4566.7
+     ],
+     [
+      "ngt-qg",
+      4326.6
+     ],
+     [
+      "symqg",
+      3818.7
+     ],
+     [
+      "pag",
+      3795.9
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2484.0
+     ],
+     [
+      "vamana-lvq(svs)",
+      2194.3
+     ],
+     [
+      "pynndescent",
+      1876.0
+     ],
+     [
+      "hnswlib",
+      1826.8
+     ],
+     [
+      "rabitq-hnsw",
+      1807.2
+     ],
+     [
+      "lorann",
+      1723.7
+     ],
+     [
+      "flatnav",
+      1682.8
+     ],
+     [
+      "nsg(faiss)",
+      1345.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1120.8
+     ],
+     [
+      "scann",
+      1014.1
+     ],
+     [
+      "rabitq-ivf",
+      849.2
+     ],
+     [
+      "vamana(diskann)",
+      714.9
+     ],
+     [
+      "mrpt",
+      253.1
+     ],
+     [
+      "falconnpp",
+      161.5
+     ],
+     [
+      "ivf(faiss)",
+      149.6
+     ],
+     [
+      "puffinn",
+      127.5
+     ],
+     [
+      "annoy",
+      82.8
+     ]
+    ],
+    "0.95": [
+     [
+      "symphonyqg",
+      3933.9
+     ],
+     [
+      "pag",
+      3795.9
+     ],
+     [
+      "ngt-qg",
+      3574.5
+     ],
+     [
+      "glass",
+      3540.1
+     ],
+     [
+      "symqg",
+      3094.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2121.9
+     ],
+     [
+      "rabitq-hnsw",
+      1807.2
+     ],
+     [
+      "vamana-lvq(svs)",
+      1769.5
+     ],
+     [
+      "pynndescent",
+      1356.0
+     ],
+     [
+      "hnswlib",
+      1268.6
+     ],
+     [
+      "flatnav",
+      1187.1
+     ],
+     [
+      "nsg(faiss)",
+      941.2
+     ],
+     [
+      "lorann",
+      790.5
+     ],
+     [
+      "vamana(diskann)",
+      714.9
+     ],
+     [
+      "ivfpqfs(faiss)",
+      562.5
+     ],
+     [
+      "scann",
+      497.3
+     ],
+     [
+      "rabitq-ivf",
+      438.2
+     ],
+     [
+      "mrpt",
+      182.6
+     ],
+     [
+      "falconnpp",
+      121.5
+     ],
+     [
+      "puffinn",
+      81.2
+     ],
+     [
+      "ivf(faiss)",
+      76.6
+     ],
+     [
+      "annoy",
+      40.5
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      2674.1
+     ],
+     [
+      "symphonyqg",
+      2578.7
+     ],
+     [
+      "glass",
+      2311.6
+     ],
+     [
+      "symqg",
+      2177.3
+     ],
+     [
+      "ngt-qg",
+      2167.4
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1381.0
+     ],
+     [
+      "vamana-lvq(svs)",
+      1126.0
+     ],
+     [
+      "rabitq-hnsw",
+      922.5
+     ],
+     [
+      "pynndescent",
+      786.1
+     ],
+     [
+      "hnswlib",
+      620.6
+     ],
+     [
+      "vamana(diskann)",
+      598.3
+     ],
+     [
+      "flatnav",
+      565.6
+     ],
+     [
+      "nsg(faiss)",
+      407.5
+     ],
+     [
+      "lorann",
+      239.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      203.6
+     ],
+     [
+      "rabitq-ivf",
+      189.0
+     ],
+     [
+      "mrpt",
+      90.2
+     ],
+     [
+      "falconnpp",
+      66.5
+     ],
+     [
+      "puffinn",
+      24.9
+     ],
+     [
+      "ivf(faiss)",
+      20.7
+     ],
+     [
+      "annoy",
+      13.3
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 19,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/codesearchnet-jina-768-cosine",
+   "selected_competitors": [
+    "glass",
+    "symphonyqg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATJ5M46CEM2MS3TQDG47R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "cqadupstack-lemur-2048-ip",
+   "dataset_bytes": 15198861424,
+   "dataset_sha256": "2b81fad4e1b887dd3c1ef7178242ade4b568c256977f3c98a1a80fe50874d963",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.509,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATJ5M46CEM2MS3TQDG47R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/cqadupstack-lemur-2048-ip",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/cqadupstack-lemur-2048-ip",
+   "memory_observation": {
+    "cgroup_current_bytes": 27720613888,
+    "cgroup_limit_bytes": 425706930176,
+    "container_id": "ta-01M5PATJ5M46CEM2MS3TQDG47R",
+    "dataset": "cqadupstack-lemur-2048-ip",
+    "mem_available_bytes": 397985816576,
+    "observed_at_utc": "2026-10-24T07:35:09.997970+00:00",
+    "requested_memory_gib": 52
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "glass",
+      124.1
+     ],
+     [
+      "roargraph",
+      118.3
+     ],
+     [
+      "mlann-rf",
+      59.4
+     ],
+     [
+      "hnswlib",
+      52.1
+     ],
+     [
+      "vamana(diskann)",
+      50.0
+     ],
+     [
+      "flatnav",
+      50.0
+     ],
+     [
+      "rabitq-hnsw",
+      49.9
+     ],
+     [
+      "pag",
+      49.8
+     ]
+    ],
+    "0.95": [
+     [
+      "roargraph",
+      49.8
+     ],
+     [
+      "hnswlib",
+      35.3
+     ],
+     [
+      "vamana(diskann)",
+      32.8
+     ],
+     [
+      "flatnav",
+      31.5
+     ],
+     [
+      "mlann-rf",
+      24.5
+     ],
+     [
+      "rabitq-hnsw",
+      23.6
+     ]
+    ],
+    "0.99": [
+     [
+      "roargraph",
+      25.3
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 52,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip",
+   "selected_competitors": [
+    "glass",
+    "roargraph"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 0,
+   "avx512": null,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": null,
+   "cpu_model": null,
+   "dataset": "cqadupstack-muvera-5120-ip",
+   "dataset_bytes": 37195563120,
+   "dataset_sha256": "a5b9074aa92baa04c040dac3f3985ad7882fb94036697e01bab4371d5ddc8f2d",
+   "deprecated": false,
+   "download_state": "pending",
+   "error": null,
+   "estimated_cost_usd": 1.213,
+   "failures": 0,
+   "hardware_cpu_record": null,
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "pending",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/cqadupstack-muvera-5120-ip",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/cqadupstack-muvera-5120-ip",
+   "memory_observation": {
+    "cgroup_current_bytes": 105402368,
+    "cgroup_limit_bytes": 349610012672,
+    "container_id": "ta-01M5PATJXYG4QN3W2RVTQ7XBJR",
+    "dataset": "cqadupstack-muvera-5120-ip",
+    "mem_available_bytes": 349504327680,
+    "observed_at_utc": "2026-10-24T07:35:11.191333+00:00",
+    "requested_memory_gib": 118
+   },
+   "metrics": null,
+   "nproc": null,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "glass",
+      104.3
+     ],
+     [
+      "lorann",
+      77.7
+     ],
+     [
+      "roargraph",
+      56.9
+     ],
+     [
+      "vamana(diskann)",
+      34.1
+     ],
+     [
+      "hnswlib",
+      33.9
+     ],
+     [
+      "flatnav",
+      30.9
+     ],
+     [
+      "annoy",
+      2.4
+     ]
+    ],
+    "0.95": [
+     [
+      "roargraph",
+      28.8
+     ],
+     [
+      "vamana(diskann)",
+      18.7
+     ],
+     [
+      "hnswlib",
+      17.9
+     ],
+     [
+      "flatnav",
+      17.3
+     ],
+     [
+      "annoy",
+      2.4
+     ]
+    ],
+    "0.99": [
+     [
+      "roargraph",
+      9.2
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 118,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/cqadupstack-muvera-5120-ip",
+   "selected_competitors": [],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "pending",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATJMTFB0MNGJ1RP22DS6R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "dpr-jina-768-normalized",
+   "dataset_bytes": 64423790912,
+   "dataset_sha256": "12626e1131dc2c0bdee99673bb69818653e26dc0e7891cf6e5df0a44f496d322",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 1.6509,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATJMTFB0MNGJ1RP22DS6R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/dpr-jina-768-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/dpr-jina-768-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 154121515008,
+    "cgroup_limit_bytes": 851628572672,
+    "container_id": "ta-01M5PATJMTFB0MNGJ1RP22DS6R",
+    "dataset": "dpr-jina-768-normalized",
+    "mem_available_bytes": 697506557952,
+    "observed_at_utc": "2026-10-24T07:35:12.975093+00:00",
+    "requested_memory_gib": 200
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [],
+    "0.95": [],
+    "0.99": []
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 200,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/dpr-jina-768-normalized",
+   "selected_competitors": [],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": true,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATKTP8B8NTMS8P6083N7R",
+   "cpu_model": "Intel Xeon 3rd gen (Ice Lake-SP; family 6 model 106)",
+   "dataset": "glove-200-cosine",
+   "dataset_bytes": 956427392,
+   "dataset_sha256": "5c0c316db8dd6c2503ea842ba8dc698d1513aa89a6655cc0d4be35d47645f5e0",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.1724,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATKTP8B8NTMS8P6083N7R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/glove-200-cosine",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/glove-200-cosine",
+   "memory_observation": {
+    "cgroup_current_bytes": 2235686912,
+    "cgroup_limit_bytes": 486238380032,
+    "container_id": "ta-01M5PATKTP8B8NTMS8P6083N7R",
+    "dataset": "glove-200-cosine",
+    "mem_available_bytes": 484002193408,
+    "observed_at_utc": "2026-10-24T07:35:13.865949+00:00",
+    "requested_memory_gib": 9
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "pag",
+      1578.5
+     ],
+     [
+      "ngt-qg",
+      1290.1
+     ],
+     [
+      "scann",
+      953.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      850.0
+     ],
+     [
+      "glass",
+      705.7
+     ],
+     [
+      "symphonyqg",
+      566.0
+     ],
+     [
+      "symqg",
+      525.5
+     ],
+     [
+      "rabitq-ivf",
+      391.0
+     ],
+     [
+      "vamana-lvq(svs)",
+      375.1
+     ],
+     [
+      "pynndescent",
+      327.6
+     ],
+     [
+      "flatnav",
+      319.2
+     ],
+     [
+      "vamana(diskann)",
+      304.4
+     ],
+     [
+      "lorann",
+      304.2
+     ],
+     [
+      "hnswlib",
+      295.9
+     ],
+     [
+      "vamana-leanvec(svs)",
+      291.8
+     ],
+     [
+      "rabitq-hnsw",
+      284.2
+     ],
+     [
+      "ivf(faiss)",
+      169.5
+     ],
+     [
+      "falconnpp",
+      97.7
+     ],
+     [
+      "mrpt",
+      62.3
+     ],
+     [
+      "annoy",
+      55.6
+     ],
+     [
+      "puffinn",
+      36.7
+     ]
+    ],
+    "0.95": [
+     [
+      "pag",
+      994.4
+     ],
+     [
+      "ngt-qg",
+      623.3
+     ],
+     [
+      "scann",
+      551.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      535.0
+     ],
+     [
+      "symqg",
+      301.9
+     ],
+     [
+      "rabitq-ivf",
+      248.8
+     ],
+     [
+      "vamana(diskann)",
+      195.2
+     ],
+     [
+      "hnswlib",
+      178.5
+     ],
+     [
+      "flatnav",
+      171.2
+     ],
+     [
+      "pynndescent",
+      171.1
+     ],
+     [
+      "rabitq-hnsw",
+      130.6
+     ],
+     [
+      "ivf(faiss)",
+      87.9
+     ],
+     [
+      "falconnpp",
+      72.6
+     ],
+     [
+      "mrpt",
+      50.2
+     ],
+     [
+      "annoy",
+      31.8
+     ],
+     [
+      "puffinn",
+      25.6
+     ]
+    ],
+    "0.99": [
+     [
+      "ngt-qg",
+      192.5
+     ],
+     [
+      "pynndescent",
+      79.5
+     ],
+     [
+      "falconnpp",
+      49.4
+     ],
+     [
+      "mrpt",
+      19.3
+     ],
+     [
+      "annoy",
+      18.1
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 9,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/glove-200-cosine",
+   "selected_competitors": [
+    "pag",
+    "ngt-qg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": true,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATKDQTWS2TKRJ5VBRVZMR",
+   "cpu_model": "AMD EPYC 9004 (Zen 4, Genoa; family 25 model 17)",
+   "dataset": "gooaq-distilroberta-768-normalized",
+   "dataset_bytes": 4535961920,
+   "dataset_sha256": "96a19109ba8a7e77d681d480f600eaa36b8f0fb453bb98bb3e1915c8cc5f2df9",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2515,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATKDQTWS2TKRJ5VBRVZMR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/gooaq-distilroberta-768-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/gooaq-distilroberta-768-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 10671370240,
+    "cgroup_limit_bytes": 349610037248,
+    "container_id": "ta-01M5PATKDQTWS2TKRJ5VBRVZMR",
+    "dataset": "gooaq-distilroberta-768-normalized",
+    "mem_available_bytes": 338938167296,
+    "observed_at_utc": "2026-10-24T07:35:15.031615+00:00",
+    "requested_memory_gib": 20
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      6345.2
+     ],
+     [
+      "glass",
+      5078.2
+     ],
+     [
+      "symphonyqg",
+      4567.8
+     ],
+     [
+      "symqg",
+      4208.4
+     ],
+     [
+      "pag",
+      3988.4
+     ],
+     [
+      "pynndescent",
+      2992.9
+     ],
+     [
+      "flatnav",
+      2598.7
+     ],
+     [
+      "lorann",
+      2571.7
+     ],
+     [
+      "hnswlib",
+      2571.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2249.9
+     ],
+     [
+      "vamana-lvq(svs)",
+      2028.9
+     ],
+     [
+      "rabitq-hnsw",
+      1976.8
+     ],
+     [
+      "nsg(faiss)",
+      1967.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1571.4
+     ],
+     [
+      "scann",
+      1302.7
+     ],
+     [
+      "rabitq-ivf",
+      1155.2
+     ],
+     [
+      "vamana(diskann)",
+      890.3
+     ],
+     [
+      "ivf(faiss)",
+      280.3
+     ],
+     [
+      "mrpt",
+      261.8
+     ],
+     [
+      "falconnpp",
+      230.4
+     ],
+     [
+      "puffinn",
+      149.5
+     ],
+     [
+      "annoy",
+      146.4
+     ]
+    ],
+    "0.95": [
+     [
+      "glass",
+      5078.2
+     ],
+     [
+      "ngt-qg",
+      4937.5
+     ],
+     [
+      "pag",
+      3988.4
+     ],
+     [
+      "symqg",
+      3685.4
+     ],
+     [
+      "symphonyqg",
+      3595.8
+     ],
+     [
+      "pynndescent",
+      2442.6
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2234.4
+     ],
+     [
+      "vamana-lvq(svs)",
+      2028.9
+     ],
+     [
+      "hnswlib",
+      1998.7
+     ],
+     [
+      "rabitq-hnsw",
+      1976.8
+     ],
+     [
+      "flatnav",
+      1940.7
+     ],
+     [
+      "nsg(faiss)",
+      1568.1
+     ],
+     [
+      "lorann",
+      1382.7
+     ],
+     [
+      "vamana(diskann)",
+      890.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      825.0
+     ],
+     [
+      "scann",
+      731.4
+     ],
+     [
+      "rabitq-ivf",
+      632.0
+     ],
+     [
+      "mrpt",
+      183.7
+     ],
+     [
+      "falconnpp",
+      142.6
+     ],
+     [
+      "ivf(faiss)",
+      137.1
+     ],
+     [
+      "puffinn",
+      132.8
+     ],
+     [
+      "annoy",
+      86.1
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      3755.5
+     ],
+     [
+      "ngt-qg",
+      3174.2
+     ],
+     [
+      "glass",
+      3117.4
+     ],
+     [
+      "symphonyqg",
+      2989.9
+     ],
+     [
+      "symqg",
+      2919.8
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1844.5
+     ],
+     [
+      "rabitq-hnsw",
+      1696.3
+     ],
+     [
+      "vamana-lvq(svs)",
+      1638.7
+     ],
+     [
+      "pynndescent",
+      1364.7
+     ],
+     [
+      "hnswlib",
+      1133.3
+     ],
+     [
+      "flatnav",
+      1051.6
+     ],
+     [
+      "vamana(diskann)",
+      890.3
+     ],
+     [
+      "nsg(faiss)",
+      783.5
+     ],
+     [
+      "lorann",
+      353.5
+     ],
+     [
+      "ivfpqfs(faiss)",
+      323.6
+     ],
+     [
+      "rabitq-ivf",
+      283.9
+     ],
+     [
+      "scann",
+      158.8
+     ],
+     [
+      "mrpt",
+      90.1
+     ],
+     [
+      "falconnpp",
+      73.3
+     ],
+     [
+      "ivf(faiss)",
+      39.4
+     ],
+     [
+      "annoy",
+      22.9
+     ],
+     [
+      "puffinn",
+      16.0
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 20,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized",
+   "selected_competitors": [
+    "ngt-qg",
+    "glass",
+    "pag"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": true,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATKV68PKYMXT5EH14P1JR",
+   "cpu_model": "Intel Xeon 3rd gen (Ice Lake-SP; family 6 model 106)",
+   "dataset": "hotpotqa-harrier-640-normalized",
+   "dataset_bytes": 13688159632,
+   "dataset_sha256": "08f1c68cc8bb1f24a29cb64d9ffc20ccc6a91c06d286538e4e659d4afb648114",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.5023,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATKV68PKYMXT5EH14P1JR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/hotpotqa-harrier-640-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/hotpotqa-harrier-640-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 32457203712,
+    "cgroup_limit_bytes": 486238380032,
+    "container_id": "ta-01M5PATKV68PKYMXT5EH14P1JR",
+    "dataset": "hotpotqa-harrier-640-normalized",
+    "mem_available_bytes": 453780676608,
+    "observed_at_utc": "2026-10-24T07:35:16.117180+00:00",
+    "requested_memory_gib": 48
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "symphonyqg",
+      1834.0
+     ],
+     [
+      "glass",
+      1827.7
+     ],
+     [
+      "pag",
+      1570.8
+     ],
+     [
+      "symqg",
+      1542.9
+     ],
+     [
+      "ngt-qg",
+      1520.1
+     ],
+     [
+      "rabitq-hnsw",
+      953.0
+     ],
+     [
+      "vamana-lvq(svs)",
+      814.6
+     ],
+     [
+      "vamana-leanvec(svs)",
+      590.2
+     ],
+     [
+      "roargraph",
+      532.5
+     ],
+     [
+      "pynndescent",
+      501.1
+     ],
+     [
+      "hnswlib",
+      492.4
+     ],
+     [
+      "flatnav",
+      452.0
+     ],
+     [
+      "vamana(diskann)",
+      435.2
+     ],
+     [
+      "lorann",
+      376.3
+     ],
+     [
+      "rabitq-ivf",
+      339.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      332.4
+     ],
+     [
+      "nsg(faiss)",
+      269.1
+     ],
+     [
+      "scann",
+      231.3
+     ],
+     [
+      "ivf(faiss)",
+      28.9
+     ],
+     [
+      "annoy",
+      24.6
+     ],
+     [
+      "falconnpp",
+      14.9
+     ],
+     [
+      "mrpt",
+      7.7
+     ]
+    ],
+    "0.95": [
+     [
+      "pag",
+      1539.9
+     ],
+     [
+      "symphonyqg",
+      1245.6
+     ],
+     [
+      "glass",
+      1030.2
+     ],
+     [
+      "symqg",
+      1028.3
+     ],
+     [
+      "ngt-qg",
+      752.6
+     ],
+     [
+      "vamana-lvq(svs)",
+      545.9
+     ],
+     [
+      "rabitq-hnsw",
+      542.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      355.5
+     ],
+     [
+      "hnswlib",
+      347.5
+     ],
+     [
+      "roargraph",
+      345.8
+     ],
+     [
+      "pynndescent",
+      311.7
+     ],
+     [
+      "flatnav",
+      304.3
+     ],
+     [
+      "vamana(diskann)",
+      257.5
+     ],
+     [
+      "rabitq-ivf",
+      186.9
+     ],
+     [
+      "ivfpqfs(faiss)",
+      184.1
+     ],
+     [
+      "scann",
+      119.6
+     ],
+     [
+      "lorann",
+      111.8
+     ],
+     [
+      "ivf(faiss)",
+      14.4
+     ],
+     [
+      "annoy",
+      12.2
+     ],
+     [
+      "falconnpp",
+      11.7
+     ],
+     [
+      "mrpt",
+      2.3
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      725.5
+     ],
+     [
+      "symphonyqg",
+      486.6
+     ],
+     [
+      "symqg",
+      475.7
+     ],
+     [
+      "glass",
+      329.2
+     ],
+     [
+      "ngt-qg",
+      281.3
+     ],
+     [
+      "rabitq-hnsw",
+      261.9
+     ],
+     [
+      "vamana-lvq(svs)",
+      199.7
+     ],
+     [
+      "flatnav",
+      166.4
+     ],
+     [
+      "roargraph",
+      156.9
+     ],
+     [
+      "hnswlib",
+      148.9
+     ],
+     [
+      "vamana(diskann)",
+      116.5
+     ],
+     [
+      "pynndescent",
+      105.5
+     ],
+     [
+      "rabitq-ivf",
+      98.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      90.5
+     ],
+     [
+      "scann",
+      54.2
+     ],
+     [
+      "ivf(faiss)",
+      7.4
+     ],
+     [
+      "mrpt",
+      1.7
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 48,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/hotpotqa-harrier-640-normalized",
+   "selected_competitors": [
+    "symphonyqg",
+    "pag"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATMG062BP8EBXE355Q8DR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "imagenet-align-640-normalized",
+   "dataset_bytes": 4218283840,
+   "dataset_sha256": "84f1fb99ba8611a37fc254cd4ec50b06c969efff07c11e272444f3e6e89cee7e",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2441,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATMG062BP8EBXE355Q8DR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/imagenet-align-640-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/imagenet-align-640-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 15261831168,
+    "cgroup_limit_bytes": 425706909696,
+    "container_id": "ta-01M5PATMG062BP8EBXE355Q8DR",
+    "dataset": "imagenet-align-640-normalized",
+    "mem_available_bytes": 410444578816,
+    "observed_at_utc": "2026-10-24T07:35:47.882873+00:00",
+    "requested_memory_gib": 19
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "glass",
+      4155.2
+     ],
+     [
+      "pag",
+      3822.2
+     ],
+     [
+      "lorann",
+      3786.7
+     ],
+     [
+      "symphonyqg",
+      2921.9
+     ],
+     [
+      "ivfpqfs(faiss)",
+      2499.1
+     ],
+     [
+      "scann",
+      2367.3
+     ],
+     [
+      "flatnav",
+      2216.2
+     ],
+     [
+      "hnswlib",
+      2182.9
+     ],
+     [
+      "symqg",
+      2040.5
+     ],
+     [
+      "vamana-lvq(svs)",
+      1719.9
+     ],
+     [
+      "pynndescent",
+      1714.0
+     ],
+     [
+      "roargraph",
+      1541.9
+     ],
+     [
+      "rabitq-hnsw",
+      1435.5
+     ],
+     [
+      "nsg(faiss)",
+      1342.6
+     ],
+     [
+      "rabitq-ivf",
+      1310.3
+     ],
+     [
+      "vamana(diskann)",
+      1165.3
+     ],
+     [
+      "ivf(faiss)",
+      664.6
+     ],
+     [
+      "ngt-qg",
+      300.5
+     ],
+     [
+      "mlann-rf",
+      100.1
+     ],
+     [
+      "mrpt",
+      36.3
+     ],
+     [
+      "puffinn",
+      2.5
+     ]
+    ],
+    "0.95": [
+     [
+      "pag",
+      3382.9
+     ],
+     [
+      "glass",
+      3073.6
+     ],
+     [
+      "lorann",
+      2385.9
+     ],
+     [
+      "symphonyqg",
+      1918.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1785.3
+     ],
+     [
+      "symqg",
+      1701.5
+     ],
+     [
+      "scann",
+      1611.3
+     ],
+     [
+      "roargraph",
+      1541.9
+     ],
+     [
+      "hnswlib",
+      1492.4
+     ],
+     [
+      "flatnav",
+      1358.2
+     ],
+     [
+      "vamana-lvq(svs)",
+      1292.0
+     ],
+     [
+      "pynndescent",
+      1183.3
+     ],
+     [
+      "vamana(diskann)",
+      1165.3
+     ],
+     [
+      "nsg(faiss)",
+      906.1
+     ],
+     [
+      "rabitq-hnsw",
+      898.6
+     ],
+     [
+      "rabitq-ivf",
+      797.1
+     ],
+     [
+      "ivf(faiss)",
+      380.2
+     ],
+     [
+      "ngt-qg",
+      300.5
+     ],
+     [
+      "mlann-rf",
+      23.1
+     ],
+     [
+      "mrpt",
+      18.9
+     ],
+     [
+      "puffinn",
+      1.7
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      1995.9
+     ],
+     [
+      "glass",
+      1414.8
+     ],
+     [
+      "symphonyqg",
+      1022.5
+     ],
+     [
+      "roargraph",
+      798.6
+     ],
+     [
+      "lorann",
+      722.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      683.5
+     ],
+     [
+      "hnswlib",
+      654.3
+     ],
+     [
+      "flatnav",
+      631.2
+     ],
+     [
+      "vamana(diskann)",
+      624.9
+     ],
+     [
+      "scann",
+      623.0
+     ],
+     [
+      "symqg",
+      595.5
+     ],
+     [
+      "pynndescent",
+      552.6
+     ],
+     [
+      "rabitq-hnsw",
+      516.0
+     ],
+     [
+      "rabitq-ivf",
+      371.9
+     ],
+     [
+      "vamana-lvq(svs)",
+      307.0
+     ],
+     [
+      "ivf(faiss)",
+      113.7
+     ],
+     [
+      "ngt-qg",
+      83.9
+     ],
+     [
+      "mrpt",
+      9.5
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 19,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/imagenet-align-640-normalized",
+   "selected_competitors": [
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "imagenet-clip-512-normalized",
+   "dataset_bytes": 2627494208,
+   "dataset_sha256": "6899ae09fa8b51eb8261ce793a4298cfdc1de2e0db0f25a6b8403d51fe93c19a",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2061,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATMQKC0T70W6N4NRXE6WR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/imagenet-clip-512-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/imagenet-clip-512-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 6458339328,
+    "cgroup_limit_bytes": 353621692416,
+    "container_id": "ta-01M5PATMQKC0T70W6N4NRXE6WR",
+    "dataset": "imagenet-clip-512-normalized",
+    "mem_available_bytes": 347162853376,
+    "observed_at_utc": "2026-10-24T07:35:18.632882+00:00",
+    "requested_memory_gib": 14
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "symphonyqg",
+      6525.9
+     ],
+     [
+      "glass",
+      6231.4
+     ],
+     [
+      "lorann",
+      5616.9
+     ],
+     [
+      "ngt-qg",
+      5472.0
+     ],
+     [
+      "pag",
+      4539.1
+     ],
+     [
+      "symqg",
+      4353.4
+     ],
+     [
+      "pynndescent",
+      3699.3
+     ],
+     [
+      "flatnav",
+      3660.9
+     ],
+     [
+      "hnswlib",
+      3258.6
+     ],
+     [
+      "scann",
+      3059.2
+     ],
+     [
+      "nsg(faiss)",
+      2929.3
+     ],
+     [
+      "rabitq-hnsw",
+      2877.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      2624.2
+     ],
+     [
+      "rabitq-ivf",
+      2289.1
+     ],
+     [
+      "vamana-lvq(svs)",
+      2158.1
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2113.5
+     ],
+     [
+      "vamana(diskann)",
+      1349.1
+     ],
+     [
+      "ivf(faiss)",
+      917.8
+     ],
+     [
+      "annoy",
+      474.1
+     ],
+     [
+      "mrpt",
+      315.6
+     ],
+     [
+      "puffinn",
+      168.0
+     ],
+     [
+      "falconnpp",
+      140.3
+     ]
+    ],
+    "0.95": [
+     [
+      "glass",
+      6231.4
+     ],
+     [
+      "symphonyqg",
+      5605.6
+     ],
+     [
+      "ngt-qg",
+      5000.6
+     ],
+     [
+      "pag",
+      4539.1
+     ],
+     [
+      "lorann",
+      3913.9
+     ],
+     [
+      "symqg",
+      3771.0
+     ],
+     [
+      "flatnav",
+      3295.4
+     ],
+     [
+      "hnswlib",
+      3258.6
+     ],
+     [
+      "pynndescent",
+      3100.8
+     ],
+     [
+      "rabitq-hnsw",
+      2877.3
+     ],
+     [
+      "scann",
+      2421.8
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2113.5
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1932.4
+     ],
+     [
+      "nsg(faiss)",
+      1920.9
+     ],
+     [
+      "rabitq-ivf",
+      1848.9
+     ],
+     [
+      "vamana-lvq(svs)",
+      1719.0
+     ],
+     [
+      "vamana(diskann)",
+      1349.1
+     ],
+     [
+      "ivf(faiss)",
+      673.1
+     ],
+     [
+      "annoy",
+      474.1
+     ],
+     [
+      "mrpt",
+      255.8
+     ],
+     [
+      "falconnpp",
+      128.4
+     ],
+     [
+      "puffinn",
+      77.4
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      4539.1
+     ],
+     [
+      "ngt-qg",
+      4268.1
+     ],
+     [
+      "glass",
+      3937.5
+     ],
+     [
+      "symphonyqg",
+      3732.5
+     ],
+     [
+      "symqg",
+      2998.8
+     ],
+     [
+      "lorann",
+      2322.6
+     ],
+     [
+      "rabitq-hnsw",
+      2254.9
+     ],
+     [
+      "hnswlib",
+      1876.0
+     ],
+     [
+      "pynndescent",
+      1870.7
+     ],
+     [
+      "flatnav",
+      1852.6
+     ],
+     [
+      "vamana-lvq(svs)",
+      1719.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1713.1
+     ],
+     [
+      "vamana(diskann)",
+      1349.1
+     ],
+     [
+      "scann",
+      1326.6
+     ],
+     [
+      "nsg(faiss)",
+      1300.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1180.1
+     ],
+     [
+      "rabitq-ivf",
+      1004.1
+     ],
+     [
+      "ivf(faiss)",
+      273.7
+     ],
+     [
+      "annoy",
+      170.3
+     ],
+     [
+      "mrpt",
+      123.1
+     ],
+     [
+      "falconnpp",
+      84.7
+     ],
+     [
+      "puffinn",
+      8.2
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 14,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/imagenet-clip-512-normalized",
+   "selected_competitors": [
+    "symphonyqg",
+    "glass",
+    "ngt-qg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 2,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PBN8XKQ2A7T4PXS31T8D1R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "inaturalist-resnet-2048-cosine",
+   "dataset_bytes": 4097616192,
+   "dataset_sha256": "1b0b15a015cce322fd9e0a05e153dfca274490881257c7483276a29d6d83a369",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.3248,
+   "failures": 1,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PBN8XKQ2A7T4PXS31T8D1R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/inaturalist-resnet-2048-cosine",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/inaturalist-resnet-2048-cosine",
+   "memory_observation": {
+    "cgroup_current_bytes": 9531609088,
+    "cgroup_limit_bytes": 425706946560,
+    "container_id": "ta-01M5PBN8XKQ2A7T4PXS31T8D1R",
+    "dataset": "inaturalist-resnet-2048-cosine",
+    "mem_available_bytes": 416174837760,
+    "observed_at_utc": "2026-10-24T07:35:49.128609+00:00",
+    "requested_memory_gib": 19
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "pag",
+      2397.7
+     ],
+     [
+      "ngt-qg",
+      2383.1
+     ],
+     [
+      "glass",
+      2144.3
+     ],
+     [
+      "lorann",
+      1659.9
+     ],
+     [
+      "rabitq-hnsw",
+      1627.7
+     ],
+     [
+      "nsg(faiss)",
+      1499.3
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1497.7
+     ],
+     [
+      "flatnav",
+      1217.4
+     ],
+     [
+      "hnswlib",
+      1189.5
+     ],
+     [
+      "scann",
+      1115.4
+     ],
+     [
+      "rabitq-ivf",
+      1010.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      903.1
+     ],
+     [
+      "pdx",
+      787.5
+     ],
+     [
+      "vamana(diskann)",
+      469.7
+     ],
+     [
+      "ivf(faiss)",
+      247.3
+     ],
+     [
+      "pynndescent",
+      209.3
+     ],
+     [
+      "annoy",
+      168.3
+     ],
+     [
+      "puffinn",
+      148.8
+     ],
+     [
+      "mrpt",
+      127.5
+     ],
+     [
+      "falconnpp",
+      119.1
+     ]
+    ],
+    "0.95": [
+     [
+      "pag",
+      2397.7
+     ],
+     [
+      "glass",
+      2144.3
+     ],
+     [
+      "ngt-qg",
+      2071.1
+     ],
+     [
+      "rabitq-hnsw",
+      1627.7
+     ],
+     [
+      "nsg(faiss)",
+      1267.6
+     ],
+     [
+      "lorann",
+      1218.9
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1190.0
+     ],
+     [
+      "flatnav",
+      922.2
+     ],
+     [
+      "hnswlib",
+      919.7
+     ],
+     [
+      "scann",
+      856.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      735.5
+     ],
+     [
+      "rabitq-ivf",
+      734.9
+     ],
+     [
+      "pdx",
+      661.3
+     ],
+     [
+      "vamana(diskann)",
+      469.7
+     ],
+     [
+      "pynndescent",
+      209.3
+     ],
+     [
+      "ivf(faiss)",
+      151.1
+     ],
+     [
+      "annoy",
+      118.6
+     ],
+     [
+      "mrpt",
+      84.2
+     ],
+     [
+      "falconnpp",
+      82.3
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      1990.9
+     ],
+     [
+      "glass",
+      1701.0
+     ],
+     [
+      "rabitq-hnsw",
+      1627.7
+     ],
+     [
+      "ngt-qg",
+      1611.4
+     ],
+     [
+      "nsg(faiss)",
+      792.1
+     ],
+     [
+      "lorann",
+      693.3
+     ],
+     [
+      "flatnav",
+      689.5
+     ],
+     [
+      "hnswlib",
+      646.7
+     ],
+     [
+      "vamana-leanvec(svs)",
+      641.8
+     ],
+     [
+      "pdx",
+      554.9
+     ],
+     [
+      "rabitq-ivf",
+      490.7
+     ],
+     [
+      "scann",
+      472.7
+     ],
+     [
+      "vamana(diskann)",
+      469.7
+     ],
+     [
+      "ivfpqfs(faiss)",
+      426.5
+     ],
+     [
+      "pynndescent",
+      205.7
+     ],
+     [
+      "ivf(faiss)",
+      84.6
+     ],
+     [
+      "falconnpp",
+      45.2
+     ],
+     [
+      "annoy",
+      38.1
+     ],
+     [
+      "mrpt",
+      34.6
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 19,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/inaturalist-resnet-2048-cosine",
+   "selected_competitors": [
+    "ngt-qg",
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATN6HWJ5THC80W1W65RAR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "laion-clip-512-normalized",
+   "dataset_bytes": 4499230400,
+   "dataset_sha256": "a152088cefc13ac9fdfaa1722ae40a67a3a3b6598d764bf01ab162a61a2d1be9",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2554,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATN6HWJ5THC80W1W65RAR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/laion-clip-512-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/laion-clip-512-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 11771781120,
+    "cgroup_limit_bytes": 353621696512,
+    "container_id": "ta-01M5PATN6HWJ5THC80W1W65RAR",
+    "dataset": "laion-clip-512-normalized",
+    "mem_available_bytes": 341849415680,
+    "observed_at_utc": "2026-10-24T07:35:50.385363+00:00",
+    "requested_memory_gib": 20
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "glass",
+      2765.5
+     ],
+     [
+      "pag",
+      2755.9
+     ],
+     [
+      "symphonyqg",
+      1666.4
+     ],
+     [
+      "symqg",
+      1580.0
+     ],
+     [
+      "roargraph",
+      1409.6
+     ],
+     [
+      "lorann",
+      1312.4
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1264.4
+     ],
+     [
+      "hnswlib",
+      1182.4
+     ],
+     [
+      "scann",
+      1162.5
+     ],
+     [
+      "flatnav",
+      1154.7
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1098.3
+     ],
+     [
+      "vamana(diskann)",
+      985.4
+     ],
+     [
+      "pynndescent",
+      916.2
+     ],
+     [
+      "rabitq-hnsw",
+      843.3
+     ],
+     [
+      "vamana-lvq(svs)",
+      835.7
+     ],
+     [
+      "nsg(faiss)",
+      753.4
+     ],
+     [
+      "rabitq-ivf",
+      605.3
+     ],
+     [
+      "ivf(faiss)",
+      284.7
+     ],
+     [
+      "mlann-rf",
+      87.4
+     ],
+     [
+      "mrpt",
+      31.7
+     ],
+     [
+      "ngt-qg",
+      9.6
+     ],
+     [
+      "puffinn",
+      7.8
+     ]
+    ],
+    "0.95": [
+     [
+      "pag",
+      1807.3
+     ],
+     [
+      "glass",
+      1573.2
+     ],
+     [
+      "symphonyqg",
+      997.8
+     ],
+     [
+      "symqg",
+      951.5
+     ],
+     [
+      "roargraph",
+      951.1
+     ],
+     [
+      "ivfpqfs(faiss)",
+      835.5
+     ],
+     [
+      "lorann",
+      813.7
+     ],
+     [
+      "vamana(diskann)",
+      734.0
+     ],
+     [
+      "flatnav",
+      686.3
+     ],
+     [
+      "hnswlib",
+      671.6
+     ],
+     [
+      "scann",
+      638.5
+     ],
+     [
+      "vamana-leanvec(svs)",
+      633.1
+     ],
+     [
+      "rabitq-hnsw",
+      627.1
+     ],
+     [
+      "pynndescent",
+      621.3
+     ],
+     [
+      "vamana-lvq(svs)",
+      620.4
+     ],
+     [
+      "nsg(faiss)",
+      448.5
+     ],
+     [
+      "rabitq-ivf",
+      403.8
+     ],
+     [
+      "ivf(faiss)",
+      158.8
+     ],
+     [
+      "mlann-rf",
+      31.9
+     ],
+     [
+      "mrpt",
+      23.7
+     ],
+     [
+      "ngt-qg",
+      9.6
+     ],
+     [
+      "puffinn",
+      4.5
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      1030.1
+     ],
+     [
+      "glass",
+      684.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      386.7
+     ],
+     [
+      "roargraph",
+      373.4
+     ],
+     [
+      "scann",
+      312.9
+     ],
+     [
+      "hnswlib",
+      308.6
+     ],
+     [
+      "lorann",
+      297.8
+     ],
+     [
+      "flatnav",
+      285.3
+     ],
+     [
+      "vamana(diskann)",
+      281.4
+     ],
+     [
+      "vamana-leanvec(svs)",
+      228.7
+     ],
+     [
+      "rabitq-ivf",
+      212.4
+     ],
+     [
+      "pynndescent",
+      155.9
+     ],
+     [
+      "ivf(faiss)",
+      45.5
+     ],
+     [
+      "mrpt",
+      16.3
+     ],
+     [
+      "mlann-rf",
+      13.9
+     ],
+     [
+      "ngt-qg",
+      1.2
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 20,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/laion-clip-512-normalized",
+   "selected_competitors": [
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATMQKY2AWHG30BA59JVCR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "landmark-dino-768-cosine",
+   "dataset_bytes": 2341733696,
+   "dataset_sha256": "b13bf651afbc5963fa2ecca73fa78bac9fe68889528935bdcf26ab333dd792d2",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2113,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATMQKY2AWHG30BA59JVCR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/landmark-dino-768-cosine",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/landmark-dino-768-cosine",
+   "memory_observation": {
+    "cgroup_current_bytes": 5675208704,
+    "cgroup_limit_bytes": 425706921984,
+    "container_id": "ta-01M5PATMQKY2AWHG30BA59JVCR",
+    "dataset": "landmark-dino-768-cosine",
+    "mem_available_bytes": 420031213568,
+    "observed_at_utc": "2026-10-24T07:35:21.717898+00:00",
+    "requested_memory_gib": 14
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      4759.9
+     ],
+     [
+      "glass",
+      4604.9
+     ],
+     [
+      "symphonyqg",
+      4053.3
+     ],
+     [
+      "lorann",
+      3919.6
+     ],
+     [
+      "pag",
+      3436.1
+     ],
+     [
+      "symqg",
+      3017.5
+     ],
+     [
+      "scann",
+      2210.4
+     ],
+     [
+      "rabitq-hnsw",
+      1958.4
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1880.6
+     ],
+     [
+      "pynndescent",
+      1809.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1808.7
+     ],
+     [
+      "hnswlib",
+      1686.2
+     ],
+     [
+      "flatnav",
+      1602.5
+     ],
+     [
+      "vamana-lvq(svs)",
+      1566.1
+     ],
+     [
+      "rabitq-ivf",
+      1450.2
+     ],
+     [
+      "nsg(faiss)",
+      1334.4
+     ],
+     [
+      "vamana(diskann)",
+      746.4
+     ],
+     [
+      "ivf(faiss)",
+      433.7
+     ],
+     [
+      "annoy",
+      297.0
+     ],
+     [
+      "mrpt",
+      246.6
+     ],
+     [
+      "falconnpp",
+      140.7
+     ],
+     [
+      "puffinn",
+      105.9
+     ]
+    ],
+    "0.95": [
+     [
+      "ngt-qg",
+      4084.2
+     ],
+     [
+      "symphonyqg",
+      3499.1
+     ],
+     [
+      "pag",
+      3436.1
+     ],
+     [
+      "glass",
+      3310.0
+     ],
+     [
+      "symqg",
+      2621.2
+     ],
+     [
+      "lorann",
+      2608.1
+     ],
+     [
+      "rabitq-hnsw",
+      1782.2
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1693.8
+     ],
+     [
+      "pynndescent",
+      1545.0
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1524.8
+     ],
+     [
+      "scann",
+      1496.3
+     ],
+     [
+      "hnswlib",
+      1440.0
+     ],
+     [
+      "rabitq-ivf",
+      1289.7
+     ],
+     [
+      "flatnav",
+      1287.9
+     ],
+     [
+      "vamana-lvq(svs)",
+      1264.9
+     ],
+     [
+      "nsg(faiss)",
+      952.3
+     ],
+     [
+      "vamana(diskann)",
+      746.4
+     ],
+     [
+      "ivf(faiss)",
+      257.4
+     ],
+     [
+      "annoy",
+      195.8
+     ],
+     [
+      "mrpt",
+      164.8
+     ],
+     [
+      "falconnpp",
+      89.8
+     ],
+     [
+      "puffinn",
+      73.4
+     ]
+    ],
+    "0.99": [
+     [
+      "symphonyqg",
+      2782.8
+     ],
+     [
+      "pag",
+      2395.8
+     ],
+     [
+      "ngt-qg",
+      2362.2
+     ],
+     [
+      "symqg",
+      2131.0
+     ],
+     [
+      "glass",
+      2128.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1256.7
+     ],
+     [
+      "rabitq-hnsw",
+      1153.1
+     ],
+     [
+      "lorann",
+      1136.5
+     ],
+     [
+      "vamana-lvq(svs)",
+      1058.9
+     ],
+     [
+      "hnswlib",
+      964.1
+     ],
+     [
+      "scann",
+      942.1
+     ],
+     [
+      "pynndescent",
+      921.6
+     ],
+     [
+      "flatnav",
+      765.4
+     ],
+     [
+      "ivfpqfs(faiss)",
+      760.5
+     ],
+     [
+      "vamana(diskann)",
+      746.4
+     ],
+     [
+      "rabitq-ivf",
+      719.5
+     ],
+     [
+      "nsg(faiss)",
+      537.7
+     ],
+     [
+      "ivf(faiss)",
+      130.1
+     ],
+     [
+      "mrpt",
+      74.1
+     ],
+     [
+      "annoy",
+      72.4
+     ],
+     [
+      "falconnpp",
+      49.7
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 14,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/landmark-dino-768-cosine",
+   "selected_competitors": [
+    "ngt-qg",
+    "symphonyqg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATN6HDQ0YTRZ5XZRNPCSR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "landmark-nomic-768-normalized",
+   "dataset_bytes": 2341733696,
+   "dataset_sha256": "9e870c21f3a33cea1adb9055ce0e7af0988557b5e4e21485a661f40365be286a",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2009,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATN6HDQ0YTRZ5XZRNPCSR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/landmark-nomic-768-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/landmark-nomic-768-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 5829541888,
+    "cgroup_limit_bytes": 425706917888,
+    "container_id": "ta-01M5PATN6HDQ0YTRZ5XZRNPCSR",
+    "dataset": "landmark-nomic-768-normalized",
+    "mem_available_bytes": 419876876288,
+    "observed_at_utc": "2026-10-24T07:35:22.448574+00:00",
+    "requested_memory_gib": 14
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      6692.8
+     ],
+     [
+      "glass",
+      5906.1
+     ],
+     [
+      "lorann",
+      5087.2
+     ],
+     [
+      "symqg",
+      4971.8
+     ],
+     [
+      "symphonyqg",
+      4680.9
+     ],
+     [
+      "pag",
+      4094.0
+     ],
+     [
+      "hnswlib",
+      4087.6
+     ],
+     [
+      "flatnav",
+      4069.0
+     ],
+     [
+      "rabitq-hnsw",
+      3272.1
+     ],
+     [
+      "pynndescent",
+      2797.7
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2792.1
+     ],
+     [
+      "ivfpqfs(faiss)",
+      2703.5
+     ],
+     [
+      "scann",
+      2613.3
+     ],
+     [
+      "rabitq-ivf",
+      2550.7
+     ],
+     [
+      "nsg(faiss)",
+      2316.5
+     ],
+     [
+      "vamana-lvq(svs)",
+      1895.8
+     ],
+     [
+      "vamana(diskann)",
+      1099.8
+     ],
+     [
+      "ivf(faiss)",
+      871.1
+     ],
+     [
+      "annoy",
+      629.5
+     ],
+     [
+      "mrpt",
+      625.7
+     ],
+     [
+      "puffinn",
+      87.7
+     ],
+     [
+      "falconnpp",
+      65.4
+     ]
+    ],
+    "0.95": [
+     [
+      "glass",
+      5906.1
+     ],
+     [
+      "ngt-qg",
+      4839.7
+     ],
+     [
+      "lorann",
+      4777.4
+     ],
+     [
+      "symqg",
+      4366.8
+     ],
+     [
+      "pag",
+      4094.0
+     ],
+     [
+      "symphonyqg",
+      3812.7
+     ],
+     [
+      "rabitq-hnsw",
+      3272.1
+     ],
+     [
+      "flatnav",
+      3137.1
+     ],
+     [
+      "hnswlib",
+      3047.7
+     ],
+     [
+      "pynndescent",
+      2797.7
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2612.7
+     ],
+     [
+      "nsg(faiss)",
+      2316.5
+     ],
+     [
+      "rabitq-ivf",
+      2090.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      2015.9
+     ],
+     [
+      "scann",
+      2012.0
+     ],
+     [
+      "vamana-lvq(svs)",
+      1895.8
+     ],
+     [
+      "vamana(diskann)",
+      1099.8
+     ],
+     [
+      "ivf(faiss)",
+      596.3
+     ],
+     [
+      "mrpt",
+      535.8
+     ],
+     [
+      "annoy",
+      362.5
+     ],
+     [
+      "falconnpp",
+      59.8
+     ],
+     [
+      "puffinn",
+      19.0
+     ]
+    ],
+    "0.99": [
+     [
+      "glass",
+      5328.9
+     ],
+     [
+      "ngt-qg",
+      4322.6
+     ],
+     [
+      "pag",
+      4094.0
+     ],
+     [
+      "symqg",
+      3539.6
+     ],
+     [
+      "rabitq-hnsw",
+      3272.1
+     ],
+     [
+      "lorann",
+      3065.4
+     ],
+     [
+      "symphonyqg",
+      2728.6
+     ],
+     [
+      "pynndescent",
+      2540.2
+     ],
+     [
+      "hnswlib",
+      2258.8
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2128.1
+     ],
+     [
+      "flatnav",
+      2100.0
+     ],
+     [
+      "vamana-lvq(svs)",
+      1895.8
+     ],
+     [
+      "nsg(faiss)",
+      1707.4
+     ],
+     [
+      "rabitq-ivf",
+      1520.4
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1366.2
+     ],
+     [
+      "scann",
+      1235.7
+     ],
+     [
+      "vamana(diskann)",
+      1099.8
+     ],
+     [
+      "ivf(faiss)",
+      377.3
+     ],
+     [
+      "mrpt",
+      263.4
+     ],
+     [
+      "annoy",
+      145.1
+     ],
+     [
+      "falconnpp",
+      41.0
+     ],
+     [
+      "puffinn",
+      19.0
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 14,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/landmark-nomic-768-normalized",
+   "selected_competitors": [
+    "ngt-qg",
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {
+    "mlann-rf": {
+     "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+     "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+     "error": null,
+     "fair_comparison": false,
+     "metrics": null,
+     "same_container_as_hms": true,
+     "state": "running"
+    }
+   },
+   "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "llama-128-ip",
+   "dataset_bytes": 367071696,
+   "dataset_sha256": "43c6a366d1e7dfd9e331e712708a664f91f8dbda1928c9923ef730d6718a2f52",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.1644,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATPQ2VXH3W0CSHQ3H1BNR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "done",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/llama-128-ip",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/llama-128-ip",
+   "memory_observation": {
+    "cgroup_current_bytes": 1245294592,
+    "cgroup_limit_bytes": 425706934272,
+    "container_id": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+    "dataset": "llama-128-ip",
+    "mem_available_bytes": 424461103104,
+    "observed_at_utc": "2026-10-24T07:35:23.128428+00:00",
+    "requested_memory_gib": 8
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "mlann-rf",
+      7966.5
+     ],
+     [
+      "roargraph",
+      6105.3
+     ],
+     [
+      "lorann",
+      1634.7
+     ],
+     [
+      "ivf(faiss)",
+      777.8
+     ]
+    ],
+    "0.95": [
+     [
+      "mlann-rf",
+      5906.1
+     ],
+     [
+      "roargraph",
+      3505.9
+     ],
+     [
+      "lorann",
+      903.5
+     ]
+    ],
+    "0.99": [
+     [
+      "mlann-rf",
+      3222.3
+     ],
+     [
+      "roargraph",
+      627.5
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 8,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/llama-128-ip",
+   "selected_competitors": [
+    "mlann-rf",
+    "roargraph"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": {
+    "done": true,
+    "expected": 180,
+    "markers": 180,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 180
+   },
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATNVBJNVGXBP073M9C58R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "msmarco-qwen-1024-normalized",
+   "dataset_bytes": 36217723200,
+   "dataset_sha256": "efa21f8418e29137ad5be44171fd4657e1738caee86eb62645ad20605457cb2c",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 1.0768,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATNVBJNVGXBP073M9C58R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/msmarco-qwen-1024-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/msmarco-qwen-1024-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 83176464384,
+    "cgroup_limit_bytes": 851628580864,
+    "container_id": "ta-01M5PATNVBJNVGXBP073M9C58R",
+    "dataset": "msmarco-qwen-1024-normalized",
+    "mem_available_bytes": 768451616768,
+    "observed_at_utc": "2026-10-24T07:35:24.379537+00:00",
+    "requested_memory_gib": 115
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "symphonyqg",
+      4911.5
+     ],
+     [
+      "symqg",
+      4506.3
+     ],
+     [
+      "pag",
+      3382.2
+     ],
+     [
+      "glass",
+      3198.6
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2412.6
+     ],
+     [
+      "rabitq-hnsw",
+      2357.9
+     ],
+     [
+      "hnswlib",
+      2188.4
+     ],
+     [
+      "flatnav",
+      2074.7
+     ],
+     [
+      "vamana-lvq(svs)",
+      2041.0
+     ],
+     [
+      "nsg(faiss)",
+      1559.2
+     ],
+     [
+      "pynndescent",
+      1117.5
+     ],
+     [
+      "vamana(diskann)",
+      849.1
+     ],
+     [
+      "lorann",
+      664.9
+     ],
+     [
+      "rabitq-ivf",
+      628.7
+     ],
+     [
+      "ivfpqfs(faiss)",
+      572.0
+     ],
+     [
+      "scann",
+      324.4
+     ],
+     [
+      "annoy",
+      80.8
+     ],
+     [
+      "ivf(faiss)",
+      42.3
+     ],
+     [
+      "falconnpp",
+      38.0
+     ]
+    ],
+    "0.95": [
+     [
+      "symphonyqg",
+      3898.3
+     ],
+     [
+      "symqg",
+      3629.4
+     ],
+     [
+      "pag",
+      3382.2
+     ],
+     [
+      "glass",
+      2987.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2015.7
+     ],
+     [
+      "rabitq-hnsw",
+      1924.1
+     ],
+     [
+      "vamana-lvq(svs)",
+      1657.7
+     ],
+     [
+      "hnswlib",
+      1363.7
+     ],
+     [
+      "flatnav",
+      1184.4
+     ],
+     [
+      "pynndescent",
+      1117.5
+     ],
+     [
+      "nsg(faiss)",
+      1096.2
+     ],
+     [
+      "vamana(diskann)",
+      849.1
+     ],
+     [
+      "rabitq-ivf",
+      350.5
+     ],
+     [
+      "lorann",
+      349.6
+     ],
+     [
+      "ivfpqfs(faiss)",
+      281.5
+     ],
+     [
+      "scann",
+      170.5
+     ],
+     [
+      "annoy",
+      37.5
+     ],
+     [
+      "ivf(faiss)",
+      21.6
+     ],
+     [
+      "falconnpp",
+      21.4
+     ]
+    ],
+    "0.99": [
+     [
+      "symqg",
+      3034.3
+     ],
+     [
+      "symphonyqg",
+      2713.2
+     ],
+     [
+      "pag",
+      2407.8
+     ],
+     [
+      "glass",
+      1880.7
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1342.9
+     ],
+     [
+      "rabitq-hnsw",
+      1112.3
+     ],
+     [
+      "vamana-lvq(svs)",
+      1056.4
+     ],
+     [
+      "vamana(diskann)",
+      625.2
+     ],
+     [
+      "pynndescent",
+      602.0
+     ],
+     [
+      "hnswlib",
+      577.6
+     ],
+     [
+      "flatnav",
+      519.4
+     ],
+     [
+      "nsg(faiss)",
+      396.2
+     ],
+     [
+      "rabitq-ivf",
+      101.7
+     ],
+     [
+      "ivfpqfs(faiss)",
+      78.9
+     ],
+     [
+      "scann",
+      45.8
+     ],
+     [
+      "lorann",
+      40.0
+     ],
+     [
+      "falconnpp",
+      11.9
+     ],
+     [
+      "ivf(faiss)",
+      5.6
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 115,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/msmarco-qwen-1024-normalized",
+   "selected_competitors": [
+    "symphonyqg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATNAXHRNV696SP2HHHP8R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "simplewiki-openai-3072-normalized",
+   "dataset_bytes": 3213355328,
+   "dataset_sha256": "5b012e832cc6ffd72c248ce5e8ac12d34441c7692a4546e2a5672ebe2d4d4aa3",
+   "deprecated": true,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2214,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATNAXHRNV696SP2HHHP8R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/simplewiki-openai-3072-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/simplewiki-openai-3072-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 7526580224,
+    "cgroup_limit_bytes": 184499568640,
+    "container_id": "ta-01M5PATNAXHRNV696SP2HHHP8R",
+    "dataset": "simplewiki-openai-3072-normalized",
+    "mem_available_bytes": 176972488704,
+    "observed_at_utc": "2026-10-24T07:35:25.514572+00:00",
+    "requested_memory_gib": 16
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      2808.2
+     ],
+     [
+      "glass",
+      1976.9
+     ],
+     [
+      "pag",
+      1695.5
+     ],
+     [
+      "lorann",
+      1280.8
+     ],
+     [
+      "rabitq-hnsw",
+      1143.7
+     ],
+     [
+      "pynndescent",
+      921.7
+     ],
+     [
+      "vamana-leanvec(svs)",
+      914.3
+     ],
+     [
+      "hnswlib",
+      819.1
+     ],
+     [
+      "flatnav",
+      803.1
+     ],
+     [
+      "nsg(faiss)",
+      719.7
+     ],
+     [
+      "rabitq-ivf",
+      654.3
+     ],
+     [
+      "scann",
+      653.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      604.8
+     ],
+     [
+      "vamana-lvq(svs)",
+      438.6
+     ],
+     [
+      "vamana(diskann)",
+      269.9
+     ],
+     [
+      "mrpt",
+      189.3
+     ],
+     [
+      "ivf(faiss)",
+      162.3
+     ],
+     [
+      "annoy",
+      66.2
+     ],
+     [
+      "falconnpp",
+      54.6
+     ],
+     [
+      "puffinn",
+      25.4
+     ]
+    ],
+    "0.95": [
+     [
+      "ngt-qg",
+      2214.7
+     ],
+     [
+      "pag",
+      1695.5
+     ],
+     [
+      "glass",
+      1630.0
+     ],
+     [
+      "rabitq-hnsw",
+      1143.7
+     ],
+     [
+      "vamana-leanvec(svs)",
+      710.8
+     ],
+     [
+      "pynndescent",
+      668.5
+     ],
+     [
+      "lorann",
+      555.6
+     ],
+     [
+      "nsg(faiss)",
+      545.8
+     ],
+     [
+      "hnswlib",
+      481.5
+     ],
+     [
+      "rabitq-ivf",
+      473.9
+     ],
+     [
+      "flatnav",
+      459.7
+     ],
+     [
+      "vamana-lvq(svs)",
+      438.6
+     ],
+     [
+      "ivfpqfs(faiss)",
+      411.4
+     ],
+     [
+      "scann",
+      401.9
+     ],
+     [
+      "vamana(diskann)",
+      269.9
+     ],
+     [
+      "mrpt",
+      121.3
+     ],
+     [
+      "ivf(faiss)",
+      82.7
+     ],
+     [
+      "falconnpp",
+      44.2
+     ],
+     [
+      "annoy",
+      29.4
+     ],
+     [
+      "puffinn",
+      8.7
+     ]
+    ],
+    "0.99": [
+     [
+      "ngt-qg",
+      1342.8
+     ],
+     [
+      "pag",
+      1240.9
+     ],
+     [
+      "glass",
+      1054.8
+     ],
+     [
+      "rabitq-hnsw",
+      837.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      481.2
+     ],
+     [
+      "vamana-lvq(svs)",
+      354.5
+     ],
+     [
+      "nsg(faiss)",
+      336.0
+     ],
+     [
+      "pynndescent",
+      323.1
+     ],
+     [
+      "hnswlib",
+      301.5
+     ],
+     [
+      "vamana(diskann)",
+      269.9
+     ],
+     [
+      "flatnav",
+      249.9
+     ],
+     [
+      "lorann",
+      226.2
+     ],
+     [
+      "rabitq-ivf",
+      176.4
+     ],
+     [
+      "scann",
+      170.6
+     ],
+     [
+      "ivfpqfs(faiss)",
+      155.8
+     ],
+     [
+      "mrpt",
+      58.4
+     ],
+     [
+      "ivf(faiss)",
+      24.2
+     ],
+     [
+      "falconnpp",
+      23.7
+     ],
+     [
+      "annoy",
+      11.3
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 16,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/simplewiki-openai-3072-normalized",
+   "selected_competitors": [
+    "ngt-qg"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATNW9NXKXFBKVZ5T31VPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yahoo-minilm-384-normalized",
+   "dataset_bytes": 1043492672,
+   "dataset_sha256": "8b0519850249d7ea4aea258eb43ae837dca1bb2f7a85ee0a5145afdb699c4136",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.1765,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATNW9NXKXFBKVZ5T31VPR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/yahoo-minilm-384-normalized",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/yahoo-minilm-384-normalized",
+   "memory_observation": {
+    "cgroup_current_bytes": 2757308416,
+    "cgroup_limit_bytes": 353621684224,
+    "container_id": "ta-01M5PATNW9NXKXFBKVZ5T31VPR",
+    "dataset": "yahoo-minilm-384-normalized",
+    "mem_available_bytes": 350863876096,
+    "observed_at_utc": "2026-10-24T07:35:26.445844+00:00",
+    "requested_memory_gib": 10
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": false,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "ngt-qg",
+      7134.7
+     ],
+     [
+      "glass",
+      6062.7
+     ],
+     [
+      "symqg",
+      5199.1
+     ],
+     [
+      "pag",
+      5030.2
+     ],
+     [
+      "symphonyqg",
+      4958.8
+     ],
+     [
+      "lorann",
+      3686.9
+     ],
+     [
+      "rabitq-hnsw",
+      3022.4
+     ],
+     [
+      "rabitq-ivf",
+      2769.5
+     ],
+     [
+      "scann",
+      2621.0
+     ],
+     [
+      "ivfpqfs(faiss)",
+      2413.1
+     ],
+     [
+      "pynndescent",
+      2398.3
+     ],
+     [
+      "hnswlib",
+      2381.5
+     ],
+     [
+      "flatnav",
+      2358.9
+     ],
+     [
+      "vamana-leanvec(svs)",
+      2092.0
+     ],
+     [
+      "vamana-lvq(svs)",
+      1992.6
+     ],
+     [
+      "nsg(faiss)",
+      1360.2
+     ],
+     [
+      "vamana(diskann)",
+      1056.8
+     ],
+     [
+      "ivf(faiss)",
+      810.4
+     ],
+     [
+      "mrpt",
+      377.8
+     ],
+     [
+      "falconnpp",
+      261.7
+     ],
+     [
+      "annoy",
+      230.0
+     ],
+     [
+      "puffinn",
+      185.2
+     ]
+    ],
+    "0.95": [
+     [
+      "ngt-qg",
+      4931.7
+     ],
+     [
+      "glass",
+      4714.8
+     ],
+     [
+      "pag",
+      4714.5
+     ],
+     [
+      "symqg",
+      4425.0
+     ],
+     [
+      "symphonyqg",
+      4190.8
+     ],
+     [
+      "rabitq-ivf",
+      1986.8
+     ],
+     [
+      "pynndescent",
+      1933.9
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1870.8
+     ],
+     [
+      "rabitq-hnsw",
+      1857.4
+     ],
+     [
+      "lorann",
+      1831.9
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1830.4
+     ],
+     [
+      "hnswlib",
+      1710.1
+     ],
+     [
+      "scann",
+      1659.5
+     ],
+     [
+      "flatnav",
+      1641.1
+     ],
+     [
+      "vamana-lvq(svs)",
+      1587.8
+     ],
+     [
+      "nsg(faiss)",
+      1090.0
+     ],
+     [
+      "vamana(diskann)",
+      1056.8
+     ],
+     [
+      "ivf(faiss)",
+      470.5
+     ],
+     [
+      "mrpt",
+      319.9
+     ],
+     [
+      "falconnpp",
+      203.0
+     ],
+     [
+      "puffinn",
+      157.7
+     ],
+     [
+      "annoy",
+      142.5
+     ]
+    ],
+    "0.99": [
+     [
+      "glass",
+      3357.1
+     ],
+     [
+      "ngt-qg",
+      3253.6
+     ],
+     [
+      "pag",
+      3124.5
+     ],
+     [
+      "symqg",
+      2872.8
+     ],
+     [
+      "symphonyqg",
+      2691.4
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1451.7
+     ],
+     [
+      "vamana-lvq(svs)",
+      1323.0
+     ],
+     [
+      "rabitq-hnsw",
+      1185.0
+     ],
+     [
+      "pynndescent",
+      1142.2
+     ],
+     [
+      "vamana(diskann)",
+      1056.8
+     ],
+     [
+      "hnswlib",
+      1023.1
+     ],
+     [
+      "flatnav",
+      900.3
+     ],
+     [
+      "ivfpqfs(faiss)",
+      753.7
+     ],
+     [
+      "lorann",
+      678.5
+     ],
+     [
+      "rabitq-ivf",
+      633.5
+     ],
+     [
+      "nsg(faiss)",
+      608.0
+     ],
+     [
+      "scann",
+      587.4
+     ],
+     [
+      "mrpt",
+      167.9
+     ],
+     [
+      "ivf(faiss)",
+      146.5
+     ],
+     [
+      "falconnpp",
+      124.0
+     ],
+     [
+      "annoy",
+      71.2
+     ],
+     [
+      "puffinn",
+      18.8
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 10,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/yahoo-minilm-384-normalized",
+   "selected_competitors": [
+    "ngt-qg",
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "pending",
+   "competitors": {},
+   "container_id": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yandex-200-cosine",
+   "dataset_bytes": 2002416192,
+   "dataset_sha256": "6026207dfe23ef0730d227f8269744fbf24c4052989feecffaeb12ce22264af5",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.2042,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATNPBZBDMYV5B4WHTJM2R.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "running",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/yandex-200-cosine",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/yandex-200-cosine",
+   "memory_observation": {
+    "cgroup_current_bytes": 3555020800,
+    "cgroup_limit_bytes": 425706921984,
+    "container_id": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+    "dataset": "yandex-200-cosine",
+    "mem_available_bytes": 422151401472,
+    "observed_at_utc": "2026-10-24T07:35:51.249103+00:00",
+    "requested_memory_gib": 13
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "glass",
+      4346.0
+     ],
+     [
+      "pag",
+      4230.1
+     ],
+     [
+      "ngt-qg",
+      3907.5
+     ],
+     [
+      "scann",
+      2654.3
+     ],
+     [
+      "symqg",
+      2462.5
+     ],
+     [
+      "roargraph",
+      2450.9
+     ],
+     [
+      "ivfpqfs(faiss)",
+      2429.4
+     ],
+     [
+      "symphonyqg",
+      2316.7
+     ],
+     [
+      "hnswlib",
+      2298.6
+     ],
+     [
+      "flatnav",
+      2197.2
+     ],
+     [
+      "lorann",
+      1995.3
+     ],
+     [
+      "vamana-lvq(svs)",
+      1910.5
+     ],
+     [
+      "pynndescent",
+      1875.9
+     ],
+     [
+      "vamana-leanvec(svs)",
+      1848.6
+     ],
+     [
+      "rabitq-hnsw",
+      1644.1
+     ],
+     [
+      "vamana(diskann)",
+      1582.8
+     ],
+     [
+      "rabitq-ivf",
+      1344.6
+     ],
+     [
+      "nsg(faiss)",
+      1312.2
+     ],
+     [
+      "ivf(faiss)",
+      782.9
+     ],
+     [
+      "annoy",
+      161.3
+     ],
+     [
+      "mlann-rf",
+      110.9
+     ],
+     [
+      "mrpt",
+      107.0
+     ],
+     [
+      "falconnpp",
+      102.1
+     ],
+     [
+      "puffinn",
+      52.4
+     ]
+    ],
+    "0.95": [
+     [
+      "glass",
+      3496.1
+     ],
+     [
+      "pag",
+      2929.5
+     ],
+     [
+      "ngt-qg",
+      2383.1
+     ],
+     [
+      "scann",
+      1869.2
+     ],
+     [
+      "symqg",
+      1861.6
+     ],
+     [
+      "roargraph",
+      1824.5
+     ],
+     [
+      "symphonyqg",
+      1656.6
+     ],
+     [
+      "hnswlib",
+      1633.7
+     ],
+     [
+      "vamana(diskann)",
+      1582.8
+     ],
+     [
+      "ivfpqfs(faiss)",
+      1582.2
+     ],
+     [
+      "flatnav",
+      1566.4
+     ],
+     [
+      "vamana-lvq(svs)",
+      1464.0
+     ],
+     [
+      "lorann",
+      1268.7
+     ],
+     [
+      "pynndescent",
+      1232.2
+     ],
+     [
+      "rabitq-hnsw",
+      989.2
+     ],
+     [
+      "vamana-leanvec(svs)",
+      920.6
+     ],
+     [
+      "rabitq-ivf",
+      891.6
+     ],
+     [
+      "nsg(faiss)",
+      853.5
+     ],
+     [
+      "ivf(faiss)",
+      417.3
+     ],
+     [
+      "falconnpp",
+      77.2
+     ],
+     [
+      "annoy",
+      73.1
+     ],
+     [
+      "mrpt",
+      70.6
+     ],
+     [
+      "mlann-rf",
+      53.5
+     ],
+     [
+      "puffinn",
+      32.0
+     ]
+    ],
+    "0.99": [
+     [
+      "pag",
+      1960.8
+     ],
+     [
+      "glass",
+      1627.8
+     ],
+     [
+      "ngt-qg",
+      1029.7
+     ],
+     [
+      "roargraph",
+      992.5
+     ],
+     [
+      "ivfpqfs(faiss)",
+      757.0
+     ],
+     [
+      "vamana(diskann)",
+      744.9
+     ],
+     [
+      "hnswlib",
+      733.2
+     ],
+     [
+      "rabitq-hnsw",
+      732.5
+     ],
+     [
+      "symqg",
+      721.6
+     ],
+     [
+      "scann",
+      721.3
+     ],
+     [
+      "symphonyqg",
+      708.3
+     ],
+     [
+      "flatnav",
+      688.6
+     ],
+     [
+      "pynndescent",
+      628.5
+     ],
+     [
+      "rabitq-ivf",
+      502.7
+     ],
+     [
+      "lorann",
+      459.1
+     ],
+     [
+      "vamana-leanvec(svs)",
+      440.4
+     ],
+     [
+      "vamana-lvq(svs)",
+      328.5
+     ],
+     [
+      "ivf(faiss)",
+      204.7
+     ],
+     [
+      "mrpt",
+      29.3
+     ],
+     [
+      "mlann-rf",
+      27.5
+     ],
+     [
+      "puffinn",
+      7.7
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 13,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/yandex-200-cosine",
+   "selected_competitors": [
+    "glass"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": null,
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "attempts": 1,
+   "avx512": false,
+   "comparison_status": "comparable",
+   "competitors": {
+    "mlann-rf": {
+     "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+     "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+     "error": null,
+     "fair_comparison": false,
+     "metrics": null,
+     "same_container_as_hms": true,
+     "state": "running"
+    },
+    "roargraph": {
+     "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+     "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+     "error": null,
+     "fair_comparison": true,
+     "metrics": null,
+     "same_container_as_hms": true,
+     "state": "done"
+    }
+   },
+   "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yi-128-ip",
+   "dataset_bytes": 268704624,
+   "dataset_sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+   "deprecated": false,
+   "download_state": "done",
+   "error": null,
+   "estimated_cost_usd": 0.1715,
+   "failures": 0,
+   "hardware_cpu_record": "hms-bench-run:/vibe/run-s-20261023/cpu/ta-01M5PATPDV47G640F4XD2E0RPR.json",
+   "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "hms_state": "done",
+   "ledger_prefix": "hms-bench-run:/vibe/run-s-20261023/ledger/yi-128-ip",
+   "log_prefix": "hms-bench-run:/vibe/run-s-20261023/logs/yi-128-ip",
+   "memory_observation": {
+    "cgroup_current_bytes": 847638528,
+    "cgroup_limit_bytes": 425706942464,
+    "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+    "dataset": "yi-128-ip",
+    "mem_available_bytes": 424858808320,
+    "observed_at_utc": "2026-10-24T07:35:28.566864+00:00",
+    "requested_memory_gib": 8
+   },
+   "metrics": null,
+   "nproc": 8,
+   "ood": true,
+   "peak_rss_bytes": null,
+   "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+   "published_leaders_diagnostic": {
+    "0.9": [
+     [
+      "roargraph",
+      4403.7
+     ],
+     [
+      "mlann-rf",
+      3761.4
+     ],
+     [
+      "lorann",
+      1252.4
+     ],
+     [
+      "ivf(faiss)",
+      808.2
+     ]
+    ],
+    "0.95": [
+     [
+      "mlann-rf",
+      2397.1
+     ],
+     [
+      "roargraph",
+      1596.7
+     ],
+     [
+      "lorann",
+      743.8
+     ]
+    ],
+    "0.99": [
+     [
+      "mlann-rf",
+      503.2
+     ]
+    ]
+   },
+   "query_threads": 1,
+   "requested_memory_gib": 8,
+   "results_prefix": "hms-bench-run:/vibe/run-s-20261023/results/yi-128-ip",
+   "selected_competitors": [
+    "roargraph",
+    "mlann-rf"
+   ],
+   "source_sha256": {
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92"
+   },
+   "state": "running",
+   "validation": {
+    "done": true,
+    "expected": 180,
+    "markers": 180,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 180
+   },
+   "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  }
+ ],
+ "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}
