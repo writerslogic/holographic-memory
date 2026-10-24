@@ -44,7 +44,10 @@ fn main() {
     let (gt_nq, gt_k, gt) = read_gt(&args[3]);
     let arg = |i: usize, d: &str| args.get(i).cloned().unwrap_or_else(|| d.to_string());
     let build = SparseBuildParams {
-        postings_per_term: arg(4, "4000").parse().unwrap(),
+        postings_per_term: match arg(4, "4000").parse().unwrap() {
+            0 => usize::MAX,
+            n => n,
+        },
         block_fraction: arg(5, "0.1").parse().unwrap(),
         summary_energy: arg(6, "0.4").parse().unwrap(),
         ..SparseBuildParams::default()

@@ -158,6 +158,9 @@ pub struct SparseBuildParams {
     pub transpose_budget: usize,
     /// Seed of the centroid sample.
     pub seed: u64,
+    /// Store forward values as half floats (2 bytes, relative error below 2^-11); scores are
+    /// then exact inner products with the rounded values.
+    pub half_values: bool,
 }
 
 impl SparseBuildParams {
@@ -166,6 +169,7 @@ impl SparseBuildParams {
         Self {
             postings_per_term: usize::MAX,
             summary_energy: 1.0,
+            half_values: false,
             ..Self::default()
         }
     }
@@ -179,6 +183,7 @@ impl Default for SparseBuildParams {
             summary_energy: 0.4,
             transpose_budget: 1 << 28,
             seed: 0x5eed,
+            half_values: true,
         }
     }
 }
@@ -209,6 +214,9 @@ pub struct SparseImpactIndex {
     fwd_offsets: Vec<u64>,
     fwd_ids: Vec<u16>,
     fwd_vals: Vec<f32>,
+    /// The forward values as IEEE half floats when [`SparseBuildParams::half_values`] is set
+    /// (`fwd_vals` is then empty).
+    fwd_half: Vec<u16>,
     /// Blocks of coordinate `t`: `term_blocks[t]..term_blocks[t + 1]`.
     term_blocks: Vec<u32>,
     /// Documents of block `b`: `block_docs[block_doc_offsets[b]..block_doc_offsets[b + 1]]`.
@@ -304,6 +312,7 @@ impl SparseImpactIndex {
             fwd_offsets,
             fwd_ids,
             fwd_vals,
+            fwd_half: Vec::new(),
             term_blocks: Vec::with_capacity(n_dims + 1),
             block_doc_offsets: vec![0],
             block_docs: Vec::new(),
@@ -366,6 +375,10 @@ impl SparseImpactIndex {
             }
             lo = hi;
         }
+        if params.half_values {
+            index.fwd_half = index.fwd_vals.par_iter().map(|&v| f16_bits(v)).collect();
+            index.fwd_vals = Vec::new();
+        }
         Ok(index)
     }
 
@@ -375,6 +388,35 @@ impl SparseImpactIndex {
             self.fwd_offsets[d as usize + 1] as usize,
         );
         (&self.fwd_ids[a..b], &self.fwd_vals[a..b])
+    }
+
+    /// Inner product of document `d` (after `build`) with a dense query.
+    #[inline]
+    fn score(&self, d: u32, dense: &[f32]) -> f32 {
+        let (a, b) = (
+            self.fwd_offsets[d as usize] as usize,
+            self.fwd_offsets[d as usize + 1] as usize,
+        );
+        if self.fwd_half.is_empty() {
+            dot(&self.fwd_ids[a..b], &self.fwd_vals[a..b], dense)
+        } else {
+            dot_half(&self.fwd_ids[a..b], &self.fwd_half[a..b], dense)
+        }
+    }
+
+    /// Hint the cache to load the forward row of document `d`.
+    #[inline]
+    fn prefetch_row(&self, d: u32) {
+        let (a, b) = (
+            self.fwd_offsets[d as usize] as usize,
+            self.fwd_offsets[d as usize + 1] as usize,
+        );
+        prefetch(self.fwd_ids[a..].as_ptr().cast(), (b - a) * 2);
+        if self.fwd_half.is_empty() {
+            prefetch(self.fwd_vals[a..].as_ptr().cast(), (b - a) * 4);
+        } else {
+            prefetch(self.fwd_half[a..].as_ptr().cast(), (b - a) * 2);
+        }
     }
 
     fn append(&mut self, tb: TermBlocks) {
@@ -420,6 +462,9 @@ impl SparseImpactIndex {
         let by_value_desc =
             |a: &(u32, f32), b: &(u32, f32)| b.1.total_cmp(&a.1).then(a.0.cmp(&b.0));
         let keep = params.postings_per_term.min(list.len());
+        if keep == 0 {
+            return out;
+        }
         if keep < list.len() {
             list.select_nth_unstable_by(keep - 1, by_value_desc);
         }
@@ -599,6 +644,7 @@ impl SparseImpactIndex {
         self.fwd_offsets.len() * 8
             + self.fwd_ids.len() * 2
             + self.fwd_vals.len() * 4
+            + self.fwd_half.len() * 2
             + self.term_blocks.len() * 4
             + self.block_doc_offsets.len() * 8
             + self.block_docs.len() * 4
@@ -635,8 +681,7 @@ impl SparseImpactIndex {
         }
         let mut heap = BinaryHeap::new();
         for d in 0..self.n_docs as u32 {
-            let (r_ids, r_vals) = self.row(d);
-            let s = dot(r_ids, r_vals, &dense);
+            let s = self.score(d, &dense);
             if s > 0.0 {
                 offer(&mut heap, k, Hit { score: s, doc: d });
             }
@@ -658,6 +703,76 @@ fn dot(ids: &[u16], vals: &[f32], dense: &[f32]) -> f32 {
     let mut tail = 0f32;
     for (&i, &v) in id_rest.iter().zip(v_rest) {
         tail += dense[i as usize] * v;
+    }
+    (acc[0] + acc[1]) + (acc[2] + acc[3]) + tail
+}
+
+/// Hint the cache to load `bytes` bytes at `ptr`. A no-op where no prefetch is wired up.
+#[inline]
+fn prefetch(ptr: *const u8, bytes: usize) {
+    let end = ptr as usize + bytes;
+    let mut line = ptr as usize & !63;
+    while line < end {
+        #[cfg(target_arch = "aarch64")]
+        // SAFETY: PRFM is a hint: it never faults and writes no register or memory, whatever
+        // the address.
+        unsafe {
+            std::arch::asm!(
+                "prfm pldl1keep, [{0}]",
+                in(reg) line,
+                options(nostack, preserves_flags, readonly)
+            );
+        }
+        #[cfg(target_arch = "x86_64")]
+        // SAFETY: PREFETCHT0 (SSE, part of the x86_64 baseline) is a hint: it never faults
+        // and writes no register or memory, whatever the address.
+        unsafe {
+            std::arch::x86_64::_mm_prefetch::<{ std::arch::x86_64::_MM_HINT_T0 }>(
+                line as *const i8,
+            );
+        }
+        line += 64;
+    }
+}
+
+/// IEEE binary16 bits of a non-negative finite `v`, rounded to nearest; values below the
+/// smallest normal half become that normal (`v > 0`) or zero, values above the largest
+/// become the largest.
+fn f16_bits(v: f32) -> u16 {
+    const MIN_NORMAL: f32 = 6.103_515_6e-5;
+    if v <= 0.0 {
+        return 0;
+    }
+    let v = v.clamp(MIN_NORMAL, 65504.0);
+    let bits = v.to_bits() - ((127 - 15) << 23);
+    let rounded = bits + 0x0fff + ((bits >> 13) & 1);
+    ((rounded >> 13).min(0x7bff)) as u16
+}
+
+/// Value of half bits produced by [`f16_bits`] (zero or normal).
+#[inline]
+fn f16_value(h: u16) -> f32 {
+    let bits = (u32::from(h) << 13) + ((127 - 15) << 23);
+    if h == 0 {
+        0.0
+    } else {
+        f32::from_bits(bits)
+    }
+}
+
+#[inline]
+fn dot_half(ids: &[u16], vals: &[u16], dense: &[f32]) -> f32 {
+    let mut acc = [0f32; 4];
+    let (id4, id_rest) = ids.as_chunks::<4>();
+    let (v4, v_rest) = vals.as_chunks::<4>();
+    for (i, v) in id4.iter().zip(v4) {
+        for j in 0..4 {
+            acc[j] += dense[i[j] as usize] * f16_value(v[j]);
+        }
+    }
+    let mut tail = 0f32;
+    for (&i, &v) in id_rest.iter().zip(v_rest) {
+        tail += dense[i as usize] * f16_value(v);
     }
     (acc[0] + acc[1]) + (acc[2] + acc[3]) + tail
 }
@@ -774,7 +889,14 @@ impl SparseSearcher<'_> {
                     index.block_doc_offsets[b] as usize,
                     index.block_doc_offsets[b + 1] as usize,
                 );
-                for &d in &index.block_docs[d0..d1] {
+                let docs = &index.block_docs[d0..d1];
+                if let Some(&first) = docs.first() {
+                    index.prefetch_row(first);
+                }
+                for (i, &d) in docs.iter().enumerate() {
+                    if let Some(&next) = docs.get(i + 1) {
+                        index.prefetch_row(next);
+                    }
                     let (w, bit) = ((d >> 6) as usize, 1u64 << (d & 63));
                     if self.visited[w] & bit != 0 {
                         continue;
@@ -783,8 +905,7 @@ impl SparseSearcher<'_> {
                         self.touched.push(w as u32);
                     }
                     self.visited[w] |= bit;
-                    let (r_ids, r_vals) = index.row(d);
-                    let s = dot(r_ids, r_vals, &self.dense);
+                    let s = index.score(d, &self.dense);
                     if s > 0.0 {
                         offer(heap, k, Hit { score: s, doc: d });
                     }
@@ -947,8 +1068,7 @@ mod tests {
             assert!(w[0].1 >= w[1].1);
         }
         for &(d, s) in &got {
-            let (r_ids, r_vals) = index.row(d);
-            assert_eq!(s, dot(r_ids, r_vals, &dense));
+            assert_eq!(s, index.score(d, &dense));
         }
         let batch = index
             .search_batch(
@@ -964,6 +1084,19 @@ mod tests {
             .unwrap();
         let ids_only: Vec<u32> = got.iter().map(|h| h.0).collect();
         assert_eq!(&batch[..ids_only.len()], ids_only.as_slice());
+    }
+
+    #[test]
+    fn half_values_round_to_nearest() {
+        for v in [
+            6.2e-5f32, 0.001, 0.1, 0.333, 1.0, 1.5, 2.71828, 7.9, 1000.0, 65504.0,
+        ] {
+            let h = f16_value(f16_bits(v));
+            assert!((h - v).abs() <= v * (1.0 / 2048.0), "{v} -> {h}");
+        }
+        assert_eq!(f16_value(f16_bits(0.0)), 0.0);
+        assert_eq!(f16_value(f16_bits(1e9)), 65504.0);
+        assert!(f16_value(f16_bits(1e-9)) > 0.0);
     }
 
     #[test]
