@@ -1,0 +1,24 @@
+{
+  "source_url": "https://modal.com/pricing",
+  "retrieved_at_utc": "2026-10-24T09:07:41.269748+00:00",
+  "http_status": 200,
+  "http_date": "Sat, 24 Oct 2026 09:07:40 GMT",
+  "page_sha256": "1fc00389a9408d082aae15b15726e1aff82a63510e93de74975921d652454d7b",
+  "scope": "Standard preemptible Modal Functions resource list prices, at displayed per-second precision",
+  "cpu_usd_per_physical_core_second": 1.31e-05,
+  "memory_usd_per_gib_second": 2.22e-06,
+  "cpu_units": "One physical core is two AWS/GCP vCPU equivalents according to this pricing page; cpu=8 is an eight-Modal-CPU request, not an eight-AWS-vCPU request. GVisor may expose a different logical CPU topology.",
+  "derived_cpu_usd_per_core_hour": 0.04716,
+  "derived_memory_usd_per_gib_hour": 0.007991999999999999,
+  "derived_cpu8_memory32gib_per_hour": 0.633024,
+  "conservative_runner_rate_per_hour": 0.6344000000000001,
+  "billing_notes": [
+    "Pricing page meters the larger of requested resources and actual CPU/memory use.",
+    "Billable time includes application load, processing inputs and the default post-input idle window (60 seconds unless changed).",
+    "Runner elapsed-time estimates exclude image builds, startup outside the timed function, unrecorded idle tails, storage, network, platform fees, credits and discounts; invoice data is unavailable.",
+    "Derived hourly values are arithmetic from the displayed per-second prices, not a statement of invoice metering precision."
+  ],
+  "network_egress_usd_per_gib_list": 0.04,
+  "volume_storage_usd_per_gib_month_list": 0.09,
+  "plan_allowances": "Not inferred for this account; credits and included transfer may apply."
+}

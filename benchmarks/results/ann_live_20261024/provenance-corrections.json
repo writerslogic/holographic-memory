@@ -9,6 +9,7 @@
     "affected_results": "HMS degree32 completed on original container, d48/d64 and comparator on replacement. Degree32 must be separately archived and rerun on replacement before a full-grid matched comparison.",
     "entrypoint_shim_reapplied": "2026-10-24T08:10Z before comparator launch",
     "entrypoint_sha256": "a8ae755a787ec25c4cd78696658e2766e7cf5da13572b0edfac32c4dbb8958d7",
-    "action": "wait for active HMS/comparator to finish, then rerun only degree32 on replacement within original dataset cap; preserve original raw points as diagnostic"
+    "action": "Retain all108 native HMS points; compare only72 d48/d64 points with same-container FAISS, while36 d32 points remain diagnostic. Post-return repair watcher stopped before any archive or heavy run. Parent accepted reduced matched subset; do not repeat a complete dataset.",
+    "state": "matched_subset_72_plus_36_diagnostic"
   }
 }

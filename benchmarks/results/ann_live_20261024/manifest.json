@@ -1,12 +1,12 @@
 {
   "source_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
   "runner_sha256": {
-    "ann-live-modal-20261024.py": "04b7a25961349e7ab327370ec3b6757bdc6f7616a17e5a24acecbf1dce15f3c3",
-    "ann-live-export-20261024.py": "ededcf0e8052df913816f3f2e01fd0287ca24446c54720b98d11c3b10b9fb74e",
-    "test_ann_live_export_20261024.py": "82de14fae14ba8d47cd710a5816083d8d3a90f640b1adca310e5be0cbbb1e5ae",
+    "ann-live-modal-20261024.py": "1ea557f87cc9f2b62d440ec55a47689c92fd85d22ad67c897040f7af511133ce",
+    "ann-live-export-20261024.py": "c0b23182762fe0badb54573737274eb105a4bf46675e436de13ab5826e7197f8",
+    "test_ann_live_export_20261024.py": "7dfaafd8c95cee07a113599e14da36829b3ad334417f98d0b4641ff78d144d20",
     "ann-sift-d32-repair-20261024.py": "d495faea262c905139d67ffe276f0530bed4a497b4f114fa977de5343132c7af"
   },
-  "state": "running",
+  "state": "SIFT and Fashion complete; GloVe comparator running",
   "apps": [
     "ap-7L5mqGLMUK9NEoBmyRpBHk",
     "ap-wtq8PwX1NcL0rRhDGaGmtQ"
@@ -15,5 +15,7 @@
   "fashion_repair_volume": "hms-ann-live-20261024:/ann-live-20261024-wheel/fashion-mnist-784-euclidean",
   "new_submissions": false,
   "publication": "none; local harness comparison only",
-  "cost_note": "Per-run estimates use rounded Modal resource rates; actual billing unavailable. Original and repaired Fashion must be added, preserving cancelled attempts."
+  "cost_note": "Per-run estimates use rounded Modal resource rates; actual billing unavailable. Original and repaired Fashion must be added, preserving cancelled attempts.",
+  "sift_scope": "108 native points retained;72 same-container d48/d64 comparison points,36 diagnostic old-CPU d32 points; no full-grid fairness claim",
+  "validation": "8 CSV integrity regression tests pass, including full-grid cardinality, raw-file identity bijection, Glass aliased labels, and diagnostic-point exclusion"
 }

@@ -257,26 +257,59 @@ def run_dataset(dataset: str, cap_usd: float, run_tag: str = "", glass_package: 
 
 
 @app.function(image=image, volumes={"/vol": VOL}, cpu=2, memory=8192, timeout=3600)
-def export_dataset(dataset: str, run_tag: str = "") -> dict:
+def export_dataset(dataset: str, run_tag: str = "", metadata_only: bool = False) -> dict:
     if dataset not in DATASETS or not re.fullmatch(r"[a-z0-9-]{0,48}", run_tag):
         raise ValueError("unsupported dataset")
     root = RUN_ROOT.with_name(RUN_ROOT.name + ("-" + run_tag if run_tag else "")) / dataset
+    started = time.monotonic()
     for name in ("hms-d32", "hms-d48", "hms-d64", DATASETS[dataset][1]):
         if not (root / "checkpoints" / f"{name}.done").exists():
             raise RuntimeError(f"{dataset}: {name} is incomplete")
-    bench = Path("/work/export-ann")
+    bench = Path(f"/work/export-ann-{dataset}-{time.time_ns()}")
     shutil.copytree("/opt/ann", bench, ignore=shutil.ignore_patterns(".git", "results"))
     (bench / "results").symlink_to(root / "results", target_is_directory=True)
+    (bench / "data").mkdir(exist_ok=True)
     (bench / "data" / f"{dataset}.hdf5").symlink_to(root / "data" / f"{dataset}.hdf5")
-    log = root / "logs" / "data-export.log"
-    with log.open("w") as output:
-        subprocess.run(["python", "data_export.py", "--output", str(root / "results.csv")],
-                       cwd=bench, stdout=output, stderr=subprocess.STDOUT, check=True)
     files = sorted((root / "results" / dataset / "10").rglob("*.hdf5"))
+    native = root / "native-results.sha256.json"
+    if not native.exists():
+        metadata = {str(path.relative_to(root)): {"sha256": sha256(path), "bytes": path.stat().st_size,
+                                                "mtime": path.stat().st_mtime} for path in files}
+        native.write_text(json.dumps(metadata, indent=2) + "\n")
+        VOL.commit()
+    log = root / "logs" / "data-export.log"
+    if metadata_only:
+        if not (root / "results.csv").exists():
+            raise ValueError("official CSV is required before metadata-only export")
+    else:
+        with log.open("w") as output:
+            subprocess.run(["python", "data_export.py", "--output", str(root / "results.csv")],
+                           cwd=bench, stdout=output, stderr=subprocess.STDOUT, check=True)
+    import h5py
+    points = []
+    for path in files:
+        with h5py.File(path, "r") as result:
+            if result["neighbors"].shape != (10000, 10):
+                raise ValueError(f"invalid raw result shape: {path}")
+            point = {"file": str(path.relative_to(root)), "algorithm": str(result.attrs["algo"]),
+                     "parameters": str(result.attrs["name"]), "qps": 1.0 / float(result.attrs["best_search_time"]),
+                     "recall_at_10": float(result["metrics/knn"].attrs["mean"])}
+            if point["algorithm"] == "glass":
+                point["query_ef"] = int(path.stem.rsplit("_", 1)[1])
+            points.append(point)
+    (root / "raw-point-metadata.json").write_text(json.dumps(points, indent=2) + "\n")
     hashes = {str(path.relative_to(root)): sha256(path) for path in files}
     (root / "raw-results.sha256.json").write_text(json.dumps(hashes, indent=2) + "\n")
+    elapsed = time.monotonic() - started
+    receipt = {"dataset": dataset, "raw_files": len(files), "csv": str(root / "results.csv"),
+               "elapsed_s": elapsed, "estimated_usd": elapsed / 3600 * (2 * 0.0473 + 8 * 0.008),
+               "purpose": "Official data export and hashing only; benchmark query hardware is recorded in manifest",
+               "export_container_id": os.environ.get("MODAL_TASK_ID")}
+    receipt["metadata_only"] = metadata_only
+    receipt_name = "metadata-receipt.json" if metadata_only else "export-receipt.json"
+    (root / receipt_name).write_text(json.dumps(receipt, indent=2) + "\n")
     VOL.commit()
-    return {"dataset": dataset, "raw_files": len(files), "csv": str(root / "results.csv")}
+    return receipt
 
 
 @app.function(image=modal.Image.debian_slim(python_version="3.10"), timeout=23 * 3600)

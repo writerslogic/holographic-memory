@@ -1,0 +1,4 @@
+official Glass level3 synthetic smoke passed
+HNSW building cost: 0.03s
+Starting quantizer training
+Done quantizer training, cost 0.00s
