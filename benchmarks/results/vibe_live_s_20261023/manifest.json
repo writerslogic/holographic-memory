@@ -71,6 +71,12 @@
       "scope": "landmark-nomic-768-normalized HMS degree64",
       "state": "repair queued after active arms finish",
       "evidence": "45 completed degree64 groups retained across preemption from container ta-01M5PATN6HDQ0YTRZ5XZRNPCSR to ta-01M5PDWQVEXHTNJSV6WPESQA3R. Both report AMD family25 model1, but feature hashes, hypervisor, and BogoMIPS differ. Mixed-container groups are excluded from fair comparisons pending rerun; originals must be archived."
+    },
+    {
+      "observed_at_utc": "2026-10-24T13:50Z",
+      "scope": "yahoo-minilm-384-normalized",
+      "state": "diagnostic after further preemption",
+      "evidence": "Replacement container ta-01M5Q1ZAXYSJDXHRKQM001KQRR does not retain old pre-export hook. Hook repair had not started: no native files removed or overwritten. Completed HMS and NGT plus partial Glass span cohorts; no new full HMS repeat would restore same-container fairness. Keep history and mark diagnostic unless a separately traceable existing subset can support a narrow claim."
     }
   ],
   "draft_pr": "https://github.com/vector-index-bench/vibe/pull/15",
@@ -89,7 +95,7 @@
   "llama_verified_standing": "llama-128-ip-standing.json",
   "repair_mode": "Pre-export hook in original function; post-return watcher stopped before execution",
   "current_runner_sha256": "f02152415e19d5a0149bb3cc9c4541715738fed9a5f62989c42b9d5951bed8a6",
-  "latest_snapshot": "snapshot-20261024T1300Z.json",
+  "latest_snapshot": "snapshot-20261024T1400Z.json",
   "additional_launches": [
     {
       "app_id": "ap-OfE3vcEhiilyNzkxav7UnY",
