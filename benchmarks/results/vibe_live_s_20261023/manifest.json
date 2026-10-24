@@ -87,7 +87,7 @@
   "llama_verified_standing": "llama-128-ip-standing.json",
   "repair_mode": "Pre-export hook in original function; post-return watcher stopped before execution",
   "current_runner_sha256": "f02152415e19d5a0149bb3cc9c4541715738fed9a5f62989c42b9d5951bed8a6",
-  "latest_snapshot": "snapshot-20261024T1000Z.json",
+  "latest_snapshot": "snapshot-20261024T1100Z.json",
   "additional_launches": [
     {
       "app_id": "ap-OfE3vcEhiilyNzkxav7UnY",
