@@ -973,7 +973,7 @@ impl Interner {
             for id in &mut self.sequence {
                 *id = counts[*id as usize];
             }
-            table.positions = Some(Box::new(positions::Positions::from_ranks(
+            table.positions = Some(Arc::new(positions::Positions::from_ranks(
                 &self.sequence,
                 self.counted.len(),
                 whole_document,

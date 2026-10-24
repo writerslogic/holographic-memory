@@ -90,6 +90,25 @@ pub(super) fn tokens(text: &str, stem: bool) -> Vec<String> {
 }
 
 impl Positions {
+    #[cfg(test)]
+    pub(super) fn record_memory(&self, census: &mut super::census::MemoryCensus) {
+        use std::mem::{size_of, size_of_val};
+        if !census.positions.insert(self as *const Self as usize) {
+            return;
+        }
+        census.bytes("positions.records", size_of_val(self));
+        census.bytes("positions.arc_headers", 2 * size_of::<usize>());
+        census.bytes("positions.data", self.data.len());
+        census.bytes(
+            "positions.offsets",
+            match &self.offsets {
+                Offsets::Byte(v) => size_of_val(&**v),
+                Offsets::Short(v) => size_of_val(&**v),
+                Offsets::Word(v) => size_of_val(&**v),
+            },
+        );
+    }
+
     /// The positions of a chunk's terms from the rank of each of its words' terms (the term's
     /// index among the chunk's `terms` sorted terms), in text order.
     pub(super) fn from_ranks(ranks: &[u32], terms: usize, whole_document: bool) -> Self {

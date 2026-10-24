@@ -9,6 +9,7 @@ pub(crate) struct MemoryCensus {
     pub(super) counts: BTreeMap<&'static str, usize>,
     pub(super) histogram: BTreeMap<(usize, usize, usize), usize>,
     pub(super) dictionaries: HashSet<usize>,
+    pub(super) positions: HashSet<usize>,
 }
 
 impl MemoryCensus {
@@ -37,7 +38,7 @@ impl MemoryCensus {
             "bytes": self.bytes,
             "counts": self.counts,
             "posting_list_histogram": histogram,
-            "accounting": "Requested capacities, excluding allocator rounding, tree node overhead, and engine state outside DocumentStore. The *.unused entries are subsets of *.capacity; *.payload entries are lower bounds. Shared dictionaries are counted once. Census scratch is excluded.",
+            "accounting": "Requested capacities, excluding allocator rounding, tree node overhead, and engine state outside DocumentStore. The *.unused entries are subsets of *.capacity; *.payload entries are lower bounds. Shared dictionaries and positions are counted once. Census scratch is excluded.",
         })
     }
 }

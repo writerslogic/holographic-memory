@@ -10,7 +10,7 @@ use std::sync::Arc;
 #[derive(Clone, Default)]
 pub(crate) struct StoredTerms {
     terms: Option<Box<TermData>>,
-    pub(super) positions: Option<Box<super::positions::Positions>>,
+    pub(super) positions: Option<Arc<super::positions::Positions>>,
 }
 
 #[derive(Clone)]
@@ -309,16 +309,7 @@ impl StoredTerms {
             }
         }
         if let Some(positions) = self.positions.as_deref() {
-            census.bytes("positions.records", size_of_val(positions));
-            census.bytes("positions.data", positions.data.len());
-            census.bytes(
-                "positions.offsets",
-                match &positions.offsets {
-                    super::positions::Offsets::Byte(v) => size_of_val(&**v),
-                    super::positions::Offsets::Short(v) => size_of_val(&**v),
-                    super::positions::Offsets::Word(v) => size_of_val(&**v),
-                },
-            );
+            positions.record_memory(census);
         }
     }
 
@@ -686,7 +677,7 @@ impl<'de> Deserialize<'de> for StoredTerms {
                         if positions.is_some() {
                             return Err(serde::de::Error::custom("duplicate positional payload"));
                         }
-                        positions = Some(access.next_value::<Box<super::positions::Positions>>()?);
+                        positions = Some(access.next_value::<Arc<super::positions::Positions>>()?);
                         continue;
                     }
                     let frequency = access.next_value::<u32>()?;

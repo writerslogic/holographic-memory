@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use super::dense::{DenseIndex, MAX_ROWS, MIN_ROWS};
+use super::positions::Positions;
 use super::postings::PostingLists;
 use super::text::TextSegment;
 use super::{SearchOptions, StoredChunk, StoredDocument, VectorState};
@@ -40,6 +41,8 @@ pub(crate) struct DocumentStore {
     owners: Vec<Option<(Arc<StoredDocument>, usize)>>,
     /// Word count of the chunk in each slot, so lexical scoring never touches the document.
     word_counts: Vec<u32>,
+    /// Shared immutable position records by slot; empty while no positional chunks are live.
+    position_sources: Vec<Option<Arc<Positions>>>,
     free: BTreeSet<usize>,
     sources: BTreeMap<String, BTreeSet<String>>,
     metadata: BTreeMap<(String, String), BTreeSet<String>>,
@@ -74,6 +77,13 @@ impl DocumentStore {
             "slots.word_counts.capacity",
             self.word_counts.capacity() * size_of::<u32>(),
         );
+        census.bytes(
+            "slots.position_sources.capacity",
+            self.position_sources.capacity() * size_of::<Option<Arc<Positions>>>(),
+        );
+        for source in self.position_sources.iter().flatten() {
+            source.record_memory(&mut census);
+        }
         census.bytes(
             "documents.map.payload",
             self.documents
@@ -273,6 +283,19 @@ fn remove_secondary<K: Ord>(map: &mut BTreeMap<K, BTreeSet<String>>, key: &K, id
     if posting.is_empty() {
         map.remove(key);
     }
+}
+
+fn set_position_source(
+    sources: &mut Vec<Option<Arc<Positions>>>,
+    slot_count: usize,
+    slot: usize,
+    positions: &Option<Arc<Positions>>,
+) {
+    if positions.is_none() && sources.is_empty() {
+        return;
+    }
+    sources.resize_with(slot_count, || None);
+    sources[slot] = positions.clone();
 }
 
 /// Moves `slot`'s postings from `old` to `new`; `words` already holds the new chunk's length.
@@ -570,6 +593,12 @@ impl DocumentStore {
                     "document slot already owned"
                 );
                 store.word_counts[slot] = slot_words(chunk.word_count);
+                set_position_source(
+                    &mut store.position_sources,
+                    store.slot_count,
+                    slot,
+                    &chunk.terms.positions,
+                );
                 store.chunk_count += 1;
                 store.word_count += chunk.word_count;
             }
@@ -590,6 +619,20 @@ impl DocumentStore {
     /// Word count of the chunk occupying `slot`.
     pub(super) fn slot_word_count(&self, slot: usize) -> u32 {
         self.word_counts[slot]
+    }
+
+    pub(super) fn slot_positions(&self, slot: usize) -> &Positions {
+        self.position_sources[slot]
+            .as_deref()
+            .expect("positional slot has no source")
+    }
+
+    fn trim_position_sources(&mut self) {
+        if self.nonpositional_chunks == self.chunk_count {
+            self.position_sources = Vec::new();
+        } else {
+            self.position_sources.truncate(self.slot_count);
+        }
     }
 
     /// The `(document id, chunk index)` ranking ties are broken by, for the chunk in `slot`.
@@ -718,6 +761,12 @@ impl DocumentStore {
                     "document slot already owned"
                 );
                 self.word_counts[slot] = slot_words(chunk.word_count);
+                set_position_source(
+                    &mut self.position_sources,
+                    self.slot_count,
+                    slot,
+                    &chunk.terms.positions,
+                );
                 self.chunk_count = self
                     .chunk_count
                     .checked_add(1)
@@ -832,6 +881,12 @@ impl DocumentStore {
                 }
             }
             self.word_counts[slot] = slot_words(new.word_count);
+            set_position_source(
+                &mut self.position_sources,
+                self.slot_count,
+                slot,
+                &new.terms.positions,
+            );
             self.word_count = self
                 .word_count
                 .checked_sub(old.word_count)
@@ -847,6 +902,7 @@ impl DocumentStore {
             replace_postings(&mut self.postings, old, new, slot, &self.word_counts);
         }
         self.shift_vector_states(pending_delta, lexical_delta);
+        self.trim_position_sources();
         if old_embedded && !new_embedded {
             assert!(
                 self.embedded_documents.remove(&id),
@@ -1027,6 +1083,9 @@ impl DocumentStore {
                 .expect("document slot has no owner");
             assert_eq!(owner.0.id, id, "document slot owner mismatch");
             assert_eq!(owner.1, index, "document slot chunk mismatch");
+            if let Some(source) = self.position_sources.get_mut(slot) {
+                *source = None;
+            }
             self.chunk_count = self
                 .chunk_count
                 .checked_sub(1)
@@ -1048,6 +1107,7 @@ impl DocumentStore {
         }
         self.owners.truncate(self.slot_count);
         self.word_counts.truncate(self.slot_count);
+        self.trim_position_sources();
         if self.slot_count > 1024 && self.free.len() > self.slot_count / 2 {
             let generation = self.generation;
             let text = self.text.take();
@@ -1060,5 +1120,233 @@ impl DocumentStore {
             self.insert_batch(documents.into_values().collect());
         }
         Some(document)
+    }
+}
+
+#[cfg(test)]
+mod position_source_tests {
+    use super::*;
+    use crate::core::documents::{self, DocumentInput, EncodeMode, IngestOptions};
+    use crate::core::encoding::TextEncoder;
+
+    fn document(
+        id: &str,
+        text: &str,
+        positional: bool,
+        unstemmed: bool,
+        words: usize,
+    ) -> Arc<StoredDocument> {
+        let input: DocumentInput = serde_json::from_value(serde_json::json!({
+            "id": id, "text": text, "chunkWords": words, "overlapWords": 0, "storeText": false,
+        }))
+        .unwrap();
+        Arc::new(
+            documents::prepare_with_options(
+                input,
+                64,
+                None,
+                None,
+                TextEncoder::default(),
+                &IngestOptions {
+                    encode: EncodeMode::Lexical,
+                    positions: positional,
+                    unstemmed,
+                    ..Default::default()
+                },
+            )
+            .unwrap(),
+        )
+    }
+
+    fn check(store: &DocumentStore) {
+        if store.nonpositional_chunks == store.chunk_count {
+            assert_eq!(store.position_sources.capacity(), 0);
+            return;
+        }
+        assert_eq!(store.position_sources.len(), store.slot_count);
+        for (owner, source) in store.owners.iter().zip(&store.position_sources) {
+            let expected = owner
+                .as_ref()
+                .and_then(|(document, index)| document.chunks[*index].terms.positions.as_ref());
+            match (expected, source) {
+                (Some(expected), Some(source)) => assert!(Arc::ptr_eq(expected, source)),
+                (None, None) => {}
+                _ => panic!("slot position source differs from its owner"),
+            }
+        }
+        for lists in &store.postings {
+            lists.assert_valid();
+        }
+    }
+
+    #[test]
+    fn shared_position_sources_follow_replacement_holes_and_snapshot_lifetimes() {
+        let mut store = DocumentStore::default();
+        store.insert(
+            "plain".into(),
+            document("plain", "red blue", false, true, 4096),
+        );
+        check(&store);
+        let held = document("live", "red blue red", true, true, 4096);
+        let serialized = serde_json::to_vec(&held).unwrap();
+        let old_source = Arc::downgrade(held.chunks[0].terms.positions.as_ref().unwrap());
+        store.insert("live".into(), Arc::clone(&held));
+        check(&store);
+        assert_eq!(old_source.strong_count(), 2);
+        store.remove("plain");
+        check(&store);
+        assert!(store.position_sources[0].is_none());
+        let captured = documents::capture_search(
+            &store,
+            vec![documents::prepare_search("red", &SearchOptions::default(), None).unwrap()],
+        );
+        let captured_result =
+            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap();
+
+        store.insert(
+            "live".into(),
+            document("live", "running foxes red", true, false, 4096),
+        );
+        check(&store);
+        assert_eq!(old_source.strong_count(), 1);
+        let changed_source = Arc::downgrade(store.position_sources[1].as_ref().unwrap());
+        assert!(!std::ptr::eq(
+            store.slot_positions(1),
+            held.chunks[0].terms.positions.as_deref().unwrap()
+        ));
+        store.insert(
+            "live".into(),
+            document("live", "running foxes red", false, false, 4096),
+        );
+        check(&store);
+        assert!(changed_source.upgrade().is_none());
+
+        store.insert(
+            "live".into(),
+            document("live", "red blue red blue", true, true, 2),
+        );
+        check(&store);
+        assert_eq!(store.slots["live"], vec![0, 1]);
+        let tail_source = Arc::downgrade(store.position_sources[1].as_ref().unwrap());
+        store.insert(
+            "live".into(),
+            document("live", "blue red", true, true, 4096),
+        );
+        check(&store);
+        assert_eq!(store.slot_count, 1);
+        assert!(tail_source.upgrade().is_none());
+        store.insert(
+            "reused".into(),
+            document("reused", "red blue", true, false, 4096),
+        );
+        check(&store);
+        store.remove("live");
+        check(&store);
+        assert!(store.position_sources[0].is_none());
+        let removed_source = Arc::downgrade(store.position_sources[1].as_ref().unwrap());
+        store.remove("reused");
+        check(&store);
+        assert!(removed_source.upgrade().is_none());
+        assert_eq!(serde_json::to_vec(&held).unwrap(), serialized);
+        assert_eq!(
+            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+            captured_result
+        );
+        drop(held);
+        assert!(old_source.upgrade().is_some());
+        drop(captured);
+        assert!(old_source.upgrade().is_none());
+    }
+
+    #[test]
+    fn shared_position_sources_restore_reindex_and_count_one_payload() {
+        for count in [1023, 1024, 1025] {
+            let template = document("template", "red blue red", true, true, 4096);
+            let source = template.chunks[0].terms.positions.as_ref().unwrap();
+            let mut store = DocumentStore::default();
+            store.insert_batch(
+                (0..count)
+                    .map(|index| {
+                        let mut copied = (*template).clone();
+                        copied.id = format!("d{index:04}");
+                        Arc::new(copied)
+                    })
+                    .collect(),
+            );
+            check(&store);
+            let census = store.memory_census();
+            assert_eq!(census.positions.len(), 1);
+            assert_eq!(
+                census.bytes["positions.records"],
+                std::mem::size_of::<Positions>()
+            );
+            assert_eq!(
+                census.bytes["positions.arc_headers"],
+                2 * std::mem::size_of::<usize>()
+            );
+            assert_eq!(census.bytes["positions.data"], source.data.len());
+            assert_eq!(
+                census.bytes["slots.position_sources.capacity"],
+                store.position_sources.capacity() * std::mem::size_of::<Option<Arc<Positions>>>()
+            );
+
+            store.remove("d0001");
+            let documents = store
+                .documents
+                .iter()
+                .map(|(id, document)| (Arc::clone(document), store.slots[id].clone()))
+                .collect();
+            let restored = DocumentStore::restore(
+                documents,
+                store.slot_count,
+                std::mem::take(&mut store.postings),
+                None,
+            );
+            drop(store);
+            let mut store = restored;
+            check(&store);
+            assert!(store.position_sources[1].is_none());
+            for index in 0..=count / 2 {
+                store.remove(&format!("d{index:04}"));
+            }
+            check(&store);
+            assert_eq!(
+                store.slot_count,
+                if count > 1024 {
+                    store.chunk_count
+                } else {
+                    count
+                }
+            );
+            assert_eq!(store.memory_census().positions.len(), 1);
+            let query = documents::LexicalQuery::parse("\"red blue\"").unwrap();
+            let expected = documents::execute_lexical(
+                &store,
+                &query,
+                &documents::LexicalOptions {
+                    k: 10,
+                    count: true,
+                    execution: documents::LexicalExecution::Exhaustive,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            let owners = Arc::strong_count(source);
+            assert_eq!(
+                documents::execute_lexical(
+                    &store,
+                    &query,
+                    &documents::LexicalOptions {
+                        k: 10,
+                        count: true,
+                        ..Default::default()
+                    }
+                )
+                .unwrap(),
+                expected
+            );
+            assert_eq!(Arc::strong_count(source), owners);
+            assert_eq!(expected.count, Some(store.documents.len()));
+        }
     }
 }

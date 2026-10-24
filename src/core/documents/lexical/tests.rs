@@ -335,6 +335,62 @@ fn phrase_ordinals_follow_replacement_slot_reuse_and_replay() {
 }
 
 #[test]
+fn shared_position_sources_preserve_weighted_spans_and_pinned_forward_answers() {
+    let mut document = documents::prepare_with_options(
+        input("weighted", "red blue red"),
+        64,
+        None,
+        None,
+        TextEncoder::default(),
+        &options(true, true),
+    )
+    .unwrap();
+    let mut terms = serde_json::to_value(&document.chunks[0].terms).unwrap();
+    terms["red"] = serde_json::json!(9);
+    terms["blue"] = serde_json::json!(7);
+    document.chunks[0].terms = serde_json::from_value(terms).unwrap();
+    let held = std::sync::Arc::new(document);
+    let original = serde_json::to_vec(&held).unwrap();
+    let mut store = DocumentStore::default();
+    store.insert("weighted".into(), std::sync::Arc::clone(&held));
+    for (text, expected) in [("\"red blue\"", 1), ("\"blue red\"", 1), ("\"red red\"", 0)] {
+        let query = LexicalQuery::parse(text).unwrap();
+        for k in [0, 10] {
+            let options = LexicalOptions {
+                k,
+                count: true,
+                ..Default::default()
+            };
+            let forward = execute(
+                &store,
+                &query,
+                &LexicalOptions {
+                    execution: LexicalExecution::Exhaustive,
+                    ..options.clone()
+                },
+            )
+            .unwrap();
+            assert_eq!(forward.count, Some(expected));
+            assert_eq!(execute(&store, &query, &options).unwrap(), forward);
+        }
+    }
+    insert(&mut store, "weighted", "red red blue", true, true);
+    assert_eq!(run(&store, "\"red red\"", 10).count, Some(1));
+    let query = LexicalQuery::parse("\"red red\"").unwrap();
+    assert_eq!(
+        frequency(
+            &query.clauses[0],
+            &held.chunks[0],
+            true,
+            &mut word_ids(&query)[0]
+        ),
+        0
+    );
+    store.remove("weighted");
+    assert_eq!(serde_json::to_vec(&held).unwrap(), original);
+}
+
+#[test]
 fn ties_and_block_boundary_sizes() {
     for count in [0, 1, 127, 128, 129, 255, 256, 257] {
         let mut store = DocumentStore::default();

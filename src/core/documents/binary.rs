@@ -486,7 +486,7 @@ pub(crate) fn read_document(
                 data.len() <= super::MAX_DOCUMENT_BYTES,
                 "positional payload exceeds document limit"
             );
-            let positions = Box::new(super::positions::Positions {
+            let positions = Arc::new(super::positions::Positions {
                 version,
                 offsets: offsets.into(),
                 data: data.into(),
