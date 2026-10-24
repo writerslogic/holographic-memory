@@ -24,6 +24,7 @@
 mod adjacency;
 mod build_kernels;
 mod fastscan;
+pub mod filter;
 pub(crate) mod kernels;
 mod projection;
 mod rerank;

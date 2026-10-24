@@ -19,6 +19,7 @@ use crate::core::phase_resonator::{phase_resonator_factorize, ResonatorConfig};
 
 #[cfg(feature = "local-embed")]
 mod embed;
+mod filter_index;
 mod vector_index;
 
 /// A quantized-phase hypervector: `dim` phases in `Z_N`. Binding is phase-add mod N
@@ -143,6 +144,7 @@ fn holographic_memory(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyPhaseHVec>()?;
     m.add_function(wrap_pyfunction!(resonator_factorize, m)?)?;
     vector_index::register(m)?;
+    filter_index::register(m)?;
     #[cfg(feature = "local-embed")]
     embed::register(m)?;
     Ok(())
