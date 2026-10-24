@@ -1,0 +1,86 @@
+{
+  "log": "production-heldout-1m.log",
+  "complete": true,
+  "encodings": [
+    {
+      "mode": "Production8",
+      "rows": "1000000",
+      "ns": "76582410",
+      "code_bytes": "116000000"
+    }
+  ],
+  "rows": [
+    {
+      "mode": "Production8",
+      "ef": 256,
+      "deleted": "false",
+      "threads": 1,
+      "complete": true,
+      "recall_hits": {
+        "base256": 949,
+        "candidate": 943
+      },
+      "pair_ratios": [
+        0.6227934899804981,
+        0.6311388737194241,
+        0.6360855286337985
+      ],
+      "median_ratio": 0.6311388737194241,
+      "recall_delta": -0.0046875
+    },
+    {
+      "mode": "Production8",
+      "ef": 256,
+      "deleted": "false",
+      "threads": 8,
+      "complete": true,
+      "recall_hits": {
+        "base256": 949,
+        "candidate": 943
+      },
+      "pair_ratios": [
+        0.6628620763700177,
+        0.6724105742919179,
+        0.6634252207053212
+      ],
+      "median_ratio": 0.6634252207053212,
+      "recall_delta": -0.0046875
+    },
+    {
+      "mode": "Production8",
+      "ef": 256,
+      "deleted": "true",
+      "threads": 1,
+      "complete": true,
+      "recall_hits": {
+        "base256": 926,
+        "candidate": 922
+      },
+      "pair_ratios": [
+        0.5801439197190883,
+        0.5844579551259753,
+        0.6163088234844802
+      ],
+      "median_ratio": 0.5844579551259753,
+      "recall_delta": -0.003125
+    },
+    {
+      "mode": "Production8",
+      "ef": 256,
+      "deleted": "true",
+      "threads": 8,
+      "complete": true,
+      "recall_hits": {
+        "base256": 926,
+        "candidate": 922
+      },
+      "pair_ratios": [
+        0.6589053094978551,
+        0.653320323437931,
+        0.6602035379410024
+      ],
+      "median_ratio": 0.6589053094978551,
+      "recall_delta": -0.003125
+    }
+  ]
+}

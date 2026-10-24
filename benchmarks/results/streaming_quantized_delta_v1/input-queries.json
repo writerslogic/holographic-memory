@@ -1,0 +1,9 @@
+{
+  "source": "https://comp21storage.z5.web.core.windows.net/comp23/clustered_data/msturing-30M-clustered/testQuery10K.fbin",
+  "content_range": "bytes 0-4000007/4000008",
+  "source_rows": 10000,
+  "prefix_rows": 10000,
+  "dimensions": 100,
+  "source_range_sha256": "4785fe3c90c94c5f004f9cd84dca4cc398fc83280517a8d3acb6bc693d6ccd29",
+  "prefix_file_sha256": "4785fe3c90c94c5f004f9cd84dca4cc398fc83280517a8d3acb6bc693d6ccd29"
+}
