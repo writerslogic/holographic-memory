@@ -59,6 +59,9 @@ pub struct FilterBuildParams {
     pub kmeans_iters: usize,
     /// Training points per list for the per-label k-means (a sample of the members).
     pub train_per_list: usize,
+    /// Labels with an inverted file and at least this many members also keep a copy of their
+    /// rows grouped by list, so a probe reads memory sequentially (`usize::MAX` = none).
+    pub copy_min: usize,
     /// Seed of the k-means sampling.
     pub seed: u64,
 }
@@ -72,6 +75,7 @@ impl Default for FilterBuildParams {
             bitset_min: 20_000,
             kmeans_iters: 6,
             train_per_list: 48,
+            copy_min: usize::MAX,
             seed: 0x5eed,
         }
     }
@@ -87,6 +91,9 @@ pub struct FilterSearchParams {
     pub target: usize,
     /// Lists an inverted-file search probes at least.
     pub min_lists: usize,
+    /// Multi-label queries whose rarest label has at most this many members are intersected
+    /// first; when the matches number at most `brute_max` they are all scored exactly.
+    pub intersect_max: usize,
 }
 
 impl Default for FilterSearchParams {
@@ -95,6 +102,7 @@ impl Default for FilterSearchParams {
             brute_max: 20_000,
             target: 5_000,
             min_lists: 1,
+            intersect_max: 200_000,
         }
     }
 }
@@ -107,6 +115,7 @@ impl FilterSearchParams {
             brute_max: usize::MAX,
             target: usize::MAX,
             min_lists: usize::MAX,
+            intersect_max: usize::MAX,
         }
     }
 }
@@ -121,6 +130,10 @@ struct LabelIvf {
     offsets: Vec<u32>,
     /// Member ids grouped by list, ascending within a list.
     members: Vec<u32>,
+    /// The members' rows in `members` order (`stride` each), or empty.
+    rows: Vec<i8>,
+    /// `|x'|^2` in `members` order, or empty.
+    norms: Vec<i32>,
 }
 
 /// Which path a query took, counted for diagnostics.
@@ -165,6 +178,19 @@ pub struct FilteredIndex {
 #[inline]
 fn shift(v: u8) -> i8 {
     (v ^ 0x80) as i8
+}
+
+#[inline]
+fn prefetch_norm(v: &i32) {
+    // SAFETY: a prefetch hint never faults or writes; the pointer comes from a live reference.
+    #[cfg(target_arch = "x86_64")]
+    unsafe {
+        std::arch::x86_64::_mm_prefetch::<{ std::arch::x86_64::_MM_HINT_T0 }>(
+            std::ptr::from_ref(v).cast::<i8>(),
+        );
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    let _ = v;
 }
 
 #[inline]
@@ -351,7 +377,7 @@ impl FilteredIndex {
             .par_iter()
             .map(|&l| {
                 let (a, b) = (label_offsets[l] as usize, label_offsets[l + 1] as usize);
-                train_label(&rows, stride, &postings[a..b], params, l as u64)
+                train_label(&rows, &norms, stride, &postings[a..b], params, l as u64)
             })
             .collect();
         for (slot, &l) in big.iter().enumerate() {
@@ -441,6 +467,8 @@ impl FilteredIndex {
                         + v.centroid_norms.len() * 4
                         + v.offsets.len() * 4
                         + v.members.len() * 4
+                        + v.rows.len()
+                        + v.norms.len() * 4
                 })
                 .sum::<usize>()
     }
@@ -539,14 +567,24 @@ impl FilteredIndex {
 
         let n_rare = self.label_len(rarest);
         let ivf = self.ivf_slot[rarest as usize];
-        let scored = if n_rare <= params.brute_max || ivf == u32::MAX {
-            self.brute_queries.fetch_add(1, Ordering::Relaxed);
-            let matches = self.intersect(rarest, others);
-            self.score_ids(&q, qsum, &matches, &mut top);
-            matches.len()
+        let matches = if n_rare <= params.brute_max
+            || ivf == u32::MAX
+            || (!others.is_empty() && n_rare <= params.intersect_max)
+        {
+            Some(self.intersect(rarest, others))
         } else {
-            self.ivf_queries.fetch_add(1, Ordering::Relaxed);
-            self.search_ivf(&self.ivfs[ivf as usize], &q, qsum, others, params, &mut top)
+            None
+        };
+        let scored = match matches {
+            Some(m) if m.len() <= params.brute_max || ivf == u32::MAX => {
+                self.brute_queries.fetch_add(1, Ordering::Relaxed);
+                self.score_ids(&q, qsum, &m, &mut top);
+                m.len()
+            }
+            _ => {
+                self.ivf_queries.fetch_add(1, Ordering::Relaxed);
+                self.search_ivf(&self.ivfs[ivf as usize], &q, qsum, others, params, &mut top)
+            }
         };
         self.scored.fetch_add(scored as u64, Ordering::Relaxed);
         out.extend(
@@ -602,11 +640,9 @@ impl FilteredIndex {
         const AHEAD: usize = 8;
         let (chunks, tail) = ids.as_chunks::<4>();
         for (c, ch) in chunks.iter().enumerate() {
-            if let Some(&p) = ids.get(c * 4 + AHEAD) {
+            for &p in ids.iter().skip(c * 4 + AHEAD).take(4) {
                 prefetch_bytes(self.row(p));
-            }
-            if let Some(&p) = ids.get(c * 4 + AHEAD + 2) {
-                prefetch_bytes(self.row(p));
+                prefetch_norm(&self.norms[p as usize]);
             }
             let rows = [
                 self.row(ch[0]),
@@ -624,6 +660,25 @@ impl FilteredIndex {
             let key = i64::from(self.norms[id as usize])
                 - 2 * i64::from(dot_i8_query(q, self.row(id), qsum));
             top.push(key, id);
+        }
+    }
+
+    /// Scores the copied rows at positions `pos` of `ivf` into `top`.
+    fn score_copied(&self, ivf: &LabelIvf, q: &[i8], qsum: i32, pos: &[u32], top: &mut TopK) {
+        let s = self.stride;
+        let row = |p: u32| &ivf.rows[p as usize * s..(p as usize + 1) * s];
+        let (chunks, tail) = pos.as_chunks::<4>();
+        for ch in chunks {
+            let d = dot_i8_query_x4(q, [row(ch[0]), row(ch[1]), row(ch[2]), row(ch[3])], qsum);
+            for (&p, &dot) in ch.iter().zip(&d) {
+                let key = i64::from(ivf.norms[p as usize]) - 2 * i64::from(dot);
+                top.push(key, ivf.members[p as usize]);
+            }
+        }
+        for &p in tail {
+            let key =
+                i64::from(ivf.norms[p as usize]) - 2 * i64::from(dot_i8_query(q, row(p), qsum));
+            top.push(key, ivf.members[p as usize]);
         }
     }
 
@@ -648,6 +703,7 @@ impl FilteredIndex {
         order.sort_unstable();
         let mut scored = 0usize;
         let mut batch: Vec<u32> = Vec::with_capacity(4096);
+        let mut cursors = vec![0usize; others.len()];
         for (probed, &(_, c)) in order.iter().enumerate() {
             if scored >= params.target && probed >= params.min_lists {
                 break;
@@ -657,16 +713,27 @@ impl FilteredIndex {
                 ivf.offsets[c as usize + 1] as usize,
             );
             let members = &ivf.members[a..b];
-            batch.clear();
-            let mut cursors = vec![0usize; others.len()];
-            batch.extend(
-                members
-                    .iter()
-                    .copied()
-                    .filter(|&id| !self.is_deleted(id) && self.holds(id, others, &mut cursors)),
-            );
-            self.score_ids(q, qsum, &batch, top);
-            scored += batch.len();
+            cursors.fill(0);
+            if ivf.rows.is_empty() {
+                batch.clear();
+                batch.extend(
+                    members
+                        .iter()
+                        .copied()
+                        .filter(|&id| !self.is_deleted(id) && self.holds(id, others, &mut cursors)),
+                );
+                self.score_ids(q, qsum, &batch, top);
+                scored += batch.len();
+            } else {
+                // Positions (into the copied rows) of the passing members.
+                batch.clear();
+                batch.extend((a as u32..b as u32).filter(|&pos| {
+                    let id = ivf.members[pos as usize];
+                    !self.is_deleted(id) && self.holds(id, others, &mut cursors)
+                }));
+                self.score_copied(ivf, q, qsum, &batch, top);
+                scored += batch.len();
+            }
         }
         scored
     }
@@ -724,6 +791,7 @@ impl FilteredIndex {
 /// over every member.
 fn train_label(
     rows: &[i8],
+    norms: &[i32],
     dim: usize,
     members: &[u32],
     params: &FilterBuildParams,
@@ -815,11 +883,22 @@ fn train_label(
         grouped[fill[c as usize] as usize] = id;
         fill[c as usize] += 1;
     }
+    let (copy_rows, copy_norms) = if members.len() >= params.copy_min {
+        let mut r = Vec::with_capacity(grouped.len() * dim);
+        for &id in &grouped {
+            r.extend_from_slice(row(id));
+        }
+        (r, grouped.iter().map(|&id| norms[id as usize]).collect())
+    } else {
+        (Vec::new(), Vec::new())
+    };
     LabelIvf {
         centroids,
         centroid_norms: cnorms,
         offsets,
         members: grouped,
+        rows: copy_rows,
+        norms: copy_norms,
     }
 }
 
@@ -932,6 +1011,7 @@ mod tests {
             bitset_min: 300,
             kmeans_iters: 4,
             train_per_list: 16,
+            copy_min: 400,
             seed: 7,
         }
     }

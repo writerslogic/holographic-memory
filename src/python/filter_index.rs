@@ -67,9 +67,10 @@ impl PyFilteredIndex {
     /// Builds over `data` (n, dim) uint8 rows whose labels are the CSR rows `indptr`/`indices`
     /// (a scipy `csr_matrix`'s arrays). Labels with more than `ivf_min` members get an inverted
     /// file of about `cluster_size` members per list (at most `max_lists`); labels with at least
-    /// `bitset_min` members a membership bitset. `threads` bounds build and search (0 = all).
+    /// `bitset_min` members a membership bitset; labels with an inverted file and at least
+    /// `copy_min` members keep their rows copied in list order. `threads` bounds build and search (0 = all).
     #[new]
-    #[pyo3(signature = (data, indptr, indices, labels=0, ivf_min=20_000, cluster_size=1_000, max_lists=1_024, bitset_min=20_000, kmeans_iters=6, train_per_list=48, threads=0))]
+    #[pyo3(signature = (data, indptr, indices, labels=0, ivf_min=20_000, cluster_size=1_000, max_lists=1_024, bitset_min=20_000, kmeans_iters=6, train_per_list=48, copy_min=usize::MAX, threads=0))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         py: Python<'_>,
@@ -83,6 +84,7 @@ impl PyFilteredIndex {
         bitset_min: usize,
         kmeans_iters: usize,
         train_per_list: usize,
+        copy_min: usize,
         threads: usize,
     ) -> PyResult<Self> {
         let (rows, n, dim) = u8_rows(&data);
@@ -103,6 +105,7 @@ impl PyFilteredIndex {
             bitset_min,
             kmeans_iters,
             train_per_list,
+            copy_min,
             ..FilterBuildParams::default()
         };
         let build = || FilteredIndex::build(&rows, dim, &ptr, &ids, labels, &params);
@@ -121,13 +124,22 @@ impl PyFilteredIndex {
 
     /// Sets the search parameters: queries whose rarest label has at most `brute_max` members
     /// score every match; others probe that label's lists until `target` matches are scored
-    /// and at least `min_lists` lists are probed.
-    #[pyo3(signature = (brute_max=20_000, target=5_000, min_lists=1))]
-    fn set_search(&mut self, brute_max: usize, target: usize, min_lists: usize) {
+    /// and at least `min_lists` lists are probed. Multi-label queries whose rarest label has at
+    /// most `intersect_max` members are intersected first and scored exactly when the matches
+    /// number at most `brute_max`.
+    #[pyo3(signature = (brute_max=20_000, target=5_000, min_lists=1, intersect_max=200_000))]
+    fn set_search(
+        &mut self,
+        brute_max: usize,
+        target: usize,
+        min_lists: usize,
+        intersect_max: usize,
+    ) {
         self.params = FilterSearchParams {
             brute_max,
             target,
             min_lists,
+            intersect_max,
         };
     }
 
