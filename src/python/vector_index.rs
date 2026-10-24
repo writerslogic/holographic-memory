@@ -18,7 +18,7 @@ use rayon::prelude::*;
 
 use crate::core::error::HmsError;
 use crate::core::qgraph::{
-    BuildParams, Consolidation, ConsolidationMode, ConsolidationPolicy, Graph, Metric,
+    BuildParams, Consolidation, ConsolidationMode, ConsolidationPolicy, Graph, Metric, Residency,
     UpdatableVGraph, UpdateError, VGraph, VSearchParams, VSearcher,
 };
 
@@ -170,6 +170,46 @@ fn row_major(x: &PyReadonlyArray2<'_, f32>) -> Vec<f32> {
     }
 }
 
+/// The `k` nearest rows of every query by a search of `index` at effort `ef` (re-ranking the
+/// whole pool), `k` ids per query in query order. A query with fewer than `k` distinct results
+/// is an error, since the projection needs complete neighbour lists.
+fn approximate_neighbors(
+    index: &VGraph,
+    queries: &[f32],
+    dim: usize,
+    k: usize,
+    ef: usize,
+) -> Result<Vec<u32>, HmsError> {
+    let params = VSearchParams {
+        ef: ef.max(k),
+        rerank: ef.max(k),
+        ..VSearchParams::default()
+    };
+    let nq = queries.len() / dim;
+    let chunk = nq.div_ceil(rayon::current_num_threads() * 16).max(1);
+    let mut ids = vec![0u32; nq * k];
+    ids.par_chunks_mut(chunk * k)
+        .zip(queries.par_chunks(chunk * dim))
+        .try_for_each(|(out, rows)| {
+            let mut searcher = index.searcher();
+            let mut found = Vec::with_capacity(k);
+            for (q, slot) in rows.chunks_exact(dim).zip(out.chunks_exact_mut(k)) {
+                searcher.search(q, k, params, &mut found)?;
+                if found.len() != k {
+                    return Err(HmsError::InvalidParam {
+                        details: format!(
+                            "a training query found {} of {k} neighbours",
+                            found.len()
+                        ),
+                    });
+                }
+                slot.copy_from_slice(&found);
+            }
+            Ok(())
+        })?;
+    Ok(ids)
+}
+
 /// The ids as a numpy int64 array.
 fn ids_array<'py>(py: Python<'py>, ids: &[u32]) -> Bound<'py, PyArray1<i64>> {
     ids.iter()
@@ -252,12 +292,23 @@ impl PyVectorIndex {
 
     /// Builds the index over a 2-D array, optionally adding projected edges from separate
     /// training queries in the original coordinates. Replaces any previous index.
-    #[pyo3(signature = (x, training_queries=None))]
+    ///
+    /// The first `training_limit` training queries are used. With `training_ef` 0 their
+    /// `training_neighbors` nearest rows are found by exact scoring of every row (cost
+    /// `training_limit * n`); a positive `training_ef` instead searches an index encoded from
+    /// the untrained graph at that effort, which scales to millions of queries. Each row gains
+    /// up to `projected_degree` forward and as many reverse edges.
+    #[pyo3(signature = (x, training_queries=None, training_limit=32768, training_neighbors=100, projected_degree=32, training_ef=0))]
+    #[allow(clippy::too_many_arguments)]
     fn fit(
         &mut self,
         py: Python<'_>,
         x: PyArrayLike2<'_, f32, AllowTypeChange>,
         training_queries: Option<PyArrayLike2<'_, f32, AllowTypeChange>>,
+        training_limit: usize,
+        training_neighbors: usize,
+        projected_degree: usize,
+        training_ef: usize,
     ) -> PyResult<()> {
         let (n, dim) = (x.shape()[0], x.shape()[1]);
         if n == 0 || dim == 0 {
@@ -265,9 +316,20 @@ impl PyVectorIndex {
                 "fit expects a non-empty matrix, got shape ({n}, {dim})"
             )));
         }
+        if training_limit == 0 || training_neighbors < 2 || projected_degree == 0 {
+            return Err(PyValueError::new_err(
+                "training_limit and projected_degree must be positive and training_neighbors at least 2",
+            ));
+        }
         // One copy, made while the array is borrowed under the GIL; the build normalizes it in
-        // place and keeps it until the encoding is done.
-        let data = row_major(&x);
+        // place and keeps it until the encoding is done. Inner-product rows are augmented
+        // straight from a C-contiguous array, so the plain copy never coexists with the
+        // augmented one.
+        let data = match (self.metric, x.as_slice()) {
+            (Distance::InnerProduct, Ok(s)) if x.is_c_contiguous() => augment_rows(s, dim),
+            (Distance::InnerProduct, _) => augment_rows(&row_major(&x), dim),
+            _ => row_major(&x),
+        };
         if data.iter().any(|v| !v.is_finite()) {
             return Err(PyValueError::new_err(
                 "fit base vectors contain non-finite values",
@@ -281,7 +343,11 @@ impl PyVectorIndex {
                         "training queries must be non-empty with {dim} dimensions, got shape ({count}, {query_dim})"
                     )));
                 }
-                let rows = row_major(&queries);
+                let used = count.min(training_limit) * dim;
+                let rows: Vec<f32> = match queries.as_slice() {
+                    Ok(s) if queries.is_c_contiguous() => s[..used].to_vec(),
+                    _ => queries.as_array().iter().take(used).copied().collect(),
+                };
                 if rows.iter().any(|v| !v.is_finite()) {
                     return Err(PyValueError::new_err("training queries contain non-finite values"));
                 }
@@ -309,41 +375,68 @@ impl PyVectorIndex {
         let graph = py
             .detach(|| {
                 self.run(|| {
-                    let data = match metric {
-                        Distance::InnerProduct => augment_rows(&data, dim),
-                        Distance::Angular | Distance::Euclidean => data,
+                    let encode = |g: &Graph| {
+                        if direct_ip {
+                            VGraph::from_lifted_ip_graph(
+                                g,
+                                code_bits,
+                                RESIDUAL_BITS,
+                                true,
+                                true,
+                                id_bytes,
+                            )
+                        } else {
+                            VGraph::from_graph_with(
+                                g,
+                                code_bits,
+                                RESIDUAL_BITS,
+                                true,
+                                true,
+                                id_bytes,
+                                false,
+                            )
+                        }
                     };
-                    let training_data = training_data.map(|queries| match metric {
-                        Distance::InnerProduct => augment_queries(&queries, dim),
-                        Distance::Angular | Distance::Euclidean => queries,
-                    });
-                    let g = Graph::build_owned_with_training_queries(
-                        data,
-                        metric.graph_dim(dim),
-                        &params,
-                        training_data.as_deref(),
-                    )?;
-                    // The graph's float rows are dropped here; the index keeps only its codes.
-                    let mut index = if direct_ip {
-                        VGraph::from_lifted_ip_graph(
-                            &g,
-                            code_bits,
-                            RESIDUAL_BITS,
-                            true,
-                            true,
-                            id_bytes,
-                        )?
-                    } else {
-                        VGraph::from_graph_with(
-                            &g,
-                            code_bits,
-                            RESIDUAL_BITS,
-                            true,
-                            true,
-                            id_bytes,
-                            false,
-                        )?
-                    };
+                    let graph_dim = metric.graph_dim(dim);
+                    let mut g = Graph::build_owned(data, graph_dim, &params)?;
+                    if let Some(queries) = training_data {
+                        let lifted = match metric {
+                            Distance::InnerProduct => augment_queries(&queries, dim),
+                            Distance::Angular | Distance::Euclidean => queries.clone(),
+                        };
+                        if training_ef == 0 {
+                            g.apply_training_queries_with(
+                                &lifted,
+                                training_limit,
+                                training_neighbors,
+                                projected_degree,
+                            )?;
+                        } else {
+                            let k = training_neighbors.min(n);
+                            let pd = projected_degree.min(n.saturating_sub(1)).max(1);
+                            let ids = {
+                                let untrained = encode(&g)?;
+                                // The encoded index takes queries in its serving coordinates.
+                                let (served, served_dim) = if direct_ip {
+                                    (&queries, dim)
+                                } else {
+                                    (&lifted, graph_dim)
+                                };
+                                approximate_neighbors(
+                                    &untrained,
+                                    served,
+                                    served_dim,
+                                    k,
+                                    training_ef,
+                                )?
+                            };
+                            if k >= 2 && pd < n {
+                                g.project_training_neighbors(&lifted, &ids, k, pd)?;
+                            }
+                        }
+                    }
+                    // The graph's float rows are dropped with `g` once the codes are encoded.
+                    let mut index = encode(&g)?;
                     if compact_adjacency {
                         index.compact_adjacency()?;
                     }
@@ -473,6 +566,87 @@ impl PyVectorIndex {
             })
             .map_err(err)?;
         Ok(results.iter().map(|ids| ids_array(py, ids)).collect())
+    }
+
+    /// `batch_query` as one (nq, k) int64 array, row i holding the ids for query i, padded with
+    /// -1 when the index returns fewer than `k`.
+    fn batch_query_array<'py>(
+        &self,
+        py: Python<'py>,
+        x: PyArrayLike2<'py, f32, AllowTypeChange>,
+        k: usize,
+    ) -> PyResult<Bound<'py, PyArray2<i64>>> {
+        Self::check_k(k)?;
+        let built = self
+            .built
+            .as_ref()
+            .ok_or_else(|| PyRuntimeError::new_err("the index is not fitted; call fit first"))?;
+        let (nq, dim) = (x.shape()[0], x.shape()[1]);
+        if dim != self.dim {
+            return Err(PyValueError::new_err(format!(
+                "queries have {dim} dimensions, the index has {}",
+                self.dim
+            )));
+        }
+        let mut queries = row_major(&x);
+        if self.metric == Distance::InnerProduct && !self.direct_ip {
+            queries = augment_queries(&queries, dim);
+        }
+        let params = self.params();
+        let graph = &*built.graph;
+        let dim = graph.dim();
+        let mut ids = vec![-1i64; nq * k];
+        py.detach(|| {
+            self.run(|| {
+                let chunk = nq.div_ceil(rayon::current_num_threads() * 4).max(1);
+                ids.par_chunks_mut(chunk * k)
+                    .zip(queries.par_chunks(chunk * dim))
+                    .try_for_each(|(out, rows)| {
+                        let mut s = graph.searcher();
+                        let mut found = Vec::with_capacity(k);
+                        for (q, slot) in rows.chunks_exact(dim).zip(out.chunks_exact_mut(k)) {
+                            s.search(q, k, params, &mut found)?;
+                            for (o, &id) in slot.iter_mut().zip(&found) {
+                                *o = i64::from(id);
+                            }
+                        }
+                        Ok::<(), HmsError>(())
+                    })
+            })
+        })
+        .map_err(err)?;
+        let array = numpy::ndarray::Array2::from_shape_vec((nq, k), ids)
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        Ok(array.into_pyarray(py))
+    }
+
+    /// Writes the fitted index to `path` (replacing it atomically); `load` reads it back.
+    fn save(&self, py: Python<'_>, path: std::path::PathBuf) -> PyResult<()> {
+        let built = self
+            .built
+            .as_ref()
+            .ok_or_else(|| PyRuntimeError::new_err("the index is not fitted; call fit first"))?;
+        let graph = &*built.graph;
+        py.detach(|| graph.save(&path))
+            .map_err(|e| PyRuntimeError::new_err(format!("save {}: {e}", path.display())))
+    }
+
+    /// Replaces the index with one written by `save` from a `VectorIndex` of the same metric
+    /// and `direct_ip` setting, read into memory.
+    fn load(&mut self, py: Python<'_>, path: std::path::PathBuf) -> PyResult<()> {
+        let graph = py
+            .detach(|| VGraph::open(&path, Residency::Heap))
+            .map_err(|e| PyRuntimeError::new_err(format!("load {}: {e}", path.display())))?;
+        let lifted = self.metric == Distance::InnerProduct && !self.direct_ip;
+        let dim = graph.dim() - usize::from(lifted);
+        if dim == 0 {
+            return Err(PyValueError::new_err(
+                "the saved index does not match this metric",
+            ));
+        }
+        self.dim = dim;
+        self.built = Some(Built::new(graph));
+        Ok(())
     }
 
     /// Bytes of the encoded index (codes, residuals, adjacency, upper layers).

@@ -6,6 +6,7 @@
 use super::{invalid, Adjacency, BuildParams, Graph, Metric, Rows};
 use crate::core::error::HmsError;
 use nalgebra::DMatrix;
+use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
@@ -177,15 +178,55 @@ impl Graph {
     }
 
     pub(super) fn apply_training_queries(&mut self, queries: &[f32]) -> Result<(), HmsError> {
+        self.apply_training_queries_with(queries, TRAINING_LIMIT, 100, 32)
+            .map(|_| ())
+    }
+
+    /// Applies the first `limit` construction queries, with the exact neighbours scored
+    /// per query and the projected degree
+    /// as arguments; each is capped by the graph size. The neighbours are found by exact
+    /// scoring of every base row, so the cost grows with `limit * n`.
+    pub fn apply_training_queries_with(
+        &mut self,
+        queries: &[f32],
+        limit: usize,
+        neighbors: usize,
+        projected_degree: usize,
+    ) -> Result<ProjectionStats, HmsError> {
+        validate_queries(queries, self.dim, self.metric)?;
         if self.n == 1 {
-            return Ok(());
+            return self.project_neighborhoods(None, &[], 0, 0);
         }
-        let count = (queries.len() / self.dim).min(TRAINING_LIMIT);
+        let count = (queries.len() / self.dim).min(limit.max(1));
         let queries = &queries[..count * self.dim];
-        let neighbors = self.n.min(100);
+        let neighbors = self.n.min(neighbors.max(2));
         let ids = self.training_neighbors(queries, neighbors)?;
-        self.project_neighborhoods(Some(queries), &ids, neighbors, (self.n - 1).min(32))?;
-        Ok(())
+        self.project_neighborhoods(
+            Some(queries),
+            &ids,
+            neighbors,
+            (self.n - 1).min(projected_degree.max(1)),
+        )
+    }
+
+    /// Projects neighbour lists the caller found for construction queries (for example by an
+    /// approximate search of an index encoded from this graph), `neighbors_per_query` ids per
+    /// query, nearest first. `queries` are in graph coordinates and only validated; the
+    /// lists must come from construction queries, never evaluation data.
+    pub fn project_training_neighbors(
+        &mut self,
+        queries: &[f32],
+        query_neighbor_ids: &[u32],
+        neighbors_per_query: usize,
+        projected_degree: usize,
+    ) -> Result<ProjectionStats, HmsError> {
+        validate_queries(queries, self.dim, self.metric)?;
+        self.project_neighborhoods(
+            Some(queries),
+            query_neighbor_ids,
+            neighbors_per_query,
+            projected_degree,
+        )
     }
 
     fn training_neighbors(&self, queries: &[f32], neighbors: usize) -> Result<Vec<u32>, HmsError> {
@@ -361,20 +402,28 @@ impl Graph {
             pooled.extend_from_slice(&ids[1..]);
         }
         let rows = self.rows();
-        let mut forward = lists(self.n)?;
+        let (adj, alpha) = (&self.adj, self.build.alpha);
+        // Every vertex selects from its own pool, so the passes run in parallel; the ordered
+        // collect keeps the result independent of the thread count.
+        let forward = candidates
+            .par_iter_mut()
+            .enumerate()
+            .map(|(vertex, pooled)| {
+                select(
+                    &rows,
+                    vertex as u32,
+                    pooled,
+                    adj.get(vertex),
+                    &[],
+                    projected_degree,
+                    alpha,
+                )
+            })
+            .collect::<Result<Vec<_>, HmsError>>()?;
         let mut reverse_candidates = lists(self.n)?;
-        for vertex in 0..self.n {
-            forward[vertex] = select(
-                &rows,
-                vertex as u32,
-                &mut candidates[vertex],
-                self.adj.get(vertex),
-                &[],
-                projected_degree,
-                self.build.alpha,
-            )?;
-            stats.forward_edges = add_edges(stats.forward_edges, forward[vertex].len())?;
-            for &neighbor in &forward[vertex] {
+        for (vertex, outgoing) in forward.iter().enumerate() {
+            stats.forward_edges = add_edges(stats.forward_edges, outgoing.len())?;
+            for &neighbor in outgoing {
                 let incoming = &mut reverse_candidates[neighbor as usize];
                 incoming
                     .try_reserve(1)
@@ -383,24 +432,32 @@ impl Graph {
             }
         }
         drop(candidates);
+        let reverse = reverse_candidates
+            .par_iter_mut()
+            .zip(forward.par_iter())
+            .enumerate()
+            .map(|(vertex, (incoming, outgoing))| {
+                select(
+                    &rows,
+                    vertex as u32,
+                    incoming,
+                    adj.get(vertex),
+                    outgoing,
+                    projected_degree,
+                    alpha,
+                )
+            })
+            .collect::<Result<Vec<_>, HmsError>>()?;
+        drop(reverse_candidates);
         let mut replacement = Adjacency::new(self.n, degree_capacity);
         let mut combined = reserved(degree_capacity)?;
         stats.max_degree = 0;
-        for vertex in 0..self.n {
-            let reverse = select(
-                &rows,
-                vertex as u32,
-                &mut reverse_candidates[vertex],
-                self.adj.get(vertex),
-                &forward[vertex],
-                projected_degree,
-                self.build.alpha,
-            )?;
+        for (vertex, reverse) in reverse.iter().enumerate() {
             stats.reverse_edges = add_edges(stats.reverse_edges, reverse.len())?;
             combined.clear();
             combined.extend_from_slice(self.adj.get(vertex));
             combined.extend_from_slice(&forward[vertex]);
-            combined.extend_from_slice(&reverse);
+            combined.extend_from_slice(reverse);
             stats.max_degree = stats.max_degree.max(combined.len());
             replacement.set(vertex, &combined);
         }
@@ -743,6 +800,53 @@ mod tests {
             Graph::build_with_training_queries(&borrowed.vectors, 2, &params, Some(&reversed))
                 .unwrap();
         assert_eq!(borrowed.structure_hash(), reordered.structure_hash());
+    }
+
+    /// The limited exact path equals projecting caller-supplied exact lists for the first
+    /// `limit` queries, and the parallel selection gives the same graph on 1 and 4 threads.
+    #[test]
+    fn caller_neighbors_match_limited_training_on_any_thread_count() {
+        let (n, dim) = (400usize, 4usize);
+        let data: Vec<f32> = (0..n * dim)
+            .map(|i| ((i * 7919 % 1009) as f32 / 1009.0 - 0.5) * (1.0 + (i % dim) as f32))
+            .collect();
+        let queries: Vec<f32> = (0..40 * dim)
+            .map(|i| ((i * 104_729 % 997) as f32 / 997.0 - 0.3) * 1.5)
+            .collect();
+        let params = BuildParams {
+            metric: Metric::Euclidean,
+            degree: 8,
+            build_ef: 32,
+            ..Default::default()
+        };
+        let (limit, k, pd) = (30, 12, 4);
+        let base = Graph::build(&data, dim, &params).unwrap();
+        let ids = scalar_neighbors(&base, &queries[..limit * dim], k);
+        let hashes: Vec<(u64, u64)> = [1, 4]
+            .into_iter()
+            .map(|threads| {
+                let pool = rayon::ThreadPoolBuilder::new()
+                    .num_threads(threads)
+                    .build()
+                    .unwrap();
+                pool.install(|| {
+                    let mut exact = Graph::build(&data, dim, &params).unwrap();
+                    exact
+                        .apply_training_queries_with(&queries, limit, k, pd)
+                        .unwrap();
+                    let mut supplied = Graph::build(&data, dim, &params).unwrap();
+                    let stats = supplied
+                        .project_training_neighbors(&queries[..limit * dim], &ids, k, pd)
+                        .unwrap();
+                    assert_eq!(stats.training_queries, limit);
+                    assert!(stats.added_edges > 0);
+                    (exact.structure_hash(), supplied.structure_hash())
+                })
+            })
+            .collect();
+        assert_eq!(hashes[0].0, hashes[0].1);
+        assert_eq!(hashes[0], hashes[1]);
+        assert_ne!(hashes[0].0, base.structure_hash());
     }
 
     #[test]
