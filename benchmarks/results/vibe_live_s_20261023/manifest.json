@@ -85,11 +85,11 @@
     "arxiv-export-merge-wrapper.py": "e091051304b0727893493bcc70b40f4c449e75a9f4c452e122d317cfa45b46fe",
     "arxiv-export-merge-install.json": "0f0d256b298f7c09488232c9c253ee3c0081cd7f0a1ff880808bb502d826973f"
   },
-  "draft_pr_verified_utc": "2026-10-24T08:28Z",
+  "draft_pr_verified_utc": "2026-10-24T11:43Z",
   "llama_verified_standing": "llama-128-ip-standing.json",
   "repair_mode": "Pre-export hook in original function; post-return watcher stopped before execution",
   "current_runner_sha256": "f02152415e19d5a0149bb3cc9c4541715738fed9a5f62989c42b9d5951bed8a6",
-  "latest_snapshot": "snapshot-20261024T1125Z.json",
+  "latest_snapshot": "snapshot-20261024T1200Z.json",
   "additional_launches": [
     {
       "app_id": "ap-OfE3vcEhiilyNzkxav7UnY",
@@ -126,5 +126,6 @@
       "receipt": "coco-nomic-768-normalized-artifact-receipt.json"
     }
   },
-  "collector_sha256": "a2524be34d85e19783011e6c129e2fe80fd69091b91008da32c1ca2e260c0b74"
+  "collector_sha256": "a2524be34d85e19783011e6c129e2fe80fd69091b91008da32c1ca2e260c0b74",
+  "draft_pr_update_blocker": "Connected integration403 resource inaccessible; gh stored auth401; neither GH_TOKEN nor GITHUB_TOKEN overrides present"
 }
