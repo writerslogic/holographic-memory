@@ -1066,10 +1066,103 @@ def status_report(ns: str) -> None:
         print("stop: none recorded")
 
 
+def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
+    root = f"/vibe/{ns}"
+    manifest = read_json(Path(__file__).resolve().parents[2] /
+                         "benchmarks/results/vibe_live_s_20261023/manifest.json", {})
+
+    def remote_json(path: str) -> dict:
+        return json.loads(b"".join(VOL.read_file(path)))
+
+    plan_data = remote_json(f"{root}/plan.json")
+    ledgers = {}
+    for entry in VOL.iterdir(f"{root}/ledger", recursive=True):
+        if entry.path.endswith(".json"):
+            rec = remote_json(entry.path)
+            ledgers.setdefault(rec["dataset"], {})[rec["job"]] = rec
+    standings = {}
+    try:
+        for entry in VOL.iterdir(f"{root}/standings", recursive=False):
+            if entry.path.endswith(f"@{hms_rev[:12]}.json"):
+                rec = remote_json(entry.path)
+                if rec.get("hms_commit") == hms_rev:
+                    standings[rec["dataset"]] = rec
+    except (FileNotFoundError, modal.exception.NotFoundError):
+        pass
+    spend_by_container = {}
+    try:
+        for entry in VOL.iterdir(f"{root}/spend", recursive=False):
+            if entry.path.endswith(".json"):
+                spend_by_container[Path(entry.path).stem] = remote_json(entry.path)
+    except (FileNotFoundError, modal.exception.NotFoundError):
+        pass
+    for key, rec in SPEND.items():
+        if key.startswith(f"{ns}:"):
+            cid = key[len(ns) + 1:]
+            if cid not in spend_by_container or rec["last"] >= spend_by_container[cid]["last"]:
+                spend_by_container[cid] = rec
+    spent = {}
+    for rec in spend_by_container.values():
+        spent[rec["dataset"]] = spent.get(rec["dataset"], 0.0) + usd(rec)
+    rows = []
+    for ds, meta in plan_data["datasets"].items():
+        records = ledgers.get(ds, {})
+        hms = records.get(f"hms@{hms_rev[:12]}", {})
+        download = records.get("_download", {})
+        standing = standings.get(ds, {})
+        measured = standing.get("best_qps_at_recall", {})
+        competitors = {}
+        for algo, record in records.items():
+            if algo in ("_download", f"hms@{hms_rev[:12]}"):
+                continue
+            same_container = bool(hms.get("container_id")) and record.get("container_id") == hms.get("container_id")
+            competitors[algo] = {
+                "state": record.get("state"), "cpu_model": record.get("cpu_model"),
+                "container_id": record.get("container_id"), "same_container_as_hms": same_container,
+                "fair_comparison": bool(hms.get("state") == "done" and record.get("state") == "done" and same_container),
+                "metrics": measured.get(algo), "error": record.get("error_tail") or record.get("error"),
+            }
+        comparison_status = ("comparable" if any(r["fair_comparison"] for r in competitors.values()) else
+                             "noncomparable" if hms.get("state") == "done" and any(
+                                 r["state"] == "done" for r in competitors.values()) else "pending")
+        rows.append({
+            "dataset": ds, "dataset_sha256": meta.get("sha256"), "dataset_bytes": meta.get("size_bytes"),
+            "requested_memory_gib": meta.get("mem_gib"), "download_state": download.get("state", "pending"),
+            "state": hms.get("state", "failed" if download.get("state") == "failed" else "pending"),
+            "attempts": hms.get("attempts", 0),
+            "failures": hms.get("failures", 0), "hms_commit": hms_rev,
+            "vibe_fork_commit": VIBE_REV, "source_sha256": manifest.get("source_sha256"),
+            "query_threads": 1, "cpu_model": hms.get("cpu_model"), "avx512": hms.get("avx512"),
+            "nproc": hms.get("nproc"), "container_id": hms.get("container_id"),
+            "hardware_cpu_record": (f"hms-bench-run:{root}/cpu/{hms['container_id']}.json"
+                                    if hms.get("container_id") else None),
+            "validation": hms.get("validation"), "metrics": measured.get("hms"),
+            "peak_rss_bytes": None, "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
+            "competitors": competitors, "comparison_status": comparison_status,
+            "published_leaders_diagnostic": meta.get("leaders"),
+            "estimated_cost_usd": round(spent.get(ds, 0.0), 4),
+            "ledger_prefix": f"hms-bench-run:{root}/ledger/{ds}",
+            "results_prefix": f"hms-bench-run:{root}/results/{ds}",
+            "hms_log": hms.get("log_path"),
+            "error": hms.get("error_tail") or download.get("error"),
+        })
+    out.parent.mkdir(parents=True, exist_ok=True)
+    write_json(out, {"generated": iso(), "namespace": ns, "hms_commit": hms_rev,
+                     "vibe_commit": VIBE_REV, "estimated_cost_usd": round(sum(spent.values()), 4),
+                     "rows": rows})
+    print(f"wrote {len(rows)} dataset rows to {out}")
+
+
 @app.local_entrypoint()
 def main(resume: bool = False, status: bool = False, hms_rev: str = "", hms_only: bool = False, retry_failed: bool = False,
-         datasets: str = "", test: bool = False, replan: bool = False, cap_usd: float = 140.0, hard_cap_usd: float = 150.0):
+         datasets: str = "", test: bool = False, replan: bool = False, cap_usd: float = 140.0, hard_cap_usd: float = 150.0,
+         snapshot: str = ""):
     ns = "test" if test else LIVE_NS
+    if snapshot:
+        if not hms_rev:
+            raise ValueError("--snapshot requires --hms-rev")
+        snapshot_report(ns, Path(snapshot), hms_rev)
+        return
     if status:
         status_report(ns)
         return
