@@ -132,4 +132,3 @@ test core::qgraph::update::tests::random_updates_match_exact_and_reopen ... ok
 test core::qgraph::update::tests::merged_consolidation_tracks_rebuild_recall_across_churn ... ok
 
 test result: ok. 117 passed; 0 failed; 10 ignored; 0 measured; 456 filtered out; finished in 18.91s
-
