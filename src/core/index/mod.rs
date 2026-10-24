@@ -2,3 +2,4 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub mod inverted;
+pub mod sparse_impact;
