@@ -1,0 +1,210 @@
+{
+  "decision": "tradeoff evidence only; no production coordinator retained",
+  "reason": "Recall exceeds the global control in every phase, but every heldout query phase regresses at both sizes; consolidation and memory savings do not establish an overall throughput win.",
+  "frozen_source_commit": "06101dfd81b7ec96579f1a425882fe62edf3d261",
+  "production_parent": "b228cae0d0cb26d92f357cbec7a88c3dc44340a9",
+  "binary_sha256": "6c3401a81769323dd32796ea75ae45e9d6edccb22a7bc50af9aea3d60a10e8d2",
+  "completed_utc": "2026-10-24T05:18:55Z",
+  "lock_free_utc": "2026-10-24T05:19:16Z",
+  "raw_archive_sha256": "66ce423353c7a3a2ca47b5fb948d87c5cb7df450ac7614fa15d1f7ea96e534d1",
+  "frozen_confirmation": {
+    "frozen_capacity": 250000,
+    "candidate_ef": 128,
+    "control_ef": 256,
+    "query_ids_half_open": [
+      640,
+      768
+    ],
+    "runs": 12,
+    "pairs": 6,
+    "checks": {
+      "liveness": true,
+      "duplicates": true,
+      "reopen": true,
+      "repeat_fingerprints": true,
+      "complete_frozen_matrix": true
+    },
+    "production_coordinator_implemented": false,
+    "sizes": [
+      {
+        "rows": 1000000,
+        "queries": [
+          {
+            "phase": "before",
+            "control_hits": 1073,
+            "candidate_hits": 1092,
+            "denominator": 1280,
+            "recall_deltas": [
+              0.014843750000000044,
+              0.014843750000000044,
+              0.014843750000000044
+            ],
+            "time_ratios": [
+              1.8947005484402968,
+              1.8237988746555092,
+              1.7432478402760536
+            ],
+            "median_time_ratio": 1.8237988746555092
+          },
+          {
+            "phase": "churn",
+            "control_hits": 1092,
+            "candidate_hits": 1104,
+            "denominator": 1280,
+            "recall_deltas": [
+              0.009375000000000022,
+              0.009375000000000022,
+              0.009375000000000022
+            ],
+            "time_ratios": [
+              1.5001012007850074,
+              1.366484580032704,
+              1.5035746579740745
+            ],
+            "median_time_ratio": 1.5001012007850074
+          },
+          {
+            "phase": "after",
+            "control_hits": 1066,
+            "candidate_hits": 1097,
+            "denominator": 1280,
+            "recall_deltas": [
+              0.024218750000000067,
+              0.024218750000000067,
+              0.024218750000000067
+            ],
+            "time_ratios": [
+              1.8447063480183405,
+              1.5981638621558982,
+              1.889416745944322
+            ],
+            "median_time_ratio": 1.8447063480183405
+          }
+        ],
+        "consolidation_median_ratios": {
+          "elapsed_ns": 0.5478273938632788,
+          "peak_rss_kib": 0.30544065153799566,
+          "written_bytes": 0.4476209789064419,
+          "cgroup_peak": 0.5480532816226676,
+          "isolated_cgroup_peak": 0.5480532816226676
+        },
+        "mutation_time_ratios": [
+          0.7508232473588048,
+          0.7184377468179294,
+          0.7541927569223046
+        ],
+        "median_mutation_time_ratio": 0.7508232473588048,
+        "every_phase_meets_control_recall": true,
+        "every_phase_query_time_improves": false
+      },
+      {
+        "rows": 3000000,
+        "queries": [
+          {
+            "phase": "before",
+            "control_hits": 1099,
+            "candidate_hits": 1148,
+            "denominator": 1280,
+            "recall_deltas": [
+              0.03828124999999993,
+              0.03828124999999993,
+              0.03828124999999993
+            ],
+            "time_ratios": [
+              4.500901939670697,
+              4.378259462859565,
+              4.099395024167427
+            ],
+            "median_time_ratio": 4.378259462859565
+          },
+          {
+            "phase": "churn",
+            "control_hits": 1097,
+            "candidate_hits": 1153,
+            "denominator": 1280,
+            "recall_deltas": [
+              0.043749999999999956,
+              0.043749999999999956,
+              0.043749999999999956
+            ],
+            "time_ratios": [
+              3.0506363792012627,
+              3.2687929029507825,
+              3.2462658441275067
+            ],
+            "median_time_ratio": 3.2462658441275067
+          },
+          {
+            "phase": "after",
+            "control_hits": 1080,
+            "candidate_hits": 1155,
+            "denominator": 1280,
+            "recall_deltas": [
+              0.05859375,
+              0.05859375,
+              0.05859375
+            ],
+            "time_ratios": [
+              4.58252152493434,
+              4.7232336015335505,
+              4.626301940569493
+            ],
+            "median_time_ratio": 4.626301940569493
+          }
+        ],
+        "consolidation_median_ratios": {
+          "elapsed_ns": 0.21505691598256396,
+          "peak_rss_kib": 0.11952146081301096,
+          "written_bytes": 0.1713873839210507,
+          "cgroup_peak": 0.4529153189732297,
+          "isolated_cgroup_peak": 0.4529153189732297
+        },
+        "mutation_time_ratios": [
+          5.783416830475349,
+          0.30599072048924164,
+          0.8268014298898171
+        ],
+        "median_mutation_time_ratio": 0.8268014298898171,
+        "every_phase_meets_control_recall": true,
+        "every_phase_query_time_improves": false
+      }
+    ]
+  },
+  "notable_loss": {
+    "state": "3M round1",
+    "mutation_control_s": 0.673295101,
+    "mutation_candidate_s": 3.893946219,
+    "ratio": 5.783416830475349,
+    "cause": "unmeasured; retained without retry"
+  },
+  "overhead_mechanism": "Unequal child sizes invalidate thread-local graph scratch; fanout and exact stored-row scoring also repeat. These are verified source mechanisms, not measured timing attribution.",
+  "diagnostic_status": "Separate query-major/segment-major diagnostic is prepared but unbuilt and unrun; no changes to frozen binary or selection.",
+  "validation": {
+    "raw_answers": "all 12 arms scored against independent float64 live-row truth",
+    "rust_time_receipts": "12 successful Rust tests and 12 zero exit statuses",
+    "synthetic_validator_tests": 10,
+    "default_behavior": "unchanged",
+    "evidence_gate": {
+      "base_commit": "aa734fe7941c75dd3fb175871db24f6622cade61",
+      "commands": [
+        "cargo fmt --all -- --check",
+        "cargo clippy --locked --all-targets -- -D warnings",
+        "cargo test --locked"
+      ],
+      "status": "pass",
+      "passed": 681,
+      "failed": 0,
+      "ignored": 13,
+      "parser_tests": 10,
+      "shell_syntax": "pass",
+      "source_patch_application": "pass",
+      "independent_confirmation_summary_sha256": "2a9e9b5af0b3ba83c479e1f7f18bac3bcc0575c42a7452019c76d7740a433dca"
+    }
+  },
+  "freeze": [
+    "standings submissions",
+    "full live benchmarks",
+    "Modal",
+    "paid runs"
+  ]
+}

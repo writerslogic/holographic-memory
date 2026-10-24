@@ -1,0 +1,102 @@
+{
+  "frozen_at": "2026-10-24T03:30:05.724173+00:00",
+  "protocol_commit": "28ecee726619fb2765f577d77bd29ebda6809467",
+  "tuning_summary_sha256": "b012d607f71d2ed395875e3d2b66f0fdf1648a7232e144b5b01491771feb637f",
+  "configurations_tried": 8,
+  "selected": {
+    "capacity": 250000,
+    "ef": 128,
+    "qualifies": true,
+    "recall_by_phase": {
+      "before": 0.84296875,
+      "churn": 0.8515625,
+      "after": 0.84765625
+    },
+    "mean_query_ms": 13.671770333333333,
+    "consolidation_ns": 4360355601
+  },
+  "candidates": [
+    {
+      "capacity": 250000,
+      "ef": 128,
+      "qualifies": true,
+      "recall_by_phase": {
+        "before": 0.84296875,
+        "churn": 0.8515625,
+        "after": 0.84765625
+      },
+      "mean_query_ms": 13.671770333333333,
+      "consolidation_ns": 4360355601
+    },
+    {
+      "capacity": 250000,
+      "ef": 256,
+      "qualifies": true,
+      "recall_by_phase": {
+        "before": 0.93125,
+        "churn": 0.93671875,
+        "after": 0.9359375
+      },
+      "mean_query_ms": 23.761552666666667,
+      "consolidation_ns": 4360355601
+    },
+    {
+      "capacity": 250000,
+      "ef": 512,
+      "qualifies": true,
+      "recall_by_phase": {
+        "before": 0.96640625,
+        "churn": 0.96796875,
+        "after": 0.96796875
+      },
+      "mean_query_ms": 44.330922666666666,
+      "consolidation_ns": 4360355601
+    },
+    {
+      "capacity": 500000,
+      "ef": 128,
+      "qualifies": false,
+      "recall_by_phase": {
+        "before": 0.79296875,
+        "churn": 0.80078125,
+        "after": 0.79609375
+      },
+      "mean_query_ms": 8.73532,
+      "consolidation_ns": 6477802863
+    },
+    {
+      "capacity": 500000,
+      "ef": 256,
+      "qualifies": true,
+      "recall_by_phase": {
+        "before": 0.8765625,
+        "churn": 0.88203125,
+        "after": 0.8796875
+      },
+      "mean_query_ms": 13.848517333333334,
+      "consolidation_ns": 6477802863
+    },
+    {
+      "capacity": 500000,
+      "ef": 512,
+      "qualifies": true,
+      "recall_by_phase": {
+        "before": 0.9359375,
+        "churn": 0.93828125,
+        "after": 0.93828125
+      },
+      "mean_query_ms": 25.526136,
+      "consolidation_ns": 6477802863
+    }
+  ],
+  "parent_ef": 256,
+  "heldout_query_ids": [
+    640,
+    768
+  ],
+  "heldout_rows": [
+    1000000,
+    3000000
+  ],
+  "heldout_examined": false
+}

@@ -1,0 +1,18 @@
+{
+  "cpu_model": "Intel(R) Core(TM) Ultra 9 185H",
+  "kernel": "6.18.33.2-microsoft-standard-WSL2",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "logical_cpus": "22",
+  "binary_sha256": "6c3401a81769323dd32796ea75ae45e9d6edccb22a7bc50af9aea3d60a10e8d2",
+  "script_sha256": {
+    "run.sh": "61f5f59abb33cf1107e495fd2e87bce4a0e0f0f6e0ffbd16aa13c3cab12dfae3",
+    "pair.sh": "2868b63206286c25668c285c298428615b3d44477ddfaa13f477b8a874f194a7",
+    "grid.sh": "3055a3b82900e521ec28c7b62e501848885d9ec03f44221fce17370181b0bee9",
+    "truth.sh": "f6e7a7641a4be3b39f05f638c8ff601f52704e6340c8cfe0cb8c789cb34d04ba",
+    "truth-heldout.sh": "4a2322f5669da24ad06e3c65d81385578bcfae193eb4e5e29c6ff1b58ce4dbde",
+    "oracle.py": "47ef18615c754160ef6ccc45bbebf6c3252e7e122de9cc8a00c61c255907b21a",
+    "score.py": "bf8d6fc01632cf91be6e5af1642d3181fa556ef6c9b98476fa1939cf20564309",
+    "prepare.sh": "839d7741884cc4f6e9344f7007272ea7f3e2265013e26dca327cfc19b9a3b2b4",
+    "prepare-3m.sh": "ebdf6a834528267afa75a360432af6e1460d7eaf5c5b714e1bfa7cbd98caac69"
+  }
+}

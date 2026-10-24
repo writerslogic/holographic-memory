@@ -1,0 +1,459 @@
+// Copyright 2024-2026 WritersLogic Contributors
+// SPDX-License-Identifier: Apache-2.0
+
+use super::*;
+use rayon::prelude::*;
+use serde_json::json;
+use std::io::{Read, Seek, Write};
+use std::time::Instant;
+
+struct Segments {
+    indexes: Vec<UpdatableVGraph>,
+    capacity: usize,
+}
+
+impl Segments {
+    fn create(path: &Path, data: &[f32], dim: usize, total: usize, capacity: usize) -> Self {
+        assert!(capacity > 0 && total < u32::MAX as usize && dim > 0);
+        assert!(data.len().is_multiple_of(dim));
+        std::fs::create_dir(path).unwrap();
+        let live = data.len() / dim;
+        assert!(live <= total);
+        let build = BuildParams {
+            metric: Metric::Euclidean,
+            degree: 32,
+            build_ef: 64,
+            ..Default::default()
+        };
+        let indexes = (0..total.div_ceil(capacity))
+            .map(|part| {
+                let first = (part * capacity).min(live);
+                let end = ((part + 1) * capacity).min(live);
+                UpdatableVGraph::create(
+                    &path.join(format!("part-{part}")),
+                    &data[first * dim..end * dim],
+                    dim,
+                    &build,
+                )
+                .unwrap()
+            })
+            .collect();
+        Self { indexes, capacity }
+    }
+
+    fn open(path: &Path, total: usize, capacity: usize) -> Self {
+        Self {
+            indexes: (0..total.div_ceil(capacity))
+                .map(|part| UpdatableVGraph::open(&path.join(format!("part-{part}"))).unwrap())
+                .collect(),
+            capacity,
+        }
+    }
+
+    fn locate(&self, id: usize) -> (&UpdatableVGraph, u32) {
+        (
+            &self.indexes[id / self.capacity],
+            (id % self.capacity) as u32,
+        )
+    }
+
+    fn commit(&self) {
+        for index in &self.indexes {
+            index.commit().unwrap();
+        }
+    }
+
+    fn search(&self, query: &[f32], k: usize, ef: usize) -> Vec<u32> {
+        let params = VSearchParams {
+            ef,
+            rerank: ef,
+            ..Default::default()
+        };
+        let mut candidates = Vec::new();
+        for (part, index) in self.indexes.iter().enumerate() {
+            let found = index.search(query, k, params).unwrap();
+            let state = index.state.read();
+            for id in found {
+                let row = if let Some(&slot) = state.delta.live.get(&id) {
+                    state.delta.row(slot, query.len())
+                } else {
+                    state
+                        .base
+                        .rows
+                        .row(state.base_slot(id).expect("returned a nonlive id"))
+                        .unwrap()
+                };
+                let score = query
+                    .iter()
+                    .zip(row)
+                    .map(|(&a, &b)| {
+                        let d = f64::from(a) - f64::from(b);
+                        d * d
+                    })
+                    .sum::<f64>();
+                candidates.push((score, (part * self.capacity + id as usize) as u32));
+            }
+        }
+        candidates.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        candidates.truncate(k);
+        candidates.into_iter().map(|(_, id)| id).collect()
+    }
+
+    fn release_pages(&self) {
+        for index in &self.indexes {
+            let state = index.state.read();
+            state.base.rows.release_pages().unwrap();
+            if let Some(graph) = &state.base.graph {
+                graph.release_pages().unwrap();
+            }
+        }
+    }
+}
+
+fn assert_exact(segments: &Segments, expected: &std::collections::BTreeMap<u32, Vec<f32>>) {
+    for query in [[0.0, 0.0], [1.0, -1.0], [5.0, 5.0]] {
+        for k in [0, 1, 9, 10, 11, 100] {
+            let mut scored: Vec<_> = expected
+                .iter()
+                .map(|(&id, row)| {
+                    let d = query
+                        .iter()
+                        .zip(row)
+                        .map(|(&a, &b)| {
+                            let x = f64::from(a) - f64::from(b);
+                            x * x
+                        })
+                        .sum::<f64>();
+                    (d, id)
+                })
+                .collect();
+            scored.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+            let want: Vec<_> = scored.into_iter().take(k).map(|(_, id)| id).collect();
+            assert_eq!(segments.search(&query, k, 100), want);
+        }
+    }
+}
+
+#[test]
+fn segment_merge_matches_live_rows_across_boundaries_and_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("segments");
+    let data: Vec<f32> = (0..29).flat_map(|i| [i as f32, (i * i) as f32]).collect();
+    let mut expected: std::collections::BTreeMap<_, _> = data
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .enumerate()
+        .map(|(id, row)| (id as u32, row.to_vec()))
+        .collect();
+    let mut segments = Segments::create(&path, &data, 2, 40, 10);
+    assert_exact(&segments, &expected);
+    for id in [9, 10, 11, 19, 20, 21, 28] {
+        let (index, local) = segments.locate(id);
+        index.delete(local).unwrap();
+        expected.remove(&(id as u32));
+    }
+    segments.commit();
+    for id in [9, 10, 11, 29, 30, 31, 39] {
+        let (index, local) = segments.locate(id);
+        let row = [-(id as f32), id as f32];
+        index.insert(local, &row).unwrap();
+        expected.insert(id as u32, row.to_vec());
+    }
+    segments.commit();
+    for id in [8, 9, 10, 11, 12, 29, 30, 31] {
+        let (index, local) = segments.locate(id);
+        index.replace(local, &[2.0, -3.0]).unwrap();
+        expected.insert(id as u32, vec![2.0, -3.0]);
+    }
+    segments.commit();
+    for (iteration, point) in [None, Some(1), Some(2), Some(4), Some(5)]
+        .into_iter()
+        .enumerate()
+    {
+        assert_exact(&segments, &expected);
+        for index in &segments.indexes {
+            let result =
+                index.consolidate_mode(ConsolidationMode::Merge { rebuild_after: 1.0 }, |at| {
+                    if Some(at) == point {
+                        Err(std::io::Error::other("interrupted").into())
+                    } else {
+                        Ok(())
+                    }
+                });
+            if point.is_none() {
+                result.unwrap();
+            }
+        }
+        drop(segments);
+        segments = Segments::open(&path, 40, 10);
+        assert_exact(&segments, &expected);
+        let (index, local) = segments.locate(9);
+        let row = [-7.0 * (iteration + 1) as f32, 13.0 + iteration as f32];
+        index.replace(local, &row).unwrap();
+        index.commit().unwrap();
+        expected.insert(9, row.to_vec());
+    }
+}
+
+struct Fbin {
+    map: memmap2::Mmap,
+    rows: usize,
+    dim: usize,
+}
+
+impl Fbin {
+    fn open(path: &Path) -> Self {
+        let file = File::open(path).unwrap();
+        // SAFETY: measurement input files are immutable for the lifetime of the mapping.
+        let map = unsafe { memmap2::Mmap::map(&file).unwrap() };
+        assert!(map.len() >= 8 && cfg!(target_endian = "little"));
+        let rows = u32::from_le_bytes(map[..4].try_into().unwrap()) as usize;
+        let dim = u32::from_le_bytes(map[4..8].try_into().unwrap()) as usize;
+        assert!(rows > 0 && (1..=MAX_DIM).contains(&dim));
+        assert_eq!(
+            map.len(),
+            rows.checked_mul(dim)
+                .unwrap()
+                .checked_mul(4)
+                .unwrap()
+                .checked_add(8)
+                .unwrap()
+        );
+        Self { map, rows, dim }
+    }
+
+    fn slice(&self, start: usize, end: usize) -> &[f32] {
+        assert!(start <= end && end <= self.rows);
+        bytemuck::cast_slice(&self.map[8 + start * self.dim * 4..8 + end * self.dim * 4])
+    }
+}
+
+fn number(name: &str) -> usize {
+    std::env::var(name).unwrap().parse().unwrap()
+}
+fn path(name: &str) -> PathBuf {
+    PathBuf::from(std::env::var_os(name).unwrap())
+}
+
+fn system_value(path: &str, key: &str) -> Option<u64> {
+    std::fs::read_to_string(path)
+        .ok()?
+        .lines()
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            (name == key)
+                .then(|| value.split_whitespace().next()?.parse().ok())
+                .flatten()
+        })
+}
+
+fn cgroup_file(name: &str) -> Option<PathBuf> {
+    let text = std::fs::read_to_string("/proc/self/cgroup").ok()?;
+    let group = text.lines().find_map(|line| line.strip_prefix("0::"))?;
+    Some(
+        Path::new("/sys/fs/cgroup")
+            .join(group.trim_start_matches('/'))
+            .join(name),
+    )
+}
+
+fn cgroup_value(name: &str) -> Option<u64> {
+    std::fs::read_to_string(cgroup_file(name)?)
+        .ok()?
+        .trim()
+        .parse()
+        .ok()
+}
+
+fn emit(value: serde_json::Value) {
+    println!("BOUNDED {value}");
+}
+
+fn query_batch(segments: &Segments, queries: &[f32], dim: usize, ef: usize) -> Vec<Vec<u32>> {
+    queries
+        .par_chunks(dim)
+        .map(|query| segments.search(query, 10, ef))
+        .collect()
+}
+
+fn query_phase(segments: &Segments, queries: &[f32], dim: usize, phase: &str, output: &Path) {
+    let efs: Vec<usize> = std::env::var("HMS_BOUNDED_EFS")
+        .unwrap()
+        .split(',')
+        .map(|value| value.parse().unwrap())
+        .collect();
+    for ef in efs {
+        let expected = query_batch(segments, queries, dim, ef);
+        let mut times = Vec::new();
+        for _ in 0..5 {
+            let start = Instant::now();
+            let actual = query_batch(segments, queries, dim, ef);
+            times.push(start.elapsed().as_nanos());
+            assert_eq!(actual, expected);
+        }
+        let mut file = File::create(output.join(format!("{phase}-ef{ef}.u32"))).unwrap();
+        for row in &expected {
+            assert_eq!(row.len(), 10);
+            for &id in row {
+                file.write_all(&id.to_le_bytes()).unwrap();
+            }
+        }
+        emit(
+            json!({"event":"query", "phase":phase, "ef":ef, "batch_ns":times,
+            "queries":queries.len()/dim, "rss_kib":system_value("/proc/self/status", "VmRSS"),
+            "cgroup_current":cgroup_value("memory.current"),
+            "load":std::fs::read_to_string("/proc/loadavg").ok()}),
+        );
+    }
+}
+
+#[test]
+#[ignore = "development segment compaction measurement"]
+fn bounded_consolidation_probe() {
+    let total = number("HMS_BOUNDED_ROWS");
+    let capacity = number("HMS_BOUNDED_CAPACITY");
+    assert!([1_000_000, 3_000_000].contains(&total));
+    assert!([250_000, 500_000, total].contains(&capacity));
+    let directory = path("HMS_BOUNDED_DIRECTORY");
+    let data = Fbin::open(&path("HMS_BOUNDED_DATA"));
+    assert!(total <= data.rows && data.dim == 100);
+    let initial = total * 9 / 10;
+    let action = std::env::var("HMS_BOUNDED_ACTION").unwrap();
+    emit(
+        json!({"event":"start", "action":action, "rows":total, "capacity":capacity,
+        "threads":rayon::current_num_threads(), "load":std::fs::read_to_string("/proc/loadavg").ok()}),
+    );
+    if action == "prepare" {
+        let start = Instant::now();
+        let segments = Segments::create(
+            &directory,
+            data.slice(0, initial),
+            data.dim,
+            total,
+            capacity,
+        );
+        emit(
+            json!({"event":"prepared", "elapsed_ns":start.elapsed().as_nanos(), "segments":segments.indexes.len()}),
+        );
+        return;
+    }
+    assert_eq!(action, "run");
+    let output = path("HMS_BOUNDED_OUTPUT");
+    std::fs::create_dir(&output).unwrap();
+    let mut segments = Segments::open(&directory, total, capacity);
+    let queries = Fbin::open(&path("HMS_BOUNDED_QUERIES"));
+    let query_start = number("HMS_BOUNDED_QUERY_START");
+    assert!([512, 640].contains(&query_start));
+    assert_eq!(queries.dim, data.dim);
+    let q = queries.slice(query_start, query_start + 128);
+    query_phase(&segments, q, data.dim, "before", &output);
+    let change = total / 100;
+    let small = change / 10;
+    let start = Instant::now();
+    for first in (0..change).step_by(4096) {
+        let end = (first + 4096).min(change);
+        let (index, _) = segments.locate(first);
+        let ids: Vec<u32> = (first..end).map(|id| (id % capacity) as u32).collect();
+        assert_eq!(first / capacity, (end - 1) / capacity);
+        index.delete_batch(&ids).unwrap();
+        index.commit().unwrap();
+    }
+    let mut first = initial;
+    while first < initial + change {
+        let end = (first + 4096)
+            .min(initial + change)
+            .min((first / capacity + 1) * capacity);
+        let (index, _) = segments.locate(first);
+        let ids: Vec<u32> = (first..end).map(|id| (id % capacity) as u32).collect();
+        index.insert_batch(&ids, data.slice(first, end)).unwrap();
+        index.commit().unwrap();
+        first = end;
+    }
+    for id in change..change + small {
+        let (index, local) = segments.locate(id);
+        let source = initial + change + id - change;
+        index
+            .replace(local, data.slice(source, source + 1))
+            .unwrap();
+        if index.state.read().pending.len() == 1024 {
+            index.commit().unwrap();
+        }
+    }
+    segments.commit();
+    for id in 0..small {
+        let (index, local) = segments.locate(id);
+        let source = initial + change + small + id;
+        index.insert(local, data.slice(source, source + 1)).unwrap();
+        if index.state.read().pending.len() == 1024 {
+            index.commit().unwrap();
+        }
+    }
+    segments.commit();
+    let mutation_ns = start.elapsed().as_nanos();
+    drop(data);
+    emit(json!({"event":"mutated", "elapsed_ns":mutation_ns}));
+    query_phase(&segments, q, queries.dim, "churn", &output);
+    segments.release_pages();
+    let dirty: Vec<_> = segments
+        .indexes
+        .iter()
+        .enumerate()
+        .filter_map(|(part, index)| {
+            let state = index.state.read();
+            (state.deleted > 0 || state.delta.len() > 0).then_some((part, state.len()))
+        })
+        .collect();
+    std::fs::write("/proc/self/clear_refs", b"5").unwrap();
+    let mut peak_handle = cgroup_file("memory.peak")
+        .and_then(|p| OpenOptions::new().read(true).write(true).open(p).ok())
+        .and_then(|mut file| file.write_all(b"0").ok().map(|()| file));
+    let io_before = system_value("/proc/self/io", "write_bytes").unwrap();
+    let start = Instant::now();
+    let mut how = Vec::new();
+    for &(part, _) in &dirty {
+        how.push(format!(
+            "{:?}",
+            segments.indexes[part]
+                .consolidate_with(ConsolidationMode::Merge { rebuild_after: 1.0 })
+                .unwrap()
+        ));
+        segments.indexes[part]
+            .state
+            .read()
+            .base
+            .rows
+            .release_pages()
+            .unwrap();
+    }
+    let elapsed_ns = start.elapsed().as_nanos();
+    let isolated_cgroup_peak = peak_handle.as_mut().map(|file| {
+        file.rewind().unwrap();
+        let mut value = String::new();
+        file.read_to_string(&mut value).unwrap();
+        value.trim().parse::<u64>().unwrap()
+    });
+    emit(json!({"event":"consolidated", "elapsed_ns":elapsed_ns,
+        "dirty":dirty, "how":how, "peak_rss_kib":system_value("/proc/self/status", "VmHWM"),
+        "rss_kib":system_value("/proc/self/status", "VmRSS"), "cgroup_peak_reset":peak_handle.is_some(),
+        "isolated_cgroup_peak":isolated_cgroup_peak,
+        "cgroup_current":cgroup_value("memory.current"), "cgroup_peak":cgroup_value("memory.peak"),
+        "written_bytes":system_value("/proc/self/io", "write_bytes").unwrap()-io_before,
+        "load":std::fs::read_to_string("/proc/loadavg").ok()}));
+    query_phase(&segments, q, queries.dim, "after", &output);
+    let efs: Vec<usize> = std::env::var("HMS_BOUNDED_EFS")
+        .unwrap()
+        .split(',')
+        .map(|value| value.parse().unwrap())
+        .collect();
+    let expected: Vec<_> = efs
+        .iter()
+        .map(|&ef| query_batch(&segments, q, queries.dim, ef))
+        .collect();
+    drop(segments);
+    segments = Segments::open(&directory, total, capacity);
+    for (ef, want) in efs.into_iter().zip(expected) {
+        assert_eq!(query_batch(&segments, q, queries.dim, ef), want);
+    }
+    emit(json!({"event":"complete", "reopen_results_equal":true}));
+}
