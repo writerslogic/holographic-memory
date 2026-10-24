@@ -2,8 +2,14 @@
 
 The index is a proximity graph whose traversal reads 8-bit (default) or 4-bit codes of the mean-centered rows;
 the `rerank` best candidates are re-scored with an 8-bit residual code. Cosine and normalized
-data are searched by angle, euclidean data by Euclidean distance, and ip data by inner product
-(reduced to Euclidean search by appending one coordinate to each row).
+data are searched by angle, euclidean data by Euclidean distance, and ip data by inner product:
+the graph is built on rows lifted by one coordinate (MIPS reduced to Euclidean search) and served
+directly on the original coordinates by negative inner product (`direct_ip`).
+
+On out-of-distribution datasets (config `ood: true` and a learn split in the HDF5 file) VIBE calls
+`fit_ood` with the dataset's official learn split. The build adds query-aware edges from a seeded
+sample of LEARN_QUERIES rows of that split (all rows when the split is smaller); the learn
+neighbors, test queries and ground truth are never used.
 """
 import os
 
@@ -15,6 +21,11 @@ import numpy as np
 from holographic_memory import VectorIndex
 
 from ..base.module import BaseANN
+
+# Sample of the learn split that routes the query-aware build: numpy default_rng(LEARN_SEED)
+# permutation, first LEARN_QUERIES rows. The native build also caps training queries at 32768.
+LEARN_QUERIES = 32768
+LEARN_SEED = 24301
 
 METRICS = {"cosine": "angular", "normalized": "angular", "euclidean": "euclidean", "ip": "ip"}
 
@@ -31,6 +42,7 @@ class HMS(BaseANN):
         self.code_bits = code_bits
         self.query_aware = bool(query_aware)
         self.trained = False
+        self.learn_queries = 0
         self.ef = None
         self.rerank = None
         self.patience = 0
@@ -39,17 +51,24 @@ class HMS(BaseANN):
     def fit(self, X):
         # In-distribution sets have no learn split: the plain graph.
         self.trained = False
+        self.learn_queries = 0
         self._fit(X, None)
 
     def fit_ood(self, X, X_learn, X_learn_neighbors):
         # Out-of-distribution sets: the dataset's official learn split routes the graph (never
         # the test queries).
         self.trained = self.query_aware and X_learn is not None and len(X_learn) > 0
-        self._fit(X, X_learn if self.trained else None)
+        if not self.trained:
+            self.learn_queries = 0
+            self._fit(X, None)
+            return
+        order = np.random.default_rng(LEARN_SEED).permutation(len(X_learn))[:LEARN_QUERIES]
+        self.learn_queries = len(order)
+        self._fit(X, X_learn[order])
 
     def _fit(self, X, queries):
         self.index = VectorIndex(METRICS[self.metric], degree=self.degree, build_ef=self.build_ef,
-                                 threads=1, code_bits=self.code_bits)
+                                 threads=1, code_bits=self.code_bits, direct_ip=self.metric == "ip")
         learning = None if queries is None else np.ascontiguousarray(queries, dtype=np.float32)
         self.index.fit(np.ascontiguousarray(X, dtype=np.float32), training_queries=learning)
 
@@ -75,6 +94,6 @@ class HMS(BaseANN):
 
     def __str__(self):
         precision = "" if self.code_bits == 4 else f", code_bits={self.code_bits}"
-        training = ", query_aware=True" if self.trained else ""
+        training = f", learn_queries={self.learn_queries}" if self.trained else ""
         early_stop = f", patience={self.patience}" if self.patience > 0 else ""
         return f"HMS(metric={self.metric}, degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank}{precision}{training}{early_stop})"

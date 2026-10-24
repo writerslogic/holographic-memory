@@ -260,11 +260,11 @@ retains its three explicitly ignored experiments.
 The [HMS adapter](../../benchmarks/vibe/hms/)
 follows VIBE's [new-method guide](https://github.com/vector-index-bench/vibe/blob/main/docs/NEW_METHOD.md):
 one-thread builds, unique original row IDs, separate build/query parameters,
-four build combinations and 33 query combinations (56 for ip), with a pinned implementation
-revision in `image.def`. It is the quantized graph algorithm, not the memory
+four build combinations and 45 query combinations per metric, with a pinned
+implementation revision in `image.def`. It is the quantized graph algorithm, not the memory
 database service. It advertises cosine, normalized, euclidean and ip datasets;
-the ip grid searches deeper (ef up to 8000) because the reduction places every
-row on one sphere.
+ip is served directly by inner product on the original coordinates (`direct_ip`).
+The grid and build flags are fixed below.
 
 Reproduce the published ranking and focused regression checks:
 
@@ -309,3 +309,47 @@ queries and Linux load reporting. Nine diagnostic regression tests pass;
 `public-bench` also passes the scoped all-features check and Clippy with warnings
 denied. Build/check logs and the source/host
 [receipt](../../benchmarks/results/vibe_v1/receipt.json) are retained.
+
+## Image build flags
+
+`image.def` compiles the wheel with `-C target-cpu=x86-64-v3` on x86_64 (the default target
+elsewhere) instead of `target-cpu=native`. VIBE's `install.sh` builds the `.sif` on whichever
+host runs it (its Slurm example uses a scratch node) and the image is then reused on the run
+nodes: Intel Xeon Gold 6230 (Cascade Lake, AVX-512F/BW/VL/VNNI, no VEX AVX-VNNI) for the current
+results and AMD EPYC 9965 (Zen 5) for the next refresh. A native build on a newer build host can
+emit instructions that fault on the run node. Every x86 qgraph kernel is selected at run time
+(`is_x86_feature_detected`: AVX2, AVX-VNNI, AVX-512F/VL, AVX-512 VNNI) and the pinned revision has
+no compile-time x86 `target_feature` gate, so the AVX-512 VNNI kernels still run on both node
+types; the baseline only sets the code generation of the non-kernel code. x86-64-v4 was not
+chosen because it faults on run hosts without AVX-512. The Modal runner
+(`benchmarks/vibe/modal_vibe.py`) keeps `target-cpu=native` because it compiles in the container
+that runs the job.
+
+## Pre-registered OOD grid, 2026-10-23
+
+Fixed in `benchmarks/vibe/hms/config.yml` before any run of this grid. Build arguments
+`degree x build_ef x code_bits x query_aware`, query arguments `ef x rerank`:
+
+| Metric section | degree | build_ef | code_bits | query_aware | ef | rerank | build / query combos |
+|---|---|---|---|---|---|---|---|
+| cosine, normalized, euclidean | 32, 48, 64, 96 | 500 | 8 | true | 40, 50, 64, 80, 100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000 | 100, 200, 400 | 4 / 45 |
+| ip | 32, 48, 64, 96 | 500 | 8 | true | 64, 80, 100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000, 1500, 2000 | 200, 400, 1000 | 4 / 45 |
+
+Both are within VIBE's guidance (build combinations below 20, query combinations below 60).
+
+- OOD sets (VIBE README, "Out-of-distribution datasets"): hotpotqa-harrier-640, imagenet-align-640, laion-clip-512 (normalized), yandex-200
+  (cosine), yi-128-ip, llama-128-ip, cqadupstack-lemur-2048-ip, cqadupstack-muvera-5120-ip (ip).
+  Every entry sets `ood: true`, so VIBE's runner calls `fit_ood` with the dataset's official learn
+  split; the wrapper samples 32768 learn rows (numpy `default_rng(24301)` permutation, all rows
+  when the split is smaller) and never reads the learn neighbors, test queries or ground truth.
+  The run name records `learn_queries=N`.
+- VIBE grids are per metric section, not per dataset: the in-distribution sets of the cosine,
+  normalized and euclidean sections (no learn split) run the same grid through `fit`, the plain
+  graph. Only the ip section is entirely OOD.
+- ef reaches down to 40: the query-aware graph halved the ef needed on coco (100k slice, recall
+  at ef 20 0.852 -> 0.935), so the low end of the curve moves left; the upper end is unchanged
+  at 1000 for the in-distribution sets.
+- ip uses direct inner-product serving (`direct_ip`); the previous query-aware ip runs covered
+  ef 100..1000 with rerank 400, so this grid brackets that range (64..2000) with rerank
+  200/400/1000. The earlier ef up to 8000 came
+  from serving ip through the lifted Euclidean reduction, which this wrapper no longer does.
