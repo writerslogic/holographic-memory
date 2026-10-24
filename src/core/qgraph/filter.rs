@@ -637,7 +637,7 @@ impl FilteredIndex {
 
     /// Scores every id of `ids` (all live and matching) into `top`.
     fn score_ids(&self, q: &[i8], qsum: i32, ids: &[u32], top: &mut TopK) {
-        const AHEAD: usize = 8;
+        const AHEAD: usize = 24;
         let (chunks, tail) = ids.as_chunks::<4>();
         for (c, ch) in chunks.iter().enumerate() {
             for &p in ids.iter().skip(c * 4 + AHEAD).take(4) {
