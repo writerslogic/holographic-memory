@@ -1,0 +1,196 @@
+{
+  "copyright": "Copyright 2024-2026 WritersLogic Contributors",
+  "spdx_license_identifier": "Apache-2.0",
+  "purpose": "Untimed regression evidence for completing VGraph search results after traversal exhaustion or early stopping.",
+  "source": {
+    "base_commit": "e22b4b8702bf24dbf676b29a0fa3bf7d59fd7575",
+    "branch": "fix/training-neighbor-completeness",
+    "path": "src/core/qgraph/vertex.rs",
+    "git_blob": "6fc23562c6dc26de037a8514932c3c0ea87cc707",
+    "sha256": "bac0eb74a4b723ef071b929cb0939a713e9f117a5b3d498ac3e8ebbe1f3e24b1",
+    "before": "Base implementation with test-only observation added before production edits; baseline regression and connected receipts were preserved at takeover.",
+    "coordinated_golden_change": {
+      "path": "src/core/qgraph/update/tests.rs",
+      "git_blob": "d42a2d28cad4ff8804a549c460c0c2352728df0e",
+      "sha256": "e7faac5cdbc2d837f8d4164812fe6529f4adc44a3cd9b27c5c50316f3b58fbab",
+      "change": "Only expected CRC 439_463_741 -> 1_364_000_328; root authorized this one-line ownership exception after independent component comparison."
+    }
+  },
+  "environment": {
+    "host": "aarch64-apple-darwin",
+    "os_arch": "Darwin arm64",
+    "rustc": "1.96.0 (ac68faa20 2026-05-25)",
+    "clippy": "0.1.99 (b940084d7e 2026-09-28)",
+    "msrv": "1.89.0",
+    "CARGO_TARGET_DIR": "/Volumes/A/.target-ood-training-verified",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "1",
+    "CARGO_PROFILE_DEV_DEBUG": "0"
+  },
+  "connected_control": {
+    "command": "cargo test --locked --lib core::qgraph::vertex::serving_tests -- --nocapture",
+    "aggregate_cases": 12,
+    "searches": 960,
+    "rows": 64,
+    "dimensions": 16,
+    "metrics": [
+      "Angular",
+      "Euclidean",
+      "InnerProduct"
+    ],
+    "code_bits": [
+      4,
+      8
+    ],
+    "knobs": [
+      "OFF",
+      "prefetch=3,batch_est=true,frontier=0.8"
+    ],
+    "ef": [
+      8,
+      16
+    ],
+    "reservoir": [
+      0,
+      16
+    ],
+    "patience": [
+      0,
+      1
+    ],
+    "queries_per_case": 10,
+    "k": 5,
+    "rerank": 16,
+    "fingerprint": "FNV-1a-style u64 accumulator over each returned ID, reconstructed result-score f32 bits, and per-query evaluation count, in traversal order. Aggregate values are same-host receipts, not architecture-independent test goldens.",
+    "before": "connected-before.txt",
+    "after": "connected-after.txt",
+    "comparison": "12/12 aggregate fingerprint and evaluation-total lines equal; all 960 individual evaluation counts participate in their fingerprints."
+  },
+  "mixed_fixture": {
+    "command": "cargo test --locked --lib core::qgraph::update::tests::mixed_search_reproduces_pinned_results_and_encoded_generations -- --exact --nocapture",
+    "method": "Baseline and repaired implementations were temporarily instrumented at result emission to record input metadata, returned IDs, result-score bits, and evaluation counts; instrumentation was removed and final source hash verified. For rerank=0 the existing result-score fields are zero placeholders. Full records and an independent comparison script are included.",
+    "baseline_golden_crc32": 439463741,
+    "repaired_golden_crc32": 1364000328,
+    "component_queries": 6948,
+    "complete_unchanged": 6264,
+    "short_repaired": 684,
+    "comparison": "mixed-comparison.json",
+    "command_to_compare": "uv run --no-project python benchmarks/results/training_neighbor_completeness_v1/compare_receipts.py"
+  },
+  "regressions": [
+    "Disconnected component k-1/k/k+1 and total n-1/n/n+1; k=0,1,usize::MAX; visited-word boundaries 63/64/65.",
+    "Angular, Euclidean and direct IP; row code bits4/8; ID widths0/3/4; reordered IDs; reservoir, stopping, screening and reranking knobs.",
+    "Block bits1/2/4; component sizes3/32/33; screened/unfused/fused traversal; reuse through two epoch rollovers.",
+    "Recovery expands a scored seed and its neighbor, counts six traversal evaluations, and leaves an unrelated seventh isolated vertex unscored.",
+    "A pre-existing k=0 plus gated-rerank assertion was exposed; its caller now enters the gate only for k>0."
+  ],
+  "limits": [
+    "No Linux run, live benchmark, timing claim, or real 10M dataset rerun.",
+    "The disconnected fixture establishes the short-result defect; disconnected components remain an unproven explanation for the earlier real-10M failure.",
+    "The repair guarantees result cardinality and distinctness, not exact nearest-neighbor recall.",
+    "Serialized layout and normal-path distance work are unchanged; preservation is verified on the recorded same-host fixtures."
+  ],
+  "gates": [
+    {
+      "command": "cargo fmt --check",
+      "exit_code": 0,
+      "log": "/Volumes/A/hms-coordination/ood-training-gate-fmt.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --locked --all-targets -- -D warnings",
+      "exit_code": 0,
+      "log": "/Volumes/A/hms-coordination/ood-training-gate-clippy-default.log",
+      "log_sha256": "d7785f3bd307bc23f9d23962910bfaca5beb647ae2052d9e76eb5c33f5bbc0f9"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --locked --all-targets --features experimental -- -D warnings",
+      "exit_code": 0,
+      "log": "/Volumes/A/hms-coordination/ood-training-gate-clippy-experimental.log",
+      "log_sha256": "f91bc65cd8945c5fd3c9696410501283b6f7de070b892e6f6c80775abca84424"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --locked --all-targets --all-features -- -D warnings",
+      "exit_code": 0,
+      "log": "/Volumes/A/hms-coordination/ood-training-gate-clippy-all.log",
+      "log_sha256": "a62195be389b678d5582335d2d14ee9956d09146090c5ff5956c132b4936f343"
+    },
+    {
+      "command": "cargo test --locked",
+      "exit_code": 0,
+      "log": "/Volumes/A/hms-coordination/ood-training-gate-test-default.log",
+      "log_sha256": "342541f982c6cd79e8787f0cd9b8c78e821374db9f25f486a26913fdfe3ad486",
+      "aggregate_harness_counts": {
+        "passed": 683,
+        "failed": 0,
+        "ignored": 13
+      },
+      "successful_harnesses": 59
+    },
+    {
+      "command": "cargo test --locked --all-features",
+      "exit_code": 0,
+      "log": "/Volumes/A/hms-coordination/ood-training-gate-test-all.log",
+      "log_sha256": "910ab7f4f84c08b2a25bdea8facc651f5a2d1ac93d8db13fe19451c1210eb5a3",
+      "aggregate_harness_counts": {
+        "passed": 1106,
+        "failed": 0,
+        "ignored": 14
+      },
+      "successful_harnesses": 86
+    },
+    {
+      "command": "cargo +1.89.0 check --locked --no-default-features",
+      "exit_code": 0,
+      "log": "/Volumes/A/hms-coordination/ood-training-gate-msrv.log",
+      "log_sha256": "9fd15326a56493259f4849b92712c8bb11d3f2cb92a3cc9d42a8f40e5a5f5210"
+    }
+  ],
+  "artifact_sha256": {
+    "compare_receipts.py": "67f88d1919709e8f7bd4906b28b9b58ec8eec22d4c513c85d36342eba97c0233",
+    "connected-after.txt": "16a6b79c7169de6715acab404286ab6508b4594c0cb77d3d503b843f36bf446c",
+    "connected-before.txt": "16a6b79c7169de6715acab404286ab6508b4594c0cb77d3d503b843f36bf446c",
+    "disconnected-before.txt": "1ba7cf5a6e1739eba0754c231df416f18a1acfbe31b22a3e00cc26387bcc133d",
+    "gate-results.txt": "f9498eb354d8bc092d38c544c1089fa4b7b227dcfdf19f3b06c09541fafc5d71",
+    "mixed-baseline.jsonl.gz": "7a35c13eb370efa50e6903a1521a92ae0d5495da73bb2a10210e43317e557832",
+    "mixed-comparison.json": "1ed0679c8b32518c1397ab97ce0782301926be5abb3c0e654e4ae62ccc376480",
+    "mixed-repaired.jsonl.gz": "3fdb91beba519ef8fcf0fed2efc2fed44a128d1e099f21c236eb48306b8fac70"
+  },
+  "initial_gate_diagnosis": {
+    "default_test_exit_code": 101,
+    "passed": 566,
+    "failed": 1,
+    "ignored": 12,
+    "failure": "mixed_search_reproduces_pinned_results_and_encoded_generations old CRC included short component results",
+    "baseline_exact_fixture_exit_code": 0,
+    "repaired_exact_fixture_with_old_crc_exit_code": 101,
+    "verified_change": "Only 684 formerly short component calls differ; all 6264 complete calls identical.",
+    "initial_default_log_sha256": "f60582b40565060cd2ec1aa06f286423ed86f2f99a1b54f2bd8b6696e8c2a994",
+    "interrupted_all_feature_log_sha256": "ff9d065c9713d804822554d0d9ec76960f338acf367368d4ded4a3c02d123768"
+  },
+  "focused_final": {
+    "command": "cargo test --locked --lib core::qgraph::vertex::serving_tests -- --nocapture",
+    "exit_code": 0,
+    "passed": 11,
+    "log": "/Volumes/A/hms-coordination/ood-training-final-focused.log",
+    "log_sha256": "4a8e6fa5051a1b61c3f764c1b404860ed65a37e5d1bdb5e2ee9bf3e17806dd5b"
+  },
+  "disconnected_before_fixture": {
+    "rows": "(0..24).map(|i| (i * 7 % 31 + 1) as f32)",
+    "n": 12,
+    "dim": 2,
+    "component_size": 3,
+    "failing_case": {
+      "metric": "Angular",
+      "bits": 4,
+      "id_bytes": 0,
+      "k": 4,
+      "ef": 8,
+      "rerank": 8,
+      "returned": 3
+    },
+    "receipt": "disconnected-before.txt"
+  },
+  "status": "All required local gates passed."
+}

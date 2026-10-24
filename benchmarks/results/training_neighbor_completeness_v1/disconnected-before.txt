@@ -1,0 +1,22 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+running 1 test
+test core::qgraph::vertex::serving_tests::disconnected_graph_returns_the_requested_number_of_distinct_neighbors ... FAILED
+
+failures:
+
+---- core::qgraph::vertex::serving_tests::disconnected_graph_returns_the_requested_number_of_distinct_neighbors stdout ----
+
+thread 'core::qgraph::vertex::serving_tests::disconnected_graph_returns_the_requested_number_of_distinct_neighbors' (15192157) panicked at src/core/qgraph/vertex.rs:3068:25:
+assertion `left == right` failed: metric=Angular bits=4 id_bytes=0 k=4
+  left: 3
+ right: 4
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    core::qgraph::vertex::serving_tests::disconnected_graph_returns_the_requested_number_of_distinct_neighbors
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 573 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

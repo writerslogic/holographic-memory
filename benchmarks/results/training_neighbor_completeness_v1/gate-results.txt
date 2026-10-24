@@ -1,0 +1,319 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+Source vertex.rs Git blob: 6fc23562c6dc26de037a8514932c3c0ea87cc707
+Source update/tests.rs Git blob: d42a2d28cad4ff8804a549c460c0c2352728df0e
+
+cargo fmt --check
+exit_code=0
+
+cargo +1.99.0 clippy --locked --all-targets -- -D warnings
+exit_code=0
+Finished `dev` profile [optimized] target(s) in 2.25s
+
+cargo +1.99.0 clippy --locked --all-targets --features experimental -- -D warnings
+exit_code=0
+Finished `dev` profile [optimized] target(s) in 2.31s
+
+cargo +1.99.0 clippy --locked --all-targets --all-features -- -D warnings
+exit_code=0
+Finished `dev` profile [optimized] target(s) in 16.41s
+
+cargo test --locked
+exit_code=0
+Running unittests src/lib.rs (/Volumes/A/.target-ood-training-verified/debug/deps/holographic_memory-4d6442f30b86bbc2)
+test result: ok. 567 passed; 0 failed; 12 ignored; 0 measured; 0 filtered out; finished in 24.87s
+Running unittests src/bin/amp-decode.rs (/Volumes/A/.target-ood-training-verified/debug/deps/amp_decode-ba480eeb2ebb46d3)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/base-residual.rs (/Volumes/A/.target-ood-training-verified/debug/deps/base_residual-ef2de1e3ffabe2a2)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/bilinear-readout.rs (/Volumes/A/.target-ood-training-verified/debug/deps/bilinear_readout-2c6073a8af433517)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/binding-baselines.rs (/Volumes/A/.target-ood-training-verified/debug/deps/binding_baselines-7472e8cf4b3d21af)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/binding-discriminator.rs (/Volumes/A/.target-ood-training-verified/debug/deps/binding_discriminator-ad71d7d7c572b13d)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/bloom-wall.rs (/Volumes/A/.target-ood-training-verified/debug/deps/bloom_wall-4fb2d6474f1934f6)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/capacity-campaign.rs (/Volumes/A/.target-ood-training-verified/debug/deps/capacity_campaign-5408b609f11e4e6b)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/encoder-eval.rs (/Volumes/A/.target-ood-training-verified/debug/deps/encoder_eval-494ce387004ea99b)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/fixed-point-holographic.rs (/Volumes/A/.target-ood-training-verified/debug/deps/fixed_point_holographic-e32957b6e445b99a)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-eval.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_eval-a06c42c3e05e0ed0)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-research-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_research_bench-46e74e2b25667c0c)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-stress.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_stress-87bda0e7a682542f)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/kernel-capacity-sweep.rs (/Volumes/A/.target-ood-training-verified/debug/deps/kernel_capacity_sweep-05c29ac02eb08162)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/kernel-load-curve.rs (/Volumes/A/.target-ood-training-verified/debug/deps/kernel_load_curve-45c7bd8de7bc1bb0)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/noisy-retrieval.rs (/Volumes/A/.target-ood-training-verified/debug/deps/noisy_retrieval-1803fbdd407be3f3)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/pinv-memory.rs (/Volumes/A/.target-ood-training-verified/debug/deps/pinv_memory-9cce88f1d4947ba7)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-bundle.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_bundle-16b374f6ecfe4122)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-cleanup.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_cleanup-c23186b06c2ce883)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-factorize.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_factorize-bfa71016ea3fee22)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-sweep.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_sweep-c1980a6483f353bb)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/ridge-memory.rs (/Volumes/A/.target-ood-training-verified/debug/deps/ridge_memory-3c4977b8a2ea196b)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/route-sweep.rs (/Volumes/A/.target-ood-training-verified/debug/deps/route_sweep-9a4403e09ec994ab)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/allocation_bounds.rs (/Volumes/A/.target-ood-training-verified/debug/deps/allocation_bounds-7586c8f3f6014891)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+Running tests/chunking_proptest.rs (/Volumes/A/.target-ood-training-verified/debug/deps/chunking_proptest-d92159a6b9a1b8ab)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+Running tests/conversation_context.rs (/Volumes/A/.target-ood-training-verified/debug/deps/conversation_context-0f920c07d8ae285d)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/conversation_memory.rs (/Volumes/A/.target-ood-training-verified/debug/deps/conversation_memory-553f7718c46232eb)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/conversation_models.rs (/Volumes/A/.target-ood-training-verified/debug/deps/conversation_models-4d4b72d5c846a08b)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/document_checkpoint.rs (/Volumes/A/.target-ood-training-verified/debug/deps/document_checkpoint-d08fbbe8fbbc84e2)
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.62s
+Running tests/document_competition.rs (/Volumes/A/.target-ood-training-verified/debug/deps/document_competition-84bf36d640128c6e)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+Running tests/document_dense.rs (/Volumes/A/.target-ood-training-verified/debug/deps/document_dense-14cedc1ee5485b23)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+Running tests/documents.rs (/Volumes/A/.target-ood-training-verified/debug/deps/documents-13886db64db868da)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+Running tests/embed_store.rs (/Volumes/A/.target-ood-training-verified/debug/deps/embed_store-cd30840c6bde6f58)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/enc_text.rs (/Volumes/A/.target-ood-training-verified/debug/deps/enc_text-8fbb3116a0973794)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/encoder_versions.rs (/Volumes/A/.target-ood-training-verified/debug/deps/encoder_versions-21c1586869574f22)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+Running tests/forget_equivalence.rs (/Volumes/A/.target-ood-training-verified/debug/deps/forget_equivalence-105b9b8e3f1ba8e2)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.78s
+Running tests/format_crash.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_crash-5f2b6e6ca3cc9a97)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 44.57s
+Running tests/format_golden.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_golden-bd0a01edfda54eb7)
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.89s
+Running tests/format_layout.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_layout-fa235572195bc74e)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.74s
+Running tests/format_upgrade_regressions.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_upgrade_regressions-6d598cd93147bf8c)
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.58s
+Running tests/ingest_encode.rs (/Volumes/A/.target-ood-training-verified/debug/deps/ingest_encode-d7f6e5b3491d5487)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s
+Running tests/ingest_postings.rs (/Volumes/A/.target-ood-training-verified/debug/deps/ingest_postings-d30937bd23825604)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.86s
+Running tests/lexical_count.rs (/Volumes/A/.target-ood-training-verified/debug/deps/lexical_count-f0f74540edd3dc4d)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+Running tests/memory_api.rs (/Volumes/A/.target-ood-training-verified/debug/deps/memory_api-36cb4c739a2d5f09)
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.55s
+Running tests/memory_api_server.rs (/Volumes/A/.target-ood-training-verified/debug/deps/memory_api_server-a039a97de3316140)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/purge.rs (/Volumes/A/.target-ood-training-verified/debug/deps/purge-6706cdff33eccc7f)
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.71s
+Running tests/qgraph_prefetch.rs (/Volumes/A/.target-ood-training-verified/debug/deps/qgraph_prefetch-2ade5f3d7e22ec15)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s
+Running tests/quantized_ivf.rs (/Volumes/A/.target-ood-training-verified/debug/deps/quantized_ivf-7c74c9879d7879d2)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/reliability.rs (/Volumes/A/.target-ood-training-verified/debug/deps/reliability-b703e708ac36ae9a)
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.16s
+Running tests/rss_embeddings.rs (/Volumes/A/.target-ood-training-verified/debug/deps/rss_embeddings-5916d4722f334e29)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+Running tests/server.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server-f7d9592d3878abc8)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/server_abuse.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_abuse-2a25b288c2d24cba)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/server_ann.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_ann-911a47e4bc8b3e1f)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/server_api.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_api-4ec3c9f0c8631055)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/server_ops.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_ops-bb7f7b6b659b1da9)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/store_lifecycle.rs (/Volumes/A/.target-ood-training-verified/debug/deps/store_lifecycle-8195bb79c69c69ba)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+Running tests/vertex_index_bare_path.rs (/Volumes/A/.target-ood-training-verified/debug/deps/vertex_index_bare_path-0e95c87179bdf701)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+Running tests/wrong_passphrase.rs (/Volumes/A/.target-ood-training-verified/debug/deps/wrong_passphrase-e95c6d68a1aa7707)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Doc-tests holographic_memory
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+cargo test --locked --all-features
+exit_code=0
+Running unittests src/lib.rs (/Volumes/A/.target-ood-training-verified/debug/deps/holographic_memory-1ebd2a540e4ef026)
+test result: ok. 826 passed; 0 failed; 12 ignored; 0 measured; 0 filtered out; finished in 37.54s
+Running unittests src/bin/algebraic-codebook-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/algebraic_codebook_bench-78fc9495a3b5ce72)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+Running unittests src/bin/amp-decode.rs (/Volumes/A/.target-ood-training-verified/debug/deps/amp_decode-41c530f874698896)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/ann-failure-map.rs (/Volumes/A/.target-ood-training-verified/debug/deps/ann_failure_map-e6775d5b33c34cb4)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/base-residual.rs (/Volumes/A/.target-ood-training-verified/debug/deps/base_residual-bd3f6c4d636c07f0)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/bilinear-readout.rs (/Volumes/A/.target-ood-training-verified/debug/deps/bilinear_readout-a97e6e2af5fc3717)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/binding-baselines.rs (/Volumes/A/.target-ood-training-verified/debug/deps/binding_baselines-8e41d2e7705fde41)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/binding-discriminator.rs (/Volumes/A/.target-ood-training-verified/debug/deps/binding_discriminator-f870d1ecac9944e7)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/block-recovery-test.rs (/Volumes/A/.target-ood-training-verified/debug/deps/block_recovery_test-ad2bb4b4d94114b0)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/bloom-wall.rs (/Volumes/A/.target-ood-training-verified/debug/deps/bloom_wall-ffd5f5afec3e488d)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/bundle-subset-sweep.rs (/Volumes/A/.target-ood-training-verified/debug/deps/bundle_subset_sweep-b9e792a594fb5e0b)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/capacity-campaign.rs (/Volumes/A/.target-ood-training-verified/debug/deps/capacity_campaign-75fb63f6df5ee569)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/conversation-eval.rs (/Volumes/A/.target-ood-training-verified/debug/deps/conversation_eval-fc898ed24dbaf0aa)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+Running unittests src/bin/document-search-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/document_search_bench-104909c5d5509a8b)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/durability-driver.rs (/Volumes/A/.target-ood-training-verified/debug/deps/durability_driver-772f9cb823f4293d)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests benchmarks/embedding/embed_store_bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/embed_store_bench-fdf44fd6daab256f)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/encoder-eval.rs (/Volumes/A/.target-ood-training-verified/debug/deps/encoder_eval-0b34239c28b2b806)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/fixed-point-holographic.rs (/Volumes/A/.target-ood-training-verified/debug/deps/fixed_point_holographic-938e2a144912e4e4)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/forget-experiment.rs (/Volumes/A/.target-ood-training-verified/debug/deps/forget_experiment-cb897528a74a0247)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-admin.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_admin-ad0e5bce58a1d1c9)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+Running unittests src/bin/hms-benchmark-suite.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_benchmark_suite-4fb27ad017157ced)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-embed.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_embed-99542091de5a1f0e)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-eval.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_eval-020e5eb17830a584)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-format.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_format-d827ca098c142b64)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-mcp.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_mcp-cccca0e8f643c9d3)
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+Running unittests src/bin/hms-research-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_research_bench-216f0d7b9653f3f9)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-scaling.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_scaling-2b6d394cc7e7b70d)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-server/main.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_server-f649f049b7f7d005)
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.79s
+Running unittests src/bin/hms-stress.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_stress-7c72f211a170d512)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/hms-workload.rs (/Volumes/A/.target-ood-training-verified/debug/deps/hms_workload-75dd229cf6bb2f44)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/kernel-capacity-sweep.rs (/Volumes/A/.target-ood-training-verified/debug/deps/kernel_capacity_sweep-22f64908b13b2873)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/kernel-load-curve.rs (/Volumes/A/.target-ood-training-verified/debug/deps/kernel_load_curve-f3631ba2d7c39eac)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/memory-api-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/memory_api_bench-9d6056fc056d7dc2)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/memory-api-lme.rs (/Volumes/A/.target-ood-training-verified/debug/deps/memory_api_lme-ce3ad72d5c250a6d)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/noisy-retrieval.rs (/Volumes/A/.target-ood-training-verified/debug/deps/noisy_retrieval-6d64f9ae4d94159b)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/operand-retriever.rs (/Volumes/A/.target-ood-training-verified/debug/deps/operand_retriever-ec9f4c48bf53517f)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/pinv-memory.rs (/Volumes/A/.target-ood-training-verified/debug/deps/pinv_memory-d50fe8c00c514591)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/private-query-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/private_query_bench-75fd9e7c4446711f)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/private-rank-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/private_rank_bench-2bc0c7458b2787ce)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/public-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/public_bench-bb9f12c33c5890f9)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/qag-diagnose.rs (/Volumes/A/.target-ood-training-verified/debug/deps/qag_diagnose-d1300c19e006ac00)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-bundle.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_bundle-0513cb1d38c154f6)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-cleanup.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_cleanup-09ec49448480a5a3)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-factorize.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_factorize-5c75be2fa223fc54)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/resonator-sweep.rs (/Volumes/A/.target-ood-training-verified/debug/deps/resonator_sweep-856bae6526f01cba)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/ridge-memory.rs (/Volumes/A/.target-ood-training-verified/debug/deps/ridge_memory-ecc5e54151d0ca38)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/route-sweep.rs (/Volumes/A/.target-ood-training-verified/debug/deps/route_sweep-cddd0b50d3c5fdcc)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/security-probe.rs (/Volumes/A/.target-ood-training-verified/debug/deps/security_probe-edf894a9cddc9693)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/sparse-bench.rs (/Volumes/A/.target-ood-training-verified/debug/deps/sparse_bench-7d9924e877760580)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running unittests src/bin/vibe-rotation.rs (/Volumes/A/.target-ood-training-verified/debug/deps/vibe_rotation-99b4e68bbbbb02f7)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Running tests/allocation_bounds.rs (/Volumes/A/.target-ood-training-verified/debug/deps/allocation_bounds-ee066e349c74b57e)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+Running tests/chunking_proptest.rs (/Volumes/A/.target-ood-training-verified/debug/deps/chunking_proptest-6a390b1c25aeaf11)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+Running tests/conversation_context.rs (/Volumes/A/.target-ood-training-verified/debug/deps/conversation_context-727b14db483d6818)
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+Running tests/conversation_memory.rs (/Volumes/A/.target-ood-training-verified/debug/deps/conversation_memory-b422532a14fac441)
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+Running tests/conversation_models.rs (/Volumes/A/.target-ood-training-verified/debug/deps/conversation_models-9ef18827b4b0f600)
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.05s
+Running tests/document_checkpoint.rs (/Volumes/A/.target-ood-training-verified/debug/deps/document_checkpoint-e2c81aa42cabb123)
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.49s
+Running tests/document_competition.rs (/Volumes/A/.target-ood-training-verified/debug/deps/document_competition-49c3e4d60238c043)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+Running tests/document_dense.rs (/Volumes/A/.target-ood-training-verified/debug/deps/document_dense-de68cc8f29b39423)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+Running tests/documents.rs (/Volumes/A/.target-ood-training-verified/debug/deps/documents-a39831e85ec02b50)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.64s
+Running tests/embed_store.rs (/Volumes/A/.target-ood-training-verified/debug/deps/embed_store-041344e1669a7404)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+Running tests/enc_text.rs (/Volumes/A/.target-ood-training-verified/debug/deps/enc_text-23bce7358ea7f8ce)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+Running tests/encoder_versions.rs (/Volumes/A/.target-ood-training-verified/debug/deps/encoder_versions-9e7a12751c8301b5)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.40s
+Running tests/forget_equivalence.rs (/Volumes/A/.target-ood-training-verified/debug/deps/forget_equivalence-c2be4b73815083e5)
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.14s
+Running tests/format_crash.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_crash-10945ba6489c4b14)
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 52.48s
+Running tests/format_golden.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_golden-9d88dcaf807c51d9)
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 3.90s
+Running tests/format_layout.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_layout-c2792932b58488b5)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.69s
+Running tests/format_upgrade_regressions.rs (/Volumes/A/.target-ood-training-verified/debug/deps/format_upgrade_regressions-77853ca027b3deb6)
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.78s
+Running tests/ingest_encode.rs (/Volumes/A/.target-ood-training-verified/debug/deps/ingest_encode-9961ac9b4d4042a6)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+Running tests/ingest_postings.rs (/Volumes/A/.target-ood-training-verified/debug/deps/ingest_postings-7096ba21e6770dab)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.69s
+Running tests/lexical_count.rs (/Volumes/A/.target-ood-training-verified/debug/deps/lexical_count-52c6ca1c94e6d472)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+Running tests/memory_api.rs (/Volumes/A/.target-ood-training-verified/debug/deps/memory_api-7bb76bf729bd7d82)
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.04s
+Running tests/memory_api_server.rs (/Volumes/A/.target-ood-training-verified/debug/deps/memory_api_server-dd3fd3e0531ff7db)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+Running tests/purge.rs (/Volumes/A/.target-ood-training-verified/debug/deps/purge-f36a34be343077ee)
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.06s
+Running tests/qgraph_prefetch.rs (/Volumes/A/.target-ood-training-verified/debug/deps/qgraph_prefetch-090de1b72e588f0f)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.96s
+Running tests/quantized_ivf.rs (/Volumes/A/.target-ood-training-verified/debug/deps/quantized_ivf-3eb39b80d30c482e)
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+Running tests/reliability.rs (/Volumes/A/.target-ood-training-verified/debug/deps/reliability-2ceb9b2e9bc2f808)
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.20s
+Running tests/rss_embeddings.rs (/Volumes/A/.target-ood-training-verified/debug/deps/rss_embeddings-ed0c30ffbc4ce6d5)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.11s
+Running tests/server.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server-6edc46f6693e61d5)
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s
+Running tests/server_abuse.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_abuse-29191664dd502fe9)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.15s
+Running tests/server_ann.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_ann-0f182b0f7c8a081c)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+Running tests/server_api.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_api-7d5bba4f15d5f7cd)
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.90s
+Running tests/server_ops.rs (/Volumes/A/.target-ood-training-verified/debug/deps/server_ops-77a15d4cb0dab724)
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.18s
+Running tests/store_lifecycle.rs (/Volumes/A/.target-ood-training-verified/debug/deps/store_lifecycle-b5f1c78814036d9a)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+Running tests/vertex_index_bare_path.rs (/Volumes/A/.target-ood-training-verified/debug/deps/vertex_index_bare_path-4258f80767ef6bbf)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+Running tests/wrong_passphrase.rs (/Volumes/A/.target-ood-training-verified/debug/deps/wrong_passphrase-2f1945907b96f5a4)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.30s
+Doc-tests holographic_memory
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.53s
+
+cargo +1.89.0 check --locked --no-default-features
+exit_code=0
+Finished `dev` profile [optimized] target(s) in 16.72s

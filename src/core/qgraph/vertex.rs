@@ -2175,6 +2175,8 @@ impl VSearcher<'_> {
     }
 
     /// Searches this index with the searcher's reusable buffers.
+    /// Returns `min(k, n)` distinct neighbors, restarting from an unseen vertex only when
+    /// traversal would otherwise return too few candidates.
     #[inline]
     pub fn search(
         &mut self,
@@ -2382,8 +2384,65 @@ impl SearchScratch {
             1.0
         };
         let mut stale = 0usize;
-        while let Some(c) = self.pool.next() {
-            if patience > 0 && stale >= patience {
+        let target = k.min(g.n);
+        let enough = |search: &Self| {
+            let count = if params.reservoir > 0 {
+                search.reservoir.keys.len()
+            } else if blocks && !block_screen {
+                search.expanded.len()
+            } else {
+                search.pool.keys.len()
+            };
+            count >= target
+        };
+        let mut seed_cursor = 0usize;
+        loop {
+            let c = match self.pool.next() {
+                Some(c) => c,
+                None => {
+                    if enough(self) {
+                        break;
+                    }
+                    // Exhausting a full pool would have retained at least `target` distinct
+                    // results. A short result therefore leaves room for an unseen seed.
+                    let seed = (seed_cursor..g.n)
+                        .find(|&v| {
+                            if fuse {
+                                self.visited.traces[v].epoch != self.visited.epoch
+                            } else {
+                                !self.visited.seen(v as u32)
+                            }
+                        })
+                        .ok_or_else(|| {
+                            invalid(
+                                "search exhausted vertices before retaining enough candidates"
+                                    .into(),
+                            )
+                        })?;
+                    seed_cursor = seed + 1;
+                    let seed = seed as u32;
+                    self.visited.insert(seed);
+                    let candidate = key(g.est(&self.qc, self.qsum, seed, w), seed);
+                    self.reservoir.offer(candidate);
+                    let (_, evicted) = self
+                        .pool
+                        .insert(candidate)
+                        .ok_or_else(|| invalid("search could not admit a recovery seed".into()))?;
+                    if fuse {
+                        self.visited.trace(seed).1.key = candidate;
+                        if let Some(evicted) = evicted {
+                            self.visited.trace(key_id(evicted)).1.key = u64::MAX;
+                        }
+                    }
+                    evals += 1;
+                    if PROFILE {
+                        profile.traversal_evaluations += 1;
+                    }
+                    stale = 0;
+                    continue;
+                }
+            };
+            if patience > 0 && stale >= patience && enough(self) {
                 break;
             }
             if frontier < 1.0 && k > 0 && self.pool.is_full() {
@@ -2393,7 +2452,7 @@ impl SearchScratch {
                 let len = self.pool.keys.len();
                 let kth = key_dist(self.pool.keys[k.min(len) - 1]);
                 let worst = key_dist(self.pool.keys[len - 1]);
-                if key_dist(c) > kth + frontier * (worst - kth) {
+                if key_dist(c) > kth + frontier * (worst - kth) && enough(self) {
                     break;
                 }
             }
@@ -2663,7 +2722,7 @@ impl SearchScratch {
         }
         self.results.clear();
         let take = take.min(self.keys.len());
-        if params.rerank > 0 && knobs.rerank_z > 0.0 && sq > 0.0 && take > k {
+        if params.rerank > 0 && knobs.rerank_z > 0.0 && sq > 0.0 && k > 0 && take > k {
             evals += self.rerank_gated(g, k, take, sq, knobs.rerank_z);
             if PROFILE {
                 profile.rerank_evaluations = self.results.len();
@@ -3027,6 +3086,404 @@ impl VGraph {
 #[cfg(test)]
 mod serving_tests {
     use super::*;
+
+    #[test]
+    fn connected_search_fingerprints_and_evaluation_counts() {
+        let rows: Vec<f32> = (0..64)
+            .flat_map(|v| (0..16).map(move |d| if v & (1 << (d % 6)) == 0 { -1.0 } else { 1.0 }))
+            .collect();
+        for metric in [VMetric::Angular, VMetric::Euclidean, VMetric::InnerProduct] {
+            let mut graph = if metric == VMetric::InnerProduct {
+                lifted(&rows, 16)
+            } else {
+                Graph::build(
+                    &rows,
+                    16,
+                    &BuildParams {
+                        metric: if metric == VMetric::Angular {
+                            Metric::Angular
+                        } else {
+                            Metric::Euclidean
+                        },
+                        degree: 8,
+                        build_ef: 16,
+                        ..Default::default()
+                    },
+                )
+                .unwrap()
+            };
+            graph.entry = 0;
+            graph.layers.clear();
+            graph.upper_ids.clear();
+            for v in 0..graph.n {
+                let neighbors: Vec<_> = [1, 3]
+                    .map(|offset| ((v + offset) % graph.n) as u32)
+                    .to_vec();
+                graph.adj.set(v, &neighbors);
+            }
+            for bits in [4, 8] {
+                let index = if metric == VMetric::InnerProduct {
+                    VGraph::from_lifted_ip_graph(&graph, bits, 8, true, true, 3).unwrap()
+                } else {
+                    VGraph::from_graph_with(&graph, bits, 8, true, true, 3, false).unwrap()
+                };
+                for (knob_id, knobs) in [
+                    SearchKnobs::OFF,
+                    SearchKnobs {
+                        prefetch: 3,
+                        batch_est: true,
+                        frontier: 0.8,
+                        ..SearchKnobs::OFF
+                    },
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    let mut searcher = index.searcher_with(knobs);
+                    let mut out = Vec::new();
+                    let mut fingerprint = 0xcbf29ce484222325u64;
+                    let mut evaluations = 0usize;
+                    for ef in [8, 16] {
+                        for reservoir in [0, 16] {
+                            for patience in [0, 1] {
+                                for query in rows.as_chunks::<16>().0.iter().step_by(7) {
+                                    let count = searcher
+                                        .search(
+                                            query,
+                                            5,
+                                            VSearchParams {
+                                                ef,
+                                                rerank: 16,
+                                                reservoir,
+                                                patience,
+                                                ..Default::default()
+                                            },
+                                            &mut out,
+                                        )
+                                        .unwrap();
+                                    assert_eq!(out.len(), 5);
+                                    evaluations += count;
+                                    for value in
+                                        out.iter()
+                                            .map(|&id| u64::from(id))
+                                            .chain(searcher.scratch.results.iter().map(
+                                                |&(distance, _)| u64::from(distance.to_bits()),
+                                            ))
+                                            .chain([count as u64])
+                                    {
+                                        fingerprint =
+                                            (fingerprint ^ value).wrapping_mul(0x100000001b3);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    println!("CONNECTED {metric:?} {bits} {knob_id} {fingerprint} {evaluations}");
+                }
+            }
+        }
+    }
+
+    fn disconnect(graph: &mut Graph, component_size: usize) {
+        graph.entry = 0;
+        graph.layers.clear();
+        graph.upper_ids.clear();
+        for v in 0..graph.n {
+            let first = v / component_size * component_size;
+            let neighbors: Vec<_> = (first..(first + component_size).min(graph.n))
+                .filter(|&u| u != v)
+                .map(|u| u as u32)
+                .collect();
+            graph.adj.set(v, &neighbors);
+        }
+    }
+
+    fn assert_complete(searcher: &VSearcher<'_>, out: &[u32], k: usize, rerank: usize) {
+        assert_eq!(out.len(), k.min(searcher.index.n));
+        assert_eq!(
+            out.iter()
+                .copied()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len(),
+            out.len()
+        );
+        assert!(out.iter().all(|&id| (id as usize) < searcher.index.n));
+        assert!(searcher.scratch.keys.windows(2).all(|w| w[0] <= w[1]));
+        if rerank > 0 {
+            assert!(searcher.scratch.results.iter().all(|r| r.0.is_finite()));
+            assert!(searcher
+                .scratch
+                .results
+                .windows(2)
+                .all(|w| { w[0].0.total_cmp(&w[1].0).then(w[0].1.cmp(&w[1].1)).is_le() }));
+        }
+    }
+
+    #[test]
+    fn disconnected_graph_returns_the_requested_number_of_distinct_neighbors() {
+        let rows: Vec<f32> = (0..67 * 2).map(|i| (i * 7 % 31 + 1) as f32).collect();
+        for metric in [VMetric::Angular, VMetric::Euclidean, VMetric::InnerProduct] {
+            let mut graph = if metric == VMetric::InnerProduct {
+                lifted(&rows, 2)
+            } else {
+                Graph::build(
+                    &rows,
+                    2,
+                    &BuildParams {
+                        metric: if metric == VMetric::Angular {
+                            Metric::Angular
+                        } else {
+                            Metric::Euclidean
+                        },
+                        degree: 2,
+                        build_ef: 16,
+                        ..Default::default()
+                    },
+                )
+                .unwrap()
+            };
+            disconnect(&mut graph, 3);
+            for bits in [4, 8] {
+                for id_bytes in [0, 3, 4] {
+                    let index = if metric == VMetric::InnerProduct {
+                        VGraph::from_lifted_ip_graph(&graph, bits, 8, true, true, id_bytes).unwrap()
+                    } else {
+                        VGraph::from_graph_with(
+                            &graph,
+                            bits,
+                            8,
+                            true,
+                            true,
+                            id_bytes,
+                            metric == VMetric::Angular,
+                        )
+                        .unwrap()
+                    };
+                    for (ef, reservoir, rerank, patience, neighbour_cap) in [
+                        (0, 0, 0, 0, 0),
+                        (8, 0, 67, 1, 1),
+                        (8, 1, 67, 1, 0),
+                        (8, 68, 67, 1, 1),
+                    ] {
+                        let knobs = SearchKnobs {
+                            prefetch: 3,
+                            batch_est: true,
+                            frontier: 0.0,
+                            rerank_z: 1.0,
+                            ..SearchKnobs::OFF
+                        };
+                        let mut searcher = index.searcher_with(knobs);
+                        let params = VSearchParams {
+                            ef,
+                            reservoir,
+                            rerank,
+                            patience,
+                            neighbour_cap,
+                            screen: reservoir == 0,
+                            screen_sigmas: 0.0,
+                            ..Default::default()
+                        };
+                        let mut out = Vec::new();
+                        for k in [0, 1, 2, 3, 4, 63, 64, 65, 66, 67, 68, usize::MAX] {
+                            let evaluations =
+                                searcher.search(&[1.0, 2.0], k, params, &mut out).unwrap();
+                            assert_complete(&searcher, &out, k, rerank);
+                            let first = out.clone();
+                            assert_eq!(
+                                searcher.search(&[1.0, 2.0], k, params, &mut out).unwrap(),
+                                evaluations
+                            );
+                            assert_eq!(out, first);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn recovery_expands_the_seed_and_counts_its_score() {
+        let rows = [
+            1.0, 0.0, 2.0, 0.0, 3.0, 0.0, -10.0, 0.0, 5.0, 0.0, 6.0, 0.0, 100.0, 0.0,
+        ];
+        let mut graph = lifted(&rows, 2);
+        disconnect(&mut graph, 1);
+        graph.adj.set(0, &[1]);
+        graph.adj.set(1, &[2]);
+        graph.adj.set(3, &[5]);
+        graph.adj.set(5, &[4]);
+        let index = VGraph::from_lifted_ip_graph(&graph, 8, 8, false, false, 4).unwrap();
+        let mut searcher = index.searcher_with(SearchKnobs::OFF);
+        for reservoir in [0, 4] {
+            let params = VSearchParams {
+                ef: 4,
+                rerank: 4,
+                reservoir,
+                patience: 1,
+                ..Default::default()
+            };
+            let mut out = Vec::new();
+            let evaluations = searcher.search(&[1.0, 0.0], 4, params, &mut out).unwrap();
+            assert_eq!(out, [5, 4, 2, 1]);
+            assert_eq!(evaluations, 10);
+            assert!(!searcher.scratch.visited.seen(6));
+            #[cfg(feature = "experimental")]
+            {
+                let profile = searcher
+                    .profile_search(&[1.0, 0.0], 4, params, &mut out)
+                    .unwrap();
+                assert_eq!(profile.traversal_evaluations, 6);
+                assert_eq!(
+                    profile.entry_evaluations
+                        + profile.traversal_evaluations
+                        + profile.rerank_evaluations,
+                    evaluations
+                );
+            }
+        }
+        searcher
+            .search(
+                &[0.0, 0.0],
+                7,
+                VSearchParams {
+                    rerank: 7,
+                    ..Default::default()
+                },
+                &mut Vec::new(),
+            )
+            .unwrap();
+        assert_eq!(
+            searcher
+                .scratch
+                .results
+                .iter()
+                .map(|r| r.1)
+                .collect::<Vec<_>>(),
+            [0, 1, 2, 3, 4, 5, 6]
+        );
+    }
+
+    #[test]
+    fn disconnected_blocks_retain_enough_expansions_with_stopping() {
+        let rows = crate::core::qgraph::tests::clustered(67, 16, 77);
+        let mut graph = Graph::build(
+            &rows,
+            16,
+            &BuildParams {
+                degree: 32,
+                build_ef: 64,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        for component_size in [3, 32, 33] {
+            disconnect(&mut graph, component_size);
+            for bits in [1, 2, 4] {
+                for id_bytes in [0, 3, 4] {
+                    let index = VGraph::from_graph_with(&graph, 4, 8, true, true, id_bytes, false)
+                        .unwrap()
+                        .with_blocks(&graph, bits)
+                        .unwrap();
+                    for (fuse, block_screen) in [(false, false), (true, false), (false, true)] {
+                        let mut searcher = index.searcher_with(SearchKnobs {
+                            frontier: 0.0,
+                            block_screen,
+                            ..SearchKnobs::OFF
+                        });
+                        for rerank in [0, 67] {
+                            let params = VSearchParams {
+                                ef: 1,
+                                rerank,
+                                patience: 1,
+                                fuse,
+                                screen_sigmas: 0.0,
+                                ..Default::default()
+                            };
+                            let mut out = Vec::new();
+                            for k in [
+                                0,
+                                component_size - 1,
+                                component_size,
+                                component_size + 1,
+                                66,
+                                67,
+                                68,
+                            ] {
+                                searcher.search(&rows[..16], k, params, &mut out).unwrap();
+                                assert_complete(&searcher, &out, k, rerank);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn recovery_reuses_marks_and_fused_traces_across_epoch_rollover() {
+        let rows = crate::core::qgraph::tests::clustered(67, 16, 79);
+        let mut graph = Graph::build(
+            &rows,
+            16,
+            &BuildParams {
+                degree: 2,
+                build_ef: 16,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        disconnect(&mut graph, 3);
+        let index = VGraph::from_graph(&graph, true)
+            .unwrap()
+            .with_blocks(&graph, 2)
+            .unwrap();
+        let mut searcher = index.searcher_with(SearchKnobs::OFF);
+        let mut out = Vec::new();
+        for iteration in 0..260 {
+            for fuse in [false, true] {
+                let k = if iteration % 2 == 0 { 4 } else { 65 };
+                let query = &rows[(iteration % 67) * 16..][..16];
+                let params = VSearchParams {
+                    ef: 1,
+                    rerank: 67,
+                    patience: 1,
+                    fuse,
+                    ..Default::default()
+                };
+                let mut fresh = index.searcher_with(SearchKnobs::OFF);
+                let mut expected = Vec::new();
+                let evaluations = fresh.search(query, k, params, &mut expected).unwrap();
+                assert_eq!(
+                    searcher.search(query, k, params, &mut out).unwrap(),
+                    evaluations
+                );
+                assert_eq!(out, expected);
+                assert_complete(&searcher, &out, k, params.rerank);
+            }
+        }
+    }
+
+    #[test]
+    fn singleton_search_bounds_k_without_recovery() {
+        let graph = lifted(&[2.0, 0.0], 2);
+        let index = VGraph::from_lifted_ip_graph(&graph, 8, 8, false, false, 4).unwrap();
+        let mut searcher = index.searcher_with(SearchKnobs::OFF);
+        for k in [0, 1, 2, usize::MAX] {
+            let mut out = Vec::new();
+            searcher
+                .search(
+                    &[1.0, 0.0],
+                    k,
+                    VSearchParams {
+                        ef: 0,
+                        ..Default::default()
+                    },
+                    &mut out,
+                )
+                .unwrap();
+            assert_complete(&searcher, &out, k, 0);
+        }
+    }
 
     fn lifted(rows: &[f32], dim: usize) -> Graph {
         let norms: Vec<f64> = rows
