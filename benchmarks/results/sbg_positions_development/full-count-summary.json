@@ -1,0 +1,18 @@
+{
+  "mode": "full-count",
+  "checked": 962,
+  "mismatches": 0,
+  "machine": "Apple M4",
+  "architecture": "arm64",
+  "slot_bits": 64,
+  "threads": 4,
+  "nice": 19,
+  "source_sha": "7e216c6a5afd5a0f518c619fb95b1bb990e08aab",
+  "correctness_only": true,
+  "open_elapsed_s": 272.64468479156494,
+  "elapsed_s": 277.03174781799316,
+  "peak_rss_kib": 13311792,
+  "query_sha256": "a8e8f2c1a4bede53063de22fb13be83b585683da1c28208da4921de73ce254bd",
+  "reference_sha256": "a3bff380d26e47e5f057b97d97809eca3602017c03abe656133ef7b5659b7647",
+  "binary_sha256": "5243203aa73ab4554d0fddd0659cf23835d7782db1f30942f8f37678377cd1f8"
+}
