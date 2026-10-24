@@ -73,5 +73,11 @@
       "evidence": "45 completed degree64 groups retained across preemption from container ta-01M5PATN6HDQ0YTRZ5XZRNPCSR to ta-01M5PDWQVEXHTNJSV6WPESQA3R. Both report AMD family25 model1, but feature hashes, hypervisor, and BogoMIPS differ. Mixed-container groups are excluded from fair comparisons pending rerun; originals must be archived."
     }
   ],
-  "draft_pr": "https://github.com/vector-index-bench/vibe/pull/15"
+  "draft_pr": "https://github.com/vector-index-bench/vibe/pull/15",
+  "repair_tools_sha256": {
+    "vibe-migration-repair-watch-20261024.py": "1580b90aff7c82b7eed1ec7f843d80381ca7462f43c222fdde922228348bc0d2",
+    "vibe-repair-migrated-20261024.py": "0908b2296ad4fa4b99a3116cc843dfdb3aea503982db73dcb478eaf5c12a96c3"
+  },
+  "draft_pr_verified_utc": "2026-10-24T08:28Z",
+  "llama_verified_standing": "llama-128-ip-standing.json"
 }

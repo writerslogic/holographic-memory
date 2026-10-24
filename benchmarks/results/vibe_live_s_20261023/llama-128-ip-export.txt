@@ -1,0 +1,7 @@
+Exporting results:   0%|          | 0/10 [00:00<?, ?it/s]Exporting results:  10%|█         | 1/10 [00:01<00:16,  1.89s/it]Exporting results:  20%|██        | 2/10 [00:03<00:14,  1.85s/it]Exporting results:  30%|███       | 3/10 [00:05<00:12,  1.84s/it]Exporting results:  40%|████      | 4/10 [00:07<00:11,  1.84s/it]Exporting results:  50%|█████     | 5/10 [00:08<00:07,  1.45s/it]Exporting results:  60%|██████    | 6/10 [00:08<00:04,  1.21s/it]Exporting results:  70%|███████   | 7/10 [00:09<00:03,  1.06s/it]Exporting results:  80%|████████  | 8/10 [00:10<00:01,  1.04it/s]Exporting results:  90%|█████████ | 9/10 [00:11<00:00,  1.11it/s]Exporting results: 100%|██████████| 10/10 [00:11<00:00,  1.16it/s]Exporting results: 100%|██████████| 10/10 [00:11<00:00,  1.19s/it]
+Exporting query stats:   0%|          | 0/1 [00:00<?, ?it/s]/opt/vibe/export_results.py:197: RuntimeWarning: invalid value encountered in log
+  metrics[f"rcdim{k}"] = np.log(n / (2*k)) / np.log(rc)
+/opt/vibe/export_results.py:174: RuntimeWarning: invalid value encountered in scalar divide
+  return -valid / s
+Exporting query stats: 100%|██████████| 1/1 [00:00<00:00, 35.54it/s]
+Exporting dataset info:   0%|          | 0/1 [00:00<?, ?it/s]Exporting dataset info: 100%|██████████| 1/1 [00:00<00:00, 700.45it/s]
