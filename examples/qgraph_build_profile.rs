@@ -197,13 +197,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.iter().any(|a| a == "--orders") {
         for o in order_locality(&graph) {
             println!(
-                "order {:<12} {:>7.3} s {:.3} B/edge log2gap {:.2} within32 {:.4} within512 {:.4}",
+                "order {:<12} {:>7.3} s {:.3} B/edge log2gap {:.2} within32 {:.4} within512 {:.4} pages/list {:.2}",
                 o.name,
                 o.order_secs,
                 o.varint_bytes_per_edge,
                 o.mean_log2_gap,
                 o.within_32,
-                o.within_512
+                o.within_512,
+                o.pages_per_list
             );
         }
         end_phase("orders");

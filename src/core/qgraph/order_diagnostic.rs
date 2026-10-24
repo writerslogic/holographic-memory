@@ -27,13 +27,16 @@ pub struct OrderLocality {
     pub within_32: f64,
     /// Share of edges with `|new(u) - new(v)| < 512`.
     pub within_512: f64,
+    /// Mean number of distinct 32-row blocks (4 KiB pages of 128-byte code rows) the
+    /// neighbours of one list fall in: the pages one expansion touches.
+    pub pages_per_list: f64,
 }
 
 /// Scores the insertion order, the breadth-first order the encoder uses, its reverse (reverse
-/// Cuthill-McKee on a graph whose lists all have the same length), and a cluster order:
-/// vertices grouped by their graph-nearest seed of the top routing layer (multi-source
-/// breadth-first search), clusters in breadth-first order of their seeds, breadth-first within
-/// each cluster.
+/// Cuthill-McKee on a graph whose lists all have the same length), a cluster order (vertices
+/// grouped by their graph-nearest seed of the top routing layer by multi-source breadth-first
+/// search, clusters in breadth-first order of their seeds, breadth-first within each cluster),
+/// and Gorder with windows 5 and 32.
 pub fn order_locality(g: &Graph) -> Vec<OrderLocality> {
     let view = g.view();
     let mut out = Vec::new();
@@ -51,6 +54,8 @@ pub fn order_locality(g: &Graph) -> Vec<OrderLocality> {
         o
     });
     score("cluster_bfs", &|| cluster_bfs(view));
+    score("gorder_w5", &|| gorder(view, 5));
+    score("gorder_w32", &|| gorder(view, 32));
     out
 }
 
@@ -60,11 +65,16 @@ fn locality(g: GraphView<'_>, name: &'static str, order_secs: f64, order: &[u32]
         new_id[o as usize] = v as u32;
     }
     let (mut edges, mut bytes, mut log_gap, mut w32, mut w512) = (0u64, 0u64, 0f64, 0u64, 0u64);
+    let (mut lists, mut pages) = (0u64, 0u64);
     let mut sorted = Vec::new();
     for (nv, &o) in order.iter().enumerate() {
         sorted.clear();
         sorted.extend(g.neighbors(o as usize).iter().map(|&u| new_id[u as usize]));
         sorted.sort_unstable();
+        if !sorted.is_empty() {
+            lists += 1;
+            pages += 1 + sorted.windows(2).filter(|p| p[0] / 32 != p[1] / 32).count() as u64;
+        }
         let mut prev = nv as i64;
         for (i, &u) in sorted.iter().enumerate() {
             let gap = (i64::from(u) - nv as i64).unsigned_abs();
@@ -90,7 +100,112 @@ fn locality(g: GraphView<'_>, name: &'static str, order_secs: f64, order: &[u32]
         mean_log2_gap: log_gap / e,
         within_32: w32 as f64 / e,
         within_512: w512 as f64 / e,
+        pages_per_list: pages as f64 / lists.max(1) as f64,
     }
+}
+
+/// Gorder (Wei, Yu, Lu and Lin, SIGMOD 2016): places vertices one at a time, each time the
+/// unplaced vertex with the highest score against the last `w` placed ones, where a pair
+/// scores one per edge between them and one per shared in-neighbour (two vertices listed by
+/// the same vertex are expanded together). The scores are kept in a bucket queue ("unit heap")
+/// so each update is O(1); ties follow deterministic bucket insertion order. Cost is
+/// about `2 n (d_out + d_in + d_in d_out)` updates.
+fn gorder(g: GraphView<'_>, w: usize) -> Vec<u32> {
+    const NONE: u32 = u32::MAX;
+    let n = g.n;
+    // In-neighbour lists, compressed.
+    let mut off = vec![0usize; n + 1];
+    for v in 0..n {
+        for &u in g.neighbors(v) {
+            off[u as usize + 1] += 1;
+        }
+    }
+    for i in 0..n {
+        off[i + 1] += off[i];
+    }
+    let mut fill = off[..n].to_vec();
+    let mut ins = vec![0u32; off[n]];
+    for v in 0..n {
+        for &u in g.neighbors(v) {
+            ins[fill[u as usize]] = v as u32;
+            fill[u as usize] += 1;
+        }
+    }
+    let in_of = |v: usize| &ins[off[v]..off[v + 1]];
+
+    // Bucket queue over the unplaced vertices: `head[k]` starts the doubly linked list of the
+    // vertices with score `k`; `top` bounds the highest non-empty bucket.
+    let mut key = vec![0u32; n];
+    let (mut prev, mut next) = (vec![NONE; n], vec![NONE; n]);
+    let mut head: Vec<u32> = vec![NONE];
+    let mut placed = vec![false; n];
+    let bfs = super::vertex::bfs_order(g);
+    for &v in bfs.iter().rev() {
+        next[v as usize] = head[0];
+        if head[0] != NONE {
+            prev[head[0] as usize] = v;
+        }
+        head[0] = v;
+    }
+    let mut top = 0usize;
+    let unlink = |v: usize, key: &[u32], prev: &mut [u32], next: &mut [u32], head: &mut [u32]| {
+        let (p, q) = (prev[v], next[v]);
+        if p == NONE {
+            head[key[v] as usize] = q;
+        } else {
+            next[p as usize] = q;
+        }
+        if q != NONE {
+            prev[q as usize] = p;
+        }
+        prev[v] = NONE;
+        next[v] = NONE;
+    };
+    let mut order = Vec::with_capacity(n);
+    let mut v = g.entry as usize;
+    for i in 0..n {
+        if i > 0 {
+            while top > 0 && head[top] == NONE {
+                top -= 1;
+            }
+            v = head[top] as usize;
+        }
+        unlink(v, &key, &mut prev, &mut next, &mut head);
+        placed[v] = true;
+        order.push(v as u32);
+        // Score changes: the new vertex enters the window, the oldest one leaves it.
+        let leaving = (i >= w).then(|| order[i - w] as usize);
+        for (x, up) in std::iter::once((v, true)).chain(leaving.map(|x| (x, false))) {
+            let related = g.neighbors(x).iter().chain(in_of(x)).copied().chain(
+                in_of(x)
+                    .iter()
+                    .flat_map(|&p| g.neighbors(p as usize).iter().copied()),
+            );
+            for u in related {
+                let u = u as usize;
+                if placed[u] {
+                    continue;
+                }
+                unlink(u, &key, &mut prev, &mut next, &mut head);
+                if up {
+                    key[u] += 1;
+                } else {
+                    key[u] -= 1;
+                }
+                let k = key[u] as usize;
+                if k >= head.len() {
+                    head.resize(k + 1, NONE);
+                }
+                next[u] = head[k];
+                if head[k] != NONE {
+                    prev[head[k] as usize] = u as u32;
+                }
+                head[k] = u as u32;
+                top = top.max(k);
+            }
+        }
+    }
+    order
 }
 
 /// Multi-source breadth-first clusters around the top routing layer's vertices.
@@ -164,6 +279,76 @@ mod tests {
     use crate::core::qgraph::{BuildParams, Metric};
 
     #[test]
+    fn gorder_selects_a_maximum_window_score() {
+        for n in [4, 5, 6, 31, 32, 33] {
+            let data: Vec<f32> = (0..n * 4)
+                .map(|i| ((i * 17 + i / 4) % 101) as f32)
+                .collect();
+            let g = Graph::build(
+                &data,
+                4,
+                &BuildParams {
+                    metric: Metric::Euclidean,
+                    degree: 4,
+                    build_ef: 16,
+                    ..BuildParams::default()
+                },
+            )
+            .unwrap();
+            let view = g.view();
+            for window in [0, 1, 4, 5, 6, 31, 32, 33] {
+                let order = gorder(view, window);
+                assert_eq!(order, gorder(view, window));
+                let mut remaining: std::collections::BTreeSet<_> = (0..n as u32).collect();
+                for (i, &chosen) in order.iter().enumerate() {
+                    let score = |candidate: u32| {
+                        order[i.saturating_sub(window)..i]
+                            .iter()
+                            .map(|&prior| {
+                                usize::from(view.neighbors(prior as usize).contains(&candidate))
+                                    + usize::from(
+                                        view.neighbors(candidate as usize).contains(&prior),
+                                    )
+                                    + (0..n)
+                                        .filter(|&source| {
+                                            let neighbors = view.neighbors(source);
+                                            neighbors.contains(&prior)
+                                                && neighbors.contains(&candidate)
+                                        })
+                                        .count()
+                            })
+                            .sum::<usize>()
+                    };
+                    assert_eq!(
+                        score(chosen),
+                        remaining.iter().copied().map(score).max().unwrap()
+                    );
+                    assert!(remaining.remove(&chosen));
+                }
+                assert!(remaining.is_empty());
+            }
+            let order: Vec<_> = (0..n as u32).collect();
+            let nonempty: Vec<_> = (0..n)
+                .map(|v| view.neighbors(v))
+                .filter(|row| !row.is_empty())
+                .collect();
+            let expected_pages: usize = nonempty
+                .iter()
+                .map(|row| {
+                    row.iter()
+                        .map(|v| v / 32)
+                        .collect::<std::collections::BTreeSet<_>>()
+                        .len()
+                })
+                .sum();
+            assert_eq!(
+                locality(view, "insertion", 0.0, &order).pages_per_list,
+                expected_pages as f64 / nonempty.len().max(1) as f64
+            );
+        }
+    }
+
+    #[test]
     fn every_order_is_a_permutation_with_the_same_edges() {
         let (n, dim) = (3000, 16);
         let mut s = 7u64;
@@ -183,13 +368,17 @@ mod tests {
         };
         let g = Graph::build(&data, dim, &params).unwrap();
         let view = g.view();
-        let mut orders = vec![super::super::vertex::bfs_order(view), cluster_bfs(view)];
+        let mut orders = vec![
+            super::super::vertex::bfs_order(view),
+            cluster_bfs(view),
+            gorder(view, 5),
+        ];
         for o in &mut orders {
             o.sort_unstable();
             assert_eq!(*o, (0..n as u32).collect::<Vec<_>>());
         }
         let scores = order_locality(&g);
-        assert_eq!(scores.len(), 4);
+        assert_eq!(scores.len(), 6);
         // Reversal keeps every gap, so the window shares and the mean log gap are equal.
         assert_eq!(scores[1].within_32, scores[2].within_32);
         assert!((scores[1].mean_log2_gap - scores[2].mean_log2_gap).abs() < 1e-9);
