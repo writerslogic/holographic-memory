@@ -59,6 +59,11 @@ DATASETS = [
     "simplewiki-openai-3072-normalized", "yahoo-minilm-384-normalized", "yandex-200-cosine",
     "llama-128-ip", "yi-128-ip",
 ]
+DEPRECATED = {"ccnews-nomic-768-normalized", "celeba-resnet-2048-cosine", "coco-nomic-768-normalized",
+              "codesearchnet-jina-768-cosine", "simplewiki-openai-3072-normalized"}
+OOD = {"hotpotqa-harrier-640-normalized", "imagenet-align-640-normalized", "laion-clip-512-normalized",
+       "yandex-200-cosine", "cqadupstack-lemur-2048-ip", "cqadupstack-muvera-5120-ip",
+       "yi-128-ip", "llama-128-ip"}
 # Competitors run in addition to the published leaders, with the reason recorded in the ledger.
 NAMED = {"llama-128-ip": ["roargraph"], "yi-128-ip": ["roargraph"]}
 SMOKE = "smoke-64-cosine"  # generated in the container for --test
@@ -1109,6 +1114,7 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
         records = ledgers.get(ds, {})
         hms = records.get(f"hms@{hms_rev[:12]}", {})
         download = records.get("_download", {})
+        selected, _ = choose(meta.get("leaders", {}), bool(hms.get("avx512")), NAMED.get(ds, []))
         standing = standings.get(ds, {})
         measured = standing.get("best_qps_at_recall", {})
         competitors = {}
@@ -1125,10 +1131,21 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
         comparison_status = ("comparable" if any(r["fair_comparison"] for r in competitors.values()) else
                              "noncomparable" if hms.get("state") == "done" and any(
                                  r["state"] == "done" for r in competitors.values()) else "pending")
+        if download.get("state") == "failed" or hms.get("state") == "failed":
+            run_state = "failed"
+        elif hms.get("state") == "done" and all(records.get(algo, {}).get("state") == "done" for algo in selected):
+            run_state = "complete"
+        elif any(records.get(algo, {}).get("state") == "failed" for algo in selected):
+            run_state = "failed_partial"
+        elif hms or download:
+            run_state = "running"
+        else:
+            run_state = "pending"
         rows.append({
-            "dataset": ds, "dataset_sha256": meta.get("sha256"), "dataset_bytes": meta.get("size_bytes"),
+            "dataset": ds, "deprecated": ds in DEPRECATED, "ood": ds in OOD,
+            "dataset_sha256": meta.get("sha256"), "dataset_bytes": meta.get("size_bytes"),
             "requested_memory_gib": meta.get("mem_gib"), "download_state": download.get("state", "pending"),
-            "state": hms.get("state", "failed" if download.get("state") == "failed" else "pending"),
+            "state": run_state, "hms_state": hms.get("state", "pending"),
             "attempts": hms.get("attempts", 0),
             "failures": hms.get("failures", 0), "hms_commit": hms_rev,
             "vibe_fork_commit": VIBE_REV, "source_sha256": manifest.get("source_sha256"),
@@ -1138,7 +1155,7 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
                                     if hms.get("container_id") else None),
             "validation": hms.get("validation"), "metrics": measured.get("hms"),
             "peak_rss_bytes": None, "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
-            "competitors": competitors, "comparison_status": comparison_status,
+            "selected_competitors": selected, "competitors": competitors, "comparison_status": comparison_status,
             "published_leaders_diagnostic": meta.get("leaders"),
             "estimated_cost_usd": round(spent.get(ds, 0.0), 4),
             "ledger_prefix": f"hms-bench-run:{root}/ledger/{ds}",

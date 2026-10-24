@@ -83,5 +83,6 @@ def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path)
     assert a["metrics"]["0.95"]["qps"] == 42
     assert a["estimated_cost_usd"] == 2.0
     assert a["peak_rss_bytes"] is None
+    assert a["state"] == "complete" and a["hms_state"] == "done"
     assert b["state"] == "failed" and b["download_state"] == "failed"
     assert b["comparison_status"] == "pending"
