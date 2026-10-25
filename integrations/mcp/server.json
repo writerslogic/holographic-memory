@@ -1,0 +1,27 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.writerslogic/holographic-memory-mcp",
+  "title": "Holographic Memory",
+  "description": "Local persistent memory for AI agents with recall, search, forgetting, and encrypted storage.",
+  "repository": {
+    "url": "https://github.com/writerslogic/holographic-memory",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "holographic-memory-mcp",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "transport": { "type": "stdio" }
+    },
+    {
+      "registryType": "pypi",
+      "identifier": "holographic-memory-mcp",
+      "version": "0.1.0",
+      "runtimeHint": "uvx",
+      "transport": { "type": "stdio" }
+    }
+  ]
+}

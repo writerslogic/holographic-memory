@@ -1,5 +1,7 @@
 # holographic-memory-mcp
 
+<!-- mcp-name: io.github.writerslogic/holographic-memory-mcp -->
+
 MCP server for Holographic Memory: private, on-device persistent memory for AI agents. This package downloads the prebuilt `hms-mcp` binary for your platform (checked against a SHA-256 table shipped in the package) and runs it.
 
 ```sh
