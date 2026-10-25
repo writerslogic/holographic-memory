@@ -535,8 +535,18 @@ fn unpack_into(bytes: &[u8], count: usize, bits: u8, mut emit: impl FnMut(usize,
 #[inline(always)]
 fn unpack_fixed<const BITS: usize>(bytes: &[u8], count: usize, out: &mut [u64; BLOCK_LEN]) {
     let out = &mut out[..count];
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(any(
+        target_arch = "x86_64",
+        all(target_arch = "aarch64", target_endian = "little")
+    )))]
     let decoded = 0;
+    #[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+    let decoded = if BITS <= 25 && count >= 32 && std::arch::is_aarch64_feature_detected!("neon") {
+        // SAFETY: NEON was detected; the decoder bounds every input load and output store.
+        unsafe { unpack_neon::<BITS>(bytes, out) }
+    } else {
+        0
+    };
     #[cfg(target_arch = "x86_64")]
     let decoded = if BITS <= 25 && count >= 32 && is_x86_feature_detected!("avx2") {
         // SAFETY: AVX2 was detected; the decoder bounds every input load and output store.
@@ -560,6 +570,51 @@ fn unpack_fixed<const BITS: usize>(bytes: &[u8], count: usize, out: &mut [u64; B
         let tail = &bytes[bit / 8..(bit / 8 + 8).min(bytes.len())];
         window[..tail.len()].copy_from_slice(tail);
         *value = (u64::from_le_bytes(window) >> (bit % 8)) & mask;
+    }
+}
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+#[target_feature(enable = "neon")]
+unsafe fn unpack_neon<const BITS: usize>(bytes: &[u8], out: &mut [u64]) -> usize {
+    use std::arch::aarch64::*;
+    assert!((1..=25).contains(&BITS));
+    let shuffle_lo = std::array::from_fn::<_, 16, _>(|i| ((i / 4) * BITS / 8 + i % 4) as u8);
+    let shuffle_hi =
+        std::array::from_fn::<_, 16, _>(|i| ((i / 4 + 4) * BITS / 8 - BITS / 2 + i % 4) as u8);
+    let shifts_lo = std::array::from_fn::<_, 4, _>(|i| -((i * BITS % 8) as i32));
+    let shifts_hi = std::array::from_fn::<_, 4, _>(|i| -(((i + 4) * BITS % 8) as i32));
+    // SAFETY: tables span 16 bytes. Each iteration checks both 16-byte input
+    // windows and eight output slots; NEON loads and stores permit unaligned pointers.
+    unsafe {
+        let shuffle_lo = vld1q_u8(shuffle_lo.as_ptr());
+        let shuffle_hi = vld1q_u8(shuffle_hi.as_ptr());
+        let shifts_lo = vld1q_s32(shifts_lo.as_ptr());
+        let shifts_hi = vld1q_s32(shifts_hi.as_ptr());
+        let mask = vdupq_n_u32(((1u64 << BITS) - 1) as u32);
+        let mut done = 0;
+        while done + 8 <= out.len() && done * BITS / 8 + BITS / 2 + 16 <= bytes.len() {
+            let first = bytes.as_ptr().add(done * BITS / 8);
+            let lo = vandq_u32(
+                vshlq_u32(
+                    vreinterpretq_u32_u8(vqtbl1q_u8(vld1q_u8(first), shuffle_lo)),
+                    shifts_lo,
+                ),
+                mask,
+            );
+            let hi = vandq_u32(
+                vshlq_u32(
+                    vreinterpretq_u32_u8(vqtbl1q_u8(vld1q_u8(first.add(BITS / 2)), shuffle_hi)),
+                    shifts_hi,
+                ),
+                mask,
+            );
+            vst1q_u64(out.as_mut_ptr().add(done), vmovl_u32(vget_low_u32(lo)));
+            vst1q_u64(out.as_mut_ptr().add(done + 2), vmovl_u32(vget_high_u32(lo)));
+            vst1q_u64(out.as_mut_ptr().add(done + 4), vmovl_u32(vget_low_u32(hi)));
+            vst1q_u64(out.as_mut_ptr().add(done + 6), vmovl_u32(vget_high_u32(hi)));
+            done += 8;
+        }
+        done
     }
 }
 
@@ -1994,7 +2049,7 @@ mod tests {
     #[test]
     fn block_unpacking_matches_single_reads_at_every_width() {
         for bits in 0..=64u8 {
-            for count in [1, 7, 8, 9, 63, BLOCK_LEN] {
+            for count in [1, 7, 8, 9, 31, 32, 33, 63, 127, BLOCK_LEN] {
                 let limit = if bits == 64 {
                     u64::MAX
                 } else {

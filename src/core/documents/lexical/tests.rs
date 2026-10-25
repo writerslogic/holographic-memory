@@ -53,6 +53,189 @@ fn run(store: &DocumentStore, query: &str, k: usize) -> LexicalResults {
 }
 
 #[test]
+fn term_conjunction_plan_preserves_aliases_exclusions_and_document_counts() {
+    for boundary in [127, 128, 129] {
+        let mut store = DocumentStore::default();
+        for i in 0..boundary {
+            for unstemmed in [false, true] {
+                insert(
+                    &mut store,
+                    &format!("f{}-{i:04}", usize::from(unstemmed)),
+                    if i % 3 == 0 {
+                        "red red blue green running run"
+                    } else {
+                        "red blue running"
+                    },
+                    true,
+                    unstemmed,
+                );
+            }
+        }
+        let mut multi = input("multi", "red blue red blue");
+        multi.chunk_words = Some(2);
+        store.insert(
+            "multi".to_owned(),
+            documents::prepare_with_options(
+                multi,
+                64,
+                None,
+                None,
+                TextEncoder::default(),
+                &options(true, true),
+            )
+            .unwrap(),
+        );
+        let verify = |store: &DocumentStore| {
+            for text in [
+                "+red +blue",
+                "+red red",
+                "+running +run",
+                "+red blue -green",
+                "+red -red",
+                "+red +absent",
+                "+red +blue -absent",
+                "+red +blue green",
+            ] {
+                let query = LexicalQuery::parse(text).unwrap();
+                for k in [0, 1, 10, 128, 1000] {
+                    for count in [false, true] {
+                        let options = LexicalOptions {
+                            k,
+                            count,
+                            ..Default::default()
+                        };
+                        let expected = execute(
+                            store,
+                            &query,
+                            &LexicalOptions {
+                                execution: LexicalExecution::Exhaustive,
+                                ..options.clone()
+                            },
+                        )
+                        .unwrap();
+                        for execution in [
+                            LexicalExecution::Auto,
+                            LexicalExecution::DocumentAtATime,
+                            LexicalExecution::BlockMaxWand,
+                        ] {
+                            assert_eq!(
+                                execute(
+                                    store,
+                                    &query,
+                                    &LexicalOptions {
+                                        execution,
+                                        ..options.clone()
+                                    }
+                                )
+                                .unwrap(),
+                                expected,
+                                "{text}, k={k}, count={count}, size={boundary}, {execution:?}"
+                            );
+                        }
+                    }
+                }
+            }
+        };
+        verify(&store);
+        store.remove("f0-0000");
+        insert(&mut store, "f1-0001", "blue red green", true, false);
+        insert(&mut store, "reused", "red blue", true, true);
+        verify(&store);
+    }
+}
+
+#[test]
+fn short_phrase_stack_cursors_preserve_offsets_and_overlapping_occurrences() {
+    let mut store = DocumentStore::default();
+    for unstemmed in [false, true] {
+        for (i, text) in [
+            "red red red red red red",
+            "red blue red blue red blue red",
+            "green red blue red blue gold",
+            "red blue gold green blue red",
+            "running foxes running foxes running",
+        ]
+        .iter()
+        .enumerate()
+        {
+            insert(
+                &mut store,
+                &format!("{unstemmed}-{i}"),
+                text,
+                true,
+                unstemmed,
+            );
+        }
+    }
+    let verify = |store: &DocumentStore| {
+        for phrase in [
+            "red red",
+            "red red red",
+            "red red red red",
+            "red red red red red",
+            "red blue",
+            "red blue red",
+            "red blue red blue",
+            "red blue red blue red",
+            "green red",
+            "red gold",
+            "running foxes",
+            "run fox run",
+        ] {
+            for text in [
+                format!("\"{phrase}\""),
+                format!("+red +\"{phrase}\""),
+                format!("red -\"{phrase}\""),
+            ] {
+                let query = LexicalQuery::parse(&text).unwrap();
+                for k in [0, 1, 3, 16] {
+                    for count in [false, true] {
+                        let options = LexicalOptions {
+                            k,
+                            count,
+                            ..Default::default()
+                        };
+                        let expected = execute(
+                            store,
+                            &query,
+                            &LexicalOptions {
+                                execution: LexicalExecution::Exhaustive,
+                                ..options.clone()
+                            },
+                        )
+                        .unwrap();
+                        for execution in [
+                            LexicalExecution::Auto,
+                            LexicalExecution::DocumentAtATime,
+                            LexicalExecution::BlockMaxWand,
+                        ] {
+                            assert_eq!(
+                                execute(
+                                    store,
+                                    &query,
+                                    &LexicalOptions {
+                                        execution,
+                                        ..options.clone()
+                                    }
+                                )
+                                .unwrap(),
+                                expected,
+                                "{text}, k={k}, count={count}, {execution:?}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    };
+    verify(&store);
+    store.remove("true-0");
+    insert(&mut store, "false-1", "blue red blue red blue", true, false);
+    insert(&mut store, "reuse", "red red red", true, true);
+    verify(&store);
+}
+
+#[test]
 fn boolean_truth_table_and_phrase_offsets() {
     let mut store = DocumentStore::default();
     for (id, text) in [

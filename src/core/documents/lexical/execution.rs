@@ -83,6 +83,21 @@ fn conjunction(states: &mut [TermState<'_>], required: &[usize]) -> Option<usize
     }
 }
 
+fn count_match(store: &DocumentStore, slot: usize, seen: &mut [u64], count: &mut usize) {
+    if !store.multichunk_documents.is_empty() {
+        let (document, _) = store.borrowed_chunk(slot);
+        if document.chunks.len() > 1 {
+            let first = store.slots[&document.id][0];
+            let bit = 1 << (first % 64);
+            if seen[first / 64] & bit != 0 {
+                return;
+            }
+            seen[first / 64] |= bit;
+        }
+    }
+    *count += 1;
+}
+
 /// The weight bounds of one positive clause of a form.
 struct ClauseBound {
     bound: Bound,
@@ -244,12 +259,37 @@ fn positional_frequency(
             .cursor
             .term_index()
     };
+    let lead_positions = positions.iter(term_index(indices[lead]));
+    if indices.len() == 2 {
+        let mut cursors =
+            [indices[0], indices[1]].map(|index| positions.iter(term_index(index)).peekable());
+        return match_positions(lead_positions, lead, &mut cursors, exact);
+    }
+    if indices.len() == 3 {
+        let mut cursors = [indices[0], indices[1], indices[2]]
+            .map(|index| positions.iter(term_index(index)).peekable());
+        return match_positions(lead_positions, lead, &mut cursors, exact);
+    }
+    if indices.len() == 4 {
+        let mut cursors = [indices[0], indices[1], indices[2], indices[3]]
+            .map(|index| positions.iter(term_index(index)).peekable());
+        return match_positions(lead_positions, lead, &mut cursors, exact);
+    }
     let mut cursors: Vec<_> = indices
         .iter()
         .map(|&index| positions.iter(term_index(index)).peekable())
         .collect();
+    match_positions(lead_positions, lead, &mut cursors, exact)
+}
+
+fn match_positions<I: Iterator<Item = u32>>(
+    lead_positions: I,
+    lead: usize,
+    cursors: &mut [std::iter::Peekable<I>],
+    exact: bool,
+) -> u32 {
     let mut count = 0;
-    for position in positions.iter(term_index(indices[lead])) {
+    for position in lead_positions {
         let Some(start) = position.checked_sub(lead as u32) else {
             continue;
         };
@@ -295,7 +335,6 @@ pub(super) fn document_at_a_time(
         Vec::new()
     };
     let average = (store.word_count as f64 / (store.chunk_count as f64).max(1.0)).max(1.0);
-    let need_document = options.count && !store.multichunk_documents.is_empty();
     let single_phrase = query.clauses.len() == 1 && query.clauses[0].phrase;
     let phrases_ranked = !options.count && query.clauses.iter().any(|c| c.phrase);
     for form in 0..2 {
@@ -379,6 +418,21 @@ pub(super) fn document_at_a_time(
             };
             continue;
         }
+        let term_plan =
+            (!required.is_empty() && query.clauses.iter().all(|c| !c.phrase)).then(|| {
+                let mut excluded = Vec::new();
+                let mut scored = Vec::new();
+                for (c, (clause, indices)) in query.clauses.iter().zip(&indices).enumerate() {
+                    if let Some(index) = indices[0] {
+                        if clause.occur == Occur::MustNot {
+                            excluded.push(index);
+                        } else if options.k > 0 {
+                            scored.push((index, idfs[c][form]));
+                        }
+                    }
+                }
+                (excluded, scored)
+            });
         // Ranked evaluation skips a chunk, or a whole block of the leading list, whose score
         // bound is below the floor of the top-k; counting still visits every match.
         let mut pruning = if options.k > 0 {
@@ -461,6 +515,40 @@ pub(super) fn document_at_a_time(
             let Some(slot) = candidate else {
                 break;
             };
+            if let Some((excluded, scored)) = &term_plan {
+                let matched = required
+                    .iter()
+                    .all(|&i| states[i].cursor.peek().is_some_and(|p| p.1 > 0))
+                    && !excluded.iter().any(|&i| {
+                        states[i]
+                            .cursor
+                            .advance(slot)
+                            .is_some_and(|p| p.0 == slot && p.1 > 0)
+                    });
+                if matched {
+                    if options.count {
+                        count_match(store, slot, &mut seen, &mut count);
+                    }
+                    if options.k > 0 {
+                        let norm = bm25.norm(f64::from(store.slot_word_count(slot)), average);
+                        let mut score = 0.0;
+                        for &(i, idf) in scored {
+                            if let Some((at, frequency)) = states[i].cursor.advance(slot) {
+                                if at == slot && frequency > 0 {
+                                    score += bm25.weight(idf, f64::from(frequency), norm);
+                                }
+                            }
+                        }
+                        ensure!(
+                            score.is_finite(),
+                            "lexical score is nonfinite; reduce BM25 parameters"
+                        );
+                        top.consider(store, score, slot);
+                    }
+                }
+                states[required[0]].cursor.next();
+                continue;
+            }
             // A candidate's bound costs about what scoring its words costs, so it is checked
             // only where it can spare a phrase's position check.
             let skip = match pruning.as_mut() {
@@ -471,7 +559,6 @@ pub(super) fn document_at_a_time(
             };
             let mut scorable = true;
             if !skip {
-                let document_chunk = need_document.then(|| store.borrowed_chunk(slot));
                 let mut phrases = false;
                 for (((clause, indices), frequency_value), pending) in query
                     .clauses
@@ -562,18 +649,7 @@ pub(super) fn document_at_a_time(
                 }
                 if matches(query, &frequencies) {
                     if options.count {
-                        if let Some((document, _)) =
-                            document_chunk.filter(|(d, _)| d.chunks.len() > 1)
-                        {
-                            let first = store.slots[&document.id][0];
-                            let bit = 1 << (first % 64);
-                            if seen[first / 64] & bit == 0 {
-                                count += 1;
-                                seen[first / 64] |= bit;
-                            }
-                        } else {
-                            count += 1;
-                        }
+                        count_match(store, slot, &mut seen, &mut count);
                     }
                     if options.k > 0 && scorable {
                         top.consider(

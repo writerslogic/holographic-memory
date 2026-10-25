@@ -89,6 +89,16 @@ pub(super) fn tokens(text: &str, stem: bool) -> Vec<String> {
         .collect()
 }
 
+#[cold]
+fn long_gap(bytes: &mut &[u8]) -> u32 {
+    // Validation also accepts zero-extended varints longer than a canonical u32 encoding.
+    let mut reader = Reader::new(bytes);
+    let gap = u32::try_from(reader.varint().expect("validated position"))
+        .expect("validated u32 position");
+    *bytes = &bytes[reader.position()..];
+    gap
+}
+
 impl Positions {
     #[cfg(test)]
     pub(super) fn record_memory(&self, census: &mut super::census::MemoryCensus) {
@@ -258,14 +268,22 @@ impl Positions {
     }
 
     pub(super) fn iter(&self, index: usize) -> impl Iterator<Item = u32> + '_ {
-        let mut reader = Reader::new(self.bytes(index));
+        let mut bytes = self.bytes(index);
         let mut position = 0u32;
         std::iter::from_fn(move || {
-            if reader.is_empty() {
-                return None;
-            }
-            position += u32::try_from(reader.varint().expect("validated position"))
-                .expect("validated u32 position");
+            let (&first, rest) = bytes.split_first()?;
+            let gap = if first < 0x80 {
+                bytes = rest;
+                u32::from(first)
+            } else if let Some((&second, tail)) =
+                rest.split_first().filter(|(byte, _)| **byte < 0x80)
+            {
+                bytes = tail;
+                u32::from(first & 0x7f) | u32::from(second) << 7
+            } else {
+                long_gap(&mut bytes)
+            };
+            position += gap;
             Some(position)
         })
     }
@@ -293,5 +311,117 @@ mod offset_tests {
                 assert_eq!(matches!(restored, Offsets::Word(_)), maximum > 65_535);
             }
         }
+    }
+
+    #[test]
+    fn position_iterator_decodes_gap_boundaries_and_exhaustion() {
+        let mut boundaries = vec![0, 1, u32::MAX - 1, u32::MAX];
+        for limit in [1u32 << 7, 1 << 14, 1 << 21, 1 << 28] {
+            boundaries.extend([limit - 1, limit, limit + 1]);
+        }
+        for gap in boundaries {
+            let mut data = Vec::new();
+            put_varint(&mut data, u64::from(gap));
+            let mut expected = vec![gap];
+            if gap < u32::MAX {
+                put_varint(&mut data, 1);
+                expected.push(gap + 1);
+            }
+            let positions = Positions {
+                version: VERSION,
+                offsets: vec![0, data.len() as u32].into(),
+                data: data.into_boxed_slice(),
+            };
+            let mut iter = positions.iter(0);
+            for value in expected {
+                assert_eq!(iter.next(), Some(value), "gap {gap}");
+            }
+            assert_eq!(iter.next(), None);
+            assert_eq!(iter.next(), None);
+        }
+    }
+
+    #[test]
+    fn position_iterator_preserves_rank_order_through_persisted_terms() {
+        for length in [
+            3, 127, 128, 129, 16_383, 16_384, 16_385, 65_534, 65_535, 65_536,
+        ] {
+            let mut ranks = vec![1; length];
+            ranks[0] = 0;
+            ranks[length - 1] = 0;
+            for whole_document in [false, true] {
+                let mut terms = StoredTerms::from(std::collections::BTreeMap::from([
+                    ("a".to_owned(), 2),
+                    ("b".to_owned(), (length - 2) as u32),
+                ]));
+                let positions = Positions::from_ranks(&ranks, 2, whole_document);
+                positions.validate(&terms).unwrap();
+                terms.positions = Some(std::sync::Arc::new(positions));
+                let bytes = serde_json::to_vec(&terms).unwrap();
+                let restored: StoredTerms = serde_json::from_slice(&bytes).unwrap();
+                assert_eq!(serde_json::to_vec(&restored).unwrap(), bytes);
+                let positions = restored.positions.as_ref().unwrap();
+                for term in 0..2 {
+                    let expected: Vec<u32> = ranks
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(index, &rank)| (rank == term).then_some(index as u32))
+                        .collect();
+                    assert_eq!(positions.iter(term as usize).collect::<Vec<_>>(), expected);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn accepted_zero_extended_positions_keep_their_values_and_bytes() {
+        for width in 1..=10 {
+            let mut data = vec![0x80; width];
+            data[width - 1] = 0;
+            let value = serde_json::json!({
+                "$hms_positions": {"version": VERSION, "offsets": [0, width], "data": data},
+                "a": 1
+            });
+            let terms: StoredTerms = serde_json::from_value(value.clone()).unwrap();
+            assert_eq!(
+                terms
+                    .positions
+                    .as_ref()
+                    .unwrap()
+                    .iter(0)
+                    .collect::<Vec<_>>(),
+                [0]
+            );
+            assert_eq!(serde_json::to_value(&terms).unwrap(), value);
+        }
+    }
+
+    #[test]
+    fn malformed_positions_still_fail_loading_before_iteration() {
+        let mut cases = vec![
+            vec![0x80],
+            vec![0x80; 10],
+            vec![0xff, 0xff, 0xff, 0xff, 0x10],
+            vec![0, 0],
+            vec![0, 1],
+        ];
+        for limit in [
+            MAX_DOCUMENT_BYTES - 1,
+            MAX_DOCUMENT_BYTES,
+            MAX_DOCUMENT_BYTES + 1,
+        ] {
+            let mut data = Vec::new();
+            put_varint(&mut data, limit as u64);
+            cases.push(data);
+        }
+        for data in cases {
+            let value = serde_json::json!({
+                "$hms_positions": {"version": VERSION, "offsets": [0, data.len()], "data": data},
+                "a": 1
+            });
+            assert!(serde_json::from_value::<StoredTerms>(value).is_err());
+        }
+        let positions = Positions::from_ranks(&[], 0, false);
+        positions.validate(&StoredTerms::default()).unwrap();
     }
 }
