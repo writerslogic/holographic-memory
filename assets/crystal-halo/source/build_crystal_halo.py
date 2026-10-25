@@ -341,7 +341,9 @@ def full(resume=False):
                     previous.load()
                     if previous.mode=="RGBA" and previous.size==(SIZE,SIZE):
                         frame=previous.copy()
-            except (OSError,SyntaxError,ValueError):pass
+            except (OSError,SyntaxError,ValueError):
+                # An unreadable cached frame is regenerated below.
+                pass
         if frame is None:
             frame=render(index/250,transparent=True)
             save_image_atomic(frame,target)
