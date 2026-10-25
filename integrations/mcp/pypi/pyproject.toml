@@ -11,6 +11,7 @@ description = "Launcher for the Holographic Memory MCP server (hms-mcp): private
 readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "WritersLogic, Inc.", email = "david@writerslogic.com" }]
 keywords = ["mcp", "model-context-protocol", "memory", "agent-memory", "local-first"]
 classifiers = [
@@ -33,4 +34,4 @@ holographic-memory-mcp = "holographic_memory_mcp:main"
 packages = ["src/holographic_memory_mcp"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/holographic_memory_mcp", "README.md"]
+include = ["src/holographic_memory_mcp", "README.md", "LICENSE"]

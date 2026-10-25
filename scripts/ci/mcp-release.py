@@ -20,13 +20,22 @@ TRIPLES = (
 
 
 def version() -> str:
-    npm = json.loads((ROOT / "integrations/mcp/npm/package.json").read_text())["version"]
+    npm_package = json.loads((ROOT / "integrations/mcp/npm/package.json").read_text())
+    npm = npm_package["version"]
     pyproject = tomllib.loads((ROOT / "integrations/mcp/pypi/pyproject.toml").read_text())
     pypi = pyproject["project"]["version"]
+    server = json.loads((ROOT / "integrations/mcp/server.json").read_text())
     source = (ROOT / "integrations/mcp/pypi/src/holographic_memory_mcp/__init__.py").read_text()
     match = re.search(r'^__version__ = "([^"]+)"$', source, re.MULTILINE)
-    if not match or not (npm == pypi == match.group(1)):
+    if not match or not (npm == pypi == match.group(1) == server["version"]):
         raise ValueError(f"launcher versions disagree: npm={npm}, PyPI={pypi}, source={match.group(1) if match else 'missing'}")
+    name = server["name"]
+    marker = f"<!-- mcp-name: {name} -->"
+    pypi_readme = (ROOT / "integrations/mcp/pypi/README.md").read_text()
+    packages = {(package["registryType"], package["identifier"], package["version"]) for package in server["packages"]}
+    expected = {("npm", npm_package["name"], npm), ("pypi", pyproject["project"]["name"], pypi)}
+    if npm_package.get("mcpName") != name or marker not in pypi_readme or packages != expected:
+        raise ValueError("MCP Registry metadata does not match the launcher packages")
     return npm
 
 

@@ -11,7 +11,7 @@ run.
 | --- | --- | --- |
 | `vX.Y.Z` | `.github/workflows/release.yml` | the crate, 8 npm native packages and the root npm package, Python wheels and sdist (as release assets), SBOMs, SLSA provenance, a draft GitHub release; then publishes the crate and the npm packages |
 | `py-vX.Y.Z` | `.github/workflows/publish-pypi.yml` | the same wheels and sdist plus `holographic-sdk`, published to PyPI through Trusted Publishing |
-| `mcp-vX.Y.Z` | `.github/workflows/mcp-release.yml` | five `hms-mcp` binaries, checksum tables embedded in npm and PyPI launchers, a GitHub release, then the launcher packages on both registries |
+| `mcp-vX.Y.Z` | `.github/workflows/mcp-release.yml` | five `hms-mcp` binaries, checksum tables embedded in npm and PyPI launchers, a GitHub release, then the launcher packages and official MCP Registry entry |
 
 Push both tags for a full release (the wheels build twice; PyPI trusted publishing is bound to
 `publish-pypi.yml`, so it cannot move into `release.yml`).
@@ -23,7 +23,8 @@ download `hms-mcp` from a `mcp-vX.Y.Z` GitHub release and verify its hash agains
 the package. The release workflow builds macOS arm64 and x64, Linux arm64 and x64 (glibc 2.17
 minimum), and Windows x64 binaries. It rejects missing or extra assets, tests both launchers with a
 local asset server, packs and installs both distributions, creates the GitHub release, then publishes
-to npm and PyPI.
+to npm, PyPI and the official MCP Registry. The Registry entry uses both packages, and the package
+metadata proves ownership of `io.github.writerslogic/holographic-memory-mcp`.
 
 Before the first release, add a **pending Trusted Publisher** for the new project at
 `https://pypi.org/manage/account/publishing/`: project `holographic-memory-mcp`, owner
@@ -36,6 +37,11 @@ open a pull request touching its files. To publish, tag the commit containing th
 with `mcp-vX.Y.Z` where X.Y.Z matches the three launcher version strings, and push the tag. The
 workflow never replaces an existing release or registry version. If one publish job fails after the
 GitHub release exists, correct its credentials or publisher configuration and rerun that job only.
+
+After the official Registry entry is active, submit the repository through Glama's **Add MCP
+Server** form. `glama.json` names the maintainer, as in `scrivener-mcp`. Other directories such as
+mcp.so and PulseMCP ingest the official Registry. GitHub's curated MCP list requires a separate
+onboarding request after the official Registry entry is active.
 
 Afterward, confirm `npm view holographic-memory-mcp version` and the PyPI project page show X.Y.Z.
 Run `uvx holographic-memory-mcp --version` and `npx -y holographic-memory-mcp --version` on a
