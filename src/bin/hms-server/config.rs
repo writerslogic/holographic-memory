@@ -27,8 +27,8 @@ pub const MAX_CONCURRENT_WORK: usize = 256;
 #[command(
     name = "hms-server",
     version,
-    about = "HTTP service for the holographic-sdk client. See docs/SERVER.md and docs/server/.",
-    long_about = "HTTP service for the holographic-sdk client.\n\nAuthentication is required unless --no-auth is given (loopback only). Credentials: HMS_API_KEY (one all-tenant key, environment only) and/or --keys-file (per-tenant hashed keys with scopes; create entries with `hms-server keygen`)."
+    about = "HTTP service for the holographic-memory-sdk client. See docs/SERVER.md and docs/server/.",
+    long_about = "HTTP service for the holographic-memory-sdk client.\n\nAuthentication is required unless --no-auth is given (loopback only). Credentials: HMS_API_KEY (one all-tenant key, environment only) and/or --keys-file (per-tenant hashed keys with scopes; create entries with `hms-server keygen`)."
 )]
 pub struct Cli {
     #[command(subcommand)]

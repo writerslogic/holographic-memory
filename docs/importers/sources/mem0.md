@@ -7,7 +7,7 @@ hms-import mem0 --config mem0-config.json --with-vectors --hms-url http://127.0.
 MEM0_API_KEY=... hms-import mem0-platform --hms-url http://127.0.0.1:8080 --embedder mypkg.enc:embed
 ```
 
-Requires `pip install 'holographic-sdk[import-mem0]'`. mem0 memories are text, so unless `--with-vectors`
+Requires `uv add 'holographic-memory-sdk[import-mem0]'`. mem0 memories are text, so unless `--with-vectors`
 carries the stored embeddings (OSS only), the server must embed text or you pass `--embedder`
 (see the vectors section of the main importer docs). With `--vectors auto` a source is carried or re-encoded as a whole, never mixed.
 

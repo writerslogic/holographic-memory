@@ -5,7 +5,7 @@ ZEP_API_KEY=... hms-import zep --hms-url http://127.0.0.1:8080 --embedder mypkg.
 hms-import zep --base-url https://zep.internal.example/api/v4 --kinds facts,entities ...
 ```
 
-Requires `pip install 'holographic-sdk[import-zep]'`. Credentials: `ZEP_API_KEY` only. Zep memory is text, so the
+Requires `uv add 'holographic-memory-sdk[import-zep]'`. Credentials: `ZEP_API_KEY` only. Zep memory is text, so the
 server must embed text or you pass `--embedder`.
 
 The importer uses the real `zep_cloud.Zep` client against the v4 API (cursor pagination, ordered by

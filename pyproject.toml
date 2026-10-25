@@ -3,12 +3,12 @@ requires = ["maturin>=1.7,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "holographic-vsa"
-description = "Fast local vector search (approximate nearest neighbors: angular, Euclidean, inner product) and vector-symbolic memory, from the Holographic Memory Rust engine."
+name = "holographic-memory-py"
+description = "Native Python bindings for Holographic Memory vector search and phase-vector algebra."
 requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
 authors = [{ name = "WritersLogic, Inc.", email = "david@writerslogic.com" }]
-readme = "README.md"
+readme = "bindings/python/README.md"
 keywords = ["vector-search", "nearest-neighbor", "ann", "embeddings", "vector-database", "vsa", "hyperdimensional", "holographic-memory"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -27,17 +27,19 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-# Offline model packs for holographic_memory.Embedder (no first-use download).
-embed = ["holographic-vsa-models>=0.1.0"]
+embed = ["holographic-memory-models==0.1.0"]
 
 [project.urls]
-Homepage = "https://holographic-memory.com"
-Documentation = "https://docs.holographic-memory.com"
+Homepage = "https://holographic-memory.com/"
+Documentation = "https://docs.holographic-memory.com/"
 Repository = "https://github.com/writerslogic/holographic-memory"
 
 [tool.maturin]
 # The import name is `holographic_memory` (matches the #[pymodule] in src/python.rs);
-# the PyPI distribution name is `holographic-vsa` (the crate name is taken on PyPI).
+# the PyPI distribution name is `holographic-memory-py` (the crate name is taken on PyPI).
 module-name = "holographic_memory"
 features = ["python", "local-embed-download"]
 # Version is read from Cargo.toml (dynamic).
+
+[tool.uv.sources]
+holographic-memory-models = { path = "bindings/embed-models/python" }

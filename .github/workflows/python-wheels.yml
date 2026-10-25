@@ -4,24 +4,13 @@
 # Builds every Python artefact (abi3 wheels for manylinux2014 x86_64/aarch64, musllinux_1_2
 # x86_64/aarch64, macOS arm64/x86_64 and Windows x64, plus the sdist), installs each wheel
 # into a clean environment and runs a search through it, and writes a CycloneDX SBOM next to
-# every wheel. It publishes nothing: publish-pypi.yml and release.yml call it as a reusable
+# every wheel. It publishes nothing: python-native-release.yml and release.yml call it as a reusable
 # workflow and own the publishing jobs. Release builds use no build cache (cache poisoning).
 name: Python wheels
 
 on:
   workflow_call:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - .github/workflows/python-wheels.yml
-      - scripts/ci/smoke-wheel.sh
-      - scripts/ci/smoke_python.py
-      - src/python.rs
-      - src/python/**
-      - tests/python/**
-      - pyproject.toml
-      - Cargo.toml
-      - Cargo.lock
 
 permissions:
   contents: read
@@ -68,6 +57,9 @@ jobs:
         id: python
       - name: Build wheel
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        env:
+          # Rust 1.96 strip=debuginfo can misalign LC_SYMTAB on macOS 27 (rust-lang/rust#157750).
+          CARGO_PROFILE_RELEASE_STRIP: ${{ startsWith(matrix.os, 'macos-') && 'none' || 'debuginfo' }}
         with:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.linux || 'auto' }}
@@ -87,7 +79,7 @@ jobs:
           bin="$RUNNER_TEMP/binding/bin"
           [ -d "$RUNNER_TEMP/binding/Scripts" ] && bin="$RUNNER_TEMP/binding/Scripts"
           "$bin/python" -m pip install --quiet numpy==2.0.2 pytest==8.3.5
-          "$bin/python" -m pip install --quiet --no-index --find-links dist holographic-vsa
+          "$bin/python" -m pip install --quiet --no-index --find-links dist holographic-memory-py
           "$bin/python" -I -m pytest -q -p no:cacheprovider tests/python
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}
@@ -111,8 +103,8 @@ jobs:
         run: |
           set -euo pipefail
           cargo cyclonedx --format json --spec-version 1.5 --target "$TRIPLE" --features python \
-            --override-filename "holographic-vsa-${NAME}.cdx"
-          mv "holographic-vsa-${NAME}.cdx.json" dist/
+            --override-filename "holographic-memory-py-${NAME}.cdx"
+          mv "holographic-memory-py-${NAME}.cdx.json" dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wheels-${{ matrix.name }}
@@ -143,8 +135,8 @@ jobs:
       - name: CycloneDX SBOM
         run: |
           set -euo pipefail
-          cargo cyclonedx --format json --spec-version 1.5 --features python --override-filename holographic-vsa-sdist.cdx
-          mv holographic-vsa-sdist.cdx.json dist/
+          cargo cyclonedx --format json --spec-version 1.5 --features python --override-filename holographic-memory-py-sdist.cdx
+          mv holographic-memory-py-sdist.cdx.json dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wheels-sdist

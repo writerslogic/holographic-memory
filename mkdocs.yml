@@ -154,5 +154,5 @@ extra:
       link: https://crates.io/crates/holographic-memory
       name: crates.io
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/holographic-sdk/
+      link: https://pypi.org/project/holographic-memory-sdk/
       name: PyPI

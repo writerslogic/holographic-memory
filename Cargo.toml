@@ -1,6 +1,6 @@
 [package]
 name = "holographic-memory"
-version = "0.6.1"
+version = "0.6.2"
 edition = "2021"
 rust-version = "1.89"
 license = "Apache-2.0"
@@ -153,7 +153,7 @@ local-embed-download = ["local-embed", "ureq"]
 # Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
-# HTTP service for the holographic-sdk Python client (`hms-server` binary).
+# HTTP service for the holographic-memory-sdk Python client (`hms-server` binary).
 server = ["dep:parking_lot", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/io-util", "tokio/fs", "tokio/signal", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:libc", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
 # MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.

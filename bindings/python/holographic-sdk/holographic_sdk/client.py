@@ -10,7 +10,7 @@ from ._transport import KeepAliveTransport, usable_for
 
 try:
     import orjson
-except ImportError:  # optional: `pip install holographic-sdk[fast]`
+except ImportError:  # optional: `uv add holographic-memory-sdk[fast]`
     orjson = None
 
 if TYPE_CHECKING:

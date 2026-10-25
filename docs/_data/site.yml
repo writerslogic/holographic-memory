@@ -41,12 +41,12 @@ runtimes:
   - id: python
     name: Python
     status: available
-    install: pip install holographic-sdk
+    install: uv pip install holographic-memory-sdk
     requires: [bindings/python/holographic-sdk/pyproject.toml, examples/quickstart/python/quickstart.py]
     snippets:
       - examples/quickstart/python/quickstart.py:ingest
       - examples/quickstart/python/quickstart.py:hit
-    note: An HTTP client for hms-server. The holographic-vsa wheel is the quantized-phase substrate, a different package.
+    note: An HTTP client for hms-server. The holographic-memory-py wheel provides native vector search and phase vectors.
   - id: node
     name: Node
     status: available
