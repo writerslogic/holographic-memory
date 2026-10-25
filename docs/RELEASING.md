@@ -92,7 +92,8 @@ These cannot be committed; the publish jobs wait on them.
    `holographic-memory`, environment `pypi`: `holographic-memory-models` uses
    `python-models-release.yml`, `holographic-memory-py` uses `python-native-release.yml`, and
    `holographic-memory-sdk` uses `python-sdk-release.yml`. The MCP launcher uses
-   `mcp-release.yml` with the same owner, repository and environment.
+   `mcp-release.yml` with the same owner, repository and environment. PyPI permits three pending
+   projects at a time; publish one before registering the fourth.
 
 ## Cut a release
 
