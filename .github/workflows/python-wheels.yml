@@ -123,6 +123,12 @@ jobs:
         with:
           command: sdist
           args: --out dist
+      - name: Check PyPI file size limit
+        run: |
+          set -euo pipefail
+          archive=$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)
+          test -n "$archive"
+          test "$(stat -c %s "$archive")" -lt 100000000
       - name: Install the sdist from source and run the smoke test
         run: |
           set -euo pipefail

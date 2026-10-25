@@ -39,6 +39,10 @@ Repository = "https://github.com/writerslogic/holographic-memory"
 # the PyPI distribution name is `holographic-memory-py` (the crate name is taken on PyPI).
 module-name = "holographic_memory"
 features = ["python", "local-embed-download"]
+exclude = [
+    { path = "benchmarks/results/**/*", format = "sdist" },
+    { path = "assets/**/*", format = "sdist" },
+]
 # Version is read from Cargo.toml (dynamic).
 
 [tool.uv.sources]
