@@ -1,0 +1,214 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+name: MCP launcher release
+
+on:
+  push:
+    tags: ["mcp-v*"]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/mcp-release.yml
+      - integrations/mcp/**
+      - scripts/ci/mcp-release.py
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check launcher versions and tag
+        shell: bash
+        run: |
+          python3 -m unittest scripts/ci/test_mcp_release.py
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            python3 scripts/ci/mcp-release.py "$GITHUB_REF_NAME"
+          else
+            version=$(node -p 'require("./integrations/mcp/npm/package.json").version')
+            python3 scripts/ci/mcp-release.py "mcp-v$version"
+          fi
+
+  binary:
+    name: binary ${{ matrix.target }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO_PROFILE_RELEASE_LTO: "false"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-15, target: aarch64-apple-darwin }
+          - { os: macos-15-intel, target: x86_64-apple-darwin }
+          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu, linux: true }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, linux: true }
+          - { os: windows-2025, target: x86_64-pc-windows-msvc }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        if: ${{ matrix.linux }}
+        with:
+          version: 0.14.1
+          use-cache: false
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        if: ${{ matrix.linux }}
+        with:
+          tool: cargo-zigbuild
+      - name: Build and smoke test MCP binary
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          host=$(rustc -vV | sed -n 's/^host: //p')
+          test "$host" = "$TARGET"
+          binary=target/release/hms-mcp
+          if [[ "$TARGET" == *linux* ]]; then
+            cargo zigbuild --release --locked --target "${TARGET}.2.17" --features mcp,security --bin hms-mcp
+            binary="target/${TARGET}/release/hms-mcp"
+            newer=$(readelf -W --version-info "$binary" | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | cut -d_ -f2 | sort -Vu | awk -F. '$1 > 2 || ($1 == 2 && $2 > 17)' | head -1)
+            test -z "$newer"
+          else
+            cargo build --release --locked --features mcp,security --bin hms-mcp
+          fi
+          extension=""
+          if [[ "$TARGET" == *windows* ]]; then extension=".exe"; fi
+          "${binary}${extension}" --version
+          mkdir -p assets
+          cp "${binary}${extension}" "assets/hms-mcp-${TARGET}${extension}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mcp-binary-${{ matrix.target }}
+          path: assets/hms-mcp-*
+          if-no-files-found: error
+          compression-level: 0
+
+  package:
+    needs: binary
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: assets
+          pattern: mcp-binary-*
+          merge-multiple: true
+      - name: Write checksums and build launcher packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p 'require("./integrations/mcp/npm/package.json").version')
+          python3 scripts/ci/mcp-release.py "mcp-v$version" assets
+          mkdir -p dist/npm dist/pypi
+          npm pack integrations/mcp/npm --ignore-scripts --pack-destination dist/npm
+          uv build integrations/mcp/pypi --out-dir dist/pypi
+          test "$(find dist/npm -name '*.tgz' | wc -l | tr -d ' ')" = 1
+          test "$(find dist/pypi -name '*.whl' | wc -l | tr -d ' ')" = 1
+          test "$(find dist/pypi -name '*.tar.gz' | wc -l | tr -d ' ')" = 1
+          tar -xOf dist/npm/*.tgz package/checksums.json | cmp - integrations/mcp/npm/checksums.json
+          unzip -p dist/pypi/*.whl holographic_memory_mcp/checksums.json | cmp - integrations/mcp/npm/checksums.json
+      - name: Test both launchers against a local release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x assets/hms-mcp-x86_64-unknown-linux-gnu
+          npm install --prefix integrations/mcp/tests --no-save --package-lock=false --ignore-scripts
+          HMS_MCP_BIN="$PWD/assets/hms-mcp-x86_64-unknown-linux-gnu" node --test --test-concurrency=1 integrations/mcp/tests/launchers.test.mjs
+      - name: Smoke test installed packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mcp-npm"
+          npm install --prefix "$RUNNER_TEMP/mcp-npm" --no-audit --no-fund dist/npm/*.tgz
+          HMS_MCP_BINARY="$PWD/assets/hms-mcp-x86_64-unknown-linux-gnu" node "$RUNNER_TEMP/mcp-npm/node_modules/holographic-memory-mcp/bin/cli.js" --version
+          uv venv "$RUNNER_TEMP/mcp-venv"
+          uv pip install --python "$RUNNER_TEMP/mcp-venv/bin/python" dist/pypi/*.whl
+          HMS_MCP_BINARY="$PWD/assets/hms-mcp-x86_64-unknown-linux-gnu" "$RUNNER_TEMP/mcp-venv/bin/holographic-memory-mcp" --version
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mcp-packages
+          path: dist
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/mcp-v')
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: assets
+          pattern: mcp-binary-*
+          merge-multiple: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mcp-packages
+          path: dist
+      - name: Publish binary and package assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" assets/* dist/npm/* dist/pypi/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "Holographic Memory MCP $GITHUB_REF_NAME" \
+            --notes "MCP binaries and checksum-verified npm and PyPI launchers."
+
+  npm-publish:
+    if: startsWith(github.ref, 'refs/tags/mcp-v')
+    needs: release
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mcp-packages
+          path: dist
+      - name: Publish npm launcher
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish dist/npm/*.tgz --provenance --access public
+
+  pypi-publish:
+    if: startsWith(github.ref, 'refs/tags/mcp-v')
+    needs: release
+    runs-on: ubuntu-24.04
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mcp-packages
+          path: dist
+      - name: Publish PyPI launcher
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist/pypi
