@@ -1,0 +1,39 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+name: MCP container
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/mcp-container.yml
+      - Cargo.toml
+      - Cargo.lock
+      - src/bin/hms-mcp.rs
+      - src/bin/hms-mcp/**
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/mcp-container.yml
+      - Cargo.toml
+      - Cargo.lock
+      - src/bin/hms-mcp.rs
+      - src/bin/hms-mcp/**
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build MCP container
+        run: docker build --progress=plain --tag hms-mcp:ci .
+      - name: Smoke test container
+        run: docker run --rm hms-mcp:ci --version
