@@ -3,6 +3,13 @@
   "name": "io.github.writerslogic/holographic-memory-mcp",
   "title": "Holographic Memory",
   "description": "Local persistent memory for AI agents with recall, search, forgetting, and encrypted storage.",
+  "websiteUrl": "https://holographic-memory.com/",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png",
+      "mimeType": "image/png"
+    }
+  ],
   "repository": {
     "url": "https://github.com/writerslogic/holographic-memory",
     "source": "github"
