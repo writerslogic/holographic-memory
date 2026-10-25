@@ -1,0 +1,10 @@
+.git
+.worktrees
+**/target
+**/node_modules
+**/.venv
+assets
+benchmarks/results
+docs
+figures
+hms-data
