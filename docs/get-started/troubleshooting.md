@@ -11,11 +11,11 @@ Keep the original store intact while investigating.
 
 ## Python import fails
 
-For `from holographic_sdk import HolographicClient`, install `holographic-sdk` in the same
-virtual environment as your application. `holographic-vsa` has a different import name and API.
+For `from holographic_sdk import HolographicClient`, install `holographic-memory-sdk` in the same
+virtual environment as your application. `holographic-memory-py` has a different import name and API.
 
 ```sh
-uv run --with holographic-sdk python -c "from holographic_sdk import HolographicClient; print(HolographicClient.__name__)"
+uv run --with holographic-memory-sdk python -c "from holographic_sdk import HolographicClient; print(HolographicClient.__name__)"
 ```
 
 If this works but your application fails, compare the interpreter and environment used to run it.

@@ -10,11 +10,14 @@ run.
 | Tag | Workflow | Produces |
 | --- | --- | --- |
 | `vX.Y.Z` | `.github/workflows/release.yml` | the crate, 8 npm native packages and the root npm package, Python wheels and sdist (as release assets), SBOMs, SLSA provenance, a draft GitHub release; then publishes the crate and the npm packages |
-| `py-vX.Y.Z` | `.github/workflows/publish-pypi.yml` | the same wheels and sdist plus `holographic-sdk`, published to PyPI through Trusted Publishing |
+| `py-models-vX.Y.Z` | `.github/workflows/python-models-release.yml` | the pinned default offline `holographic-memory-models` pack, published to PyPI through Trusted Publishing |
+| `py-vX.Y.Z` | `.github/workflows/python-native-release.yml` | `holographic-memory-py` wheels and sdist, published to PyPI through Trusted Publishing |
+| `sdk-vX.Y.Z` | `.github/workflows/python-sdk-release.yml` | `holographic-memory-sdk` wheel and sdist, published to PyPI through Trusted Publishing |
 | `mcp-vX.Y.Z` | `.github/workflows/mcp-release.yml` | five `hms-mcp` binaries, checksum tables embedded in npm and PyPI launchers, a GitHub release, then the launcher packages and official MCP Registry entry |
 
-Push both tags for a full release (the wheels build twice; PyPI trusted publishing is bound to
-`publish-pypi.yml`, so it cannot move into `release.yml`).
+Publish the model pack before the native wheel that offers it through `[embed]`. The Python
+distributions have separate release tags and Trusted Publisher workflows. For a full engine release,
+push both `vX.Y.Z` and `py-vX.Y.Z`; the native wheels build twice.
 
 ## MCP launcher release
 
@@ -85,7 +88,11 @@ These cannot be committed; the publish jobs wait on them.
    `npm` environment as `NPM_TOKEN`. The first publish of the seven new platform package names
    needs a token; afterwards configure Trusted Publishing for every package on npmjs.com and delete
    the secret. Publishing uses `--provenance`.
-4. PyPI: the trusted publisher is bound to `publish-pypi.yml` and environment `pypi`. Keep both.
+4. PyPI: add pending Trusted Publishers under owner `writerslogic`, repository
+   `holographic-memory`, environment `pypi`: `holographic-memory-models` uses
+   `python-models-release.yml`, `holographic-memory-py` uses `python-native-release.yml`, and
+   `holographic-memory-sdk` uses `python-sdk-release.yml`. The MCP launcher uses
+   `mcp-release.yml` with the same owner, repository and environment.
 
 ## Cut a release
 
@@ -94,12 +101,13 @@ These cannot be committed; the publish jobs wait on them.
    runs in every artefact job and again against the tag, so a mismatch fails the build.
 2. **Changelog.** `git cliff -c cliff.toml -o CHANGELOG.md`, committed as `chore: update changelog`.
    Tag the commit before any `[skip ci]` commit (those run no workflows).
-3. **Dry run.** Merge to `main`, then run Actions, Release, Run workflow on `main`, and run
-   `publish-pypi` the same way. Both build, smoke-test, SBOM and attest everything and skip the
-   publish jobs. Do not tag until both are green. The `Reproducible build` workflow must also be
-   green on that commit.
+3. **Dry run.** Merge to `main`, then run Actions, Release and Python native release on `main`.
+   Run Python models release and Python SDK release when those packages change. The dry runs build
+   and test without publishing. The `Reproducible build` workflow must also be green on that commit.
 4. **Tag and push** (signed): `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`, and the same
-   for `py-vX.Y.Z`. Approve the `release`, `crates-io`, `npm` and `pypi` environments when asked.
+   for `py-vX.Y.Z`. Publish `py-models-vX.Y.Z` first if the native `[embed]` extra needs a new model
+   pack. Publish `sdk-vX.Y.Z` when the SDK changes. Approve the `release`, `crates-io`, `npm` and
+   `pypi` environments when asked.
 5. **GitHub release.** `release.yml` leaves a *draft* release holding every artefact, SBOM,
    `SHA256SUMS` and the provenance bundle. Write the notes, then publish it. The data releases
    (`evidence-v*`) use other tags and never trigger these workflows.
@@ -122,7 +130,7 @@ These cannot be committed; the publish jobs wait on them.
 ## Verify an artefact
 
 ```sh
-gh attestation verify holographic_vsa-X.Y.Z-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl \
+gh attestation verify holographic_memory_py-X.Y.Z-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl \
   --repo writerslogic/holographic-memory
 gh attestation verify holographic-memory-linux-x64-gnu-X.Y.Z.tgz --repo writerslogic/holographic-memory
 npm audit signatures            # in a project that depends on holographic-memory

@@ -147,7 +147,7 @@ pub(crate) fn missing_message(spec: &ModelSpec, cache: &Path, why: &str) -> Stri
     format!(
         "embedding model {id:?} is not installed and {why}. Provide the pack {name} (sha256 {sha}) in one of these ways: \
          set {ENV_PACK} to its path; put it in a directory named by {ENV_MODEL_DIR}; or copy it to {cache}. \
-         On a connected machine, `hms-embed fetch {id} --out DIR` creates it (or `pip install holographic-vsa[embed]` installs it). \
+         On a connected machine, `hms-embed fetch {id} --out DIR` creates it. \
          Unset {ENV_OFFLINE} to allow the one-time pinned download.",
         id = spec.id,
         name = spec.pack_name(),

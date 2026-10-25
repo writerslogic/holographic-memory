@@ -7,7 +7,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
 [![docs.rs](https://img.shields.io/docsrs/holographic-memory)](https://docs.rs/holographic-memory)
-[![PyPI](https://img.shields.io/pypi/v/holographic-vsa.svg?label=pypi)](https://pypi.org/project/holographic-vsa/)
+[![PyPI](https://img.shields.io/pypi/v/holographic-memory-py.svg?label=pypi)](https://pypi.org/project/holographic-memory-py/)
 ![MSRV 1.89](https://img.shields.io/badge/MSRV-1.89-informational.svg)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory)](https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13977/badge)](https://www.bestpractices.dev/projects/13977)
@@ -204,13 +204,13 @@ main().catch(error => { console.error(error); process.exit(1) })
 <details>
 <summary><strong>Server and Python</strong></summary>
 
-The Python package `holographic-sdk` is an HTTP client for `hms-server`, which stores vectors you
-supply. (`holographic-vsa` on PyPI is the quantized-phase vector substrate, with no document search.)
+The Python package `holographic-memory-sdk` is an HTTP client for `hms-server`, which stores vectors you
+supply. (`holographic-memory-py` provides native vector search and phase vectors, but no document search.)
 
 ```sh
 cargo build --release --features server --bin hms-server
 HMS_API_KEY=change-me target/release/hms-server --input-dim 384 &
-pip install holographic-sdk
+uv pip install holographic-memory-sdk
 ```
 
 ```python
@@ -311,7 +311,7 @@ flowchart TB
     rust["Rust crate"]
     node["Node.js (napi)"]
     ffi["C, WASM, UniFFI"]
-    python["Python: holographic-sdk"]
+    python["Python: holographic-memory-sdk"]
     server["hms-server (HTTP)"]
     mcp["hms-mcp (stdio, HTTP)"]
   end

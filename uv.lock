@@ -3,5 +3,19 @@ revision = 3
 requires-python = ">=3.9"
 
 [[package]]
-name = "holographic-vsa"
+name = "holographic-memory-models"
+version = "0.1.0"
+source = { directory = "bindings/embed-models/python" }
+
+[[package]]
+name = "holographic-memory-py"
 source = { editable = "." }
+
+[package.optional-dependencies]
+embed = [
+    { name = "holographic-memory-models" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "holographic-memory-models", marker = "extra == 'embed'", directory = "bindings/embed-models/python" }]
+provides-extras = ["embed"]

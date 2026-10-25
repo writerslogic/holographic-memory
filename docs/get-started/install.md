@@ -24,7 +24,7 @@ Package installation needs network access; the engine can run offline after inst
 |---|---|
 | Rust 1.89 or newer (the MSRV) | the Rust crate, the HTTP server and the Node build |
 | Node 22 or newer | the Node bindings; Node 24 for the quickstart, which uses `node:sqlite` |
-| Python 3.10 or newer | the Python SDK (`holographic-vsa` needs 3.9) |
+| Python 3.10 or newer | the Python SDK (`holographic-memory-py` needs 3.9) |
 
 For Python, create and activate a virtual environment first: `uv venv`, then
 `source .venv/bin/activate` (PowerShell: `.venv\Scripts\Activate.ps1`).
@@ -47,7 +47,7 @@ For Python, create and activate a virtual environment first: `uv venv`, then
     vectors you supply:
 
     ```sh
-    uv pip install holographic-sdk
+    uv pip install holographic-memory-sdk
     ```
 
     Build and start the server from a checkout, then point the client at it:
@@ -59,11 +59,11 @@ For Python, create and activate a virtual environment first: `uv venv`, then
     HMS_API_KEY=change-me target/release/hms-server --input-dim 384
     ```
 
-    The `holographic-vsa` wheel is a different package: the quantized-phase vector substrate,
+    The `holographic-memory-py` wheel provides native vector search and phase vectors,
     imported as `holographic_memory`. It does not include document search.
 
     ```sh
-    uv pip install holographic-vsa
+    uv pip install holographic-memory-py
     ```
 
 === "Node"
@@ -90,7 +90,7 @@ For Python, create and activate a virtual environment first: `uv venv`, then
 === "Python"
 
     ```sh
-    uv run --with holographic-sdk python -c "from holographic_sdk import HolographicClient; print(HolographicClient.__name__)"
+    uv run --with holographic-memory-sdk python -c "from holographic_sdk import HolographicClient; print(HolographicClient.__name__)"
     ```
 
 === "Node"

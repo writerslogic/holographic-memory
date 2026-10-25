@@ -3,7 +3,7 @@
 
 //! Python surface of the local embedder (feature `local-embed`): `Embedder` and `SemanticIndex`.
 //! Inference runs without the GIL. The companion package `holographic_memory_models`, when
-//! installed (`pip install holographic-vsa[embed]`), supplies the model packs offline.
+//! installed, supplies its pinned model pack without a first-use download.
 
 use std::path::PathBuf;
 use std::sync::Arc;

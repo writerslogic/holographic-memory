@@ -28,7 +28,7 @@ index.add(&["a", "b"], &["The cat sat on the mat.", "Quarterly revenue grew."])?
 let hits = index.search("feline on a rug", 3)?;                     // [{id, score, text}]
 ```
 
-Python (`pip install holographic-vsa`, or `holographic-vsa[embed]` for offline model packs):
+Python (`uv pip install holographic-memory-py`; add `[embed]` for the pinned default offline pack):
 
 ```python
 import holographic_memory as hm
@@ -112,11 +112,11 @@ hms-embed fetch default --out ./packs            # on a connected machine
 export HMS_EMBED_MODEL_DIR=./packs HMS_EMBED_OFFLINE=1   # on the offline one
 ```
 
-`pip install holographic-vsa[embed]` installs `holographic-vsa-models`, a wheel carrying the packs (the
-Python `Embedder` finds it automatically); `holographic-memory-models` does the same for Node
-(`index.js` points `HMS_EMBED_MODEL_DIR` at it). Both are built by
-`bindings/embed-models/python/build_packs.sh` from the pinned upstream files, so their contents are the
-registry's, hash for hash. `hms-embed pack` converts any local BERT-family Hugging Face directory.
+`holographic-memory-py[embed]` installs `holographic-memory-models`, which carries the pinned
+default Granite embedding pack. The Python `Embedder` also uses packs from
+`HMS_EMBED_MODEL_DIR` or the local cache. Fetch other models on a connected machine with
+`hms-embed fetch`, then copy them to an offline machine if needed.
+`hms-embed pack` converts a local BERT-family Hugging Face directory.
 
 Why not bundle weights in the Rust crate: crates.io caps a crate at 10 MB and the smallest good int8
 pack is about 25 MB. Python wheels (100 MB limit) and npm can carry them, so they do.

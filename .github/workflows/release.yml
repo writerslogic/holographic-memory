@@ -9,7 +9,7 @@
 # requests that touch the release machinery, and never publishes: the three publish jobs and
 # the GitHub release job run only on a `v*` tag and each sits behind its own environment
 # (`crates-io`, `npm`, `release`; give them required reviewers). PyPI publishing stays in
-# publish-pypi.yml, whose trusted publisher is bound to that file name. See docs/RELEASING.md.
+# python-native-release.yml, whose trusted publisher is bound to that file name. See docs/RELEASING.md.
 name: Release
 
 on:

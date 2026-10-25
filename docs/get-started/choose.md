@@ -14,16 +14,16 @@ Start with where your application runs and who should own the store.
 | Embed document search in a Rust application | [Rust quickstart](../quickstart/index.md) | Inside your application |
 | Add search to a Node application | [Node installation](install.md) | A native Rust module inside Node |
 | Access a store from Python or several processes | [Python SDK and HTTP server](../SERVER.md) | A server you run; Python is the client |
-| Experiment with phase hypervectors in Python | [Python runtime](../api/python/vsa.md) | The `holographic-vsa` extension |
+| Search vectors or experiment with phase hypervectors in Python | [Python runtime](../api/python/vsa.md) | The `holographic-memory-py` extension |
 
 ## Which Python package?
 
-`holographic-sdk` imports as `holographic_sdk`. It is an HTTP client for `hms-server`.
+`holographic-memory-sdk` imports as `holographic_sdk`. It is an HTTP client for `hms-server`.
 The server must be running, and client and server must use the same API key, tenant and
 embedding dimensions. Installing the SDK does not start a server or download an embedding model.
 
-`holographic-vsa` imports as `holographic_memory`. It exposes the phase-vector substrate;
-it is not a replacement for the document-search client. Choose it when you need vector algebra.
+`holographic-memory-py` imports as `holographic_memory`. It exposes native vector search and
+phase-vector algebra. Choose it when you need those APIs in-process.
 
 ## Which retrieval path?
 

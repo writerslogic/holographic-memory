@@ -1,6 +1,6 @@
 {
   "name": "holographic-memory",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "license": "Apache-2.0",
   "author": "WritersLogic, Inc. <david@writerslogic.com>",
   "description": "Holographic Memory System (HMS): local document search (BM25 + embedding cosine) and vector-symbolic associative memory.",
@@ -74,14 +74,14 @@
     "typescript": "^7.0.2"
   },
   "optionalDependencies": {
-    "holographic-memory-darwin-arm64": "0.6.1",
-    "holographic-memory-darwin-x64": "0.6.1",
-    "holographic-memory-linux-arm64-gnu": "0.6.1",
-    "holographic-memory-linux-arm64-musl": "0.6.1",
-    "holographic-memory-linux-x64-gnu": "0.6.1",
-    "holographic-memory-linux-x64-musl": "0.6.1",
-    "holographic-memory-win32-arm64-msvc": "0.6.1",
-    "holographic-memory-win32-x64-msvc": "0.6.1"
+    "holographic-memory-darwin-arm64": "0.6.2",
+    "holographic-memory-darwin-x64": "0.6.2",
+    "holographic-memory-linux-arm64-gnu": "0.6.2",
+    "holographic-memory-linux-arm64-musl": "0.6.2",
+    "holographic-memory-linux-x64-gnu": "0.6.2",
+    "holographic-memory-linux-x64-musl": "0.6.2",
+    "holographic-memory-win32-arm64-msvc": "0.6.2",
+    "holographic-memory-win32-x64-msvc": "0.6.2"
   },
   "peerDependencies": {
     "@huggingface/transformers": "^3.8.1 || ^4.2.0"

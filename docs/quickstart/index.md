@@ -42,8 +42,8 @@ questions in `examples/quickstart/queries.json`, each with the article that answ
 
     The script embeds text with `toy_embed`, a small hashed bag of words so it needs no model
     download. It is lexical and only a stand-in: use a real embedding model for semantic
-    search. The `holographic-vsa` wheel on PyPI is a different thing (the quantized-phase
-    vector substrate) and does not include document search.
+    search. The `holographic-memory-py` wheel provides native vector search and phase vectors;
+    it does not include document search.
 
 === "Node"
 

@@ -11,6 +11,7 @@ import argparse
 import json
 import pathlib
 import sys
+
 import tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -23,7 +24,20 @@ def main() -> int:
 
     cargo = tomllib.loads((ROOT / "Cargo.toml").read_text())["package"]["version"]
     package = json.loads((ROOT / "package.json").read_text())
+    native = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
+    models = tomllib.loads((ROOT / "bindings/embed-models/python/pyproject.toml").read_text())["project"]
+    sdk = tomllib.loads((ROOT / "bindings/python/holographic-sdk/pyproject.toml").read_text())["project"]
     problems = []
+    if native["name"] != "holographic-memory-py":
+        problems.append(f"native Python distribution is {native['name']}")
+    if models["name"] != "holographic-memory-models":
+        problems.append(f"embedding model distribution is {models['name']}")
+    if native.get("optional-dependencies", {}).get("embed") != [
+        f"holographic-memory-models=={models['version']}"
+    ]:
+        problems.append("native Python embed extra disagrees with the model package")
+    if sdk["name"] != "holographic-memory-sdk":
+        problems.append(f"SDK distribution is {sdk['name']}")
     if package["version"] != cargo:
         problems.append(f"package.json is {package['version']}, Cargo.toml is {cargo}")
     for name, version in package.get("optionalDependencies", {}).items():
