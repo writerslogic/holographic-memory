@@ -25,6 +25,11 @@ uv add "holographic-memory-sdk[langchain]"
 uv add "holographic-memory-sdk[all]"
 ```
 
+The earlier standalone `langchain-holographic` distribution is retired. For LangChain, install
+`holographic-memory-sdk[langchain]` and import `HolographicVectorStore` from
+`holographic_sdk.langchain`. This adapter connects to `hms-server`; update the old
+`langchain_holographic` import and its local-store configuration when migrating.
+
 The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
 
 ```bash
