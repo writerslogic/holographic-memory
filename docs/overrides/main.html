@@ -12,8 +12,7 @@
   {% set page_title = (page.meta.title if page.meta and page.meta.title else page.title) if page and page.title else config.site_name %}
   {% set page_desc = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
   <style>{{ hms.inline_css }}</style>
-  <link rel="icon" type="image/svg+xml" href="{{ 'assets/favicon.svg' | url }}">
-  <link rel="mask-icon" href="{{ 'assets/logo.svg' | url }}" color="#0a7b8c">
+  <link rel="icon" type="image/svg+xml" href="{{ config.theme.favicon }}">
   <meta name="theme-color" content="#0a0d14" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#fcfcfa" media="(prefers-color-scheme: light)">
   <meta property="og:type" content="{{ 'website' if page.is_homepage else 'article' }}">

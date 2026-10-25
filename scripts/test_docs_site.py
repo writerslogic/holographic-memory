@@ -25,6 +25,19 @@ import docs_pyo3_stub  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 
 
+class BrandingTests(unittest.TestCase):
+    def test_brand_assets_resolve_within_each_site_version(self):
+        import docs_site
+
+        for url in ("https://docs.example/", "https://docs.example/dev/", "http://127.0.0.1:8123/latest/"):
+            config = {"docs_dir": str(ROOT / "docs"), "site_url": url, "extra": {}, "theme": {}}
+            docs_site.on_config(config)
+            for key in ("logo", "favicon"):
+                asset = config["theme"][key]
+                self.assertTrue(asset.startswith(url))
+                self.assertTrue((ROOT / "docs" / asset.removeprefix(url)).is_file())
+
+
 class VectorChartTests(unittest.TestCase):
     def chart(self, table, competitors=(), hms=()):
         with tempfile.TemporaryDirectory() as tmp:

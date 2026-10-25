@@ -175,6 +175,8 @@ def build_comparison(root, site):
 
 
 def on_config(config):
+    for key in ("logo", "favicon"):
+        config["theme"][key] = config["site_url"].rstrip("/") + "/assets/crystal-detailed-static.svg"
     root = _repo_root(config)
     site = yaml.safe_load((root / "docs" / "_data" / "site.yml").read_text(encoding="utf-8"))
     ref = os.environ.get("HMS_DOCS_REF", "main")

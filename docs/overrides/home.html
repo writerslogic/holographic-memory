@@ -26,15 +26,19 @@
         </ul>
       </div>
       <div class="hms-hero__art" aria-hidden="true">
-        <svg viewBox="0 0 520 520" class="hms-field" focusable="false">
-          <defs><clipPath id="hf-clip"><circle cx="260" cy="260" r="252"/></clipPath></defs>
-          <g clip-path="url(#hf-clip)">
-            <g class="hf-a">{% for r in range(1, 25) %}<circle cx="190" cy="260" r="{{ r * 17 }}"/>{% endfor %}</g>
-            <g class="hf-b">{% for r in range(1, 25) %}<circle cx="330" cy="260" r="{{ r * 17 }}"/>{% endfor %}</g>
-          </g>
-          <circle cx="260" cy="260" r="252" class="hf-rim"/>
-        </svg>
+        <img src="{{ config.theme.logo }}" width="520" height="520" alt="" class="hms-crystal" fetchpriority="high">
       </div>
+    </section>
+
+    <section class="hms-section" aria-labelledby="start-title">
+      <h2 id="start-title">What are you building?</h2>
+      <p class="hms-sub">Choose a path, run an example, then inspect the evidence it returns.</p>
+      <div class="hms-grid">
+        <a class="hms-card hms-feature" href="{{ 'integrations/editors/' | url }}"><h3>Memory for an editor</h3><p>Connect an MCP host to a local store. Remember, recall and inspect memories across sessions.</p></a>
+        <a class="hms-card hms-feature" href="{{ 'get-started/choose/' | url }}"><h3>Search inside an app</h3><p>Choose Rust, Node or a Python HTTP client, with clear package and storage boundaries.</p></a>
+        <a class="hms-card hms-feature" href="{{ 'guides/evaluate-search/' | url }}"><h3>Evaluate your results</h3><p>Check known answers, inspect source passages and compare retrieval on your own questions.</p></a>
+      </div>
+      <p class="hms-fine">Already installing? <a href="{{ 'get-started/troubleshooting/' | url }}">Troubleshoot setup and retrieval</a>.</p>
     </section>
 
     <section class="hms-section" id="install" aria-labelledby="install-title">
