@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "holographic-memory-mcp"
-version = "0.1.1"
+version = "0.1.2"
 description = "Launcher for the Holographic Memory MCP server (hms-mcp): private, on-device persistent memory for AI agents."
 readme = "README.md"
 requires-python = ">=3.9"

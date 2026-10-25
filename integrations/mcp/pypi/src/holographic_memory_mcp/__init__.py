@@ -20,7 +20,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 TARGETS = {
     ("darwin", "arm64"): "aarch64-apple-darwin",
