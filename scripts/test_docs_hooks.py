@@ -66,6 +66,17 @@ class RewriteTests(unittest.TestCase):
         text = "```\n[r](../../benchmarks/results/r.json)\n```"
         self.assertEqual(self.run_hook(text), text)
 
+    def test_typescript_matrix_suffixes_are_literal_not_empty_references(self):
+        for dimensions in (1, 2, 3):
+            suffix = "[]" * dimensions
+            text = f"`number`{suffix} and [`Hit`](Hit.md){suffix}"
+            expected_suffix = r"\[]" * dimensions if dimensions > 1 else suffix
+            expected = f"`number`{expected_suffix} and [`Hit`](Hit.md){expected_suffix}"
+            self.assertEqual(self.run_hook(text, "api/node/Example.md"), expected)
+            self.assertEqual(self.run_hook(text), text)
+        code = "```ts\nconst rows: number[][] = [];\n```"
+        self.assertEqual(self.run_hook(code, "api/node/Example.md"), code)
+
 
 if __name__ == "__main__":
     unittest.main()

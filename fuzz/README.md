@@ -1,4 +1,4 @@
-<img src="../assets/logo.png" width="88" alt="Holographic Memory System" align="left">
+<img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" width="88" alt="Holographic Memory System" align="left">
 
 <h1>HMS fuzzing</h1>
 <p><strong>Deterministic, allocation-bounded fuzz targets for every parser of untrusted input in the Holographic Memory System.</strong></p>

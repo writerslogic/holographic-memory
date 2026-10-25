@@ -36,17 +36,7 @@
 [dir] .md-typeset .hms-runtimes li { margin: 0; padding: 0.22rem 0.7rem; border-radius: 6px; border: 1px solid var(--hms-border); background: var(--hms-surface); font-size: 0.7rem; font-weight: 560; font-family: var(--md-code-font); color: var(--hms-text); }
 .hms-runtimes small { color: var(--hms-muted); font-weight: 400; }
 .hms-hero__art { justify-self: center; width: min(100%, 30rem); }
-.hms-field { width: 100%; height: auto; display: block; filter: drop-shadow(0 20px 40px color-mix(in srgb, var(--hms-accent) 18%, transparent)); }
-.hms-field circle { fill: none; stroke-width: 1.5; }
-.hf-a circle { stroke: var(--hms-accent); }
-.hf-b circle { stroke: var(--hms-violet); }
-.hf-rim { stroke: var(--hms-border-strong) !important; stroke-width: 2 !important; }
-[data-md-color-scheme="slate"] .hf-b { mix-blend-mode: screen; }
-[data-md-color-scheme="default"] .hf-b { mix-blend-mode: multiply; }
-.hf-a { animation: hf-a 18s ease-in-out infinite alternate; }
-.hf-b { animation: hf-b 18s ease-in-out infinite alternate; }
-@keyframes hf-a { to { transform: translateX(-34px); } }
-@keyframes hf-b { to { transform: translateX(34px); } }
+.hms-crystal { display: block; width: 100%; height: auto; max-width: 26rem; margin: auto; }
 
 /* ---- install tabs ---- */
 .hms-install { max-width: 52rem; }

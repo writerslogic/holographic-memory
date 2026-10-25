@@ -19,8 +19,8 @@ strict: true
 theme:
   name: material
   custom_dir: docs/overrides
-  logo: assets/logo.svg
-  favicon: assets/favicon.svg
+  logo: https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.svg
+  favicon: https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.svg
   font: false
   icon:
     repo: fontawesome/brands/github

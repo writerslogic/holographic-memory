@@ -43,3 +43,7 @@ architecture | ARCHITECTURE
 production readiness | production-readiness
 avx512 | platforms
 how docs are built | docs-pipeline
+
+choose an integration | get-started/choose
+troubleshooting | get-started/troubleshooting
+evaluate search | guides/evaluate-search

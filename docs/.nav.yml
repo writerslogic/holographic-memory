@@ -12,6 +12,7 @@
 #   Benchmarks    the evidence and the research behind it
 nav:
   - Get started:
+      - get-started/choose.md
       - get-started/install.md
       - quickstart/index.md
       - quickstart/offline-agent.md

@@ -1,8 +1,4 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-white.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo-black.svg">
-  <img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/logo.png" width="120" alt="Holographic Memory System" align="left">
-</picture>
+<img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" width="120" alt="Holographic Memory System" align="left">
 
 <h3>Holographic SDK</h3>
 <p><strong>Python HTTP client and agent-framework adapters for a Holographic Memory System service.</strong></p>

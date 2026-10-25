@@ -56,5 +56,8 @@ def on_page_markdown(markdown, page, config, files):
     for line in markdown.split("\n"):
         if FENCE.match(line):
             in_fence = not in_fence
+        if not in_fence and page.file.src_uri.startswith("api/node/"):
+            # TypeDoc emits matrix suffixes as [][]; autorefs treats them as an empty reference.
+            line = re.sub(r"(?<=[`)])(?:\[\]){2,}", lambda m: m[0].replace("[", r"\["), line)
         out.append(line if in_fence else LINK.sub(rewrite, line))
     return "\n".join(out)

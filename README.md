@@ -1,4 +1,4 @@
-<img src="assets/logo.png" alt="Holographic Memory logo" width="96" align="left">
+<img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" alt="Holographic Memory logo" width="96" align="left">
 
 # Holographic Memory
 
