@@ -137,16 +137,21 @@ _Generated from `benchmarks/results/competitive/` by `hms-bench table`; method a
 
 <!-- BENCH:END -->
 
-## Get started in 60 seconds
+## Get started
 
 Clone once: `git clone https://github.com/writerslogic/holographic-memory && cd holographic-memory`.
+Run the offline agent-memory demo with `cargo run --release --example demo-offline-agent`.
 
 <details open>
 <summary><strong>Rust</strong></summary>
 
+From your own Rust project, add the current Apache-2.0 source:
+
 ```sh
-cargo add holographic-memory        # crates.io 0.6.1, MSRV 1.89
+cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory
 ```
+
+The published crate 0.6.1 remains AGPL-3.0-or-later.
 
 ```rust quickstart-check
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};

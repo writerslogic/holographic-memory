@@ -38,7 +38,7 @@ For Python, create and activate a virtual environment first: `uv venv`, then
     ```
 
     `default = []`: nothing is on unless you ask. Turn on what you need, for example
-    `cargo add holographic-memory --features security` for AES-256-GCM stores and signed audit logs.
+    `cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory --features security` for AES-256-GCM stores and signed audit logs.
     Every feature, what it turns on and whether it is experimental: [Cargo features](../reference/features.md).
 
 === "Python"

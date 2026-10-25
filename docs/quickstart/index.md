@@ -24,7 +24,7 @@ questions in `examples/quickstart/queries.json`, each with the article that answ
 
     The example crate depends on the library by path, with the `security` feature, plus
     `rusqlite` (bundled SQLite) for the comparison. In your own project:
-    `cargo add holographic-memory --features security`.
+    `cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory --features security`.
 
 === "Python"
 
