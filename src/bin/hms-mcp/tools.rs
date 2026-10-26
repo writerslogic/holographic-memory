@@ -156,7 +156,7 @@ pub fn definitions(exposure: &Exposure, limits: &Limits) -> Vec<Value> {
         json!({
             "name": "remember",
             "title": "Store memory",
-            "description": "Store a durable fact, decision or preference; use `recall` to find one instead. A supplied `id` replaces that memory, while an omitted `id` creates a new one. Use `if_version` to reject concurrent changes or `create_only` to reject overwrites.",
+            "description": "Store a durable fact, decision or preference; use `recall` to find one instead. Omit `id` to create a memory; an existing `id` replaces its text, title, tags and metadata, clearing optional fields you omit. Use `if_version` with a known id to reject concurrent changes, or `create_only` to reject overwrites.",
             "inputSchema": schema(exposure, json!({
                 "text": {"type": "string", "maxLength": limits.max_text_bytes, "description": "UTF-8 memory content; must be nonblank unless `allow_empty` is true. The server also enforces a byte limit and a 4,096-word limit."},
                 "id": {"type": "string", "minLength": 1, "maxLength": 256, "description": "Stable id; replaces an existing memory with this id."},
@@ -179,7 +179,7 @@ pub fn definitions(exposure: &Exposure, limits: &Limits) -> Vec<Value> {
         json!({
             "name": "recall",
             "title": "Recall matching memories",
-            "description": "Retrieve full memories ranked for a natural-language question. Use this for ordinary recall; use `search` when you need metadata filters, ranking controls or score details. Read-only; default builds rank lexically, and a configured model adds semantic ranking.",
+            "description": "Retrieve full memories ranked for a natural-language question. `tags` require every listed label, and `min_score` drops low relative-score matches; use `search` for exact metadata-key filters, custom ranking weights or fusion, or text previews instead of full memories. Read-only; ranking is lexical by default, with semantic ranking when a model is configured.",
             "inputSchema": schema(exposure, json!({
                 "query": {"type": "string", "minLength": 1, "maxLength": 4096, "description": "Natural-language question or phrase to match against stored memories; nonblank, at most 4,096 UTF-8 bytes."},
                 "k": {"type": "integer", "minimum": 1, "maximum": limits.max_top_k, "default": 5, "description": "Maximum number of ranked memories to return."},
@@ -225,7 +225,7 @@ pub fn definitions(exposure: &Exposure, limits: &Limits) -> Vec<Value> {
         json!({
             "name": "forget",
             "title": "Delete memories",
-            "description": "Delete memories from the active store by id, ids or id prefix; use `remember` to update content instead. Inspect prefix matches with `list` first: prefix deletion requires `confirm: true`. Returns the deletion count and ids that were absent.",
+            "description": "Delete memories from the active store by exact id(s) or id prefix; use `remember` to update content instead. Deletion has no undo: inspect prefix matches with `list` first and set `confirm: true` for prefix deletion. Exact ids and a prefix cannot be combined, and a batch failure may leave earlier ids deleted.",
             "inputSchema": schema(exposure, json!({
                 "id": {"type": "string", "minLength": 1, "maxLength": 256, "description": "One exact memory id to delete; cannot combine with `prefix`."},
                 "ids": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 256}, "maxItems": limits.max_forget, "description": "Exact memory ids to delete in one call; cannot combine with `prefix`."},
@@ -278,7 +278,7 @@ pub fn definitions(exposure: &Exposure, limits: &Limits) -> Vec<Value> {
         json!({
             "name": "export",
             "title": "Export memory contents",
-            "description": "Read a portable snapshot of memory contents as JSON, JSONL or Markdown; use `list` for short previews instead. Read-only. The payload is returned as text and capped by the server's export byte limit; pass `next_cursor` as `cursor` to continue.",
+            "description": "Export a portable copy of many memories as JSON, JSONL or Markdown. Use `get` for one known memory, `recall` or `search` to find matches, and `list` for short previews. The text payload is capped by the export byte limit; pass `next_cursor` as `cursor` for more. Pages read the live store, so concurrent writes can change later pages.",
             "inputSchema": schema(exposure, json!({
                 "format": {"type": "string", "enum": ["json", "jsonl", "markdown"], "default": "json", "description": "Serialization of the returned text payload."},
                 "prefix": {"type": "string", "maxLength": 256, "description": "Include only memory ids starting with this prefix."},

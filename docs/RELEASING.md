@@ -71,7 +71,7 @@ version. The build step picks up npm's latest published launcher on each build. 
 new build test and release publication for each version. A release enables hosted deployment and
 security scans; a GitHub tag alone does not.
 
-Then check the [server score](https://glama.ai/mcp/servers/writerslogic/holographic-memory/score)
+Then check the [server score](https://glama.ai/mcp/servers/writerslogic/holographic-memory)
 and confirm it can deploy and introspect all eight tools. Review every tool's six Tool Definition
 Quality Score dimensions, the server coherence score, and the listed security and maintenance
 findings. Use Glama's specific findings to improve any dimension below 5/5, any overall score below
