@@ -116,10 +116,11 @@ These cannot be committed; the publish jobs wait on them.
    `npm`, `pypi`.
 2. crates.io: add this repository's `release.yml` and environment `crates-io` as a Trusted Publisher
    for `holographic-memory`. The job uses `rust-lang/crates-io-auth-action` and holds no token.
-3. npm: put an automation token for the `holographic-memory` and `holographic-memory-*` names in the
-   `npm` environment as `NPM_TOKEN`. The first publish of the seven new platform package names
-   needs a token; afterwards configure Trusted Publishing for every package on npmjs.com and delete
-   the secret. Publishing uses `--provenance`.
+3. npm: provide an automation token for the `holographic-memory` and
+   `holographic-memory-*` names as `NPM_TOKEN` (a repository or `npm` environment secret).
+   The first publish of the eight platform package names needs a token. Publishing uses
+   `--provenance`. The token must also permit `npm deprecate` until the 0.3.0 listing is corrected;
+   npm Trusted Publishing alone does not authorize that command.
 4. PyPI: add pending Trusted Publishers under owner `writerslogic`, repository
    `holographic-memory`, environment `pypi`: `holographic-memory-models` uses
    `python-models-release.yml`, `holographic-memory-py` uses `python-native-release.yml`, and
@@ -144,20 +145,19 @@ These cannot be committed; the publish jobs wait on them.
 5. **GitHub release.** `release.yml` leaves a *draft* release holding every artefact, SBOM,
    `SHA256SUMS` and the provenance bundle. Write the notes, then publish it. The data releases
    (`evidence-v*`) use other tags and never trigger these workflows.
-6. **npm un-deprecation** (required while the package carries the old deprecation; the previous
-   `0.3.0` was deprecated):
+6. **npm listing.** The protected `correct-npm-deprecation` job runs after `publish-npm` and
+   replaces the incorrect AGPL message on `0.3.0` while keeping that version deprecated. Verify:
 
    ```sh
-   npm view holographic-memory deprecated            # the message, if any, that npm shows today
-   npm deprecate "holographic-memory@*" ""            # an empty message removes the deprecation
+   npm view holographic-memory@0.3.0 deprecated       # accurate upgrade message
    npm view holographic-memory@X.Y.Z deprecated       # must print nothing
    npm dist-tag ls holographic-memory                 # latest must be X.Y.Z
    ```
 
-   Run it after the npm publish job is green, as an owner of the package (`npm login`, 2FA on).
-   Then confirm the registry page shows no deprecation banner and `npm install holographic-memory`
-   resolves to X.Y.Z. The `verify-published` job already installs the published packages and runs a
-   search; this step is only about the deprecation flag.
+   If the correction job fails after publication, fix its token and rerun that job. Then confirm
+   the latest registry page shows no deprecation banner, the README logo renders, and
+   `npm install holographic-memory` resolves to X.Y.Z. The `verify-published` job installs the
+   published packages and runs a search after the correction job succeeds.
 7. **Verify** what was shipped (see below).
 
 ## Verify an artefact

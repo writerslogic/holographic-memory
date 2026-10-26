@@ -5,6 +5,8 @@ same engine code as the native and Node bindings: ingest, stemmed BM25 passage s
 filters, `titleWeight`, `bm25K1` / `bm25B`, optional caller-supplied dense embeddings with blend or RRF
 fusion, delete, stats, and a serialized store you can export, import and persist. No service calls.
 
+The package is available as source in this repository; `@holographic-memory/wasm` is not published on npm yet. Build it locally with the steps below.
+
 Package documentation (entry points, usage, storage, encryption): `bindings/wasm/npm/README.md`.
 Encryption decision and measurements: [ENCRYPTION.md](ENCRYPTION.md).
 Browser demo: `examples/wasm` (see its README section below).

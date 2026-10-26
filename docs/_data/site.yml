@@ -51,13 +51,12 @@ runtimes:
     name: Node
     status: available
     install: |-
-      git clone https://github.com/writerslogic/holographic-memory
-      cd holographic-memory && npm ci --omit=optional && npm run build
+      npm install holographic-memory
     requires: [index.d.ts, examples/quickstart/node/quickstart.mjs]
     snippets:
       - examples/quickstart/node/quickstart.mjs:ingest
       - examples/quickstart/node/quickstart.mjs:hit
-    note: Built from source with a Rust toolchain. The npm package is deprecated until the next release.
+    note: The npm package installs a native binary for your platform. Building from source requires Rust.
 
 features:
   - title: Hybrid search

@@ -3,6 +3,8 @@
 `bindings/kotlin` is a Gradle build with two library modules over the UniFFI crate in
 `bindings/uniffi`, plus a Compose sample:
 
+These modules are available as source in this repository; no packaged JVM or Android release is published yet. Build the native libraries locally before using them.
+
 | Module | What | Native library |
 | --- | --- | --- |
 | `:jvm` | Kotlin/JVM library; JNA loads the library from classpath resources (`<os>-<arch>/`) | host, via `scripts/build-jvm-native.sh` |

@@ -15,6 +15,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/npm-packages.yml
+      - npm/README.md
       - scripts/ci/npm-platform-packages.cjs
       - scripts/ci/smoke-node.cjs
       - index.js
@@ -137,7 +138,9 @@ jobs:
             (cd "$dir" && npm pack --ignore-scripts --pack-destination ../../tarballs)
           done
           # The root package ships JavaScript only; the bindings come from the platform packages.
+          cp npm/README.md README.md
           npm pack --ignore-scripts --pack-destination tarballs
+          tar -xOf "tarballs/holographic-memory-$(node -p 'require("./package.json").version').tgz" package/README.md | cmp - npm/README.md
           cp bindings/*.cdx.json tarballs/
           npm sbom --sbom-format cyclonedx --package-lock-only --omit dev --omit optional --omit peer > "tarballs/holographic-memory-root-$(node -p 'require("./package.json").version').cdx.json"
           ls -l tarballs
