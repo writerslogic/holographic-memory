@@ -52,22 +52,24 @@ tested separately by `mcp-container.yml`. Clear the **Pinned Commit SHA** (`5250
 commit before the repository Dockerfile and current tool definitions); leave it empty so Glama can
 sync newer commits. Pinning a SHA requires updating it for every subsequent release.
 
-Set **Base Image** to `rust:1.89-bookworm`, leave Node.js and Python versions at their defaults,
-and enter this **Build Step** to compile the synced repository checkout:
+Set **Base Image** to `debian:trixie-slim` and **Node.js version** to `24`. Glama installs Node and
+`mcp-proxy` in its generated image. Enter this **Build Step** after publishing the MCP launcher to
+npm:
 
 ```sh
-CARGO_PROFILE_RELEASE_LTO=false cargo build --release --locked --features mcp,security --bin hms-mcp && install -m 755 target/release/hms-mcp /usr/local/bin/hms-mcp && install -d -m 1777 /data
+npm install -g --no-audit --no-fund holographic-memory-mcp@latest && HMS_MCP_CACHE_DIR=/tmp/hms-mcp-cache holographic-memory-mcp --version && install -m 755 /tmp/hms-mcp-cache/*/*/hms-mcp /usr/local/bin/hms-mcp && install -d -m 1777 /data
 ```
 
-Set **CMD Arguments** to `["/usr/local/bin/hms-mcp","--data-dir","/data"]`, **Environment
+The npm launcher verifies its downloaded binary against the checksum embedded in that release;
+the build copies the verified binary into the image so it needs no download at runtime. Set **CMD
+Arguments** to `["mcp-proxy","--","/usr/local/bin/hms-mcp","--data-dir","/data"]`, **Environment
 Variables JSON Schema** to `{"type":"object","properties":{}}`, and **Placeholder Parameters**
-to `{}`. Glama wraps the stdio command for its hosted endpoint. Persistent memory on a hosted
-deployment requires Glama's optional `/data` volume.
+to `{}`. Persistent memory on a hosted deployment requires Glama's optional `/data` volume.
 
 Click Deploy; after its build test succeeds, choose Make Release and publish the MCP launcher
-version. Glama requires this release step for each published version; tracking the latest commit
-in the build spec alone does not publish a new Glama release. A release enables hosted deployment
-and security scans; a GitHub tag alone does not.
+version. The build step picks up npm's latest published launcher on each build. Glama requires a
+new build test and release publication for each version. A release enables hosted deployment and
+security scans; a GitHub tag alone does not.
 
 Then check the [server score](https://glama.ai/mcp/servers/writerslogic/holographic-memory/score)
 and confirm it can deploy and introspect all eight tools. Review every tool's six Tool Definition
