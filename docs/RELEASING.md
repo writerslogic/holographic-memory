@@ -156,8 +156,11 @@ These cannot be committed; the publish jobs wait on them.
 
    If the correction job fails after publication, fix its token and rerun that job. Then confirm
    the latest registry page shows no deprecation banner, the README logo renders, and
-   `npm install holographic-memory` resolves to X.Y.Z. The `verify-published` job installs the
-   published packages and runs a search after the correction job succeeds.
+   `npm install holographic-memory` resolves to X.Y.Z. npm can acknowledge a new package before
+   its version is available; a [`0.0.0-stage` placeholder](https://docs.npmjs.com/staged-publishing/)
+   alone is not a published binding.
+   The `verify-published` job waits for the root and every declared optional platform package
+   with a fresh npm cache, then installs the published package and runs a search.
 7. **Verify** what was shipped (see below).
 
 ## Verify an artefact
