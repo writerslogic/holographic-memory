@@ -44,8 +44,8 @@ GitHub release exists, correct its credentials or publisher configuration and re
 After the official Registry entry is active, submit the repository through Glama's **Add MCP
 Server** form. `glama.json` names the maintainer, as in `scrivener-mcp`. Verify third-party
 directories separately; an official Registry entry does not confirm their listings. At the 0.1.2
-release, [mcp.so](https://mcp.so/Submit?type=server) charges a $39 publishing fee, which we will
-not pay, and PulseMCP is not accepting submissions. Revisit them if those conditions change.
+release, [mcp.so](https://mcp.so/Submit?type=server) has a free submission path and an optional
+$39 paid publication option. Use the free path; do not pay. PulseMCP is not accepting submissions.
 The [modelcontextprotocol/servers repository](https://github.com/modelcontextprotocol/servers)
 now contains reference servers and directs community server discovery to the official Registry.
 
