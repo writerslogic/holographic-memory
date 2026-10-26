@@ -8,6 +8,8 @@
 [![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
 [![docs.rs](https://img.shields.io/docsrs/holographic-memory)](https://docs.rs/holographic-memory)
 [![PyPI](https://img.shields.io/pypi/v/holographic-memory-py.svg?label=pypi)](https://pypi.org/project/holographic-memory-py/)
+[![npm](https://img.shields.io/npm/v/holographic-memory.svg?label=node)](https://www.npmjs.com/package/holographic-memory)
+[![MCP on npm](https://img.shields.io/npm/v/holographic-memory-mcp.svg?label=mcp)](https://www.npmjs.com/package/holographic-memory-mcp)
 ![MSRV 1.89](https://img.shields.io/badge/MSRV-1.89-informational.svg)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory)](https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13977/badge)](https://www.bestpractices.dev/projects/13977)
@@ -175,15 +177,21 @@ println!("{} {:?}", hits[0].document_id, hits[0].source_uri);
 <details>
 <summary><strong>Node.js</strong></summary>
 
-The npm registry carries only the deprecated 0.3.0; build the native module from source (Rust required):
+Install the Node.js bindings (the package selects a native binary for your platform):
+
+```sh
+npm install holographic-memory
+```
+
+To build the native module from source instead (Rust required):
 
 ```sh
 npm ci --omit=optional && npm run build
 ```
 
 ```js quickstart-check
-const { HolographicMemorySystem } = require('./index.js')
-const { DocumentMemory } = require('./semantic.js')
+const { HolographicMemorySystem } = require('holographic-memory')
+const { DocumentMemory } = require('holographic-memory/semantic')
 
 async function main() {
   const dir = require('node:fs').mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'hms-readme-'))
@@ -231,6 +239,13 @@ with a toy embedder is in [`examples/quickstart/python`](examples/quickstart/pyt
 <summary><strong>MCP</strong></summary>
 
 `hms-mcp` serves a store to any Model Context Protocol client over stdio or HTTP:
+
+```sh
+npx -y holographic-memory-mcp                                # stdio; downloads a verified binary on first run
+npx -y holographic-memory-mcp --transport http               # http://127.0.0.1:8765/mcp
+```
+
+The [MCP package](https://www.npmjs.com/package/holographic-memory-mcp) is a separate launcher. To build the server from source:
 
 ```sh
 cargo build --release --features mcp,security --bin hms-mcp   # add local-models for semantic recall
@@ -295,8 +310,8 @@ version, with the tested numbers, is in
 | On-device models (`local-models`: Qwen3 embed/rerank/LLM) | Ships | Local weights only; never downloads |
 | `hms-server` HTTP API, multi-tenant (`server`) | Ships | Single node; TLS, per-tenant scoped keys ([guide](docs/SERVER.md)) |
 | MCP server (`mcp`: `hms-mcp`, stdio and HTTP) | Ships | Encryption needs `security`; semantic recall needs `local-models` |
-| Node.js bindings | Ships (build from source) | npm package not yet republished |
-| C, WASM and UniFFI bindings | Ships (build from source) | See [`bindings/`](bindings) |
+| Node.js bindings | Ships on npm and from source | Native binaries are selected by platform at install time |
+| C, Go, .NET, Java, Kotlin, Swift and WebAssembly bindings | Source available | Require local builds; the language packages and native bundles are not yet published ([runtime guides](docs/runtimes)) |
 | Python | Client + phase substrate | No in-process document search |
 | Query-private search (`private-search`) | Experimental | For searching an index someone else holds; hides the query vector from the scorer only ([notes](docs/PRIVATE-SEARCH.md)) |
 

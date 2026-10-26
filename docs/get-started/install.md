@@ -14,7 +14,7 @@ next_steps:
 
 # Install
 
-HMS is a Rust engine. Use it directly, build the Node module, connect an editor through MCP,
+HMS is a Rust engine. Use it directly, install the Node bindings, connect an editor through MCP,
 or call a self-hosted server from Python. [Choose an integration](choose.md) before installing.
 Package installation needs network access; the engine can run offline after installation.
 
@@ -68,16 +68,14 @@ For Python, create and activate a virtual environment first: `uv venv`, then
 
 === "Node"
 
-    The native module is built from source, which needs a Rust toolchain:
+    Install the Node bindings. npm selects the native binary for your platform:
 
     ```sh
-    git clone https://github.com/writerslogic/holographic-memory
-    cd holographic-memory
-    npm ci --omit=optional
-    npm run build
+    npm install holographic-memory
     ```
 
-    The npm package is deprecated until the next release; use the source build until then.
+    To build from a checkout instead, run `npm ci --omit=optional && npm run build` with a Rust
+    toolchain. The separate `holographic-memory-mcp` package launches the MCP server.
 
 ## Check that it works
 
@@ -96,7 +94,7 @@ For Python, create and activate a virtual environment first: `uv venv`, then
 === "Node"
 
     ```sh
-    node -e "const { HolographicMemorySystem } = require('./index.js'); console.log(typeof HolographicMemorySystem)"
+    node -e "const { HolographicMemorySystem } = require('holographic-memory'); console.log(typeof HolographicMemorySystem)"
     ```
 
 The [quickstart](../quickstart/index.md) runs a full ingest and search against the same checkout.
@@ -106,7 +104,13 @@ round trip, run the Python tab in the [quickstart](../quickstart/index.md).
 
 ## Connect an editor
 
-Build `hms-mcp` from this checkout, then configure your editor to launch the absolute binary path:
+Run the separate MCP launcher from npm:
+
+```sh
+npx -y holographic-memory-mcp
+```
+
+To build `hms-mcp` from this checkout instead and configure your editor to launch its absolute path:
 
 ```sh
 cargo build --release --features mcp,security --bin hms-mcp

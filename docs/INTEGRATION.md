@@ -55,6 +55,9 @@ versioned as `multiscale-words-v1`; a generic character-trigram implementation d
 compatible vectors. Dense projection version 2 preserves sign, and old vectors must be
 re-encoded from their original inputs. See [migration](production-readiness.md).
 
-The persistent engine depends on native file locking and mmap. This repository does not
-provide a supported browser/Wasm binding. Applications in other languages can expose their
-own service around the native engine with authentication and limits appropriate to their use.
+The persistent native engine depends on file locking and mmap. A separate
+[WebAssembly binding](runtimes/wasm/README.md) runs the document store in browsers and other
+JavaScript runtimes with snapshot persistence; it is available from source and is not yet
+published on npm. It does not include the graph or knowledge-graph engine. Applications in other
+languages can expose their own service around the native engine with authentication and limits
+appropriate to their use.

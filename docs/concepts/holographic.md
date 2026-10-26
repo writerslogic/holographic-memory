@@ -17,7 +17,9 @@ indices. At `D = 16,384` that is 64 indices, 256 bytes, against 64 KiB for a den
 Vectors for atoms (names, relations, words) are generated deterministically from a hash seed, so
 the same atom has the same vector in every process and no codebook has to be stored.
 
-## The three operations
+## Bind, bundle and permute
+
+Bind, bundle and permute are the three operations on sparse hypervectors:
 
 | Operation | On sparse index sets | What it is for |
 |-----------|----------------------|----------------|
