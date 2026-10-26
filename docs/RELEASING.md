@@ -42,9 +42,11 @@ workflow never replaces an existing release or registry version. If one publish 
 GitHub release exists, correct its credentials or publisher configuration and rerun that job only.
 
 After the official Registry entry is active, submit the repository through Glama's **Add MCP
-Server** form. `glama.json` names the maintainer, as in `scrivener-mcp`. Other directories such as
-mcp.so and PulseMCP ingest the official Registry. GitHub's curated MCP list requires a separate
-onboarding request after the official Registry entry is active.
+Server** form. `glama.json` names the maintainer, as in `scrivener-mcp`. Verify third-party
+directories separately; use [mcp.so's submission form](https://mcp.so/Submit?type=server) or
+[PulseMCP's submission form](https://www.pulsemcp.com/submit) if their listings do not appear.
+The [modelcontextprotocol/servers repository](https://github.com/modelcontextprotocol/servers)
+now contains reference servers and directs community server discovery to the official Registry.
 
 After Glama approves the listing, a signed-in maintainer must [configure its Docker release](https://glama.ai/mcp/servers/writerslogic/holographic-memory/admin/dockerfile).
 That form generates a Dockerfile from its fields; the repository-root `Dockerfile` is built and
