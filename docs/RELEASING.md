@@ -205,8 +205,11 @@ attestations, not compared).
   `skip-existing`).
 - A tag's crate upload failed because the archive is too large: fix the `Cargo.toml` package
   contents on `main` and verify `cargo package --locked --no-default-features` reports less than
-  9.5 MB compressed. Run `Release` on `main` with `publish_crate_only=true` and approve the
-  `crates-io` environment. This protected run packages, attests, and publishes only the crate.
+  9.5 MB compressed. The `crates-io` environment normally permits only `v*` tags; temporarily
+  add `main` as an allowed deployment branch while retaining the `v*` policy and required reviewer.
+  Run `Release` on `main` with `publish_crate_only=true` and approve the `crates-io` environment.
+  Remove the temporary `main` policy after the job finishes. This protected run packages,
+  attests, and publishes only the crate.
   Replace the GitHub release's crate, crate SBOM, and matching `SHA256SUMS` entries with its
   `crate-recovery` artifact; attach its provenance bundle and record the recovery commit in the
   release notes. Verify that the crate index checksum matches the recovered `.crate`. Never move
