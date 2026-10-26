@@ -37,6 +37,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - The revocation status list and the signed log head are replaced atomically, so a crash cannot leave a short list that reads revoked credentials as valid.
 
 ### Documentation
+- Prepare the maintained Node npm listing and document which runtime bindings require local builds.
 - Ideas tree for October 2026 with its 10-minute proxies
 - Preliminary nytimes VGraph comparison on the M4 and the next-session specs
 - Record the green CI and the clippy toolchain for the gate
