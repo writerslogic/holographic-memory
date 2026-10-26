@@ -6,8 +6,9 @@
 # artefact, attest SLSA build provenance and the SBOMs, then publish.
 #
 # Everything up to and including the attestations also runs on workflow_dispatch and on pull
-# requests that touch the release machinery, and never publishes: the three publish jobs and
-# the GitHub release job run only on a `v*` tag and each sits behind its own environment
+# requests that touch the release machinery. A protected manual crate-only recovery can publish
+# after a tag's crate upload fails; the normal publish jobs and GitHub release run only on `v*` tags.
+# The publish jobs sit behind their own environments
 # (`crates-io`, `npm`, `release`; give them required reviewers). PyPI publishing stays in
 # python-native-release.yml, whose trusted publisher is bound to that file name. See docs/RELEASING.md.
 name: Release
@@ -16,9 +17,15 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publish_crate_only:
+        description: Publish the current version's crate only after a failed tag upload
+        type: boolean
+        default: false
   pull_request:
     paths:
       - .github/workflows/release.yml
+      - Cargo.toml
       - scripts/ci/pair-sboms.py
       - scripts/ci/check-versions.py
 
@@ -27,16 +34,19 @@ permissions:
 
 jobs:
   python:
+    if: ${{ !inputs.publish_crate_only }}
     uses: ./.github/workflows/python-wheels.yml
     permissions:
       contents: read
 
   npm:
+    if: ${{ !inputs.publish_crate_only }}
     uses: ./.github/workflows/npm-packages.yml
     permissions:
       contents: read
 
   fuzz:
+    if: ${{ !inputs.publish_crate_only }}
     uses: ./.github/workflows/fuzz.yml
     with:
       seconds: "120"
@@ -44,6 +54,7 @@ jobs:
       contents: read
 
   crate:
+    if: ${{ !inputs.publish_crate_only }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,7 +71,13 @@ jobs:
             python3 scripts/ci/check-versions.py
           fi
       - name: Package and verify the crate builds from its own tarball
-        run: cargo package --locked --no-default-features
+        run: |
+          cargo package --locked --no-default-features
+          bytes=$(stat -c%s target/package/holographic-memory-*.crate)
+          if (( bytes >= 9500000 )); then
+            echo "::error::Crate archive is ${bytes} bytes; crates.io uploads are limited to 10 MiB"
+            exit 1
+          fi
       - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
         with:
           tool: cargo-cyclonedx
@@ -202,6 +219,73 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
           toolchain: stable
+      - name: Exchange the OIDC token for a short-lived crates.io token (Trusted Publishing)
+        id: auth
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+      - name: Publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish --locked --no-default-features
+
+  publish-crate-recovery:
+    name: publish crate only to crates.io
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_crate_only
+    runs-on: ubuntu-latest
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - name: Crate and npm versions agree
+        run: python3 scripts/ci/check-versions.py
+      - name: Package, verify and check upload size
+        id: package
+        run: |
+          set -euo pipefail
+          cargo package --locked --no-default-features
+          bytes=$(stat -c%s target/package/holographic-memory-*.crate)
+          if (( bytes >= 9500000 )); then
+            echo "::error::Crate archive is ${bytes} bytes; crates.io uploads are limited to 10 MiB"
+            exit 1
+          fi
+          echo "crate_name=$(basename target/package/holographic-memory-*.crate)" >> "$GITHUB_OUTPUT"
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: cargo-cyclonedx
+      - name: CycloneDX SBOM
+        run: |
+          cargo cyclonedx --format json --spec-version 1.5 --no-default-features --override-filename holographic-memory-crate.cdx
+          mkdir -p dist
+          cp target/package/*.crate dist/
+          mv holographic-memory-crate.cdx.json "dist/${{ steps.package.outputs.crate_name }}.cdx.json"
+      - name: Attest crate and SBOM provenance
+        id: provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.crate
+            dist/*.cdx.json
+      - name: Attest crate SBOM
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: dist/${{ steps.package.outputs.crate_name }}
+          sbom-path: dist/${{ steps.package.outputs.crate_name }}.cdx.json
+      - name: Keep crate provenance bundle
+        env:
+          BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+        run: cp "$BUNDLE" dist/crate-recovery-provenance.intoto.jsonl
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: crate-recovery
+          path: dist
+          if-no-files-found: error
       - name: Exchange the OIDC token for a short-lived crates.io token (Trusted Publishing)
         id: auth
         uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5

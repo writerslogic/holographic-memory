@@ -12,6 +12,24 @@ documentation = "https://docs.rs/holographic-memory"
 keywords = ["vector-database", "vector-search", "full-text-search", "agent-memory", "rag"]
 categories = ["database-implementations", "text-processing", "algorithms", "data-structures", "science"]
 readme = "README.md"
+include = [
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/build.rs",
+    "/src/**",
+    "/tests/**",
+    "/examples/**",
+    "/benches/**",
+    "/docs/**",
+    "/benchmarks/embedding/embed_store_bench.rs",
+    "/benchmarks/public/vector_glove_development.rs",
+    "/benchmarks/public/vector_glove_diagnosis.rs",
+    "/benchmarks/research/phase_resonator/cases.rs",
+    "/benchmarks/results/holography_resonator_v1/baseline.rs",
+]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

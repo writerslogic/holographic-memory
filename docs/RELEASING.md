@@ -203,6 +203,14 @@ attestations, not compared).
 - A publish job failed before publishing: fix and re-run the failed job; every publish is
   idempotent (`cargo publish` and `npm publish` refuse a version that exists, PyPI uses
   `skip-existing`).
+- A tag's crate upload failed because the archive is too large: fix the `Cargo.toml` package
+  contents on `main` and verify `cargo package --locked --no-default-features` reports less than
+  9.5 MB compressed. Run `Release` on `main` with `publish_crate_only=true` and approve the
+  `crates-io` environment. This protected run packages, attests, and publishes only the crate.
+  Replace the GitHub release's crate, crate SBOM, and matching `SHA256SUMS` entries with its
+  `crate-recovery` artifact; attach its provenance bundle and record the recovery commit in the
+  release notes. Verify that the crate index checksum matches the recovered `.crate`. Never move
+  the signed release tag.
 - Published a bad version: crates.io `cargo yank --version X.Y.Z`; npm `npm deprecate
   holographic-memory@X.Y.Z "reason"` (unpublish only within 72 hours); PyPI yank in the web UI (no
   API). Then release X.Y.(Z+1); never re-tag.
