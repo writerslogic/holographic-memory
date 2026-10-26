@@ -205,12 +205,17 @@ attestations, not compared).
   `skip-existing`).
 - A tag's crate upload failed because the archive is too large: fix the `Cargo.toml` package
   contents on `main` and verify `cargo package --locked --no-default-features` reports less than
-  9.5 MB compressed. Run `Release` on `main` with `publish_crate_only=true` and approve the
-  `crates-io` environment. This protected run packages, attests, and publishes only the crate.
-  Replace the GitHub release's crate, crate SBOM, and matching `SHA256SUMS` entries with its
-  `crate-recovery` artifact; attach its provenance bundle and record the recovery commit in the
-  release notes. Verify that the crate index checksum matches the recovered `.crate`. Never move
-  the signed release tag.
+  9.5 MB compressed. The `crates-io` environment normally permits only `v*` tags; temporarily
+  add `main` as an allowed deployment branch while retaining the `v*` policy and required reviewer.
+  Run `Release` on `main` with `publish_crate_only=true` and approve the `crates-io` environment.
+  Remove the temporary `main` policy after the job finishes. This protected run packages,
+  attests, and publishes only the crate.
+  Verify that the crate index checksum matches the `crate-recovery` artifact and the registry
+  download. If the GitHub release is still a draft, replace its crate, crate SBOM, and matching
+  `SHA256SUMS` entries before publishing. If it is already immutable, leave those assets intact;
+  record the recovery commit, registry checksum, and attestation in the editable release notes so
+  readers can distinguish the published crate from the original oversized release asset. Never
+  move the signed release tag.
 - Published a bad version: crates.io `cargo yank --version X.Y.Z`; npm `npm deprecate
   holographic-memory@X.Y.Z "reason"` (unpublish only within 72 hours); PyPI yank in the web UI (no
   API). Then release X.Y.(Z+1); never re-tag.
