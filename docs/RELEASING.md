@@ -47,10 +47,29 @@ mcp.so and PulseMCP ingest the official Registry. GitHub's curated MCP list requ
 onboarding request after the official Registry entry is active.
 
 After Glama approves the listing, a signed-in maintainer must [configure its Docker release](https://glama.ai/mcp/servers/writerslogic/holographic-memory/admin/dockerfile).
-Use the repository-root `Dockerfile` with build context `.`, leave CMD arguments unset so its
-`/hms-mcp` entrypoint runs over stdio, and add no required environment variables. Click Deploy;
-after its build test succeeds, choose Make Release and publish the MCP launcher version. This
-Glama release enables hosted deployment and security scans; a GitHub tag alone does not.
+That form generates a Dockerfile from its fields; the repository-root `Dockerfile` is built and
+tested separately by `mcp-container.yml`. Clear a stale **Pinned Commit SHA** before deploying:
+`5250df9` predates the repository Dockerfile and the MCP tool-definition improvements. If the
+field requires a value for version `0.1.2`, use its release commit
+`425e22b1dd49ea25a88516e02b7218ffae7214e2`.
+
+For MCP version `0.1.2`, set **Base Image** to `debian:trixie-slim`, leave Node.js and Python
+versions at their defaults, and add these as separate **Build Steps** (or a JSON array of the two
+strings if the editor asks for JSON):
+
+```sh
+apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
+curl -fsSL -o /usr/local/bin/hms-mcp https://github.com/writerslogic/holographic-memory/releases/download/mcp-v0.1.2/hms-mcp-x86_64-unknown-linux-gnu && echo 'd778b55f845375615914f9dc68d7476fc718669515addef6261e007a41a0af69  /usr/local/bin/hms-mcp' | sha256sum -c - && chmod 755 /usr/local/bin/hms-mcp && mkdir -p /data && chmod 1777 /data
+```
+
+Set **CMD Arguments** to `["/usr/local/bin/hms-mcp","--data-dir","/data"]`, **Environment
+Variables JSON Schema** to `{"type":"object","properties":{}}`, and **Placeholder Parameters**
+to `{}`. Glama wraps the stdio command for its hosted endpoint. When publishing a newer version,
+update the release asset URL and its verified SHA-256 together. Persistent memory on a hosted
+deployment requires Glama's optional `/data` volume.
+
+Click Deploy; after its build test succeeds, choose Make Release and publish version `0.1.2`.
+This Glama release enables hosted deployment and security scans; a GitHub tag alone does not.
 
 Then check the [server score](https://glama.ai/mcp/servers/writerslogic/holographic-memory/score)
 and confirm it can deploy and introspect all eight tools. Review every tool's six Tool Definition
