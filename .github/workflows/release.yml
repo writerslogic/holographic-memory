@@ -282,13 +282,25 @@ jobs:
         run: |
           set -euo pipefail
           version="${VERSION#v}"
+          platform_packages=()
+          while IFS= read -r package; do platform_packages+=("$package"); done < <(node -e "console.log(Object.keys(require('./package.json').optionalDependencies).join('\n'))")
+          [ "${#platform_packages[@]}" -gt 0 ]
+          [ -n "${platform_packages[0]}" ]
           mkdir consumer && cd consumer
           npm init -y > /dev/null
-          for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            if npm install --no-audit --no-fund "holographic-memory@${version}"; then break; fi
-            [ "$attempt" = 10 ] && { echo "holographic-memory@${version} never became installable" >&2; exit 1; }
+          for attempt in {1..20}; do
+            ready=1
+            for package in holographic-memory "${platform_packages[@]}"; do
+              if ! npm_config_cache="$RUNNER_TEMP/npm-release-$attempt" npm view "${package}@${version}" version > /dev/null 2>&1; then
+                echo "${package}@${version} is not available yet (attempt $attempt/20)"
+                ready=0
+              fi
+            done
+            [ "$ready" = 1 ] && break
+            [ "$attempt" = 20 ] && { echo "Published npm packages did not all become available" >&2; exit 1; }
             sleep 30
           done
+          npm_config_cache="$RUNNER_TEMP/npm-release-install" npm install --no-audit --no-fund "holographic-memory@${version}"
           node -e "
             const assert = require('node:assert/strict');
             (async () => {
