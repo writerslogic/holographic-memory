@@ -46,6 +46,19 @@ Server** form. `glama.json` names the maintainer, as in `scrivener-mcp`. Other d
 mcp.so and PulseMCP ingest the official Registry. GitHub's curated MCP list requires a separate
 onboarding request after the official Registry entry is active.
 
+After Glama approves the listing, a signed-in maintainer must [configure its Docker release](https://glama.ai/mcp/servers/writerslogic/holographic-memory/admin/dockerfile).
+Use the repository-root `Dockerfile` with build context `.`, leave CMD arguments unset so its
+`/hms-mcp` entrypoint runs over stdio, and add no required environment variables. Click Deploy;
+after its build test succeeds, choose Make Release and publish the MCP launcher version. This
+Glama release enables hosted deployment and security scans; a GitHub tag alone does not.
+
+Then check the [server score](https://glama.ai/mcp/servers/writerslogic/holographic-memory/score)
+and confirm it can deploy and introspect all eight tools. Review every tool's six Tool Definition
+Quality Score dimensions, the server coherence score, and the listed security and maintenance
+findings. Use Glama's specific findings to improve any dimension below 5/5, any overall score below
+the highest tier, or any reported risk; then confirm the next scan reflects the fix. The
+`mcp-container.yml` CI check covers the Docker build and stdio introspection before submission.
+
 Afterward, confirm `npm view holographic-memory-mcp version` and the PyPI project page show X.Y.Z.
 Run `uvx holographic-memory-mcp --version` and `npx -y holographic-memory-mcp --version` on a
 supported platform with an empty launcher cache; these commands print the underlying engine's
