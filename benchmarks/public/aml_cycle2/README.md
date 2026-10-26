@@ -45,3 +45,11 @@ uv run --script benchmarks/public/aml_cycle2/local_host.py \
 The local lifecycle test uses synthetic data and checks Add, shutdown, reopen,
 Search, authentication, and user isolation. Pass `HMS_QUERY_TEST_BINARY` to run
 it against the pinned binary.
+
+`gce_install.sh` installs this same local host on a dedicated Ubuntu 24.04
+Compute Engine VM. It checks out the pinned native commit, overlays the
+reviewed adapter and launcher from the pinned integration commit, builds the
+server with Rust 1.96, and installs a loopback-only systemd service. It does
+not install a token or expose a public port. Provision the token privately and
+configure a TLS reverse proxy only after checking the VM's identity, source,
+disk lifetime, and firewall rules.
