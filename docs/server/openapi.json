@@ -679,7 +679,7 @@
     },
     "summary": "Holographic Memory HTTP service",
     "title": "hms-server",
-    "version": "0.6.3"
+    "version": "0.6.4"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2551,4 +2551,3 @@
     }
   ]
 }
-

@@ -5,7 +5,8 @@
 usage: bump-version.py X.Y.Z[-pre]
 
 Updates Cargo.toml, Cargo.lock (offline), package.json with its optionalDependencies, and
-package-lock.json, then runs check-versions.py. The wheel version comes from Cargo.toml.
+package-lock.json and the OpenAPI version, then runs check-versions.py. The wheel version
+comes from Cargo.toml.
 """
 import json
 import pathlib
@@ -51,6 +52,11 @@ def main(argv: list[str]) -> int:
         root["optionalDependencies"][name] = version
         lock["packages"][f"node_modules/{name}"]["version"] = version
     dump(lock_path, lock)
+
+    openapi_path = ROOT / "docs/server/openapi.json"
+    openapi = json.loads(openapi_path.read_text())
+    openapi["info"]["version"] = version
+    dump(openapi_path, openapi)
 
     subprocess.run(["cargo", "update", "--workspace", "--offline"], cwd=ROOT, check=True)
     return subprocess.run([sys.executable, str(ROOT / "scripts/ci/check-versions.py")]).returncode
