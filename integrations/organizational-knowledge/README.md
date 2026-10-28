@@ -106,15 +106,18 @@ instead of accumulating. Hit offsets are UTF-8 byte offsets into the exact curat
   equal the whole array.
 - One writer per store directory.
 - JSON numbers are IEEE doubles: integers above 2^53 in extra metadata fields are not
-  preserved exactly (the Rust example keeps them). The curated schema has no numeric fields.
+  preserved exactly. The curated schema has no numeric fields.
 - No retrieval-quality, speed, or benchmark claim is made.
 
 ## Interoperability
 
 The Rust example reads and deletes what this adapter wrote, and the reverse, one writer at a
-time. Stricter here: this adapter also rejects non-string optional fields, non-http(s)
-`source_url`, `hms_namespace` in the input, control characters in identity parts, and lone
-surrogates, which the Rust example accepts.
+time. Differences checked against the Rust example binary: this adapter rejects non-string
+optional fields (`title: 12`, `title: null`) and a `javascript:` `source_url`, which the Rust
+example imports; it reads files up to 16 MiB where the Rust example reads 8 MiB; and it stores
+integers above 2^53 in extra metadata fields as rounded doubles where the Rust example keeps
+them exactly. Both reject control characters in `id`, a reserved `hms_namespace` key, and
+lone surrogates.
 
 ```sh
 node integrations/organizational-knowledge/example/cli.cjs import ./toip-js-store toip integrations/organizational-knowledge/example/fixtures
@@ -123,8 +126,8 @@ cargo run --locked --example organizational_knowledge -- forget ./toip-js-store 
 node integrations/organizational-knowledge/example/cli.cjs search ./toip-js-store toip "reporting profile"
 ```
 
-This sequence was run once against a debug build and the synthetic fixtures; it is not part of
-the automated tests.
+This sequence was run against a debug build and the synthetic fixtures. The automated
+tests do not call cargo; `tests/organizational_knowledge_cli.test.cjs` covers the cross-tool path.
 
 ## Tests
 
