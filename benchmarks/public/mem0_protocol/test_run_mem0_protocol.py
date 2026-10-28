@@ -5,7 +5,9 @@ import json
 
 import pytest
 
-from run_mem0_protocol import audit_completion, audit_outputs, protocol_exit_code, validate_run_budget
+from budget_ledger import BudgetLedger
+from run_mem0_protocol import (audit_completion, audit_outputs, harness_environment, load_run_ledger,
+                               protocol_exit_code, summarize_proxy, validate_run_budget)
 
 
 def prediction(qid, cutoff=None):
@@ -117,3 +119,62 @@ def test_pinned_client_final_transport_retries_make_output_incomplete(tmp_path):
     assert audit["failed_after_retries_lines"] == 3
     audit.update(completion={"complete": True}, ingestion_failures=0, invalid_ingestion_checkpoints=[])
     assert protocol_exit_code(0, audit, {"blocked": 0}) == 2
+
+
+def test_positive_cli_budget_requires_fixed_private_allocation(tmp_path):
+    assert load_run_ledger(0) is None
+    with pytest.raises(ValueError, match="private budget ledger"):
+        load_run_ledger(1)
+    path = tmp_path / "budget.sqlite3"
+    BudgetLedger.initialize(path, "1", {"final": "1"})
+    assert load_run_ledger(1, path, "final").snapshot()["spend_usd"] == 0
+    with pytest.raises(ValueError, match="immutable"):
+        load_run_ledger(2, path, "final")
+
+
+def test_harness_never_inherits_upstream_or_other_provider_secrets():
+    environment = {"PATH": "/synthetic/bin", "OPENAI_API_KEY": "upstream", "OPENAI_BASE_URL": "external",
+                   "OPENROUTER_API_KEY": "router", "AZURE_OPENAI_API_KEY": "azure", "HF_TOKEN": "hf",
+                   "GOOGLE_APPLICATION_CREDENTIALS": "/private/file", "HMS_PROXY_TOKEN": "local"}
+    assert harness_environment(environment) == {"PATH": "/synthetic/bin"}
+
+
+def test_historical_charges_are_added_across_reset_epochs(tmp_path):
+    path = tmp_path / "calls.jsonl"
+    rows = [{"status": 200, "cost_usd": .3, "spend_usd": .3},
+            {"status": 200, "cost_usd": .2, "spend_usd": .2},
+            {"status": 402, "blocked": "cap", "spend_usd": .2}]
+    original = "".join(json.dumps(row) + "\n" for row in rows)
+    path.write_text(original)
+    assert summarize_proxy(path)["spend_usd"] == .5
+    assert path.read_text() == original
+
+
+@pytest.mark.parametrize("second", [
+    {"cost_units": 300_000_001, "cost_usd": .300000001},
+    {"cost_units": 300_000_000, "cost_usd": .4},
+    {"cost_usd": .4},
+])
+def test_conflicting_costs_for_one_reservation_fail_loudly(tmp_path, second):
+    path = tmp_path / "calls.jsonl"
+    identifier = "a" * 32
+    rows = [{"status": 200, "budget_call_id": identifier, "cost_units": 300_000_000, "cost_usd": .3},
+            {"status": 503, "budget_call_id": identifier, "blocked": "audit failure", **second}]
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    with pytest.raises(ValueError, match="disagree|conflicting"):
+        summarize_proxy(path)
+
+
+def test_same_prompt_on_different_calls_is_charged_independently(tmp_path):
+    path = tmp_path / "calls.jsonl"
+    rows = [{"status": 200, "budget_call_id": identifier, "prompt_sha256": "same-prompt", "cost_usd": .3}
+            for identifier in ("a" * 32, "b" * 32)]
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    assert summarize_proxy(path)["spend_usd"] == .6
+
+
+def test_unresolved_ledger_cannot_be_reported_as_complete():
+    audit = {"completion": {"complete": True}, "ingestion_failures": 0,
+             "invalid_ingestion_checkpoints": [], "failed_after_retries_lines": 0}
+    assert protocol_exit_code(0, audit, {"blocked": 0, "budget_ledger": {"unresolved_calls": 1}}) == 2
+    assert protocol_exit_code(0, audit, {"blocked": 0, "budget_ledger": {"halted": True}}) == 2

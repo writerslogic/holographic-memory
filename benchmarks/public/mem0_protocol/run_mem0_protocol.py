@@ -14,11 +14,11 @@ the published headline runs (gpt-5 answerer and judge, top-200, single pass). Wr
 commit, exact command, dataset hash, model parameters and snapshots seen by the
 proxy, spend, silent-failure audit) next to the harness output.
 
-Example (3 LoCoMo questions, $1 cap):
-    uv run benchmarks/public/mem0_protocol/run_mem0_protocol.py locomo \
+Example (authorized full LongMemEval run, existing private allocation):
+    uv run benchmarks/public/mem0_protocol/run_mem0_protocol.py longmemeval \
         --clone /path/memory-benchmarks --python /path/venv/bin/python \
-        --hms-bin target/release/hms-server --work /path/out/locomo-smoke \
-        --max-spend 1 -- --conversations 0 --max-questions 3
+        --hms-bin target/release/hms-server --work /path/out/longmemeval \
+        --max-spend "$LME_ALLOCATION_USD" --budget-ledger "$BUDGET_LEDGER" --budget-allocation final-lme
 """
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ import math
 import os
 import platform
 import re
+import secrets
 import socket
 import subprocess
 import sys
@@ -40,8 +41,10 @@ from pathlib import Path
 
 if __package__:
     from .grade_validation import complete_grade
+    from .budget_ledger import BudgetLedger, UNITS_PER_USD, usd_units
 else:
     from grade_validation import complete_grade
+    from budget_ledger import BudgetLedger, UNITS_PER_USD, usd_units
 
 HERE = Path(__file__).resolve().parent
 PINNED_COMMIT = "4b61c5d31b9c668a12b4f5e78064248a02c82d2b"
@@ -71,6 +74,23 @@ def validate_run_budget(config: dict, max_spend: float) -> None:
     if config.get("embedding") is not None:
         raise ValueError("hybrid development embeddings are unavailable under the finite proxy budget; "
                          "the proxy meters only supported chat completions")
+
+
+def load_run_ledger(max_spend, path=None, allocation=None):
+    if path is None and allocation is None and max_spend == 0:
+        return None
+    if path is None or allocation is None:
+        raise ValueError("positive-cost runs require an existing private budget ledger and allocation")
+    ledger = BudgetLedger(path, allocation, max_spend)
+    if ledger.snapshot()["halted"]:
+        raise ValueError("provider ledger requires reconciliation before another run")
+    return ledger
+
+
+def harness_environment(environ):
+    return {key: value for key, value in environ.items()
+            if not key.startswith(("OPENAI_", "OPENROUTER_", "AZURE_", "MEM0_", "HMS_PROXY_"))
+            and not any(part in key.upper() for part in ("TOKEN", "SECRET", "PASSWORD", "API_KEY", "CREDENTIAL"))}
 
 
 def sha256_file(path: Path) -> str:
@@ -144,9 +164,31 @@ def summarize_proxy(log: Path) -> dict:
            "finish_reasons": {}}
     if not log.exists():
         return out
+    charged_units = 0
+    charges_by_call = {}
     for line in log.read_text().splitlines():
         r = json.loads(line)
         out["calls"] += 1
+        amount = r.get("cost_units")
+        if amount is None:
+            amount = usd_units(r.get("cost_usd", 0))
+        if type(amount) is not int or amount < 0:
+            raise ValueError("invalid recorded proxy charge")
+        if "cost_units" in r and "cost_usd" in r and amount != usd_units(r["cost_usd"]):
+            raise ValueError("recorded proxy charge representations disagree")
+        identifier = r.get("budget_call_id")
+        if identifier is None:
+            charged_units += amount
+        elif "cost_units" in r or "cost_usd" in r:
+            if not isinstance(identifier, str) or not re.fullmatch(r"[0-9a-f]{32}", identifier):
+                raise ValueError("invalid recorded budget call identifier")
+            if identifier in charges_by_call:
+                if charges_by_call[identifier] != amount:
+                    raise ValueError("conflicting charges for one budget call")
+            else:
+                charges_by_call[identifier] = amount
+                charged_units += amount
+        out["spend_usd"] = charged_units / UNITS_PER_USD
         if r.get("blocked"):
             out["blocked"] += 1
             continue
@@ -163,7 +205,6 @@ def summarize_proxy(log: Path) -> dict:
         out["usage"]["reasoning_tokens"] += (u.get("completion_tokens_details") or {}).get("reasoning_tokens", 0) or 0
         for fr in r.get("finish_reason") or []:
             out["finish_reasons"][fr] = out["finish_reasons"].get(fr, 0) + 1
-        out["spend_usd"] = max(out["spend_usd"], r.get("spend_usd", 0.0))
     return out
 
 
@@ -241,6 +282,8 @@ def protocol_exit_code(harness_rc: int, audit: dict, llm: dict) -> int:
     valid = audit["completion"]["complete"] and not audit["ingestion_failures"]
     valid = valid and not audit["invalid_ingestion_checkpoints"] and not audit["failed_after_retries_lines"]
     valid = valid and audit.get("retrieval_unchanged", True) and not llm["blocked"]
+    ledger = llm.get("budget_ledger") or {}
+    valid = valid and not ledger.get("halted") and not ledger.get("unresolved_calls")
     return harness_rc or (0 if valid else 2)
 
 
@@ -256,7 +299,9 @@ def main() -> None:
                     help="hms-server store (default WORK/hms-data); put it on a local SSD: every remember is synced")
     ap.add_argument("--config", type=Path, default=HERE / "retrieval_config.json")
     ap.add_argument("--project-name", default=None)
-    ap.add_argument("--max-spend", type=float, required=True, help="USD proxy stop threshold; in-flight calls may exceed it")
+    ap.add_argument("--max-spend", type=float, required=True, help="must equal the immutable final-run allocation")
+    ap.add_argument("--budget-ledger", type=Path, help="existing private SQLite ledger outside the repository")
+    ap.add_argument("--budget-allocation", help="predeclared final-run allocation identifier")
     ap.add_argument("--max-workers", type=int, default=10, help="harness --max-workers (its default is 10)")
     ap.add_argument("extra", nargs="*", help="after --: harness flags such as --predict-only, --evaluate-only, "
                     "--conversations, --max-questions, --run-id")
@@ -265,6 +310,9 @@ def main() -> None:
     try:
         config = json.loads(args.config.read_text())
         validate_run_budget(config, args.max_spend)
+        budget_ledger = load_run_ledger(args.max_spend, args.budget_ledger, args.budget_allocation)
+        if args.max_spend > 0 and not os.environ.get("OPENAI_API_KEY"):
+            raise ValueError("the guarded proxy requires its upstream credential")
     except (OSError, ValueError) as error:
         ap.error(str(error))
     clone = args.clone.resolve()
@@ -286,6 +334,11 @@ def main() -> None:
     hms_repo = HERE.parents[2]
     project = args.project_name or f"hms-{args.benchmark}"
     procs: list[subprocess.Popen] = []
+    private_environment = harness_environment(os.environ)
+    proxy_token = secrets.token_urlsafe(32)
+    proxy_environment = dict(private_environment, HMS_PROXY_TOKEN=proxy_token)
+    if args.max_spend > 0:
+        proxy_environment["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
     with open(work / "hms-server.log", "ab") as log_hms, open(work / "shim.log", "ab") as log_shim, \
             open(work / "proxy.log", "ab") as log_proxy, open(work / "harness.log", "ab") as log_harness:
         try:
@@ -294,7 +347,7 @@ def main() -> None:
                        "--max-top-k", str(config.get("max_k", 200)), "--max-tenants", "1024",
                        "--tenant-idle-seconds", "120", "--max-concurrent-work", "16", "--max-queue", "1024",
                        "--queue-timeout-ms", "60000"]
-            hms = subprocess.Popen(hms_cmd, stdout=subprocess.PIPE, stderr=log_hms)
+            hms = subprocess.Popen(hms_cmd, stdout=subprocess.PIPE, stderr=log_hms, env=private_environment)
             procs.append(hms)
             line = hms.stdout.readline().decode()
             m = re.search(r"listening on (\S+)", line)
@@ -307,13 +360,19 @@ def main() -> None:
                         "--port", str(shim_port)]
             if config.get("embedding"):
                 shim_cmd += ["--embedding-log", str(work / "embedding_calls.jsonl")]
-            procs.append(subprocess.Popen(shim_cmd, stdout=log_shim, stderr=log_shim))
+            procs.append(subprocess.Popen(shim_cmd, stdout=log_shim, stderr=log_shim, env=private_environment))
             proxy_log = work / "openai_calls.jsonl"
             proxy_cmd = [sys.executable, str(HERE / "openai_proxy.py"), "--port", str(proxy_port), "--log", str(proxy_log),
                          "--max-spend", str(args.max_spend)]
-            procs.append(subprocess.Popen(proxy_cmd, stdout=log_proxy, stderr=log_proxy))
+            if budget_ledger:
+                proxy_cmd += ["--budget-ledger", str(budget_ledger.path), "--budget-allocation", args.budget_allocation]
+            procs.append(subprocess.Popen(proxy_cmd, stdout=log_proxy, stderr=log_proxy, env=proxy_environment))
             wait_http(f"http://127.0.0.1:{shim_port}/_shim/stats")
             wait_http(f"http://127.0.0.1:{proxy_port}/_proxy/health")
+            with urllib.request.urlopen(f"http://127.0.0.1:{proxy_port}/_proxy/health", timeout=10) as response:
+                health = json.loads(response.read())
+            if health.get("guard") != "durable-openai-v1" or health.get("halted") or health.get("unresolved_calls"):
+                raise RuntimeError("guarded proxy is not ready")
 
             out_dir = work / "harness-out"
             cmd = [args.python, *PROTOCOL[args.benchmark], *COMMON, "--project-name", project,
@@ -322,7 +381,7 @@ def main() -> None:
             if args.dataset:
                 cmd += [DATASETS[args.benchmark], str(args.dataset.resolve())]
             cmd += args.extra
-            env = {k: v for k, v in os.environ.items() if not k.startswith(("MEM0_", "AZURE_"))}
+            env = dict(private_environment, OPENAI_API_KEY=proxy_token, PYTHON_DOTENV_DISABLED="1")
             env["OPENAI_BASE_URL"] = f"http://127.0.0.1:{proxy_port}/v1"
             retrieval_before = retrieval_hash(out_dir)
             started = dt.datetime.now(dt.timezone.utc).isoformat()
@@ -368,6 +427,8 @@ def main() -> None:
     audit["ingestion_failures"] = ingestion_failures
     audit["invalid_ingestion_checkpoints"] = invalid_ingestion_checkpoints
     llm = summarize_proxy(proxy_log)
+    if budget_ledger:
+        llm["budget_ledger"] = budget_ledger.snapshot()
     wrapper_rc = protocol_exit_code(rc, audit, llm)
     manifest = {
         "benchmark": args.benchmark,

@@ -17,7 +17,8 @@ memory-benchmarks run.py --backend oss --mem0-host http://127.0.0.1:<shim>
 | `shim.py` | Mem0 OSS REST surface over the hms-server memory API |
 | `retrieval_config.json` | Frozen primary retrieval configuration (token-matched: `max_context_tokens: 7000`). It is copied into the manifest with its sha256 |
 | `retrieval_config_count_matched.json` | Documented alternative: literal top-200 with no token cap. Not scheduled |
-| `openai_proxy.py` | Pass-through proxy. It records model alias, parameters, resolved snapshot, usage and spend, and stops new forwarding after its recorded USD threshold is reached |
+| `openai_proxy.py` | Authenticated local proxy with durable reservations, pinned GPT-5 routing and validated usage |
+| `budget_ledger.py` | Private SQLite provider ceiling and immutable final-run allocations; initialization makes no API calls |
 | `run_mem0_protocol.py` | Starts server, shim and proxy, runs the harness with the protocol flags, writes `manifest.json` |
 | `price.py` | Prices a run from `--predict-only` output using the harness's own prompt builders |
 | `manifest_template.json` | Fields every run manifest carries |
@@ -103,6 +104,11 @@ LoCoMo and LongMemEval, which costs 4x, and `100` for BEAM.
 - **Passes and limits:** single pass, `--max-workers 10`, LLM `rpm=200`. LLM and memory calls retry
   5 times.
 
+New guarded runs preserve the original harness parameters in the audit, then explicitly send
+`model=gpt-5-2025-08-07` and `service_tier=default` upstream. Prompts and generation settings are
+unchanged. Responses must confirm that snapshot and tier. This routing disclosure replaces the
+older byte-for-byte forwarding behavior; it is recorded separately in every new proxy call.
+
 ### Silent failures (check after every run)
 
 When retries run out, `Mem0Client` returns `[]` or `None` and `LLMClient` returns `""`. The harness
@@ -132,6 +138,44 @@ be true; this was checked on a 1-question LoCoMo evaluate-only smoke run ($0.02)
 These are the exact commands. Paid runs start only with the final HMS SHA from the coordinator. Put
 `--data-dir` on a local SSD.
 
+Before a paid final run, create one owner-only directory outside Git and a mode-600 JSON policy
+there. Its fields are `provider` (exactly `openai`), `ceiling_usd` (a decimal string), and
+`allocations` (final-run identifiers mapped to decimal strings). The coordinator supplies the
+reconciled, unspent final-only allocation; historical charges before this baseline must already
+be excluded. Allocations must sum to no more than the fixed provider ceiling. Use at most nine
+decimal places. Never publish this policy, ledger, financial balances, or credentials.
+
+```sh
+# Both paths are outside Git, in a mode-700 directory; PRIVATE_POLICY is mode 600.
+# Initialization refuses an existing ledger and makes no paid calls.
+uv run --no-project python benchmarks/public/mem0_protocol/budget_ledger.py init \
+  --policy "$PRIVATE_POLICY" --ledger "$BUDGET_LEDGER"
+```
+
+Every positive `--max-spend` must match its persisted allocation and supply `--budget-ledger`
+and `--budget-allocation`. Clean restarts preserve charges; changing CLI caps or work directories
+cannot reset them. One proxy owns the provider ledger at a time. Concurrent requests reserve
+atomically before network I/O. Crashes, uncertain transport/responses, or audit failures halt
+forwarding until the coordinator reconciles durable evidence. There is no automatic reservation
+release, reset, top-up, or uncertain-call retry. Identical prompts remain independent, separately
+charged calls after known outcomes; the proxy neither caches answers nor changes official retries.
+
+Reservations use the full 400,000-token uncached input bound plus the explicit output limit,
+including reasoning. At `max_completion_tokens=4096`, the reservation is $0.54096; validated actual
+usage releases the unused portion. Calls may be refused before the allocation reaches zero.
+[Official model bounds and standard prices](https://developers.openai.com/api/docs/models/gpt-5)
+are the assumption. Only text Chat Completions, one choice, nonstreaming, the documented GPT-5
+alias/snapshot and standard tier are admitted. OpenRouter, embeddings, tools, multimodal input,
+other endpoints and unpriced models remain unsupported. Provider violations of the pinned price
+or token-limit contract are outside this local guarantee.
+
+Only the proxy receives the upstream key. Server, shim and harness child environments have
+provider credentials removed; the harness uses a fresh local bearer token as its dummy OpenAI
+key. Manifests contain allocation usage, holds and halt state, never provider balances or ceilings.
+Existing audit logs remain append-only; historical per-call charges are summed across restarts.
+`price.py` without calibration is offline. **`price.py --calibrate` is excluded from this goal and
+may not consume either provider's credits, even through the proxy.**
+
 ```sh
 # once
 git clone https://github.com/mem0ai/memory-benchmarks /path/memory-benchmarks
@@ -147,29 +191,32 @@ LOCOMO=~/.cache/hms-bench/locomo/locomo10.json                      # sha256 79f
 LME=~/.cache/hms-bench/downloads/longmemeval_s_cleaned.json
 BEAM=~/.cache/hms-bench/beam                                         # harness caches beam_<size>.json here
 
-# 1. LoCoMo, token-matched, cap $48: retrieval only ($0), price, then answer and judge that retrieval
+# 1. LoCoMo: retrieval only ($0), offline price, then the private final allocation
 $PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
     --max-spend 0 -- --predict-only
 $PY $H/price.py --clone /path/memory-benchmarks --benchmark locomo \
     --predict runs/locomo/harness-out/predicted_hms-locomo --calls runs/locomo-smoke/openai_calls.jsonl
 $PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
-    --max-spend 48 -- --evaluate-only
+    --max-spend "$LOCOMO_ALLOCATION_USD" --budget-ledger "$BUDGET_LEDGER" \
+    --budget-allocation final-locomo -- --evaluate-only
 
-# 2. LongMemEval-S, token-matched, cap $13 (same three steps)
+# 2. LongMemEval-S (same three steps)
 $PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
     --max-spend 0 -- --predict-only
 $PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
-    --max-spend 13 -- --evaluate-only
+    --max-spend "$LME_ALLOCATION_USD" --budget-ledger "$BUDGET_LEDGER" \
+    --budget-allocation final-lme -- --evaluate-only
 
-# 3. BEAM-10M, token-matched, cap $10. The BEAM runner's --evaluate-only only recomputes metrics,
+# 3. BEAM-10M. The BEAM runner's --evaluate-only only recomputes metrics,
 #    so the paid run is the combined one. Do the $0 retrieval-only run first, in its own work dir,
 #    for pricing and for the retrieval hash.
 $PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m-predict --data-dir /ssd/beam10m-predict \
     --dataset $BEAM --max-spend 0 -- --predict-only
 $PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m --data-dir /ssd/beam10m --dataset $BEAM \
-    --max-spend 10 -- --run-id beam10m
+    --max-spend "$BEAM_ALLOCATION_USD" --budget-ledger "$BUDGET_LEDGER" \
+    --budget-allocation final-beam10m -- --run-id beam10m
 # The combined run's retrieval_after.sha256 must equal the predict run's.
-# BEAM-1M (waits for credit): the same with beam-1m.
+# BEAM-1M requires its own predeclared final allocation; use the beam-1m selector.
 ```
 
 Each run writes `WORK/manifest-<predict|evaluate|full>-<UTC stamp>.json`. Before reporting, check:
@@ -287,7 +334,12 @@ answers. A successful saved answer whose judge failed is replayed through the pi
 scoring function with a prompt-checked cached answerer, so only the judge calls the model again.
 Only proven quota failures and never-attempted questions receive fresh answer/judge calls.
 Ambiguous provenance stops preparation before any destination appears. Original attempts and
-all failed transport records remain unchanged. Account-credit restoration must precede paid
-recovery. `prepare()` requires `judge`, the pinned `official_apply` callback and a `replay_spend_usd()` getter when judge-only cases exist. The getter reports cumulative additional spend beyond the original manifest, including replayed judges; the receipt subtracts both amounts from the remaining allocation.
+all failed transport records remain unchanged. Recovery requires a reconciled, existing final
+allocation; no top-up or new paid run is implied. `prepare()` requires `judge`, the pinned
+`official_apply` callback and a `replay_spend_usd()` getter when judge-only cases exist. The getter
+reports cumulative additional spend beyond the original manifest, including replayed judges;
+the receipt subtracts both amounts from the remaining allocation.
 
-The proxy stops forwarding new requests once recorded spend reaches `--max-spend`. A single request or requests already in flight can exceed that threshold; it is not a strict dollar ceiling. No new paid run is authorized by these recovery helpers.
+New paid launches require the durable guard above. Historical logs used a post-spend threshold
+and must not be relabeled as hard-capped evidence. Recovery callbacks must use the guarded proxy
+and their existing fixed allocation; these helpers authorize no new paid run.
