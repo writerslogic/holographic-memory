@@ -2,6 +2,8 @@
 
 # Holographic Memory
 
+**Hybrid search, graph indexing, and vector-symbolic memory.**
+
 **Local memory for agents and apps: full-text and vector search, a memory API and a vector-symbolic fact store in one embeddable Rust engine that makes no network calls.**
 
 [![CI](https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)

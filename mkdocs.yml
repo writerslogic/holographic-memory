@@ -6,7 +6,7 @@
 # Landing-page copy and the capability list live in docs/_data/site.yml (scripts/docs_site.py).
 
 site_name: Holographic Memory
-site_description: Local-first document search and vector-symbolic associative memory. Runs on your machine, no service calls.
+site_description: Hybrid search, graph indexing, and vector-symbolic memory. Runs on your machine, no service calls.
 site_url: !ENV [HMS_SITE_URL, "https://docs.holographic-memory.com/dev/"]
 repo_url: https://github.com/writerslogic/holographic-memory
 repo_name: writerslogic/holographic-memory

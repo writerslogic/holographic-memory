@@ -188,6 +188,7 @@ def on_config(config):
     chart = docs_charts.vector_chart(root, site["chart"])
     chart["link"] = doc_url(docs_dir, chart["link"])
     extra["hms"] = {
+        "technical_line": site["technical_line"],
         "tagline": site["tagline"], "lede": " ".join(site["lede"].split()),
         "license": site.get("license", ""), "announcement": site.get("announcement") or {},
         "runtimes": build_runtimes(root, site), "features": features,

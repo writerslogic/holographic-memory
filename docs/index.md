@@ -1,7 +1,7 @@
 ---
 template: home.html
 title: Holographic Memory
-description: Local-first document search and vector-symbolic associative memory. Hybrid BM25 and exact-cosine retrieval, crash-safe storage and superposed memory, with no service calls.
+description: Hybrid search, graph indexing, and vector-symbolic memory. Local-first retrieval and associative memory with crash-safe storage and no service calls.
 hide:
   - navigation
   - toc
