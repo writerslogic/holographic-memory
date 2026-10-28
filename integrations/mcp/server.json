@@ -14,19 +14,19 @@
     "url": "https://github.com/writerslogic/holographic-memory",
     "source": "github"
   },
-  "version": "0.1.2",
+  "version": "0.1.3",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "holographic-memory-mcp",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "runtimeHint": "npx",
       "transport": { "type": "stdio" }
     },
     {
       "registryType": "pypi",
       "identifier": "holographic-memory-mcp",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "runtimeHint": "uvx",
       "transport": { "type": "stdio" }
     }

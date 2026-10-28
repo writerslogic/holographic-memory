@@ -42,9 +42,12 @@ workflow never replaces an existing release or registry version. If one publish 
 GitHub release exists, correct its credentials or publisher configuration and rerun that job only.
 
 After the official Registry entry is active, submit the repository through Glama's **Add MCP
-Server** form. `glama.json` names the maintainer, as in `scrivener-mcp`. Other directories such as
-mcp.so and PulseMCP ingest the official Registry. GitHub's curated MCP list requires a separate
-onboarding request after the official Registry entry is active.
+Server** form. `glama.json` names the maintainer, as in `scrivener-mcp`. Verify third-party
+directories separately; an official Registry entry does not confirm their listings. At the 0.1.2
+release, [mcp.so](https://mcp.so/Submit?type=server) has a free submission path and an optional
+$39 paid publication option. Use the free path; do not pay. PulseMCP is not accepting submissions.
+The [modelcontextprotocol/servers repository](https://github.com/modelcontextprotocol/servers)
+now contains reference servers and directs community server discovery to the official Registry.
 
 After Glama approves the listing, a signed-in maintainer must [configure its Docker release](https://glama.ai/mcp/servers/writerslogic/holographic-memory/admin/dockerfile).
 That form generates a Dockerfile from its fields; the repository-root `Dockerfile` is built and
@@ -71,7 +74,7 @@ version. The build step picks up npm's latest published launcher on each build. 
 new build test and release publication for each version. A release enables hosted deployment and
 security scans; a GitHub tag alone does not.
 
-Then check the [server score](https://glama.ai/mcp/servers/writerslogic/holographic-memory/score)
+Then check the [server score](https://glama.ai/mcp/servers/writerslogic/holographic-memory)
 and confirm it can deploy and introspect all eight tools. Review every tool's six Tool Definition
 Quality Score dimensions, the server coherence score, and the listed security and maintenance
 findings. Use Glama's specific findings to improve any dimension below 5/5, any overall score below
