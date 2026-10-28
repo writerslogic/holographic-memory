@@ -14,11 +14,14 @@ appended to the log: requested model alias, the parameters that shape generation
 verbosity, seed), a hash and size of the prompt, the snapshot the API resolved,
 usage (prompt, cached, completion, reasoning tokens), status and latency. The
 Authorization header is forwarded and never written.
+Only priced Chat Completions requests are supported; other endpoints and models
+are rejected before forwarding, including embeddings.
 
-``--max-spend`` (USD, at the list prices in PRICES) is a hard stop: once the
+``--max-spend`` (USD, at the list prices in PRICES) is a stop threshold: once the
 logged spend reaches it, every further call is answered 402 without reaching
-OpenAI, and the log says so. The harness then records empty answers, so a capped
-run must be discarded, not scored.
+OpenAI, and the log says so. A completing or already in-flight request can exceed
+the threshold because spend is recorded after completion. The harness records
+blocked calls as empty answers, so a stopped run is incomplete.
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 import time
 from typing import Any
@@ -60,6 +64,8 @@ def cost(model: str, usage: dict[str, Any]) -> float:
 
 class Proxy:
     def __init__(self, log_path: str, max_spend: float):
+        if type(max_spend) not in (int, float) or not math.isfinite(max_spend) or max_spend < 0:
+            raise ValueError("max-spend must be a finite nonnegative USD amount")
         self.log_path = log_path
         self.max_spend = max_spend
         self.spend = 0.0
@@ -76,23 +82,32 @@ class Proxy:
         with open(self.log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, sort_keys=True) + "\n")
 
+    def blocked(self, record: dict[str, Any], reason: str, status: int = 400) -> web.Response:
+        record.update(status=status, blocked=reason, spend_usd=round(self.spend, 6))
+        self.log(record)
+        return web.json_response({"error": {"message": reason}}, status=status)
+
     async def forward(self, request: web.Request) -> web.Response:
         assert self.session is not None
-        body = await request.read()
         record: dict[str, Any] = {"t": time.time(), "path": request.path}
+        if request.method != "POST" or request.path != "/v1/chat/completions":
+            return self.blocked(record, "unsupported endpoint for finite-budget proxy")
+        body = await request.read()
         try:
             req = json.loads(body) if body else {}
-        except json.JSONDecodeError:
-            req = {}
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return self.blocked(record, "invalid JSON request for finite-budget proxy")
+        if not isinstance(req, dict):
+            return self.blocked(record, "request must be a JSON object")
         record["request"] = {k: req[k] for k in SHAPING if k in req}
+        if not isinstance(req.get("model"), str) or price_key(req["model"]) is None:
+            return self.blocked(record, "unsupported model for finite-budget proxy")
         messages = req.get("messages") or []
         prompt_bytes = json.dumps(messages, sort_keys=True).encode()
         record["prompt_sha256"] = hashlib.sha256(prompt_bytes).hexdigest()
         record["prompt_chars"] = sum(len(str(m.get("content", ""))) for m in messages)
         if self.spend >= self.max_spend:
-            record.update(status=402, blocked="spend cap reached", spend_usd=round(self.spend, 6))
-            self.log(record)
-            return web.json_response({"error": {"message": "local spend cap reached"}}, status=402)
+            return self.blocked(record, "local spend cap reached", 402)
         headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP}
         start = time.monotonic()
         async with self.session.request(
@@ -128,7 +143,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--port", type=int, default=8899)
     ap.add_argument("--log", required=True, help="JSONL call log")
-    ap.add_argument("--max-spend", type=float, required=True, help="USD hard stop")
+    ap.add_argument("--max-spend", type=float, required=True, help="USD stop threshold checked before each call")
     args = ap.parse_args()
     proxy = Proxy(args.log, args.max_spend)
     app = web.Application(client_max_size=64 * 1024 * 1024)
