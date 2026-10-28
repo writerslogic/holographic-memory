@@ -259,6 +259,8 @@ cargo build --release --features mcp,security --bin hms-mcp   # add local-models
 
 Client setup, data directory and the one-writer rule: [MCP integration](docs/integrations/mcp/README.md).
 
+For normalized content from multiple applications, see the [organizational knowledge adapter](docs/integrations/organizational-knowledge.md).
+
 </details>
 
 The [five-minute quickstart](https://docs.holographic-memory.com/latest/quickstart/)

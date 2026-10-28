@@ -1,0 +1,18 @@
+{
+  "project": "Example Project",
+  "organizational_unit": [
+    "Example Working Group"
+  ],
+  "source_system": "Zoom",
+  "source_identifier": "GMT20260101-100000",
+  "source_url": "",
+  "date": "2026-01-01",
+  "asset_type": "Meeting",
+  "identifier_type": "SAID",
+  "collected_at": "2026-01-02T00:00:00+00:00",
+  "id": "zoom-example-project-transcript-GMT20260101-100000",
+  "content_type": "Transcript",
+  "title": "Example Working Group Meeting",
+  "identifier": "urn:said:Esynthetic0000000000000000000000000000000001",
+  "content": "The group reviewed the credential governance draft. Quartzmarker was agreed as the working name for the reporting profile."
+}

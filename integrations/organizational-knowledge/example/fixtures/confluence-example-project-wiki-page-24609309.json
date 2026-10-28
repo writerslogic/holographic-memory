@@ -1,0 +1,19 @@
+{
+  "project": "Example Project",
+  "organizational_unit": [
+    "Example Working Group",
+    "Reporting Task Force"
+  ],
+  "source_system": "Confluence",
+  "source_identifier": "24609309",
+  "source_url": "https://wiki.example.org/pages/viewpage.action?pageId=24609309",
+  "date": "2026-01-05",
+  "asset_type": "Document",
+  "identifier_type": "SAID",
+  "collected_at": "2026-01-02T00:00:00+00:00",
+  "id": "confluence-example-project-wiki-page-24609309",
+  "content_type": "Wiki Page",
+  "title": "Reporting Profile Overview",
+  "identifier": "urn:said:Esynthetic0000000000000000000000000000000003",
+  "content": "The reporting profile describes how a working group publishes decisions. Quartzmarker links each decision to its meeting."
+}
