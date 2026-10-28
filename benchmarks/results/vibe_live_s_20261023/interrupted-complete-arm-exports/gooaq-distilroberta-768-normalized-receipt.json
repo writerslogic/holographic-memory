@@ -1,0 +1,32 @@
+{
+  "dataset": "gooaq-distilroberta-768-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "977f5c6fdd4ddbb360867566e49250fbe8648aef040deef28c369d3302b23eb1",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "474f9c7841590030a119a8b105aff658985d5343d0a090788fa992e1dff34d73",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "d17f47e203de48901610a97ac82258ef534ae8ef2f9249aabd31626e05c4777a",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/gooaq-distilroberta-768-normalized/hms@12c80decb094/results/gooaq-distilroberta-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "b2cc4bf987784bd55456ab7ac0f7f8d48e374a4c10550f85d6f52a7be221fc4c"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATKDQTWS2TKRJ5VBRVZMR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "316ae018a9b1d279f7cafc953526e1d27a1268f94d4295977c89ba6201217ac1",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/gooaq-distilroberta-768-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

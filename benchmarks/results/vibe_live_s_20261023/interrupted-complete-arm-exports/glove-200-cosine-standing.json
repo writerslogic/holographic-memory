@@ -1,0 +1,32 @@
+{
+  "dataset": "glove-200-cosine",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:54:54.223399+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATKTP8B8NTMS8P6083N7R"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": {
+        "qps": 824.6927300234914,
+        "recall": 0.90906,
+        "params": "HMS(metric=cosine, degree=96, build_ef=500, ef=320, rerank=200, code_bits=8)|320_200",
+        "build_time": 2861.9940621852875,
+        "index_size": 990648.0
+      },
+      "0.95": {
+        "qps": 461.5411391141897,
+        "recall": 0.95398,
+        "params": "HMS(metric=cosine, degree=96, build_ef=500, ef=640, rerank=100, code_bits=8)|640_100",
+        "build_time": 2861.9940621852875,
+        "index_size": 990648.0
+      },
+      "0.99": null
+    }
+  }
+}

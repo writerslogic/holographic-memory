@@ -1,0 +1,122 @@
+{
+ "cost_scope": "requested CPU/memory estimate for this artifact export only; excludes image and storage",
+ "dataset": "celeba-resnet-2048-cosine",
+ "ended": "2026-10-24T11:20:04Z",
+ "estimated_hashing_usd": 0.00033334895656585693,
+ "hashing_container": "ta-01M5PT6Y0DZ10MZW40Q7YGR4MR",
+ "hashing_cpus": 2,
+ "hashing_memory_gib": 4,
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "ledgers": [
+  {
+   "at": "2026-10-24T06:52:06Z",
+   "dataset": "celeba-resnet-2048-cosine",
+   "job": "_download",
+   "sha256": "168f89ccf8aaa22cc9ce6f81c241fd016eb67a0bc5b5b381b955ffa746a906f4",
+   "state": "done"
+  },
+  {
+   "algorithm": "hms",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 4718.5,
+   "chosen_why": [
+    "HMS runs on every dataset"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "celeba-resnet-2048-cosine",
+   "end": "2026-10-24T08:16:28Z",
+   "expected": 180,
+   "failures": 0,
+   "flags_sha": "ced2924a5f1c",
+   "heartbeat": 1792829729.5053625,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+     "end": "2026-10-24T08:16:28Z",
+     "markers": 180,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "hms@12c80decb094",
+   "log_path": "/vol/vibe/run-s-20261023/logs/celeba-resnet-2048-cosine/hms@12c80decb094.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/hms@12c80decb094/results",
+   "start": "2026-10-24T06:55:00Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 180,
+    "markers": 180,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 180
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "algorithm": "ngt-qg",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 11861.6,
+   "chosen_why": [
+    "recall>=0.9: leader at 2647.5 QPS",
+    "recall>=0.95: substitute for pag (2426.4 QPS; needs AVX-512, absent here): 2330.1 QPS",
+    "recall>=0.99: substitute for pag (2230.1 QPS; needs AVX-512, absent here): 2013.0 QPS"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "celeba-resnet-2048-cosine",
+   "end": "2026-10-24T11:12:48Z",
+   "expected": 101,
+   "failures": 0,
+   "flags_sha": "ced2924a5f1c",
+   "heartbeat": 1792840315.7828763,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATJBNDETJ3AZBBEEYNXPR",
+     "end": "2026-10-24T11:12:48Z",
+     "markers": 101,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "ngt-qg",
+   "log_path": "/vol/vibe/run-s-20261023/logs/celeba-resnet-2048-cosine/ngt-qg.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/celeba-resnet-2048-cosine/ngt-qg/results",
+   "start": "2026-10-24T08:20:17Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 101,
+    "markers": 101,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 101
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  }
+ ],
+ "measurement_containers": [
+  "ta-01M5PATJBNDETJ3AZBBEEYNXPR"
+ ],
+ "purpose": "artifact hashing only; no benchmark rerun",
+ "query_threads": 1,
+ "raw_hashes": "/vol/vibe/run-s-20261023/artifacts/celeba-resnet-2048-cosine@12c80decb094/raw-results.sha256.json",
+ "raw_hdf5_bytes": 228228472,
+ "raw_hdf5_files": 9,
+ "started": "2026-10-24T11:19:54Z"
+}

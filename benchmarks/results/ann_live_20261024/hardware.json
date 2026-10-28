@@ -1,0 +1,46 @@
+{
+  "app_id": "ap-7L5mqGLMUK9NEoBmyRpBHk",
+  "source_app_sha256": "08c04cc5c93c7e8ffc536a3db7b9eca251ec4b305dd628da90b38a49005451a5",
+  "verified_at_utc": "2026-10-24T07:14:00Z",
+  "probe": "modal container exec <container-id> -- lscpu; cat /sys/fs/cgroup/memory/memory.limit_in_bytes; cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us; cat /sys/fs/cgroup/cpu/cpu.cfs_period_us; cat /sys/fs/cgroup/cpuset/cpuset.cpus",
+  "dataset_containers": {
+    "glove-100-angular": {
+      "container_id": "ta-01M5PBSCNQGZ2ST223C1F128PR",
+      "vendor": "AuthenticAMD",
+      "family": 25,
+      "model": 1,
+      "avx512": false,
+      "cpuset": "0-7",
+      "timed_cpu": 0,
+      "memory_limit_bytes": 34359738368,
+      "cpu_quota_us": 8000000,
+      "cpu_period_us": 1000000
+    },
+    "sift-128-euclidean": {
+      "container_id": "ta-01M5PBSD0QM7SJ1WDAQT916KBR",
+      "vendor": "AuthenticAMD",
+      "family": 25,
+      "model": 1,
+      "avx512": false,
+      "cpuset": "0-7",
+      "timed_cpu": 0,
+      "memory_limit_bytes": 34359738368,
+      "cpu_quota_us": 8000000,
+      "cpu_period_us": 1000000
+    },
+    "fashion-mnist-784-euclidean": {
+      "container_id": "ta-01M5PBSEV4V5KCRPA57Z9158NR",
+      "vendor": "AuthenticAMD",
+      "family": 25,
+      "model": 17,
+      "avx512": true,
+      "cpuset": "0-7",
+      "timed_cpu": 0,
+      "memory_limit_bytes": 34359738368,
+      "cpu_quota_us": 8000000,
+      "cpu_period_us": 1000000
+    }
+  },
+  "model_name_observation": "Modal gVisor exposes unknown as the marketing model name. Vendor/family/model and ISA flags are observed; generation names are intentionally omitted.",
+  "memory_limit_interpretation": "Configured cgroup limit observed; this value does not prove strict enforcement. Peak usage was not captured. Official memory metric is post-fit process RSS delta in each result file."
+}

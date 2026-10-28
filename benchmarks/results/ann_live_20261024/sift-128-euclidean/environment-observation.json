@@ -1,0 +1,14 @@
+{
+  "license": "Apache-2.0",
+  "kind": "historical-environment-observation",
+  "installable": false,
+  "security_note": "This archived environment includes package versions flagged by dependency review for known advisories. It records measurement provenance only. Do not install or reuse it as a dependency specification.",
+  "original_source": {
+    "filename": "requirements-resolved.txt",
+    "repository_path": "benchmarks/results/ann_live_20261024/sift-128-euclidean/requirements-resolved.txt",
+    "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+    "archive_commit": "3c21bdf14826bf1e05149e5f7287bb52463f4bb7",
+    "archive_ref": "refs/archive/retained-work-20261028/ann-live-20261024"
+  },
+  "original_text": "aiohappyeyeballs==2.7.1\naiohttp==3.14.5\naiosignal==1.4.0\nansicolors==1.1.8\nanyio==4.15.1\nasync-timeout==5.0.1\nattrs==26.1.0\ncertifi==2026.10.23\ncharset-normalizer==3.5.2\nclick==8.5.0\ncloudpickle==3.1.2\ncontourpy==1.3.2\ncycler==0.12.1\ndatasets==3.4.0\ndill==0.3.8\ndocker==7.1.0\nexceptiongroup==1.3.1\nfaiss-cpu==1.15.1\nfilelock==4.1.0\nfonttools==4.65.0\nfrozenlist==1.8.0\nfsspec==2024.12.0\nh11==0.16.0\nh5py==3.13.0\nhf-xet==1.7.0\nholographic-vsa @ file:///opt/wheels/holographic_vsa-0.6.1-cp39-abi3-manylinux_2_34_x86_64.whl\nhttpcore2==2.14.0\nhttpx2==2.14.0\nhuggingface-hub==2.3.0\nidna==3.20\niniconfig==2.3.1\njinja2==3.1.6\njoblib==1.6.0\nkiwisolver==1.5.1\nmarkupsafe==3.0.4\nmatplotlib==3.10.1\nmaturin==1.15.0\nmultidict==7.1.0\nmultiprocess==0.70.16\nnumpy==2.2.4\npackaging==26.3\npandas==2.3.3\npillow==12.3.0\npip==25.1.1\npluggy==1.7.0\npropcache==0.5.4\nprotobuf==7.36.2\npsutil==7.0.0\npyarrow==25.0.1\npybind11==2.10.4\npyparsing==3.3.3\npytest==8.3.5\npython-dateutil==3.0.0\npytz==2026.5\npyyaml==6.0.2\nrequests==2.32.3\nscann==1.4.2\nscikit-learn==1.6.1\nscipy==1.15.3\nsetuptools==65.5.1\nsix==1.17.0\nthreadpoolctl==3.7.0\ntomli==2.5.0\ntqdm==4.70.1\ntruststore==0.10.5\ntyping-extensions==4.16.0\ntzdata==2026.5\nurllib3==2.8.0\nuv==0.12.13\nwheel==0.45.1\nxxhash==4.0.2\nyarl==1.25.1\n"
+}

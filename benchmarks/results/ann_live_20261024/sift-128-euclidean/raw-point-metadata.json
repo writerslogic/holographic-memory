@@ -1,0 +1,1430 @@
+[
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_100_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=100, k_reorder=0)",
+    "qps": 4637.0592252382785,
+    "recall_at_10": 0.61188
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_100_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=100, k_reorder=10)",
+    "qps": 3803.2103696617573,
+    "recall_at_10": 0.98729
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_100_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=100, k_reorder=100)",
+    "qps": 2450.923578858068,
+    "recall_at_10": 0.99882
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_100_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=100, k_reorder=1000)",
+    "qps": 669.065642418533,
+    "recall_at_10": 0.99882
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_10_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=10, k_reorder=0)",
+    "qps": 16699.336972096928,
+    "recall_at_10": 0.57416
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_10_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=10, k_reorder=10)",
+    "qps": 11437.83697109633,
+    "recall_at_10": 0.8568300000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_10_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=10, k_reorder=100)",
+    "qps": 4951.478087342748,
+    "recall_at_10": 0.86176
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_10_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=10, k_reorder=1000)",
+    "qps": 955.8480133145401,
+    "recall_at_10": 0.86176
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_1_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=1, k_reorder=0)",
+    "qps": 25443.108080482714,
+    "recall_at_10": 0.30446
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_1_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=1, k_reorder=10)",
+    "qps": 16726.481237111595,
+    "recall_at_10": 0.35847
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_1_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=1, k_reorder=100)",
+    "qps": 6859.898767401193,
+    "recall_at_10": 0.35909
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_1_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=1, k_reorder=1000)",
+    "qps": 5902.91021654398,
+    "recall_at_10": 0.35909
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_200_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=200, k_reorder=0)",
+    "qps": 2706.660037099334,
+    "recall_at_10": 0.61192
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_200_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=200, k_reorder=10)",
+    "qps": 2400.290165692714,
+    "recall_at_10": 0.98819
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_200_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=200, k_reorder=100)",
+    "qps": 1646.1670792644607,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_200_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=200, k_reorder=1000)",
+    "qps": 557.2526792856784,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_50_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=50, k_reorder=0)",
+    "qps": 7475.863391617908,
+    "recall_at_10": 0.6102000000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_50_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=50, k_reorder=10)",
+    "qps": 5833.719067117679,
+    "recall_at_10": 0.9793799999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_50_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=50, k_reorder=100)",
+    "qps": 3153.1385851312402,
+    "recall_at_10": 0.98987
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_50_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=50, k_reorder=1000)",
+    "qps": 709.0960882186848,
+    "recall_at_10": 0.98987
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_5_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=5, k_reorder=0)",
+    "qps": 20531.891146765458,
+    "recall_at_10": 0.52352
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_5_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=5, k_reorder=10)",
+    "qps": 13884.226391160553,
+    "recall_at_10": 0.7309300000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_5_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=5, k_reorder=100)",
+    "qps": 5415.3368162503075,
+    "recall_at_10": 0.73379
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_1204_5_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=1204, n_probe=5, k_reorder=1000)",
+    "qps": 1682.5463352673057,
+    "recall_at_10": 0.73379
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_100_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=100, k_reorder=0)",
+    "qps": 5627.391199580538,
+    "recall_at_10": 0.6117600000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_100_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=100, k_reorder=10)",
+    "qps": 4665.073345565009,
+    "recall_at_10": 0.9850099999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_100_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=100, k_reorder=100)",
+    "qps": 2650.9802037832824,
+    "recall_at_10": 0.99611
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_100_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=100, k_reorder=1000)",
+    "qps": 685.4234881297635,
+    "recall_at_10": 0.99611
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_10_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=10, k_reorder=0)",
+    "qps": 16955.97950067977,
+    "recall_at_10": 0.56167
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_10_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=10, k_reorder=10)",
+    "qps": 12108.327321467801,
+    "recall_at_10": 0.81702
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_10_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=10, k_reorder=100)",
+    "qps": 5089.372439951518,
+    "recall_at_10": 0.8208399999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_10_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=10, k_reorder=1000)",
+    "qps": 1489.4188438309804,
+    "recall_at_10": 0.8208399999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_1_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=1, k_reorder=0)",
+    "qps": 20678.536160411215,
+    "recall_at_10": 0.28571
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_1_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=1, k_reorder=10)",
+    "qps": 15161.481206222768,
+    "recall_at_10": 0.32877999999999996
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_1_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=1, k_reorder=100)",
+    "qps": 8476.35351633035,
+    "recall_at_10": 0.32916
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_1_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=1, k_reorder=1000)",
+    "qps": 7879.151517838392,
+    "recall_at_10": 0.32916
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_200_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=200, k_reorder=0)",
+    "qps": 3427.19495354747,
+    "recall_at_10": 0.61197
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_200_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=200, k_reorder=10)",
+    "qps": 2951.788485973863,
+    "recall_at_10": 0.98795
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_200_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=200, k_reorder=100)",
+    "qps": 1933.3110424068743,
+    "recall_at_10": 0.99963
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_200_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=200, k_reorder=1000)",
+    "qps": 586.2292377342974,
+    "recall_at_10": 0.99963
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_50_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=50, k_reorder=0)",
+    "qps": 9034.671971907956,
+    "recall_at_10": 0.6088
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_50_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=50, k_reorder=10)",
+    "qps": 7105.446741641709,
+    "recall_at_10": 0.97108
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_50_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=50, k_reorder=100)",
+    "qps": 3699.0513335374685,
+    "recall_at_10": 0.9806699999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_50_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=50, k_reorder=1000)",
+    "qps": 757.5481428583116,
+    "recall_at_10": 0.9806699999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_5_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=5, k_reorder=0)",
+    "qps": 19480.92712088214,
+    "recall_at_10": 0.50363
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_5_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=5, k_reorder=10)",
+    "qps": 14075.133752737891,
+    "recall_at_10": 0.68289
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_5_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=5, k_reorder=100)",
+    "qps": 5696.958962592953,
+    "recall_at_10": 0.68501
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_2048_5_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=2048, n_probe=5, k_reorder=1000)",
+    "qps": 2669.26284682151,
+    "recall_at_10": 0.68501
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_100_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=100, k_reorder=0)",
+    "qps": 6112.367305372955,
+    "recall_at_10": 0.6103
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_100_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=100, k_reorder=10)",
+    "qps": 5053.223672432193,
+    "recall_at_10": 0.97855
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_100_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=100, k_reorder=100)",
+    "qps": 2988.7513803446336,
+    "recall_at_10": 0.9887
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_100_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=100, k_reorder=1000)",
+    "qps": 726.7122414242389,
+    "recall_at_10": 0.9887
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_10_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=10, k_reorder=0)",
+    "qps": 13997.78734850596,
+    "recall_at_10": 0.5418499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_10_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=10, k_reorder=10)",
+    "qps": 11050.291781381318,
+    "recall_at_10": 0.76195
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_10_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=10, k_reorder=100)",
+    "qps": 5075.7132863079305,
+    "recall_at_10": 0.76468
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_10_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=10, k_reorder=1000)",
+    "qps": 2569.103979978857,
+    "recall_at_10": 0.76468
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_1_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=1, k_reorder=0)",
+    "qps": 16901.271331573753,
+    "recall_at_10": 0.2524
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_1_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=1, k_reorder=10)",
+    "qps": 13226.915989942721,
+    "recall_at_10": 0.28148
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_1_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=1, k_reorder=100)",
+    "qps": 10733.068685381386,
+    "recall_at_10": 0.28174
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_1_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=1, k_reorder=1000)",
+    "qps": 9197.657903064062,
+    "recall_at_10": 0.28174
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_200_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=200, k_reorder=0)",
+    "qps": 3963.075955529082,
+    "recall_at_10": 0.61197
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_200_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=200, k_reorder=10)",
+    "qps": 3451.1309122149087,
+    "recall_at_10": 0.98697
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_200_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=200, k_reorder=100)",
+    "qps": 2215.294193143913,
+    "recall_at_10": 0.9982900000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_200_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=200, k_reorder=1000)",
+    "qps": 643.6876102584275,
+    "recall_at_10": 0.9982900000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_50_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=50, k_reorder=0)",
+    "qps": 8960.60461110825,
+    "recall_at_10": 0.6049800000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_50_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=50, k_reorder=10)",
+    "qps": 7156.231877183802,
+    "recall_at_10": 0.9532
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_50_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=50, k_reorder=100)",
+    "qps": 3944.0374688374036,
+    "recall_at_10": 0.96139
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_50_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=50, k_reorder=1000)",
+    "qps": 815.924302963923,
+    "recall_at_10": 0.96139
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_5_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=5, k_reorder=0)",
+    "qps": 15829.885971940788,
+    "recall_at_10": 0.47434000000000004
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_5_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=5, k_reorder=10)",
+    "qps": 12014.59980303672,
+    "recall_at_10": 0.6209800000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_5_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=5, k_reorder=100)",
+    "qps": 5510.403910658049,
+    "recall_at_10": 0.6223
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_4096_5_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=4096, n_probe=5, k_reorder=1000)",
+    "qps": 4280.687852800734,
+    "recall_at_10": 0.6223
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_100_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=100, k_reorder=0)",
+    "qps": 2907.267051663326,
+    "recall_at_10": 0.61195
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_100_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=100, k_reorder=10)",
+    "qps": 2553.6599593404485,
+    "recall_at_10": 0.9881800000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_100_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=100, k_reorder=100)",
+    "qps": 1772.9736145779775,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_100_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=100, k_reorder=1000)",
+    "qps": 569.3467339207278,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_10_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=10, k_reorder=0)",
+    "qps": 14412.261836079791,
+    "recall_at_10": 0.59219
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_10_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=10, k_reorder=10)",
+    "qps": 9725.71258173447,
+    "recall_at_10": 0.91341
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_10_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=10, k_reorder=100)",
+    "qps": 4371.760764237628,
+    "recall_at_10": 0.9204399999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_10_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=10, k_reorder=1000)",
+    "qps": 818.2574217875077,
+    "recall_at_10": 0.9204399999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_1_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=1, k_reorder=0)",
+    "qps": 32489.227201287704,
+    "recall_at_10": 0.34472
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_1_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=1, k_reorder=10)",
+    "qps": 19952.315804095208,
+    "recall_at_10": 0.42436999999999997
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_1_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=1, k_reorder=100)",
+    "qps": 6506.014602570884,
+    "recall_at_10": 0.4255
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_1_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=1, k_reorder=1000)",
+    "qps": 3428.7694928666488,
+    "recall_at_10": 0.4255
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_200_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=200, k_reorder=0)",
+    "qps": 1581.2420528930484,
+    "recall_at_10": 0.61193
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_200_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=200, k_reorder=10)",
+    "qps": 1453.9655491991446,
+    "recall_at_10": 0.98826
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_200_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=200, k_reorder=100)",
+    "qps": 1096.3673374698988,
+    "recall_at_10": 1.0
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_200_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=200, k_reorder=1000)",
+    "qps": 426.18781233471685,
+    "recall_at_10": 1.0
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_50_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=50, k_reorder=0)",
+    "qps": 4928.975137743354,
+    "recall_at_10": 0.6115999999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_50_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=50, k_reorder=10)",
+    "qps": 4134.797646195019,
+    "recall_at_10": 0.9864499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_50_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=50, k_reorder=100)",
+    "qps": 2530.769336129086,
+    "recall_at_10": 0.99793
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_50_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=50, k_reorder=1000)",
+    "qps": 667.6912878476434,
+    "recall_at_10": 0.99793
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_5_0.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=5, k_reorder=0)",
+    "qps": 21195.428506745255,
+    "recall_at_10": 0.5535300000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_5_10.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=5, k_reorder=10)",
+    "qps": 13910.228815633514,
+    "recall_at_10": 0.80683
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_5_100.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=5, k_reorder=100)",
+    "qps": 5518.358527055035,
+    "recall_at_10": 0.8111499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/faiss-ivfpqfs/euclidean_512_5_1000.hdf5",
+    "algorithm": "faiss-ivfpqfs",
+    "parameters": "FaissIVFPQfs(n_list=512, n_probe=5, k_reorder=1000)",
+    "qps": 912.3458219580241,
+    "recall_at_10": 0.8111499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 40949.722579391695,
+    "recall_at_10": 0.7648699999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 41727.22678307792,
+    "recall_at_10": 0.7648699999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 6504.277252559187,
+    "recall_at_10": 0.9939199999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 7164.272514366366,
+    "recall_at_10": 0.9939199999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 742.8951234577763,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 892.184319237935,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 32354.020200898194,
+    "recall_at_10": 0.84329
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 31729.863323345024,
+    "recall_at_10": 0.84329
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 5096.226526281513,
+    "recall_at_10": 0.99688
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 5676.917989910327,
+    "recall_at_10": 0.99688
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 27638.545134413493,
+    "recall_at_10": 0.8848499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 27024.249187527224,
+    "recall_at_10": 0.8848499999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 3585.0008419098444,
+    "recall_at_10": 0.99889
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 3986.884348335663,
+    "recall_at_10": 0.99889
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 21293.801688556297,
+    "recall_at_10": 0.9309799999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 20546.052347978068,
+    "recall_at_10": 0.9309799999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 2803.3738839534117,
+    "recall_at_10": 0.9994500000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 3219.6759063797776,
+    "recall_at_10": 0.9994500000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 16990.30156612167,
+    "recall_at_10": 0.95556
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 17410.440692149765,
+    "recall_at_10": 0.95556
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 15337.514215609197,
+    "recall_at_10": 0.96275
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 15445.7150453708,
+    "recall_at_10": 0.96275
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 1995.0617951048803,
+    "recall_at_10": 0.99986
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 2322.362396712473,
+    "recall_at_10": 0.99986
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 13808.91285245321,
+    "recall_at_10": 0.96868
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 14200.539473047169,
+    "recall_at_10": 0.96868
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 13175.730267051502,
+    "recall_at_10": 0.97332
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 12612.908017848047,
+    "recall_at_10": 0.97332
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 12270.86393025365,
+    "recall_at_10": 0.97728
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 12092.1508485947,
+    "recall_at_10": 0.97728
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 1519.5583673358483,
+    "recall_at_10": 0.9998900000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 1818.2585094421427,
+    "recall_at_10": 0.9998900000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 9574.827653038326,
+    "recall_at_10": 0.98669
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 9965.574453293379,
+    "recall_at_10": 0.98669
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 1059.223633733378,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 1300.4449406901804,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 34157.23895304331,
+    "recall_at_10": 0.82391
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 35893.20449000515,
+    "recall_at_10": 0.82391
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 7056.298417057575,
+    "recall_at_10": 0.9972099999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 7437.207671010574,
+    "recall_at_10": 0.9972099999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 813.5971757615739,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 972.38681869175,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 26943.213936995737,
+    "recall_at_10": 0.89413
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 28238.38634099049,
+    "recall_at_10": 0.89413
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 5738.138756033228,
+    "recall_at_10": 0.99863
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 6141.38271541308,
+    "recall_at_10": 0.99863
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 24973.854971604273,
+    "recall_at_10": 0.92533
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 23638.857797270626,
+    "recall_at_10": 0.92533
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 4028.270377042405,
+    "recall_at_10": 0.9994799999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 4411.119337685939,
+    "recall_at_10": 0.9994799999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 19695.00776661464,
+    "recall_at_10": 0.95859
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 20078.69089147426,
+    "recall_at_10": 0.95859
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 3058.6867225353085,
+    "recall_at_10": 0.99969
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 3508.6255825849603,
+    "recall_at_10": 0.99969
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 15659.514985973168,
+    "recall_at_10": 0.9741
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 15926.898026635561,
+    "recall_at_10": 0.9741
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 14519.422560730334,
+    "recall_at_10": 0.97868
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 14058.527367059512,
+    "recall_at_10": 0.97868
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 2199.7221858891703,
+    "recall_at_10": 0.9998900000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 2525.664132574629,
+    "recall_at_10": 0.9998900000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 14289.490082061515,
+    "recall_at_10": 0.9823299999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 12782.34469845422,
+    "recall_at_10": 0.9823299999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 12920.992349010325,
+    "recall_at_10": 0.98553
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 11092.447553372254,
+    "recall_at_10": 0.98553
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 12191.627801523988,
+    "recall_at_10": 0.98774
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 11829.422724270331,
+    "recall_at_10": 0.98774
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 1703.3318760897598,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 2033.530654901164,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 9076.585988143297,
+    "recall_at_10": 0.9932399999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 10029.426125980932,
+    "recall_at_10": 0.9932399999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 1158.152451628826,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 1411.049499823581,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 37170.20041563091,
+    "recall_at_10": 0.85601
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 34991.111033247485,
+    "recall_at_10": 0.85601
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 6167.044813110476,
+    "recall_at_10": 0.99818
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 6696.572877269209,
+    "recall_at_10": 0.99818
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 719.6248860848085,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 865.0558860053651,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 29020.521155284514,
+    "recall_at_10": 0.9178200000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 29683.386010329694,
+    "recall_at_10": 0.9178200000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 4892.24999661743,
+    "recall_at_10": 0.99907
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 5407.445463728327,
+    "recall_at_10": 0.99907
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 24315.87710531015,
+    "recall_at_10": 0.9440500000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 24301.971538509228,
+    "recall_at_10": 0.9440500000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 3473.5845340789933,
+    "recall_at_10": 0.9996
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 3907.402939189976,
+    "recall_at_10": 0.9996
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 18994.995720321902,
+    "recall_at_10": 0.9701000000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 18118.81260829353,
+    "recall_at_10": 0.9701000000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 2787.4930517101634,
+    "recall_at_10": 0.99979
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 3179.609280571918,
+    "recall_at_10": 0.99979
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 14367.622097952402,
+    "recall_at_10": 0.9820800000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 15011.508346817302,
+    "recall_at_10": 0.9820800000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 13758.646095143624,
+    "recall_at_10": 0.9853099999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 13001.030336018488,
+    "recall_at_10": 0.9853099999999999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 1907.2191926736077,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 2211.7437718666756,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 11792.289683562756,
+    "recall_at_10": 0.98804
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 12207.222519732706,
+    "recall_at_10": 0.98804
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 11647.7028001614,
+    "recall_at_10": 0.9901300000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 11451.530555132365,
+    "recall_at_10": 0.9901300000000001
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 11245.201898944759,
+    "recall_at_10": 0.9917
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 11260.275531911466,
+    "recall_at_10": 0.9917
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 1487.0159660046131,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 1757.4389609721377,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 8559.2608305881,
+    "recall_at_10": 0.99544
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 9140.591680746677,
+    "recall_at_10": 0.99544
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 1027.4393381340226,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/sift-128-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 1252.0847909829681,
+    "recall_at_10": 0.9999
+  }
+]

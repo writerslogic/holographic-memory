@@ -1,0 +1,38 @@
+{
+  "dataset": "simplewiki-openai-3072-normalized",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:55:24.214060+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATNAXHRNV696SP2HHHP8R"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": {
+        "qps": 1313.8333141623937,
+        "recall": 0.9819200000000001,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+        "build_time": 1036.4664630889893,
+        "index_size": 1598116.0
+      },
+      "0.95": {
+        "qps": 1313.8333141623937,
+        "recall": 0.9819200000000001,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+        "build_time": 1036.4664630889893,
+        "index_size": 1598116.0
+      },
+      "0.99": {
+        "qps": 1031.0817139029405,
+        "recall": 0.99127,
+        "params": "HMS(metric=normalized, degree=48, build_ef=500, ef=80, rerank=100, code_bits=8)|80_100",
+        "build_time": 1217.2273125648499,
+        "index_size": 1610996.0
+      }
+    }
+  }
+}

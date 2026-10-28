@@ -1,0 +1,64 @@
+{
+  "dataset": "yandex-200-cosine",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:55:40.439084+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "glass": [
+      "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+    ],
+    "hms": [
+      "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+    ]
+  },
+  "best_qps_at_recall": {
+    "glass": {
+      "0.90": {
+        "qps": 4309.383018081118,
+        "recall": 0.9151500000000001,
+        "params": "Glass(L=400, R=32, efQuery=50, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|50",
+        "build_time": 571.4705064296722,
+        "index_size": 1231172.0
+      },
+      "0.95": {
+        "qps": 3022.0280310759786,
+        "recall": 0.9681500000000001,
+        "params": "Glass(L=400, R=48, efQuery=200, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|200",
+        "build_time": 725.8821291923523,
+        "index_size": 1290612.0
+      },
+      "0.99": {
+        "qps": 1691.840912704298,
+        "recall": 0.9905600000000001,
+        "params": "Glass(L=400, R=48, efQuery=400, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|400",
+        "build_time": 725.8821291923523,
+        "index_size": 1290612.0
+      }
+    },
+    "hms": {
+      "0.90": {
+        "qps": 6224.2212587394,
+        "recall": 0.9219700000000001,
+        "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=64, rerank=400, code_bits=8, learn_queries=32768)|64_400",
+        "build_time": 1567.4295625686646,
+        "index_size": 801016.0
+      },
+      "0.95": {
+        "qps": 4189.077971885376,
+        "recall": 0.96497,
+        "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=160, rerank=400, code_bits=8, learn_queries=32768)|160_400",
+        "build_time": 1567.4295625686646,
+        "index_size": 801016.0
+      },
+      "0.99": {
+        "qps": 2142.9773394954286,
+        "recall": 0.9926100000000001,
+        "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=400, rerank=100, code_bits=8, learn_queries=32768)|400_100",
+        "build_time": 1567.4295625686646,
+        "index_size": 801016.0
+      }
+    }
+  }
+}

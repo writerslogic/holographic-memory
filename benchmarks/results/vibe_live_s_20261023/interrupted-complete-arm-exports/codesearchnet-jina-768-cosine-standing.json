@@ -1,0 +1,38 @@
+{
+  "dataset": "codesearchnet-jina-768-cosine",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:54:49.443396+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATHY8AJ6AMZKNZF0PR7NR"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": {
+        "qps": 2266.6442435757804,
+        "recall": 0.9666399999999999,
+        "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=64, rerank=100, code_bits=8)|64_100",
+        "build_time": 3427.7888300418854,
+        "index_size": 2241988.0
+      },
+      "0.95": {
+        "qps": 2266.6442435757804,
+        "recall": 0.9666399999999999,
+        "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=64, rerank=100, code_bits=8)|64_100",
+        "build_time": 3427.7888300418854,
+        "index_size": 2241988.0
+      },
+      "0.99": {
+        "qps": 1700.1832347120476,
+        "recall": 0.9904100000000001,
+        "params": "HMS(metric=cosine, degree=64, build_ef=500, ef=100, rerank=200, code_bits=8)|100_200",
+        "build_time": 4514.17692565918,
+        "index_size": 2396564.0
+      }
+    }
+  }
+}

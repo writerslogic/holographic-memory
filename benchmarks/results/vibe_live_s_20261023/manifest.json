@@ -1,0 +1,1031 @@
+{
+  "license": "Apache-2.0",
+  "state": "provider-interrupted",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "official_vibe_commit": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
+  "vibe_fork_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "archive": {
+    "repository": "https://github.com/writerslogic/holographic-memory",
+    "commit": "c330ea5e16baf1201f9f65ff531c845bce6e0162",
+    "source_ref": "bench/vibe-live-s",
+    "directory": "benchmarks/results/vibe_live_s_20261023",
+    "original_manifest_sha256": "c8bd5ef96b16837c0b4244c2738afab7cbf8944093a1068c95a54636939eccdf",
+    "omitted": "Earlier snapshots, bulk volume/hash inventories, operational recovery scripts, and PR drafts remain available at this exact commit.",
+    "retained_ref": "refs/archive/retained-work-20261028/vibe-live-s"
+  },
+  "official_protocol": {
+    "dataset_source": "https://huggingface.co/datasets/vector-index-bench/vibe",
+    "dataset_scope": "24 configured float datasets: 19 current and 5 deprecated; int8, uint8, binary, and chamfer datasets require unsupported HMS interfaces",
+    "splits": "Official HDF5 train corpus, test queries and truth; OOD learn queries supplied to fit_ood without access to learn neighbors by HMS",
+    "preprocessing": "Official VIBE HDF5 data and loader; normalized datasets use VIBE-normalized float32 rows",
+    "metrics": "VIBE recall@100 (distance tolerance 0.001), best QPS of five full query passes, build time, index size",
+    "recall_thresholds": [
+      0.9,
+      0.95,
+      0.99
+    ],
+    "operation_sequence": "download and verify dataset; build each index; search all test queries for each query configuration five times; export summary",
+    "timing_boundaries": "VIBE runner times algo.query for each CPU query with time.perf_counter, excludes post-query truth-distance calculation, and retains best QPS of five passes",
+    "threads": "one pinned worker core per index; math-library thread variables set to 1",
+    "official_hardware": "Intel Xeon Gold 6230 with AVX-512, one core per algorithm, at least 16 GiB per used core recommended",
+    "official_limits": "24-hour timeout per individual algorithm run; no published fixed memory cap",
+    "modal_hardware": "Per-container CPU model, AVX-512, allocated memory, and process state are in the ledger and cpu records; VIBE falls back from unavailable numactl to taskset pinning; HMS and competitors are scheduled in one dataset job, with possible container handovers",
+    "modal_memory_note": "Several small-dataset Modal requests are below VIBE's recommendation of 16 GiB per used core; Modal memory requests are soft minimums, with actual usage allowed to burst. These rows are not an exact published-hardware reproduction",
+    "comparability": "Cross-hardware published Xeon QPS is diagnostic only; use same-container HMS/competitor measurements when they complete, and verify CPU identity after any handover"
+  },
+  "source_sha256": {
+    "modal_runner_uploaded": "86be41acaca43a58dc0b2578977bcc5a6a386ed431707223080a5fa84f923e92",
+    "hms_adapter_module": "9cdba402bf82fc3d200a39638fa01997755a3a9502b507c832cdaa2b042adf6d",
+    "hms_adapter_grid": "2d8af65af759939ec4c401e7e47f33af2c160832c35f307e10d05cacfb4ce2f2",
+    "hms_adapter_image": "4a96d5ead377e18a3f77d58ba5e174368570261f1f7aae2ee1d644082b8063d3",
+    "dataset_plan": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60"
+  },
+  "dataset_plan": "plan.json",
+  "latest_historical_snapshot": "snapshot-20261024T1440Z-interrupted.json",
+  "interruption_receipt": "workspace-interruption.json",
+  "rescue_receipt": "interruption-rescue-receipt.json",
+  "local_export_environment": "interrupted-complete-arm-exports/local-export-environment.json",
+  "verification_scope": "Committed Parquet rows support offline reproduction of threshold standings. Receipts preserve original native/truth hashes; raw predictions, timings and truth arrays are external historical artifacts, so native recall cannot be independently recomputed from this directory alone.",
+  "completeness": {
+    "completed_hms_grids": 20,
+    "exported_groups": 5488,
+    "complete_protocol_sweep": false,
+    "partial_arms_in_exported_metrics": false,
+    "no_fit_or_query_repeated_for_rescue": true
+  },
+  "collections": [
+    {
+      "dataset": "agnews-mxbai-1024-euclidean",
+      "standing": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-standing.json",
+      "summary": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "arxiv-nomic-768-normalized",
+      "standing": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "ccnews-nomic-768-normalized",
+      "standing": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-truth-receipt.json",
+      "groups": 281,
+      "algorithms": [
+        "hms",
+        "ngt-qg"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "celeba-resnet-2048-cosine",
+      "standing": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-standing.json",
+      "summary": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-truth-receipt.json",
+      "groups": 281,
+      "algorithms": [
+        "hms",
+        "ngt-qg"
+      ],
+      "matched_comparators": [
+        "ngt-qg"
+      ],
+      "comparison_scope": "same-container complete arms only",
+      "same_as_prior_official_points": true
+    },
+    {
+      "dataset": "coco-nomic-768-normalized",
+      "standing": "interrupted-complete-arm-exports/coco-nomic-768-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/coco-nomic-768-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/coco-nomic-768-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/coco-nomic-768-normalized-truth-receipt.json",
+      "groups": 1076,
+      "algorithms": [
+        "glass",
+        "hms",
+        "lorann"
+      ],
+      "matched_comparators": [
+        "glass",
+        "lorann"
+      ],
+      "comparison_scope": "same-container complete arms only",
+      "same_as_prior_official_points": true
+    },
+    {
+      "dataset": "codesearchnet-jina-768-cosine",
+      "standing": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-standing.json",
+      "summary": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "cqadupstack-lemur-2048-ip",
+      "standing": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-standing.json",
+      "summary": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "glove-200-cosine",
+      "standing": "interrupted-complete-arm-exports/glove-200-cosine-standing.json",
+      "summary": "interrupted-complete-arm-exports/glove-200-cosine-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/glove-200-cosine-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/glove-200-cosine-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "gooaq-distilroberta-768-normalized",
+      "standing": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "imagenet-align-640-normalized",
+      "standing": "interrupted-complete-arm-exports/imagenet-align-640-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/imagenet-align-640-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/imagenet-align-640-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/imagenet-align-640-normalized-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "imagenet-clip-512-normalized",
+      "standing": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-truth-receipt.json",
+      "groups": 232,
+      "algorithms": [
+        "hms",
+        "symphonyqg"
+      ],
+      "matched_comparators": [
+        "symphonyqg"
+      ],
+      "comparison_scope": "same-container complete arms only",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "inaturalist-resnet-2048-cosine",
+      "standing": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-standing.json",
+      "summary": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "laion-clip-512-normalized",
+      "standing": "interrupted-complete-arm-exports/laion-clip-512-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/laion-clip-512-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/laion-clip-512-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/laion-clip-512-normalized-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "landmark-dino-768-cosine",
+      "standing": "interrupted-complete-arm-exports/landmark-dino-768-cosine-standing.json",
+      "summary": "interrupted-complete-arm-exports/landmark-dino-768-cosine-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/landmark-dino-768-cosine-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/landmark-dino-768-cosine-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "landmark-nomic-768-normalized",
+      "standing": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-truth-receipt.json",
+      "groups": 281,
+      "algorithms": [
+        "hms",
+        "ngt-qg"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "llama-128-ip",
+      "standing": "interrupted-complete-arm-exports/llama-128-ip-standing.json",
+      "summary": "interrupted-complete-arm-exports/llama-128-ip-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/llama-128-ip-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/llama-128-ip-truth-receipt.json",
+      "groups": 288,
+      "algorithms": [
+        "hms",
+        "roargraph"
+      ],
+      "matched_comparators": [
+        "roargraph"
+      ],
+      "comparison_scope": "same-container complete arms only",
+      "same_as_prior_official_points": true
+    },
+    {
+      "dataset": "simplewiki-openai-3072-normalized",
+      "standing": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-truth-receipt.json",
+      "groups": 180,
+      "algorithms": [
+        "hms"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "yahoo-minilm-384-normalized",
+      "standing": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-standing.json",
+      "summary": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-truth-receipt.json",
+      "groups": 281,
+      "algorithms": [
+        "hms",
+        "ngt-qg"
+      ],
+      "matched_comparators": [],
+      "comparison_scope": "HMS-only or diagnostic cross-container arms",
+      "same_as_prior_official_points": false
+    },
+    {
+      "dataset": "yandex-200-cosine",
+      "standing": "interrupted-complete-arm-exports/yandex-200-cosine-standing.json",
+      "summary": "interrupted-complete-arm-exports/yandex-200-cosine-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/yandex-200-cosine-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/yandex-200-cosine-truth-receipt.json",
+      "groups": 500,
+      "algorithms": [
+        "glass",
+        "hms"
+      ],
+      "matched_comparators": [
+        "glass"
+      ],
+      "comparison_scope": "same-container complete arms only",
+      "same_as_prior_official_points": true
+    },
+    {
+      "dataset": "yi-128-ip",
+      "standing": "interrupted-complete-arm-exports/yi-128-ip-standing.json",
+      "summary": "interrupted-complete-arm-exports/yi-128-ip-summary.parquet",
+      "receipt": "interrupted-complete-arm-exports/yi-128-ip-receipt.json",
+      "truth_receipt": "interrupted-complete-arm-exports/yi-128-ip-truth-receipt.json",
+      "groups": 288,
+      "algorithms": [
+        "hms",
+        "roargraph"
+      ],
+      "matched_comparators": [
+        "roargraph"
+      ],
+      "comparison_scope": "same-container complete arms only",
+      "same_as_prior_official_points": true
+    }
+  ],
+  "prior_completed_collections": {
+    "yi-128-ip": {
+      "standing": "yi-128-ip-standing.json",
+      "summary": "yi-128-ip-summary.parquet",
+      "receipt": "yi-128-ip-artifact-receipt.json",
+      "raw_hashes": "yi-128-ip-raw-results.sha256.json"
+    },
+    "llama-128-ip": {
+      "standing": "llama-128-ip-standing.json",
+      "summary": "llama-128-ip-summary.parquet",
+      "receipt": "llama-128-ip-artifact-receipt.json",
+      "raw_hashes": "llama-128-ip-raw-results.sha256.json"
+    },
+    "celeba-resnet-2048-cosine": {
+      "standing": "celeba-resnet-2048-cosine-standing.json",
+      "summary": "celeba-resnet-2048-cosine-summary.parquet",
+      "receipt": "celeba-resnet-2048-cosine-artifact-receipt.json",
+      "raw_hashes": "celeba-resnet-2048-cosine-raw-results.sha256.json"
+    },
+    "coco-nomic-768-normalized": {
+      "standing": "coco-nomic-768-normalized-standing.json",
+      "summary": "coco-nomic-768-normalized-summary.parquet",
+      "receipt": "coco-nomic-768-normalized-artifact-receipt.json",
+      "raw_hashes": "coco-nomic-768-normalized-raw-results.sha256.json"
+    },
+    "yandex-200-cosine": {
+      "standing": "yandex-200-cosine-standing.json",
+      "summary": "yandex-200-cosine-summary.parquet",
+      "receipt": "yandex-200-cosine-artifact-receipt.json",
+      "raw_hashes": "yandex-200-cosine-raw-results.sha256.json"
+    }
+  },
+  "native_build_receipt_coverage": "19 active-container wheel/module hashes captured after measurement began, plus Arxiv pre-index hashes; finished-container install logs retained without inventing binary hashes",
+  "curation": {
+    "maintained_runner": "../../vibe/modal_vibe.py",
+    "historical_runner_archive_path": "benchmarks/vibe/modal_vibe.py",
+    "maintained_runner_note": "Historical provenance, memory matching, native receipt and billing fixes retained; the existing run namespace and 64-GiB planning cap are preserved. Current source is not represented as the historical uploaded runner.",
+    "retained_files": [
+      {
+        "path": "celeba-resnet-2048-cosine-artifact-receipt.json",
+        "sha256": "152abe8878286154b20feec4904bbbf4c140bfb9f99151ec899879a3b1f7af58",
+        "archive_sha256": "152abe8878286154b20feec4904bbbf4c140bfb9f99151ec899879a3b1f7af58"
+      },
+      {
+        "path": "celeba-resnet-2048-cosine-raw-results.sha256.json",
+        "sha256": "47f41a2a38ea160c2b39504a5939f54cccc14a21e9fc28a6f93d1569b4c4f92c",
+        "archive_sha256": "47f41a2a38ea160c2b39504a5939f54cccc14a21e9fc28a6f93d1569b4c4f92c"
+      },
+      {
+        "path": "celeba-resnet-2048-cosine-standing.json",
+        "sha256": "2ffc67343408a9c28e313a0efadd9aeeaacf1ca143fd4cbc2ca8610983355c55",
+        "archive_sha256": "2ffc67343408a9c28e313a0efadd9aeeaacf1ca143fd4cbc2ca8610983355c55"
+      },
+      {
+        "path": "celeba-resnet-2048-cosine-summary.parquet",
+        "sha256": "ba5888ded209adbc7fbd9d523c69d659dbf9ba9d830b3e8df8a8a3e174a5e1b7",
+        "archive_sha256": "ba5888ded209adbc7fbd9d523c69d659dbf9ba9d830b3e8df8a8a3e174a5e1b7"
+      },
+      {
+        "path": "coco-nomic-768-normalized-artifact-receipt.json",
+        "sha256": "78a6fd74ddd92306b25cf1e47b61f8e44545b078bc1b92607fa753e40a159e4b",
+        "archive_sha256": "78a6fd74ddd92306b25cf1e47b61f8e44545b078bc1b92607fa753e40a159e4b"
+      },
+      {
+        "path": "coco-nomic-768-normalized-raw-results.sha256.json",
+        "sha256": "accdcc483f8dbef5f22ff3b81384c6581b4713fc56f842b7d0713826ad53b7d8",
+        "archive_sha256": "accdcc483f8dbef5f22ff3b81384c6581b4713fc56f842b7d0713826ad53b7d8"
+      },
+      {
+        "path": "coco-nomic-768-normalized-standing.json",
+        "sha256": "a3823426cd4c390778cd6790d88820fcd97ea02430c3b3038fecb58796cdcf36",
+        "archive_sha256": "a3823426cd4c390778cd6790d88820fcd97ea02430c3b3038fecb58796cdcf36"
+      },
+      {
+        "path": "coco-nomic-768-normalized-summary.parquet",
+        "sha256": "8825b4453532a3e5885665510d8a2c240f949845ed152b7d93b741712cd572c6",
+        "archive_sha256": "8825b4453532a3e5885665510d8a2c240f949845ed152b7d93b741712cd572c6"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-receipt.json",
+        "sha256": "1f1e872709aad6009adfaf7b671f7b9812cb9644a546488072eeef7f0cdc023c",
+        "archive_sha256": "1f1e872709aad6009adfaf7b671f7b9812cb9644a546488072eeef7f0cdc023c"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-standing.json",
+        "sha256": "fd08dba8f0605943a60ce56cee698f891e69e4f03c60ba9b6cc55f70b80369ae",
+        "archive_sha256": "fd08dba8f0605943a60ce56cee698f891e69e4f03c60ba9b6cc55f70b80369ae"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-summary.parquet",
+        "sha256": "d3c4a0c99feb3466213f4ed7543e7b7b88d623b6ebbceeeba2703fcff4d8aacd",
+        "archive_sha256": "d3c4a0c99feb3466213f4ed7543e7b7b88d623b6ebbceeeba2703fcff4d8aacd"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/agnews-mxbai-1024-euclidean-truth-receipt.json",
+        "sha256": "22852121fdfd3fec25bad6a7099997a5a7267bb076ce61739e1033cd17af2ca8",
+        "archive_sha256": "22852121fdfd3fec25bad6a7099997a5a7267bb076ce61739e1033cd17af2ca8"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-receipt.json",
+        "sha256": "9973e29288db96de396de46e25e31a90d656e43d8631521c522ca85e866ff4a5",
+        "archive_sha256": "9973e29288db96de396de46e25e31a90d656e43d8631521c522ca85e866ff4a5"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-standing.json",
+        "sha256": "c19ad6959bd2e9f952f65e32a755733f6170663a305c56099a028329756bd5f7",
+        "archive_sha256": "c19ad6959bd2e9f952f65e32a755733f6170663a305c56099a028329756bd5f7"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-summary.parquet",
+        "sha256": "c6baf6b788415bbdf211eb23b269b25a851279c82a88a06dde21d08b1a9e0f32",
+        "archive_sha256": "c6baf6b788415bbdf211eb23b269b25a851279c82a88a06dde21d08b1a9e0f32"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/arxiv-nomic-768-normalized-truth-receipt.json",
+        "sha256": "47fc34d7e52da045c23af9f83b8f03db470ef11abae1908562298c8f17d10640",
+        "archive_sha256": "47fc34d7e52da045c23af9f83b8f03db470ef11abae1908562298c8f17d10640"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-receipt.json",
+        "sha256": "75022d4457a0770a5fa5cea46cfc8ff1b3436db83b2553d829d849c87f7bd075",
+        "archive_sha256": "75022d4457a0770a5fa5cea46cfc8ff1b3436db83b2553d829d849c87f7bd075"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-standing.json",
+        "sha256": "9462aaf15a290c6958e0e59aeadde75d919ecbfe8f9883a4d526e602ef4fa82c",
+        "archive_sha256": "9462aaf15a290c6958e0e59aeadde75d919ecbfe8f9883a4d526e602ef4fa82c"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-summary.parquet",
+        "sha256": "9331debb443377367fc5bf816b262a1f32d2307a8d37888971f5736163d916dd",
+        "archive_sha256": "9331debb443377367fc5bf816b262a1f32d2307a8d37888971f5736163d916dd"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/ccnews-nomic-768-normalized-truth-receipt.json",
+        "sha256": "0ea3759a9c5f7a5af6458e7bc91055b770999e7cd68b9021e975c95cd821a476",
+        "archive_sha256": "0ea3759a9c5f7a5af6458e7bc91055b770999e7cd68b9021e975c95cd821a476"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-receipt.json",
+        "sha256": "63cc06417fd96f55b53c2c5e1332c59a52c33e2ef48b8a0627b356f268b6252e",
+        "archive_sha256": "63cc06417fd96f55b53c2c5e1332c59a52c33e2ef48b8a0627b356f268b6252e"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-standing.json",
+        "sha256": "3f61a61425765f87de50f659820280dcb253bae1c4707f1e3e12c4f63576396d",
+        "archive_sha256": "3f61a61425765f87de50f659820280dcb253bae1c4707f1e3e12c4f63576396d"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-summary.parquet",
+        "sha256": "29f74cbc2ad7128db23f91093f626ecbb42f50f0ad3c4b4f9bdba189cabc1770",
+        "archive_sha256": "29f74cbc2ad7128db23f91093f626ecbb42f50f0ad3c4b4f9bdba189cabc1770"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/celeba-resnet-2048-cosine-truth-receipt.json",
+        "sha256": "13b48058d817f2ea5f47f4c74233422da3a8e6a42150f69ef5d9dba3884e2238",
+        "archive_sha256": "13b48058d817f2ea5f47f4c74233422da3a8e6a42150f69ef5d9dba3884e2238"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/coco-nomic-768-normalized-receipt.json",
+        "sha256": "730eabc165239fc349e240e97d07f8fb54492d60757c8edcdd27bb9450e2cdb2",
+        "archive_sha256": "730eabc165239fc349e240e97d07f8fb54492d60757c8edcdd27bb9450e2cdb2"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/coco-nomic-768-normalized-standing.json",
+        "sha256": "db643b68a9bb03a490afc539b4ca991f7bd93496e879bdc7d28c4da6bad69985",
+        "archive_sha256": "db643b68a9bb03a490afc539b4ca991f7bd93496e879bdc7d28c4da6bad69985"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/coco-nomic-768-normalized-summary.parquet",
+        "sha256": "354ad44e3658abee61fbbdd5374bd5c6a8933a9910ac44769bf04f864c52f41a",
+        "archive_sha256": "354ad44e3658abee61fbbdd5374bd5c6a8933a9910ac44769bf04f864c52f41a"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/coco-nomic-768-normalized-truth-receipt.json",
+        "sha256": "4dc367c79b6b3f9b693dcc1b2aec2e364f0ede1391ae2b6a551040a6812a85ee",
+        "archive_sha256": "4dc367c79b6b3f9b693dcc1b2aec2e364f0ede1391ae2b6a551040a6812a85ee"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-receipt.json",
+        "sha256": "c1a495bd64076bce9a2e3ae5df6f13da16bee72decec0d10b7ea1f5d41f04f78",
+        "archive_sha256": "c1a495bd64076bce9a2e3ae5df6f13da16bee72decec0d10b7ea1f5d41f04f78"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-standing.json",
+        "sha256": "dae625bddef006f412116499b211aa3455e6bf775c6ef1b0b96a8dcb0b7238d1",
+        "archive_sha256": "dae625bddef006f412116499b211aa3455e6bf775c6ef1b0b96a8dcb0b7238d1"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-summary.parquet",
+        "sha256": "d14058808d02feed15ae26b93b59354364db737149cc864f9e964abb9c0f49d1",
+        "archive_sha256": "d14058808d02feed15ae26b93b59354364db737149cc864f9e964abb9c0f49d1"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/codesearchnet-jina-768-cosine-truth-receipt.json",
+        "sha256": "a40990c1517c586d890ef4c3181ec0c85ba210a9b5842a6c556d6240f65ef511",
+        "archive_sha256": "a40990c1517c586d890ef4c3181ec0c85ba210a9b5842a6c556d6240f65ef511"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-receipt.json",
+        "sha256": "46771dc7b111350bf6ebb7eb3c283acdf7fa05b4e8bac71db4a67b761fd6cdbd",
+        "archive_sha256": "46771dc7b111350bf6ebb7eb3c283acdf7fa05b4e8bac71db4a67b761fd6cdbd"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-standing.json",
+        "sha256": "40bd49b239993208617c3ce23ea9bf1e54144930c5387f54b39c6c9ca1a4dcf6",
+        "archive_sha256": "40bd49b239993208617c3ce23ea9bf1e54144930c5387f54b39c6c9ca1a4dcf6"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-summary.parquet",
+        "sha256": "cc032b9b3ba1765b499633e7929af93293912ba3820a821d6d2733d8978f603e",
+        "archive_sha256": "cc032b9b3ba1765b499633e7929af93293912ba3820a821d6d2733d8978f603e"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/cqadupstack-lemur-2048-ip-truth-receipt.json",
+        "sha256": "8b9c3ea75cbde01b004d3c443c97e7e42b951ac9d99a97576007f18825996215",
+        "archive_sha256": "8b9c3ea75cbde01b004d3c443c97e7e42b951ac9d99a97576007f18825996215"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/glove-200-cosine-receipt.json",
+        "sha256": "e5bfee29f6e90e226a659a8661afbdd6df4850896f09a975ac29d461d8d2aa70",
+        "archive_sha256": "e5bfee29f6e90e226a659a8661afbdd6df4850896f09a975ac29d461d8d2aa70"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/glove-200-cosine-standing.json",
+        "sha256": "5b912cbc83e3d7a3f421aef0c29453e5a781c881ecd01b584ec2c50b39f96d34",
+        "archive_sha256": "5b912cbc83e3d7a3f421aef0c29453e5a781c881ecd01b584ec2c50b39f96d34"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/glove-200-cosine-summary.parquet",
+        "sha256": "0b250aad847d7144e9b9fd781c1a0621bd656e460cd0a94546a49cc6062c16f5",
+        "archive_sha256": "0b250aad847d7144e9b9fd781c1a0621bd656e460cd0a94546a49cc6062c16f5"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/glove-200-cosine-truth-receipt.json",
+        "sha256": "9576a5dbef07c7075c72095198d8550b98a510b208957fd3b6e37345f2ba222a",
+        "archive_sha256": "9576a5dbef07c7075c72095198d8550b98a510b208957fd3b6e37345f2ba222a"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-receipt.json",
+        "sha256": "d4aa3869dffda7a25423edc73cf8e970344b9d09fd9bbc1fe5a0f88934a64ef1",
+        "archive_sha256": "d4aa3869dffda7a25423edc73cf8e970344b9d09fd9bbc1fe5a0f88934a64ef1"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-standing.json",
+        "sha256": "b9daefaabc9f20ac3f8dd96ec4f08ebe95641e932f7e7b7c062e2ec0214e64b4",
+        "archive_sha256": "b9daefaabc9f20ac3f8dd96ec4f08ebe95641e932f7e7b7c062e2ec0214e64b4"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-summary.parquet",
+        "sha256": "316ae018a9b1d279f7cafc953526e1d27a1268f94d4295977c89ba6201217ac1",
+        "archive_sha256": "316ae018a9b1d279f7cafc953526e1d27a1268f94d4295977c89ba6201217ac1"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/gooaq-distilroberta-768-normalized-truth-receipt.json",
+        "sha256": "c05027edce6bf7f592f9b424af749f3afee616afda33565e69da48f0983cee5c",
+        "archive_sha256": "c05027edce6bf7f592f9b424af749f3afee616afda33565e69da48f0983cee5c"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-align-640-normalized-receipt.json",
+        "sha256": "7a63814d6832b4cddc71fe90564d96b182ce4eee8bbc8b682222057276d9787f",
+        "archive_sha256": "7a63814d6832b4cddc71fe90564d96b182ce4eee8bbc8b682222057276d9787f"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-align-640-normalized-standing.json",
+        "sha256": "dd3e295d50aaacdd7770d94c64ed0d2a9dc9f17f87c47b75d1dfa36369704d80",
+        "archive_sha256": "dd3e295d50aaacdd7770d94c64ed0d2a9dc9f17f87c47b75d1dfa36369704d80"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-align-640-normalized-summary.parquet",
+        "sha256": "bcfd56d436541de4f65e04b8815323849b0501048826a3c18486f1798fe57019",
+        "archive_sha256": "bcfd56d436541de4f65e04b8815323849b0501048826a3c18486f1798fe57019"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-align-640-normalized-truth-receipt.json",
+        "sha256": "f8f6eaeaa992d93504520f87d3ff84ef2b72d778c3d675990445aaa67cfa2e79",
+        "archive_sha256": "f8f6eaeaa992d93504520f87d3ff84ef2b72d778c3d675990445aaa67cfa2e79"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-receipt.json",
+        "sha256": "9a04d940f159fff12d42a44f00571bbe575b1ec9a98783165869175c05178136",
+        "archive_sha256": "9a04d940f159fff12d42a44f00571bbe575b1ec9a98783165869175c05178136"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-standing.json",
+        "sha256": "e49b46e934ec1fed665f6a83a338e64e23f2d50a3d7be4f29e7b6b413dcd5478",
+        "archive_sha256": "e49b46e934ec1fed665f6a83a338e64e23f2d50a3d7be4f29e7b6b413dcd5478"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-summary.parquet",
+        "sha256": "85bfc96c482650393fa52afb2569e703752868efef1cf5ae8b176a7fb1a29b26",
+        "archive_sha256": "85bfc96c482650393fa52afb2569e703752868efef1cf5ae8b176a7fb1a29b26"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/imagenet-clip-512-normalized-truth-receipt.json",
+        "sha256": "c4adc39b5966646df17b977e14545ab9c4cd8dad8b89473d6513fcbf10023eef",
+        "archive_sha256": "c4adc39b5966646df17b977e14545ab9c4cd8dad8b89473d6513fcbf10023eef"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-receipt.json",
+        "sha256": "1e0cb8c5648d37f85554845e47bf0555ea6ac32ff89a4614a3857706bf4a5e0a",
+        "archive_sha256": "1e0cb8c5648d37f85554845e47bf0555ea6ac32ff89a4614a3857706bf4a5e0a"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-standing.json",
+        "sha256": "bacaa72b1cc54a555b174882c8777969cf2f595bda95e796c19fcd2696d65352",
+        "archive_sha256": "bacaa72b1cc54a555b174882c8777969cf2f595bda95e796c19fcd2696d65352"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-summary.parquet",
+        "sha256": "a478a7499f39ede93c17bc7d3ae8f4e1c38342b80ba339a0a43dfe79e6aff9af",
+        "archive_sha256": "a478a7499f39ede93c17bc7d3ae8f4e1c38342b80ba339a0a43dfe79e6aff9af"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/inaturalist-resnet-2048-cosine-truth-receipt.json",
+        "sha256": "660b3c7b80877a9404a24741d2d8b7af64317b7833231bf94fa8cab298f50cef",
+        "archive_sha256": "660b3c7b80877a9404a24741d2d8b7af64317b7833231bf94fa8cab298f50cef"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/laion-clip-512-normalized-receipt.json",
+        "sha256": "530a97127402c24f4e3f97a3d95b1a5b324153d1231704624fe05620147adad9",
+        "archive_sha256": "530a97127402c24f4e3f97a3d95b1a5b324153d1231704624fe05620147adad9"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/laion-clip-512-normalized-standing.json",
+        "sha256": "f51250dea55349d9840e0a97e2bf76b4942830a1415f59b4b283a96a33d2449e",
+        "archive_sha256": "f51250dea55349d9840e0a97e2bf76b4942830a1415f59b4b283a96a33d2449e"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/laion-clip-512-normalized-summary.parquet",
+        "sha256": "f322a9bf4418a435db74d146756678aaecab119c80ec08fca7b0dec3b28e297b",
+        "archive_sha256": "f322a9bf4418a435db74d146756678aaecab119c80ec08fca7b0dec3b28e297b"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/laion-clip-512-normalized-truth-receipt.json",
+        "sha256": "e4edc6439ee4244b6b5a84f4d4eb506aa56722cba4e4bc13d339a296aa8d05c8",
+        "archive_sha256": "e4edc6439ee4244b6b5a84f4d4eb506aa56722cba4e4bc13d339a296aa8d05c8"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-dino-768-cosine-receipt.json",
+        "sha256": "646c0a525951ec4ad19763d98c22197ca7b42454e75a5d0179063eb0863c35c6",
+        "archive_sha256": "646c0a525951ec4ad19763d98c22197ca7b42454e75a5d0179063eb0863c35c6"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-dino-768-cosine-standing.json",
+        "sha256": "4cfa055694b083e563b40ace8004714713e76754587fc4bedbba4df2e13b23a1",
+        "archive_sha256": "4cfa055694b083e563b40ace8004714713e76754587fc4bedbba4df2e13b23a1"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-dino-768-cosine-summary.parquet",
+        "sha256": "9a225b07075553ae08e5f1b1a4fc74b9be2e5629000e61466873f9513694de2b",
+        "archive_sha256": "9a225b07075553ae08e5f1b1a4fc74b9be2e5629000e61466873f9513694de2b"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-dino-768-cosine-truth-receipt.json",
+        "sha256": "3842deae6c978a5727d8bfb4f2f539daa6e862ec8785fa0141b23a8e4fa7b0ac",
+        "archive_sha256": "3842deae6c978a5727d8bfb4f2f539daa6e862ec8785fa0141b23a8e4fa7b0ac"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-receipt.json",
+        "sha256": "aa076e4b6ce512213e830fe508bb4cf11c55d9b8252c8ab4c46fa895320c26a6",
+        "archive_sha256": "aa076e4b6ce512213e830fe508bb4cf11c55d9b8252c8ab4c46fa895320c26a6"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-standing.json",
+        "sha256": "d5a177876d5559d21f036cdf9369d7fbcf5782852cc9626fbdc491fd5c7eb08b",
+        "archive_sha256": "d5a177876d5559d21f036cdf9369d7fbcf5782852cc9626fbdc491fd5c7eb08b"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-summary.parquet",
+        "sha256": "069084c20453e997d3830d853b3432dbc4b3c5d1187939980e3d5a7d75c09903",
+        "archive_sha256": "069084c20453e997d3830d853b3432dbc4b3c5d1187939980e3d5a7d75c09903"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/landmark-nomic-768-normalized-truth-receipt.json",
+        "sha256": "b079cec6b50422fedcd9d213572c6886b8f155b437b892a730ccf6e8a0672855",
+        "archive_sha256": "b079cec6b50422fedcd9d213572c6886b8f155b437b892a730ccf6e8a0672855"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/llama-128-ip-receipt.json",
+        "sha256": "37f10e03ab6115ba2e76a74d351b37a84009bb74a2fa2dc1a7d190d21df2014d",
+        "archive_sha256": "37f10e03ab6115ba2e76a74d351b37a84009bb74a2fa2dc1a7d190d21df2014d"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/llama-128-ip-standing.json",
+        "sha256": "58f5a48a77bcc1515a91ce9c0e723c67e69100b716a5921421bd0ab991586042",
+        "archive_sha256": "58f5a48a77bcc1515a91ce9c0e723c67e69100b716a5921421bd0ab991586042"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/llama-128-ip-summary.parquet",
+        "sha256": "ee42c67afe7c9525903969ae616f054beebb791b534535e8f755a9fed2504e44",
+        "archive_sha256": "ee42c67afe7c9525903969ae616f054beebb791b534535e8f755a9fed2504e44"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/llama-128-ip-truth-receipt.json",
+        "sha256": "bfdad1679566d3d2c854db1dd1e7eb818485779bcf3f5314f078b7261d9daa72",
+        "archive_sha256": "bfdad1679566d3d2c854db1dd1e7eb818485779bcf3f5314f078b7261d9daa72"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/local-export-environment.json",
+        "sha256": "96144809326278c624ce549666357a4c516f98936bf365c7fd98f19a24945c9d",
+        "archive_sha256": "96144809326278c624ce549666357a4c516f98936bf365c7fd98f19a24945c9d"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-receipt.json",
+        "sha256": "7d863ab9a434724fce3b01715d1d546ebba99b7a36aded45757eaf426353f4e0",
+        "archive_sha256": "7d863ab9a434724fce3b01715d1d546ebba99b7a36aded45757eaf426353f4e0"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-standing.json",
+        "sha256": "25e7a259cfbc587c41578fccbf6bd7221d51df2c05ad6c73fc24a9ad26c84b75",
+        "archive_sha256": "25e7a259cfbc587c41578fccbf6bd7221d51df2c05ad6c73fc24a9ad26c84b75"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-summary.parquet",
+        "sha256": "3884718fa3defbebea8cf6377cff7173a4b548f50c3c9ecbff482c2f8a78c7d4",
+        "archive_sha256": "3884718fa3defbebea8cf6377cff7173a4b548f50c3c9ecbff482c2f8a78c7d4"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/simplewiki-openai-3072-normalized-truth-receipt.json",
+        "sha256": "e5dcb12bda25327dd559b16f0355f6fc30da38b93474ed3de6d288dab3b85f1a",
+        "archive_sha256": "e5dcb12bda25327dd559b16f0355f6fc30da38b93474ed3de6d288dab3b85f1a"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-receipt.json",
+        "sha256": "f1bfc465ffcdf764aab983dbc8cd567cb76c08a47943aacb77c0ed55b1a3d139",
+        "archive_sha256": "f1bfc465ffcdf764aab983dbc8cd567cb76c08a47943aacb77c0ed55b1a3d139"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-standing.json",
+        "sha256": "42695cc5abb988f8e0b7f0063f6a6539b3ef9e4e86c6891d96288e8ab73f77c3",
+        "archive_sha256": "42695cc5abb988f8e0b7f0063f6a6539b3ef9e4e86c6891d96288e8ab73f77c3"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-summary.parquet",
+        "sha256": "8f8fbde11ef961ee5caada4274dd7caf1a2b5c8551e2398a95a9bcbed67d7e25",
+        "archive_sha256": "8f8fbde11ef961ee5caada4274dd7caf1a2b5c8551e2398a95a9bcbed67d7e25"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yahoo-minilm-384-normalized-truth-receipt.json",
+        "sha256": "12b5ddd654570fa0f5e9881fba9c586b1e7075d9b5945e88e3d923868ec9e995",
+        "archive_sha256": "12b5ddd654570fa0f5e9881fba9c586b1e7075d9b5945e88e3d923868ec9e995"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yandex-200-cosine-receipt.json",
+        "sha256": "e99c4b8307b514974e65ff1ad5da3ff0596f60543ded3ad9172fb39ffa3194b7",
+        "archive_sha256": "e99c4b8307b514974e65ff1ad5da3ff0596f60543ded3ad9172fb39ffa3194b7"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yandex-200-cosine-standing.json",
+        "sha256": "379cdba22dffbbb6c4936cba492b723b077dd7fd78a25f0ccb699b8f3877db31",
+        "archive_sha256": "379cdba22dffbbb6c4936cba492b723b077dd7fd78a25f0ccb699b8f3877db31"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yandex-200-cosine-summary.parquet",
+        "sha256": "4795df6991e0ce1a6961b4fa1da953c6a59945e452bc5791e9e99e38a78c4cc0",
+        "archive_sha256": "4795df6991e0ce1a6961b4fa1da953c6a59945e452bc5791e9e99e38a78c4cc0"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yandex-200-cosine-truth-receipt.json",
+        "sha256": "d092db87a12824a932f2c6a4d26ae5216ff2b4c365ef2dfbc18ee03a6ef0716e",
+        "archive_sha256": "d092db87a12824a932f2c6a4d26ae5216ff2b4c365ef2dfbc18ee03a6ef0716e"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yi-128-ip-receipt.json",
+        "sha256": "8722b75034536ba5379a7439deab9416fdf892a6389f2ecc90c3e29b2b832553",
+        "archive_sha256": "8722b75034536ba5379a7439deab9416fdf892a6389f2ecc90c3e29b2b832553"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yi-128-ip-standing.json",
+        "sha256": "1b0de15fbea7b8799d3a4fe48f174a3e8318b7e79f192d4929b202cbe5fd0a03",
+        "archive_sha256": "1b0de15fbea7b8799d3a4fe48f174a3e8318b7e79f192d4929b202cbe5fd0a03"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yi-128-ip-summary.parquet",
+        "sha256": "d34b36e86eb3d1f478e60dfadfe4fd508c9723a2879fbeb2d175e62c81b4553d",
+        "archive_sha256": "d34b36e86eb3d1f478e60dfadfe4fd508c9723a2879fbeb2d175e62c81b4553d"
+      },
+      {
+        "path": "interrupted-complete-arm-exports/yi-128-ip-truth-receipt.json",
+        "sha256": "6441d101f795ce35d47896c91487c160dada732827173023647de0ce46177137",
+        "archive_sha256": "6441d101f795ce35d47896c91487c160dada732827173023647de0ce46177137"
+      },
+      {
+        "path": "interruption-rescue-receipt.json",
+        "sha256": "9500cd9e39ecf4645f2254bc7e8f599a51eb830a8f930eb3f5e668078847f0b2",
+        "archive_sha256": "9500cd9e39ecf4645f2254bc7e8f599a51eb830a8f930eb3f5e668078847f0b2"
+      },
+      {
+        "path": "llama-128-ip-artifact-receipt.json",
+        "sha256": "35f3de116f3179301dd434644ffcc3d199666a75cd7e2a3416ccc7a2179acb1a",
+        "archive_sha256": "35f3de116f3179301dd434644ffcc3d199666a75cd7e2a3416ccc7a2179acb1a"
+      },
+      {
+        "path": "llama-128-ip-raw-results.sha256.json",
+        "sha256": "645f9187e9b4368c65b9b9be518e61ee9d6340568419dce3fe28181991ccc9fe",
+        "archive_sha256": "645f9187e9b4368c65b9b9be518e61ee9d6340568419dce3fe28181991ccc9fe"
+      },
+      {
+        "path": "llama-128-ip-standing.json",
+        "sha256": "4cfadd2e764c29b12e46a9c28c7ca5715d5934c050c3a93c33dabf2bdb826b68",
+        "archive_sha256": "4cfadd2e764c29b12e46a9c28c7ca5715d5934c050c3a93c33dabf2bdb826b68"
+      },
+      {
+        "path": "llama-128-ip-summary.parquet",
+        "sha256": "2027c85905c9fa5d941971d63cff084dd96e3a4a855358364d48cb3f695710c6",
+        "archive_sha256": "2027c85905c9fa5d941971d63cff084dd96e3a4a855358364d48cb3f695710c6"
+      },
+      {
+        "path": "modal-pricing-20261024.json",
+        "sha256": "72b7bf6e7a1cfe8a8758dc2015428c9f93c8c3872bbbd84e21081eb73141af63",
+        "archive_sha256": "72b7bf6e7a1cfe8a8758dc2015428c9f93c8c3872bbbd84e21081eb73141af63"
+      },
+      {
+        "path": "native-build-receipts/agnews-mxbai-1024-euclidean-ta-01M5PATH4SPV2PQVY7TXBFWM8R.json",
+        "sha256": "d185984e6de7e94070395d85fbbc593367681cdee576ee89080cd47a763031b7",
+        "archive_sha256": "d185984e6de7e94070395d85fbbc593367681cdee576ee89080cd47a763031b7"
+      },
+      {
+        "path": "native-build-receipts/arxiv-nomic-768-normalized-ta-01M5PKP35HA4E538A8D193RJJR.json",
+        "sha256": "a4538559551fcf874c3335ad5486f75a17cf6ad56be7a1155dc35913e49851d1",
+        "archive_sha256": "a4538559551fcf874c3335ad5486f75a17cf6ad56be7a1155dc35913e49851d1"
+      },
+      {
+        "path": "native-build-receipts/celeba-resnet-2048-cosine-ta-01M5PATJBNDETJ3AZBBEEYNXPR.json",
+        "sha256": "78f34eda89fe52988c03515ec53c497a3b475f218aa927079fdd3278c78f011a",
+        "archive_sha256": "78f34eda89fe52988c03515ec53c497a3b475f218aa927079fdd3278c78f011a"
+      },
+      {
+        "path": "native-build-receipts/coco-nomic-768-normalized-ta-01M5PATHQ0DF3TDTCC4S1PBKJR.json",
+        "sha256": "0eab970941dc71174964d4b7b3a19efb0c936e5dd409ea3c101f2f8c743a8ac4",
+        "archive_sha256": "0eab970941dc71174964d4b7b3a19efb0c936e5dd409ea3c101f2f8c743a8ac4"
+      },
+      {
+        "path": "native-build-receipts/codesearchnet-jina-768-cosine-ta-01M5PATHY8AJ6AMZKNZF0PR7NR.json",
+        "sha256": "27b7c5b272f9c7b11807bd1ccbdfca5b952793b4d60b4fa32dcc9fe555aafe71",
+        "archive_sha256": "27b7c5b272f9c7b11807bd1ccbdfca5b952793b4d60b4fa32dcc9fe555aafe71"
+      },
+      {
+        "path": "native-build-receipts/cqadupstack-lemur-2048-ip-ta-01M5PATJ5M46CEM2MS3TQDG47R.json",
+        "sha256": "ca448f3ad5847b50339c652aafbc55cd9e55b73957be08376ca15923ff392d9d",
+        "archive_sha256": "ca448f3ad5847b50339c652aafbc55cd9e55b73957be08376ca15923ff392d9d"
+      },
+      {
+        "path": "native-build-receipts/cqadupstack-muvera-5120-ip-ta-01M5PATJXYG4QN3W2RVTQ7XBJR.json",
+        "sha256": "9fd98d3301c184b61c1c1cb6bf6d6d323ab3adacb9a46f598706a444f21bd46e",
+        "archive_sha256": "9fd98d3301c184b61c1c1cb6bf6d6d323ab3adacb9a46f598706a444f21bd46e"
+      },
+      {
+        "path": "native-build-receipts/dpr-jina-768-normalized-ta-01M5PATJMTFB0MNGJ1RP22DS6R.json",
+        "sha256": "1b47d94bf561c9a10daf45eaad3ec7319fa894ca18c41ec52a10e58dc62cb0aa",
+        "archive_sha256": "1b47d94bf561c9a10daf45eaad3ec7319fa894ca18c41ec52a10e58dc62cb0aa"
+      },
+      {
+        "path": "native-build-receipts/glove-200-cosine-ta-01M5PATKTP8B8NTMS8P6083N7R.json",
+        "sha256": "6f21025e35a88dd2731006600b1bb7c2178106c54c428d2bc3eeca38d773bd71",
+        "archive_sha256": "6f21025e35a88dd2731006600b1bb7c2178106c54c428d2bc3eeca38d773bd71"
+      },
+      {
+        "path": "native-build-receipts/gooaq-distilroberta-768-normalized-ta-01M5PATKDQTWS2TKRJ5VBRVZMR.json",
+        "sha256": "a9e0a8345e070461aab83b2e79ff2fac85f08ce06851ade37e50054856051414",
+        "archive_sha256": "a9e0a8345e070461aab83b2e79ff2fac85f08ce06851ade37e50054856051414"
+      },
+      {
+        "path": "native-build-receipts/hotpotqa-harrier-640-normalized-ta-01M5PATKV68PKYMXT5EH14P1JR.json",
+        "sha256": "b28b3136c94e50a3b1535ba389c2818b4a9c65858910bed5aafd4b8b0671dca2",
+        "archive_sha256": "b28b3136c94e50a3b1535ba389c2818b4a9c65858910bed5aafd4b8b0671dca2"
+      },
+      {
+        "path": "native-build-receipts/imagenet-align-640-normalized-ta-01M5PATMG062BP8EBXE355Q8DR.json",
+        "sha256": "c4e1a66a9a204a6876a53a8fdade896d683d716237abbfde301a96a99f573e2d",
+        "archive_sha256": "c4e1a66a9a204a6876a53a8fdade896d683d716237abbfde301a96a99f573e2d"
+      },
+      {
+        "path": "native-build-receipts/imagenet-clip-512-normalized-ta-01M5PATMQKC0T70W6N4NRXE6WR.json",
+        "sha256": "3a0baacf3d8a39cadf9b0f7e617fa75ad960949f079029450daa37913db07b09",
+        "archive_sha256": "3a0baacf3d8a39cadf9b0f7e617fa75ad960949f079029450daa37913db07b09"
+      },
+      {
+        "path": "native-build-receipts/laion-clip-512-normalized-ta-01M5PATN6HWJ5THC80W1W65RAR.json",
+        "sha256": "467db423e384d4450186a0ac5f1cb52bdb631685f54bc9df6c6d2cdb9deda808",
+        "archive_sha256": "467db423e384d4450186a0ac5f1cb52bdb631685f54bc9df6c6d2cdb9deda808"
+      },
+      {
+        "path": "native-build-receipts/landmark-dino-768-cosine-ta-01M5PATMQKY2AWHG30BA59JVCR.json",
+        "sha256": "7fe4a663a785a2c7dd6e1286d1e31529750a1551cc45e8e3b3bf7fc4c6c13d9b",
+        "archive_sha256": "7fe4a663a785a2c7dd6e1286d1e31529750a1551cc45e8e3b3bf7fc4c6c13d9b"
+      },
+      {
+        "path": "native-build-receipts/landmark-nomic-768-normalized-ta-01M5PDWQVEXHTNJSV6WPESQA3R.json",
+        "sha256": "987ab0684663045dd0f452ba45f58527b586e194c03a6e4bad02a8967e60d8d3",
+        "archive_sha256": "987ab0684663045dd0f452ba45f58527b586e194c03a6e4bad02a8967e60d8d3"
+      },
+      {
+        "path": "native-build-receipts/msmarco-qwen-1024-normalized-ta-01M5PATNVBJNVGXBP073M9C58R.json",
+        "sha256": "98542a7fdd5d05e7624df144d0d912fd688bd7b87455b24726f7a16f3bf33808",
+        "archive_sha256": "98542a7fdd5d05e7624df144d0d912fd688bd7b87455b24726f7a16f3bf33808"
+      },
+      {
+        "path": "native-build-receipts/simplewiki-openai-3072-normalized-ta-01M5PATNAXHRNV696SP2HHHP8R.json",
+        "sha256": "9e82aa1e4b9490c681caa2b4b368d019347444a2dca629e82603d1ac9f7d5706",
+        "archive_sha256": "9e82aa1e4b9490c681caa2b4b368d019347444a2dca629e82603d1ac9f7d5706"
+      },
+      {
+        "path": "native-build-receipts/yahoo-minilm-384-normalized-ta-01M5PED1Z9ZRB57ZY0DF9A9B2R.json",
+        "sha256": "0d909c08ac472fbe0b80610fd27f34dbcd2bdaba1c553140edcb86ee121d219b",
+        "archive_sha256": "0d909c08ac472fbe0b80610fd27f34dbcd2bdaba1c553140edcb86ee121d219b"
+      },
+      {
+        "path": "native-build-receipts/yandex-200-cosine-ta-01M5PATNPBZBDMYV5B4WHTJM2R.json",
+        "sha256": "c0c91b5063fa09176e198d6a279ff81ef06259197b848199d18002a21338715d",
+        "archive_sha256": "c0c91b5063fa09176e198d6a279ff81ef06259197b848199d18002a21338715d"
+      },
+      {
+        "path": "plan.json",
+        "sha256": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60",
+        "archive_sha256": "16d8fcf67d8f0b916616e1bac02ca29ff97ca892f146d202171a2993c0885b60"
+      },
+      {
+        "path": "snapshot-20261024T1440Z-interrupted.json",
+        "sha256": "bba0dfbae6b8ce90f49f7977b9ade1b9cef3da6a6a980432ecb0dd515bed44b0",
+        "archive_sha256": "bba0dfbae6b8ce90f49f7977b9ade1b9cef3da6a6a980432ecb0dd515bed44b0"
+      },
+      {
+        "path": "workspace-interruption.json",
+        "sha256": "e2ade6b558f5736a35f44f8a752b312dcb8429aae805183f5394e6073477e6a0",
+        "archive_sha256": "e2ade6b558f5736a35f44f8a752b312dcb8429aae805183f5394e6073477e6a0"
+      },
+      {
+        "path": "yandex-200-cosine-artifact-receipt.json",
+        "sha256": "64b80dc454cd762925fdd3f235353f73a7db24304d1ccc35e9b9f249f97b706e",
+        "archive_sha256": "64b80dc454cd762925fdd3f235353f73a7db24304d1ccc35e9b9f249f97b706e"
+      },
+      {
+        "path": "yandex-200-cosine-raw-results.sha256.json",
+        "sha256": "e6f2ac9f11a2993da755cc677ac085506e5e2879e642fb64ad03586eea7e0c0f",
+        "archive_sha256": "e6f2ac9f11a2993da755cc677ac085506e5e2879e642fb64ad03586eea7e0c0f"
+      },
+      {
+        "path": "yandex-200-cosine-standing.json",
+        "sha256": "15fbc5da8bf741e29fe168bb7d335786fdfcfb6574a34e27d29870ab96ff9d6d",
+        "archive_sha256": "15fbc5da8bf741e29fe168bb7d335786fdfcfb6574a34e27d29870ab96ff9d6d"
+      },
+      {
+        "path": "yandex-200-cosine-summary.parquet",
+        "sha256": "b8da52f7744fe7088391063192c87e812a6d4bd617bba9a3c7a719f7185ebb93",
+        "archive_sha256": "b8da52f7744fe7088391063192c87e812a6d4bd617bba9a3c7a719f7185ebb93"
+      },
+      {
+        "path": "yi-128-ip-artifact-receipt.json",
+        "sha256": "5d8ce6b1e219e6b30b5d7a6a6b1d9eb5a8265a1d0dc00ef1b5be65a2c59319a2",
+        "archive_sha256": "5d8ce6b1e219e6b30b5d7a6a6b1d9eb5a8265a1d0dc00ef1b5be65a2c59319a2"
+      },
+      {
+        "path": "yi-128-ip-raw-results.sha256.json",
+        "sha256": "da16dc02d0a34507b3e3c15399dc399df0ebab1beaf70bdce0d80d66486ac394",
+        "archive_sha256": "da16dc02d0a34507b3e3c15399dc399df0ebab1beaf70bdce0d80d66486ac394"
+      },
+      {
+        "path": "yi-128-ip-standing.json",
+        "sha256": "2238620bb02b8549fc13ed46909069cd32006a1081c6216bccf7d9510d92952c",
+        "archive_sha256": "2238620bb02b8549fc13ed46909069cd32006a1081c6216bccf7d9510d92952c"
+      },
+      {
+        "path": "yi-128-ip-summary.parquet",
+        "sha256": "0f802c6a4177b65d34e9eb8f6d3db21eb4a8de3e7a798c16479226236e916406",
+        "archive_sha256": "0f802c6a4177b65d34e9eb8f6d3db21eb4a8de3e7a798c16479226236e916406"
+      }
+    ]
+  }
+}

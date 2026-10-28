@@ -1,0 +1,38 @@
+{
+ "results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_32_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "d14b2bd2d4922fda33c04df09419ae5a125058f21e6b60b9a872a17a9f8bf60a"
+ },
+ "results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_48_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "774773c5d53b43878813813a66fcc3cf5ad54998b0ae1f2b6bba1779cc4bb138"
+ },
+ "results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_64_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "74e19bee28b1e188fef86684bdb2929066643c94e7c8b1da2c7834ad643f6cb7"
+ },
+ "results/celeba-resnet-2048-cosine/hms@12c80decb094/results/celeba-resnet-2048-cosine/100/hms/cosine_96_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "82921a995472eca8441f57dbf990a6866988e9f1fb78901354fa0e0918a08098"
+ },
+ "results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": {
+  "bytes": 16244120,
+  "sha256": "1b4ca09ddc023b9694b40779fd681688dec099f49bc3720854ab2014eec2508f"
+ },
+ "results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": {
+  "bytes": 17868504,
+  "sha256": "e77e0d190f942b21f3ac5fe66734309479aa9f3d378ff6a50730e31169bb1b69"
+ },
+ "results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": {
+  "bytes": 12995352,
+  "sha256": "31ae213709df317b6a7625bf60ed745f701eb36c605096f611ec73665e5310c4"
+ },
+ "results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": {
+  "bytes": 15431928,
+  "sha256": "00acd7f9cbd1ade5bfff6cf54b32b4d58b3a5a58020b4753c6ef98c586a408f1"
+ },
+ "results/celeba-resnet-2048-cosine/ngt-qg/results/celeba-resnet-2048-cosine/100/ngt-qg/cosine_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": {
+  "bytes": 19492888,
+  "sha256": "2e85ffdd7adfd159cb1b7bc48004c14272b3225b4c3281d351a489be691cd7af"
+ }
+}

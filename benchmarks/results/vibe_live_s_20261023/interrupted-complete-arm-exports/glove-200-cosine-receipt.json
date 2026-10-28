@@ -1,0 +1,32 @@
+{
+  "dataset": "glove-200-cosine",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_32_500_8_true.hdf5": "c14201c71faf962ad1d552882c04d0bcbbc1ba701580b3f9e988689ed0de5477",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_48_500_8_true.hdf5": "eb1a63df10b42ac0f5ba7a0d9adad3a80e826bf1efa78247fb2076a5ed0f0e77",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_64_500_8_true.hdf5": "5df1e117f59b28fc526b84f1c97020501fc40966a76d9ca649fffde25fac527a",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/glove-200-cosine/hms@12c80decb094/results/glove-200-cosine/100/hms/cosine_96_500_8_true.hdf5": "3b485451e6bdc0880050b78f47bc414da06fdf6836a80fd620b23c73adb29eb5"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATKTP8B8NTMS8P6083N7R"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "0b250aad847d7144e9b9fd781c1a0621bd656e460cd0a94546a49cc6062c16f5",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/glove-200-cosine/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}
