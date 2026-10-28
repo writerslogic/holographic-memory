@@ -20,6 +20,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Explain npm registry propagation gate
 
 ### Fixed
+- Bootstrap Python docs from the current source layout
 - Synchronize release and OpenAPI versions
 - Preserve guarded final benchmark allocations
 - Enforce provenance semantics and cached status expiry
