@@ -85,8 +85,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Add on-device Qwen3 model stages behind local-models
 - Add quantized graph ANN index and its public benchmark mode
 - Add hms-server HTTP service for the Python SDK
-- Add experimental query-private similarity scoring behind private-search
 - Subset-union bundle experiment and capacity sweep
+- Add experimental query-private similarity scoring behind private-search
 
 ### Changed
 - Clean up memory API, provenance, security and core modules (#214)
@@ -190,16 +190,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Encrypt the document text segment at rest (#111)
 - Windows compaction rename, changelog drift, dependabot npm 404 (#112)
 - Check tenant directories against the canonical tenants root
+- Fail open on arena corruption, checksum the manifests, zeroize the AES key schedule
 - Scrub 256 KiB of stack below the key derivation and locate surviving key copies in the scan test
 - Gate scrub_stack and the AES cipher impl behind the security feature
-- Fail open on arena corruption, checksum the manifests, zeroize the AES key schedule
 - Satisfy clippy 1.99 lints in the qgraph kernels and graph cache
 - Keep greedy decoding at batch 1 unless a batch is set
 - Reserve Modal wave cost before launch so preemption cannot bypass the cap
 - Run HMS model stages on L4 on Modal
 - Decode benchmark data with as_chunks for the current clippy
-- Resolve leftover merge markers in .bestpractices.json
 - Serve SDK queries by exact cosine through the document API
+- Resolve leftover merge markers in .bestpractices.json
 - Return query results best-first on exact-scan, multi-shard and federated paths
 
 ### Performance
@@ -256,12 +256,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Rank unfiltered lexical queries in a per-thread slot table (#154)
 - Round-3 ingest, memory and ANN work with research results (#143)
 - Quantized construction search for the graph build; cache header records it
-- Quantized construction search and owned-input build for the proximity graph
-- Byte visited marks for the unfused block path; close the neighbour-block mechanism
 - Keep the default neighbour loop free of the delta decoder and the cap counter
+- Quantized construction search and owned-input build for the proximity graph
 - Neighbour cap for the per-row search, lint fixes, x86 paired rows
-- Unbiasing scale for block codes, sorted candidate pool, delta-coded adjacency
+- Byte visited marks for the unfused block path; close the neighbour-block mechanism
 - Neighbour-block fast-scan codes with evidence fusion and a certified exit for the vertex graph
+- Unbiasing scale for block codes, sorted candidate pool, delta-coded adjacency
 - NEON per-row 1-bit screen kernel with its microbenchmark kill test (screen stays off)
 - Screen exact distances in vertex graph construction with 8-bit bounds
 - Add 4-bit traversal codes, aligned rows, BFS reorder and 3-byte ids to the vertex index
@@ -349,12 +349,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - X86 confirmation of the kernel fix and the build lever on Modal (#80)
 - X86 confirmation of the kernel fix and the build lever on Modal
 - Superiority session, October 16 to 17 (#76)
-- Accept V40 serving row, record the V38 transport and 2C relevance measurements
 - Record the V37 compact-postings serving row and the session handoff
+- Accept V40 serving row, record the V38 transport and 2C relevance measurements
 - Security and privacy matrix harness and first matrix
 - Durability matrix harness and first matrix against SQLite and Lucene
-- Record native benchmark gate checkpoint
 - Checkpoint native harness validation draft
+- Record native benchmark gate checkpoint
 - Establish checked LongMemEval dev answer results
 - Checkpoint final local reader batch and faster validation
 - Preserve dev reader progress and speed pilot audits
@@ -382,8 +382,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Pivot to Zero-Trust Edge Architecture (FHE-Lite, AGPL-3.0, SIMD)
 - Python bindings + PyPI packaging for holographic-vsa (maturin/pyo3)
 - PhaseResonator reusable-index API + clean re-export + doctest (§20 capability)
-- Counting membership store with Poisson z-score readout (4x Bloom capacity)
 - PhaseHVec core type + real Frady/Kent resonator on quantized-phase substrate
+- Counting membership store with Poisson z-score readout (4x Bloom capacity)
 - Real SHA-256 commitment for verifiable phasor mutation (lane 3)
 - Multi-hop reasoning over the phasor memory (retrieve_path)
 - PhaseGraph -- phasor relational memory with relation algebra + retrieval
@@ -393,11 +393,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Trust-anchored provenance verification and sharded ANN persistence
 - Runnable cross-verification of the cogmem C2PA sample
 - Add provenance system with COSE, VCs, C2PA, JUMBF, Sigstore, KERI, CAWG
-- Add sparse Clifford algebra multivector type (CliffordVec)
-- Define HolographicAlgebra trait boundary for future geometric algebra
-- Add research-grade benchmarks, scaling analysis, and visualizations
 - Multi-scale encoding, morphological decomposer, fault-tolerant federation
+- Add research-grade benchmarks, scaling analysis, and visualizations
+- Add sparse Clifford algebra multivector type (CliffordVec)
 - Add Hopfield-Fenchel-Young energy-based associative retrieval
+- Define HolographicAlgebra trait boundary for future geometric algebra
 - Improve SOTA for analogy, planner, and concept synthesis
 - Add cost/total_cost fields to planner N-API types
 - Evidence-weighted multi-hop confidence, ranked results
@@ -424,9 +424,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ### Changed
 - Centralize SDK HTTP client and add CrewAI + Embedchain platforms
 - Consolidate LangChain, LlamaIndex, and Haystack adapters into unified holographic-sdk
-- Extract meaning_ctx() helper shared by structural_query and multi_hop
-- Remove dead self-inverse resonator; move ResonatorConfig to phase_resonator
 - Extract shared wire codec (write/read_lp_str, write/read_deltas)
+- Remove dead self-inverse resonator; move ResonatorConfig to phase_resonator
+- Extract meaning_ctx() helper shared by structural_query and multi_hop
 - Gate experimental VSA modules behind experimental feature
 - Migrate HMS agent identity from did.cose to CAWG ICA
 - Deduplicate RNG pruning, unify patterns, add doc comments
@@ -436,8 +436,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ### Documentation
 - Update changelog [skip ci]
 - State the AGPL-3.0-or-later license in the security policy
-- Update changelog [skip ci]
 - Record algorithm findings and private-search threat models
+- Update changelog [skip ci]
 - Rewrite README to highlight Zero-Trust Enterprise Security and Python SDK
 - State the testing policy explicitly in CONTRIBUTING.md (#66)
 - Sync changelog (#54)
@@ -453,14 +453,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
+- Overnight closeout — queue exhausted, 337 tests green, flag pre-existing §21 bin lint
 - Retract 'info-theoretically impossible' framing; 0.1D Plate is a readout artifact, closing gap to ceiling is open (§22)
 - Block codes also floor (§24); capacity gap is retrieval-vs-information, open not impossible
 - DETERMINISTIC-RESONATOR.md — §20 validation write-up from in-loop 24-seed run
-- Correct resonator-factorize repro command — bin is std-only, no experimental feature
-- §29 confirmed on unseen seeds — 4-bit matches float, 8-16x footprint win; log floor-exploration findings
 - Reproducibility header for resonator-factorize (fixed seeds, correct repro command)
+- Correct resonator-factorize repro command — bin is std-only, no experimental feature
 - Wire deterministic-resonator capability into RESEARCH.md (discoverability + correct citation)
-- Overnight closeout — queue exhausted, 337 tests green, flag pre-existing §21 bin lint
+- §29 confirmed on unseen seeds — 4-bit matches float, 8-16x footprint win; log floor-exploration findings
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -509,8 +509,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Use sort_by_key to satisfy clippy 1.96 unnecessary_sort_by
 - Repair --all-features build (port SCITT to ureq 3 API, drop dead CliffordVec bench, gate provenance example)
 - Allow CDLA-Permissive-2.0 license from webpki-roots via ureq
-- Replace bare unwrap() with expect() or total_cmp in production code
 - Remove dead CliffordVec code and fix clippy warnings
+- Replace bare unwrap() with expect() or total_cmp in production code
 - Perf and safety improvements from audit
 - 5 bugs from audit (deadlock, double-decay, over-count, double-start, stale-used)
 - Cargo fmt
@@ -534,9 +534,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Harden signing-key file perms, zeroize copies, bound JUMBF recursion
 
 ### Assets
+- Simplify logo — strip floating decorative specks, keep the connected graph mark
 - Replace logo with self-contrasting node-graph mark (animated gif + static svg), drop garbled-text variants
 - Static transparent logo from first frame, text removed
-- Simplify logo — strip floating decorative specks, keep the connected graph mark
 
 ### Deps
 - Land 10 Dependabot major bumps with API fixes (#26)
@@ -550,10 +550,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Rotation binding gives relation algebra the current substrate lacks
 - Path-plasticity -- holographic generalization a cache can't do
 - Living-connection-graph slice -- plasticity beats saturation, verifiably
-- #2 involution control disconfirms the self-inverse framing
-- #2 step-1 binding discriminator harness + result
 - #2 density-matched control rules out the confound
+- #2 involution control disconfirms the self-inverse framing
 - #2 hardening RETRACTS the sparse-wins claim (AUC artifact)
+- #2 step-1 binding discriminator harness + result
 - #2 strong baselines HRR + MAP vs sparse permutation
 
 ### Style
