@@ -196,7 +196,9 @@ def _content_text(content: Any, name: str) -> str:
     return "\n".join(text) if text else "[image content omitted by text-only memory method]"
 
 
-def add_facts(payload: Any) -> tuple[str, str, str, list[dict[str, Any]]]:
+def add_facts(payload: Any, *, source_provenance: bool = False) -> tuple[str, str, str, list[dict[str, Any]]]:
+    if type(source_provenance) is not bool:
+        raise ValueError("source_provenance must be a boolean")
     if not isinstance(payload, dict):
         raise ValueError("Add body must be an object")
     request_id = _nonempty(payload.get("request_id"), "request_id")
@@ -216,6 +218,9 @@ def add_facts(payload: Any) -> tuple[str, str, str, list[dict[str, Any]]]:
         text = f"{message['role']}: {content}"
         for part_index, part in enumerate(split_text(text)):
             fact: dict[str, Any] = {"id": fact_id(user_id, request_id, index, part_index), "text": part}
+            if source_provenance:
+                fact["metadata"] = {"aml_request_id": request_id, "aml_message_index": index,
+                                    "aml_part_index": part_index}
             if timestamp is not None:
                 fact["eventTime"] = timestamp
             facts.append(fact)
@@ -248,7 +253,9 @@ def _token(request: Request) -> str | None:
     return request.headers.get("x-api-key")
 
 
-def create_app(hms_url: str, token: str, commit: Any = None) -> FastAPI:
+def create_app(hms_url: str, token: str, commit: Any = None, *, source_provenance: bool = False) -> FastAPI:
+    if type(source_provenance) is not bool:
+        raise ValueError("source_provenance must be a boolean")
     if not token:
         raise ValueError("AML_TOKEN is required")
     client = httpx.AsyncClient(base_url=hms_url, timeout=httpx.Timeout(1800))
@@ -302,7 +309,7 @@ def create_app(hms_url: str, token: str, commit: Any = None) -> FastAPI:
         try:
             import json
 
-            request_id, user_id, session_id, facts = add_facts(json.loads(body))
+            request_id, user_id, session_id, facts = add_facts(json.loads(body), source_provenance=source_provenance)
         except (ValueError, UnicodeDecodeError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         tenant = tenant_for(user_id)

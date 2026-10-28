@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "scope": "Synthetic semantic regression specifications, not measured model performance. Source recording times and literal messages are separate fields. Minimal witness labels are qualitative expectations, not output from the structural selector.",
+  "cases": [
+    {
+      "id": "wrong_parent",
+      "question": "What is the name of Bea's one-year-old child?",
+      "records": [
+        {
+          "id": "parent",
+          "speaker": "Ari",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "My one-year-old is named Kit, Bea."
+        }
+      ],
+      "expected": {
+        "status": "insufficient",
+        "minimal_witnesses": [],
+        "answer_constraint": "Do not bind Ari's first-person child to the addressee Bea."
+      }
+    },
+    {
+      "id": "correct_parent",
+      "question": "What is the name of Ari's one-year-old child?",
+      "records": [
+        {
+          "id": "parent",
+          "speaker": "Ari",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "My one-year-old is named Kit, Bea."
+        }
+      ],
+      "expected": {
+        "status": "supported",
+        "minimal_witnesses": [
+          [
+            "parent"
+          ]
+        ],
+        "answer_constraint": "Kit; the first-person statement belongs to the attested speaker Ari."
+      }
+    },
+    {
+      "id": "relative_event_time",
+      "question": "When did Rina go camping?",
+      "records": [
+        {
+          "id": "dated",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "I took my family camping last week."
+        }
+      ],
+      "expected": {
+        "status": "supported",
+        "minimal_witnesses": [
+          [
+            "dated"
+          ]
+        ],
+        "answer_constraint": "The week before the recording time; no exact day is established."
+      }
+    },
+    {
+      "id": "recording_time_is_not_event_time",
+      "question": "When did Rina go camping?",
+      "records": [
+        {
+          "id": "followup",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "We roasted marshmallows on our camping trip."
+        }
+      ],
+      "expected": {
+        "status": "insufficient",
+        "minimal_witnesses": [],
+        "answer_constraint": "The recording timestamp alone does not date the camping event."
+      }
+    },
+    {
+      "id": "redundant_followup",
+      "question": "When did Rina go camping?",
+      "records": [
+        {
+          "id": "dated",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "I took my family camping last week."
+        },
+        {
+          "id": "followup",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "We roasted marshmallows on our camping trip."
+        }
+      ],
+      "expected": {
+        "status": "supported",
+        "minimal_witnesses": [
+          [
+            "dated"
+          ]
+        ],
+        "answer_constraint": "The follow-up adds activities, not a necessary temporal premise."
+      }
+    },
+    {
+      "id": "planned_event",
+      "question": "Did Rina actually attend the Oslo concert on May 4, 2025?",
+      "records": [
+        {
+          "id": "plan",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "I plan to attend the Oslo concert on May 4, 2025."
+        }
+      ],
+      "expected": {
+        "status": "insufficient",
+        "minimal_witnesses": [],
+        "answer_constraint": "A plan alone does not establish attendance."
+      }
+    },
+    {
+      "id": "explicit_refutation",
+      "question": "Did Rina actually attend the Oslo concert on May 4, 2025?",
+      "records": [
+        {
+          "id": "cancel",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "I cancelled my Oslo concert visit on May 4, 2025 and did not attend."
+        }
+      ],
+      "expected": {
+        "status": "refuted",
+        "minimal_witnesses": [
+          [
+            "cancel"
+          ]
+        ],
+        "answer_constraint": "An explicit nonattendance report answers the question negatively."
+      }
+    },
+    {
+      "id": "duration_binding_missing",
+      "question": "How long did chair order C17 take to arrive?",
+      "records": [
+        {
+          "id": "order",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "I placed chair order C17 on June 2, 2025."
+        },
+        {
+          "id": "arrival",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "Parcel P9 arrived on June 8, 2025."
+        }
+      ],
+      "expected": {
+        "status": "insufficient",
+        "minimal_witnesses": [],
+        "answer_constraint": "The sources do not establish that parcel P9 is order C17."
+      }
+    },
+    {
+      "id": "duration_binding_present",
+      "question": "How long did chair order C17 take to arrive?",
+      "records": [
+        {
+          "id": "order",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "I placed chair order C17 on June 2, 2025."
+        },
+        {
+          "id": "arrival",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "Parcel P9 arrived on June 8, 2025."
+        },
+        {
+          "id": "bridge",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "Parcel P9 contains chair order C17."
+        }
+      ],
+      "expected": {
+        "status": "supported",
+        "minimal_witnesses": [
+          [
+            "order",
+            "arrival",
+            "bridge"
+          ]
+        ],
+        "answer_constraint": "Six days; both dates and the order/parcel association are required."
+      }
+    },
+    {
+      "id": "later_correction",
+      "question": "Did Rina actually attend the Oslo concert on May 4, 2025?",
+      "records": [
+        {
+          "id": "old",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "I attended the Oslo concert on May 4, 2025."
+        },
+        {
+          "id": "correction",
+          "speaker": "Rina",
+          "recorded_at": "2025-06-27T10:00:00Z",
+          "text": "Correction: I did not attend the Oslo concert on May 4, 2025; my earlier attendance report was mistaken."
+        }
+      ],
+      "expected": {
+        "status": "refuted",
+        "minimal_witnesses": [
+          [
+            "correction"
+          ]
+        ],
+        "answer_constraint": "Adding an explicit correction invalidates the earlier positive answer despite unchanged old source bytes."
+      }
+    }
+  ]
+}

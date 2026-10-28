@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "experiment_completed_at": "2026-10-28T02:44:04.973646+00:00",
+  "extracted_at": "2026-10-28T04:31:55.845123+00:00",
+  "status": "rejected_for_promotion",
+  "scope": "Curated record of an exposed development experiment, retained separately from the active adapter. No claimed retrieval or reader improvement; no held-out confirmation was used.",
+  "primary_design": {
+    "questions": 24,
+    "conversations": 3,
+    "selection": "Eight label-free SHA-selected keys per conversation from the previously exposed96; all development, not held-out.",
+    "output_limit": 10,
+    "original_source_owners_indexed": 1451,
+    "preflight_failures": 0,
+    "runtime_errors": 0,
+    "matched_acquisition_pairs": 9,
+    "primary_reader_pairs": 6,
+    "reader": "Same fixed qwen3:14b, nonthinking128, own exact source text plus explicit source-attested speaker and recording time, same isolated runtime for both arms."
+  },
+  "primary_annotated_id_metrics": {
+    "baseline": {
+      "n": 24,
+      "any_at10": 16,
+      "complete_at10": 16
+    },
+    "cached_owned": {
+      "n": 24,
+      "any_at10": 17,
+      "complete_at10": 15
+    },
+    "independent": {
+      "n": 24,
+      "any_at10": 16,
+      "complete_at10": 16
+    },
+    "original100": {
+      "n": 24,
+      "any_at10": 17,
+      "complete_at10": 17
+    },
+    "expanded125": {
+      "n": 24,
+      "any_at10": 17,
+      "complete_at10": 17
+    },
+    "initial_closure": {
+      "n": 24,
+      "any_at10": 17,
+      "complete_at10": 17
+    },
+    "generic": {
+      "n": 24,
+      "any_at10": 17,
+      "complete_at10": 17
+    },
+    "directed": {
+      "n": 24,
+      "any_at10": 17,
+      "complete_at10": 17
+    }
+  },
+  "citation_match_scope": "CSV rows store required citation count and matched count per arm, reproducing aggregate any/complete scores. Full selected-ID lists, source records, prompts and runtime manifests remain in the original experiment archive, identified by hashes below; they are not included in this extraction.",
+  "matched_acquisition": {
+    "n": 9,
+    "generic": {
+      "n": 9,
+      "any_at10": 6,
+      "complete_at10": 6
+    },
+    "directed": {
+      "n": 9,
+      "any_at10": 6,
+      "complete_at10": 6
+    },
+    "paired": {
+      "n": 9,
+      "any_wins": 0,
+      "any_losses": 0,
+      "complete_wins": 0,
+      "complete_losses": 0,
+      "changed": []
+    },
+    "matching_limit": "Matched new anchors, not total materialized records or prompt tokens. No persistent multi-round policy was evaluated."
+  },
+  "semantic_falsification": {
+    "case": "conv-26:31",
+    "question": "When did Melanie go camping in June?",
+    "numerical_gain": "16/24 to17/24 any and complete with no citation-ID losses, unchanged after source expansion or directed acquisition.",
+    "baseline_source": "S8, baseline rank9, already says Melanie took the family camping last week and is recorded June27.",
+    "added_source": "S16, original100 rank67, adds activities, no necessary date or subject binding.",
+    "conclusion": "The added annotated ID does not recover missing temporal support; its inclusion follows a nonminimal proposed AND. No benchmark label is modified or declared erroneous.",
+    "necessity_audit": "Independent blinded qualitative source inspection, frozen before the model deletion results.",
+    "model_source_deletions": "Both qwen3:14b and the single qwen3.5:9b diagnostic approve the undated S16 singleton and reject the dated S8 singleton, contrary to the qualitative source sufficiency judgments.",
+    "counterfactual": "Replacing only this proposed pair with the independently judged sufficient S8 singleton makes both whole and singleton selections16/24. This is post-hoc falsification, not a retuned validated improvement."
+  },
+  "checker_measurements": {
+    "strict_generating_all_minimal_witnesses_v15": "3/12, failed",
+    "reasoning_strict_v16": "6/12, failed",
+    "given_bundle_boolean_v18": "10/12; one false acceptance and one false rejection, failed",
+    "typed_v19_composite": "12/12 post-hoc fit on the same authored controls, not fresh validation",
+    "natural_typed_rule_applications": 0,
+    "natural_bundle_traces": {
+      "source_only_check": 15,
+      "raw_approved": 1,
+      "typed_approved": 1,
+      "typed_veto": 0,
+      "typed_override_approved": 0,
+      "typed_rule_applicable": 0,
+      "owned_scope_verified": 15
+    },
+    "importance": "Sufficiency, source necessity, marginal contribution and validity after new defeaters require separate tests."
+  },
+  "reader_primary": {
+    "n": 6,
+    "results": {
+      "baseline": {
+        "n": 6,
+        "benchmark_correct": 4,
+        "source_grounded": 4,
+        "strict_pass": 4,
+        "abstained": 3,
+        "unsupported_nonabstention": 2,
+        "excessive_abstention": 0
+      },
+      "directed": {
+        "n": 6,
+        "benchmark_correct": 4,
+        "source_grounded": 4,
+        "strict_pass": 4,
+        "abstained": 3,
+        "unsupported_nonabstention": 2,
+        "excessive_abstention": 0
+      }
+    },
+    "identical_sources_and_answers_on_all_pairs": true,
+    "scope": "Independent blinded model-assisted qualitative review, exposed development; not the earlier54-question score or official AML."
+  },
+  "reader_changed_case_posthoc": {
+    "n": 1,
+    "selection": "Every directed ID list unequal to baseline, without gold or outcome selection; separate from primary six.",
+    "results": {
+      "directed": {
+        "n": 1,
+        "benchmark_correct": 0,
+        "source_grounded": 0,
+        "strict_pass": 0,
+        "abstained": 0,
+        "unsupported_nonabstention": 1,
+        "excessive_abstention": 0
+      },
+      "baseline": {
+        "n": 1,
+        "benchmark_correct": 0,
+        "source_grounded": 0,
+        "strict_pass": 0,
+        "abstained": 1,
+        "unsupported_nonabstention": 0,
+        "excessive_abstention": 1
+      }
+    },
+    "baseline_answer": "unknown",
+    "directed_answer": "2023-06-27T10:37:00+00:00",
+    "finding": "Both selected sets already contain the relative-time statement. Baseline excessively abstains; candidate substitutes the recording timestamp for event time and makes an unsupported assertion. Neither is correct."
+  },
+  "newer_verifier_diagnostic": {
+    "model": "qwen3.5:9b-q4_K_M",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "summary": {
+      "n": 8,
+      "old14b_correct": 4,
+      "new_configuration_correct": 5,
+      "new_false_positives": 1,
+      "new_false_negatives": 1,
+      "invalid_or_failed": 1
+    },
+    "scope": "Six known authored contrasts plus two exposed natural source-deletion contrasts. One cold-load timeout retained and charged; no retry. Different model and inherited configuration, not weights alone. Not a semantic gate, new natural method, or adoption."
+  },
+  "lessons": [
+    "A sufficient evidence union can contain a redundant member. Verify necessity and marginal contribution independently.",
+    "A benchmark citation hit does not establish additional answer support.",
+    "Recording time is an anchor for interpreting relative expressions; it is not an event date by itself.",
+    "A source addressee does not identify the speaker or the owner of a first-person assertion.",
+    "Previously approved evidence can lose validity when a later correction is observed.",
+    "A bounded exact selector can enforce supplied witness constraints; it cannot certify those constraints or corpus completeness."
+  ],
+  "selector_extraction": {
+    "module": "evidence_selection.py",
+    "derived_from": [
+      "evidence_proofs_v13.py: constants and ID/bitmask helpers",
+      "requirement_exchange_v14.py: whole-witness claim-preserving selection"
+    ],
+    "runtime_integration": false,
+    "tests": "Adapted structural boundary and exhaustive-oracle tests; original capsule-only comparison removed, redundant-witness limitation retained as a regression.",
+    "guarantee": "Exact within unions of at most one witness per claim followed by baseline fill, under the declared state/transition caps. Not arbitrary-subset global optimization or a semantic guarantee."
+  },
+  "semantic_fixture_scope": "semantic_cases.json contains synthetic known regression specifications. The structural tests do not establish that HMS or any model solves them.",
+  "source_archive_sha256": {
+    "answer-eval-directed-evidence-followup-v21-20261027.json": "401d16745b6ca4ff82d69ff19af4308e9b1321df65ac0718aac542940e9d6d7f",
+    "answer-eval-directed-evidence-v19-20261027-protocol.json": "050298067c6ed3ae16102578e9adf49705a582bae93a881beda2a492b2b798d7",
+    "answer-eval-directed-evidence-v19-20261027.json": "ab80a0604c053ae556168cce3131dd1344867eaefba23d98ce4d4ec66e04724e",
+    "answer-eval-directed-evidence-v19-20261027-analysis.json": "b125a2eb2160991229ed85f29bdef60b1c30f1cbe6e1d40fd178863185354903",
+    "answer-eval-semantic-attribution-v20-20261027.json": "482eaca01fcff566c8d0b976d08ac6bacf402689938e1207efc9a2250fbcebc1",
+    "reader-blind-review-v19-20261027.json": "08b013504e53970017c311016cbc04b6abfbf610b721f49b9c4ae0dd688f9111",
+    "reader-changed-blind-review-v20-20261027.json": "b1d5ab12598fbb41282af1a378294c2f474a3f00a446d25f805181178be3946b",
+    "answer-eval-verifier-contingency-v21-20261027.json": "7ea88f48b467d75dbbfce05466d0d71f77d3d571a0e76760de92e3ecf6c5640c",
+    "evidence_proofs_v13.py": "73f9c4c159158fd095b81691ae658d312e803942a0e3aee2d89f4e5649e9c34b",
+    "requirement_exchange_v14.py": "1babd3685d400bbe3a6b6cda7d7a85992ffaa498d66112cf3f9ffd34675c9b47",
+    "test_requirement_exchange_v14.py": "5c91f609d0a7e9177a7b622338f7cad27530cef4d6fb7981e51ea0604a13253b"
+  },
+  "per_question_citation_matches_file": "citation_matches.csv",
+  "per_question_citation_matches_sha256": "c6d678421ed3eba70cd0cadfbfd528e082e26199d5777beada17e69bb54530bd"
+}

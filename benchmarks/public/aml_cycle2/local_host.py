@@ -108,7 +108,8 @@ async def serve(args: argparse.Namespace) -> None:
                 await asyncio.sleep(0.2)
             else:
                 raise RuntimeError("native memory engine did not become ready")
-        app = create_app(f"http://127.0.0.1:{args.native_port}", token)
+        app = create_app(f"http://127.0.0.1:{args.native_port}", token,
+                         source_provenance=args.source_provenance)
         server = uvicorn.Server(uvicorn.Config(
             app, host="127.0.0.1", port=args.adapter_port,
             access_log=False, log_level="warning", timeout_graceful_shutdown=1800,
@@ -151,6 +152,8 @@ def main() -> None:
     parser.add_argument("--binary-sha256", required=True)
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--token-file", type=Path, required=True)
+    parser.add_argument("--source-provenance", action="store_true",
+                        help="store request/message/chunk provenance; use only with a fresh data directory")
     parser.add_argument("--native-port", type=int, default=8777)
     parser.add_argument("--adapter-port", type=int, default=8000)
     args = parser.parse_args()

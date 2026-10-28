@@ -13,6 +13,7 @@ import unittest
 
 import httpx
 
+from adapter import tenant_for
 from local_host import private_data_dir, private_token, verified_binary
 
 
@@ -55,6 +56,12 @@ class LocalHostTests(unittest.TestCase):
                 verified_binary(binary, "0" * 64)
 
     def test_add_reopen_search_and_auth(self) -> None:
+        self._exercise_lifecycle(source_provenance=False)
+
+    def test_provenance_persists_and_retries_after_reopen(self) -> None:
+        self._exercise_lifecycle(source_provenance=True)
+
+    def _exercise_lifecycle(self, *, source_provenance: bool) -> None:
         native = os.environ.get("HMS_QUERY_TEST_BINARY")
         if not native:
             self.skipTest("set HMS_QUERY_TEST_BINARY to run native lifecycle")
@@ -74,6 +81,8 @@ class LocalHostTests(unittest.TestCase):
                 "--data-dir", str(stores), "--token-file", str(token_file),
                 "--native-port", str(native_port), "--adapter-port", str(adapter_port),
             ]
+            if source_provenance:
+                command.append("--source-provenance")
             base = f"http://127.0.0.1:{adapter_port}"
             headers = {"Authorization": "Bearer synthetic-private-token"}
             add = {
@@ -96,6 +105,21 @@ class LocalHostTests(unittest.TestCase):
                 process.terminate()
                 self.fail("local host did not become ready")
 
+            def assert_native_metadata() -> None:
+                response = httpx.post(f"http://127.0.0.1:{native_port}/api/v1/memory/recall",
+                    json={"query": "sapphire key", "k": 10},
+                    headers={"X-Tenant-ID": tenant_for("alice")}, timeout=30)
+                self.assertEqual(response.status_code, 200, response.text)
+                rows = response.json()["results"]
+                self.assertEqual(len(rows), 1)
+                metadata = rows[0]["metadata"]
+                if source_provenance:
+                    self.assertEqual({key: metadata[key] for key in (
+                        "aml_request_id", "aml_message_index", "aml_part_index")},
+                        {"aml_request_id": "r1", "aml_message_index": 0, "aml_part_index": 0})
+                else:
+                    self.assertNotIn("aml_request_id", metadata)
+
             process = launch()
             try:
                 self.assertEqual(httpx.post(base + "/add", json=add).status_code, 401)
@@ -104,16 +128,20 @@ class LocalHostTests(unittest.TestCase):
                 response = httpx.post(base + "/search", json=search, headers=headers, timeout=30)
                 self.assertEqual(response.status_code, 200, response.text)
                 self.assertEqual(len(response.json()["data"]), 1)
+                assert_native_metadata()
             finally:
                 process.terminate()
                 self.assertEqual(process.wait(timeout=45), 0)
 
             process = launch()
             try:
+                response = httpx.post(base + "/add", json=add, headers=headers, timeout=30)
+                self.assertEqual(response.status_code, 200, response.text)
                 response = httpx.post(base + "/search", json=search, headers=headers, timeout=30)
                 self.assertEqual(response.status_code, 200, response.text)
                 self.assertEqual(len(response.json()["data"]), 1)
                 self.assertIn("sapphire key", response.json()["data"][0]["content"])
+                assert_native_metadata()
                 other = httpx.post(base + "/search", json=search | {"user_id": "bob"}, headers=headers, timeout=30)
                 self.assertEqual(other.json(), {"data": []})
             finally:
