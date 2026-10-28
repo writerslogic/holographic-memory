@@ -9,6 +9,7 @@ point at a page that does not exist.
 """
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -154,7 +155,17 @@ class Pyo3StubTests(unittest.TestCase):
                 path = tree / relative
                 path.parent.mkdir(parents=True)
                 path.write_text(source)
-                stub = docs_pyo3_stub.write(tree, tree / "output")
+                hook = tree / "scripts" / "docs_site.py"
+                hook.parent.mkdir()
+                hook.write_bytes((ROOT / "scripts" / "docs_site.py").read_bytes())
+                result = subprocess.run(
+                    [sys.executable, "-I", "-c",
+                     "import runpy, sys; sys.path.insert(0, sys.argv[1]); runpy.run_path(sys.argv[2])",
+                     str(ROOT / "scripts"), str(hook)],
+                    capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                stub = tree / ".docs-gen" / "pyi" / "holographic_memory" / "__init__.py"
                 self.assertEqual(stub.read_text(), expected)
 
     def test_the_real_module_is_described(self):

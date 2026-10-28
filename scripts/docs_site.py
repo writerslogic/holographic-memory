@@ -318,5 +318,6 @@ def on_post_build(config):
 # the stub package for the PyO3 module is written as soon as this hook is loaded.
 import docs_pyo3_stub  # noqa: E402
 
-if (Path(__file__).resolve().parents[1] / "src" / "python.rs").is_file():
-    docs_pyo3_stub.write(Path(__file__).resolve().parents[1], Path(__file__).resolve().parents[1] / ".docs-gen" / "pyi")
+_root = Path(__file__).resolve().parents[1]
+if any((_root / relative).is_file() for relative in ("src/bindings/python/mod.rs", "src/python.rs")):
+    docs_pyo3_stub.write(_root, _root / ".docs-gen" / "pyi")
