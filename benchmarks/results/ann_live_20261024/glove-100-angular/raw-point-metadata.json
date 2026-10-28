@@ -1,0 +1,1346 @@
+[
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 29749.600849440623,
+    "recall_at_10": 0.5351600000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 30247.769983607966,
+    "recall_at_10": 0.5351600000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 6057.964772469427,
+    "recall_at_10": 0.86725
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 6662.214922661007,
+    "recall_at_10": 0.86725
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 548.4077975478508,
+    "recall_at_10": 0.9822900000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 630.777724747229,
+    "recall_at_10": 0.9822900000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 24992.649928644423,
+    "recall_at_10": 0.60903
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 25794.75163434869,
+    "recall_at_10": 0.60903
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 4685.848578740123,
+    "recall_at_10": 0.88927
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 4888.3995404724665,
+    "recall_at_10": 0.88927
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 20567.472012318012,
+    "recall_at_10": 0.65755
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 19110.10935347905,
+    "recall_at_10": 0.65755
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 3209.484325896832,
+    "recall_at_10": 0.91572
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 3675.3236727404424,
+    "recall_at_10": 0.91572
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 13816.168027211332,
+    "recall_at_10": 0.7199099999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 15537.457413078597,
+    "recall_at_10": 0.7199099999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 2498.0387588422614,
+    "recall_at_10": 0.9303800000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 2878.5236453852767,
+    "recall_at_10": 0.9303800000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 11434.868368141177,
+    "recall_at_10": 0.75808
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 12182.311311301426,
+    "recall_at_10": 0.75808
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 12943.501114498478,
+    "recall_at_10": 0.77248
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 13006.15034069675,
+    "recall_at_10": 0.77248
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 1677.2069658146095,
+    "recall_at_10": 0.94827
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 1920.071926522516,
+    "recall_at_10": 0.94827
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 9753.478581574005,
+    "recall_at_10": 0.78462
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 11707.136257951428,
+    "recall_at_10": 0.78462
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 8039.600885940439,
+    "recall_at_10": 0.79548
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 11286.515717096569,
+    "recall_at_10": 0.79548
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 10949.081325364108,
+    "recall_at_10": 0.80434
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 10851.83302221308,
+    "recall_at_10": 0.80434
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 1233.2256784373947,
+    "recall_at_10": 0.95935
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 1504.5426073591264,
+    "recall_at_10": 0.95935
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 8617.122011781632,
+    "recall_at_10": 0.8330299999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 8770.199374797436,
+    "recall_at_10": 0.8330299999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 898.3796560414876,
+    "recall_at_10": 0.97224
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_32_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 985.9038426989487,
+    "recall_at_10": 0.97224
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 28683.689163562456,
+    "recall_at_10": 0.60668
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 28753.08144333572,
+    "recall_at_10": 0.60668
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 4840.691732492341,
+    "recall_at_10": 0.9070199999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 5159.52148107144,
+    "recall_at_10": 0.9070199999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 488.47048638584454,
+    "recall_at_10": 0.9951399999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 553.0004759625716,
+    "recall_at_10": 0.9951399999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 22630.82327816683,
+    "recall_at_10": 0.67628
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 22534.441241163368,
+    "recall_at_10": 0.67628
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 3791.3176441045985,
+    "recall_at_10": 0.92585
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 4093.3557082021725,
+    "recall_at_10": 0.92585
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 18937.87616772848,
+    "recall_at_10": 0.7214400000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 19245.726808492283,
+    "recall_at_10": 0.7214400000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 2658.0046751889445,
+    "recall_at_10": 0.94815
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 2932.2798025517654,
+    "recall_at_10": 0.94815
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 14380.059998285762,
+    "recall_at_10": 0.77796
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 14348.222611898787,
+    "recall_at_10": 0.77796
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 2048.8830806129185,
+    "recall_at_10": 0.96074
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 2268.711265266038,
+    "recall_at_10": 0.96074
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 11645.186824512202,
+    "recall_at_10": 0.8123799999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 11817.763792590455,
+    "recall_at_10": 0.8123799999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 10615.462373140625,
+    "recall_at_10": 0.8252900000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 10691.665438854172,
+    "recall_at_10": 0.8252900000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 1410.7559078773872,
+    "recall_at_10": 0.9751
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 1567.4981989465487,
+    "recall_at_10": 0.9751
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 9838.529853926952,
+    "recall_at_10": 0.83651
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 9781.852969395793,
+    "recall_at_10": 0.83651
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 9203.759180051453,
+    "recall_at_10": 0.8444499999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 9133.784124264466,
+    "recall_at_10": 0.8444499999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 8635.201728726908,
+    "recall_at_10": 0.8527799999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 8704.654868016987,
+    "recall_at_10": 0.8527799999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 1075.874072141901,
+    "recall_at_10": 0.98289
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 1209.0790005233198,
+    "recall_at_10": 0.98289
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 6708.041117279695,
+    "recall_at_10": 0.87768
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 6880.536203285587,
+    "recall_at_10": 0.87768
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 722.898622333339,
+    "recall_at_10": 0.99017
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_48_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 827.9933541076035,
+    "recall_at_10": 0.99017
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 24365.103846258855,
+    "recall_at_10": 0.65298
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 24043.442445810157,
+    "recall_at_10": 0.65298
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 4079.0452730510865,
+    "recall_at_10": 0.9293699999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 4238.01317265752,
+    "recall_at_10": 0.9293699999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 408.80716162640596,
+    "recall_at_10": 0.99796
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 454.9225966366585,
+    "recall_at_10": 0.99796
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 18671.673909540204,
+    "recall_at_10": 0.7186899999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 19190.629575402636,
+    "recall_at_10": 0.7186899999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 3168.181855262804,
+    "recall_at_10": 0.94479
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 3322.4141506524024,
+    "recall_at_10": 0.94479
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 15649.477119988538,
+    "recall_at_10": 0.75708
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 15878.625527072343,
+    "recall_at_10": 0.75708
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 2214.5131119610787,
+    "recall_at_10": 0.96517
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 2395.187313028749,
+    "recall_at_10": 0.96517
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 11808.238422416573,
+    "recall_at_10": 0.80874
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 11654.16264353045,
+    "recall_at_10": 0.80874
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 1714.6667003524788,
+    "recall_at_10": 0.97561
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 1855.5662710108072,
+    "recall_at_10": 0.97561
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 9676.459622973027,
+    "recall_at_10": 0.8402
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 9764.748089388695,
+    "recall_at_10": 0.8402
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 9098.139116386135,
+    "recall_at_10": 0.85196
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 8999.765902886389,
+    "recall_at_10": 0.85196
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 1174.5861284207342,
+    "recall_at_10": 0.9861700000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 1293.542722798281,
+    "recall_at_10": 0.9861700000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 8363.050517618158,
+    "recall_at_10": 0.86155
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 8301.911141944673,
+    "recall_at_10": 0.86155
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 7769.393549610854,
+    "recall_at_10": 0.87084
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 7729.435552531658,
+    "recall_at_10": 0.87084
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 7257.764154642504,
+    "recall_at_10": 0.87842
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 7190.4318300808445,
+    "recall_at_10": 0.87842
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 901.3818919313707,
+    "recall_at_10": 0.9912599999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 992.3038620179645,
+    "recall_at_10": 0.9912599999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 5650.445199638635,
+    "recall_at_10": 0.90116
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 5763.860192683671,
+    "recall_at_10": 0.90116
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 610.3811201643446,
+    "recall_at_10": 0.9956200000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/hms/angular_build_ef_500_code_bits_8_degree_64_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 680.1940660272019,
+    "recall_at_10": 0.9956200000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_11_35.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 10866.821392355016,
+    "recall_at_10": 0.8122199999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_12_35.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 10171.72576745007,
+    "recall_at_10": 0.82125
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_13_35.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 9747.750498914324,
+    "recall_at_10": 0.82988
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_14_40.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 9300.177963324388,
+    "recall_at_10": 0.83696
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_15_40.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 8859.808030282547,
+    "recall_at_10": 0.8436600000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_16_40.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 8469.606232241418,
+    "recall_at_10": 0.85036
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_17_45.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 7994.758989973347,
+    "recall_at_10": 0.8560700000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_1_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 28668.102929757988,
+    "recall_at_10": 0.42184
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_20_45.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 7057.26486364431,
+    "recall_at_10": 0.8707900000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_20_55.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 7050.636847917994,
+    "recall_at_10": 0.8708
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_25_55.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 5896.7955614997245,
+    "recall_at_10": 0.88918
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_25_70.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 5883.273595456209,
+    "recall_at_10": 0.88918
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_2_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 23869.46386946387,
+    "recall_at_10": 0.5579500000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_30_70.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 5038.854876480717,
+    "recall_at_10": 0.90263
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_40_90.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 3974.457292320993,
+    "recall_at_10": 0.92296
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_4_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 19061.40517910923,
+    "recall_at_10": 0.67803
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_50_100.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 3301.880360935336,
+    "recall_at_10": 0.93725
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_60_120.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 2797.6572619323874,
+    "recall_at_10": 0.94727
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_70_140.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 2432.7753803343103,
+    "recall_at_10": 0.95527
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_8_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 13270.804132192181,
+    "recall_at_10": 0.7740400000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1000_0_2_1_dot_product_9_25.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1000 avq_threshold=0.20 dims_per_block=1",
+    "qps": 12438.004274994604,
+    "recall_at_10": 0.78835
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_120_210.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 4847.981038532414,
+    "recall_at_10": 0.9275100000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_16_32.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 17780.008478168715,
+    "recall_at_10": 0.6561899999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_180_270.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 3506.809439372546,
+    "recall_at_10": 0.9492100000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_1_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 30334.837911315,
+    "recall_at_10": 0.36426
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_210_330.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 3066.7777177969087,
+    "recall_at_10": 0.96007
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_25_50.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 13981.404812668088,
+    "recall_at_10": 0.74005
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_260_400.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 2509.5261144713295,
+    "recall_at_10": 0.96939
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_320_500.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 2070.2387921895956,
+    "recall_at_10": 0.9774800000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_36_72.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 11494.802500500155,
+    "recall_at_10": 0.8002
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_400_600.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 1697.863490415883,
+    "recall_at_10": 0.9835900000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_49_98.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 9237.220348777797,
+    "recall_at_10": 0.8434100000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_4_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 25654.8202671847,
+    "recall_at_10": 0.55086
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_500_700.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 1388.1351246634704,
+    "recall_at_10": 0.98795
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_70_150.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 7187.528810579331,
+    "recall_at_10": 0.88954
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_800_900.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 902.5582335964723,
+    "recall_at_10": 0.99267
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_90_200.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 5976.112386084162,
+    "recall_at_10": 0.9159700000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1400_0_15_3_dot_product_9_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1400 avq_threshold=0.15 dims_per_block=3",
+    "qps": 21486.211452232503,
+    "recall_at_10": 0.61615
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_100_100.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 2443.8163982062265,
+    "recall_at_10": 0.9574999999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_10_25.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 13319.661081431092,
+    "recall_at_10": 0.77518
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_12_25.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 12060.05899626982,
+    "recall_at_10": 0.79606
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_13_25.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 11549.774294555174,
+    "recall_at_10": 0.8048
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_14_27.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 10875.186847007792,
+    "recall_at_10": 0.8125199999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_15_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 10515.592736593717,
+    "recall_at_10": 0.81981
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_17_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 9680.582399234841,
+    "recall_at_10": 0.8323600000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_18_40.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 9401.764731726167,
+    "recall_at_10": 0.83783
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_1_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 25168.67309379422,
+    "recall_at_10": 0.39732
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_20_40.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 8653.168234982715,
+    "recall_at_10": 0.8476800000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_22_40.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 8226.488589369299,
+    "recall_at_10": 0.85671
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_25_50.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 7331.958413992432,
+    "recall_at_10": 0.8680199999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_2_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 22248.65981962599,
+    "recall_at_10": 0.53077
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_30_50.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 6669.175774106551,
+    "recall_at_10": 0.88324
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_35_55.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 5845.387467862454,
+    "recall_at_10": 0.89487
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_4_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 18875.890340555965,
+    "recall_at_10": 0.6486799999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_50_60.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 4425.280637835707,
+    "recall_at_10": 0.9202199999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_60_60.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 3791.746073761564,
+    "recall_at_10": 0.9312400000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_80_80.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 3028.2668291636915,
+    "recall_at_10": 0.9469799999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_8_25.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 14658.530618521392,
+    "recall_at_10": 0.74724
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/1500_0_55_1_dot_product_8_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=1500 avq_threshold=0.55 dims_per_block=1",
+    "qps": 14518.708877024304,
+    "recall_at_10": 0.74754
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_110_120.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 4884.56822393598,
+    "recall_at_10": 0.9465899999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_130_150.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 4259.949394169208,
+    "recall_at_10": 0.9568
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_150_200.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 3754.241228767004,
+    "recall_at_10": 0.9643499999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_170_200.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 3404.670652023477,
+    "recall_at_10": 0.96879
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_1_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 23888.469323710295,
+    "recall_at_10": 0.37599
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_200_300.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 2899.2609563245624,
+    "recall_at_10": 0.97568
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_220_500.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 2562.2887631865988,
+    "recall_at_10": 0.9790800000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_250_500.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 2320.134436348041,
+    "recall_at_10": 0.98263
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_2_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 22547.439459889807,
+    "recall_at_10": 0.50169
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_30_120.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 10388.89395278424,
+    "recall_at_10": 0.8661300000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_310_300.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 2018.4553525637987,
+    "recall_at_10": 0.98652
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_35_100.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 9811.102022217705,
+    "recall_at_10": 0.8766
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_400_300.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 1635.2652093691488,
+    "recall_at_10": 0.9909800000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_40_80.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 9454.85251927408,
+    "recall_at_10": 0.88264
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_45_80.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 8900.015341546756,
+    "recall_at_10": 0.89018
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_4_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 20911.691650188808,
+    "recall_at_10": 0.61166
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_500_500.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 1317.7762387730477,
+    "recall_at_10": 0.9948
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_50_80.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 8295.89309872861,
+    "recall_at_10": 0.8970800000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_55_95.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 7650.756775372258,
+    "recall_at_10": 0.9064
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_60_110.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 7384.423833093836,
+    "recall_at_10": 0.91455
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_65_110.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 6967.5103985961,
+    "recall_at_10": 0.9192600000000001
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_75_110.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 6266.45815843727,
+    "recall_at_10": 0.92692
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_800_1000.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 771.227453207226,
+    "recall_at_10": 0.9984999999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_8_30.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 18521.08751617276,
+    "recall_at_10": 0.6968099999999999
+  },
+  {
+    "file": "results/glove-100-angular/10/scann/2000_0_2_2_dot_product_90_110.hdf5",
+    "algorithm": "scann",
+    "parameters": "scann n_leaves=2000 avq_threshold=0.20 dims_per_block=2",
+    "qps": 5603.898555677792,
+    "recall_at_10": 0.93667
+  }
+]

@@ -1,0 +1,42 @@
+{
+ "results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_32_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "756b22914013affa161fef60236d56c0033510c74719fd664449df444ca4ee0e"
+ },
+ "results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_48_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "7f002e722e22e20e8f97cb0d9c241188492dc34405b69ae7264ecb990baa7827"
+ },
+ "results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_64_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "2ac3793f4a36a43f74b010eeba47d997f45f8c3bb8bd3cc3ef2d86884a8fe81a"
+ },
+ "results/yi-128-ip/hms@12c80decb094/results/yi-128-ip/100/hms/ip_96_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "15a0ee05a335112c1917151181806c335218c90fee98b014fddcc2b7eaf0d904"
+ },
+ "results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_16_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "a8675f18c6102ef9d9d458ca5f0faab31d5ded52b3146e060a27338975b33e39"
+ },
+ "results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_24_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "62b7ad65964a81b7b33e2fb4930294a26189a69888712f71b4d066cb049fe2d5"
+ },
+ "results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_32_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "a1a52d79b7e5bbe8fc878f3a42ab8d51f62f8f240d88c080969d0bbbdd5bf1d6"
+ },
+ "results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_48_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "c930b7f1d22e55ba9f66a054530a9b658ef8c1313247f2c6993678489955a066"
+ },
+ "results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_64_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "2fb1d325bdfc5b60cf9027297fdf7b597ae8cd54582c7b6a32bedaadb938da53"
+ },
+ "results/yi-128-ip/roargraph/results/yi-128-ip/100/roargraph/ip_100_96_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "544d1a579ac907fc535045f985fc7edceb9b7e1e3771a09aeeb1464c2ed096ea"
+ }
+}

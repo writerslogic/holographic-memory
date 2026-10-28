@@ -1,0 +1,51 @@
+{
+  "dataset": "landmark-nomic-768-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    },
+    "ngt-qg": {
+      "done": true,
+      "expected": 101,
+      "markers": 101,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 101
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "a4a36fb5d0bacc5cf38ce827d70830b6b49c0602185227c9ec990160835a5381",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "abe8a0b69cfdf43d63ecae6212e81ccc54d563f29460f42358283a012fdf3b63",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "e94d9792860dea02acae9b0837361aa71fd30cd248347c81a0bc1e59c398fd20",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/hms@12c80decb094/results/landmark-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "6c5ad78712f345fe34aee4efe4946a5e1f16aebe2d4fa551ce41265ea8636b3f"
+    },
+    "ngt-qg": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": "ae99dc4a0c819f4d6cc1d1127863a728e1ee4bdebff090d41e7d1406bf94b2c0",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": "28c37623b4f771fcb0a9bf94028b288fd47ad99321e7bacba520d37e98ab019c",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": "58fb240e4542b2f2be2f0d76e19cd034906504493722fd456de2144201efd304",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": "2160c1549d49602bcbbbc31d718a3c9acc9d7c66ed4ed623e16c61b80723b10c",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/landmark-nomic-768-normalized/ngt-qg/results/landmark-nomic-768-normalized/100/ngt-qg/normalized_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": "b12c359cea5f2c650e9bebd3619769456c5281dfa990e9721215c77e0a8de00a"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATN6HDQ0YTRZ5XZRNPCSR",
+      "ta-01M5PDWQVEXHTNJSV6WPESQA3R"
+    ],
+    "ngt-qg": [
+      "ta-01M5PDWQVEXHTNJSV6WPESQA3R"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "069084c20453e997d3830d853b3432dbc4b3c5d1187939980e3d5a7d75c09903",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/landmark-nomic-768-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 281,
+  "same_as_prior_official_points": false
+}

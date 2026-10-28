@@ -1,0 +1,162 @@
+{
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "9fd9601826c7ae927ba95b9903db83e649b5fe608184756bd0d3f7ca9396e6e4"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "494da22a9fbb89001186cc3047e85179e098a28cbc431f890331101b96b83a92"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "f03297da734127eb6fee6bff8223df4007281770bf6a469fe975bb0f94db744f"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_16_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "93b3724b7feb738858e6737fff44794e819f8c83bbbfd9a31d1f4017af530190"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "18a2d6bceb494de574ec110acfd150e6bc5b75ec452afba0ffaf516a6d6d427d"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "4db6f7134a48f5434f5684a392d7772e89c79a06192b95d20387f6d3c306783c"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "9d55edef86ac4f503e59901899cea85a7458632a3cc18c7cb6b026b7b0872470"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_32_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "9883d5b845e1b57957fe12207fc0b187debe071147b9036869c8dd00d9f48c32"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "13a4c6d37e0b03e7d51bdd01ec2719d88f8887216d96a3242171b8e958123d69"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "dc724a5c95042b4e9f7c258acd0303934688bfd33678798f37b4619200177e03"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "e5a9c1aeb73c1b8629684114bcd66acd7e503067fe1dc0acd36f6d015cab4df8"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_48_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "c4d6d824145cd5107fdfe8dcd7e986dea941b268b1284453cfe41635e28abee2"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "d6b61ed89ad91f7f37cefeb1074df06552d0ee4d14eb6416c350c8d101ca8a1b"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "1874a2831a81efb489aa951c5cbafd9e318e3296d77ae24588322c7fd408b173"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "a4259c84a6d2db774190fd809789a7a4767c63580330521c154c5c62aaa7131c"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_64_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "b855fa5d98fc42743b5e4697b9df980bee304fecec5a7b65702e07ce80197108"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "8dde88af524c379d0abf88d523706db692cdc50b55b4f8a6deb95e9423fdaab7"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "4eeabe8c7ac634e35fb51a569115bef166ba3da0bdc365231d69d4bdcdd125ee"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "2b2900e10c8531d3dd9069af6c13554a884b250086bcf3ca0f9c159d2a82466a"
+ },
+ "results/coco-nomic-768-normalized/glass/results/coco-nomic-768-normalized/100/glass/normalized_400_8_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "e689ae36936cb8149ebb5b693e3d62e88607d61e87ed030b6ce2e7e5e4ce10bf"
+ },
+ "results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "a14c2b2064f879e1ea2b2a5d7c4fc9ca49690919cac3273b8293b03f3b60ca68"
+ },
+ "results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "507a62f7682c83e1ce563cd5a334a949ca7d159c98e7268c79338b9be044029f"
+ },
+ "results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "71c8859a3c5baeed9ca56c18d9399219fc7378b44473ac8c54660fefc85334e3"
+ },
+ "results/coco-nomic-768-normalized/hms@12c80decb094/results/coco-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "8fb1414cfa032d5bdaaa7456a246662a76c3d3564df05e268243a4d54fc9b1c7"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_128_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "5dc39e784408490884f1c591487c3ce140ad22f5325072707fa130f3c9f7bf95"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_128_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "0cb2db50ffa9580dd24774ea8d255a0400030dc634ac2c6c685fa2a5cd27f6de"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_256_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "11add0edc837805558a2761cfd9d01fe43855105c7a22513e8201f9920ce3711"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_256_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "1522fac9896cfab85b6d156ecfdde804322e66f0135f2c1bb69e142e34f49e9a"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_384_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "ef77a8c2672a7d666befd39978798828954a89f0fd865b9bcdc469633642a0f5"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_384_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "dbc627ffc5a7f33d0c4b6f810e601e17abc94391d9ddb29e9ac9360a78560693"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_512_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "88f4c0f144d03d5569192b1f9707ee1f1bdf16a7f17ba76177b88bba58c3fca6"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_2048_512_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "c635f3f2c2c3e1a3391ae38c02497ace07086c0df8f339c93d471ffc83f39afb"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_128_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "0e7c0a2fa792ef8b8e4ec3ee9825be5e480b1af82758afa9f6d8da552c7e37f0"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_128_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "ffd064f23e3791c5e0f2f209c6d8b259c3751d759605534b9a158517f802471f"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_256_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "51737fd0dae91b4509be01f29f20380896f4cd53dd06a06cd8d0369529946cef"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_256_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "998519c54b7af910161b62fa948c4a453b1fbf3127e2aad28a02c3295a4ec574"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_384_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "4e5ed5b9401b04ac96993ac1334980ba66cefe8bf5fb7ffb670193ba02d18ec0"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_384_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "fabd64303fef261b010d7988e6d1b5147ebcd0dde3e53e11e5955ef15a1f0636"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_512_32_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "85f347e052e1208d3f43e7644f85b9b6973b8792b022e00d312966a5faeda594"
+ },
+ "results/coco-nomic-768-normalized/lorann/results/coco-nomic-768-normalized/100/lorann/normalized_8_4096_512_64_5.hdf5": {
+  "bytes": 29239192,
+  "sha256": "6823494cf399b5d72b88fb682a1f4fc42210d6655dad03c1bf43c2b9641229fb"
+ }
+}

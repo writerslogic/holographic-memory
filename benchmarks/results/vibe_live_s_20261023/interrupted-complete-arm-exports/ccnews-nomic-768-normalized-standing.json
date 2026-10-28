@@ -1,0 +1,66 @@
+{
+  "dataset": "ccnews-nomic-768-normalized",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:54:30.523068+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATHZNQ0Y3256HHNV659GR"
+    ],
+    "ngt-qg": [
+      "ta-01M5PGP4JKDE7HMXCG7X9VKDGR",
+      "ta-01M5PQN38EGVXVMZ66TVE6B1AR",
+      "ta-01M5PYHHJ1VVKQYCWZ64XR3QVR"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": {
+        "qps": 4297.971966918037,
+        "recall": 0.9836699999999999,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+        "build_time": 856.1746602058411,
+        "index_size": 810632.0
+      },
+      "0.95": {
+        "qps": 4297.971966918037,
+        "recall": 0.9836699999999999,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=80, rerank=400, code_bits=8)|80_400",
+        "build_time": 856.1746602058411,
+        "index_size": 810632.0
+      },
+      "0.99": {
+        "qps": 3530.136102910845,
+        "recall": 0.99074,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=128, rerank=100, code_bits=8)|128_100",
+        "build_time": 856.1746602058411,
+        "index_size": 810632.0
+      }
+    },
+    "ngt-qg": {
+      "0.90": {
+        "qps": 5014.761049475864,
+        "recall": 0.91759,
+        "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.0,1.2)|1_2_1_0",
+        "build_time": 1486.3904466629028,
+        "index_size": 4674164.0
+      },
+      "0.95": {
+        "qps": 4353.329774589538,
+        "recall": 0.9573900000000001,
+        "params": "QG-NGT(20,0.1,10:25,10:25,96,4000,200:2,f96,1:40,0,1.01,1.5)|1_5_1_01",
+        "build_time": 1486.3904466629028,
+        "index_size": 4674164.0
+      },
+      "0.99": {
+        "qps": 3160.552522023492,
+        "recall": 0.99222,
+        "params": "QG-NGT(20,0.06,20:40,20:40,96,4000,2000:2,f96,1:60,0,1.04,2.0)|2_0_1_04",
+        "build_time": 1582.441398382187,
+        "index_size": 5030520.0
+      }
+    }
+  }
+}

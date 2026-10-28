@@ -1,0 +1,32 @@
+{
+  "dataset": "laion-clip-512-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_32_500_8_true.hdf5": "ea08bf758b24c52b539ad06b7d394b6114aec37c89a5b02eb8133a662ac48da5",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_48_500_8_true.hdf5": "778e466d23e771cb73ea7b730d48612715f61dd7108b475a7423081d0bc368bd",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_64_500_8_true.hdf5": "090508a77af99f7aa17d4a20f7137dac22a807b1822d2d28c9bd1affbfd290d8",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/laion-clip-512-normalized/hms@12c80decb094/results/laion-clip-512-normalized/100/hms/normalized_96_500_8_true.hdf5": "c5413e9b15171c23527141775dad8486fea9c801657f975195840abf85926676"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATN6HWJ5THC80W1W65RAR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "f322a9bf4418a435db74d146756678aaecab119c80ec08fca7b0dec3b28e297b",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/laion-clip-512-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

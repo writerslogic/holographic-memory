@@ -1,0 +1,9 @@
+{
+  "dataset": "sift-128-euclidean",
+  "raw_files": 204,
+  "csv": "/vol/ann-live-20261024/sift-128-euclidean/results.csv",
+  "elapsed_s": 35.129197183,
+  "estimated_usd": 0.0015476362981177224,
+  "purpose": "Official data export and hashing only; benchmark query hardware is recorded in manifest",
+  "export_container_id": "ta-01M5PM2RXZY801Z1P7CW413HNR"
+}

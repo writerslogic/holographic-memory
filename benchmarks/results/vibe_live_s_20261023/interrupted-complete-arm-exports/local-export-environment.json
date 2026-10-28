@@ -1,0 +1,35 @@
+{
+  "python": "3.14.7",
+  "packages": {
+    "h5py": "3.16.0",
+    "numpy": "2.5.4",
+    "polars": "2.0.0",
+    "tqdm": "4.70.1",
+    "modal": "1.6.2"
+  },
+  "command": [
+    "uv",
+    "run",
+    "--no-project",
+    "--with",
+    "h5py",
+    "--with",
+    "polars",
+    "--with",
+    "tqdm",
+    "--with",
+    "modal",
+    "python",
+    "-u",
+    "/Volumes/A/hms-coordination/public-bench/vibe-results/export-rescued-complete-arms-20261024.py"
+  ],
+  "official_source_commit": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "exported_complete_datasets": 20,
+  "exported_groups": 5488,
+  "hms_groups": 3600,
+  "truth_transferred_bytes": 19678656,
+  "validation": "All5existing official standing point sets exactly reproduce to1e-9; complete arm group counts,1000queryrows,run_count5 and original marker inventory verified",
+  "partial_arms_excluded_from_metrics": true,
+  "no_native_measurement_repeated": true
+}

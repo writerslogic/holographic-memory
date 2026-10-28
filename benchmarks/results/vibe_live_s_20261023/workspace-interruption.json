@@ -1,0 +1,21 @@
+{
+  "observed_at_utc": "2026-10-24T14:35Z",
+  "state": "provider-interrupted",
+  "app": "ap-y0mN2NRbZ8qFkrm5IEPNV6",
+  "tasks": 0,
+  "all_visible_containers": 0,
+  "root_observation": "Owned AML HTTP health reported workspace disabled; causal reason unknown",
+  "local_launcher_pid": 18081,
+  "local_launcher_remaining_path": "All24spawn calls occurred at original launch; remainingloop only call.get/read/print, no local retry/dispatch",
+  "no_new_functions_launched": true,
+  "retained_live_processes": true,
+  "paused_manual_dispatches": true,
+  "provider_queued_retry_pause_not_claimed": true,
+  "source_evidence": "/Volumes/A/hms-coordination/reports/owned-workspace-disabled-containers.json",
+  "rescue_root": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z",
+  "input_data_policy": "48official input files215211712656bytes retained remotely; inventory+planURLs/digests local; no duplicate dataset download",
+  "rescue_egress_cost": "unknown, separate from CPU/RAM estimates",
+  "unique_artifact_rescue": "complete7461files5590265460bytes,zero failed attempts",
+  "raw_hdf5_rescued": "253files5578205496bytes",
+  "local_completed_arm_export": "20HMS grids+completecomparators5488groups,unchangedofficialfunction"
+}

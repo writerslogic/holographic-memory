@@ -1,0 +1,98 @@
+{
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "2f3d2cbc84007a1137957865c26db4bbf1cd734a7d2e231ec629300f09a1360d"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "80c288c9676359b5d7342a91e4ce4c4d755773c4f6c35a9b2f51f0a9154cee83"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "10dac3ee9268f57770ef42f02a4aa3a12cf484b7f07b0d6ed039700e6fd86864"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_16_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "6c4f07a482a680279f3e36d51e112cc1aa4f9a6ce7cba574713c01a8d2927c6f"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "de11453462e0a4c71858c7588ba2486acdf9f78bcc547567f123fc19393a8d7a"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "b10b5616e11676eeedca674a0cda65c91428df7f928525a270b9c7626b48f227"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "de69dbe8e0bb3ff39e72a57c6c7cc976d890d24841098fb0d5d5895fcc018440"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_32_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "e5337b979bf7513c773e60c1ce61a28e61464c63fad930f9dd832da2e9528327"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "6263baf4b7163b65929cf0f0ce30fee69268f3fa7c9899df72e2de33547f4495"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "53e1209a14c04280db0e6e7836295ca9222a15b9509162fc5e2a4878d23603ee"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "6c37451cc144630cb94ecc8533c3ffc62d124a84c32d545774d4d22c90cdc748"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_48_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "29106d510404836cd2d609b2d8d931c25218ec74fe0397e1cf135f150dfcec65"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "1a79e146e863e5b210ec94b8a7c3ff8a1fc34aa5f0ba340c86d02c0e9755bfb2"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "fc4bf6bef0794aebcd5dbe3aa86d2fd56ed9a319da04bed49545ac2b6fa1dd9b"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "48038a7cef9eca1f1ece301731de8d15d13f9f32c3113f23563d4ca8f51103e9"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_64_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "d3348a745775846a4ad271187d4f871bc86e2b49470265514a56baaecc43ec2c"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ4U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "d0b87a0c07b9c5135928d4ca5b4d6cf399abb87827b06a1d4502c528b5d0dc21"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ4U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "27a150ea06c17cdd5304d3a718f50eb192ff9e25cedf39e23efa6a9b55b463f7"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ8U_FP16.hdf5": {
+  "bytes": 12995352,
+  "sha256": "ee740ac3251300fb76cb54a93a4029e2973de926011a1d142cc26ee8d78f19fb"
+ },
+ "results/yandex-200-cosine/glass/results/yandex-200-cosine/100/glass/cosine_400_8_SQ8U_SQ8U_FP32.hdf5": {
+  "bytes": 12995352,
+  "sha256": "4861f1da56b7070d320fd068615aa7a852949fefd285bc73200f45ed1194657a"
+ },
+ "results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_32_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "77368f046b16bff5de342753842d0d6c439a6ec1c3ab142f2cebc38870429c30"
+ },
+ "results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_48_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "c309137684a3da04969f0d0cf151995181d450fa409a52d9a3a5fe3df5f26eb8"
+ },
+ "results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_64_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "03c681b3cd9f21862301c480144028d6ad8a17cd63dce12d64f30dfe34f30d6b"
+ },
+ "results/yandex-200-cosine/hms@12c80decb094/results/yandex-200-cosine/100/hms/cosine_96_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "3e43f432665bf8da93aaae112bf5f5bc501bef4aeabd433101334a352d9d0f9f"
+ }
+}

@@ -1,0 +1,51 @@
+{
+  "harness_repository": "https://github.com/erikbern/ann-benchmarks",
+  "harness_commit": "2e081ad32c1eccab72dcb739ad886c310b90f715",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "datasets": [
+    "glove-100-angular",
+    "sift-128-euclidean",
+    "fashion-mnist-784-euclidean"
+  ],
+  "dataset_provenance": "Official ann-benchmarks HDF5, SHA-256 in each Volume manifest; pre-split train/test and top-100 exact ground truth; 10,000 test queries for each configured dataset",
+  "preprocessing": "Upstream dataset_transform dense float arrays unchanged; HMS adapter makes C-contiguous float32; angular handling is internal to each algorithm's upstream adapter",
+  "operation_sequence": "Instantiate algorithm, load HDF5 train/test, fit once per build definition, then sweep all configured query arguments over the same index; five passes of all 10,000 test queries per query argument; write results HDF5 and recall metrics outside the query timer",
+  "query_timer": "Upstream runner times the algorithm query call or run_prepared_query call; distance validation and result serialization are outside the timer; best mean per-query time across five passes is reported as QPS",
+  "metrics": [
+    "recall@10 at tenth true distance + 0.001",
+    "QPS",
+    "p50/p95/p99/p999 query latency",
+    "build seconds",
+    "post-fit process RSS delta/index size",
+    "relative distance error",
+    "epsilon recall",
+    "candidates"
+  ],
+  "recall_targets_for_report": [
+    0.9,
+    0.95,
+    0.99
+  ],
+  "official_published_setup": "AWS r6i.16xlarge, 31 parallel Docker containers, hyperthreading disabled, one pinned CPU per algorithm build and query; Docker per-run memory limit=(available-500 MB)/parallelism; default timeout 7200 s per build definition",
+  "this_run": "Modal app ap-7L5mqGLMUK9NEoBmyRpBHk; three separate 8-CPU/32-GiB containers; each upstream --local algorithm runner pinned to CPU 0, math threads=1, 7200 s timeout per build definition; each dataset comparator runs in the same container as HMS",
+  "deviations": [
+    "--local rather than official Docker runner",
+    "Modal CPU model/hardware differs from AWS r6i.16xlarge and varies by dataset",
+    "32-GiB configured cgroup memory limit differs from published AWS per-container memory allocation",
+    "one algorithm definition at a time inside each dataset container rather than 31 parallel Docker workers",
+    "only one historically strongest competitor family per dataset rerun; values within that family's upstream config are not tuned on heldout queries"
+  ],
+  "comparison_scope": "Within-dataset, same-container HMS/comparator comparisons only; no comparison to published AWS QPS, no hardware scaling or official leaderboard standing",
+  "memory_limit_caveat": "Observed cgroup limit does not prove strict enforcement; measured peak usage is unavailable. Official index_size is post-fit process RSS delta.",
+  "heldout_policy": "HMS build/query grid and competitor families were fixed before the live test queries were accessed; no optimization or parameter revision on heldout query results",
+  "source_for_price": "https://modal.com/pricing",
+  "comparator_launcher_correction": {
+    "purpose": "Remove accidental --max-n-algorithms 1 before official main() runs, allowing all upstream build definitions; patched before competitor arms started",
+    "active_entrypoint_sha256": "a8ae755a787ec25c4cd78696658e2766e7cf5da13572b0edfac32c4dbb8958d7",
+    "corrected_source_sha256": "7f61b006e251fa2b16c6761a11b330be04ceb4e8bbef70c84e48552e7a1fc9ee",
+    "durable_entrypoint_archive": {
+      "commit": "3c21bdf14826bf1e05149e5f7287bb52463f4bb7",
+      "path": "benchmarks/results/ann_live_20261024/run-entrypoint-shim.py"
+    }
+  }
+}

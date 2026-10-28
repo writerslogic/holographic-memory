@@ -1,0 +1,32 @@
+{
+  "dataset": "arxiv-nomic-768-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_32_500_8_true.hdf5": "fa5b11aa75056180febc6868322e0c0e30001b2619c31c8472ed224a1b492c68",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_48_500_8_true.hdf5": "ba2781d1dfc14ce3ad504a046eb5b682339e64bbce9bcf1b00fa716565e3cae0",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_64_500_8_true.hdf5": "fe3b69243784f7c10858a7a90d7e85208e036e35606c3ea34d272fcdbf12e6e4",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/arxiv-nomic-768-normalized/hms@12c80decb094/results/arxiv-nomic-768-normalized/100/hms/normalized_96_500_8_true.hdf5": "f0014b3dac54d686153a69a327ed80edf9c9f34e75126dab031d514c6fa4d17a"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PKP35HA4E538A8D193RJJR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "c6baf6b788415bbdf211eb23b269b25a851279c82a88a06dde21d08b1a9e0f32",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/arxiv-nomic-768-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

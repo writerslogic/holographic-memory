@@ -1,0 +1,60 @@
+{
+ "avx512": false,
+ "best_qps_at_recall": {
+  "glass": {
+   "0.90": {
+    "build_time": 571.4705064296722,
+    "index_size": 1231172.0,
+    "params": "Glass(L=400, R=32, efQuery=50, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|50",
+    "qps": 4309.383018081118,
+    "recall": 0.9151500000000001
+   },
+   "0.95": {
+    "build_time": 725.8821291923523,
+    "index_size": 1290612.0,
+    "params": "Glass(L=400, R=48, efQuery=200, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|200",
+    "qps": 3022.0280310759786,
+    "recall": 0.9681500000000001
+   },
+   "0.99": {
+    "build_time": 725.8821291923523,
+    "index_size": 1290612.0,
+    "params": "Glass(L=400, R=48, efQuery=400, quant=SQ8U, search_quant=SQ8U, refine_quant=FP32)|400",
+    "qps": 1691.840912704298,
+    "recall": 0.9905600000000001
+   }
+  },
+  "hms": {
+   "0.90": {
+    "build_time": 1567.4295625686646,
+    "index_size": 801016.0,
+    "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=64, rerank=400, code_bits=8, learn_queries=32768)|64_400",
+    "qps": 6224.2212587394,
+    "recall": 0.9219700000000001
+   },
+   "0.95": {
+    "build_time": 1567.4295625686646,
+    "index_size": 801016.0,
+    "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=160, rerank=400, code_bits=8, learn_queries=32768)|160_400",
+    "qps": 4189.077971885376,
+    "recall": 0.96497
+   },
+   "0.99": {
+    "build_time": 1567.4295625686646,
+    "index_size": 801016.0,
+    "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=400, rerank=100, code_bits=8, learn_queries=32768)|400_100",
+    "qps": 2142.9773394954286,
+    "recall": 0.9926100000000001
+   }
+  }
+ },
+ "container": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+ "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+ "dataset": "yandex-200-cosine",
+ "flags_sha": "ec7ab2242885",
+ "generated": "2026-10-24T12:17:59Z",
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "k": 100,
+ "nproc": 8,
+ "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}

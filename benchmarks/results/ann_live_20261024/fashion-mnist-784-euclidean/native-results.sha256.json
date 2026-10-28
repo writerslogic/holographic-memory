@@ -1,0 +1,1532 @@
+{
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_10.hdf5": {
+    "sha256": "dd3ac1ef37e058d0a7dfd254e1c24e6034b3e4d456d284530550d79dddd93715",
+    "bytes": 848192,
+    "mtime": 1792831457.4430063
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_120.hdf5": {
+    "sha256": "5b124e29df833a3038c270cee6faf24e60752edece5778c15ce509e7bb33b7c2",
+    "bytes": 848192,
+    "mtime": 1792831502.7054145
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_20.hdf5": {
+    "sha256": "af1a6bbf4c3c144700760ef2e0f89c9cead6676023138508eb38ef15bd3d27f7",
+    "bytes": 848192,
+    "mtime": 1792831463.542957
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_200.hdf5": {
+    "sha256": "3606e84ab7f9a2b32913019e1a67535b0da9a822ed915d8d9913e954f357f331",
+    "bytes": 848192,
+    "mtime": 1792831514.9531994
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_30.hdf5": {
+    "sha256": "3891b20d779b7ad0e5dd5dc095d894f14ba961d24eb3ca4b297ad79ee294f541",
+    "bytes": 848192,
+    "mtime": 1792831470.240969
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_40.hdf5": {
+    "sha256": "93012ac38a85d5f3bdf5af0e847be67f76fba8a7236c4a0a0a8307bdca01f814",
+    "bytes": 848192,
+    "mtime": 1792831477.2186756
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_400.hdf5": {
+    "sha256": "4f3dc951d7b724843b231fa60fe4084e56f624c152976605504f06ac0312f298",
+    "bytes": 848192,
+    "mtime": 1792831533.6388166
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_60.hdf5": {
+    "sha256": "13f77aeda8ccd9480ff40e8ea0c9f0c44b00ff74af9b60448ee61a0a59764a19",
+    "bytes": 848192,
+    "mtime": 1792831484.9100156
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_600.hdf5": {
+    "sha256": "8082fcc7e70ae8404846318620aa4d2de902351e7d935f1e8918cb14335bc6ef",
+    "bytes": 848192,
+    "mtime": 1792831555.7075121
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_80.hdf5": {
+    "sha256": "090c1b714ee175b61ba5e8ca420146aadc0268e8c6f63e554a3fce7dfcb04051",
+    "bytes": 848192,
+    "mtime": 1792831493.2850227
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_800.hdf5": {
+    "sha256": "72f8aacf1fa508f44e82fafac4b1a68e87cc9c8d9de050a2924cf22f0bd770b5",
+    "bytes": 848192,
+    "mtime": 1792831581.8378248
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_10.hdf5": {
+    "sha256": "d27f0b0b69145c9c0e0e31053c466618e984aedc59966fac11330146e558c60d",
+    "bytes": 848192,
+    "mtime": 1792832574.0402045
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_120.hdf5": {
+    "sha256": "e9e3819cfbe20c8b8fc0db0ab3607ff83392f4e66e031f3e4d7fe157cc90fd83",
+    "bytes": 848192,
+    "mtime": 1792832610.5674396
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_20.hdf5": {
+    "sha256": "d7fdacc6da8ceb6d891f02911d8d9c1543ce9d751b90c9c1bbe61cfcc713efbd",
+    "bytes": 848192,
+    "mtime": 1792832579.046512
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_200.hdf5": {
+    "sha256": "63b4b5f9bebd4ffef766c34083caab1e888cde59ce7af784f37219d50f22bd41",
+    "bytes": 848192,
+    "mtime": 1792832620.2617118
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_30.hdf5": {
+    "sha256": "938962173d15c581a04c28e8e358cde2aa14d13211d299ded97281edab97e760",
+    "bytes": 848192,
+    "mtime": 1792832584.3466692
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_40.hdf5": {
+    "sha256": "780380ea913b74b0eb75c986eb2c91d0c715a01a062b716a8a41a317f4014b81",
+    "bytes": 848192,
+    "mtime": 1792832589.9548943
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_400.hdf5": {
+    "sha256": "ce9ec36fe1807dfc9d44a8d9a4a5a8a42e71f471f38177e526ea676040df35c2",
+    "bytes": 848192,
+    "mtime": 1792832634.6310992
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_60.hdf5": {
+    "sha256": "95a3b54fdea8f6b6ef309f816fb5f6f87d7b4ff530bba0ff644edc1335b156e4",
+    "bytes": 848192,
+    "mtime": 1792832596.1080613
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_600.hdf5": {
+    "sha256": "dd56dfe5c46eeb143a1529f8f0c9a423aeec10e05b18908f075e361c85db01ec",
+    "bytes": 848192,
+    "mtime": 1792832654.1031883
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_80.hdf5": {
+    "sha256": "99833ad584361b638b8281f43876b31503c9958038d2a973a92cb9e1b93af466",
+    "bytes": 848192,
+    "mtime": 1792832602.7590432
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_800.hdf5": {
+    "sha256": "ed5df244d6b5360518e7a9e6328577d267b435fef9d6a11406e0e08169639753",
+    "bytes": 848192,
+    "mtime": 1792832679.0830448
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_10.hdf5": {
+    "sha256": "8a3e5691b0cd34d118fba918d3d0563ab2d4302654e79aafd9d31e92285bd764",
+    "bytes": 848192,
+    "mtime": 1792832948.341429
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_120.hdf5": {
+    "sha256": "24342e27123450c62abc039986594207ec0c41300d513025ddde8b3a590d5b42",
+    "bytes": 848192,
+    "mtime": 1792832984.109386
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_20.hdf5": {
+    "sha256": "4a2125124efe92e9b919ff395d31e45d13a2d4f114cb6cbce1521f268f5c2a71",
+    "bytes": 848192,
+    "mtime": 1792832953.3115706
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_200.hdf5": {
+    "sha256": "14cfd50a07ce51c8176c92eeba8847b314d3c17ded9b317021fa5a924521a27c",
+    "bytes": 848192,
+    "mtime": 1792832993.7700827
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_30.hdf5": {
+    "sha256": "4e81e551634863db3f2244edd3ce5784706f13104b1935e7e082199da60fdbb3",
+    "bytes": 848192,
+    "mtime": 1792832958.5402899
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_40.hdf5": {
+    "sha256": "fcb72c0fcb36de3b024792cbd1628173b79948a542d6ccd0fc960dee64d13ddc",
+    "bytes": 848192,
+    "mtime": 1792832963.9474645
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_400.hdf5": {
+    "sha256": "652b1c14e8c1b7282f6c7880f3baca6c0e4834b7242f2eec7ec36235af127655",
+    "bytes": 848192,
+    "mtime": 1792833008.3512723
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_60.hdf5": {
+    "sha256": "8e3fa5bd6808291f4004f5c87b757be595f83e7ebcc681e77397092f6d39d12f",
+    "bytes": 848192,
+    "mtime": 1792832969.9592667
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_600.hdf5": {
+    "sha256": "234e4bf40faa5724c72b0afacb5b0d7d83fb515a717b9a0815af166f4858b58f",
+    "bytes": 848192,
+    "mtime": 1792833027.5191662
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_80.hdf5": {
+    "sha256": "d01468a75820df99c63886a871dda3a0721aeb84136efb08e83fdb8e3dc29d7c",
+    "bytes": 848192,
+    "mtime": 1792832976.5536706
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_800.hdf5": {
+    "sha256": "739492398c036f131c6b953da71428c0ec81975b6e0c2cb77a4cd26c3c2c1500",
+    "bytes": 848192,
+    "mtime": 1792833050.6688182
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_10.hdf5": {
+    "sha256": "00c4cd4338ce757c74904bbd39f12f8e7b3ee7bc6024a60907b64c02e95ac2ad",
+    "bytes": 848192,
+    "mtime": 1792831604.119946
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_120.hdf5": {
+    "sha256": "aaaad7a628b8c00ba95138c2d518ab49e4a1650ec5c78040035a3219b8319ccc",
+    "bytes": 848192,
+    "mtime": 1792831652.0206983
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_20.hdf5": {
+    "sha256": "63e1da8fba1408303737b1519f02b8c64daf9c9851bb0ff4dff036d546a0b37f",
+    "bytes": 848192,
+    "mtime": 1792831610.6384194
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_200.hdf5": {
+    "sha256": "8e81d854524a477753aa440a1817af8b7753e9b4b647176f62e7d42d5379a8d6",
+    "bytes": 848192,
+    "mtime": 1792831665.9681544
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_30.hdf5": {
+    "sha256": "3360bb7325272a73a10ade0372f72154577bc48df5bdad9926369ecea302f92a",
+    "bytes": 848192,
+    "mtime": 1792831617.3424826
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_40.hdf5": {
+    "sha256": "33a8bea456adc89e0c6c614a4486a35463042d1ee28fc4dfea6524738c1feb7e",
+    "bytes": 848192,
+    "mtime": 1792831624.3861337
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_400.hdf5": {
+    "sha256": "0c985b4f00051c8586676de47615f442ea5634e0c5dd0337b8fff0a5497b1dea",
+    "bytes": 848192,
+    "mtime": 1792831688.0035963
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_60.hdf5": {
+    "sha256": "366e48ed32c3fcaaa2494629221fa3befcd5c8e44b60b13fa8c0583f312c70a1",
+    "bytes": 848192,
+    "mtime": 1792831632.266462
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_600.hdf5": {
+    "sha256": "fae0996389254cce30ab1314fe691752fadaeacd33862cb47ec466bd314b550b",
+    "bytes": 848192,
+    "mtime": 1792831716.8443224
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_80.hdf5": {
+    "sha256": "9e0c9eef2d336905288296a0dc117ca5606db1c38a5de11837f95cd784042426",
+    "bytes": 848192,
+    "mtime": 1792831641.1500754
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_800.hdf5": {
+    "sha256": "4e174cbba30543355deef19b6b6b18efff8af41b7d4740977fda3898487190d2",
+    "bytes": 848192,
+    "mtime": 1792831750.9259827
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_10.hdf5": {
+    "sha256": "778c5571e3a25dc8238433883b3a6a7fbe82de5ef9f32b28bd5541323705110a",
+    "bytes": 848192,
+    "mtime": 1792832814.9226158
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_120.hdf5": {
+    "sha256": "a5c54bd4f83115d7f0382033848e34a3ef16e9e591c8807f48c741a7b920e91b",
+    "bytes": 848192,
+    "mtime": 1792832858.652304
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_20.hdf5": {
+    "sha256": "258eea76e67138d4b1f0e6dd9b321912fbf01fc226a68d10c4b99ac246257f90",
+    "bytes": 848192,
+    "mtime": 1792832820.6643665
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_200.hdf5": {
+    "sha256": "16310048d504e0e8c320f63d929901192c49b1b0edab4b4425097645bc603a50",
+    "bytes": 848192,
+    "mtime": 1792832870.957802
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_30.hdf5": {
+    "sha256": "ccd03555ac47fe80ea89a6a183cea41f915777ec54b3b6d63330e9ed260ee831",
+    "bytes": 848192,
+    "mtime": 1792832826.8642406
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_40.hdf5": {
+    "sha256": "37843663b49b6167923814eb80c07c4bf1c8ae8150aabd417dcf963020f1af5e",
+    "bytes": 848192,
+    "mtime": 1792832833.4250975
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_400.hdf5": {
+    "sha256": "73d265063cd94f06b8698b9c80acfe936e2e413fcf9353359cedb028e94f7899",
+    "bytes": 848192,
+    "mtime": 1792832888.4400482
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_60.hdf5": {
+    "sha256": "27d5c91fefa97b353fa4e3a63995605fd8e807c3f354f01a85aad795b0e90228",
+    "bytes": 848192,
+    "mtime": 1792832841.071073
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_600.hdf5": {
+    "sha256": "3bb80c185acc96d6b662ba96ab5290be2c34648d72b5ed27a8d0a438aa64148e",
+    "bytes": 848192,
+    "mtime": 1792832912.6215334
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_80.hdf5": {
+    "sha256": "d7142cd17686f18fc7ea0f545d4c0d6e994134106cb4a0da05b312c0a06263d6",
+    "bytes": 848192,
+    "mtime": 1792832849.3569162
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_800.hdf5": {
+    "sha256": "4d0af97a6ba4fbbbab76da0e353455e8fa5c9ea55a4a5922ba83b3bd61b5979b",
+    "bytes": 848192,
+    "mtime": 1792832942.5125918
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_10.hdf5": {
+    "sha256": "d902c7df982de4053ddc2ccaac5b4e83e10f438590305596c331eb0a6b9aa6f6",
+    "bytes": 848192,
+    "mtime": 1792832457.3205671
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_120.hdf5": {
+    "sha256": "175a864449a263beb327431a21800a384ad82d4d843bdb8ae9a572f19e576c36",
+    "bytes": 848192,
+    "mtime": 1792832494.8320696
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_20.hdf5": {
+    "sha256": "4d788003347f559ebc1a81e96c2764b5639167f99166a8545bf87dc4f9ecc9d6",
+    "bytes": 848192,
+    "mtime": 1792832462.3366315
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_200.hdf5": {
+    "sha256": "21a474f89ea87973ec0d9a84cd06b1a89965c540c6c708fb65b8a9a9fff02e39",
+    "bytes": 848192,
+    "mtime": 1792832504.989155
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_30.hdf5": {
+    "sha256": "3ba3eb8355974304c486f2667fdcaac8be66f232e96188bdc0b852a1bccf01fb",
+    "bytes": 848192,
+    "mtime": 1792832467.6949947
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_40.hdf5": {
+    "sha256": "3802d666f8868e062a140c783a4b05cc3922795e0c11a1856686412d6b916548",
+    "bytes": 848192,
+    "mtime": 1792832473.4477446
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_400.hdf5": {
+    "sha256": "e9b8bec7406fd469a999a083aa6ac34abb90f4889091afc0c1e788beead91f53",
+    "bytes": 848192,
+    "mtime": 1792832520.266554
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_60.hdf5": {
+    "sha256": "263540cf858eba47869686a9ff077a7881f4467073bec38b5b2909326a7f481b",
+    "bytes": 848192,
+    "mtime": 1792832479.8208542
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_600.hdf5": {
+    "sha256": "b9092b22711a7d868c47367795cb07fd2b93beb7e529657c169d860a31298df1",
+    "bytes": 848192,
+    "mtime": 1792832542.7257793
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_80.hdf5": {
+    "sha256": "00913db55f14721f24453284c1efd4c9e21310a0f31b0dfb2a410c87ddcf67dd",
+    "bytes": 848192,
+    "mtime": 1792832486.849288
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_800.hdf5": {
+    "sha256": "ee84c399365d639c6a100dc486347084247d7fa891197e8d2da7143f327a432f",
+    "bytes": 848192,
+    "mtime": 1792832567.8888013
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_10.hdf5": {
+    "sha256": "2401e569d192bb5e221f26081c09427e5d4cc4222fac8907f6b6d02d875bf177",
+    "bytes": 848192,
+    "mtime": 1792831777.614879
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_120.hdf5": {
+    "sha256": "42488b782bd06d31e1d39d5fe55baf1e045e0056a4e00b079c3a5da7d1b2cb89",
+    "bytes": 848192,
+    "mtime": 1792831832.7965605
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_20.hdf5": {
+    "sha256": "f54d23331a462966fdd41430f3ecdd639a7666be743e2a9b7d21ac0b74692b49",
+    "bytes": 848192,
+    "mtime": 1792831784.5614736
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_200.hdf5": {
+    "sha256": "6c7d3bdb1d5945bd8ac3c7c64a61b6b806effb4db7a7586bf4cbaa5c47c0a99b",
+    "bytes": 848192,
+    "mtime": 1792831847.4706502
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_30.hdf5": {
+    "sha256": "30df61c69b768adbffbaf6f8873beeb9c19e99c7ae272d93ce33bde3a24ac226",
+    "bytes": 848192,
+    "mtime": 1792831792.133655
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_40.hdf5": {
+    "sha256": "db947bea4841a851896076e0498e5336e7acb259572d5aefc8da55f44f7738d0",
+    "bytes": 848192,
+    "mtime": 1792831800.5158584
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_400.hdf5": {
+    "sha256": "487c96cbd0a20cbc3a96af12fa775fd586fc6702aad8b25bbbd6ce386be5929e",
+    "bytes": 848192,
+    "mtime": 1792831870.7763758
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_60.hdf5": {
+    "sha256": "aac6754238496f43baefc1bd2cdef09daf4f6fccfabe09ebe7367344fb3b5287",
+    "bytes": 848192,
+    "mtime": 1792831810.358404
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_600.hdf5": {
+    "sha256": "aa6a43ec905058216adc277068a334b2c86cebe1eb5a3f5629c40a9a23765f74",
+    "bytes": 848192,
+    "mtime": 1792831903.464371
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_80.hdf5": {
+    "sha256": "c8525584801c7401c8941001997ee5d55febee5187782d8786fc87b626332967",
+    "bytes": 848192,
+    "mtime": 1792831820.7273862
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_800.hdf5": {
+    "sha256": "0434e8710772df08c934e27eb89e9c2350cdbaaa18db5be4fa0ddf12152b8321",
+    "bytes": 848192,
+    "mtime": 1792831947.0483735
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_10.hdf5": {
+    "sha256": "e9cdb3176d99bbc6a25607c63382b9dc95b395b1259e4e71dede152535bb2b0e",
+    "bytes": 848192,
+    "mtime": 1792833494.361053
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_120.hdf5": {
+    "sha256": "a4acbefa0ca07b9861c84b84b0a0dfe6356e5dfff579e21e58cb73092daed5b1",
+    "bytes": 848192,
+    "mtime": 1792833539.9552922
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_20.hdf5": {
+    "sha256": "7a844836b073be5353566e21ee20b65aee166568527a7b9c37deef84fb80fb4b",
+    "bytes": 848192,
+    "mtime": 1792833500.2943857
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_200.hdf5": {
+    "sha256": "2bc77e686e586ab8be04ab82783ab808aa1479762a7cd042b0e0b6eaddaa0edf",
+    "bytes": 848192,
+    "mtime": 1792833551.7631228
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_30.hdf5": {
+    "sha256": "baa6ba224285ec4110620e450cec2504d2dfff144fb74c3f278cd0f8025da939",
+    "bytes": 848192,
+    "mtime": 1792833506.734371
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_40.hdf5": {
+    "sha256": "e0a6106c6a36df1e75abd5a229483155646eaab2cf5e81d88169141b8fa26b25",
+    "bytes": 848192,
+    "mtime": 1792833513.421425
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_400.hdf5": {
+    "sha256": "a85774a7cc7a6bd9c95deeb96f255265f0ac71ebdede70b6a3ed72c662aefc95",
+    "bytes": 848192,
+    "mtime": 1792833570.4117615
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_60.hdf5": {
+    "sha256": "c0fa461f5b6150e74e8f4b042a19d252b0119afb68d3770a7bb0b7fe263b51db",
+    "bytes": 848192,
+    "mtime": 1792833520.7801728
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_600.hdf5": {
+    "sha256": "33671f6dde257e8f1aff61890d51a538b853a03fc047b7f93c4b9826c251fb66",
+    "bytes": 848192,
+    "mtime": 1792833595.6817663
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_80.hdf5": {
+    "sha256": "6dc9f6dde68896bd2a3cc271e709d289bf8bd6a0b7dcd9856a25977502d9ef72",
+    "bytes": 848192,
+    "mtime": 1792833529.0222967
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_800.hdf5": {
+    "sha256": "833c66d3f81995304db2d52027b2e5fa2b98bd613659b02c9bdeaa752589a083",
+    "bytes": 848192,
+    "mtime": 1792833626.2562535
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_10.hdf5": {
+    "sha256": "509f32382585db262ddaeb78616ab5a5a253052d7a2bf04d94333395f8e8c816",
+    "bytes": 848192,
+    "mtime": 1792832073.098952
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_120.hdf5": {
+    "sha256": "d1f0eee72da3b17188b6decfebda749d1f2ad54299ec8ef558adc90ce874f0d8",
+    "bytes": 848192,
+    "mtime": 1792832114.7944567
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_20.hdf5": {
+    "sha256": "0e5c96cfb4d2e9c7d7ea8a5571c119293feda42e8f6320ed614304a54ef71ba6",
+    "bytes": 848192,
+    "mtime": 1792832078.5155935
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_200.hdf5": {
+    "sha256": "328f973d1107776c2f17ef629578194c9df38ef35be7add49a1fe86d5c6d456e",
+    "bytes": 848192,
+    "mtime": 1792832127.111265
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_30.hdf5": {
+    "sha256": "511f95b02a463c0e20d4c6337d1d7eb5c8dc0c161318e3bb7d5fcbc91d655186",
+    "bytes": 848192,
+    "mtime": 1792832084.19408
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_40.hdf5": {
+    "sha256": "ef8b785b22407c5813723010c045bc16a7bce02f237c3565e6ea749d3a241d96",
+    "bytes": 848192,
+    "mtime": 1792832090.4930162
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_400.hdf5": {
+    "sha256": "c11d5ebdee8b6c3e4926f9376604f921a0dfe8a1d5436b1262dbc16d85081535",
+    "bytes": 848192,
+    "mtime": 1792832143.551149
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_60.hdf5": {
+    "sha256": "8040dc18f7fbeea20fa4e0e514a634e6eb4b8163d142657c5eb6ae02c2adce01",
+    "bytes": 848192,
+    "mtime": 1792832098.0199618
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_600.hdf5": {
+    "sha256": "ddecf6439fb65c5001367258e3beed155dc5c4fda2882c525776875c23c556cc",
+    "bytes": 848192,
+    "mtime": 1792832165.8720088
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_80.hdf5": {
+    "sha256": "c7b09c9d65c2aebac050cb7a08013fc9dc167f814fa81de8c8ba072a71972cfb",
+    "bytes": 848192,
+    "mtime": 1792832105.8070223
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_800.hdf5": {
+    "sha256": "4415cc6b935bc898fc666384f4d9a573306392ddb5953a037e59f8dc293e8400",
+    "bytes": 848192,
+    "mtime": 1792832191.8736036
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_10.hdf5": {
+    "sha256": "7d91ff15ed1df9614b83dc6daa574364bca3cb613a30539193bf5ddf9f2136ab",
+    "bytes": 848192,
+    "mtime": 1792833168.7379718
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_120.hdf5": {
+    "sha256": "57b021181ef6a285478bf4e06881e636821a027cafd0dc7d1fa41ca592904c43",
+    "bytes": 848192,
+    "mtime": 1792833220.3800461
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_20.hdf5": {
+    "sha256": "8eb5862ef03649edb527e40142d6d8ae20da6c813f8c8e467d592afcdbb34bcd",
+    "bytes": 848192,
+    "mtime": 1792833175.2541702
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_200.hdf5": {
+    "sha256": "a319859c02ee1eb752ae1061b80753d600894a452d8e93051d0c0619a1b599e5",
+    "bytes": 848192,
+    "mtime": 1792833234.6662982
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_30.hdf5": {
+    "sha256": "7858fd4188b869216745b7d7309c54a89cad4baa0fe6db73267ef9ba4f7bc2b8",
+    "bytes": 848192,
+    "mtime": 1792833182.4365401
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_40.hdf5": {
+    "sha256": "7baf5be61457b0fa569687038207c6e54192dd5df2edb86139989990ba71c08b",
+    "bytes": 848192,
+    "mtime": 1792833190.5404902
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_400.hdf5": {
+    "sha256": "22f1b292d72f73a19646fb97d55860f3e1ef54ff0e7c7a9ad9309f9d4c8c5f9e",
+    "bytes": 848192,
+    "mtime": 1792833256.2630079
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_60.hdf5": {
+    "sha256": "8d360a0c09a764b01a2c9afef5b49e40db2e8711f822225c066995095155cb7c",
+    "bytes": 848192,
+    "mtime": 1792833199.1232407
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_600.hdf5": {
+    "sha256": "f8a74e08af5f2cbe262679139a7baccce06671340f7fd95961620e3f1e7a63b2",
+    "bytes": 848192,
+    "mtime": 1792833282.6893556
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_80.hdf5": {
+    "sha256": "f56139bb95a49397b306fe69ca848880de677924fddf373d6744f5b4090e3b42",
+    "bytes": 848192,
+    "mtime": 1792833208.665037
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_800.hdf5": {
+    "sha256": "847b5e8a394a050873ede4b38a36ba4b118ffa663a4f3fca87deaaca3afb17ec",
+    "bytes": 848192,
+    "mtime": 1792833316.2132375
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_10.hdf5": {
+    "sha256": "5c9674f7a69a5f9d7741c78bae94e8b9ee2b616ffc7d4018779dc14d66c09e8b",
+    "bytes": 848192,
+    "mtime": 1792833633.5801058
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_120.hdf5": {
+    "sha256": "2c5b0b2ac997b90883d7e6b45738985cc33815b34625743f57427f1007c916d3",
+    "bytes": 848192,
+    "mtime": 1792833677.9981213
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_20.hdf5": {
+    "sha256": "07b8a8d11c8ce0a951fbfd398462dd3f31d6d3d6d886f000934480c8f6e01f81",
+    "bytes": 848192,
+    "mtime": 1792833639.4368725
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_200.hdf5": {
+    "sha256": "a6c0afcfd305f7c36f9d33fe67ed6ab48fb2972be9f9f942cc9ffa24bf1331e9",
+    "bytes": 848192,
+    "mtime": 1792833689.8488312
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_30.hdf5": {
+    "sha256": "40ad0414003caac31138e698dd62c83695f23e617096a03e6a823013cd93fc36",
+    "bytes": 848192,
+    "mtime": 1792833645.7332914
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_40.hdf5": {
+    "sha256": "7b2d90cd7c6467b436d05dcb5434aac94814e9cbd71126fedfec8de5c24c48bb",
+    "bytes": 848192,
+    "mtime": 1792833652.6914864
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_400.hdf5": {
+    "sha256": "b61e4cf7dc7b5b21cbe97cbdfea44cb7d257b48dbda9b103f57856295d495cf8",
+    "bytes": 848192,
+    "mtime": 1792833708.7608762
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_60.hdf5": {
+    "sha256": "2d309b6550825b6097056cb74db4b72c40d2ae36419e86fd2940ca11d9e3f2fe",
+    "bytes": 848192,
+    "mtime": 1792833660.0568717
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_600.hdf5": {
+    "sha256": "fe7d2ba10ff7ed972d30db91355d6c0b48825032d322c6c10c0b2356c297944f",
+    "bytes": 848192,
+    "mtime": 1792833733.5556278
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_80.hdf5": {
+    "sha256": "80dd845571dd304cd42220e2f23d397d508eb27ef6ad1bbdb3b517dc2a83a7f3",
+    "bytes": 848192,
+    "mtime": 1792833668.1857095
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_800.hdf5": {
+    "sha256": "9f417a915f2022b924879b72f331ae0560b4d66486e4b56bbcd62898d7222465",
+    "bytes": 848192,
+    "mtime": 1792833766.3870423
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_10.hdf5": {
+    "sha256": "ae7101cc1d65bc80da515908eeea5adb637372ee474ef9c179cf8f735cf273c8",
+    "bytes": 848192,
+    "mtime": 1792832700.5669398
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_120.hdf5": {
+    "sha256": "8a05c367fbd9ee58810526d5346bb3ab1fff4c42c31c63aff4730ccfc1c18893",
+    "bytes": 848192,
+    "mtime": 1792832738.4511006
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_20.hdf5": {
+    "sha256": "6f24cbdcd327d34be160fa006e66fd644b0e1eec971a401a0b9689c78f57f096",
+    "bytes": 848192,
+    "mtime": 1792832705.6479015
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_200.hdf5": {
+    "sha256": "92ffbb28a559508b12f049a1f159a5e1e8848c803970ad30f752ae62b5585e9f",
+    "bytes": 848192,
+    "mtime": 1792832748.5679936
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_30.hdf5": {
+    "sha256": "666327f6c80353466b22388608f6e3cd01455290d7f9b1a6251103f377866811",
+    "bytes": 848192,
+    "mtime": 1792832711.0642982
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_40.hdf5": {
+    "sha256": "3346dbe63a894420d664414f67bb6f973d4ba9fb856a01811eb14a312cd9c086",
+    "bytes": 848192,
+    "mtime": 1792832716.8173492
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_400.hdf5": {
+    "sha256": "bba4829d1c0395b4f5dfc9609ffd1d8e16a83ff66b5bcae3670895564a2d8503",
+    "bytes": 848192,
+    "mtime": 1792832763.27646
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_60.hdf5": {
+    "sha256": "507c424d413d70a6250b592f77c2a9bcee20047b23c969111d7e0af7fc04058b",
+    "bytes": 848192,
+    "mtime": 1792832723.2698808
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_600.hdf5": {
+    "sha256": "451bd8ba207a10580be4f2bb705b8aad96d5f5f1e1302ba02c735ca54429d858",
+    "bytes": 848192,
+    "mtime": 1792832782.6327648
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_80.hdf5": {
+    "sha256": "d9ede4df2dd67bc995cdcc0fc66644d8ed2b3a34a3c5bacd45154858afe9c080",
+    "bytes": 848192,
+    "mtime": 1792832730.2571075
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_800.hdf5": {
+    "sha256": "736605c1e37a858119fa1f7fc148deb9f9b77c876cd9ee28bd9b36f2dcc97f62",
+    "bytes": 848192,
+    "mtime": 1792832808.1073287
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_10.hdf5": {
+    "sha256": "edfbb64d2eee39718503d1b6ac2ff7a998ef890884a0555bf1d6d8e192e0e26b",
+    "bytes": 848192,
+    "mtime": 1792832349.7095852
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_120.hdf5": {
+    "sha256": "b393b4b1ca407dc5195c6979c904f576d3f3da8dc2c4158f485c998cab7bf6cf",
+    "bytes": 848192,
+    "mtime": 1792832387.7112381
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_20.hdf5": {
+    "sha256": "0186c4374fdaf271cd9094a1f6e35a2f568d5b1655d5877aa64b18f774887ca2",
+    "bytes": 848192,
+    "mtime": 1792832354.8665578
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_200.hdf5": {
+    "sha256": "564e988304f6d385f795c6c83bf78ade1817b6cb2b7dfbdb0993fd425e3d7a1f",
+    "bytes": 848192,
+    "mtime": 1792832397.2999175
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_30.hdf5": {
+    "sha256": "73cd3d0c74d5be3c7b3b0dd93dba90990193c7bce4082e8e55e584650f4d94a4",
+    "bytes": 848192,
+    "mtime": 1792832360.2947185
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_40.hdf5": {
+    "sha256": "fe201655562b0409e1c17202ee18e62d715d09f47502a08713ff1ddee5652a36",
+    "bytes": 848192,
+    "mtime": 1792832366.034877
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_400.hdf5": {
+    "sha256": "e65d027b369112200feaeb6d24322ca77b5dc5896414474ece045af31e325367",
+    "bytes": 848192,
+    "mtime": 1792832410.8914077
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_60.hdf5": {
+    "sha256": "86137afd12ce730653e51380d56ce53d19477f3e0a6b93da0472828aba3eaa3f",
+    "bytes": 848192,
+    "mtime": 1792832372.7436638
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_600.hdf5": {
+    "sha256": "913db55e0952893a9276d5a804ad5548d0a3cdefd16682b9a4a44be862795d93",
+    "bytes": 848192,
+    "mtime": 1792832429.1924515
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_80.hdf5": {
+    "sha256": "a8f796f984cef085ce6e25b8a4906eeab5fcba3407feff8ae91868b1b86ce0f4",
+    "bytes": 848192,
+    "mtime": 1792832380.0693614
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_800.hdf5": {
+    "sha256": "c11bb87a9a72cc1ad0152308b9898224c53c5917aff01476af98df6b814d2313",
+    "bytes": 848192,
+    "mtime": 1792832451.0668166
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_10.hdf5": {
+    "sha256": "95a998fa52fe93e2076e25b0dfa079e2cdc7b40f4485e24bcac4f32e3f66c35f",
+    "bytes": 848192,
+    "mtime": 1792833056.3801289
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_120.hdf5": {
+    "sha256": "6e75194404b2d89e4b3a9f237033f6659910361521f0059c03c21d5cf4a6efb8",
+    "bytes": 848192,
+    "mtime": 1792833092.2205515
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_20.hdf5": {
+    "sha256": "9c05d49217d25978fc88cc54a374bde2f92919fe47092189dd3e8bccd2048e39",
+    "bytes": 848192,
+    "mtime": 1792833061.5438845
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_200.hdf5": {
+    "sha256": "2b6af4490d613ece35456bf4a9a10e1608c697a7e8e8168029c45627d69af34c",
+    "bytes": 848192,
+    "mtime": 1792833101.1855943
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_30.hdf5": {
+    "sha256": "c0bd11181ceefc33113cb61468a3f411a38bebffe3ff3a84419b86f52c2ae78f",
+    "bytes": 848192,
+    "mtime": 1792833067.0084765
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_40.hdf5": {
+    "sha256": "5928fb5ecb12aa68ee958cc0a8a124916855ddefacbdb45c8e3cc759496a085d",
+    "bytes": 848192,
+    "mtime": 1792833072.7909753
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_400.hdf5": {
+    "sha256": "88909052b0213ea75a5f6c687f628192665d16de62a89d53763f053ef3735d53",
+    "bytes": 848192,
+    "mtime": 1792833114.638959
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_60.hdf5": {
+    "sha256": "cbe15ab0ee32599bfed52cb9714a62f493ca23c9fa4329bb7f5c47d4f6f35360",
+    "bytes": 848192,
+    "mtime": 1792833078.7001998
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_600.hdf5": {
+    "sha256": "6570f959258f1f24413ed2b8a5a244e51849679f1956690587c07129a9e55a22",
+    "bytes": 848192,
+    "mtime": 1792833137.8054664
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_80.hdf5": {
+    "sha256": "4c5d83435e8c478502d1f2da73cc1e2a390d95844e44fa123581e8f800abc670",
+    "bytes": 848192,
+    "mtime": 1792833085.001672
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_800.hdf5": {
+    "sha256": "699dfc62e1ee5a7c8a4e9423e57b7c4068e8c7a2e680d2f45bf16375fc154ae6",
+    "bytes": 848192,
+    "mtime": 1792833160.3125334
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_10.hdf5": {
+    "sha256": "08cebff30d37ecfabfa9f916153e925360dee73ec761753dcaeeff186041a833",
+    "bytes": 848192,
+    "mtime": 1792831965.3860908
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_120.hdf5": {
+    "sha256": "7ad8395555ffec5fb3210780f5e6c2e69de5d8eb86ecf07c58c3b5ad0ec27500",
+    "bytes": 848192,
+    "mtime": 1792832001.87618
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_20.hdf5": {
+    "sha256": "521b1d145f4a7db48b7077e8bf99b9379e2f4488a03931df0a3600bf2ce6312d",
+    "bytes": 848192,
+    "mtime": 1792831970.6175675
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_200.hdf5": {
+    "sha256": "183060e785e5656db6294140c06eb9fc0a5a12e68ff4d3e8454ef4b68392ff8a",
+    "bytes": 848192,
+    "mtime": 1792832012.0549834
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_30.hdf5": {
+    "sha256": "ed8070bb09c3064cfa0d9d4055c4072424252f8d0188ee11c8809ed58a0cd677",
+    "bytes": 848192,
+    "mtime": 1792831975.9150898
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_40.hdf5": {
+    "sha256": "9712b059d0c35a33a74d4d202f771f65b4d72bb63c4ff71f13307255548ea7bc",
+    "bytes": 848192,
+    "mtime": 1792831981.2450929
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_400.hdf5": {
+    "sha256": "ddd0e855eea1d98506b3a254404c68731e7ec2d568dbb10be79064bd860a66b7",
+    "bytes": 848192,
+    "mtime": 1792832026.5105438
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_60.hdf5": {
+    "sha256": "8d7ddbdc11e9cd2bade4e106854e1c0aa1de81888b4313367862a4ec78219836",
+    "bytes": 848192,
+    "mtime": 1792831987.145472
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_600.hdf5": {
+    "sha256": "9549b3cb25e530bf9c2ed4a4d59bba2b7d0d299a2c534c6ca902e873736f8a2b",
+    "bytes": 848192,
+    "mtime": 1792832043.063638
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_80.hdf5": {
+    "sha256": "018f7944c8270ff53ac57fcf56653c1c2a4a0d2e3c95104e9c6a40860cef86e8",
+    "bytes": 848192,
+    "mtime": 1792831993.7429795
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_800.hdf5": {
+    "sha256": "5d05a84e47726bcadde6dcf07f6d7448bda59c3153b8633cba9b3eeab63a1792",
+    "bytes": 848192,
+    "mtime": 1792832066.1002605
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_10.hdf5": {
+    "sha256": "6a0e098101154309f8b437242c3cb64d1fdcb73ccefa46742153b043d63c7bd5",
+    "bytes": 848192,
+    "mtime": 1792833325.1431315
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_120.hdf5": {
+    "sha256": "8d9149d0a487b7b297584ffb2e0490c6d31159856368719d390d0a1ca68842e2",
+    "bytes": 848192,
+    "mtime": 1792833378.0998979
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_20.hdf5": {
+    "sha256": "4a8fa1c704ed9bafb86df70cdfee847e10f9e312c5c14b3d7b65330b497c6b84",
+    "bytes": 848192,
+    "mtime": 1792833331.7886941
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_200.hdf5": {
+    "sha256": "6549844e4ac0e479c0f5a2c4e82492f8f81960eea2d91507a9339dd30e2351a3",
+    "bytes": 848192,
+    "mtime": 1792833393.3099494
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_30.hdf5": {
+    "sha256": "95aa0ea7bee0973cd6703d7892efb94d47a3a123dfc9ca528f7c74f623a2a9a0",
+    "bytes": 848192,
+    "mtime": 1792833339.2010212
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_40.hdf5": {
+    "sha256": "0d6831ab37fb15898c811df3f4dc1943c8a1b98d6ffab2d61b19950404aa4ff8",
+    "bytes": 848192,
+    "mtime": 1792833346.8852282
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_400.hdf5": {
+    "sha256": "7d98978f271cee691f5b508cddddc9a001d7951bded6f8a43ccd59f00b69a95a",
+    "bytes": 848192,
+    "mtime": 1792833416.8892524
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_60.hdf5": {
+    "sha256": "f9f775bccb00a2971e1877eefb325719f4402ce705ab99b80928d56be383b7bc",
+    "bytes": 848192,
+    "mtime": 1792833356.0682044
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_600.hdf5": {
+    "sha256": "f31137c4dd355cfa339e4d570ecbdba0f2c2825fb964b6e20535a13491dd05a3",
+    "bytes": 848192,
+    "mtime": 1792833449.8447964
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_80.hdf5": {
+    "sha256": "ade4dd297983e4bf0dafccaa774489203b710365fe7b53f7c87e074a8d068813",
+    "bytes": 848192,
+    "mtime": 1792833366.0756779
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_800.hdf5": {
+    "sha256": "5a12f6ad53c26c9c890077bb612e812b209ba184dc400a446e6b68e3184517e7",
+    "bytes": 848192,
+    "mtime": 1792833487.471573
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_10.hdf5": {
+    "sha256": "063acb0de612a44ed5a553c4acc5f77e578e072da5f966d643ad15daadee316b",
+    "bytes": 848192,
+    "mtime": 1792832214.9833121
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_120.hdf5": {
+    "sha256": "54cff881bbaf088150c6a987da40d122cc32d89fec678dd86530e08d7b8d8595",
+    "bytes": 848192,
+    "mtime": 1792832258.057216
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_20.hdf5": {
+    "sha256": "642b18274bae48811a142e939544b4553a6d593b1cf5a899a67a3dbb047a1fac",
+    "bytes": 848192,
+    "mtime": 1792832220.6001942
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_200.hdf5": {
+    "sha256": "33ae0fafe39f5c3a5649b3b696d7aacfa2e09c24ddf2df8bba715589f0f2c533",
+    "bytes": 848192,
+    "mtime": 1792832269.9563005
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_30.hdf5": {
+    "sha256": "4fe0dbb7f0ae65c9a2963a75d110d7dc5f688a77009a47a9342adde1b9a068d6",
+    "bytes": 848192,
+    "mtime": 1792832227.008924
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_40.hdf5": {
+    "sha256": "d0901c3c7bba134f9fc933b0e2be07086a636621c17de65c508a27d43a8520ff",
+    "bytes": 848192,
+    "mtime": 1792832233.420208
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_400.hdf5": {
+    "sha256": "4bbdafba2cc61d02d36eca22b5dbb895a616ae6789e6ef3cd092e55194b877ad",
+    "bytes": 848192,
+    "mtime": 1792832288.9707863
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_60.hdf5": {
+    "sha256": "6263ddf1e8fcdf598d73a5954ae39ec2abf93f4c8f04777b7528778333b0a02d",
+    "bytes": 848192,
+    "mtime": 1792832240.646778
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_600.hdf5": {
+    "sha256": "114b952691b54d92b32b3a3069c677388dfcba1ca84c9d19e494b53cd614460f",
+    "bytes": 848192,
+    "mtime": 1792832313.2167618
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_80.hdf5": {
+    "sha256": "e0b096e8761160f00bd3521aa344d2f1f9db06ff06213b4c0c771ae12dc033cc",
+    "bytes": 848192,
+    "mtime": 1792832248.6331782
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_800.hdf5": {
+    "sha256": "9d31cc3aa01c2890398166c6ae941acf422dd40b0e4b29982bd71d1d40103997",
+    "bytes": 848192,
+    "mtime": 1792832343.7473352
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_10.hdf5": {
+    "sha256": "31198b5186693c19f6625baeb8c101b939290e2ebef794338ccc879854c67143",
+    "bytes": 848192,
+    "mtime": 1792833773.6804254
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_120.hdf5": {
+    "sha256": "2fb5855e13dfee0d4358afbdde2f556262aaf2b8eab70690fad143a1c593b4af",
+    "bytes": 848192,
+    "mtime": 1792833817.00563
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_20.hdf5": {
+    "sha256": "8bcf7b4c82aaf5077e027fc9cf558f46a387c12be9be9cd74773f06df7ae5def",
+    "bytes": 848192,
+    "mtime": 1792833779.5172749
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_200.hdf5": {
+    "sha256": "133ce8534390c58584fb313d9efc9d12e7702326e178d9eac20e4026064fd7f5",
+    "bytes": 848192,
+    "mtime": 1792833828.6582289
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_30.hdf5": {
+    "sha256": "b4c1d36c02ea6f3c09cac5b0c609ab1148c223ee81058e0e0c386ca083ad7717",
+    "bytes": 848192,
+    "mtime": 1792833785.7387955
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_40.hdf5": {
+    "sha256": "170fb0f03cdb546f6ef7977a63000cee6997212b932f4bf58a9910d0ffd1b482",
+    "bytes": 848192,
+    "mtime": 1792833792.2713006
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_400.hdf5": {
+    "sha256": "bda3c6c5783fce4c1282d2c00898201d6563f4adc09989902ab50614e81a1a06",
+    "bytes": 848192,
+    "mtime": 1792833845.2270217
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_60.hdf5": {
+    "sha256": "ec7cf72349e58e5ab095c7a3f5789e961aee86c2409fcd42bc84463a4a72c70d",
+    "bytes": 848192,
+    "mtime": 1792833799.6630967
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_600.hdf5": {
+    "sha256": "363d76ae132acd1a2d8fdd2ad16bd66b22452697df0ab9152a1cf39ac15ccd16",
+    "bytes": 848192,
+    "mtime": 1792833869.9099429
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_80.hdf5": {
+    "sha256": "34abd4d5ec2962cdeb204d0e2617c7c706d9f2383ff89011206014a68a5698e0",
+    "bytes": 848192,
+    "mtime": 1792833807.686381
+  },
+  "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_800.hdf5": {
+    "sha256": "639e41d537b3f11332ab8f02b3b8cd8146f5050b44aa40adf89479d00e4c7987",
+    "bytes": 848192,
+    "mtime": 1792833900.063992
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_10_2000.hdf5": {
+    "sha256": "301dcbf96b193086a2989be49e1c580a2f51ad7680af8e9560e1441ff6695551",
+    "bytes": 848192,
+    "mtime": 1792829901.053492
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_10_64.hdf5": {
+    "sha256": "2814a72787198323b4dc1807e47fa444e3af526f0413f692c4df9a7042caa90e",
+    "bytes": 848192,
+    "mtime": 1792829895.239696
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_120_2000.hdf5": {
+    "sha256": "6a813c432c3c3ce5b60188cb17020a880e38c98831f701c6e40a872d5b9e18a6",
+    "bytes": 848192,
+    "mtime": 1792830055.2660413
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_120_64.hdf5": {
+    "sha256": "7c7eaebbd4e52f95666a879518192fabd45522491567274ffb10b045465d557a",
+    "bytes": 848192,
+    "mtime": 1792830045.3858502
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_1440_2000.hdf5": {
+    "sha256": "012ef22e16877f093d1c7da159c678c7bf56a740576be8225cc3373686584d96",
+    "bytes": 848192,
+    "mtime": 1792830348.2993586
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_1440_64.hdf5": {
+    "sha256": "5d31ca4512062b849ad41b457e0dc3163b896d56b49490aa2625bab97d9dd199",
+    "bytes": 848192,
+    "mtime": 1792830299.565389
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_15_2000.hdf5": {
+    "sha256": "ab45d2ea706128dbcab34968877f59b9267290206e7707ff7347bf90c417c1e6",
+    "bytes": 848192,
+    "mtime": 1792829913.344659
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_15_64.hdf5": {
+    "sha256": "4a3b66aef26f5ecfd186aa6b1dc643a5470823b74c404f2a8fc76fcca4f3364e",
+    "bytes": 848192,
+    "mtime": 1792829907.452758
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_160_2000.hdf5": {
+    "sha256": "232f361553ba87e5179dc233cb1d7d2845eee466dc25b10702596a6ed48a6c19",
+    "bytes": 848192,
+    "mtime": 1792830075.729299
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_160_64.hdf5": {
+    "sha256": "e0ae004f69f39480068b53697fe4fb5540b5909adf4c696cde4ef8058ab2cd7e",
+    "bytes": 848192,
+    "mtime": 1792830064.990251
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_20_2000.hdf5": {
+    "sha256": "84141b183b53da68879692e240d25854556a4737402146d8376a4e737156e26b",
+    "bytes": 848192,
+    "mtime": 1792829925.5076094
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_20_64.hdf5": {
+    "sha256": "80a6ac795d674356a5e348c7e8664ad1d221759353d474abf61720ea51e73c30",
+    "bytes": 848192,
+    "mtime": 1792829919.299751
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_240_2000.hdf5": {
+    "sha256": "b06ef46ad3f3542554c669cbf97a9d0df03c68cbfc8e6d30b638cf2187f7873d",
+    "bytes": 848192,
+    "mtime": 1792830100.3351579
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_240_64.hdf5": {
+    "sha256": "d8b9ad21243cd2792f1281088674cba88c64baf22658be4d941320fa51a5e2e0",
+    "bytes": 848192,
+    "mtime": 1792830086.9194937
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_30_2000.hdf5": {
+    "sha256": "40591565423c2c4c7830e6e6438462a1f71347b81b064d1e985e4bd390d800b8",
+    "bytes": 848192,
+    "mtime": 1792829938.8944576
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_30_64.hdf5": {
+    "sha256": "823b60904a0928fed7bb33dc283df6711eadd6b427c1f92d1bfe5ebdfee5adbc",
+    "bytes": 848192,
+    "mtime": 1792829932.0484257
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_320_2000.hdf5": {
+    "sha256": "b0ba2ae53eaa414e0c21880635fa4126d56776be651de7a2629f9ea2f88062b9",
+    "bytes": 848192,
+    "mtime": 1792830128.7457137
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_320_64.hdf5": {
+    "sha256": "2ed2ece08d1805417cb682afbb56a7c94143bf972cd5d1f5f3c4e5ba6e34db17",
+    "bytes": 848192,
+    "mtime": 1792830113.1854696
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_40_2000.hdf5": {
+    "sha256": "e4f7c426d57ee0224f6fd361f2525743949407080a4807d6a4218c730fa4e4cd",
+    "bytes": 848192,
+    "mtime": 1792829952.8813486
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_40_64.hdf5": {
+    "sha256": "2a3a7f9a68b7a994374f9256d578d7e7e4c4b91176d183dd241b7124ee2f7585",
+    "bytes": 848192,
+    "mtime": 1792829945.8944314
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_45_2000.hdf5": {
+    "sha256": "79771203422e049590cd853da55735aa89a0175a77bba0485def45037e74aa60",
+    "bytes": 848192,
+    "mtime": 1792829967.2440407
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_45_64.hdf5": {
+    "sha256": "9b67eb7fb527af77ac420ccff905eee09f397107ca7e7646e9df05f0bd947753",
+    "bytes": 848192,
+    "mtime": 1792829959.8763564
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_480_2000.hdf5": {
+    "sha256": "93642078af279d5c6387370ca20d36fd1837388acf819f7c02f368e5114bbc4d",
+    "bytes": 848192,
+    "mtime": 1792830164.362677
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_480_64.hdf5": {
+    "sha256": "e3888ad01cc77a142c63fadca4627aea760e536a689bd0526c4fa992676d0730",
+    "bytes": 848192,
+    "mtime": 1792830143.852778
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_50_2000.hdf5": {
+    "sha256": "d9bf0e02e995344e6f780cd6e695b8dbf4e7df429d10bceb0412aa7b13533f97",
+    "bytes": 848192,
+    "mtime": 1792829985.3464026
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_50_64.hdf5": {
+    "sha256": "17103ec317f2b182f99637a204f69ea380ef71cf2d52b31c08d45f212dd71b28",
+    "bytes": 848192,
+    "mtime": 1792829976.8732698
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_55_2000.hdf5": {
+    "sha256": "8bd67b88cd05016cf2cc61df7da008fcf3019e7533005e53d2528a3eec9fb990",
+    "bytes": 848192,
+    "mtime": 1792830002.7932613
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_55_64.hdf5": {
+    "sha256": "ba9763f48ca8e6c16d654fdd62aa9de6c867b081874281a2d8c4e871066b4234",
+    "bytes": 848192,
+    "mtime": 1792829994.2627153
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_60_2000.hdf5": {
+    "sha256": "034c94248088f6551b66ea68d123a8f33f5ab8178b053859cc7e242783fb2337",
+    "bytes": 848192,
+    "mtime": 1792830018.2375443
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_60_64.hdf5": {
+    "sha256": "5e1b219f6486f58a338aa4bc6c4fd0aa1245f7e374b74536fcc3a281b078a8a9",
+    "bytes": 848192,
+    "mtime": 1792830010.5305488
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_640_2000.hdf5": {
+    "sha256": "db77ff8f4c0f42972954befd684f10a391f2dc4f8623fa83e6e3b92782965e1a",
+    "bytes": 848192,
+    "mtime": 1792830208.0939639
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_640_64.hdf5": {
+    "sha256": "fec6d0fc69fa72aed0d7e8ab0d179c903b0466d2953be171267c90c7f57b8996",
+    "bytes": 848192,
+    "mtime": 1792830183.0539274
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_80_2000.hdf5": {
+    "sha256": "8a4921a9f929fd9642bf34f1866db1370dcce007e75d02ad3780701e21b81de1",
+    "bytes": 848192,
+    "mtime": 1792830035.900152
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_80_64.hdf5": {
+    "sha256": "de4481273d38a4672a3e0a2313f320060824bc83a1b1a8e34f3766c727ab183a",
+    "bytes": 848192,
+    "mtime": 1792830027.2728214
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_960_2000.hdf5": {
+    "sha256": "f112c9db31a9a400def829418303c8846ea7ee87a38215820de270427c7b9782",
+    "bytes": 848192,
+    "mtime": 1792830267.2600534
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_960_64.hdf5": {
+    "sha256": "1638746495414d2879883714dfd92967ae1573cd1d23424eb1c0501d3e61c702",
+    "bytes": 848192,
+    "mtime": 1792830231.7276363
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_10_2000.hdf5": {
+    "sha256": "91fd014cf5a9121ae52fbc77ddc45b6e2f944c3c6704e037e68d827eacff2821",
+    "bytes": 848192,
+    "mtime": 1792830401.4384444
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_10_64.hdf5": {
+    "sha256": "24e4cc9c2da38c17f8393245f22a1bf750e440b87c4ba9c0e4ec10b547312bda",
+    "bytes": 848192,
+    "mtime": 1792830395.4308858
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_120_2000.hdf5": {
+    "sha256": "cbe80fdba46ef59f1352554f0bd53b3d40fb3a8433928ae0e5ac42c9c1863922",
+    "bytes": 848192,
+    "mtime": 1792830556.3442328
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_120_64.hdf5": {
+    "sha256": "9d0606f0ba353b1b94378a58a775b4c8460c7a0370d58b677b368081c34e1901",
+    "bytes": 848192,
+    "mtime": 1792830546.30357
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_1440_2000.hdf5": {
+    "sha256": "c3b66f9f46ee419a8616e46ce6e5fce725930d9e5f7c7950394f62980d76b889",
+    "bytes": 848192,
+    "mtime": 1792830881.4851208
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_1440_64.hdf5": {
+    "sha256": "e1b8677a3aa286a7e8a78d45f9cfc79d8fdbaf1ac3d1065332b552c787c1427c",
+    "bytes": 848192,
+    "mtime": 1792830831.2030883
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_15_2000.hdf5": {
+    "sha256": "257dc36e6ad6a5c563f7844112d36c42d7e88ac6a148b3f0b7d0a63b7475d9cb",
+    "bytes": 848192,
+    "mtime": 1792830414.151559
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_15_64.hdf5": {
+    "sha256": "1555508fa02915686db74a2b076d66aaa74bf0e6d23be591b2e057ccab1433df",
+    "bytes": 848192,
+    "mtime": 1792830407.7090988
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_160_2000.hdf5": {
+    "sha256": "bceba173095c0776ee084655a21a884a1d47cdb59289deaedf095b9fc1fcdc2a",
+    "bytes": 848192,
+    "mtime": 1792830578.4866486
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_160_64.hdf5": {
+    "sha256": "8a8afff602a019d8a206766afca7053d9b647bc7695fd23b679c1d63e3880966",
+    "bytes": 848192,
+    "mtime": 1792830566.6854384
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_20_2000.hdf5": {
+    "sha256": "f3a5963f89643875c203030ab26020842ffeedc391e351b824e9ec4cf7731326",
+    "bytes": 848192,
+    "mtime": 1792830426.7863786
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_20_64.hdf5": {
+    "sha256": "d81c053e174639a7ed446381417fb7c28927a7119eb99078341a5a284fbf640b",
+    "bytes": 848192,
+    "mtime": 1792830420.3754506
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_240_2000.hdf5": {
+    "sha256": "8d96e05f556ff519635e895117993a1f6eef953a554f7623830b304a980044d6",
+    "bytes": 848192,
+    "mtime": 1792830605.6683936
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_240_64.hdf5": {
+    "sha256": "5ac0d994163d475f57988a70cb963efa3f912777a3b5b62b593e2308a23bdcb2",
+    "bytes": 848192,
+    "mtime": 1792830591.0244823
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_30_2000.hdf5": {
+    "sha256": "34999fc0941c54bf1718b0d35ae9a6cdb68260a8dce6198c8b81870b9e19e0b0",
+    "bytes": 848192,
+    "mtime": 1792830440.746155
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_30_64.hdf5": {
+    "sha256": "76eb4a5967e42dd240a1c797d4522aacf0d5971e12e1ee018d92485ffa7f6f76",
+    "bytes": 848192,
+    "mtime": 1792830433.625228
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_320_2000.hdf5": {
+    "sha256": "9061ca37d48a8362b87d5b4fdb318641f8e9d372c3dbdfc85dbe60b769d7a303",
+    "bytes": 848192,
+    "mtime": 1792830637.4384725
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_320_64.hdf5": {
+    "sha256": "792dd73273505f387a1a3a4a46bf36ece0003ac0343dcb631ab29b8afe67edfe",
+    "bytes": 848192,
+    "mtime": 1792830620.0143073
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_40_2000.hdf5": {
+    "sha256": "837dc45b826ab8115a8ef93e9a99c1158958e04d701bd3e902df164bfc478541",
+    "bytes": 848192,
+    "mtime": 1792830456.3140647
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_40_64.hdf5": {
+    "sha256": "03adaec263d310c189924305a524c670e136238ffc35643740442761b42c4436",
+    "bytes": 848192,
+    "mtime": 1792830448.5017548
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_45_2000.hdf5": {
+    "sha256": "c645f326493bef90eeacd100ba951a1f8950d9bc47e40bcaa30197376144f0cd",
+    "bytes": 848192,
+    "mtime": 1792830471.9844537
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_45_64.hdf5": {
+    "sha256": "a190ab4884634cbf66a34728346b44293718be27b33102500fbfeac461e1ecf1",
+    "bytes": 848192,
+    "mtime": 1792830463.9117572
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_480_2000.hdf5": {
+    "sha256": "5631ff6bad0044408ee87812850ac2f2a8c64f80c0f5666c72f3fecb8cc48804",
+    "bytes": 848192,
+    "mtime": 1792830678.802348
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_480_64.hdf5": {
+    "sha256": "b632d352f584130d487cc6ce9bc03681553ca72600170371182bd8cc1876705e",
+    "bytes": 848192,
+    "mtime": 1792830655.168151
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_50_2000.hdf5": {
+    "sha256": "f8406b1dc3a4faeb0ec59c2fc21d146c070403f8b434515ffa45b741745e9592",
+    "bytes": 848192,
+    "mtime": 1792830487.5924506
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_50_64.hdf5": {
+    "sha256": "547dce02570c73b9f8b1fca1f1d3dae930988e04f35b75bede543071b1546fcc",
+    "bytes": 848192,
+    "mtime": 1792830480.011567
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_55_2000.hdf5": {
+    "sha256": "d0f126036d4ccc6f0eb1775f862acd46924e2510805fa44b6396a8461d8b1ebe",
+    "bytes": 848192,
+    "mtime": 1792830503.2423427
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_55_64.hdf5": {
+    "sha256": "3770fcff32ea9e92e300a1dfbd2d4ea5f3c5db38ec9b19a41b1d277dc2c8f2df",
+    "bytes": 848192,
+    "mtime": 1792830495.4852924
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_60_2000.hdf5": {
+    "sha256": "52f41f7a00add2b4869a10812ccc3321db2a34cca429782f6bd8dad1b86a73fe",
+    "bytes": 848192,
+    "mtime": 1792830519.0888517
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_60_64.hdf5": {
+    "sha256": "f367633d713037136b3f784c9c148252557767a62c195b9deeb6fbd699a5d18c",
+    "bytes": 848192,
+    "mtime": 1792830511.1133757
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_640_2000.hdf5": {
+    "sha256": "1072bdf9f15b899911d2352abd761979973d77d2225e73e0afabd631f2f6a189",
+    "bytes": 848192,
+    "mtime": 1792830729.660595
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_640_64.hdf5": {
+    "sha256": "24bc3d93f4cd908471207b7623fb0c973f1dc212f5507fde6bdc9b165fa3231d",
+    "bytes": 848192,
+    "mtime": 1792830700.188202
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_80_2000.hdf5": {
+    "sha256": "043c7f8629d27a89b14f0c2468f08ae948371434fbad15871d70e929838ed08c",
+    "bytes": 848192,
+    "mtime": 1792830536.716219
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_80_64.hdf5": {
+    "sha256": "9dd122daf25505e9adb372c738fa7980d8b9b3eba350a283455eb689aa38cee2",
+    "bytes": 848192,
+    "mtime": 1792830527.7008958
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_960_2000.hdf5": {
+    "sha256": "742d16930a0ce04e4c232d55600843682bd779d81aabca77e8ff06ab981f6f37",
+    "bytes": 848192,
+    "mtime": 1792830796.6868372
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_960_64.hdf5": {
+    "sha256": "f8a2705120a8d07d9a1fa2229a0f4f6058bbd7011068c7f4e74b55368ba73244",
+    "bytes": 848192,
+    "mtime": 1792830757.7190006
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_10_2000.hdf5": {
+    "sha256": "1b79091e3f9abffade2d14535874cf1463692828f0045c8cbf6fc310ce65a8c7",
+    "bytes": 848192,
+    "mtime": 1792830933.8494596
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_10_64.hdf5": {
+    "sha256": "53ed07d5a8c9383e4c81f0dd5e9fb88d8152564c97ded733c28a4a8d989fe11b",
+    "bytes": 848192,
+    "mtime": 1792830928.0388916
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_120_2000.hdf5": {
+    "sha256": "2197956dfcb9da34397232a8c6a5a94ea28e966ca7e65e7c90bd957f10189fc8",
+    "bytes": 848192,
+    "mtime": 1792831098.190055
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_120_64.hdf5": {
+    "sha256": "d3a2fbc819bb8c4663d047ce53fe2b88843774c39b1e0a172f4d1ea52f365846",
+    "bytes": 848192,
+    "mtime": 1792831086.730493
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_1440_2000.hdf5": {
+    "sha256": "f5aa6dd552ae2cb66e65d4318cb9e34e8403581a4c90d866513212ea08bb20f6",
+    "bytes": 848192,
+    "mtime": 1792831433.1287563
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_1440_64.hdf5": {
+    "sha256": "45d12b311f4544eede5bd0774f95f09ac0a97f0a85ae994db6d83d628da6e948",
+    "bytes": 848192,
+    "mtime": 1792831379.3942654
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_15_2000.hdf5": {
+    "sha256": "ff688640eb0e99f829c446aa76121280c30825acf0b68735b30cfb588b5e2cd4",
+    "bytes": 848192,
+    "mtime": 1792830947.3156574
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_15_64.hdf5": {
+    "sha256": "567891d7f71cea66ffcc96d4b5b5d071dd413ca38bf51f64cf3ed2907d3b85ec",
+    "bytes": 848192,
+    "mtime": 1792830940.3673275
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_160_2000.hdf5": {
+    "sha256": "b7b431686728a15fca1252d9f8fa14bf18d210e26f6891c2804737fd964ed6d4",
+    "bytes": 848192,
+    "mtime": 1792831122.8264701
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_160_64.hdf5": {
+    "sha256": "c99bbf0d07828b99d8d58b72b5c1a48458d092e0ea4fb7cacc1e8dbd15c28bb3",
+    "bytes": 848192,
+    "mtime": 1792831110.1602888
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_20_2000.hdf5": {
+    "sha256": "188a9395f989994104a8848ee55119f3cd7226b05e7c0865620de9f2418b3b56",
+    "bytes": 848192,
+    "mtime": 1792830961.554412
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_20_64.hdf5": {
+    "sha256": "b956ed57b00c7aa330dbd341271355f60d1204b59232d492f4c7ea106fef84f8",
+    "bytes": 848192,
+    "mtime": 1792830954.5012264
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_240_2000.hdf5": {
+    "sha256": "9cb69693b41c82ad423d3de1c25f2faf3998a83c874e22f58e1acf006d425bd7",
+    "bytes": 848192,
+    "mtime": 1792831151.49718
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_240_64.hdf5": {
+    "sha256": "752ca718e492d66024f323cb88f7fc8495d5a7a52ece94476a693cabe0b30a9d",
+    "bytes": 848192,
+    "mtime": 1792831136.0027034
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_30_2000.hdf5": {
+    "sha256": "525f9202eff24db6f30d9dec4150a5d1ed1dc03a76fb475d7790b5b6b1188e90",
+    "bytes": 848192,
+    "mtime": 1792830976.5720706
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_30_64.hdf5": {
+    "sha256": "78719eb52b15f326cbbe57b20b1000beffc7df400d8debb47610238642ded4f7",
+    "bytes": 848192,
+    "mtime": 1792830968.9245772
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_320_2000.hdf5": {
+    "sha256": "692e9d0d98777a6c18a8d3b226f971eb1eebe11cbcbb7c29a9776e8caae6592c",
+    "bytes": 848192,
+    "mtime": 1792831185.9255369
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_320_64.hdf5": {
+    "sha256": "93f0882ae64769bdb0d8e6f0afa9c66db8b1cfb1877a3d8a627f4a61544d088e",
+    "bytes": 848192,
+    "mtime": 1792831167.6559725
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_40_2000.hdf5": {
+    "sha256": "6df3079a2ad639764512723e8ae5ba54e2f7d88831d46e1b52674ea62dbf1f0b",
+    "bytes": 848192,
+    "mtime": 1792830992.5043292
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_40_64.hdf5": {
+    "sha256": "f6dcc10b11ef193882d415a007756a8c75ff81a499ad3a473592e5d733537371",
+    "bytes": 848192,
+    "mtime": 1792830984.8106747
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_45_2000.hdf5": {
+    "sha256": "ee6b49cf0a0a424df49187b3f7850a14a102cc047aa3d4c21177f3cf30a912d9",
+    "bytes": 848192,
+    "mtime": 1792831007.7387547
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_45_64.hdf5": {
+    "sha256": "d31f73c5e71d234aa54c7f1ff5fa0a0b9ad47686832a8563235ed42fcfcb035f",
+    "bytes": 848192,
+    "mtime": 1792831000.101285
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_480_2000.hdf5": {
+    "sha256": "516aec411061a8c20752b84d44c481abe44a81264363d1f3454a49a3d5cb241d",
+    "bytes": 848192,
+    "mtime": 1792831227.878659
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_480_64.hdf5": {
+    "sha256": "f1eaed53af373b457487bbca4f55157e059659b19ee750ef77186c7b92cd746a",
+    "bytes": 848192,
+    "mtime": 1792831204.4848871
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_50_2000.hdf5": {
+    "sha256": "013b6c69eb04d9b40f64fb789f7f9b373d87df989bbc98d48140399fb595c231",
+    "bytes": 848192,
+    "mtime": 1792831023.3447785
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_50_64.hdf5": {
+    "sha256": "2eede468b9dc62a83df6af4eaeb381007ec75a2c9e579fac027105b5a19a0dab",
+    "bytes": 848192,
+    "mtime": 1792831015.557229
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_55_2000.hdf5": {
+    "sha256": "3966ab5094730020b27d461b5872c26d8594adc310fbb1081d3be20468532b63",
+    "bytes": 848192,
+    "mtime": 1792831040.2557118
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_55_64.hdf5": {
+    "sha256": "e86c74207b7b869ece27bca570d211a80bf3b49194b9f6b4dad7907d2b6c3cfe",
+    "bytes": 848192,
+    "mtime": 1792831031.7279918
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_60_2000.hdf5": {
+    "sha256": "3f88c91fc5c6fcb2921144e91cf12f4f5baf9c94ba747fa8227e9fa637c4baa8",
+    "bytes": 848192,
+    "mtime": 1792831057.3765228
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_60_64.hdf5": {
+    "sha256": "ac29d31010ddf10504c35b6388983713a2fb6c7e9582f82a22ada68072bbcfee",
+    "bytes": 848192,
+    "mtime": 1792831048.8269475
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_640_2000.hdf5": {
+    "sha256": "5ca971186260b478191269b758e6763fda9fb09d891d803673082b1af092134b",
+    "bytes": 848192,
+    "mtime": 1792831276.1054142
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_640_64.hdf5": {
+    "sha256": "d09d3003cc6dfe096d6270250cf0197ab8ecef8e443b15249c907837f07e9aa3",
+    "bytes": 848192,
+    "mtime": 1792831249.5075057
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_80_2000.hdf5": {
+    "sha256": "5d96eec0f73890b5446f6fc12969b66214b82150524668380bf33b8d04fd5565",
+    "bytes": 848192,
+    "mtime": 1792831076.1799352
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_80_64.hdf5": {
+    "sha256": "6be5b5993716b144f9e712bc538091646c073f13e2e0c5188cd0ad8ece881330",
+    "bytes": 848192,
+    "mtime": 1792831066.547064
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_960_2000.hdf5": {
+    "sha256": "df94fcbd81048f5e2e5c636d57bcba4d8808f6239351e32341ee6491570aa6ff",
+    "bytes": 848192,
+    "mtime": 1792831341.4805255
+  },
+  "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_960_64.hdf5": {
+    "sha256": "80b2f049bc45765f54ff720f448be3396f098d8c07c7156929ff7f1048d259bd",
+    "bytes": 848192,
+    "mtime": 1792831303.6432316
+  }
+}

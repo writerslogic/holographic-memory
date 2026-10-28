@@ -1,0 +1,116 @@
+{
+  "dataset": "cqadupstack-lemur-2048-ip",
+  "source_url": "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/main/cqadupstack-lemur-2048-ip.hdf5?download=true",
+  "source_full_file_sha256": "2b81fad4e1b887dd3c1ef7178242ade4b568c256977f3c98a1a80fe50874d963",
+  "source_full_file_bytes": 15198861424,
+  "advertised_sha_matches_fully_verified_volume_plan": true,
+  "extracted_only": "distances",
+  "shape": [
+    1000,
+    100
+  ],
+  "dtype": "float64",
+  "local_sha256": "8aca2fe82b9f14e40a4e3e70d31192df3228beff69d0e38c6a44ec1e4e13bee8",
+  "transferred_bytes": 1048576,
+  "ranges": [
+    {
+      "start": 0,
+      "end": 65535,
+      "bytes": 65536,
+      "sha256": "70c675dacc8b014e7f151ca1ab0f05ddbaec5f97f946243594fb590bfb8da83b"
+    },
+    {
+      "start": 3753115648,
+      "end": 3753181183,
+      "bytes": 65536,
+      "sha256": "2f9a613e8e0120c5f131b6a279efee7909b1ea5975cf9deee9d347fead35d929"
+    },
+    {
+      "start": 3753902080,
+      "end": 3753967615,
+      "bytes": 65536,
+      "sha256": "52d56f523b12f44b523a271c1ce8844b55b3b1870b499d665b16e11496237b9b"
+    },
+    {
+      "start": 3753967616,
+      "end": 3754033151,
+      "bytes": 65536,
+      "sha256": "a336c9fb782f50a8533e58a2bd7a669074f12708258a16d8bc37262996cf7ccd"
+    },
+    {
+      "start": 3754033152,
+      "end": 3754098687,
+      "bytes": 65536,
+      "sha256": "1afa5dfde30affa1594495fd3c32a1ce12419ba2426350aac2637f191015af8e"
+    },
+    {
+      "start": 3754098688,
+      "end": 3754164223,
+      "bytes": 65536,
+      "sha256": "cb8b0a7cb3fe397d86cffa1511f1c36542f27130bf030ed862f47d47a867482a"
+    },
+    {
+      "start": 3754164224,
+      "end": 3754229759,
+      "bytes": 65536,
+      "sha256": "8017d2a17f98e5be66017c087d8093cfb2b41d7941cf7652d79bfad2c2bdec18"
+    },
+    {
+      "start": 3754229760,
+      "end": 3754295295,
+      "bytes": 65536,
+      "sha256": "baa94f3db0e85a7c6216a0a49f8ac405757402a5fd4048f5e56bee0eb5f5ba29"
+    },
+    {
+      "start": 3754295296,
+      "end": 3754360831,
+      "bytes": 65536,
+      "sha256": "39a655248ad762f1efbb2c5722b7b9af127fb81ec9addb8bf266dd50fe5fcb6d"
+    },
+    {
+      "start": 3754360832,
+      "end": 3754426367,
+      "bytes": 65536,
+      "sha256": "c9292eb9a86935536b2e59b6a593329b4a1df9fd3e3fdb76246d455b146e4d5a"
+    },
+    {
+      "start": 3754426368,
+      "end": 3754491903,
+      "bytes": 65536,
+      "sha256": "3f629e2528f68c8c818deabe934ae4d09d15d0bd4a38dc22c1aae00d8082df0b"
+    },
+    {
+      "start": 3754491904,
+      "end": 3754557439,
+      "bytes": 65536,
+      "sha256": "28290d6c072ada7458cd6ef83c48210909709c8b9e1521ebd2189a89b039be31"
+    },
+    {
+      "start": 3754557440,
+      "end": 3754622975,
+      "bytes": 65536,
+      "sha256": "9f7085bf91d124969dfaf278606d20ae0fb1e2071808c875c0ef1541007424ec"
+    },
+    {
+      "start": 3754622976,
+      "end": 3754688511,
+      "bytes": 65536,
+      "sha256": "37642734ea7b10b9bdf6f89b3376645fb3b4bec2f3c5504c75749ec8d78bbe2c"
+    },
+    {
+      "start": 3754688512,
+      "end": 3754754047,
+      "bytes": 65536,
+      "sha256": "69e4a6fa17cdc404e33e574580027d8b25d2464bb31dd24e07231b5518872812"
+    },
+    {
+      "start": 3754754048,
+      "end": 3754819583,
+      "bytes": 65536,
+      "sha256": "4548bdc4831cf738b7be068d97b5ece708cf1a8edfa55ebae91ee02970546b34"
+    }
+  ],
+  "verification_scope": "Source full hash verified by original Modal download; this extraction verifies matching HF advertised SHA and preserves exact requested byte ranges, not a second full-file hash",
+  "purpose": "Official metric export only; no fitting, query execution, tuning or dataset bulk download",
+  "at": "2026-10-24T14:45:29.691168+00:00"
+}

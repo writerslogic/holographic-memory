@@ -1,0 +1,32 @@
+{
+  "dataset": "cqadupstack-lemur-2048-ip",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_32_500_8_true.hdf5": "65a1171ba50b2f37e17a26662cbbf8b1d8e83de7951b70bac81d011984c08429",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_48_500_8_true.hdf5": "c08d8ea21267d49ba8589bbfd8bbc5c0c301b428f4a42fd8fc1c335237e0f894",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_64_500_8_true.hdf5": "8ad55a8ec5c3ef4f35b42d9c67dce2373d3dc02b429626389aac90e7a0099beb",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/cqadupstack-lemur-2048-ip/hms@12c80decb094/results/cqadupstack-lemur-2048-ip/100/hms/ip_96_500_8_true.hdf5": "b0316acb50c08cac61085665a7a43a947bb0994887674a727f8732b6aa616238"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATJ5M46CEM2MS3TQDG47R"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "cc032b9b3ba1765b499633e7929af93293912ba3820a821d6d2733d8978f603e",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/cqadupstack-lemur-2048-ip/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 180,
+  "same_as_prior_official_points": false
+}

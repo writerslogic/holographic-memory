@@ -1,0 +1,58 @@
+{
+  "dataset": "imagenet-clip-512-normalized",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:55:02.382503+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+    ],
+    "symphonyqg": [
+      "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": {
+        "qps": 3573.0120024786215,
+        "recall": 0.99161,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=200, code_bits=8)|40_200",
+        "build_time": 2625.118451356888,
+        "index_size": 1450152.0
+      },
+      "0.95": {
+        "qps": 3573.0120024786215,
+        "recall": 0.99161,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=200, code_bits=8)|40_200",
+        "build_time": 2625.118451356888,
+        "index_size": 1450152.0
+      },
+      "0.99": {
+        "qps": 3573.0120024786215,
+        "recall": 0.99161,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=200, code_bits=8)|40_200",
+        "build_time": 2625.118451356888,
+        "index_size": 1450152.0
+      }
+    },
+    "symphonyqg": {
+      "0.90": {
+        "qps": 1879.2751572507707,
+        "recall": 0.9011600000000001,
+        "params": "SymphonyQG(max_degree=64, efConstruction=400, quantization_bits=8, ef=600)|600",
+        "build_time": 4483.4918620586395,
+        "index_size": 11266200.0
+      },
+      "0.95": {
+        "qps": 781.3653723035387,
+        "recall": 0.95477,
+        "params": "SymphonyQG(max_degree=64, efConstruction=400, quantization_bits=0, ef=1500)|1500",
+        "build_time": 2616.819615840912,
+        "index_size": 12493044.0
+      },
+      "0.99": null
+    }
+  }
+}

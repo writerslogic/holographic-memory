@@ -1,0 +1,357 @@
+{
+  "license": "Apache-2.0",
+  "state": "complete",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "harness_commit": "2e081ad32c1eccab72dcb739ad886c310b90f715",
+  "archive": {
+    "repository": "https://github.com/writerslogic/holographic-memory",
+    "commit": "3c21bdf14826bf1e05149e5f7287bb52463f4bb7",
+    "source_ref": "origin/bench/ann-live-20261024",
+    "directory": "benchmarks/results/ann_live_20261024",
+    "original_manifest_sha256": "495c7f1cd3c773df75f4e6bc8eae9479967c7d3b76f835f0ee18a9c99a5b8eaa",
+    "operational_runner_sha256": {
+      "ann-live-modal-20261024.py": "1ea557f87cc9f2b62d440ec55a47689c92fd85d22ad67c897040f7af511133ce",
+      "ann-live-export-20261024.py": "a682f6441d04890a2de8e89d1817803730a1c3c7f3594ef4d08d16833e58dce4",
+      "test_ann_live_export_20261024.py": "7dfaafd8c95cee07a113599e14da36829b3ad334417f98d0b4641ff78d144d20",
+      "ann-sift-d32-repair-20261024.py": "d495faea262c905139d67ffe276f0530bed4a497b4f114fa977de5343132c7af"
+    },
+    "omitted": "Bulk logs, paid Modal launchers, and the abandoned SIFT repair runner remain available at this exact commit.",
+    "retained_ref": "refs/archive/retained-work-20261028/ann-live-20261024"
+  },
+  "protocol": "protocol.json",
+  "hardware": "hardware.json",
+  "provenance_corrections": "provenance-corrections.json",
+  "comparison_scope": "Within-dataset same-container harness comparison only; not published AWS hardware or an official leaderboard submission.",
+  "verification_scope": "Each summary can be regenerated offline from committed CSV, byte-identical dataset manifest and raw-point metadata using ann-live-export-20261024.py. Native-result SHA-256 inventories identify external HDF5 artifacts; this directory cannot independently recompute native recall or timings.",
+  "sift_scope": "108 native points retained;72 same-container d48/d64 comparison points,36 diagnostic old-CPU d32 points; no full-grid fairness claim",
+  "native_points": {
+    "hms": 324,
+    "comparators": 378,
+    "total": 702,
+    "diagnostic_old_cpu_hms": 36
+  },
+  "cost_note": "Per-run estimates use rounded Modal resource rates; actual billing unavailable. Original and repaired Fashion must be added, preserving cancelled attempts.",
+  "collections": [
+    {
+      "dataset": "glove-100-angular",
+      "summary": "glove-100-angular-summary.json",
+      "csv": "glove-100-angular/results.csv",
+      "manifest": "glove-100-angular/manifest.json",
+      "raw_metadata": "glove-100-angular/raw-point-metadata.json",
+      "native_hashes": "glove-100-angular/native-results.sha256.json",
+      "result_hashes": "glove-100-angular/raw-results.sha256.json",
+      "points": 192,
+      "matched_comparison_points": 192,
+      "diagnostic_points": 0
+    },
+    {
+      "dataset": "sift-128-euclidean",
+      "summary": "sift-128-euclidean-summary.json",
+      "csv": "sift-128-euclidean/results.csv",
+      "manifest": "sift-128-euclidean/manifest.json",
+      "raw_metadata": "sift-128-euclidean/raw-point-metadata.json",
+      "native_hashes": "sift-128-euclidean/native-results.sha256.json",
+      "result_hashes": "sift-128-euclidean/raw-results.sha256.json",
+      "points": 204,
+      "matched_comparison_points": 168,
+      "diagnostic_points": 36
+    },
+    {
+      "dataset": "fashion-mnist-784-euclidean",
+      "summary": "fashion-mnist-784-euclidean-summary.json",
+      "csv": "fashion-mnist-784-euclidean/results.csv",
+      "manifest": "fashion-mnist-784-euclidean/manifest.json",
+      "raw_metadata": "fashion-mnist-784-euclidean/raw-point-metadata.json",
+      "native_hashes": "fashion-mnist-784-euclidean/native-results.sha256.json",
+      "result_hashes": "fashion-mnist-784-euclidean/raw-results.sha256.json",
+      "points": 306,
+      "matched_comparison_points": 306,
+      "diagnostic_points": 0
+    }
+  ],
+  "curation": {
+    "maintained_scripts": [
+      "ann-live-export-20261024.py",
+      "test_ann_live_export_20261024.py"
+    ],
+    "script_note": "License headers were added to maintained scripts; archived source digests remain separately identified. Dataset manifests, CSVs, metadata and upstream definitions retain their original bytes.",
+    "retained_files": [
+      {
+        "path": "ann-live-export-20261024.py",
+        "sha256": "4f938d4fdd42d3d775d694ef99a0d873c0bfa4b5591bcd03713287a15a240c12",
+        "archive_sha256": "a682f6441d04890a2de8e89d1817803730a1c3c7f3594ef4d08d16833e58dce4"
+      },
+      {
+        "path": "diagnostic-source-glass/failure.json",
+        "sha256": "c17aa804c739209d2655a0c4bd6b207d532c4c97c9fc61cdf9d526e31ba9d8d3",
+        "archive_sha256": "c17aa804c739209d2655a0c4bd6b207d532c4c97c9fc61cdf9d526e31ba9d8d3"
+      },
+      {
+        "path": "diagnostic-source-glass/manifest.json",
+        "sha256": "9af197feb155fafe20d5717a20188d2b1f7b56904df247c9263fa77284dd57dd",
+        "archive_sha256": "9af197feb155fafe20d5717a20188d2b1f7b56904df247c9263fa77284dd57dd"
+      },
+      {
+        "path": "diagnostic-source-glass/requirements-resolved.txt",
+        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean-summary.json",
+        "sha256": "daa35f416d0ae3fb126a6307f0f3b2f1e4555009f8c6f808fb9103386fdc186f",
+        "archive_sha256": "daa35f416d0ae3fb126a6307f0f3b2f1e4555009f8c6f808fb9103386fdc186f"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/defs/glass/glass/config.yml",
+        "sha256": "342144a9fd6d7d0961983b09ccad5d9505f9760a711fec92f9088c099c76c41b",
+        "archive_sha256": "342144a9fd6d7d0961983b09ccad5d9505f9760a711fec92f9088c099c76c41b"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/defs/hms-d32/hms/config.yml",
+        "sha256": "0fd34d9f89ed5767ae2f95cdc34bd55b8a8d6f73b32e746d6d7f0384f7066807",
+        "archive_sha256": "0fd34d9f89ed5767ae2f95cdc34bd55b8a8d6f73b32e746d6d7f0384f7066807"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/defs/hms-d48/hms/config.yml",
+        "sha256": "331f19589572557c10e0943b83eba452b49fcda3a91825a307464f5033f591c6",
+        "archive_sha256": "331f19589572557c10e0943b83eba452b49fcda3a91825a307464f5033f591c6"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/defs/hms-d64/hms/config.yml",
+        "sha256": "f1b525dbc152f583bd20657c1c9aabd6c154d07ff96ea01499965486a0ad3436",
+        "archive_sha256": "f1b525dbc152f583bd20657c1c9aabd6c154d07ff96ea01499965486a0ad3436"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/export-receipt.json",
+        "sha256": "385eb17c540be2ecee9d999a0f43e3cc156e2d189016094a449c329e4eecec98",
+        "archive_sha256": "385eb17c540be2ecee9d999a0f43e3cc156e2d189016094a449c329e4eecec98"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/manifest.json",
+        "sha256": "f6ef0931f6c2229da195c2e636f6935a1daad0dfeca966f2e3d52985e70cc140",
+        "archive_sha256": "f6ef0931f6c2229da195c2e636f6935a1daad0dfeca966f2e3d52985e70cc140"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/metadata-receipt.json",
+        "sha256": "26d7340a173d6351af3516016135d57b4772cd78c6ffac54d51a64fe830e1e5a",
+        "archive_sha256": "26d7340a173d6351af3516016135d57b4772cd78c6ffac54d51a64fe830e1e5a"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/native-results.sha256.json",
+        "sha256": "7a8117249edbcc131c1ed727f9cc531a5df717681c1fe0e5005888aeae3e0d31",
+        "archive_sha256": "7a8117249edbcc131c1ed727f9cc531a5df717681c1fe0e5005888aeae3e0d31"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/raw-point-metadata.json",
+        "sha256": "46472df89ba3a71ee58974f0817ae30faf33d9a7571f78a85b15177281900ff9",
+        "archive_sha256": "46472df89ba3a71ee58974f0817ae30faf33d9a7571f78a85b15177281900ff9"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/raw-results.sha256.json",
+        "sha256": "f800dbae2859dcd55eaf1ef8cdf64284705dd20b625a0bc94a81619631efb13e",
+        "archive_sha256": "f800dbae2859dcd55eaf1ef8cdf64284705dd20b625a0bc94a81619631efb13e"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/receipt.json",
+        "sha256": "d8cd6f75991a0f0b4d5208bba9c6377f9f8740046dc5efe3055aa7ddcb153a74",
+        "archive_sha256": "d8cd6f75991a0f0b4d5208bba9c6377f9f8740046dc5efe3055aa7ddcb153a74"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/requirements-resolved-post-glass.txt",
+        "sha256": "a56b83f9e4a00148c9b6205aa6a54ea1813828162813af587e7de1bafb80a2f7",
+        "archive_sha256": "a56b83f9e4a00148c9b6205aa6a54ea1813828162813af587e7de1bafb80a2f7"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/requirements-resolved.txt",
+        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/results.csv",
+        "sha256": "fdcc128d7a7a4da670d1a69892ee2a96954347107cdbd74ef9414f00a79ee6a4",
+        "archive_sha256": "fdcc128d7a7a4da670d1a69892ee2a96954347107cdbd74ef9414f00a79ee6a4"
+      },
+      {
+        "path": "glove-100-angular-summary.json",
+        "sha256": "49239afa14fe10fb6620feedcc96ada6a1eb51aa404bc38ec5e6a87e5285a4f3",
+        "archive_sha256": "49239afa14fe10fb6620feedcc96ada6a1eb51aa404bc38ec5e6a87e5285a4f3"
+      },
+      {
+        "path": "glove-100-angular/defs/hms-d32/hms/config.yml",
+        "sha256": "0fd34d9f89ed5767ae2f95cdc34bd55b8a8d6f73b32e746d6d7f0384f7066807",
+        "archive_sha256": "0fd34d9f89ed5767ae2f95cdc34bd55b8a8d6f73b32e746d6d7f0384f7066807"
+      },
+      {
+        "path": "glove-100-angular/defs/hms-d48/hms/config.yml",
+        "sha256": "331f19589572557c10e0943b83eba452b49fcda3a91825a307464f5033f591c6",
+        "archive_sha256": "331f19589572557c10e0943b83eba452b49fcda3a91825a307464f5033f591c6"
+      },
+      {
+        "path": "glove-100-angular/defs/hms-d64/hms/config.yml",
+        "sha256": "f1b525dbc152f583bd20657c1c9aabd6c154d07ff96ea01499965486a0ad3436",
+        "archive_sha256": "f1b525dbc152f583bd20657c1c9aabd6c154d07ff96ea01499965486a0ad3436"
+      },
+      {
+        "path": "glove-100-angular/defs/scann/scann/config.yml",
+        "sha256": "c351b31dd084724db2a3254ecc6927095f1565551cb6707aff897043fc9ac594",
+        "archive_sha256": "c351b31dd084724db2a3254ecc6927095f1565551cb6707aff897043fc9ac594"
+      },
+      {
+        "path": "glove-100-angular/export-receipt.json",
+        "sha256": "a4dd7fa97c16718200a454aeb7d76d04a5bb5431d881b5cf8d3e555e9086e29b",
+        "archive_sha256": "a4dd7fa97c16718200a454aeb7d76d04a5bb5431d881b5cf8d3e555e9086e29b"
+      },
+      {
+        "path": "glove-100-angular/manifest.json",
+        "sha256": "97ee9fb6fee16de0eec87687438cee4123e07b83e63214b936c9b21bdfb0f6f4",
+        "archive_sha256": "97ee9fb6fee16de0eec87687438cee4123e07b83e63214b936c9b21bdfb0f6f4"
+      },
+      {
+        "path": "glove-100-angular/native-results.sha256.json",
+        "sha256": "e6de5049b3d8811fdb9c7472714b33ef770df160a10bce50d13ac5d15a5fab5c",
+        "archive_sha256": "e6de5049b3d8811fdb9c7472714b33ef770df160a10bce50d13ac5d15a5fab5c"
+      },
+      {
+        "path": "glove-100-angular/raw-point-metadata.json",
+        "sha256": "7cf33f441aacc60b3b741aeb6adf854d807b8066c2a4b1ee344434c6044ed4c8",
+        "archive_sha256": "7cf33f441aacc60b3b741aeb6adf854d807b8066c2a4b1ee344434c6044ed4c8"
+      },
+      {
+        "path": "glove-100-angular/raw-results.sha256.json",
+        "sha256": "731b214b756cce3ba22a89a981051a604094dc9cc8222c76ca3e685714b0aeb4",
+        "archive_sha256": "731b214b756cce3ba22a89a981051a604094dc9cc8222c76ca3e685714b0aeb4"
+      },
+      {
+        "path": "glove-100-angular/receipt.json",
+        "sha256": "a13c9d240fa17335e22367581d7947ac3103bf2a904c749a082bcbdb6fe629a3",
+        "archive_sha256": "a13c9d240fa17335e22367581d7947ac3103bf2a904c749a082bcbdb6fe629a3"
+      },
+      {
+        "path": "glove-100-angular/requirements-resolved.txt",
+        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+      },
+      {
+        "path": "glove-100-angular/results.csv",
+        "sha256": "1ed8c07f9b78ca3968eba52f0d5c1a8cf6e20315db8c2fe08f143e332e2e0bcb",
+        "archive_sha256": "1ed8c07f9b78ca3968eba52f0d5c1a8cf6e20315db8c2fe08f143e332e2e0bcb"
+      },
+      {
+        "path": "hardware.json",
+        "sha256": "9e8fdf3f793ec6927fe86d8fd3b76502acbf3d13332a70c141284a430ec81195",
+        "archive_sha256": "9e8fdf3f793ec6927fe86d8fd3b76502acbf3d13332a70c141284a430ec81195"
+      },
+      {
+        "path": "initial-hardware-manifests/fashion-mnist-784-euclidean-ta-01M5PFRMY0BA8E8QE7C70RKFCR.json",
+        "sha256": "f6ef0931f6c2229da195c2e636f6935a1daad0dfeca966f2e3d52985e70cc140",
+        "archive_sha256": "f6ef0931f6c2229da195c2e636f6935a1daad0dfeca966f2e3d52985e70cc140"
+      },
+      {
+        "path": "initial-hardware-manifests/glove-100-angular-ta-01M5PBSCNQGZ2ST223C1F128PR.json",
+        "sha256": "97ee9fb6fee16de0eec87687438cee4123e07b83e63214b936c9b21bdfb0f6f4",
+        "archive_sha256": "97ee9fb6fee16de0eec87687438cee4123e07b83e63214b936c9b21bdfb0f6f4"
+      },
+      {
+        "path": "initial-hardware-manifests/sift-128-euclidean-ta-01M5PDWGY5JF6G29DRNPS32RMR.json",
+        "sha256": "5bea4902fd02295b35682a7ddb703186eb4b134f93a2226da571ac1270e12297",
+        "archive_sha256": "5bea4902fd02295b35682a7ddb703186eb4b134f93a2226da571ac1270e12297"
+      },
+      {
+        "path": "modal-pricing-20261024.json",
+        "sha256": "72b7bf6e7a1cfe8a8758dc2015428c9f93c8c3872bbbd84e21081eb73141af63",
+        "archive_sha256": "72b7bf6e7a1cfe8a8758dc2015428c9f93c8c3872bbbd84e21081eb73141af63"
+      },
+      {
+        "path": "provenance-corrections.json",
+        "sha256": "50284a306dab8230344e519348f13a67f04e6fce1a417ba1176053656f7b9c84",
+        "archive_sha256": "50284a306dab8230344e519348f13a67f04e6fce1a417ba1176053656f7b9c84"
+      },
+      {
+        "path": "sift-128-euclidean-summary.json",
+        "sha256": "923eb60aad08bfeed5052ce43dc46316d1e8be5ac7b5883bf32b51536e7afe1c",
+        "archive_sha256": "923eb60aad08bfeed5052ce43dc46316d1e8be5ac7b5883bf32b51536e7afe1c"
+      },
+      {
+        "path": "sift-128-euclidean/defs/faiss/faiss/config.yml",
+        "sha256": "8182826789cd28331b894bbf2f7fbd6526967b2193b8a816bbdc556e0e13661d",
+        "archive_sha256": "8182826789cd28331b894bbf2f7fbd6526967b2193b8a816bbdc556e0e13661d"
+      },
+      {
+        "path": "sift-128-euclidean/defs/hms-d32/hms/config.yml",
+        "sha256": "0fd34d9f89ed5767ae2f95cdc34bd55b8a8d6f73b32e746d6d7f0384f7066807",
+        "archive_sha256": "0fd34d9f89ed5767ae2f95cdc34bd55b8a8d6f73b32e746d6d7f0384f7066807"
+      },
+      {
+        "path": "sift-128-euclidean/defs/hms-d48/hms/config.yml",
+        "sha256": "331f19589572557c10e0943b83eba452b49fcda3a91825a307464f5033f591c6",
+        "archive_sha256": "331f19589572557c10e0943b83eba452b49fcda3a91825a307464f5033f591c6"
+      },
+      {
+        "path": "sift-128-euclidean/defs/hms-d64/hms/config.yml",
+        "sha256": "f1b525dbc152f583bd20657c1c9aabd6c154d07ff96ea01499965486a0ad3436",
+        "archive_sha256": "f1b525dbc152f583bd20657c1c9aabd6c154d07ff96ea01499965486a0ad3436"
+      },
+      {
+        "path": "sift-128-euclidean/export-receipt.json",
+        "sha256": "fde109877b03ace044406089d51512c54697886706282e8e08b3ac7f9ca04b4f",
+        "archive_sha256": "fde109877b03ace044406089d51512c54697886706282e8e08b3ac7f9ca04b4f"
+      },
+      {
+        "path": "sift-128-euclidean/manifest.json",
+        "sha256": "5bea4902fd02295b35682a7ddb703186eb4b134f93a2226da571ac1270e12297",
+        "archive_sha256": "5bea4902fd02295b35682a7ddb703186eb4b134f93a2226da571ac1270e12297"
+      },
+      {
+        "path": "sift-128-euclidean/metadata-receipt.json",
+        "sha256": "ce7a8dee80275bf8b1dfed8e61d478ccaef3a54b0926a94a94029e2a7ab96b13",
+        "archive_sha256": "ce7a8dee80275bf8b1dfed8e61d478ccaef3a54b0926a94a94029e2a7ab96b13"
+      },
+      {
+        "path": "sift-128-euclidean/native-results.sha256.json",
+        "sha256": "29e0cb5dbd97ecabe4f0c1de8ea15c1a06e614966805a311cc62e244e1895c9b",
+        "archive_sha256": "29e0cb5dbd97ecabe4f0c1de8ea15c1a06e614966805a311cc62e244e1895c9b"
+      },
+      {
+        "path": "sift-128-euclidean/raw-point-metadata.json",
+        "sha256": "c8b892a15f22f2eb941a483b2c7c31828ed2db84c43a6c29cd625afd28b9db26",
+        "archive_sha256": "c8b892a15f22f2eb941a483b2c7c31828ed2db84c43a6c29cd625afd28b9db26"
+      },
+      {
+        "path": "sift-128-euclidean/raw-results.sha256.json",
+        "sha256": "bfb6ef2f73d1b772fdd18b99eb23a9a3c1055f1436e482f441b2469ad1420fb1",
+        "archive_sha256": "bfb6ef2f73d1b772fdd18b99eb23a9a3c1055f1436e482f441b2469ad1420fb1"
+      },
+      {
+        "path": "sift-128-euclidean/receipt.json",
+        "sha256": "d52cbb1f4c3a1c84ede22f16e1e9d57ed70e538bec2344aa7b590ccc9ebd0442",
+        "archive_sha256": "d52cbb1f4c3a1c84ede22f16e1e9d57ed70e538bec2344aa7b590ccc9ebd0442"
+      },
+      {
+        "path": "sift-128-euclidean/requirements-resolved.txt",
+        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+      },
+      {
+        "path": "sift-128-euclidean/results.csv",
+        "sha256": "43abba8a90da5c13103708364d450e28c48afccab85fb36349fd9afce2c4554f",
+        "archive_sha256": "43abba8a90da5c13103708364d450e28c48afccab85fb36349fd9afce2c4554f"
+      },
+      {
+        "path": "sift-128-euclidean/sift-hardware-matching-limitation.json",
+        "sha256": "92839d0a45825067bd25c693eaea495e20f62ee019eeedfaefa15a41150fe346",
+        "archive_sha256": "92839d0a45825067bd25c693eaea495e20f62ee019eeedfaefa15a41150fe346"
+      },
+      {
+        "path": "test_ann_live_export_20261024.py",
+        "sha256": "417128a5f826be6ed9ec1738e8725717b5b18b31104b145998ffb6add33e0a6c",
+        "archive_sha256": "7dfaafd8c95cee07a113599e14da36829b3ad334417f98d0b4641ff78d144d20"
+      },
+      {
+        "path": "protocol.json",
+        "sha256": "3b1c0b0e3be2d0b51bf88681c0a20b1805275b6c55e73c4b1b41df2368a0c6ba",
+        "archive_sha256": "0cd0c76242e62c05bcfa959da089c8cf970827213d95ce65c52ef004d88811ae"
+      }
+    ],
+    "definition_note": "Dataset defs/ files are the byte-preserved generated definitions actually passed to the harness. Original manifest config hashes identify pre-generation source files at the pinned HMS/harness commits; YAML reserialization and per-degree filtering change those bytes."
+  }
+}

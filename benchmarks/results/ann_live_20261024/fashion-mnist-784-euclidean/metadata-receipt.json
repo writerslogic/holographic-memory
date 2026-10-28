@@ -1,0 +1,10 @@
+{
+  "dataset": "fashion-mnist-784-euclidean",
+  "raw_files": 306,
+  "csv": "/vol/ann-live-20261024-wheel/fashion-mnist-784-euclidean/results.csv",
+  "elapsed_s": 6.437273621999999,
+  "estimated_usd": 0.0002835976656803333,
+  "purpose": "Official data export and hashing only; benchmark query hardware is recorded in manifest",
+  "export_container_id": "ta-01M5PMZDS99HXQX6K06Y7P8ZER",
+  "metadata_only": true
+}
