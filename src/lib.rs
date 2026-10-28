@@ -39,6 +39,8 @@ pub use crate::core::EmbeddingSpace;
 pub use crate::core::HmsCore;
 
 #[cfg(feature = "provenance")]
+pub use crate::core::provenance::status_list::StatusListCredential;
+#[cfg(feature = "provenance")]
 pub use crate::core::provenance::types::{
     DeletionRecord, ProvenanceRecord, StoreManifest, VerificationDetail, VerificationResult,
 };

@@ -1,0 +1,13 @@
+{
+  "@context": {
+    "@protected": true,
+    "HMSFactCredential": "https://writerslogic.com/ns/hms/v1#HMSFactCredential",
+    "contentHash": "https://writerslogic.com/ns/hms/v1#contentHash",
+    "encodingMethod": "https://writerslogic.com/ns/hms/v1#encodingMethod",
+    "dimensions": "https://writerslogic.com/ns/hms/v1#dimensions",
+    "sourceUri": {"@id": "https://writerslogic.com/ns/hms/v1#sourceUri", "@type": "@id"},
+    "subjectId": "https://writerslogic.com/ns/hms/v1#subjectId",
+    "relationId": "https://writerslogic.com/ns/hms/v1#relationId",
+    "objectId": "https://writerslogic.com/ns/hms/v1#objectId"
+  }
+}

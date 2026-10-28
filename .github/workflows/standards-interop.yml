@@ -1,0 +1,50 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Standards interop
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/standards-interop.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/core/provenance/**'
+      - 'examples/emit_w3c_credential.rs'
+      - 'interop/w3c/**'
+      - 'docs/reference/fixtures/**'
+      - 'scripts/check-w3c-interop.sh'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/standards-interop.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'src/core/provenance/**'
+      - 'examples/emit_w3c_credential.rs'
+      - 'interop/w3c/**'
+      - 'docs/reference/fixtures/**'
+      - 'scripts/check-w3c-interop.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  interop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      - run: npm ci --ignore-scripts --prefix interop/w3c
+      - run: bash scripts/check-w3c-interop.sh

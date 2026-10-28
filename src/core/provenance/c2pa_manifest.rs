@@ -5,6 +5,7 @@ use anyhow::{anyhow, Result};
 use ed25519_dalek::SigningKey;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::{HashMap, HashSet};
 
 use super::cawg;
 use super::did::did_key_from_ed25519;
@@ -205,22 +206,126 @@ pub struct AgentProvenanceParams<'a> {
     pub process_proof: Option<&'a serde_json::Value>,
     /// `c2pa.attestation` evidence for the signing environment (e.g. a RATS EAT).
     pub attestation: Option<&'a serde_json::Value>,
-    /// `cawg.training-and-data-mining` usage policy.
+    /// `cawg.training-mining` usage policy.
     pub training_policy: Option<&'a serde_json::Value>,
 }
 
-/// Create a complete C2PA manifest for AI-agent-produced content, embedding every
-/// provenance layer: the default HMS assertions, a CAWG identity assertion naming the
-/// AI agent (did:key / COSE), cogmem memory provenance, an optional `c2pa.process-proof`
-/// (CPoE), a `c2pa.soft_binding` fingerprint for durability, an optional
-/// `cawg.training-and-data-mining` policy, and an optional `c2pa.attestation` bound to
-/// the partial-claim hash. The claim is signed by `claim_key`; the agent identity
-/// assertion by `agent_key`.
+fn validate_agent_credential(
+    claim_key: &SigningKey,
+    agent_key: &SigningKey,
+    credential: &serde_json::Value,
+) -> Result<()> {
+    let mut pending = vec![(credential, 0_u8)];
+    let mut visited = 0_usize;
+    while let Some((value, depth)) = pending.pop() {
+        visited += 1;
+        anyhow::ensure!(
+            depth <= 32 && visited <= 4096,
+            "agent credential nesting or node limit exceeded"
+        );
+        match value {
+            serde_json::Value::Array(values) => {
+                anyhow::ensure!(
+                    values.len() <= 128,
+                    "agent credential collection limit exceeded"
+                );
+                pending.extend(values.iter().map(|value| (value, depth + 1)));
+            }
+            serde_json::Value::Object(values) => {
+                anyhow::ensure!(
+                    values.len() <= 128,
+                    "agent credential collection limit exceeded"
+                );
+                pending.extend(values.values().map(|value| (value, depth + 1)));
+            }
+            _ => {}
+        }
+    }
+    struct Bounded(Vec<u8>);
+    impl std::io::Write for Bounded {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            if bytes.len() > 65_536 - self.0.len() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "agent credential exceeds 65536 bytes",
+                ));
+            }
+            self.0.extend_from_slice(bytes);
+            Ok(bytes.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    let mut serialized = Bounded(Vec::new());
+    serde_json::to_writer(&mut serialized, credential)?;
+    let issuer = credential["issuer"]
+        .as_str()
+        .or_else(|| credential["issuer"]["id"].as_str());
+    let expected_issuer = did_key_from_ed25519(&claim_key.verifying_key().to_bytes());
+    anyhow::ensure!(
+        issuer == Some(expected_issuer.as_str()),
+        "agent credential issuer is not the authenticated manifest issuer"
+    );
+    let expected_agent = did_key_from_ed25519(&agent_key.verifying_key().to_bytes());
+    let expected_jwk = super::did::did_jwk_from_ed25519(&agent_key.verifying_key().to_bytes());
+    let subject = credential["credentialSubject"]["id"].as_str();
+    anyhow::ensure!(
+        subject == Some(expected_agent.as_str()) || subject == Some(expected_jwk.as_str()),
+        "agent credential subject does not control the identity signing key"
+    );
+    anyhow::ensure!(
+        credential["@context"]
+            .as_array()
+            .is_some_and(|values| values.first().and_then(serde_json::Value::as_str)
+                == Some("https://www.w3.org/ns/credentials/v2")),
+        "agent credential must use the VC 2.0 context"
+    );
+    anyhow::ensure!(
+        credential["type"]
+            .as_array()
+            .is_some_and(|values| values.len() <= 8
+                && values
+                    .iter()
+                    .any(|v| v.as_str() == Some("VerifiableCredential"))
+                && values
+                    .iter()
+                    .any(|v| v.as_str() == Some("AgentIdentityCredential"))),
+        "agent credential type is invalid"
+    );
+    let valid_from = credential["validFrom"]
+        .as_str()
+        .ok_or_else(|| anyhow!("agent credential is missing validFrom"))?;
+    let valid_from = super::vc::parse_iso8601_utc(valid_from)?;
+    let now = super::vc::parse_iso8601_utc(&iso8601_now())?;
+    anyhow::ensure!(valid_from <= now, "agent credential is not yet valid");
+    if let Some(until) = credential.get("validUntil") {
+        let until = until
+            .as_str()
+            .ok_or_else(|| anyhow!("agent credential validUntil must be text"))?;
+        let until = super::vc::parse_iso8601_utc(until)?;
+        anyhow::ensure!(
+            until > valid_from && until > now,
+            "agent credential validity interval is invalid or expired"
+        );
+    }
+    anyhow::ensure!(
+        credential.get("credentialStatus").is_none(),
+        "agent credential status requires a trusted caller verifier"
+    );
+    super::vc::verify_credential_json(std::str::from_utf8(&serialized.0)?)
+}
+
+/// Create an HMS agent-provenance sidecar after authenticating a current agent
+/// credential issued by the claim key. This admission check does not establish
+/// external issuer authority or full CAWG conformance.
 pub fn create_agent_provenance_manifest(
     claim_key: &SigningKey,
     agent_key: &SigningKey,
     params: &AgentProvenanceParams<'_>,
 ) -> Result<(HmsManifest, Vec<u8>)> {
+    validate_agent_credential(claim_key, agent_key, params.agent_credential)?;
     let store_hash: [u8; 32] = Sha256::digest(params.asset).into();
     let mp = ManifestParams {
         store_id: "agent-content",
@@ -278,8 +383,9 @@ pub fn create_agent_provenance_manifest(
     });
 
     if let Some(tp) = params.training_policy {
+        validate_training_policy(tp)?;
         manifest.assertions.push(Assertion {
-            label: "cawg.training-and-data-mining".to_string(),
+            label: "cawg.training-mining".to_string(),
             data: tp.clone(),
         });
     }
@@ -302,34 +408,165 @@ pub fn create_agent_provenance_manifest(
     Ok((manifest, signed))
 }
 
-/// Verify the claim signature AND the embedded CAWG agent identity assertion.
+fn validate_training_policy(policy: &serde_json::Value) -> Result<()> {
+    let root = policy
+        .as_object()
+        .ok_or_else(|| anyhow!("CAWG training policy must be an object"))?;
+    anyhow::ensure!(
+        root.len() == 1 && root.contains_key("entries"),
+        "CAWG training policy must contain only entries"
+    );
+    let entries = root["entries"]
+        .as_object()
+        .ok_or_else(|| anyhow!("CAWG training entries must be an object"))?;
+    anyhow::ensure!(
+        (1..=4).contains(&entries.len()),
+        "CAWG training entries count is out of range"
+    );
+    for (name, entry) in entries {
+        anyhow::ensure!(
+            matches!(
+                name.as_str(),
+                "cawg.data_mining"
+                    | "cawg.ai_inference"
+                    | "cawg.ai_training"
+                    | "cawg.ai_generative_training"
+            ),
+            "unsupported CAWG training entry"
+        );
+        let entry = entry
+            .as_object()
+            .ok_or_else(|| anyhow!("CAWG training entry must be an object"))?;
+        anyhow::ensure!(
+            entry.len() <= 2
+                && entry.contains_key("use")
+                && entry.keys().all(|k| k == "use" || k == "constraint_info"),
+            "invalid CAWG training entry fields"
+        );
+        anyhow::ensure!(
+            matches!(
+                entry["use"].as_str(),
+                Some("allowed" | "notAllowed" | "constrained")
+            ),
+            "invalid CAWG training use"
+        );
+        if let Some(info) = entry.get("constraint_info") {
+            let info = info
+                .as_str()
+                .ok_or_else(|| anyhow!("CAWG constraint_info must be text"))?;
+            anyhow::ensure!(
+                (1..=2048).contains(&info.len()),
+                "CAWG constraint_info length is out of range"
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Verify the signed HMS sidecar and bind every ICA reference to an assertion in it.
+/// Asset content and issuer trust require separate checks by the caller.
 pub fn verify_agent_provenance_manifest(
     claim_vk: &ed25519_dalek::VerifyingKey,
     signed_bytes: &[u8],
 ) -> Result<HmsManifest> {
     let manifest = verify_manifest(claim_vk, signed_bytes)?;
-    let agent = manifest
-        .assertions
-        .iter()
-        .find(|a| a.label == "cawg.identity")
-        .ok_or_else(|| anyhow!("manifest has no cawg.identity assertion"))?;
-    let embedded = cawg::ica_embedded_bytes(&agent.data)?;
-    let (_, referenced) = cawg::verify_cawg_ica_references(&embedded)?;
-    // The identity assertion must sign this manifest's hard binding, as creation does;
-    // otherwise an agent's assertion lifted from another manifest would verify here.
-    let hard = manifest
-        .assertions
-        .iter()
-        .find(|a| a.label == "c2pa.hash.data")
+    let mut assertions = HashMap::new();
+    for assertion in &manifest.assertions {
+        anyhow::ensure!(
+            assertions
+                .insert(assertion.label.as_str(), assertion)
+                .is_none(),
+            "manifest repeats assertion label {}",
+            assertion.label
+        );
+    }
+    let hard = assertions
+        .get("c2pa.hash.data")
         .ok_or_else(|| anyhow!("manifest missing hard binding"))?;
-    let hard_hash: [u8; 32] = Sha256::digest(serde_json::to_vec(&hard.data)?).into();
-    if !referenced
-        .iter()
-        .any(|r| r.label() == "c2pa.hash.data" && r.hash == hard_hash)
-    {
-        return Err(anyhow!(
-            "agent identity assertion does not reference this manifest's hard binding"
-        ));
+    anyhow::ensure!(
+        hard.data.get("alg").and_then(serde_json::Value::as_str) == Some("sha256"),
+        "manifest hard binding uses an unsupported hash algorithm"
+    );
+    let asset_hash = signed_store_hash(&manifest)?;
+    anyhow::ensure!(
+        asset_hash.len() == 64 && asset_hash.bytes().all(|byte| byte.is_ascii_hexdigit()),
+        "manifest hard binding has an invalid SHA-256 digest"
+    );
+    let identities: Vec<&str> = assertions
+        .keys()
+        .copied()
+        .filter(|label| *label == "cawg.identity" || label.starts_with("cawg.identity__"))
+        .collect();
+    anyhow::ensure!(
+        !identities.is_empty(),
+        "manifest has no cawg.identity assertion"
+    );
+    let mut edges: HashMap<&str, Vec<&str>> = HashMap::new();
+    for label in &identities {
+        let embedded = cawg::ica_embedded_bytes(&assertions[*label].data)?;
+        let (vc, referenced) = cawg::verify_cawg_ica_references(&embedded)?;
+        let asset = &vc["credentialSubject"]["c2paAsset"];
+        for field in [
+            "expected_partial_claim",
+            "expected_claim_generator",
+            "expected_countersigners",
+        ] {
+            anyhow::ensure!(
+                asset.get(field).is_none(),
+                "CAWG {field} needs C2PA claim context unavailable in the HMS sidecar"
+            );
+        }
+        anyhow::ensure!(
+            vc.get("credentialStatus").is_none(),
+            "CAWG credential status needs a trusted resolver"
+        );
+        let mut has_hard_binding = false;
+        for reference in referenced {
+            anyhow::ensure!(
+                reference.alg.as_deref() == Some("sha256") && reference.hash.len() == 32,
+                "unsupported CAWG assertion hash algorithm or length"
+            );
+            let assertion = assertions
+                .get(reference.label())
+                .ok_or_else(|| anyhow!("CAWG reference is absent from the signed manifest"))?;
+            let expected_url = format!("self#jumbf=c2pa.assertions/{}", assertion.label);
+            anyhow::ensure!(
+                reference.url == expected_url,
+                "CAWG reference URL does not match this manifest"
+            );
+            let expected_hash: [u8; 32] =
+                Sha256::digest(serde_json::to_vec(&assertion.data)?).into();
+            anyhow::ensure!(
+                reference.hash == expected_hash,
+                "CAWG reference hash differs from the signed assertion"
+            );
+            if assertion.label == "c2pa.hash.data" {
+                has_hard_binding = true;
+            }
+            if assertion.label == "cawg.identity" || assertion.label.starts_with("cawg.identity__")
+            {
+                edges.entry(*label).or_default().push(&assertion.label);
+            }
+        }
+        anyhow::ensure!(
+            has_hard_binding,
+            "CAWG identity assertion does not reference this manifest's hard binding"
+        );
+    }
+    for start in &identities {
+        let mut pending = vec![*start];
+        let mut visited = HashSet::new();
+        while let Some(label) = pending.pop() {
+            if !visited.insert(label) {
+                continue;
+            }
+            if let Some(neighbors) = edges.get(label) {
+                for neighbor in neighbors {
+                    anyhow::ensure!(neighbor != start, "CAWG identity references form a cycle");
+                    pending.push(neighbor);
+                }
+            }
+        }
     }
 
     // If an attestation is present, confirm it binds to the partial claim.
@@ -366,6 +603,20 @@ mod tests {
         SigningKey::from_bytes(&rand::random())
     }
 
+    fn agent_credential(issuer: &SigningKey, agent: &SigningKey) -> serde_json::Value {
+        let mut credential = serde_json::json!({
+            "@context": ["https://www.w3.org/ns/credentials/v2"],
+            "type": ["VerifiableCredential", "AgentIdentityCredential"],
+            "issuer": did_key_from_ed25519(&issuer.verifying_key().to_bytes()),
+            "validFrom": iso8601_now(),
+            "credentialSubject": {"id": did_key_from_ed25519(&agent.verifying_key().to_bytes()), "actorType": "ai-agent"}
+        });
+        credential["proof"] =
+            serde_json::to_value(super::super::vc::sign_document(issuer, &credential).unwrap())
+                .unwrap();
+        credential
+    }
+
     #[test]
     fn create_and_sign_manifest() {
         let key = test_keypair();
@@ -394,16 +645,14 @@ mod tests {
     fn agent_provenance_manifest_roundtrip() {
         let claim_key = test_keypair();
         let agent_key = test_keypair();
-        let vc = serde_json::json!({
-            "type": ["VerifiableCredential", "AgentIdentityCredential"],
-            "credentialSubject": { "actorType": "ai-agent" }
-        });
+        let vc = agent_credential(&claim_key, &agent_key);
         let process_proof = serde_json::json!({
             "merkleRoot": "abcd", "input": "seed", "durationMs": 1500, "iterations": 100000
         });
         let attestation = serde_json::json!({ "eat": "<EAT-token>", "platform": "cogmem-runtime" });
-        let training =
-            serde_json::json!({ "entries": [{ "use": "aiTraining", "constraint": "notAllowed" }] });
+        let training = serde_json::json!({
+            "entries": {"cawg.ai_training": {"use": "notAllowed"}}
+        });
         let params = AgentProvenanceParams {
             asset: b"agent-made content",
             agent_credential: &vc,
@@ -419,7 +668,7 @@ mod tests {
             "cogmem.memory.provenance",
             "c2pa.process-proof",
             "c2pa.soft_binding",
-            "cawg.training-and-data-mining",
+            "cawg.training-mining",
             "c2pa.attestation",
         ] {
             assert!(
@@ -441,12 +690,127 @@ mod tests {
         assert!(verify_agent_provenance_manifest(&claim_key.verifying_key(), &bad).is_err());
     }
 
+    #[test]
+    fn agent_credential_is_authenticated_before_manifest_generation() {
+        let (issuer, agent) = (test_keypair(), test_keypair());
+        let valid = agent_credential(&issuer, &agent);
+        validate_agent_credential(&issuer, &agent, &valid).unwrap();
+        let mut unsigned = valid.clone();
+        unsigned.as_object_mut().unwrap().remove("proof");
+        let mut tampered = valid.clone();
+        tampered["credentialSubject"]["actorType"] = serde_json::json!("tampered");
+        let mut future = valid.clone();
+        future["validFrom"] = serde_json::json!("2999-01-01T00:00:00Z");
+        let mut expired = valid.clone();
+        expired["validUntil"] = serde_json::json!("2000-01-01T00:00:00Z");
+        let mut status = valid.clone();
+        status["credentialStatus"] = serde_json::json!({"id": "https://example.com/status"});
+        let wrong_agent = agent_credential(&issuer, &test_keypair());
+        let wrong_issuer = agent_credential(&test_keypair(), &agent);
+        for rejected in [
+            &unsigned,
+            &tampered,
+            &future,
+            &expired,
+            &status,
+            &wrong_agent,
+            &wrong_issuer,
+        ] {
+            let params = AgentProvenanceParams {
+                asset: b"asset",
+                agent_credential: rejected,
+                memory_provenance: b"memory",
+                process_proof: None,
+                attestation: None,
+                training_policy: None,
+            };
+            assert!(create_agent_provenance_manifest(&issuer, &agent, &params).is_err());
+        }
+    }
+
+    #[test]
+    fn agent_credential_structure_and_byte_limits_are_enforced() {
+        let (issuer, agent) = (test_keypair(), test_keypair());
+        let valid = agent_credential(&issuer, &agent);
+        for depth in [31, 32, 33] {
+            let mut credential = valid.clone();
+            let mut nested = serde_json::json!(null);
+            for _ in 1..depth {
+                nested = serde_json::json!({"nested": nested});
+            }
+            credential["extra"] = nested;
+            credential["proof"] = serde_json::to_value(
+                super::super::vc::sign_document(&issuer, &credential).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                validate_agent_credential(&issuer, &agent, &credential).is_ok(),
+                depth <= 32
+            );
+        }
+        for limit in [65_535, 65_536, 65_537] {
+            let mut credential = valid.clone();
+            credential["extra"] = serde_json::json!("");
+            for attempt in 0..128 {
+                let size = serde_json::to_vec(&credential).unwrap().len();
+                if size == limit {
+                    break;
+                }
+                credential["nonce"] = serde_json::json!(format!("{attempt:03}"));
+                let size = serde_json::to_vec(&credential).unwrap().len();
+                let current = credential["extra"].as_str().unwrap().len();
+                let length = if size < limit {
+                    current + limit - size
+                } else {
+                    current - (size - limit)
+                };
+                credential["extra"] = serde_json::json!("x".repeat(length));
+                credential["proof"] = serde_json::to_value(
+                    super::super::vc::sign_document(&issuer, &credential).unwrap(),
+                )
+                .unwrap();
+            }
+            assert_eq!(serde_json::to_vec(&credential).unwrap().len(), limit);
+            assert_eq!(
+                validate_agent_credential(&issuer, &agent, &credential).is_ok(),
+                limit <= 65_536
+            );
+        }
+    }
+
+    #[test]
+    fn training_policy_uses_ratified_cawg_shape_and_bounds() {
+        for len in [2047, 2048] {
+            let policy = serde_json::json!({
+                "entries": {"cawg.data_mining": {
+                    "use": "constrained",
+                    "constraint_info": "x".repeat(len)
+                }}
+            });
+            validate_training_policy(&policy).unwrap();
+        }
+        let too_long = serde_json::json!({
+            "entries": {"cawg.data_mining": {
+                "use": "constrained", "constraint_info": "x".repeat(2049)
+            }}
+        });
+        assert!(validate_training_policy(&too_long).is_err());
+        for malformed in [
+            serde_json::json!({"entries": []}),
+            serde_json::json!({"entries": {}}),
+            serde_json::json!({"entries": {"cawg.ai_training": {"use": "maybe"}}}),
+            serde_json::json!({"entries": {"cawg.unknown": {"use": "allowed"}}}),
+        ] {
+            assert!(validate_training_policy(&malformed).is_err());
+        }
+    }
+
     /// An agent's identity assertion signs one asset's hard binding; carried into a manifest
     /// for another asset it no longer verifies.
     #[test]
     fn agent_identity_assertion_does_not_transplant_to_another_asset() {
         let (agent_key, claim_key) = (test_keypair(), test_keypair());
-        let vc = serde_json::json!({ "type": ["VerifiableCredential"] });
+        let vc = agent_credential(&claim_key, &agent_key);
         let params = |asset| AgentProvenanceParams {
             asset,
             agent_credential: &vc,
@@ -457,9 +821,14 @@ mod tests {
         };
         let (genuine, _) =
             create_agent_provenance_manifest(&claim_key, &agent_key, &params(b"genuine")).unwrap();
+        let other_key = test_keypair();
+        let other_credential = agent_credential(&claim_key, &other_key);
+        let other_params = AgentProvenanceParams {
+            agent_credential: &other_credential,
+            ..params(b"other")
+        };
         let (mut other, _) =
-            create_agent_provenance_manifest(&claim_key, &test_keypair(), &params(b"other"))
-                .unwrap();
+            create_agent_provenance_manifest(&claim_key, &other_key, &other_params).unwrap();
         let identity = |m: &HmsManifest| {
             m.assertions
                 .iter()
@@ -471,6 +840,59 @@ mod tests {
         other.assertions[slot] = lifted;
         let signed = sign_manifest(&claim_key, &other).unwrap();
         assert!(verify_agent_provenance_manifest(&claim_key.verifying_key(), &signed).is_err());
+    }
+
+    #[test]
+    fn agent_identity_references_match_the_authenticated_manifest() {
+        let (agent_key, claim_key) = (test_keypair(), test_keypair());
+        let credential = agent_credential(&claim_key, &agent_key);
+        let params = AgentProvenanceParams {
+            asset: b"agent content",
+            agent_credential: &credential,
+            memory_provenance: b"memory",
+            process_proof: None,
+            attestation: None,
+            training_policy: None,
+        };
+        let (manifest, _) =
+            create_agent_provenance_manifest(&claim_key, &agent_key, &params).unwrap();
+        let hard = manifest
+            .assertions
+            .iter()
+            .find(|assertion| assertion.label == "c2pa.hash.data")
+            .unwrap();
+        let hard_hash = Sha256::digest(serde_json::to_vec(&hard.data).unwrap()).to_vec();
+        let valid_hard = (
+            "self#jumbf=c2pa.assertions/c2pa.hash.data".to_string(),
+            "sha256".to_string(),
+            hard_hash.clone(),
+        );
+        for refs in [
+            vec![valid_hard.clone(), valid_hard.clone()],
+            vec![
+                valid_hard.clone(),
+                (
+                    "self#jumbf=c2pa.assertions/c2pa.actions".to_string(),
+                    "sha256".to_string(),
+                    vec![0x55; 32],
+                ),
+            ],
+            vec![(
+                "self#jumbf=another-manifest/c2pa.assertions/c2pa.hash.data".to_string(),
+                "sha256".to_string(),
+                hard_hash.clone(),
+            )],
+        ] {
+            let mut forged = manifest.clone();
+            forged
+                .assertions
+                .iter_mut()
+                .find(|assertion| assertion.label == "cawg.identity")
+                .unwrap()
+                .data = cawg::create_identity_assertion_ica(&agent_key, &refs, "agent").unwrap();
+            let signed = sign_manifest(&claim_key, &forged).unwrap();
+            assert!(verify_agent_provenance_manifest(&claim_key.verifying_key(), &signed).is_err());
+        }
     }
 
     #[test]

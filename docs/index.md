@@ -23,3 +23,6 @@ search box, the [glossary](reference/glossary.md) or the [FAQ](reference/faq.md)
 selector in the header switches between `latest` (the newest tagged release that carries these
 docs), `dev` (the `main` branch) and each tagged release. How the site is built and checked is on
 [its own page](community/docs-pipeline.md).
+
+The [standards and provenance page](reference/standards.md) names the W3C, C2PA, CAWG, DIF,
+and Trust over IP features, their interoperability checks, and the limits on current claims.

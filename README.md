@@ -24,6 +24,7 @@
 [Website](https://holographic-memory.com) ·
 [Docs](https://docs.holographic-memory.com/) ·
 [Get started](#get-started-in-60-seconds) ·
+[Standards and provenance](docs/reference/standards.md) ·
 [Results](#headline-results) ·
 [Why "holographic"?](#why-is-it-called-holographic) ·
 [Capabilities](#what-ships-today) ·
