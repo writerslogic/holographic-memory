@@ -1,0 +1,50 @@
+{
+  "commit": "5943c4e42fee049f7b813f6b6df62aaae0eb29ce",
+  "checks": [
+    {
+      "name": "clippy-default",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 21.113,
+      "log": "clippy-default.txt",
+      "test_profile": false
+    },
+    {
+      "name": "clippy-all",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 33.391,
+      "log": "clippy-all.txt",
+      "test_profile": false
+    },
+    {
+      "name": "test-default",
+      "command": [
+        "cargo",
+        "test",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 294.331,
+      "log": "test-default.txt",
+      "test_profile": true
+    }
+  ]
+}
