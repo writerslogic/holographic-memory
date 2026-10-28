@@ -47,4 +47,5 @@ commit_parsers = [
 filter_commits = false
 tag_pattern = "^v[0-9]+[.][0-9]+[.][0-9]+$"
 topo_order = false
+topo_order_commits = false
 sort_commits = "newest"

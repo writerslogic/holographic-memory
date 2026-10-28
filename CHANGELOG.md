@@ -5,6 +5,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
 
 [v0.6.3 migration and integrity notes](https://docs.holographic-memory.com/latest/releasing/v0.6.3/).
+## [0.6.4] - 2026-10-28
+
+### Added
+- Add optional AML provenance and evidence research tools
+
+### Changed
+- Organize bindings and research source modules
+
+### Documentation
+- Align landing page with retrieval architecture
+- Add Glama score badge (#316)
+- Explain crate recovery environment policy (#322)
+- Explain npm registry propagation gate
+
+### Fixed
+- Preserve guarded final benchmark allocations
+- Enforce provenance semantics and cached status expiry
+- Preserve Mem0 recovery and completion integrity
+- Clarify MCP tool behavior for Glama (#317)
+- Reduce crate archive for crates.io (#321)
+- Verify every npm platform before install (#320)
+- Verify every npm platform before install
 ## [0.6.3] - 2026-10-26
 
 ### Added
@@ -62,8 +84,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Add on-device Qwen3 model stages behind local-models
 - Add quantized graph ANN index and its public benchmark mode
 - Add hms-server HTTP service for the Python SDK
-- Add experimental query-private similarity scoring behind private-search
 - Subset-union bundle experiment and capacity sweep
+- Add experimental query-private similarity scoring behind private-search
 
 ### Changed
 - Clean up memory API, provenance, security and core modules (#214)
@@ -175,8 +197,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Reserve Modal wave cost before launch so preemption cannot bypass the cap
 - Run HMS model stages on L4 on Modal
 - Decode benchmark data with as_chunks for the current clippy
-- Resolve leftover merge markers in .bestpractices.json
 - Serve SDK queries by exact cosine through the document API
+- Resolve leftover merge markers in .bestpractices.json
 - Return query results best-first on exact-scan, multi-shard and federated paths
 
 ### Performance
@@ -240,14 +262,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Unbiasing scale for block codes, sorted candidate pool, delta-coded adjacency
 - Neighbour-block fast-scan codes with evidence fusion and a certified exit for the vertex graph
 - NEON per-row 1-bit screen kernel with its microbenchmark kill test (screen stays off)
-- Scan both planes of 2-bit qgraph edge codes in one NEON pass
-- Add FastScan edge kernel, batched pool merge and 2-bit qgraph edge codes
-- Add 4-bit traversal codes, aligned rows, BFS reorder and 3-byte ids to the vertex index
 - Screen exact distances in vertex graph construction with 8-bit bounds
+- Add 4-bit traversal codes, aligned rows, BFS reorder and 3-byte ids to the vertex index
 - Measure Metal batching and set per-stage defaults
 - Prefetch rows ahead in qgraph fill, prune inputs and edge encoding
 - Use a bitset visited set and prefetch adjacency in qgraph construction
+- Scan both planes of 2-bit qgraph edge codes in one NEON pass
 - Speed up qgraph construction without changing the built index
+- Add FastScan edge kernel, batched pool merge and 2-bit qgraph edge codes
 - Speed up from_dense with branchless term compaction and add encoder-eval
 - Gallop before AVX2 on skewed sizes; add intersection kernel bench
 - Route sparse queries to the exact inverted index
@@ -284,15 +306,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Add Oct 21 2026 Core Ultra 9 competitive results (SIFT-1M, BEIR text) (#158)
 - Reproducible comparison harness and self-updating table (#122)
 - Per-session quota on the tuned LongMemEval turn ranking fails on cached dev scores
-- Record timed held-out glove run of i8 vertex-code qgraph
-- Correct reference eval counts in memory-first results
-- Record held-out recall screening of qgraph memory layouts
 - Add grid-matched vertex search pairs and correct the alignment claim
 - Record paired held-out timing of the vertex search encodings
 - Narrow the FAISS comparison and vendor the clean edge baselines
 - Record paired held-out timing of the per-vertex code index
 - Add paired-timing sync to ann-qgraph
 - Record held-out recall and memory of the per-vertex code index
+- Record timed held-out glove run of i8 vertex-code qgraph
+- Correct reference eval counts in memory-first results
+- Record held-out recall screening of qgraph memory layouts
 - Record the s-dev-hms cost overrun and stop
 - Record held-out qgraph tuning on nytimes
 - Measure HMS fact extraction against the Python stage on S dev
@@ -359,8 +381,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Pivot to Zero-Trust Edge Architecture (FHE-Lite, AGPL-3.0, SIMD)
 - Python bindings + PyPI packaging for holographic-vsa (maturin/pyo3)
 - PhaseResonator reusable-index API + clean re-export + doctest (§20 capability)
-- PhaseHVec core type + real Frady/Kent resonator on quantized-phase substrate
 - Counting membership store with Poisson z-score readout (4x Bloom capacity)
+- PhaseHVec core type + real Frady/Kent resonator on quantized-phase substrate
 - Real SHA-256 commitment for verifiable phasor mutation (lane 3)
 - Multi-hop reasoning over the phasor memory (retrieve_path)
 - PhaseGraph -- phasor relational memory with relation algebra + retrieval
@@ -370,11 +392,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Trust-anchored provenance verification and sharded ANN persistence
 - Runnable cross-verification of the cogmem C2PA sample
 - Add provenance system with COSE, VCs, C2PA, JUMBF, Sigstore, KERI, CAWG
+- Multi-scale encoding, morphological decomposer, fault-tolerant federation
+- Add Hopfield-Fenchel-Young energy-based associative retrieval
+- Define HolographicAlgebra trait boundary for future geometric algebra
 - Add research-grade benchmarks, scaling analysis, and visualizations
 - Add sparse Clifford algebra multivector type (CliffordVec)
-- Define HolographicAlgebra trait boundary for future geometric algebra
-- Add Hopfield-Fenchel-Young energy-based associative retrieval
-- Multi-scale encoding, morphological decomposer, fault-tolerant federation
 - Improve SOTA for analogy, planner, and concept synthesis
 - Add cost/total_cost fields to planner N-API types
 - Evidence-weighted multi-hop confidence, ranked results
@@ -413,8 +435,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 ### Documentation
 - Update changelog [skip ci]
 - State the AGPL-3.0-or-later license in the security policy
-- Update changelog [skip ci]
 - Record algorithm findings and private-search threat models
+- Update changelog [skip ci]
 - Rewrite README to highlight Zero-Trust Enterprise Security and Python SDK
 - State the testing policy explicitly in CONTRIBUTING.md (#66)
 - Sync changelog (#54)
@@ -430,14 +452,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
-- §29 confirmed on unseen seeds — 4-bit matches float, 8-16x footprint win; log floor-exploration findings
-- Wire deterministic-resonator capability into RESEARCH.md (discoverability + correct citation)
-- Overnight closeout — queue exhausted, 337 tests green, flag pre-existing §21 bin lint
-- Correct resonator-factorize repro command — bin is std-only, no experimental feature
-- Reproducibility header for resonator-factorize (fixed seeds, correct repro command)
-- DETERMINISTIC-RESONATOR.md — §20 validation write-up from in-loop 24-seed run
-- Block codes also floor (§24); capacity gap is retrieval-vs-information, open not impossible
 - Retract 'info-theoretically impossible' framing; 0.1D Plate is a readout artifact, closing gap to ceiling is open (§22)
+- Block codes also floor (§24); capacity gap is retrieval-vs-information, open not impossible
+- Wire deterministic-resonator capability into RESEARCH.md (discoverability + correct citation)
+- DETERMINISTIC-RESONATOR.md — §20 validation write-up from in-loop 24-seed run
+- Correct resonator-factorize repro command — bin is std-only, no experimental feature
+- §29 confirmed on unseen seeds — 4-bit matches float, 8-16x footprint win; log floor-exploration findings
+- Overnight closeout — queue exhausted, 337 tests green, flag pre-existing §21 bin lint
+- Reproducibility header for resonator-factorize (fixed seeds, correct repro command)
 - Update changelog [skip ci]
 - Update changelog [skip ci]
 - Update changelog [skip ci]
@@ -527,11 +549,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 - Rotation binding gives relation algebra the current substrate lacks
 - Path-plasticity -- holographic generalization a cache can't do
 - Living-connection-graph slice -- plasticity beats saturation, verifiably
-- #2 hardening RETRACTS the sparse-wins claim (AUC artifact)
 - #2 strong baselines HRR + MAP vs sparse permutation
-- #2 involution control disconfirms the self-inverse framing
-- #2 density-matched control rules out the confound
 - #2 step-1 binding discriminator harness + result
+- #2 density-matched control rules out the confound
+- #2 hardening RETRACTS the sparse-wins claim (AUC artifact)
+- #2 involution control disconfirms the self-inverse framing
 
 ### Style
 - Apply rustfmt to experiment binaries
