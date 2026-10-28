@@ -11,7 +11,9 @@ Regenerate a summary offline with the committed CSV, byte-preserved dataset mani
 uv run --no-project python benchmarks/results/ann_live_20261024/ann-live-export-20261024.py benchmarks/results/ann_live_20261024/glove-100-angular/results.csv benchmarks/results/ann_live_20261024/glove-100-angular/manifest.json glove-summary.json
 ```
 
-Run the adjacent `test_ann_live_export_20261024.py` with pytest to check grid completeness, raw identity matching, aliased Glass labels and diagnostic-point exclusion. Compare generated JSON with the committed summary; input digests identify the precise source bytes. The generated definition files actually passed to the harness and the resolved requirements are retained unchanged. Original manifest config digests identify pre-generation source files at the pinned HMS/harness commits; per-degree filtering and YAML reserialization produce different definition bytes.
+Run the adjacent `test_ann_live_export_20261024.py` with pytest to check grid completeness, raw identity matching, aliased Glass labels and diagnostic-point exclusion. Compare generated JSON with the committed summary; input digests identify the precise source bytes. The generated definition files actually passed to the harness are retained unchanged. Original manifest config digests identify pre-generation source files at the pinned HMS/harness commits; per-degree filtering and YAML reserialization produce different definition bytes.
+
+The five `environment-observation*.json` reports contain historical pip environment text, original filenames, SHA-256 digests, and archive references. Those environments include versions with known security advisories. They are non-installable provenance records: do not install or reuse the archived environments as a dependency recipe. Recorded versions are preserved unchanged inside `original_text`; the original report bytes remain available at the archive commit.
 
 The source-package Glass attempt was diagnosed and cancelled; its compact failure record remains under `diagnostic-source-glass/`. Fashion results use the documented repaired wheel run. Cost estimates preserve that limitation and are not invoices.
 

@@ -74,7 +74,7 @@
       "ann-live-export-20261024.py",
       "test_ann_live_export_20261024.py"
     ],
-    "script_note": "License headers were added to maintained scripts; archived source digests remain separately identified. Dataset manifests, CSVs, metadata and upstream definitions retain their original bytes.",
+    "script_note": "License headers were added to maintained scripts; archived source digests remain separately identified. Dataset manifests, CSVs, metadata and generated definitions retain their original bytes. Historical pip environment text is preserved inside non-installable JSON observations with original filenames, digests and archive mappings.",
     "retained_files": [
       {
         "path": "ann-live-export-20261024.py",
@@ -92,9 +92,11 @@
         "archive_sha256": "9af197feb155fafe20d5717a20188d2b1f7b56904df247c9263fa77284dd57dd"
       },
       {
-        "path": "diagnostic-source-glass/requirements-resolved.txt",
-        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
-        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+        "path": "diagnostic-source-glass/environment-observation.json",
+        "sha256": "36085b052504840467c3716f3649f9a703ff36dd0f669d5e732332d1499870c1",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "diagnostic-source-glass/requirements-resolved.txt",
+        "original_text_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
       },
       {
         "path": "fashion-mnist-784-euclidean-summary.json",
@@ -157,14 +159,18 @@
         "archive_sha256": "d8cd6f75991a0f0b4d5208bba9c6377f9f8740046dc5efe3055aa7ddcb153a74"
       },
       {
-        "path": "fashion-mnist-784-euclidean/requirements-resolved-post-glass.txt",
-        "sha256": "a56b83f9e4a00148c9b6205aa6a54ea1813828162813af587e7de1bafb80a2f7",
-        "archive_sha256": "a56b83f9e4a00148c9b6205aa6a54ea1813828162813af587e7de1bafb80a2f7"
+        "path": "fashion-mnist-784-euclidean/environment-observation-post-glass.json",
+        "sha256": "cf2dab97787083639cd32da765cb54f46a562ed068f50ea5c353ecc68a8c38f1",
+        "archive_sha256": "a56b83f9e4a00148c9b6205aa6a54ea1813828162813af587e7de1bafb80a2f7",
+        "archive_path": "fashion-mnist-784-euclidean/requirements-resolved-post-glass.txt",
+        "original_text_sha256": "a56b83f9e4a00148c9b6205aa6a54ea1813828162813af587e7de1bafb80a2f7"
       },
       {
-        "path": "fashion-mnist-784-euclidean/requirements-resolved.txt",
-        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
-        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+        "path": "fashion-mnist-784-euclidean/environment-observation.json",
+        "sha256": "f16f79935e71ead8dabfd6cee66c737e26545edc57b240addf9268d5e3e3a6e4",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "fashion-mnist-784-euclidean/requirements-resolved.txt",
+        "original_text_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
       },
       {
         "path": "fashion-mnist-784-euclidean/results.csv",
@@ -227,9 +233,11 @@
         "archive_sha256": "a13c9d240fa17335e22367581d7947ac3103bf2a904c749a082bcbdb6fe629a3"
       },
       {
-        "path": "glove-100-angular/requirements-resolved.txt",
-        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
-        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+        "path": "glove-100-angular/environment-observation.json",
+        "sha256": "52e7c4d7768b9e51e40f47040953ee41658b4717562ad197b519cc76d263b3ca",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "glove-100-angular/requirements-resolved.txt",
+        "original_text_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
       },
       {
         "path": "glove-100-angular/results.csv",
@@ -327,9 +335,11 @@
         "archive_sha256": "d52cbb1f4c3a1c84ede22f16e1e9d57ed70e538bec2344aa7b590ccc9ebd0442"
       },
       {
-        "path": "sift-128-euclidean/requirements-resolved.txt",
-        "sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
-        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
+        "path": "sift-128-euclidean/environment-observation.json",
+        "sha256": "918ee180539df319d19aca96ea8d331e2b9ba2c93afaad5b05d75c08feeec7a8",
+        "archive_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "sift-128-euclidean/requirements-resolved.txt",
+        "original_text_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b"
       },
       {
         "path": "sift-128-euclidean/results.csv",
@@ -353,5 +363,41 @@
       }
     ],
     "definition_note": "Dataset defs/ files are the byte-preserved generated definitions actually passed to the harness. Original manifest config hashes identify pre-generation source files at the pinned HMS/harness commits; YAML reserialization and per-degree filtering change those bytes."
+  },
+  "historical_environment_reports": {
+    "installable": false,
+    "security_note": "Historical observations contain versions with known advisories; do not install or reuse the archived environment. Original package text and digests are retained for provenance, without changing any recorded versions.",
+    "reports": [
+      {
+        "path": "diagnostic-source-glass/environment-observation.json",
+        "original_filename": "requirements-resolved.txt",
+        "original_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "diagnostic-source-glass/requirements-resolved.txt"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/environment-observation-post-glass.json",
+        "original_filename": "requirements-resolved-post-glass.txt",
+        "original_sha256": "a56b83f9e4a00148c9b6205aa6a54ea1813828162813af587e7de1bafb80a2f7",
+        "archive_path": "fashion-mnist-784-euclidean/requirements-resolved-post-glass.txt"
+      },
+      {
+        "path": "fashion-mnist-784-euclidean/environment-observation.json",
+        "original_filename": "requirements-resolved.txt",
+        "original_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "fashion-mnist-784-euclidean/requirements-resolved.txt"
+      },
+      {
+        "path": "glove-100-angular/environment-observation.json",
+        "original_filename": "requirements-resolved.txt",
+        "original_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "glove-100-angular/requirements-resolved.txt"
+      },
+      {
+        "path": "sift-128-euclidean/environment-observation.json",
+        "original_filename": "requirements-resolved.txt",
+        "original_sha256": "5678c9d648d1bd7b6037b09401fcf1026d1bc2f5885e660b41e5e10a1d55e54b",
+        "archive_path": "sift-128-euclidean/requirements-resolved.txt"
+      }
+    ]
   }
 }
