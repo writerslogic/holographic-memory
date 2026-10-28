@@ -16,6 +16,7 @@
 #                       fills the comparison table; without it the page derives a table from
 #                       the committed results named under comparison_fallback.
 
+technical_line: Hybrid search, graph indexing, and vector-symbolic memory.
 tagline: Search and memory that run entirely on your machine.
 lede: >-
   HMS is a local-first document search engine and a vector-symbolic associative memory in one

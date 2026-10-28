@@ -23,7 +23,9 @@
 .hms-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 2rem; align-items: center; padding: 3.6rem 0 0.5rem; }
 .hms-chip { display: inline-flex; align-items: center; gap: 0.55rem; margin: 0 0 1.2rem; padding: 0.3rem 0.8rem; border: 1px solid var(--hms-border); border-radius: 999px; font-size: 0.68rem; color: var(--hms-muted); background: var(--hms-surface); }
 .hms-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: linear-gradient(135deg, var(--hms-accent), var(--hms-violet)); }
-.md-typeset .hms-hero h1 { font-size: clamp(2.2rem, 4.6vw, 3.4rem); line-height: 1.04; letter-spacing: -0.04em; font-weight: 720; margin: 0 0 1.1rem; max-width: 14ch; }
+.md-typeset .hms-hero h1 { font-size: clamp(2.2rem, 4.6vw, 3.4rem); line-height: 1.04; letter-spacing: -0.04em; font-weight: 720; margin: 0 0 0.5rem; max-width: 14ch; }
+.md-typeset .hms-hero .hms-technical-line { font-size: clamp(1rem, 1.2vw, 1.3rem); font-weight: 650; line-height: 1.35; margin: 0 0 0.65rem; max-width: 36rem; }
+.md-typeset .hms-hero .hms-tagline { font-size: 0.98rem; line-height: 1.5; color: var(--hms-muted); margin: 0 0 0.45rem; }
 .md-typeset .hms-hero .hms-lede { font-size: 1.08rem; line-height: 1.6; color: var(--hms-muted); max-width: 36rem; margin: 0 0 1.8rem; }
 .hms-cta { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 1.8rem; }
 .md-typeset .hms-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.72rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.8rem; text-decoration: none; border: 1px solid var(--hms-border-strong); color: var(--hms-text); background: var(--hms-surface); transition: transform 0.12s, border-color 0.12s, background 0.12s; cursor: pointer; font-family: inherit; line-height: 1.2; }

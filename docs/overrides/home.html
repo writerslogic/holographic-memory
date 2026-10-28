@@ -14,7 +14,9 @@
     <section class="hms-hero" aria-labelledby="hms-hero-title">
       <div class="hms-hero__text">
         <p class="hms-chip"><span class="hms-dot" aria-hidden="true"></span>{{ hms.license }} &middot; {{ hms.crate_version and ('v' ~ hms.crate_version) or 'open source' }} &middot; runs on your machine</p>
-        <h1 id="hms-hero-title">{{ hms.tagline }}</h1>
+        <h1 id="hms-hero-title">Holographic Memory</h1>
+        <p class="hms-technical-line">{{ hms.technical_line }}</p>
+        <p class="hms-tagline">{{ hms.tagline }}</p>
         <p class="hms-lede">{{ hms.lede }}</p>
         <div class="hms-cta">
           <a class="hms-btn hms-btn--primary" href="{{ 'quickstart/' | url }}">Get started</a>
