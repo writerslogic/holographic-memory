@@ -4,7 +4,7 @@
 """mkdocs-gen-files script: the API reference, generated from the source of the tree being built.
 
   Rust     rustdoc (scripts/build-rustdoc.sh) is embedded under api/rust/doc/ by scripts/docs_site.py
-  Python   mkdocstrings reads the SDK source, and a stub written from src/python.rs for the PyO3 module
+  Python   mkdocstrings reads the SDK source, and a stub written from src/bindings/python/mod.rs for the PyO3 module
   Node     typedoc reads every `types` entry in package.json "exports" (index.d.ts, semantic.d.ts, ...)
   HTTP     the OpenAPI document the server publishes, rendered as pages (when the tree has one)
   C        the shipped header, rendered as pages (when the tree has one)
@@ -68,13 +68,15 @@ def python_pages() -> list[str]:
             write(name, front(text) + f"# {title}\n\n{text}\n\n::: holographic_sdk.{module}\n",
                   f"bindings/python/holographic-sdk/holographic_sdk/{module}.py")
             pages.append(name)
-    if (ROOT / "src" / "python.rs").is_file():
+    native_source = next((path for path in ("src/bindings/python/mod.rs", "src/python.rs")
+                          if (ROOT / path).is_file()), None)
+    if native_source:
         stub_dir = ROOT / ".docs-gen" / "pyi"
         docs_pyo3_stub.write(ROOT, stub_dir)
         text = ("The `holographic-memory-py` wheel provides native vector search and phase vectors, "
                 "imported as `holographic_memory`. It does not include document search; "
                 "`holographic-memory-sdk` is the HTTP client for that API.")
-        write("api/python/vsa.md", front(text) + f"# Phase vectors\n\n{text}\n\n::: holographic_memory\n", "src/python.rs")
+        write("api/python/vsa.md", front(text) + f"# Phase vectors\n\n{text}\n\n::: holographic_memory\n", native_source)
         pages.append("api/python/vsa.md")
     return pages
 

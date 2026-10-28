@@ -216,7 +216,7 @@ def check_fingerprints(report):
     required_paths = [artifact_path(report[kind + '_path']) for kind in required] + [
         ROOT / 'benchmarks/public/longmemeval_reader_api.py',
         ROOT / 'benchmarks/public/longmemeval_answer_evidence.py',
-        ROOT / 'src/core/operand_retriever.rs', ROOT / 'src/bin/operand-retriever.rs',
+        ROOT / 'src/core/experimental/operand_retriever.rs', ROOT / 'src/bin/research/operand-retriever.rs',
     ]
     require(all(path.resolve() in seen for path in required_paths), 'missing frozen code or protocol fingerprint')
     require(file_digest(source) == SOURCE_SHA256, 'pinned LongMemEval source fingerprint mismatch')

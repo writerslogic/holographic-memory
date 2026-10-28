@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
 
-use super::documents::terms;
+use crate::core::documents::terms;
 
 pub type Source = (String, String, String, String, String);
 

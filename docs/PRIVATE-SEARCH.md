@@ -5,7 +5,7 @@ stored data and must not be described as such.** It has not been externally revi
 not been audited for constant-time behaviour. Do not rely on it to protect anything of value.
 
 Code: `src/core/private_query.rs`, behind the Cargo feature `private-search` (off by default).
-Measurement: `src/bin/private-query-bench.rs`, results in `benchmarks/results/private_query.json`.
+Measurement: `src/bin/research/private-query-bench.rs`, results in `benchmarks/results/private_query.json`.
 A second layout for dense low-bit codes, which can score a chosen part of the database, is in
 `src/core/private_query/clustered.rs`; see [Clustered ranking of dense codes](#clustered-ranking-of-dense-codes).
 
@@ -192,7 +192,7 @@ that the query is hidden; that rests on the LWE assumption and the parameter ana
 ## Clustered ranking of dense codes
 
 Code: `src/core/private_query/clustered.rs`, same feature. Measurement:
-`src/bin/private-rank-bench.rs`. Recall and sizes: `benchmarks/results/private_rank_sweep_100k.json`
+`src/bin/research/private-rank-bench.rs`. Recall and sizes: `benchmarks/results/private_rank_sweep_100k.json`
 and `private_rank_sweep_1m.json`. Protocol timings: `private_rank_protocol_100k.json` and
 `private_rank_protocol_1m.json`.
 

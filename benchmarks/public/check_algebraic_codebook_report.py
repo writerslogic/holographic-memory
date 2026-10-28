@@ -103,8 +103,8 @@ def check(path):
     root = Path(__file__).resolve().parents[2]
     report = json.loads(path.read_text())
     assert report["schema_version"] == 1 and report["experiment"] == "implicit-algebraic-codebook"
-    for key, source in (("codebook", "src/core/algebraic_codebook.rs"),
-                        ("harness", "src/bin/algebraic-codebook-bench.rs"),
+    for key, source in (("codebook", "src/core/experimental/algebraic_codebook.rs"),
+                        ("harness", "src/bin/research/algebraic-codebook-bench.rs"),
                         ("transform", "src/core/qgraph/kernels.rs"),
                         ("hash", "src/core/entangled.rs")):
         assert report["source_crc32"][key] == zlib.crc32((root / source).read_bytes()), source

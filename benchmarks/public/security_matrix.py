@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Security and privacy matrix (category 3B): drives src/bin/security-probe.rs and the
+"""Security and privacy matrix (category 3B): drives src/bin/research/security-probe.rs and the
 comparators, writes benchmarks/results/security_matrix_v1.json.
 
 Cells: network egress during a workload; encryption-at-rest overhead (QPS, peak RSS); tamper

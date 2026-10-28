@@ -158,7 +158,7 @@ def verify_artifacts(records):
 
 def native_source_artifacts(source_root):
     source_root = Path(source_root).expanduser().resolve()
-    require((source_root / 'src/bin/conversation-eval.rs').is_file(), 'native source root lacks the bridge')
+    require(any((source_root / path).is_file() for path in ('src/bin/research/conversation-eval.rs', 'src/bin/conversation-eval.rs')), 'native source root lacks the bridge')
     paths = sorted((source_root / 'src').rglob('*.rs'))
     paths.extend(source_root / name for name in ('Cargo.toml', 'Cargo.lock', 'build.rs'))
     require(paths and len(paths) <= 4096 and all(path.is_file() for path in paths), 'invalid native source inventory')

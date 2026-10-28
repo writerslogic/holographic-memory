@@ -3,7 +3,7 @@
 
 //! Experimental finite-alphabet codes with fully accounted storage and allocation-free cleanup.
 
-use super::{entangled::hash_u64, qgraph::kernels::fwht};
+use crate::core::{entangled::hash_u64, qgraph::kernels::fwht};
 use anyhow::{ensure, Result};
 use nalgebra::Complex;
 use serde::Serialize;

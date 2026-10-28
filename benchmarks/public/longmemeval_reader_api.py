@@ -131,8 +131,8 @@ def prepare():
         rows.append(row)
         print("prepared", len(rows), flush=True)
     paths = [PROTOCOL, PREREGISTRATION, SPLIT, SOURCE, EVIDENCE, Path(__file__),
-             Path("benchmarks/public/longmemeval_answer_evidence.py"), Path("src/core/operand_retriever.rs"),
-             Path("src/bin/operand-retriever.rs"), Path(protocol["judge_source"]["path"])]
+             Path("benchmarks/public/longmemeval_answer_evidence.py"), Path("src/core/experimental/operand_retriever.rs"),
+             Path("src/bin/research/operand-retriever.rs"), Path(protocol["judge_source"]["path"])]
     report = {"schema_version": 1, "dev_only": True, "heldout_run": False,
               "protocol_path": str(PROTOCOL), "protocol_sha256": sha(PROTOCOL),
               "preregistration_path": str(PREREGISTRATION), "preregistration_sha256": sha(PREREGISTRATION),

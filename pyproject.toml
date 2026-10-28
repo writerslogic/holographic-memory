@@ -35,7 +35,7 @@ Documentation = "https://docs.holographic-memory.com/"
 Repository = "https://github.com/writerslogic/holographic-memory"
 
 [tool.maturin]
-# The import name is `holographic_memory` (matches the #[pymodule] in src/python.rs);
+# The import name is `holographic_memory` (matches the #[pymodule] in src/bindings/python/mod.rs);
 # the PyPI distribution name is `holographic-memory-py` (the crate name is taken on PyPI).
 module-name = "holographic_memory"
 features = ["python", "local-embed-download"]

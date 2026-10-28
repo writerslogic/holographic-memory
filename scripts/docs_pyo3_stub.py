@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Writes a stub package for the PyO3 module from src/python.rs, with its doc comments as docstrings.
+"""Writes a stub package for the PyO3 module from src/bindings/python/mod.rs, with its doc comments as docstrings.
 
 mkdocstrings reads the stub statically, so the Python reference for the compiled module needs no
 wheel and matches whichever source tree is being documented (a release tag included). Anything
@@ -143,7 +143,10 @@ def generate(rs_path: Path) -> str:
 def write(root: Path, out_dir: Path) -> Path:
     stub = out_dir / "holographic_memory" / "__init__.py"
     stub.parent.mkdir(parents=True, exist_ok=True)
-    stub.write_text(generate(root / "src" / "python.rs"), encoding="utf-8")
+    source = root / "src" / "bindings" / "python" / "mod.rs"
+    if not source.is_file():
+        source = root / "src" / "python.rs"
+    stub.write_text(generate(source), encoding="utf-8")
     return stub
 
 

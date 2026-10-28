@@ -3,7 +3,16 @@
 ## Module Graph
 
 ```
-lib.rs                          N-API bindings (HolographicMemorySystem)
+lib.rs                          Public Rust exports and module declarations
+  |
+  bindings/
+  +-- node/                     Node.js bindings, configuration, DTOs and local embedder
+  +-- python/                   PyO3 entry point, vector indexes and phase-vector bindings
+  |
+  tests/                        Engine, security, meaning and export tests
+  |
+  bin/                          Shipped command-line tools and servers
+  +-- research/                 Benchmark, diagnostic and experiment executables
   |
   core/
   +-- engine/
@@ -38,10 +47,9 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
   |
   +-- entangled.rs              EntangledHVec: sparse binary hypervector type
   +-- encoding.rs               Text -> sparse vector (multiscale words and character n-grams)
-  +-- block_codes.rs            BlockCodeVec: structured block-code bundles
-  +-- bloom_memory.rs           BloomMemory: Bloom-filter-based bundled storage
+  +-- experimental/             Opt-in codebooks, block codes, Bloom memory and phase graphs
   +-- hopfield.rs               Modern Hopfield network with sparse softmax
-  +-- resonator.rs              Resonator network for symbolic factorization
+  +-- phase_resonator.rs        Resonator network for symbolic factorization
   +-- decompose.rs              Decomposer: vector decomposition
   +-- graph.rs                  Graph engine: typed relations, multi-hop BFS, temporal
   +-- documents.rs              Chunking, stemmed BM25, metadata filters, BM25/cosine score blend
@@ -83,6 +91,11 @@ lib.rs                          N-API bindings (HolographicMemorySystem)
       +-- search.rs             Greedy graph search
       +-- graph.rs              Graph operations (KNN, pruning, centroid)
 ```
+
+The crate root keeps the existing public Rust exports. Experimental modules live under
+`core/experimental/`; their existing `core::module_name` imports remain available through
+re-exports. Cargo keeps every binary name and required feature unchanged. Historical
+benchmark manifests retain the paths at their measured revisions.
 
 ## Meaning Memory Module Graph
 

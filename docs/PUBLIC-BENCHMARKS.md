@@ -2,7 +2,7 @@
 
 Measured 2026-10-05 on an Apple M4 (10 cores, macOS). Results: `benchmarks/results/public_*.json`.
 Harness: `benchmarks/public/prepare.py` (downloads and embeds data outside the repository),
-`src/bin/public-bench.rs` (drives HMS) and `benchmarks/public/evaluate.py` (scores runs and runs
+`src/bin/research/public-bench.rs` (drives HMS) and `benchmarks/public/evaluate.py` (scores runs and runs
 the comparison libraries on the same data).
 
 The machine was not idle: load average ranged from 4 to 37 during the runs, and every result

@@ -7,45 +7,32 @@ pub mod admin;
 pub(crate) mod admission;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod agency;
-pub(crate) mod durable_file;
-pub(crate) mod schema;
-// Experimental VSA research modules. Reachable only from the `src/bin/*`
-// experiment harnesses (or fully orphaned) and not used by `HmsCore`. Gated
-// behind the `experimental` feature so they are not part of the crate's
-// published public API. See CONTRIBUTING for the codebook-first roadmap.
-#[cfg(feature = "experimental")]
-pub mod algebraic_codebook;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod atom_memory;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod audit;
-#[cfg(feature = "experimental")]
-pub mod block_codes;
-#[cfg(feature = "experimental")]
-pub mod bloom_memory;
-#[cfg(feature = "experimental")]
-pub mod bundle_subset;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cognition;
-#[cfg(feature = "experimental")]
-pub mod counting_bloom_memory;
-// Living connection-graph: plastic, event-sourced holographic relation store.
-// Experimental and opt-in; does not touch the sparse-binary core.
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod composite_memory;
 pub(crate) mod config;
-#[cfg(feature = "experimental")]
-pub mod connection_graph;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod decompose;
-// Phasor relational memory: rotation-typed relations over a quantized-phase
-// histogram field -- relation algebra + retrieval the sparse core cannot do.
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod diffusion;
 pub mod documents;
+pub(crate) mod durable_file;
 #[cfg(feature = "local-embed")]
 pub mod embed;
 pub mod encoding;
+#[cfg(feature = "experimental")]
+pub mod experimental;
+pub(crate) mod schema;
+#[cfg(feature = "experimental")]
+pub use experimental::{
+    algebraic_codebook, block_codes, bloom_memory, bundle_subset, connection_graph,
+    counting_bloom_memory, operand_retriever, phase_graph,
+};
 #[cfg(not(target_arch = "wasm32"))]
 pub mod engine;
 pub mod entangled;
@@ -73,10 +60,6 @@ pub mod memory_api;
 pub mod models;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod nsg;
-#[cfg(feature = "experimental")]
-pub mod operand_retriever;
-#[cfg(feature = "experimental")]
-pub mod phase_graph;
 pub mod phase_hvec;
 pub mod phase_resonator;
 pub(crate) mod posting;

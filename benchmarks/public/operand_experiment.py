@@ -20,8 +20,8 @@ INPUT = Path('benchmarks/results/evidence_completeness_dev.json')
 VALIDATED = Path('benchmarks/results/evidence_completeness_summary.json')
 SOURCE = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
 SPLIT = Path('benchmarks/public/longmemeval_split.json')
-KERNEL = Path('src/core/operand_retriever.rs')
-HARNESS = Path('src/bin/operand-retriever.rs')
+KERNEL = Path('src/core/experimental/operand_retriever.rs')
+HARNESS = Path('src/bin/research/operand-retriever.rs')
 
 
 def sha(path):

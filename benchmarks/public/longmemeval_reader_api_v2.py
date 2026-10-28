@@ -162,7 +162,7 @@ def prepare():
              Path("benchmarks/public/longmemeval_answer_evidence.py"), Path("benchmarks/public/longmemeval_obligations.py"),
              Path("benchmarks/public/resume_longmemeval_readers.py"),
              Path("benchmarks/results/longmemeval_dev_obligations_v2.json"),
-             Path("src/core/operand_retriever.rs"), Path("src/bin/operand-retriever.rs"), Path(protocol["judge_source"]["path"])]
+             Path("src/core/experimental/operand_retriever.rs"), Path("src/bin/research/operand-retriever.rs"), Path(protocol["judge_source"]["path"])]
     evidence_report = json.loads(EVIDENCE.read_text())
     report = {"schema_version": 1, "dev_only": True, "heldout_run": False, "reader_systems": [SYSTEM], "variant": VARIANT,
               "lever": ("1B.3 abstention calibration (operand arm second pass under a widened byte budget for flagged abstentions, on v2b); " if VARIANT == "v3" else "1B.1 obligation decomposition (operand arm); first_five and knapsack frozen from v1; ") + evidence_report["protocol"],

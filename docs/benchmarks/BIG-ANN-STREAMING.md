@@ -4,7 +4,7 @@ The streaming track replays a runbook of inserts, deletes and searches from an e
 (`neurips23/runbooks/delete_runbook.yaml` on msturing-10M-clustered: 100-d float32, L2,
 at most 6M live rows, 33 search checkpoints of 10,000 public queries) and scores the mean
 recall@10 over the checkpoints, under 8 GiB of DRAM and one hour. HMS enters it with
-`UpdatableIndex` (`src/python/vector_index.rs` over `core::qgraph::UpdatableVGraph`): a
+`UpdatableIndex` (`src/bindings/python/vector_index.rs` over `core::qgraph::UpdatableVGraph`): a
 memory-mapped base graph, an in-memory delta graph of the rows inserted since the last
 consolidation, and a rebuild of the base over the live rows when the delta or the deleted
 share passes the adapter's thresholds (delta 1.0x the base, 30% deleted, 100k rows minimum).

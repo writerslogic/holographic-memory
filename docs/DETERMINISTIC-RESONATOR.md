@@ -28,7 +28,7 @@ workloads; they do not establish a universal capacity guarantee.
 
 ## Method
 
-`src/bin/resonator-factorize.rs`. `D = 1024`, `k = 3` factors (search space `F^3`;
+`src/bin/research/resonator-factorize.rs`. `D = 1024`, `k = 3` factors (search space `F^3`;
 two factors is trivially within capacity and measures nothing — see "Why three
 factors" below).
 
@@ -78,7 +78,7 @@ floor even past the knee.
 
 ## Validation hardening (wider seeds, phase-bit and dimension sweeps)
 
-To tighten confidence in the headline, `src/bin/resonator-sweep.rs` extends the *same*
+To tighten confidence in the headline, `src/bin/research/resonator-sweep.rs` extends the *same*
 fixed design (identical dynamics, verified below) along two controlling parameters:
 phase resolution across float/8/6/4/3/2 bits (`N ∈ {0,256,64,16,8,4}`) and dimension
 `D ∈ {512, 1024, 2048}`, at **30 seeds × 32 trials**. This adds no new mechanism — it

@@ -12,8 +12,8 @@ use crate::core::sync::RwLock;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
+use super::{napi_err, run_async};
 use crate::core::embed::{EmbedKind, EmbedOptions, Embedder, Pooling, SemanticIndex};
-use crate::{napi_err, run_async};
 
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
 

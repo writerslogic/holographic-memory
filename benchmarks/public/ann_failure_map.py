@@ -105,7 +105,7 @@ def run(dataset, binary):
     start = time.monotonic()
     with (destination / "run.log").open("w") as log:
         result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=False)
-    sources = [ROOT / "src/bin/ann-failure-map.rs", ROOT / "src/core/qgraph/diagnostics.rs",
+    sources = [ROOT / "src/bin/research/ann-failure-map.rs", ROOT / "src/core/qgraph/diagnostics.rs",
                ROOT / "src/core/qgraph/vertex.rs", ROOT / "src/core/qgraph/mod.rs",
                ROOT / "src/core/qgraph/kernels.rs", Path(__file__)]
     write(destination / "run.json", {"command": command, "exit_code": result.returncode,

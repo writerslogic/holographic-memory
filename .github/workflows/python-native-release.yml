@@ -14,8 +14,8 @@ on:
       - bindings/python/README.md
       - scripts/ci/smoke-wheel.sh
       - scripts/ci/smoke_python.py
-      - src/python.rs
-      - src/python/**
+      - src/bindings/python/**
+      - src/bindings/mod.rs
       - tests/python/**
       - Cargo.toml
       - Cargo.lock

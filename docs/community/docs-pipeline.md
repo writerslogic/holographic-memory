@@ -15,7 +15,7 @@ There is no `gh-pages` branch: the workflow uploads the directory as a Pages art
 | Landing page copy, install tabs, feature cards | `docs/_data/site.yml`; code is read from the quickstart examples that CI runs |
 | Headline benchmark and the vector-search chart | the committed files under `benchmarks/results/`, each time the site is built |
 | Comparison table | `docs/_data/comparison.json` when the benchmark generator writes one, else the committed SciFact result |
-| Python reference | mkdocstrings reads the SDK source; a stub written from `src/python.rs` covers the PyO3 module |
+| Python reference | mkdocstrings reads the SDK source; a stub written from `src/bindings/python/mod.rs` covers the PyO3 module |
 | Node and TypeScript reference | typedoc reads every `types` entry in `package.json` exports |
 | Rust reference | rustdoc, embedded under `api/rust/doc/` |
 | HTTP and C reference | rendered from the OpenAPI document and the C header when the tree has them |

@@ -367,7 +367,7 @@ def build():
 
 
 CODE_PATHS = {
-    "ann": {"default": "src/core/qgraph/vertex.rs (VGraph search/refine), src/bin/public-bench.rs (ann-qgraph)",
+    "ann": {"default": "src/core/qgraph/vertex.rs (VGraph search/refine), src/bin/research/public-bench.rs (ann-qgraph)",
             "build_seconds": "src/core/qgraph (Graph::build_owned, VGraph::from_graph_with)",
             "cold_start_s": "no persisted VGraph exists; Graph::save/load only cache the structure (src/core/qgraph)",
             "serving_rss_mib": "src/core/qgraph/vertex.rs (index arrays), build-time allocations in Graph::build_owned"},

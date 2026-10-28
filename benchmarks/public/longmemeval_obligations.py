@@ -116,8 +116,8 @@ RUN = CACHE / "longmemeval_s/runs/s-dev-small-all2"
 FINAL = ROOT / "benchmarks/results/longmemeval_dev_final.json"
 TURNS = CACHE / "holo_dev/turns_dev.json"
 SCORER = CACHE / "downloads/longmemeval_eval_utils_9e0b455f4ef0.py"
-KERNEL = ROOT / "src/core/operand_retriever.rs"
-HARNESS = ROOT / "src/bin/operand-retriever.rs"
+KERNEL = ROOT / "src/core/experimental/operand_retriever.rs"
+HARNESS = ROOT / "src/bin/research/operand-retriever.rs"
 MAX_RANK = 64  # the operand kernel rejects cached ranks above this
 SWEEP = {"w_sub": (0.0, 0.5, 1.0), "w_date": (0.0, 1.0), "pool": (24, 32, 48), "mode": ("turn", "session_union")}
 

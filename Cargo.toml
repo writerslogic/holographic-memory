@@ -139,6 +139,7 @@ required-features = ["security"]
 
 [[bin]]
 name = "security-probe"
+path = "src/bin/research/security-probe.rs"
 required-features = ["security", "server"]
 
 [features]
@@ -219,49 +220,56 @@ path = "src/bin/hms-mcp.rs"
 required-features = ["mcp"]
 
 # Experiment harnesses that depend on `experimental` modules. Declared
-# explicitly so they only build with `--features experimental`; the remaining
-# binaries under src/bin are still auto-discovered.
+# explicitly so they only build with `--features experimental`. Research drivers
+# under src/bin/research have explicit paths; shipped tools stay in src/bin.
 [[bin]]
 name = "hms-benchmark-suite"
+path = "src/bin/research/hms-benchmark-suite.rs"
 required-features = ["experimental"]
 
 [[bin]]
 name = "hms-scaling"
+path = "src/bin/research/hms-scaling.rs"
 required-features = ["experimental"]
 
 [[bin]]
 name = "block-recovery-test"
+path = "src/bin/research/block-recovery-test.rs"
 required-features = ["experimental"]
 
 [[bin]]
 name = "public-bench"
-path = "src/bin/public-bench.rs"
+path = "src/bin/research/public-bench.rs"
 required-features = ["cli", "mimalloc"]
 
 [[bin]]
 name = "conversation-eval"
-path = "src/bin/conversation-eval.rs"
+path = "src/bin/research/conversation-eval.rs"
 required-features = ["conversation-memory", "cli"]
 
 [[bin]]
 name = "route-sweep"
-path = "src/bin/route-sweep.rs"
+path = "src/bin/research/route-sweep.rs"
 
 [[bin]]
 name = "bundle-subset-sweep"
+path = "src/bin/research/bundle-subset-sweep.rs"
 required-features = ["experimental"]
 
 
 [[bin]]
 name = "algebraic-codebook-bench"
+path = "src/bin/research/algebraic-codebook-bench.rs"
 required-features = ["experimental", "cli"]
 
 [[bin]]
 name = "private-query-bench"
+path = "src/bin/research/private-query-bench.rs"
 required-features = ["private-search"]
 
 [[bin]]
 name = "private-rank-bench"
+path = "src/bin/research/private-rank-bench.rs"
 required-features = ["private-search", "cli"]
 
 [profile.release]
@@ -308,26 +316,31 @@ harness = false
 
 [[bin]]
 name = "encoder-eval"
-path = "src/bin/encoder-eval.rs"
+path = "src/bin/research/encoder-eval.rs"
 
 [[bin]]
 name = "operand-retriever"
+path = "src/bin/research/operand-retriever.rs"
 required-features = ["experimental"]
 
 [[bin]]
 name = "forget-experiment"
+path = "src/bin/research/forget-experiment.rs"
 required-features = ["experimental"]
 
 [[bin]]
 name = "ann-failure-map"
+path = "src/bin/research/ann-failure-map.rs"
 required-features = ["experimental", "cli"]
 
 [[bin]]
 name = "vibe-rotation"
+path = "src/bin/research/vibe-rotation.rs"
 required-features = ["experimental", "cli"]
 
 [[bin]]
 name = "qag-diagnose"
+path = "src/bin/research/qag-diagnose.rs"
 required-features = ["experimental", "cli"]
 
 [[example]]
@@ -352,26 +365,32 @@ harness = false
 
 [[bin]]
 name = "sparse-bench"
+path = "src/bin/research/sparse-bench.rs"
 required-features = ["cli"]
 
 [[bin]]
 name = "memory-api-lme"
+path = "src/bin/research/memory-api-lme.rs"
 required-features = ["cli"]
 
 [[bin]]
 name = "memory-api-bench"
+path = "src/bin/research/memory-api-bench.rs"
 required-features = ["cli"]
 
 [[bin]]
 name = "hms-workload"
+path = "src/bin/research/hms-workload.rs"
 required-features = ["cli"]
 
 [[bin]]
 name = "durability-driver"
+path = "src/bin/research/durability-driver.rs"
 required-features = ["cli"]
 
 [[bin]]
 name = "document-search-bench"
+path = "src/bin/research/document-search-bench.rs"
 required-features = ["cli"]
 
 [[example]]
@@ -393,3 +412,79 @@ harness = false
 [[bench]]
 name = "query_alloc"
 harness = false
+
+[[bin]]
+name = "amp-decode"
+path = "src/bin/research/amp-decode.rs"
+
+[[bin]]
+name = "base-residual"
+path = "src/bin/research/base-residual.rs"
+
+[[bin]]
+name = "bilinear-readout"
+path = "src/bin/research/bilinear-readout.rs"
+
+[[bin]]
+name = "binding-baselines"
+path = "src/bin/research/binding-baselines.rs"
+
+[[bin]]
+name = "binding-discriminator"
+path = "src/bin/research/binding-discriminator.rs"
+
+[[bin]]
+name = "bloom-wall"
+path = "src/bin/research/bloom-wall.rs"
+
+[[bin]]
+name = "capacity-campaign"
+path = "src/bin/research/capacity-campaign.rs"
+
+[[bin]]
+name = "fixed-point-holographic"
+path = "src/bin/research/fixed-point-holographic.rs"
+
+[[bin]]
+name = "hms-research-bench"
+path = "src/bin/research/hms-research-bench.rs"
+
+[[bin]]
+name = "hms-stress"
+path = "src/bin/research/hms-stress.rs"
+
+[[bin]]
+name = "kernel-capacity-sweep"
+path = "src/bin/research/kernel-capacity-sweep.rs"
+
+[[bin]]
+name = "kernel-load-curve"
+path = "src/bin/research/kernel-load-curve.rs"
+
+[[bin]]
+name = "noisy-retrieval"
+path = "src/bin/research/noisy-retrieval.rs"
+
+[[bin]]
+name = "pinv-memory"
+path = "src/bin/research/pinv-memory.rs"
+
+[[bin]]
+name = "resonator-bundle"
+path = "src/bin/research/resonator-bundle.rs"
+
+[[bin]]
+name = "resonator-cleanup"
+path = "src/bin/research/resonator-cleanup.rs"
+
+[[bin]]
+name = "resonator-factorize"
+path = "src/bin/research/resonator-factorize.rs"
+
+[[bin]]
+name = "resonator-sweep"
+path = "src/bin/research/resonator-sweep.rs"
+
+[[bin]]
+name = "ridge-memory"
+path = "src/bin/research/ridge-memory.rs"

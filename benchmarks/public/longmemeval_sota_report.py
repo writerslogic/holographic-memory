@@ -265,7 +265,7 @@ def main():
                              "python_gate_log_tail": args.python_gate_log.read_text().splitlines()[-8:] if args.python_gate_log else None,
                              "rust_sources_sha256": {name: R.file_digest(R.ROOT / name) for name in (
                                  "src/core/memory_api/conversation.rs", "src/core/memory_api/conversation/context.rs",
-                                 "src/bin/conversation-eval.rs", "tests/conversation_context.rs",
+                                 "src/bin/research/conversation-eval.rs", "tests/conversation_context.rs",
                                  "tests/fixtures/conversation_context_v1.json")}},
               "blocked": ["New matched reader/judge evaluation requires funded credits; no quota probes made.",
                           "Held-out 400 and final full-500 feedback are unauthorized.",

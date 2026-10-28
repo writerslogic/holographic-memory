@@ -7,7 +7,7 @@
 //! slows bundle saturation at the cost of a higher per-query false-positive
 //! exponent; see `src/bin/bundle-subset-sweep.rs` for measurements.
 
-use super::entangled::{hash_u64, EntangledHVec};
+use crate::core::entangled::{hash_u64, EntangledHVec};
 
 /// Content hash of an item's own indices, used as the selection key so no
 /// external id is needed.

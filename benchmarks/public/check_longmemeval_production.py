@@ -675,7 +675,7 @@ def check_work(work, inputs_only=False):
                     'check_longmemeval_answers.py'))
     identity = protocol['native_identity']
     native_root = Path(identity['native_source_root']).expanduser().resolve()
-    require(native_root != ROOT and (native_root / 'src/bin/conversation-eval.rs').is_file(), 'native source root is not an isolated frozen snapshot')
+    require(native_root != ROOT and any((native_root / path).is_file() for path in ('src/bin/research/conversation-eval.rs', 'src/bin/conversation-eval.rs')), 'native source root is not an isolated frozen snapshot')
     inventory = {path.resolve() for path in (native_root / 'src').rglob('*.rs')}
     inventory.update((native_root / name).resolve() for name in ('Cargo.toml', 'Cargo.lock', 'build.rs'))
     source_artifacts = identity['native_source_artifacts']

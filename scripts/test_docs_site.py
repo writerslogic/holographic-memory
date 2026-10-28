@@ -145,8 +145,20 @@ class OpenApiTests(unittest.TestCase):
 
 
 class Pyo3StubTests(unittest.TestCase):
+    def test_current_and_historical_layouts_generate_the_same_api(self):
+        source = (ROOT / "src" / "bindings" / "python" / "mod.rs").read_text()
+        expected = docs_pyo3_stub.generate(ROOT / "src" / "bindings" / "python" / "mod.rs")
+        for relative in ("src/bindings/python/mod.rs", "src/python.rs"):
+            with self.subTest(layout=relative), tempfile.TemporaryDirectory() as temporary:
+                tree = Path(temporary)
+                path = tree / relative
+                path.parent.mkdir(parents=True)
+                path.write_text(source)
+                stub = docs_pyo3_stub.write(tree, tree / "output")
+                self.assertEqual(stub.read_text(), expected)
+
     def test_the_real_module_is_described(self):
-        stub = docs_pyo3_stub.generate(ROOT / "src" / "python.rs")
+        stub = docs_pyo3_stub.generate(ROOT / "src" / "bindings" / "python" / "mod.rs")
         self.assertIn("class PhaseHVec:", stub)
         self.assertIn("def resonator_factorize(", stub)
         self.assertIn("max_iter: int = 50", stub)
