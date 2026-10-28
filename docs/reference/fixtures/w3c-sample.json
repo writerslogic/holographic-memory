@@ -1,0 +1,107 @@
+{
+  "credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://docs.holographic-memory.com/ns/hms/v1.jsonld"
+    ],
+    "credentialStatus": {
+      "id": "urn:uuid:16f9e145-9b1c-4be1-ac07-b489d790e32e#status",
+      "statusListCredential": "https://example.com/credentials/status/1",
+      "statusListIndex": "7",
+      "statusPurpose": "revocation",
+      "type": "BitstringStatusListEntry"
+    },
+    "credentialSubject": {
+      "contentHash": "4242424242424242424242424242424242424242424242424242424242424242",
+      "dimensions": 64,
+      "encodingMethod": "holographic-reduced-representation",
+      "id": "urn:hms:fact:interop-example"
+    },
+    "id": "urn:uuid:16f9e145-9b1c-4be1-ac07-b489d790e32e",
+    "issuer": "did:key:z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp",
+    "proof": {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://docs.holographic-memory.com/ns/hms/v1.jsonld"
+      ],
+      "created": "2026-10-26T02:55:00Z",
+      "cryptosuite": "eddsa-jcs-2022",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z592SgCYRiswmUQLVR86Fy4jJ7o9KCTeS1Yfhoki5TjAjP75WrvLUTirpFgDm6woFcks8Vkzkm4M2WpQopD2QP9q9",
+      "type": "DataIntegrityProof",
+      "verificationMethod": "did:key:z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp#z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp"
+    },
+    "type": [
+      "VerifiableCredential",
+      "HMSFactCredential"
+    ],
+    "validFrom": "2026-10-26T02:55:00Z"
+  },
+  "revokedCredential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://docs.holographic-memory.com/ns/hms/v1.jsonld"
+    ],
+    "credentialStatus": {
+      "id": "urn:uuid:f0f15f45-bf21-43c1-80ed-2bbc406e37b7#status",
+      "statusListCredential": "https://example.com/credentials/status/1",
+      "statusListIndex": "8",
+      "statusPurpose": "revocation",
+      "type": "BitstringStatusListEntry"
+    },
+    "credentialSubject": {
+      "contentHash": "2424242424242424242424242424242424242424242424242424242424242424",
+      "dimensions": 64,
+      "encodingMethod": "holographic-reduced-representation",
+      "id": "urn:hms:fact:interop-revoked"
+    },
+    "id": "urn:uuid:f0f15f45-bf21-43c1-80ed-2bbc406e37b7",
+    "issuer": "did:key:z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp",
+    "proof": {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://docs.holographic-memory.com/ns/hms/v1.jsonld"
+      ],
+      "created": "2026-10-26T02:55:00Z",
+      "cryptosuite": "eddsa-jcs-2022",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z3fKnMtgpzg1pH8rJ1EVySEV7XNrDiiSzewfxb5Bt5YrAAcMKRLTraZLHLhe7NkkKFAS5ZbEfje4q5issKLxyUgju",
+      "type": "DataIntegrityProof",
+      "verificationMethod": "did:key:z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp#z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp"
+    },
+    "type": [
+      "VerifiableCredential",
+      "HMSFactCredential"
+    ],
+    "validFrom": "2026-10-26T02:55:00Z"
+  },
+  "statusList": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "credentialSubject": {
+      "encodedList": "uH4sIAAAAAAAA_-3AMQEAAAABMNFFF8OzpQEAAAAAAAAAAAAAAAAAAADOBjIlqLAAQAAA",
+      "id": "https://example.com/credentials/status/1#list",
+      "statusPurpose": "revocation",
+      "type": "BitstringStatusList"
+    },
+    "id": "https://example.com/credentials/status/1",
+    "issuer": "did:key:z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp",
+    "proof": {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2"
+      ],
+      "created": "2026-10-26T02:55:00Z",
+      "cryptosuite": "eddsa-jcs-2022",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z5PaTgq3mFVCGZGrWELWxyRbJUJoAqFQ25RWUPBL29wcBVht1PhJ6VdLSPbj73gEFbz7seEAzj6b5rLg6jb1JXXjJ",
+      "type": "DataIntegrityProof",
+      "verificationMethod": "did:key:z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp#z6MkiQv9CLa8Q1PNcP59tmGpJsvJhzLq8H9aGz7RkNh7aVVp"
+    },
+    "type": [
+      "VerifiableCredential",
+      "BitstringStatusListCredential"
+    ],
+    "validFrom": "2026-10-26T02:55:00Z"
+  }
+}

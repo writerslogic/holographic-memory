@@ -99,5 +99,7 @@ fi
 } > "$out/versions.json"
 
 touch "$out/.nojekyll"
+mkdir -p "$out/ns/hms"
+cp "$repo_root/docs/reference/fixtures/hms-v1-context.jsonld" "$out/ns/hms/v1.jsonld"
 "${PYTHON:-python3}" "$repo_root/scripts/docs_finalize.py" "$out" "$base"
 echo "built dev ${versions[*]:-} latest=$latest_title into $out"

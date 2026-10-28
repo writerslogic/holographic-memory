@@ -1,0 +1,76 @@
+{
+  "scope": "Core provenance and W3C interop only; not AML quality or certification",
+  "archive_checkpoint": "f7e9d6151d37efd80d7ca0b7d0f331cfafd48627",
+  "inputs_sha256": {
+    ".gitignore": "3d5cd4397ff4a010b8ca882e7dbdf15db93991dd112ea4d1714f98ff6232cb85",
+    "Cargo.lock": "fa709644286cce688c164ef97b0bf30b34013613124caca589ed903df0562898",
+    "Cargo.toml": "2b0068bcc1ed22af96ce116062948310bc6f28f2b59ad99d4a0c90c92a34af40",
+    "README.md": "cd4c0bcd369700989b4eebe02831d143b13dab107f7de062ec87bac588d35830",
+    "docs/index.md": "ab8d7e06bbb06bf942db27f8f23e15923b8267ba33e47c62ce0407f3e3b4f78e",
+    "scripts/build-docs-site.sh": "96469821749728a6a98664191df7cdfbdcee41ccc636acc119308572e78932dd",
+    "src/core/config.rs": "09efea97a8e40b600c4a7effd6186f64ec07f0a0cca8c5f93220b6e83d4330b1",
+    "src/core/engine/mod.rs": "f7d9e24dcebc892949057dfb9197b33aaa3f843c9b294ff57fbb2912650e5e2b",
+    "src/core/provenance/access.rs": "efc215ec212d1243871904864436b2f6ef9eeae60df00403953fb106e0d8b806",
+    "src/core/provenance/c2pa_manifest.rs": "2dec3d31d85a72014c07dd2325cf9a617e699295fac3c602582486bea6b70be6",
+    "src/core/provenance/cawg.rs": "ad28d0e29b544c59ae7c0a14df94f8a4fca18c8855c9b5c8a69ac0b146db728c",
+    "src/core/provenance/mod.rs": "82f683dc0ded07c8b0477bf9a762e4997f802f5cfb558c78573185a917d1e3a1",
+    "src/core/provenance/trust.rs": "1f9868bcce037d3ea96a7c10328385bc4996e18f0031cf38b75e942898ef81a5",
+    "src/core/provenance/vc.rs": "7c3c447173976f166da48a95d212fe976c880a200a594d6979e98fe53a1bd29a",
+    "src/lib.rs": "6f0c994fcaab0f69efe482402c88f64399db9daa2f5d7617e404241c95e86e19",
+    ".github/workflows/standards-interop.yml": "f85ba6fee63f1d2be01ddbff73a8adf8c2f6a70dbd5a40a6dd58da21e5a56e7c",
+    "docs/reference/fixtures/c2pa-asset-manifest.json": "8d7f9d9eeea8799cab14340fbd40309b21a89041377be181b60d1db0618d6f64",
+    "docs/reference/fixtures/hms-c2pa-assertion-v1.schema.json": "44f17e83a1ae5d55b1f514ae69f4d1798bc5eebc18a3a9425e17c7ecddbe3b1a",
+    "docs/reference/fixtures/hms-c2pa-assertion-v2.schema.json": "eeed27a3d47ba3b7d00807257cee61bd2cb57d24fd4fb78cbb79373a12f40100",
+    "docs/reference/fixtures/hms-fact-subject-v1.schema.json": "5dc4d096b9f3227fe2c87c416939131a4d45917f566a738156a9154192ca0538",
+    "docs/reference/fixtures/hms-v1-context.jsonld": "ec2dbc721f02dc1f06a7d03f589c5a7e43b5fa0ff8184d6a384516b774790b45",
+    "docs/reference/fixtures/w3c-sample.json": "1147f53c90aac588ad4ae5bc1ea47f33cefc58e53819514fe3b88bbf03fdee79",
+    "docs/reference/provenance-profile-v1.md": "327bba0063afd9a527f9cf41a04955c91a300937c5c9b807ff2072a7d983a581",
+    "docs/reference/standards.md": "86d7174e002f90ef710638d8a20a9695198257ef27f7de69d10792adc953b1b8",
+    "examples/emit_w3c_credential.rs": "60630ed6dea69e4b94f9543f9f9a4ee8395924ac4e48d017aa813ef7cc156fe4",
+    "interop/w3c/package-lock.json": "f91e9763806b1424732db71ce92dbaa75767e7791ff0b2ab857b281cc195915f",
+    "interop/w3c/package.json": "f5c549180207efd2f250500eb9bb2954577c9f1c758bb225ac995130e0d04960",
+    "interop/w3c/verify.mjs": "fd56629015c043c653dd3a5e90c7062bbe7ce5a8ab7d166c8ea81b81e3e77880",
+    "scripts/check-w3c-interop.sh": "48f70a326d8e1b89386f61154e2fc228bb4daadb3c66ffb9bbc1635eb045c981",
+    "src/core/provenance/status_list.rs": "5fecd1c8086bb0ba38f81781f0cece297d1bfec0d5e2b19ea02f53674425bda9"
+  },
+  "checks": [
+    {
+      "check": "tests",
+      "passed": true,
+      "tests": 121,
+      "report": "integration-core-tests-20261028.txt",
+      "report_sha256": "537c3aabc8bed0e1e4153e25b5477517a6cb127917c11799270d07b7bc714918",
+      "raw_log": "/Volumes/A/hms-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-tests.log",
+      "raw_sha256": "2cec6c0d261d8e206ff2767b6fcade6e13a371cd4cd3ed262406bef518ed76bf",
+      "normalization": "Trailing report whitespace only"
+    },
+    {
+      "check": "clippy",
+      "passed": true,
+      "tests": null,
+      "report": "integration-core-clippy-20261028.txt",
+      "report_sha256": "47bcc6418a8e3be29a20655f3ecc53df49306f96f22c76026ed98a1358eed1df",
+      "raw_log": "/Volumes/A/hms-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-clippy.log",
+      "raw_sha256": "47bcc6418a8e3be29a20655f3ecc53df49306f96f22c76026ed98a1358eed1df",
+      "normalization": "Trailing report whitespace only"
+    },
+    {
+      "check": "w3c",
+      "passed": true,
+      "tests": null,
+      "report": "integration-core-w3c-20261028.txt",
+      "report_sha256": "5a06feb25f8eafbfef0ab4c6493b3d847dc73e2165f7aa8f12ff26178e4ffe6c",
+      "raw_log": "/Volumes/A/hms-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-w3c.log",
+      "raw_sha256": "5a06feb25f8eafbfef0ab4c6493b3d847dc73e2165f7aa8f12ff26178e4ffe6c",
+      "normalization": "Trailing report whitespace only"
+    }
+  ],
+  "excluded": "Native C2PA signing/release toolkit: two focused invocations each had four private-key timeouts; exact-CDHash fixture ACL did not resolve. Separately under focused review.",
+  "limits": [
+    "No live status endpoint",
+    "No production signing acceptance",
+    "No AML reader, retrieval, model or live leaderboard run",
+    "Cross-feature and MSRV CI pending"
+  ],
+  "base_commit": "fbac5d5a4d8b05bc52f75d293952701e38567bab"
+}

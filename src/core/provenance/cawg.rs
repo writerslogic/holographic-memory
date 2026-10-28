@@ -5,6 +5,7 @@ use anyhow::Result;
 use base64::Engine;
 use ed25519_dalek::{Signer, SigningKey};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 use super::did;
 use super::vc::iso8601_now;
@@ -31,6 +32,7 @@ pub fn hash_assertion(label: &str, content: &[u8]) -> HashedUri {
 /// The CAWG ICA `sig_type` for the identity claims aggregation credential.
 const CAWG_ICA_SIG_TYPE: &str = "cawg.identity_claims_aggregation";
 const VC_CONTEXT: &str = "https://www.w3.org/ns/credentials/v2";
+const VC1_CONTEXT: &str = "https://www.w3.org/2018/credentials/v1";
 const ICA_CONTEXT: &str = "https://cawg.io/identity/1.1/ica/context/";
 const ICA_CREDENTIAL_TYPE: &str = "IdentityClaimsAggregationCredential";
 const COSE_CONTENT_TYPE_VC: &str = "application/vc";
@@ -166,12 +168,8 @@ fn sign_cose_vc(signing_key: &SigningKey, payload: &[u8]) -> Result<Vec<u8>> {
         .map_err(|e| anyhow::anyhow!("COSE_Sign1 tagged serialization failed: {e}"))
 }
 
-/// Verify a CAWG Identity Claims Aggregation (ICA) identity assertion from its raw CBOR
-/// bytes — the `cawg.identity` assertion box content `{signer_payload, signature, pad1}`.
-/// The signature is a tag-18 COSE_Sign1 (`application/vc`) over the W3C VC JSON, signed by
-/// the did:jwk issuer. Checks: the COSE signature is valid under the issuer DID, the
-/// assertion's `signer_payload` equals the `c2paAsset` the signed VC carries, sig_type is
-/// ICA, and a hard binding is referenced. Returns the verified, parsed VC JSON.
+/// Check the signature and internal consistency of an ICA assertion. A containing
+/// authenticated claim is required to validate its referenced assertions and asset binding.
 pub fn verify_cawg_ica(assertion_cbor: &[u8]) -> Result<serde_json::Value> {
     verify_cawg_ica_references(assertion_cbor).map(|(vc, _)| vc)
 }
@@ -205,6 +203,16 @@ pub(crate) fn verify_cawg_ica_references(
         Value::Map(entries) => entries,
         _ => return Err(anyhow::anyhow!("identity assertion is not a CBOR map")),
     };
+    for key in ["signer_payload", "signature", "pad1", "pad2"] {
+        if map
+            .iter()
+            .filter(|(k, _)| matches!(k, Value::Text(t) if t == key))
+            .count()
+            > 1
+        {
+            return Err(anyhow::anyhow!("identity assertion repeats {key}"));
+        }
+    }
     let get = |key: &str| -> Option<&Value> {
         map.iter()
             .find(|(k, _)| matches!(k, Value::Text(t) if t == key))
@@ -215,6 +223,27 @@ pub(crate) fn verify_cawg_ica_references(
         Some(payload @ Value::Map(_)) => cbor_to_json(payload)?,
         _ => return Err(anyhow::anyhow!("missing signer_payload map")),
     };
+    for key in ["pad1", "pad2"] {
+        match get(key) {
+            Some(Value::Bytes(bytes)) if bytes.iter().all(|byte| *byte == 0) => {}
+            None if key == "pad2" => {}
+            _ => return Err(anyhow::anyhow!("identity assertion has invalid {key}")),
+        }
+    }
+    if let Some(role) = signer_payload.get("role") {
+        let roles = role
+            .as_array()
+            .ok_or_else(|| anyhow::anyhow!("identity assertion role is not an array"))?;
+        if roles.is_empty()
+            || roles
+                .iter()
+                .any(|value| value.as_str().is_none_or(str::is_empty))
+        {
+            return Err(anyhow::anyhow!(
+                "identity assertion role is empty or invalid"
+            ));
+        }
+    }
 
     let sig_bytes = match get("signature") {
         Some(Value::Bytes(b)) => b,
@@ -223,16 +252,25 @@ pub(crate) fn verify_cawg_ica_references(
 
     let sign1 = CoseSign1::from_tagged_slice(sig_bytes)
         .map_err(|e| anyhow::anyhow!("COSE_Sign1 deserialization failed: {e}"))?;
+    if !matches!(
+        sign1.protected.header.content_type.as_ref(),
+        Some(coset::RegisteredLabel::Text(content_type)) if content_type == COSE_CONTENT_TYPE_VC
+    ) {
+        return Err(anyhow::anyhow!(
+            "ICA COSE content type is not application/vc"
+        ));
+    }
     let payload = sign1
         .payload
         .as_ref()
         .ok_or_else(|| anyhow::anyhow!("COSE envelope has no payload"))?;
     let vc: serde_json::Value = serde_json::from_slice(payload)
         .map_err(|e| anyhow::anyhow!("VC JSON parse failed: {e}"))?;
+    validate_ica_vc(&vc)?;
 
     let issuer = vc
         .get("issuer")
-        .and_then(|v| v.as_str())
+        .and_then(|issuer| issuer.as_str().or_else(|| issuer.get("id")?.as_str()))
         .ok_or_else(|| anyhow::anyhow!("VC has no issuer"))?;
     let key = ed25519_dalek::VerifyingKey::from_bytes(&super::did::ed25519_from_did_jwk(issuer)?)
         .map_err(|e| anyhow::anyhow!("invalid issuer key: {e}"))?;
@@ -277,6 +315,18 @@ pub(crate) fn verify_cawg_ica_references(
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    if referenced.is_empty() {
+        return Err(anyhow::anyhow!("referenced_assertions is empty"));
+    }
+    let mut seen_urls = HashSet::new();
+    for reference in &referenced {
+        if !seen_urls.insert(&reference.url) {
+            return Err(anyhow::anyhow!("duplicate referenced assertion"));
+        }
+        if reference.url.is_empty() || reference.hash.is_empty() {
+            return Err(anyhow::anyhow!("referenced assertion has an empty field"));
+        }
+    }
     if !referenced
         .iter()
         .any(|r| r.label().starts_with("c2pa.hash."))
@@ -285,6 +335,77 @@ pub(crate) fn verify_cawg_ica_references(
     }
 
     Ok((vc, referenced))
+}
+
+fn validate_ica_vc(vc: &serde_json::Value) -> Result<()> {
+    let contains = |field: &str, expected: &str| {
+        vc.get(field)
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|values| values.iter().any(|value| value == expected))
+    };
+    let vc2 = contains("@context", VC_CONTEXT);
+    if !(vc2 || contains("@context", VC1_CONTEXT)) || !contains("@context", ICA_CONTEXT) {
+        return Err(anyhow::anyhow!("ICA VC is missing a required context"));
+    }
+    if !contains("type", "VerifiableCredential") || !contains("type", ICA_CREDENTIAL_TYPE) {
+        return Err(anyhow::anyhow!("ICA VC is missing a required type"));
+    }
+    let from_field = if vc2 { "validFrom" } else { "issuanceDate" };
+    let until_field = if vc2 { "validUntil" } else { "expirationDate" };
+    let from = vc
+        .get(from_field)
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("ICA VC has no effective date"))?;
+    let from = super::vc::parse_datetime_stamp(from)?;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?;
+    let now = (
+        now.as_secs() as i64,
+        format!("{:09}", now.subsec_nanos())
+            .trim_end_matches('0')
+            .to_string(),
+    );
+    if from > now {
+        return Err(anyhow::anyhow!("ICA VC is not yet valid"));
+    }
+    if let Some(until) = vc.get(until_field) {
+        let until = until
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("ICA VC validUntil is not a date"))?;
+        let until = super::vc::parse_datetime_stamp(until)?;
+        if from > until || now > until {
+            return Err(anyhow::anyhow!(
+                "ICA VC has expired or invalid validity range"
+            ));
+        }
+    }
+    let identities = vc
+        .get("credentialSubject")
+        .and_then(|subject| subject.get("verifiedIdentities"))
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| anyhow::anyhow!("ICA VC has no verifiedIdentities array"))?;
+    if identities.is_empty() {
+        return Err(anyhow::anyhow!("ICA VC has no verified identities"));
+    }
+    for identity in identities {
+        let text = |field: &str| identity.get(field).and_then(serde_json::Value::as_str);
+        if text("type").is_none_or(str::is_empty)
+            || text("verifiedAt").is_none_or(str::is_empty)
+            || identity
+                .get("provider")
+                .and_then(|provider| provider.get("name"))
+                .and_then(serde_json::Value::as_str)
+                .is_none_or(str::is_empty)
+        {
+            return Err(anyhow::anyhow!("ICA VC has an invalid verified identity"));
+        }
+        super::vc::parse_datetime_stamp(text("verifiedAt").unwrap())?;
+        for field in ["name", "username", "address", "uri", "method"] {
+            if identity.get(field).is_some() && text(field).is_none_or(str::is_empty) {
+                return Err(anyhow::anyhow!("ICA VC has an invalid identity {field}"));
+            }
+        }
+    }
+    Ok(())
 }
 
 /// `asset` with each referenced assertion's hash as padded standard base64, the form

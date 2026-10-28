@@ -1,0 +1,5 @@
+    Checking data-encoding-macro v0.1.21
+   Compiling holographic-memory v0.6.3 (/Volumes/A/.hms-integrate-standards-20261028)
+    Checking multibase v0.9.3
+    Checking memmap2 v0.9.12
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.62s

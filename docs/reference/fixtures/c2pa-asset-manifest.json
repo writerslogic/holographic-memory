@@ -1,0 +1,20 @@
+{
+  "claim_generator": "holographic-memory/0.6.1",
+  "assertions": [
+    {
+      "label": "c2pa.actions.v2",
+      "data": {
+        "actions": [],
+        "allActionsIncluded": false
+      }
+    },
+    {
+      "label": "org.writerslogic.hms.provenance",
+      "data": {
+        "profile": "urn:hms:provenance:v2",
+        "memoryDigestAlg": "sha256",
+        "memoryDigest": "9d6a182c97f4e9ad5c4d36d6826cea0c6dff0c5aa1c60ec61bf0a26e419f4878"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:hms:provenance:v1:c2pa-assertion",
+  "title": "HMS C2PA memory digest assertion v1",
+  "type": "object",
+  "required": ["profile", "memoryDigestAlg", "memoryDigest"],
+  "properties": {
+    "profile": {"const": "urn:hms:provenance:v1"},
+    "memoryDigestAlg": {"const": "sha256"},
+    "memoryDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

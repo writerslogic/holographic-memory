@@ -232,6 +232,11 @@ impl HmsCore {
                 .map(std::path::PathBuf::from)
                 .unwrap_or_else(|| base_path.join("hms_provenance.key"));
             let mgr = super::provenance::ProvenanceManager::new(&key_path, Some(&base_path))?;
+            let mgr = if let Some(ref url) = config.provenance.status_list_url {
+                mgr.with_status_list_url(url.clone())?
+            } else {
+                mgr
+            };
             #[cfg(feature = "provenance-scitt")]
             let mgr = if let Some(ref endpoint) = config.provenance.scitt_endpoint {
                 mgr.with_scitt_endpoint(endpoint.clone())
@@ -1579,6 +1584,13 @@ impl HmsCore {
     pub fn revoke_credential(&self, status_index: u64) -> Result<()> {
         let mgr = self.provenance_manager()?;
         mgr.revoke_credential(status_index)
+    }
+
+    #[cfg(feature = "provenance")]
+    pub fn status_list_credential(
+        &self,
+    ) -> Result<super::provenance::status_list::StatusListCredential> {
+        self.provenance_manager()?.status_list_credential()
     }
 
     #[cfg(feature = "provenance")]

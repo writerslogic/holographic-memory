@@ -10,6 +10,7 @@ pub mod jumbf;
 pub mod keri;
 pub mod scitt;
 pub mod sigstore;
+pub mod status_list;
 pub mod trust;
 pub mod types;
 pub mod vc;
@@ -19,8 +20,9 @@ use ed25519_dalek::SigningKey;
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use sha2::{Digest, Sha256};
-use std::io::{BufRead, Write};
+use std::io::{BufRead, Read, Write};
 use std::path::{Path, PathBuf};
+use trust::StatusLookup;
 use trust::TrustStore;
 
 use types::{
@@ -55,6 +57,7 @@ struct LogEntryRef<'a> {
 pub struct ProvenanceManager {
     signing_key: SigningKey,
     issuer_did: String,
+    status_list_url: String,
     records: RwLock<crate::core::hash::FastMap<String, ProvenanceRecord>>,
     chain_head: Mutex<[u8; 32]>,
     logical_clock: std::sync::atomic::AtomicU64,
@@ -97,6 +100,7 @@ impl ProvenanceManager {
 
         Ok(Self {
             signing_key,
+            status_list_url: vc::status_list_credential_url(&issuer_did),
             issuer_did,
             records: RwLock::new(records),
             chain_head: Mutex::new(chain_head),
@@ -119,6 +123,7 @@ impl ProvenanceManager {
         }
         Self {
             signing_key,
+            status_list_url: vc::status_list_credential_url(&issuer_did),
             issuer_did,
             records: RwLock::new(crate::core::hash::FastMap::default()),
             chain_head: Mutex::new([0u8; 32]),
@@ -129,6 +134,25 @@ impl ProvenanceManager {
             #[cfg(feature = "provenance-scitt")]
             scitt_endpoint: None,
         }
+    }
+
+    pub fn with_status_list_url(mut self, url: String) -> Result<Self> {
+        status_list::validate_url(&url)?;
+        let legacy = vc::status_list_credential_url(&self.issuer_did);
+        for record in self.records.read().values() {
+            if let Some(ref json) = record.vc_json {
+                let credential: vc::FactCredential = serde_json::from_str(json)?;
+                if let Some(status) = credential.credential_status {
+                    anyhow::ensure!(
+                        status.status_list_credential == url
+                            || status.status_list_credential == legacy,
+                        "configured status list URL differs from an issued credential"
+                    );
+                }
+            }
+        }
+        self.status_list_url = url;
+        Ok(self)
     }
 
     fn next_sequence(&self) -> u64 {
@@ -394,8 +418,17 @@ impl ProvenanceManager {
         let Some(path) = log_path else {
             return Ok(Vec::new());
         };
-        match std::fs::read(path.with_extension("statuslist")) {
-            Ok(bits) => Ok(bits),
+        match std::fs::File::open(path.with_extension("statuslist")) {
+            Ok(file) => {
+                let mut bits = Vec::new();
+                file.take((status_list::MAX_BYTES + 1) as u64)
+                    .read_to_end(&mut bits)?;
+                anyhow::ensure!(
+                    bits.len() <= status_list::MAX_BYTES,
+                    "revocation status list exceeds size limit"
+                );
+                Ok(bits)
+            }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
             Err(e) => Err(anyhow::anyhow!(
                 "failed to read revocation status list: {e}"
@@ -409,6 +442,10 @@ impl ProvenanceManager {
         let out_of_range = || anyhow::anyhow!("status index {status_index} is out of range");
         let byte_idx = usize::try_from(status_index / 8).map_err(|_| out_of_range())?;
         let len = byte_idx.checked_add(1).ok_or_else(out_of_range)?;
+        anyhow::ensure!(
+            len <= status_list::MAX_BYTES,
+            "status index exceeds list size limit"
+        );
         let bit_idx = (status_index % 8) as u8;
         // The write guard covers the update and its persistence: concurrent revocations
         // reach the file in the order they change the list, so a later write never carries
@@ -434,6 +471,28 @@ impl ProvenanceManager {
 
     pub fn is_revoked(&self, status_index: u64) -> bool {
         trust::status_bit(&self.revocation_bitstring.read(), status_index)
+    }
+
+    fn published_status_list_len(&self, bits_len: usize) -> Option<usize> {
+        let highest_issued = self
+            .logical_clock
+            .load(std::sync::atomic::Ordering::SeqCst)
+            .saturating_sub(1);
+        let issued_bytes = usize::try_from(highest_issued / 8).ok()?.checked_add(1)?;
+        let length = status_list::MIN_BYTES.max(issued_bytes).max(bits_len);
+        (length <= status_list::MAX_BYTES).then_some(length)
+    }
+
+    fn local_status(&self, index: u64) -> StatusLookup {
+        let bits = self.revocation_bitstring.read();
+        let Some(length) = self.published_status_list_len(bits.len()) else {
+            return StatusLookup::OutOfRange;
+        };
+        if index / 8 >= length as u64 {
+            StatusLookup::OutOfRange
+        } else {
+            StatusLookup::Value(trust::status_bit(&bits, index))
+        }
     }
 
     /// Create a full provenance record for a stored fact.
@@ -467,7 +526,8 @@ impl ProvenanceManager {
             source_uri,
             None,
             record.sequence,
-        );
+        )
+        .with_status_list_url(&self.status_list_url);
         let signed_vc = vc::sign_credential(&self.signing_key, credential)?;
         record.vc_json = Some(serde_json::to_string(&signed_vc)?);
 
@@ -520,7 +580,8 @@ impl ProvenanceManager {
             params.source_uri,
             Some((params.subject, params.relation, params.object)),
             record.sequence,
-        );
+        )
+        .with_status_list_url(&self.status_list_url);
         let signed_vc = vc::sign_credential(&self.signing_key, credential)?;
         record.vc_json = Some(serde_json::to_string(&signed_vc)?);
 
@@ -575,7 +636,8 @@ impl ProvenanceManager {
                         *source_uri,
                         None,
                         record.sequence,
-                    );
+                    )
+                    .with_status_list_url(&self.status_list_url);
                     let signed_vc = vc::sign_credential(&self.signing_key, credential)?;
                     record.vc_json = Some(serde_json::to_string(&signed_vc)?);
                     Ok(record)
@@ -765,7 +827,7 @@ impl ProvenanceManager {
         record: &ProvenanceRecord,
         trust: Option<&TrustStore>,
     ) -> Result<VerificationResult> {
-        let own_status_list = vc::status_list_credential_url(&self.issuer_did);
+        let legacy_status_list = vc::status_list_credential_url(&self.issuer_did);
         let mut details = Vec::new();
         let fallback = self.signing_key.verifying_key();
         let verifying_key = Self::resolve_cose_verifying_key(record, &fallback);
@@ -779,22 +841,38 @@ impl ProvenanceManager {
 
         let mut credential = None;
         if let Some(ref vc_json) = record.vc_json {
+            details.push(outcome_detail(
+                "vc_proof",
+                &vc::verify_credential_json(vc_json),
+            ));
             match serde_json::from_str::<vc::FactCredential>(vc_json) {
                 Ok(parsed) => {
-                    details.push(outcome_detail("vc_proof", &vc::verify_credential(&parsed)));
+                    details.push(outcome_detail(
+                        "vc_semantics",
+                        &vc::validate_fact_credential(&parsed),
+                    ));
                     details.push(revocation_detail(
                         &parsed,
                         trust.is_some_and(TrustStore::requires_status_lists),
                         |url, index| {
-                            let trusted = trust.and_then(|t| t.is_revoked(url, index));
-                            if url == own_status_list {
-                                Some(self.is_revoked(index) || trusted == Some(true))
-                            } else if trusted.is_some()
-                                || trust.is_some_and(TrustStore::requires_status_lists)
-                            {
-                                trusted
+                            let trusted = trust
+                                .map_or(StatusLookup::Missing, |t| t.status_lookup(url, index));
+                            if url == self.status_list_url || url == legacy_status_list {
+                                match (self.local_status(index), trusted) {
+                                    (StatusLookup::Value(local), StatusLookup::Value(remote)) => {
+                                        StatusLookup::Value(local || remote)
+                                    }
+                                    (StatusLookup::Value(local), _) => StatusLookup::Value(local),
+                                    (StatusLookup::OutOfRange, StatusLookup::Value(remote)) => {
+                                        StatusLookup::Value(remote)
+                                    }
+                                    (StatusLookup::OutOfRange, StatusLookup::Stale) => {
+                                        StatusLookup::Stale
+                                    }
+                                    _ => StatusLookup::OutOfRange,
+                                }
                             } else {
-                                Some(self.is_revoked(index))
+                                trusted
                             }
                         },
                     ));
@@ -842,11 +920,30 @@ impl ProvenanceManager {
     /// A trust store holding this manager's key and a snapshot of its revocation status list.
     pub fn self_trust(&self) -> TrustStore {
         let mut trust = TrustStore::trusting_key(&self.signing_key.verifying_key());
-        trust.trust_status_list(
-            &vc::status_list_credential_url(&self.issuer_did),
-            self.revocation_bitstring.read().clone(),
-        );
+        let mut bits = self.revocation_bitstring.read().clone();
+        if let Some(length) = self.published_status_list_len(bits.len()) {
+            bits.resize(length, 0);
+        }
+        trust.trust_status_list(&self.status_list_url, bits.clone());
+        let legacy_url = vc::status_list_credential_url(&self.issuer_did);
+        if legacy_url != self.status_list_url {
+            trust.trust_status_list(&legacy_url, bits);
+        }
         trust
+    }
+
+    pub fn status_list_credential(&self) -> Result<status_list::StatusListCredential> {
+        let highest_issued = self
+            .logical_clock
+            .load(std::sync::atomic::Ordering::SeqCst)
+            .saturating_sub(1);
+        let bits = self.revocation_bitstring.read().clone();
+        status_list::create_status_list_credential(
+            &self.signing_key,
+            &self.status_list_url,
+            &bits,
+            highest_issued,
+        )
     }
 
     pub fn create_sigstore_bundle(
@@ -879,11 +976,9 @@ impl ProvenanceManager {
         cawg::create_identity_assertion_ica(&self.signing_key, referenced, display_name)
     }
 
-    /// Verify a `cawg.identity` ICA assertion JSON and require its issuer to be
-    /// trusted, returning the embedded VC. `verify_cawg_ica` only proves the
-    /// assertion is self-consistent (signed by the key its own VC names); the
-    /// `trust` anchor establishes that the issuing agent is one the caller
-    /// accepts. Rejects an assertion whose issuer DID is not in `trust`.
+    /// Verify a standalone `cawg.identity` ICA signature and issuer trust, returning
+    /// the embedded VC. Complete identity assertion validation also requires the
+    /// authenticated containing C2PA claim and its referenced assertions.
     pub fn verify_cawg_assertion(
         &self,
         assertion: &serde_json::Value,
@@ -893,7 +988,10 @@ impl ProvenanceManager {
         let vc = cawg::verify_cawg_ica(&embedded)?;
         let issuer = vc
             .get("issuer")
-            .and_then(|v| v.as_str())
+            .and_then(|v| {
+                v.as_str()
+                    .or_else(|| v.get("id").and_then(|id| id.as_str()))
+            })
             .ok_or_else(|| anyhow::anyhow!("CAWG assertion VC has no issuer"))?;
         let key_bytes = did::ed25519_from_did_jwk(issuer)?;
         let key = ed25519_dalek::VerifyingKey::from_bytes(&key_bytes)
@@ -1068,13 +1166,20 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
 
     let mut credential = None;
     if let Some(ref vc_json) = record.vc_json {
+        details.push(outcome_detail(
+            "vc_proof",
+            &vc::verify_credential_json(vc_json),
+        ));
         match serde_json::from_str::<vc::FactCredential>(vc_json) {
             Ok(parsed) => {
-                details.push(outcome_detail("vc_proof", &vc::verify_credential(&parsed)));
+                details.push(outcome_detail(
+                    "vc_semantics",
+                    &vc::validate_fact_credential(&parsed),
+                ));
                 details.push(revocation_detail(
                     &parsed,
                     trust.requires_status_lists(),
-                    |url, index| trust.is_revoked(url, index),
+                    |url, index| trust.status_lookup(url, index),
                 ));
                 credential = Some(parsed);
             }
@@ -1128,15 +1233,23 @@ pub fn verify_record(record: &ProvenanceRecord, trust: &TrustStore) -> Result<Ve
 }
 
 /// The `revocation_status` detail of a credential. `lookup(status list URL, index)` answers
-/// whether the index is revoked, or `None` when no status list is known for that URL, which
-/// passes with a message saying revocation was not checked, or fails when `require_list`.
+/// whether the index is revoked, missing, or outside the known bitstring.
 fn revocation_detail(
     credential: &vc::FactCredential,
     require_list: bool,
-    lookup: impl Fn(&str, u64) -> Option<bool>,
+    lookup: impl Fn(&str, u64) -> StatusLookup,
 ) -> VerificationDetail {
     let (passed, message) = match credential.credential_status {
         None => (true, None),
+        Some(ref status)
+            if status.status_type != "BitstringStatusListEntry"
+                || status.status_purpose != "revocation" =>
+        {
+            (
+                false,
+                Some("unsupported credential status type or purpose".to_string()),
+            )
+        }
         Some(ref status) => match status.status_list_index.parse::<u64>() {
             Err(_) => (
                 false,
@@ -1146,9 +1259,18 @@ fn revocation_detail(
                 )),
             ),
             Ok(index) => match lookup(&status.status_list_credential, index) {
-                Some(true) => (false, Some("credential has been revoked".to_string())),
-                Some(false) => (true, None),
-                None => (
+                StatusLookup::Value(true) => {
+                    (false, Some("credential has been revoked".to_string()))
+                }
+                StatusLookup::Value(false) => (true, None),
+                StatusLookup::OutOfRange => {
+                    (false, Some("status list index is out of range".to_string()))
+                }
+                StatusLookup::Stale => (
+                    false,
+                    Some("trusted status list is stale or has no signed timestamp".to_string()),
+                ),
+                StatusLookup::Missing => (
                     !require_list,
                     Some(format!(
                         "no trusted status list for {}; revocation not checked",
@@ -1592,8 +1714,8 @@ mod tests {
             .verify_fact_provenance(&record, &mgr.self_trust())
             .unwrap();
         assert!(verification.valid);
-        // cose_signature, vc_proof, revocation_status, record_binding, trust_anchor
-        assert_eq!(verification.details.len(), 5);
+        // cose_signature, vc_proof, vc_semantics, revocation_status, record_binding, trust_anchor
+        assert_eq!(verification.details.len(), 6);
 
         assert!(mgr.get_record("fact-001").is_some());
         assert_eq!(mgr.record_count(), 1);
@@ -1686,9 +1808,9 @@ mod tests {
         let trust = trust::TrustStore::trusting_did(&issuer).unwrap();
         let result = verify_record(&record, &trust).unwrap();
         assert!(result.valid);
-        // cose_signature, vc_proof, revocation_status (unchecked: no list trusted),
+        // cose_signature, vc_proof, vc_semantics, revocation_status (unchecked: no list trusted),
         // record_binding, trust_anchor
-        assert_eq!(result.details.len(), 5);
+        assert_eq!(result.details.len(), 6);
     }
 
     #[test]
@@ -2285,6 +2407,59 @@ mod binding_tests {
             .any(|d| d.check == "revocation_status" && !d.passed));
     }
 
+    #[test]
+    fn published_status_list_covers_issued_credentials_and_requires_trust() {
+        let key = SigningKey::from_bytes(&[31u8; 32]);
+        let mgr = ProvenanceManager::from_signing_key(key)
+            .with_status_list_url("https://example.com/credentials/status/1".into())
+            .unwrap();
+        let record = mgr
+            .create_fact_provenance("fact", b"revocable", None)
+            .unwrap();
+        let credential: vc::FactCredential =
+            serde_json::from_str(record.vc_json.as_ref().unwrap()).unwrap();
+        let status = credential.credential_status.unwrap();
+        assert_eq!(status.status_list_credential, mgr.status_list_url);
+        let index: u64 = status.status_list_index.parse().unwrap();
+        mgr.revoke_credential(index).unwrap();
+
+        let published = mgr.status_list_credential().unwrap();
+        let mut untrusted = TrustStore::new();
+        assert!(untrusted.trust_status_list_credential(&published).is_err());
+        let mut trust = TrustStore::trusting_did(mgr.issuer_did()).unwrap();
+        assert!(trust.trust_status_list_credential(&published).is_err());
+        trust
+            .authorize_status_list_publisher(&published.id, &mgr.signing_key.verifying_key())
+            .unwrap();
+        trust.trust_status_list_credential(&published).unwrap();
+        assert_eq!(
+            trust.is_revoked(&status.status_list_credential, index),
+            Some(true)
+        );
+        assert!(!verify_record(&record, &trust).unwrap().valid);
+    }
+
+    #[test]
+    fn reopening_rejects_a_different_published_status_url() {
+        let (dir, mgr) = manager();
+        let mgr = mgr
+            .with_status_list_url("https://example.com/status/1".into())
+            .unwrap();
+        mgr.create_fact_provenance("fact", b"content", None)
+            .unwrap();
+        drop(mgr);
+        let reopened =
+            ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        assert!(reopened
+            .with_status_list_url("https://example.com/status/2".into())
+            .is_err());
+        let reopened =
+            ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+        assert!(reopened
+            .with_status_list_url("https://example.com/status/1".into())
+            .is_ok());
+    }
+
     /// Without a trusted status list a credential passes its revocation check unchecked by
     /// default, and fails it when the trust store requires status lists.
     #[test]
@@ -2305,6 +2480,112 @@ mod binding_tests {
                 .unwrap()
                 .valid
         );
+    }
+
+    #[test]
+    fn status_lookup_rejects_indices_outside_the_published_list() {
+        let key = SigningKey::from_bytes(&[43u8; 32]);
+        let did = did::did_key_from_ed25519(&key.verifying_key().to_bytes());
+        let url = "https://example.com/status/1";
+        let mut credential = vc::create_fact_credential(&did, "fact", &[0u8; 32], 1, None, None, 0)
+            .with_status_list_url(url);
+        let mut trust = TrustStore::new();
+        trust.trust_status_list(url, vec![0; status_list::MIN_BYTES]);
+        let last = (status_list::MIN_BYTES * 8 - 1) as u64;
+        for (index, expected) in [(last - 1, true), (last, true), (last + 1, false)] {
+            credential
+                .credential_status
+                .as_mut()
+                .unwrap()
+                .status_list_index = index.to_string();
+            let result = revocation_detail(&credential, false, |url, index| {
+                trust.status_lookup(url, index)
+            });
+            assert_eq!(result.passed, expected, "index {index}");
+        }
+        credential
+            .credential_status
+            .as_mut()
+            .unwrap()
+            .status_list_index = last.to_string();
+        credential
+            .credential_status
+            .as_mut()
+            .unwrap()
+            .status_purpose = "suspension".into();
+        assert!(
+            !revocation_detail(&credential, false, |url, index| {
+                trust.status_lookup(url, index)
+            })
+            .passed
+        );
+    }
+
+    #[test]
+    fn record_verification_rejects_unsigned_credential_extensions() {
+        let (_dir, mgr) = manager();
+        let mut record = mgr
+            .create_fact_provenance("fact", b"content", None)
+            .unwrap();
+        let mut document: serde_json::Value =
+            serde_json::from_str(record.vc_json.as_ref().unwrap()).unwrap();
+        document["credentialSubject"]["admin"] = serde_json::Value::Bool(true);
+        record.vc_json = Some(serde_json::to_string(&document).unwrap());
+        let result = verify_record(&record, &mgr.self_trust()).unwrap();
+        assert!(!result.valid);
+        assert!(result
+            .details
+            .iter()
+            .any(|detail| detail.check == "vc_proof" && !detail.passed));
+    }
+
+    #[test]
+    fn signed_credential_semantics_and_status_snapshot_freshness_are_reported() {
+        let (_dir, mgr) = manager();
+        let mgr = mgr
+            .with_status_list_url("https://example.com/status/1".into())
+            .unwrap();
+        let mut record = mgr
+            .create_fact_provenance("fact", b"content", None)
+            .unwrap();
+        let mut credential: vc::FactCredential =
+            serde_json::from_str(record.vc_json.as_ref().unwrap()).unwrap();
+        credential.extra.insert(
+            "validUntil".into(),
+            serde_json::json!("2020-01-01T00:00:00Z"),
+        );
+        let credential = vc::sign_credential(&mgr.signing_key, credential).unwrap();
+        record.vc_json = Some(serde_json::to_string(&credential).unwrap());
+        let checked = verify_record(&record, &mgr.self_trust()).unwrap();
+        assert!(checked
+            .details
+            .iter()
+            .any(|d| d.check == "vc_proof" && d.passed));
+        assert!(checked
+            .details
+            .iter()
+            .any(|d| d.check == "vc_semantics" && !d.passed));
+
+        let original = mgr
+            .create_fact_provenance("freshness", b"content", None)
+            .unwrap();
+        let mut list = mgr.status_list_credential().unwrap();
+        list.valid_from = "2020-01-01T00:00:00Z".into();
+        list.proof = None;
+        list.proof = Some(vc::sign_document(&mgr.signing_key, &list).unwrap());
+        let mut trust = TrustStore::trusting_did(mgr.issuer_did()).unwrap();
+        trust
+            .authorize_status_list_publisher(&list.id, &mgr.signing_key.verifying_key())
+            .unwrap();
+        trust.trust_status_list_credential(&list).unwrap();
+        trust.require_recent_status_lists(60);
+        let checked = verify_record(&original, &trust).unwrap();
+        assert!(checked
+            .details
+            .iter()
+            .any(|d| d.check == "revocation_status"
+                && !d.passed
+                && d.message.as_deref().unwrap_or_default().contains("stale")));
     }
 
     #[test]
