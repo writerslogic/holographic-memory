@@ -1,0 +1,38 @@
+{
+  "dataset": "landmark-dino-768-cosine",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:55:09.555891+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATMQKY2AWHG30BA59JVCR"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": {
+        "qps": 3215.059999614404,
+        "recall": 0.97604,
+        "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+        "build_time": 1661.7207391262054,
+        "index_size": 1242424.0
+      },
+      "0.95": {
+        "qps": 3215.059999614404,
+        "recall": 0.97604,
+        "params": "HMS(metric=cosine, degree=32, build_ef=500, ef=100, rerank=400, code_bits=8)|100_400",
+        "build_time": 1661.7207391262054,
+        "index_size": 1242424.0
+      },
+      "0.99": {
+        "qps": 2307.3190987914845,
+        "recall": 0.9946200000000002,
+        "params": "HMS(metric=cosine, degree=48, build_ef=500, ef=128, rerank=400, code_bits=8)|128_400",
+        "build_time": 1589.2487525939941,
+        "index_size": 1279568.0
+      }
+    }
+  }
+}

@@ -1,0 +1,75 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Python models release
+
+on:
+  push:
+    tags: ["py-models-v*"]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/python-models-release.yml
+      - bindings/embed-models/python/**
+      - src/core/embed/**
+      - src/bin/hms-embed.rs
+      - Cargo.toml
+      - Cargo.lock
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build default offline embedding pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: false
+      - name: Check release version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            version=$(sed -n 's/^version = "\(.*\)"$/\1/p' bindings/embed-models/python/pyproject.toml | head -n 1)
+            test "$GITHUB_REF_NAME" = "py-models-v$version"
+          fi
+      - name: Build pinned model pack
+        run: |
+          cargo build --locked --release --features local-embed-download,cli --bin hms-embed
+          bindings/embed-models/python/build_packs.sh "$PWD/target/release/hms-embed" granite-embedding-30m-english
+      - name: Verify pack and build wheel
+        working-directory: bindings/embed-models/python
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' '6a1cc24734a57e4524ecdab1466b2c14535a059b393c76c418ca458ec29602dd' 'holographic_memory_models/packs/granite-embedding-30m-english-int8.hmsemb' | sha256sum --check
+          uv build --wheel
+          uv run --no-project --with twine twine check dist/*.whl
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: models-dist
+          path: bindings/embed-models/python/dist
+          if-no-files-found: error
+
+  publish:
+    name: Publish holographic-memory-models to PyPI
+    if: startsWith(github.ref, 'refs/tags/py-models-v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          name: models-dist
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist
+          skip-existing: true

@@ -8,6 +8,8 @@ header = """
 All notable changes to this project are generated from the commit history.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
+
+[v0.6.3 migration and integrity notes](https://docs.holographic-memory.com/latest/releasing/v0.6.3/).
 """
 body = """
 {% if version %}\
@@ -43,6 +45,6 @@ commit_parsers = [
   { message = "^build", skip = true },
 ]
 filter_commits = false
-tag_pattern = "v?[0-9]*"
+tag_pattern = "^v[0-9]+[.][0-9]+[.][0-9]+$"
 topo_order = false
 sort_commits = "newest"

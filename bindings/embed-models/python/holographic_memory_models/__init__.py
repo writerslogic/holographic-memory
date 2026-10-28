@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Model packs for holographic_memory.Embedder; installed by `pip install holographic-vsa[embed]`."""
+"""Model packs for holographic_memory.Embedder; installed by holographic-memory-py[embed]."""
 from pathlib import Path
 
 __all__ = ["pack_dir"]

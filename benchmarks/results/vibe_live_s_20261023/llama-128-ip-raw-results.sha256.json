@@ -1,0 +1,42 @@
+{
+ "results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_32_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "e4e0237b96b7a6931bd996825b654ace3b90b5eed740c39e7d8f465c167f58e8"
+ },
+ "results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_48_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "7112d59d0836e635e1d6fde8294fc4994ce777e388df34d7dcbfc83551283004"
+ },
+ "results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_64_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "c6b1f4de125facdd2b5bbe56b09a87c28493d2e3aa9bb30e4a6adb555b867cc1"
+ },
+ "results/llama-128-ip/hms@12c80decb094/results/llama-128-ip/100/hms/ip_96_500_8_true.hdf5": {
+  "bytes": 36548920,
+  "sha256": "eaa4716783fdc3707b92c7d2943442e11527091488a777226d2ab0fd928cc80e"
+ },
+ "results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_16_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "b38aafe8631201ff18da82bccd7c197b84840ecedf68d40b1f9aa98c8d4d9c2a"
+ },
+ "results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_24_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "28a9ca9cf54f58f47a5616eaf3ee24390ab500229804e7b04880554afe0cfd3a"
+ },
+ "results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_32_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "e98c7d9bc60535387ba12d23956aa867ee749fea2b362a0daf82d6b780f98bfd"
+ },
+ "results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_48_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "a9050eff88f5405a9483d3e5f538d33f76ba627d1e0f16ac1a471b447554f535"
+ },
+ "results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_64_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "6feb5a39bd87cf25228280be546652360cbab906c069ab5d286a8bc963b47bf3"
+ },
+ "results/llama-128-ip/roargraph/results/llama-128-ip/100/roargraph/ip_100_96_500.hdf5": {
+  "bytes": 14619736,
+  "sha256": "f5dcb07812286c92d34d573be75a1418a5fc9cb10c90f4bbb0f2128833840dba"
+ }
+}

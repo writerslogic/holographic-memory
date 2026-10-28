@@ -1,0 +1,20 @@
+{
+  "dataset": "cqadupstack-lemur-2048-ip",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:54:51.837561+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATJ5M46CEM2MS3TQDG47R"
+    ]
+  },
+  "best_qps_at_recall": {
+    "hms": {
+      "0.90": null,
+      "0.95": null,
+      "0.99": null
+    }
+  }
+}

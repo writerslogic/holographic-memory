@@ -1,0 +1,11 @@
+{
+  "dataset": "sift-128-euclidean",
+  "outcomes": {
+    "hms-d32": "done",
+    "hms-d48": "done",
+    "hms-d64": "done",
+    "faiss-ivfpqfs": "done"
+  },
+  "elapsed_s": 5759.495328299,
+  "estimated_usd": 1.0149510656313572
+}

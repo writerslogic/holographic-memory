@@ -6,11 +6,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "holographic-memory-mcp"
-version = "0.1.0"
+version = "0.1.3"
 description = "Launcher for the Holographic Memory MCP server (hms-mcp): private, on-device persistent memory for AI agents."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "WritersLogic, Inc.", email = "david@writerslogic.com" }]
 keywords = ["mcp", "model-context-protocol", "memory", "agent-memory", "local-first"]
 classifiers = [
@@ -23,7 +24,8 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/writerslogic/holographic-memory/tree/main/docs/integrations/mcp"
+Homepage = "https://holographic-memory.com/"
+Documentation = "https://docs.holographic-memory.com/latest/integrations/mcp/"
 Repository = "https://github.com/writerslogic/holographic-memory"
 
 [project.scripts]
@@ -33,4 +35,4 @@ holographic-memory-mcp = "holographic_memory_mcp:main"
 packages = ["src/holographic_memory_mcp"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/holographic_memory_mcp", "README.md"]
+include = ["src/holographic_memory_mcp", "README.md", "LICENSE"]

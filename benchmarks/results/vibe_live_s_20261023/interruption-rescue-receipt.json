@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-10-24T14:54:21.362898+00:00",
+  "files": 7461,
+  "bytes": 5590265460,
+  "raw_hdf5_files": 253,
+  "raw_hdf5_bytes": 5578205496,
+  "failed_attempt_records": 0,
+  "hash_cross_check": "All priority/main overlapping hashes match; all sizes match saved Volume inventory",
+  "input_data_not_duplicated": true,
+  "remote_input_files_retained": 48,
+  "remote_input_bytes_retained": 215211712656,
+  "egress_cost": "unknown; not included in CPU/RAM estimates",
+  "root": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z",
+  "read_only": true,
+  "functions_launched": 0
+}

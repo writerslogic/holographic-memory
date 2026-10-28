@@ -2,16 +2,21 @@
 
 # Holographic Memory
 
+**Hybrid search, graph indexing, and vector-symbolic memory.**
+
 **Local memory for agents and apps: full-text and vector search, a memory API and a vector-symbolic fact store in one embeddable Rust engine that makes no network calls.**
 
 [![CI](https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
 [![docs.rs](https://img.shields.io/docsrs/holographic-memory)](https://docs.rs/holographic-memory)
-[![PyPI](https://img.shields.io/pypi/v/holographic-vsa.svg?label=pypi)](https://pypi.org/project/holographic-vsa/)
+[![PyPI](https://img.shields.io/pypi/v/holographic-memory-py.svg?label=pypi)](https://pypi.org/project/holographic-memory-py/)
+[![npm](https://img.shields.io/npm/v/holographic-memory.svg?label=node)](https://www.npmjs.com/package/holographic-memory)
+[![MCP on npm](https://img.shields.io/npm/v/holographic-memory-mcp.svg?label=mcp)](https://www.npmjs.com/package/holographic-memory-mcp)
 ![MSRV 1.89](https://img.shields.io/badge/MSRV-1.89-informational.svg)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory)](https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13977/badge)](https://www.bestpractices.dev/projects/13977)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
+[![Holographic Memory MCP MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/writerslogic/holographic-memory/badges/score.svg)](https://glama.ai/mcp/servers/writerslogic/holographic-memory)
 
 [![Bemula forgetting score, DeepSeek backbone](https://img.shields.io/badge/Bemula%20forgetting%2C%20DeepSeek%20backbone-32.2%20vs%2031.0%20best%20published-blue)](benchmarks/results/bemula_v1.json)
 [![LongMemEval dev, gpt-4o reader and judge](https://img.shields.io/badge/LongMemEval%20dev%2C%20gpt--4o%20reader-89.75%25%20mean%20of%204%20runs-blue)](benchmarks/results/longmemeval_official_dev_summary.json)
@@ -21,6 +26,7 @@
 [Website](https://holographic-memory.com) ·
 [Docs](https://docs.holographic-memory.com/) ·
 [Get started](#get-started-in-60-seconds) ·
+[Standards and provenance](docs/reference/standards.md) ·
 [Results](#headline-results) ·
 [Why "holographic"?](#why-is-it-called-holographic) ·
 [Capabilities](#what-ships-today) ·
@@ -137,16 +143,21 @@ _Generated from `benchmarks/results/competitive/` by `hms-bench table`; method a
 
 <!-- BENCH:END -->
 
-## Get started in 60 seconds
+## Get started
 
 Clone once: `git clone https://github.com/writerslogic/holographic-memory && cd holographic-memory`.
+Run the offline agent-memory demo with `cargo run --release --example demo-offline-agent`.
 
 <details open>
 <summary><strong>Rust</strong></summary>
 
+From your own Rust project, add the current Apache-2.0 source:
+
 ```sh
-cargo add holographic-memory        # crates.io 0.6.1, MSRV 1.89
+cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory
 ```
+
+The published crate 0.6.1 remains AGPL-3.0-or-later.
 
 ```rust quickstart-check
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
@@ -170,15 +181,21 @@ println!("{} {:?}", hits[0].document_id, hits[0].source_uri);
 <details>
 <summary><strong>Node.js</strong></summary>
 
-The npm registry carries only the deprecated 0.3.0; build the native module from source (Rust required):
+Install the Node.js bindings (the package selects a native binary for your platform):
+
+```sh
+npm install holographic-memory
+```
+
+To build the native module from source instead (Rust required):
 
 ```sh
 npm ci --omit=optional && npm run build
 ```
 
 ```js quickstart-check
-const { HolographicMemorySystem } = require('./index.js')
-const { DocumentMemory } = require('./semantic.js')
+const { HolographicMemorySystem } = require('holographic-memory')
+const { DocumentMemory } = require('holographic-memory/semantic')
 
 async function main() {
   const dir = require('node:fs').mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'hms-readme-'))
@@ -199,13 +216,13 @@ main().catch(error => { console.error(error); process.exit(1) })
 <details>
 <summary><strong>Server and Python</strong></summary>
 
-The Python package `holographic-sdk` is an HTTP client for `hms-server`, which stores vectors you
-supply. (`holographic-vsa` on PyPI is the quantized-phase vector substrate, with no document search.)
+The Python package `holographic-memory-sdk` is an HTTP client for `hms-server`, which stores vectors you
+supply. (`holographic-memory-py` provides native vector search and phase vectors, but no document search.)
 
 ```sh
 cargo build --release --features server --bin hms-server
 HMS_API_KEY=change-me target/release/hms-server --input-dim 384 &
-pip install holographic-sdk
+uv pip install holographic-memory-sdk
 ```
 
 ```python
@@ -226,6 +243,13 @@ with a toy embedder is in [`examples/quickstart/python`](examples/quickstart/pyt
 <summary><strong>MCP</strong></summary>
 
 `hms-mcp` serves a store to any Model Context Protocol client over stdio or HTTP:
+
+```sh
+npx -y holographic-memory-mcp                                # stdio; downloads a verified binary on first run
+npx -y holographic-memory-mcp --transport http               # http://127.0.0.1:8765/mcp
+```
+
+The [MCP package](https://www.npmjs.com/package/holographic-memory-mcp) is a separate launcher. To build the server from source:
 
 ```sh
 cargo build --release --features mcp,security --bin hms-mcp   # add local-models for semantic recall
@@ -290,8 +314,8 @@ version, with the tested numbers, is in
 | On-device models (`local-models`: Qwen3 embed/rerank/LLM) | Ships | Local weights only; never downloads |
 | `hms-server` HTTP API, multi-tenant (`server`) | Ships | Single node; TLS, per-tenant scoped keys ([guide](docs/SERVER.md)) |
 | MCP server (`mcp`: `hms-mcp`, stdio and HTTP) | Ships | Encryption needs `security`; semantic recall needs `local-models` |
-| Node.js bindings | Ships (build from source) | npm package not yet republished |
-| C, WASM and UniFFI bindings | Ships (build from source) | See [`bindings/`](bindings) |
+| Node.js bindings | Ships on npm and from source | Native binaries are selected by platform at install time |
+| C, Go, .NET, Java, Kotlin, Swift and WebAssembly bindings | Source available | Require local builds; the language packages and native bundles are not yet published ([runtime guides](docs/runtimes)) |
 | Python | Client + phase substrate | No in-process document search |
 | Query-private search (`private-search`) | Experimental | For searching an index someone else holds; hides the query vector from the scorer only ([notes](docs/PRIVATE-SEARCH.md)) |
 
@@ -306,7 +330,7 @@ flowchart TB
     rust["Rust crate"]
     node["Node.js (napi)"]
     ffi["C, WASM, UniFFI"]
-    python["Python: holographic-sdk"]
+    python["Python: holographic-memory-sdk"]
     server["hms-server (HTTP)"]
     mcp["hms-mcp (stdio, HTTP)"]
   end

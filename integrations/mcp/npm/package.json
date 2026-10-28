@@ -1,6 +1,7 @@
 {
   "name": "holographic-memory-mcp",
-  "version": "0.1.0",
+  "version": "0.1.3",
+  "mcpName": "io.github.writerslogic/holographic-memory-mcp",
   "description": "MCP server for Holographic Memory: private, on-device persistent memory for AI agents (stdio and streamable HTTP).",
   "license": "Apache-2.0",
   "author": "WritersLogic, Inc. <david@writerslogic.com>",
@@ -9,12 +10,12 @@
     "url": "git+https://github.com/writerslogic/holographic-memory.git",
     "directory": "integrations/mcp/npm"
   },
-  "homepage": "https://github.com/writerslogic/holographic-memory/tree/main/docs/integrations/mcp",
+  "homepage": "https://holographic-memory.com/",
   "keywords": ["mcp", "model-context-protocol", "memory", "agent-memory", "vector-search", "local-first"],
   "bin": {
     "holographic-memory-mcp": "bin/cli.js"
   },
-  "files": ["bin/cli.js", "checksums.json", "README.md"],
+  "files": ["bin/cli.js", "checksums.json", "README.md", "LICENSE"],
   "engines": {
     "node": ">=18"
   },

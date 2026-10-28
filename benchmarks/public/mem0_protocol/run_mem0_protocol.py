@@ -6,7 +6,7 @@
 # ///
 """Run mem0ai/memory-benchmarks' own runners against HMS, unmodified.
 
-Starts hms-server (lexical memory API), the Mem0-OSS shim in front of it and the
+Starts hms-server, the Mem0-OSS shim in front of it and the
 OpenAI logging proxy, then runs ``python -m benchmarks.<bench>.run`` inside a clean
 checkout of memory-benchmarks pinned to PINNED_COMMIT with the flags that reproduce
 the published headline runs (gpt-5 answerer and judge, top-200, single pass). Writes
@@ -27,6 +27,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -36,6 +37,11 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+
+if __package__:
+    from .grade_validation import complete_grade
+else:
+    from grade_validation import complete_grade
 
 HERE = Path(__file__).resolve().parent
 PINNED_COMMIT = "4b61c5d31b9c668a12b4f5e78064248a02c82d2b"
@@ -55,6 +61,16 @@ COMMON = ["--answerer-model", MODEL, "--judge-model", MODEL, "--provider", "open
           "--top-k", "200", "--top-k-cutoffs", "200", "--backend", "oss"]
 DATASETS = {"locomo": "--dataset-path", "longmemeval": "--dataset-path", "beam-1m": "--dataset-cache-dir",
             "beam-10m": "--dataset-cache-dir"}
+
+
+def validate_run_budget(config: dict, max_spend: float) -> None:
+    if type(max_spend) not in (int, float) or not math.isfinite(max_spend) or max_spend < 0:
+        raise ValueError("max-spend must be a finite nonnegative USD amount")
+    if not isinstance(config, dict):
+        raise ValueError("retrieval configuration must be a JSON object")
+    if config.get("embedding") is not None:
+        raise ValueError("hybrid development embeddings are unavailable under the finite proxy budget; "
+                         "the proxy meters only supported chat completions")
 
 
 def sha256_file(path: Path) -> str:
@@ -151,6 +167,20 @@ def summarize_proxy(log: Path) -> dict:
     return out
 
 
+def summarize_embedding_log(log: Path) -> dict:
+    out = {"calls": 0, "inputs": 0, "tokens": 0, "estimated_usd_at_0_13_per_million": 0.0}
+    if not log.exists():
+        return out
+    with log.open(encoding="utf-8") as handle:
+        for line in handle:
+            row = json.loads(line)
+            out["calls"] += 1
+            out["inputs"] += row["inputs"]
+            out["tokens"] += row["tokens"]
+    out["estimated_usd_at_0_13_per_million"] = round(out["tokens"] * 0.13 / 1_000_000, 6)
+    return out
+
+
 def audit_outputs(out_dir: Path, harness_log: Path) -> dict:
     """Failures the harness scores as WRONG without stopping: empty retrieval, empty answers, retries."""
     per_q = [p for p in out_dir.rglob("*.json") if not p.name.startswith("_") and "results" not in p.name]
@@ -171,8 +201,47 @@ def audit_outputs(out_dir: Path, harness_log: Path) -> dict:
     text = harness_log.read_text(errors="replace") if harness_log.exists() else ""
     return {"questions_on_disk": questions, "empty_generated_answers": sorted(set(empty_answers)),
             "empty_retrieval": sorted(set(empty_retrieval)),
-            "failed_after_retries_lines": len(re.findall(r"failed after", text)),
+            "failed_after_retries_lines": len(re.findall(r"failed after|attempt (\d+)/\1 (?:failed|timed out)", text)),
             "retry_warning_lines": len(re.findall(r"attempt \d+/\d+", text))}
+
+
+def audit_completion(predictions: Path, expected: list[str], scored: bool) -> dict:
+    if not isinstance(expected, list) or not expected or any(
+        not isinstance(qid, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,256}", qid) for qid in expected
+    ) or len(set(expected)) != len(expected):
+        raise ValueError("scope must contain unique, nonempty, safe question IDs")
+    files = {path.stem for path in predictions.glob("*.json") if not path.name.startswith("_")}
+    missing = sorted(set(expected) - files)
+    unexpected = sorted(files - set(expected))
+    invalid = []
+    scored_count = 0
+    for qid in sorted(files & set(expected)):
+        try:
+            row = json.loads((predictions / f"{qid}.json").read_text())
+            retrieval = row.get("retrieval")
+            valid = row.get("question_id") == qid and isinstance(row.get("question"), str) and bool(
+                row["question"].strip()
+            ) and isinstance(retrieval, dict) and isinstance(
+                retrieval.get("search_results"), list
+            )
+            if scored:
+                if valid:
+                    complete_grade(row, len(retrieval["search_results"]))
+                scored_count += bool(valid)
+        except (OSError, ValueError, AttributeError, TypeError, OverflowError):
+            valid = False
+        if not valid:
+            invalid.append(qid)
+    return {"expected_questions": len(expected), "prediction_files": len(files),
+            "scored_questions": scored_count, "missing": missing, "unexpected": unexpected,
+            "invalid": invalid, "complete": not (missing or unexpected or invalid)}
+
+
+def protocol_exit_code(harness_rc: int, audit: dict, llm: dict) -> int:
+    valid = audit["completion"]["complete"] and not audit["ingestion_failures"]
+    valid = valid and not audit["invalid_ingestion_checkpoints"] and not audit["failed_after_retries_lines"]
+    valid = valid and audit.get("retrieval_unchanged", True) and not llm["blocked"]
+    return harness_rc or (0 if valid else 2)
 
 
 def main() -> None:
@@ -187,12 +256,17 @@ def main() -> None:
                     help="hms-server store (default WORK/hms-data); put it on a local SSD: every remember is synced")
     ap.add_argument("--config", type=Path, default=HERE / "retrieval_config.json")
     ap.add_argument("--project-name", default=None)
-    ap.add_argument("--max-spend", type=float, required=True, help="USD hard stop enforced by the proxy")
+    ap.add_argument("--max-spend", type=float, required=True, help="USD proxy stop threshold; in-flight calls may exceed it")
     ap.add_argument("--max-workers", type=int, default=10, help="harness --max-workers (its default is 10)")
     ap.add_argument("extra", nargs="*", help="after --: harness flags such as --predict-only, --evaluate-only, "
                     "--conversations, --max-questions, --run-id")
     args = ap.parse_args()
 
+    try:
+        config = json.loads(args.config.read_text())
+        validate_run_budget(config, args.max_spend)
+    except (OSError, ValueError) as error:
+        ap.error(str(error))
     clone = args.clone.resolve()
     head = git(clone, "rev-parse", "HEAD")
     if head != PINNED_COMMIT:
@@ -201,15 +275,14 @@ def main() -> None:
         sys.exit("harness checkout has modified tracked files; the protocol runs it unpatched")
     if (clone / ".env").exists():
         sys.exit("harness checkout has a .env; load_dotenv(override=True) would override the run environment")
-    for flag in ("--answerer-model", "--judge-model", "--top-k", "--top-k-cutoffs", "--provider", "--categories",
+    for flag in ("--answerer-model", "--judge-model", "--judge-provider", "--top-k", "--top-k-cutoffs", "--provider", "--categories",
                  "--chat-sizes", "--mode", "--dataset-path", "--dataset-cache-dir", "--with-evidence",
-                 "--user-profile", "--per-type", "--question-types", "--backend", "--mem0-host"):
-        if flag in args.extra:
+                 "--user-profile", "--per-type", "--question-types", "--backend", "--mem0-host", "--project-name", "--output-dir"):
+        if flag in [argument.split("=", 1)[0] for argument in args.extra]:
             sys.exit(f"{flag} is fixed by the protocol and may not be passed")
 
     work = args.work.resolve()
     work.mkdir(parents=True, exist_ok=True)
-    config = json.loads(args.config.read_text())
     hms_repo = HERE.parents[2]
     project = args.project_name or f"hms-{args.benchmark}"
     procs: list[subprocess.Popen] = []
@@ -217,7 +290,8 @@ def main() -> None:
             open(work / "proxy.log", "ab") as log_proxy, open(work / "harness.log", "ab") as log_harness:
         try:
             hms_cmd = [str(args.hms_bin), "--no-auth", "--bind", "127.0.0.1:0", "--data-dir", str((args.data_dir or work / "hms-data").resolve()),
-                       "--input-dim", "384", "--max-top-k", str(config.get("max_k", 200)), "--max-tenants", "1024",
+                       "--input-dim", str((config.get("embedding") or {}).get("dimensions", 384)),
+                       "--max-top-k", str(config.get("max_k", 200)), "--max-tenants", "1024",
                        "--tenant-idle-seconds", "120", "--max-concurrent-work", "16", "--max-queue", "1024",
                        "--queue-timeout-ms", "60000"]
             hms = subprocess.Popen(hms_cmd, stdout=subprocess.PIPE, stderr=log_hms)
@@ -231,6 +305,8 @@ def main() -> None:
             shim_port, proxy_port = free_port(), free_port()
             shim_cmd = [sys.executable, str(HERE / "shim.py"), "--hms-url", hms_url, "--config", str(args.config),
                         "--port", str(shim_port)]
+            if config.get("embedding"):
+                shim_cmd += ["--embedding-log", str(work / "embedding_calls.jsonl")]
             procs.append(subprocess.Popen(shim_cmd, stdout=log_shim, stderr=log_shim))
             proxy_log = work / "openai_calls.jsonl"
             proxy_cmd = [sys.executable, str(HERE / "openai_proxy.py"), "--port", str(proxy_port), "--log", str(proxy_log),
@@ -268,9 +344,34 @@ def main() -> None:
     audit = audit_outputs(out_dir, work / "harness.log") if out_dir.exists() else {}
     if phase == "evaluate":
         audit["retrieval_unchanged"] = retrieval_before == retrieval_after
+    try:
+        scope = subprocess.run(
+            [args.python, str(HERE / "protocol_scope.py"), str(clone), json.dumps(cmd[1:])],
+            check=True, capture_output=True, text=True,
+        )
+        expected = json.loads(scope.stdout)
+        completion = audit_completion(out_dir / f"predicted_{project}", expected, phase != "predict")
+    except (subprocess.CalledProcessError, OSError, ValueError) as error:
+        completion = {"complete": False, "error": f"scope validation failed: {type(error).__name__}"}
+    ingestion_failures = 0
+    invalid_ingestion_checkpoints = []
+    for path in (out_dir / f"predicted_{project}").glob("_ingestion_*.json"):
+        try:
+            field = "total_pairs_failed" if args.benchmark == "longmemeval" else "total_chunks_failed"
+            count = json.loads(path.read_text())[field]
+            if type(count) is not int or count < 0:
+                raise ValueError("invalid ingestion failure count")
+            ingestion_failures += count
+        except (OSError, ValueError, KeyError, TypeError):
+            invalid_ingestion_checkpoints.append(path.name)
+    audit["completion"] = completion
+    audit["ingestion_failures"] = ingestion_failures
+    audit["invalid_ingestion_checkpoints"] = invalid_ingestion_checkpoints
+    llm = summarize_proxy(proxy_log)
+    wrapper_rc = protocol_exit_code(rc, audit, llm)
     manifest = {
         "benchmark": args.benchmark,
-        "started_utc": started, "finished_utc": finished, "harness_exit_code": rc,
+        "started_utc": started, "finished_utc": finished, "harness_exit_code": rc, "wrapper_exit_code": wrapper_rc,
         "hms": {"commit": git(hms_repo, "rev-parse", "HEAD"),
                 "dirty": bool(git(hms_repo, "status", "--porcelain", "--untracked-files=no")),
                 "server_binary_sha256": sha256_file(args.hms_bin), "server_command": hms_cmd[1:]},
@@ -279,12 +380,13 @@ def main() -> None:
                     "ingest_unit": "one fact per harness add() call; text = '{role}: {content}' per message, newline-joined",
                     "created_at": "harness timestamp (session date) as naive UTC ISO-8601",
                     "tenant": "one hms-server tenant per harness user_id",
-                    "model_calls_at_ingest": 0},
+                    "embedding": config.get("embedding"),
+                    "embedding_usage": summarize_embedding_log(work / "embedding_calls.jsonl")},
         "harness": {"repo": HARNESS_REPO, "commit": head, "patches": [], "command": cmd[1:], "cwd": "<clone>"},
         "dataset": {"path": str(args.dataset) if args.dataset else None,
                     "sha256": sha256_file(args.dataset) if args.dataset and args.dataset.is_file() else None},
         "llm": {"endpoint": "api.openai.com chat.completions (Mem0 published runs: Azure OpenAI)",
-                **summarize_proxy(proxy_log)},
+                **llm},
         "ingest": {"tenants": len(facts), "facts": sum(facts.values())},
         "phase": phase,
         "retrieval_before": retrieval_before, "retrieval_after": retrieval_after,
@@ -293,8 +395,8 @@ def main() -> None:
     }
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     (work / f"manifest-{phase}-{stamp}.json").write_text(json.dumps(manifest, indent=2, sort_keys=True))
-    print(json.dumps({"exit": rc, "spend_usd": manifest["llm"]["spend_usd"], "audit": manifest["audit"]}, indent=2))
-    sys.exit(rc)
+    print(json.dumps({"exit": wrapper_rc, "spend_usd": manifest["llm"]["spend_usd"], "audit": manifest["audit"]}, indent=2))
+    sys.exit(wrapper_rc)
 
 
 if __name__ == "__main__":

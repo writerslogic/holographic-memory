@@ -1,0 +1,13 @@
+{
+  "max_k": 200,
+  "max_context_tokens": 7000,
+  "embedding": {
+    "model": "text-embedding-3-large",
+    "dimensions": 1024
+  },
+  "recall": {
+    "lexicalWeight": 1.0,
+    "semanticWeight": 2.0,
+    "fusion": "rrf"
+  }
+}

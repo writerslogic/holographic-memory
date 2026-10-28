@@ -13,7 +13,7 @@ at 1.0.0.
 | Surface | Versioned as | Stable in 1.x | Not covered |
 |---|---|---|---|
 | Rust crate (`holographic-memory`) | crate version | items reachable without the `experimental` feature, outside `core::format::scan` internals | `experimental` feature, `doc(hidden)`, `pub(crate)` |
-| Python (`holographic-vsa` wheels, `holographic-sdk`) | PyPI version | documented classes and functions | underscore names; the `phase` substrate is experimental |
+| Python (`holographic-memory-py` wheels, `holographic-memory-sdk`) | PyPI version | documented classes and functions | underscore names; the `phase` substrate is experimental |
 | Node (`holographic-memory` on npm) | npm version | the exports in `index.d.ts`, `memory.d.ts`, `semantic.d.ts` | undocumented properties |
 | HTTP (`hms-server`) | URL prefix `/api/v1` | documented endpoints, request and response fields, error codes | new optional fields may appear; new endpoints |
 | C ABI | none | **there is no C ABI.** The `cdylib` exists for the Node and Python bindings only; nothing is exported for C callers and no promise is made | |

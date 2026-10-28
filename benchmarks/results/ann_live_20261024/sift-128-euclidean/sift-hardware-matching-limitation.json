@@ -1,0 +1,8 @@
+{
+  "state": "post-return repair not launched",
+  "stopped_watcher_pids": [
+    37
+  ],
+  "reason": "Official Modal documentation says exec commands terminate with the function container. Preserve completed d32 as diagnostic; d48/d64 are the same-container comparison subset unless a full supported repair is added.",
+  "at": 1792831859.0934954
+}

@@ -1,0 +1,80 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Python SDK release
+
+on:
+  push:
+    tags: ["sdk-v*"]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/python-sdk-release.yml
+      - bindings/python/holographic-sdk/**
+      - src/bin/hms-server/**
+      - src/bin/hms-server.rs
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test Holographic Memory SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: false
+      - name: Check release version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            version=$(sed -n 's/^version = "\(.*\)"$/\1/p' bindings/python/holographic-sdk/pyproject.toml | head -n 1)
+            test "$GITHUB_REF_NAME" = "sdk-v$version"
+          fi
+      - name: Build SDK
+        working-directory: bindings/python/holographic-sdk
+        run: uv build
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+      - name: Build hms-server for the live tests
+        run: cargo build --locked --features server --bin hms-server
+      - name: Test SDK against the real server
+        working-directory: bindings/python/holographic-sdk
+        env:
+          HMS_SERVER_BIN: ${{ github.workspace }}/target/debug/hms-server
+          PYTHONPATH: .
+        run: uv run --no-project --with 'httpx>=0.27' --with pytest pytest -q -rs tests
+      - name: Install the built wheel in a clean environment
+        working-directory: bindings/python/holographic-sdk
+        run: |
+          set -euo pipefail
+          uv venv "$RUNNER_TEMP/sdk-venv"
+          uv pip install --python "$RUNNER_TEMP/sdk-venv/bin/python" dist/*.whl
+          "$RUNNER_TEMP/sdk-venv/bin/python" -I -c "import holographic_sdk; print(holographic_sdk.__name__, 'imports')"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sdk-dist
+          path: bindings/python/holographic-sdk/dist
+          if-no-files-found: error
+
+  publish:
+    name: Publish holographic-memory-sdk to PyPI
+    if: startsWith(github.ref, 'refs/tags/sdk-v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          name: sdk-dist
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist
+          skip-existing: true

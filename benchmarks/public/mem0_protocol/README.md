@@ -17,11 +17,11 @@ memory-benchmarks run.py --backend oss --mem0-host http://127.0.0.1:<shim>
 | `shim.py` | Mem0 OSS REST surface over the hms-server memory API |
 | `retrieval_config.json` | Frozen primary retrieval configuration (token-matched: `max_context_tokens: 7000`). It is copied into the manifest with its sha256 |
 | `retrieval_config_count_matched.json` | Documented alternative: literal top-200 with no token cap. Not scheduled |
-| `openai_proxy.py` | Pass-through proxy. It records model alias, parameters, resolved snapshot, usage and spend, and enforces a hard USD cap |
+| `openai_proxy.py` | Pass-through proxy. It records model alias, parameters, resolved snapshot, usage and spend, and stops new forwarding after its recorded USD threshold is reached |
 | `run_mem0_protocol.py` | Starts server, shim and proxy, runs the harness with the protocol flags, writes `manifest.json` |
 | `price.py` | Prices a run from `--predict-only` output using the harness's own prompt builders |
 | `manifest_template.json` | Fields every run manifest carries |
-| `clear_failed.py` | Prepares a capped LoCoMo/LongMemEval run for re-scoring |
+| `clear_failed.py` | Clears empty cutoffs only for an entirely failed model-call attempt |
 | `test_shim.py` | Unit tests for tenant mapping, fact splitting and `created_at` parsing |
 
 Results table: [`docs/benchmarks/MEM0-PROTOCOL.md`](../../../docs/benchmarks/MEM0-PROTOCOL.md).
@@ -34,7 +34,7 @@ no tracked files are modified. Prompts are imported from that clone at run time 
 here. The published result JSONs under its `results/platform/` are the source of the Mem0 numbers we
 quote.
 
-## What the backend does (fixed before any run)
+## Primary lexical baseline behavior (fixed before its run)
 
 - **Ingest unit.** Each harness `add()` call becomes one fact: LoCoMo 1 turn (with the
   `[Sharing image - query: ... The image shows: <blip_caption>]` tag the harness itself appends),
@@ -112,17 +112,15 @@ scores both as WRONG and keeps going. The manifest's `audit` block counts each c
 - questions with zero retrieved memories
 - `failed after` lines and retry lines in the harness log
 
-`llm.finish_reasons` shows `length` truncations, and `ingest.facts` should equal the harness chunk
-count. A run with any of these is not reportable until those questions are re-scored.
+`llm.finish_reasons` distinguishes successful `length` truncations from transport failures.
+An empty answer from a successful call remains a scored WRONG outcome under the fixed completion
+budget. Do not selectively rescore it. Empty retrievals and empty answers remain visible in the
+result audit. Failed ingestion, exhausted transport retries, spend-cap blocks, and missing or
+invalid prediction/cutoff records make the wrapper exit nonzero.
 
-After a 402 from the proxy's spend cap (`llm.blocked > 0`) or a 429 when credit runs out, the
-harness has already written WRONG results with empty answers into the per-question files. A plain
-rerun does not fix this. LoCoMo and LongMemEval `--evaluate-only` skip any file that already holds
-`cutoff_results` (unless `--rejudge` is given, which re-scores everything), and they refuse to
-start while any file is missing. To salvage a run:
-1. Delete only the `cutoff_results` key from the files listed in `audit.empty_generated_answers`.
-2. Raise `--max-spend`.
-3. Rerun `--evaluate-only`.
+`ingest.facts` counts newly stored facts for the optional hybrid adapter; idempotent repeats need
+not add a new fact. Check native tenant document counts against the unique source facts when
+reusing ingestion state.
 
 The BEAM runner has no `--rejudge`, and its skip logic is not checked. Each run writes
 `manifest-<predict|evaluate|full>-<UTC stamp>.json`. `retrieval_before` and `retrieval_after` hash
@@ -179,98 +177,22 @@ Each run writes `WORK/manifest-<predict|evaluate|full>-<UTC stamp>.json`. Before
 - `llm.blocked == 0`;
 - `llm.resolved_models` shows a single snapshot.
 
-### Salvage after the spend cap (402) or exhausted credit (429)
+### Recovering an incomplete paid attempt
 
-The harness has already written WRONG results with empty answers for the affected questions, and
-`audit.empty_generated_answers` lists them. A plain rerun does not fix them.
+Preserve the original failed run before recovery. LoCoMo and LongMemEval `--evaluate-only`
+skip existing `cutoff_results`, so rerunning alone does not replace incomplete scored records.
 
-**LoCoMo and LongMemEval.** `--evaluate-only` skips every file that already has `cutoff_results`,
-and it refuses to start while any file is missing. So:
-1. Run `$PY $H/clear_failed.py WORK`. For every question in the newest manifest's
-   `audit.empty_generated_answers`, it removes only the `cutoff_results` key.
-2. Raise `--max-spend`.
-3. Rerun `--evaluate-only`.
+`clear_failed.py WORK` supports only attempts where the manifest proves every logged model call
+failed or was blocked, with no successful completion. It clears only empty cutoffs and updates
+individual prediction files atomically. It refuses mixed runs: aggregate empty-answer counts do
+not establish which questions failed in transport. A successful empty completion, including a
+`length` termination, must remain scored WRONG. Do not delete such records or use `--rejudge`
+selectively to improve an observed score.
 
-The BEAM runner has no `--rejudge`, and its skip logic is not checked. Each run writes
-`manifest-<predict|evaluate|full>-<UTC stamp>.json`. `retrieval_before` and `retrieval_after` hash
-only the question ids and returned memories. On `--evaluate-only`, `audit.retrieval_unchanged` must
-be true; this was checked on a 1-question LoCoMo evaluate-only smoke run ($0.02).
-
-## Commands
-
-These are the exact commands. Paid runs start only with the final HMS SHA from the coordinator. Put
-`--data-dir` on a local SSD.
-
-```sh
-# once
-git clone https://github.com/mem0ai/memory-benchmarks /path/memory-benchmarks
-git -C /path/memory-benchmarks checkout 4b61c5d31b9c668a12b4f5e78064248a02c82d2b
-uv venv /path/venv && VIRTUAL_ENV=/path/venv uv pip install -r /path/memory-benchmarks/requirements.txt \
-    datasets python-dateutil tiktoken          # BEAM imports datasets and dateutil; shim and price.py use tiktoken
-git -C /path/hms checkout <final SHA>
-CARGO_TARGET_DIR=/path/target cargo build --release --features server --bin hms-server
-export OPENAI_API_KEY=...                      # never written to any log or manifest
-PY=/path/venv/bin/python; H=benchmarks/public/mem0_protocol
-C="--clone /path/memory-benchmarks --python $PY --hms-bin /path/target/release/hms-server"
-LOCOMO=~/.cache/hms-bench/locomo/locomo10.json                      # sha256 79fa87e9...
-LME=~/.cache/hms-bench/downloads/longmemeval_s_cleaned.json
-BEAM=~/.cache/hms-bench/beam                                         # harness caches beam_<size>.json here
-
-# 1. LoCoMo, token-matched, cap $48: retrieval only ($0), price, then answer and judge that retrieval
-$PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
-    --max-spend 0 -- --predict-only
-$PY $H/price.py --clone /path/memory-benchmarks --benchmark locomo \
-    --predict runs/locomo/harness-out/predicted_hms-locomo --calls runs/locomo-smoke/openai_calls.jsonl
-$PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
-    --max-spend 48 -- --evaluate-only
-
-# 2. LongMemEval-S, token-matched, cap $13 (same three steps)
-$PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
-    --max-spend 0 -- --predict-only
-$PY $H/run_mem0_protocol.py longmemeval $C --work runs/lme --data-dir /ssd/lme --dataset $LME \
-    --max-spend 13 -- --evaluate-only
-
-# 3. BEAM-10M, token-matched, cap $10. The BEAM runner's --evaluate-only only recomputes metrics,
-#    so the paid run is the combined one. Do the $0 retrieval-only run first, in its own work dir,
-#    for pricing and for the retrieval hash.
-$PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m-predict --data-dir /ssd/beam10m-predict \
-    --dataset $BEAM --max-spend 0 -- --predict-only
-$PY $H/run_mem0_protocol.py beam-10m $C --work runs/beam10m --data-dir /ssd/beam10m --dataset $BEAM \
-    --max-spend 10 -- --run-id beam10m
-# The combined run's retrieval_after.sha256 must equal the predict run's.
-# BEAM-1M (waits for credit): the same with beam-1m.
-```
-
-Each run writes `WORK/manifest-<predict|evaluate|full>-<UTC stamp>.json`. Before reporting, check:
-- `audit` counts are all zero (and `retrieval_unchanged: true` on evaluate);
-- `llm.blocked == 0`;
-- `llm.resolved_models` shows a single snapshot.
-
-### Salvage after the spend cap (402) or exhausted credit (429)
-
-The harness has already written WRONG results with empty answers for the affected questions, and
-`audit.empty_generated_answers` lists them. A plain rerun does not fix them.
-
-**LoCoMo and LongMemEval.** `--evaluate-only` skips every file that already has `cutoff_results`,
-and it refuses to start while any file is missing. So:
-1. For each question id in `audit.empty_generated_answers`, delete only the `cutoff_results` key
-   from `WORK/harness-out/predicted_<project>/<question_id>.json`:
-   ```sh
-   $PY -c 'import json,sys; [ (lambda p,d: (d.pop("cutoff_results",None), open(p,"w").write(json.dumps(d,indent=2))))(p, json.load(open(p))) for p in sys.argv[1:]]' \
-       WORK/harness-out/predicted_<project>/<qid>.json ...
-   ```
-2. Raise `--max-spend` to cover only the remaining questions.
-3. Rerun the same `--evaluate-only` command.
-
-Do not use `--rejudge`: it re-scores every question.
-
-**BEAM.** There is no `--rejudge`, and `--evaluate-only` does not answer.
-1. Delete the per-question files of the affected questions.
-2. Rerun the combined command with the same `--work`, `--data-dir` and `--run-id`, adding `--resume`.
-
-The run then skips the questions already on disk and re-searches the deleted ones. Retrieval is
-deterministic and the stored memories persist in `--data-dir`, so these questions get the same
-retrieval.
+For a mixed run, establish per-question transport provenance before any recovery; the current
+proxy logs do not provide that mapping automatically. Keep the attempt marked incomplete until
+that evidence exists. BEAM's `--evaluate-only` only aggregates saved results and does not generate
+missing answers, so the LoCoMo/LongMemEval recovery helper does not apply to BEAM.
 
 ## Cost and prompt sizes (measured with price.py on retrieval-only output)
 
@@ -284,9 +206,88 @@ retrieval.
 Prices are gpt-5 list price, with output calibrated on LoCoMo calls. A BEAM chunk averages about
 1.1k tokens, so 7,000 tokens hold about 6 memories.
 
-## Hybrid recall with a local embedder: left out
+## Optional hybrid development configuration
 
-The shipped on-device embedder (`--features local-models`, Qwen3-Embedding) serves only the
-documents/search path. The memory API's `remember` and `recall` take an embedding only from the
-client, so hybrid recall would need either an embedding model inside the adapter or a server change
-to embed memory facts. Neither is the shipped local embedder, so no hybrid variant is configured.
+The protocol runner rejects embedding configurations before starting processes because embeddings bypass its chat-completion proxy. The presets remain development artifacts; they are unavailable through finite-budget protocol runs. Direct adapter smoke runs do not meter embedding spending.
+
+`retrieval_config_hybrid_dev.json` adds OpenAI `text-embedding-3-large` embeddings at 1024
+dimensions to the stored raw facts and query, with semantic2:lexical1 reciprocal rank
+fusion, selected on the established development partition. The primary lexical configuration remains unchanged. Both configurations retain the
+7,000-token memory cap, original timestamps, and unmodified official answerer and judge.
+
+The embedding response is checked for count, indices, dimension, finite values and token usage.
+The run manifest records the embedding configuration and usage separately from answer/judge
+spend. Embeddings require `OPENAI_API_KEY`; the adapter never logs the key. This configuration
+uses a hosted embedding service, so it does not represent fully local operation.
+Small numerical differences between embedding API responses can affect ties; do not assume
+byte-identical hybrid retrieval across fresh calls.
+
+Hybrid fact IDs depend on exact text, event time and embedding configuration within each tenant.
+A retry reads the stored fact before embedding again; concurrent retries verify the atomically
+stored winner. This prevents small embedding-response differences from creating duplicate facts.
+
+The runner resolves expected question IDs with the pinned harness's selectors and checks every
+prediction and required scored cutoff. Missing, invalid, or unexpected outputs, failed ingestion,
+and exhausted transport retries produce a nonzero wrapper exit even if the upstream runner exits
+zero. A successful length-limited call with an empty answer and a recorded wrong score remains a
+scored result; the existing empty-answer audit reports it.
+
+Run `live_smoke.py --binary <hms-server> --config retrieval_config_hybrid_dev.json --output <new-dir>`
+with the harness Python environment for synthetic ingest, timestamp, semantic retrieval and tenant
+isolation checks. Development measurements must use a conversation partition declared before
+examining question failures; a smoke result alone is not benchmark accuracy evidence.
+
+
+### Development presentation order
+
+`retrieval_config_ordered_dev.json` selects the same hybrid results under the same token budget,
+then orders selected facts sharing an event timestamp by native ingestion time. Equal ingestion
+times retain their native relevance order; missing timestamps stay in their selected slots.
+Returned `score` values represent presentation rank (`1 / rank`), so the upstream Mem0 client's
+score sort preserves this order before the official prompt sorts by event date. Relevance scores
+still determine selection before this step. Facts remain separate with their original IDs, text
+and event dates; no adjacency or relationship is inferred from a shared timestamp.
+
+This option is appropriate only when ingestion order reflects source order. The established
+LoCoMo development audit verified all1,451 facts: zero missing ingestion timestamps, inversions
+or ties across1,381 adjacent same-session pairs. It has not been validated as a general ordering
+rule for concurrent ingestion. The answer model, judge, prompt and completion limit are unchanged.
+
+### Reusing frozen development grades in final validation
+
+`reuse_locomo_dev.py` freezes the selected candidate's completed development files and protocol
+manifest before final validation. It creates a separate scoring directory from fresh full-run
+predictions, retaining a development grade only when the ranked memories, official question/judge
+inputs and rendered answer prompt match exactly. Correct, wrong and successful empty answers use
+the same rule. A mismatch is scored anew. Both original directories remain untouched, and the
+prepared directory appears only after every check succeeds.
+
+The helper checks the same shim, native binary, retrieval configuration, pinned harness and fixed
+model/completion budgets. Its receipt records the required resolved model snapshot; the final
+evaluation manifest must match it. It refuses incomplete/failed source runs, modified frozen
+grades, already scored fresh predictions, unsafe paths and any development source outside
+conversation indices0/1/2. Grade validity uses the shared `locomo_comparison.complete_grade` check.
+
+```sh
+uv run --no-project --python "$PY" python "$H/reuse_locomo_dev.py" \
+    --source /selected-dev/harness-out/predicted_project \
+    --source-manifest /selected-dev/manifest-evaluate-TIMESTAMP.json --freeze /results/frozen-dev.json
+uv run --no-project --python "$PY" python "$H/reuse_locomo_dev.py" \
+    --freeze /results/frozen-dev.json --fresh /final-predict/harness-out/predicted_project \
+    --fresh-manifest /final-predict/manifest-predict-TIMESTAMP.json \
+    --destination /final-evaluate/harness-out/predicted_project --clone /path/memory-benchmarks
+```
+
+### Provider-credit recovery
+
+`quota_resume.py` prepares an independent recovery copy from a reviewed, immutable transport
+audit. It verifies saved-file hashes, exact rendered prompt hashes, model settings and every
+successful call association. Completed grades are retained regardless of correctness or empty
+answers. A successful saved answer whose judge failed is replayed through the pinned official
+scoring function with a prompt-checked cached answerer, so only the judge calls the model again.
+Only proven quota failures and never-attempted questions receive fresh answer/judge calls.
+Ambiguous provenance stops preparation before any destination appears. Original attempts and
+all failed transport records remain unchanged. Account-credit restoration must precede paid
+recovery. `prepare()` requires `judge`, the pinned `official_apply` callback and a `replay_spend_usd()` getter when judge-only cases exist. The getter reports cumulative additional spend beyond the original manifest, including replayed judges; the receipt subtracts both amounts from the remaining allocation.
+
+The proxy stops forwarding new requests once recorded spend reaches `--max-spend`. A single request or requests already in flight can exceed that threshold; it is not a strict dollar ceiling. No new paid run is authorized by these recovery helpers.

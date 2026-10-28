@@ -1,0 +1,122 @@
+{
+ "cost_scope": "requested CPU/memory estimate for this artifact export only; excludes image and storage",
+ "dataset": "yandex-200-cosine",
+ "ended": "2026-10-24T12:21:51Z",
+ "estimated_hashing_usd": 0.00023234122660636904,
+ "hashing_container": "ta-01M5PXR414TPVJ9TJFVN3HF5HR",
+ "hashing_cpus": 2,
+ "hashing_memory_gib": 4,
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "ledgers": [
+  {
+   "at": "2026-10-24T06:51:52Z",
+   "dataset": "yandex-200-cosine",
+   "job": "_download",
+   "sha256": "6026207dfe23ef0730d227f8269744fbf24c4052989feecffaeb12ce22264af5",
+   "state": "done"
+  },
+  {
+   "algorithm": "glass",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 10931.9,
+   "chosen_why": [
+    "recall>=0.9: leader at 4346.0 QPS",
+    "recall>=0.95: leader at 3496.1 QPS",
+    "recall>=0.99: substitute for pag (1960.8 QPS; needs AVX-512, absent here): 1627.8 QPS"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yandex-200-cosine",
+   "end": "2026-10-24T12:17:25Z",
+   "expected": 320,
+   "failures": 0,
+   "flags_sha": "ec7ab2242885",
+   "heartbeat": 1792844215.8452172,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+     "end": "2026-10-24T12:17:25Z",
+     "markers": 320,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "glass",
+   "log_path": "/vol/vibe/run-s-20261023/logs/yandex-200-cosine/glass.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/yandex-200-cosine/glass/results",
+   "start": "2026-10-24T09:05:47Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 320,
+    "markers": 320,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 320
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "algorithm": "hms",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 7615.6,
+   "chosen_why": [
+    "HMS runs on every dataset"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yandex-200-cosine",
+   "end": "2026-10-24T09:04:44Z",
+   "expected": 180,
+   "failures": 0,
+   "flags_sha": "ec7ab2242885",
+   "heartbeat": 1792832632.9893422,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATNPBZBDMYV5B4WHTJM2R",
+     "end": "2026-10-24T09:04:44Z",
+     "markers": 180,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "hms@12c80decb094",
+   "log_path": "/vol/vibe/run-s-20261023/logs/yandex-200-cosine/hms@12c80decb094.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/yandex-200-cosine/hms@12c80decb094/results",
+   "start": "2026-10-24T06:55:15Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 180,
+    "markers": 180,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 180
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  }
+ ],
+ "measurement_containers": [
+  "ta-01M5PATNPBZBDMYV5B4WHTJM2R"
+ ],
+ "purpose": "artifact hashing only; no benchmark rerun",
+ "query_threads": 1,
+ "raw_hashes": "/vol/vibe/run-s-20261023/artifacts/yandex-200-cosine@12c80decb094/raw-results.sha256.json",
+ "raw_hdf5_bytes": 406102720,
+ "raw_hdf5_files": 24,
+ "started": "2026-10-24T12:21:44Z"
+}

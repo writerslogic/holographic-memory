@@ -1,0 +1,10 @@
+{
+  "state": "cancelled_diagnosed_failure",
+  "reason": "Official grid level3 unsupported by pinned source package; 132/198 Glass points valid,66 fail; stop redundant retries and test official PyPI wheel before bounded repair",
+  "stopped_run_pids": [
+    327,
+    331
+  ],
+  "at": 1792829738.9522076,
+  "raw_points": 240
+}

@@ -1,0 +1,49 @@
+{
+  "dataset": "imagenet-clip-512-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    },
+    "symphonyqg": {
+      "done": true,
+      "expected": 52,
+      "markers": 52,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 52
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_32_500_8_true.hdf5": "fe14facb1f117da8b831852467f4a5cd3e66f995a6fc303827e3c0018216ac2c",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_48_500_8_true.hdf5": "a73d1cc80d149b76a7e932efc7960666681644bb9e38f67998f5037f781d832a",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_64_500_8_true.hdf5": "dcba04419abded0b7614789ab464d000f2683dc5d08df7398143dfb9042aa3ee",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/hms@12c80decb094/results/imagenet-clip-512-normalized/100/hms/normalized_96_500_8_true.hdf5": "6aa15835357e02f232a96adabae25da0081a45146c29b32b56f804d717487751"
+    },
+    "symphonyqg": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_32_400_0.hdf5": "abb0b9d2614c7e16e7c4a7af2c9ded6dadfcf1341ac754e81c0c052f2c584f93",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_32_400_8.hdf5": "fbd8e4eb3098ef392d43f8e61d524306931cd0a5ca81973bc356db9b2ec85908",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_64_400_0.hdf5": "a2e0559aaf31375e0e1ca1b7a95c13122e085ee73f9ce505a88c35939263598f",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/imagenet-clip-512-normalized/symphonyqg/results/imagenet-clip-512-normalized/100/symphonyqg/normalized_64_400_8.hdf5": "449872ec03e45b0941e452a7f2d765e408a788d83c7f7a54fe84b91a32662967"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+    ],
+    "symphonyqg": [
+      "ta-01M5PATMQKC0T70W6N4NRXE6WR"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "85bfc96c482650393fa52afb2569e703752868efef1cf5ae8b176a7fb1a29b26",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/imagenet-clip-512-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 232,
+  "same_as_prior_official_points": false
+}

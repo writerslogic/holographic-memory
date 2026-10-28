@@ -16,6 +16,7 @@
 #                       fills the comparison table; without it the page derives a table from
 #                       the committed results named under comparison_fallback.
 
+technical_line: Hybrid search, graph indexing, and vector-symbolic memory.
 tagline: Search and memory that run entirely on your machine.
 lede: >-
   HMS is a local-first document search engine and a vector-symbolic associative memory in one
@@ -41,23 +42,22 @@ runtimes:
   - id: python
     name: Python
     status: available
-    install: pip install holographic-sdk
+    install: uv pip install holographic-memory-sdk
     requires: [bindings/python/holographic-sdk/pyproject.toml, examples/quickstart/python/quickstart.py]
     snippets:
       - examples/quickstart/python/quickstart.py:ingest
       - examples/quickstart/python/quickstart.py:hit
-    note: An HTTP client for hms-server. The holographic-vsa wheel is the quantized-phase substrate, a different package.
+    note: An HTTP client for hms-server. The holographic-memory-py wheel provides native vector search and phase vectors.
   - id: node
     name: Node
     status: available
     install: |-
-      git clone https://github.com/writerslogic/holographic-memory
-      cd holographic-memory && npm ci --omit=optional && npm run build
+      npm install holographic-memory
     requires: [index.d.ts, examples/quickstart/node/quickstart.mjs]
     snippets:
       - examples/quickstart/node/quickstart.mjs:ingest
       - examples/quickstart/node/quickstart.mjs:hit
-    note: Built from source with a Rust toolchain. The npm package is deprecated until the next release.
+    note: The npm package installs a native binary for your platform. Building from source requires Rust.
 
 features:
   - title: Hybrid search

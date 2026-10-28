@@ -1,0 +1,51 @@
+{
+  "dataset": "yahoo-minilm-384-normalized",
+  "validation": {
+    "hms": {
+      "done": true,
+      "expected": 180,
+      "markers": 180,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 180
+    },
+    "ngt-qg": {
+      "done": true,
+      "expected": 101,
+      "markers": 101,
+      "problems": [],
+      "test_count": 1000,
+      "valid": 101
+    }
+  },
+  "raw_original_sha256": {
+    "hms": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_32_500_8_true.hdf5": "30660e80349496518b0b87f723ef06f2a52596a6aeef55bf0930580b21c8a677",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_48_500_8_true.hdf5": "7d168b33f4dbfedf56363d8594a6329daa242059df8c01722c241e505b7acb4e",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_64_500_8_true.hdf5": "f98e485d029cae5cb6994b0dc67c1bffcc49c52e0c9dffa1a44b455f5574695a",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/hms@12c80decb094/results/yahoo-minilm-384-normalized/100/hms/normalized_96_500_8_true.hdf5": "4619e9269670fab40a8c42cc296630b13e358798c4cc13961a91e95ca843993b"
+    },
+    "ngt-qg": {
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_20_0_06_40_20_40_20_96_4000_2000_2_f96_1_60_0.hdf5": "dfbc83b08f2df89c3f24e624e1c18c1f80c7a516b9130f05124091e386687b50",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_20_0_1_25_10_25_10_96_4000_200_2_f96_1_40_0.hdf5": "214d9b67ceab4c8b8018bb78b1cef84a1b4c3649b6d884c02bf90a947f228803",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_30_0_06_40_20_40_20_96_10000_4000_2_f96_1_50_10.hdf5": "72f9e95038976edcaa6e908590a5fea54693488fafdd1fe9ccd2636d9de85164",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_30_0_1_40_20_40_20_96_4000_10000_2_f96_1_50_15.hdf5": "a96f5ca29e97a664a50b762886277fed0f7f707533e5178ca2fa1ed5b5991949",
+      "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/volume/vibe/run-s-20261023/results/yahoo-minilm-384-normalized/ngt-qg/results/yahoo-minilm-384-normalized/100/ngt-qg/normalized_40_0_1_50_20_50_30_96_4000_4000_2_f96_1_80_0.hdf5": "787421391f9d892a616aee265831be8f902f1bb3c0b7ffa8c60b5457ff9884e2"
+    }
+  },
+  "measurement_containers": {
+    "hms": [
+      "ta-01M5PATNW9NXKXFBKVZ5T31VPR",
+      "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R"
+    ],
+    "ngt-qg": [
+      "ta-01M5PED1Z9ZRB57ZY0DF9A9B2R"
+    ]
+  },
+  "official_exporter_sha256": "ee8ca28e1070bd4e48fa2723cf6e508fde1733a604d61717f7b0c0af523e5c17",
+  "summary_sha256": "8f8fbde11ef961ee5caada4274dd7caf1a2b5c8551e2398a95a9bcbed67d7e25",
+  "truth_receipt": "/Volumes/A/hms-coordination/public-bench/vibe-results/workspace-disabled-20261024T1435Z/truth-distance-extracts/yahoo-minilm-384-normalized/receipt.json",
+  "no_fit_query_function_launch": true,
+  "groups_exported": 281,
+  "same_as_prior_official_points": false
+}

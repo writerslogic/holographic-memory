@@ -1,6 +1,6 @@
 [package]
 name = "holographic-memory"
-version = "0.6.1"
+version = "0.6.3"
 edition = "2021"
 rust-version = "1.89"
 license = "Apache-2.0"
@@ -12,6 +12,24 @@ documentation = "https://docs.rs/holographic-memory"
 keywords = ["vector-database", "vector-search", "full-text-search", "agent-memory", "rag"]
 categories = ["database-implementations", "text-processing", "algorithms", "data-structures", "science"]
 readme = "README.md"
+include = [
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/build.rs",
+    "/src/**",
+    "/tests/**",
+    "/examples/**",
+    "/benches/**",
+    "/docs/**",
+    "/benchmarks/embedding/embed_store_bench.rs",
+    "/benchmarks/public/vector_glove_development.rs",
+    "/benchmarks/public/vector_glove_diagnosis.rs",
+    "/benchmarks/research/phase_resonator/cases.rs",
+    "/benchmarks/results/holography_resonator_v1/baseline.rs",
+]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -26,6 +44,9 @@ serde = { version = "1.0", features = ["derive", "rc"] }
 ts-rs = { version = "12", features = ["serde-compat"], optional = true }
 schemars = { version = "1.2", features = ["derive"], optional = true }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
+serde_json_canonicalizer = { version = "0.4.1", optional = true }
+flate2 = { version = "1.1", optional = true }
+http = { version = "1", optional = true }
 bincode = { version = "2.0", features = ["serde"] }
 rand = "0.10"
 crc32fast = "1.3"
@@ -109,6 +130,10 @@ name = "verify_cogmem_sample"
 required-features = ["provenance"]
 
 [[example]]
+name = "emit_w3c_credential"
+required-features = ["provenance"]
+
+[[example]]
 name = "zero_trust_demo"
 required-features = ["security"]
 
@@ -129,7 +154,7 @@ node-api = ["napi", "napi-derive", "tokio", "tokio/rt", "napi-build", "dep:ts-rs
 # .github/workflows/publish-pypi.yml and dormant until a `py-v*` tag is pushed.
 python = ["pyo3", "dep:numpy"]
 security = ["ed25519-dalek", "zeroize", "aes-gcm", "aes-gcm/zeroize", "argon2", "sha2"]
-provenance = ["security", "dep:parking_lot", "coset", "ciborium", "bs58", "multibase", "base64"]
+provenance = ["security", "dep:parking_lot", "coset", "ciborium", "bs58", "multibase", "base64", "dep:serde_json_canonicalizer", "dep:flate2", "dep:http"]
 provenance-scitt = ["provenance", "ureq"]
 # Experimental VSA research modules (algebraic_codebook, block_codes, bloom_memory,
 # bundle_subset, connection_graph, counting_bloom_memory, operand_retriever,
@@ -153,7 +178,7 @@ local-embed-download = ["local-embed", "ureq"]
 # Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
-# HTTP service for the holographic-sdk Python client (`hms-server` binary).
+# HTTP service for the holographic-memory-sdk Python client (`hms-server` binary).
 server = ["dep:parking_lot", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/io-util", "tokio/fs", "tokio/signal", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:libc", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
 # MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.

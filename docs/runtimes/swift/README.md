@@ -3,6 +3,8 @@
 `bindings/swift` is a Swift Package over the UniFFI crate in `bindings/uniffi`. The engine runs
 on the device: no service calls, no network.
 
+The package is available as source in this repository; no prebuilt XCFramework release is published yet. Build the XCFramework locally before adding the package by path.
+
 ## Requirements
 
 - macOS with Xcode 15 or later (the iOS and Catalyst slices need the full Xcode, not only the

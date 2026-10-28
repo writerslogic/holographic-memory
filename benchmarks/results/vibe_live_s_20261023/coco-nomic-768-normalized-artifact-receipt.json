@@ -1,0 +1,167 @@
+{
+ "cost_scope": "requested CPU/memory estimate for this artifact export only; excludes image and storage",
+ "dataset": "coco-nomic-768-normalized",
+ "ended": "2026-10-24T11:34:54Z",
+ "estimated_hashing_usd": 0.0009366296117877961,
+ "hashing_container": "ta-01M5PV1JSGY20188E4TX5D7HMR",
+ "hashing_cpus": 2,
+ "hashing_memory_gib": 4,
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "ledgers": [
+  {
+   "at": "2026-10-24T06:51:23Z",
+   "dataset": "coco-nomic-768-normalized",
+   "job": "_download",
+   "sha256": "dd6391da4e010071832346e65ceb2e86adfd08ca83d7e0513d9ffac74e5e9131",
+   "state": "done"
+  },
+  {
+   "algorithm": "glass",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 5643.9,
+   "chosen_why": [
+    "recall>=0.99: leader at 2622.9 QPS"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "coco-nomic-768-normalized",
+   "end": "2026-10-24T11:17:46Z",
+   "expected": 320,
+   "failures": 0,
+   "flags_sha": "20b972a2324d",
+   "heartbeat": 1792840630.139384,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+     "end": "2026-10-24T11:17:46Z",
+     "markers": 320,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "glass",
+   "log_path": "/vol/vibe/run-s-20261023/logs/coco-nomic-768-normalized/glass.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/coco-nomic-768-normalized/glass/results",
+   "start": "2026-10-24T09:33:35Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 320,
+    "markers": 320,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 320
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "algorithm": "hms",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 4778.3,
+   "chosen_why": [
+    "HMS runs on every dataset"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "coco-nomic-768-normalized",
+   "end": "2026-10-24T08:16:17Z",
+   "expected": 180,
+   "failures": 0,
+   "flags_sha": "20b972a2324d",
+   "heartbeat": 1792829768.2812915,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+     "end": "2026-10-24T08:16:17Z",
+     "markers": 180,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "hms@12c80decb094",
+   "log_path": "/vol/vibe/run-s-20261023/logs/coco-nomic-768-normalized/hms@12c80decb094.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/coco-nomic-768-normalized/hms@12c80decb094/results",
+   "start": "2026-10-24T06:54:21Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 180,
+    "markers": 180,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 180
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "algorithm": "lorann",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 4068.9,
+   "chosen_why": [
+    "recall>=0.9: leader at 4575.1 QPS",
+    "recall>=0.95: leader at 3405.5 QPS"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "coco-nomic-768-normalized",
+   "end": "2026-10-24T09:32:37Z",
+   "expected": 576,
+   "failures": 0,
+   "flags_sha": "20b972a2324d",
+   "heartbeat": 1792834298.8212764,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATHQ0DF3TDTCC4S1PBKJR",
+     "end": "2026-10-24T09:32:37Z",
+     "markers": 576,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "lorann",
+   "log_path": "/vol/vibe/run-s-20261023/logs/coco-nomic-768-normalized/lorann.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/coco-nomic-768-normalized/lorann/results",
+   "start": "2026-10-24T08:17:37Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 576,
+    "markers": 576,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 576
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  }
+ ],
+ "measurement_containers": [
+  "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+ ],
+ "purpose": "artifact hashing only; no benchmark rerun",
+ "query_threads": 1,
+ "raw_hashes": "/vol/vibe/run-s-20261023/artifacts/coco-nomic-768-normalized@12c80decb094/raw-results.sha256.json",
+ "raw_hdf5_bytes": 873929792,
+ "raw_hdf5_files": 40,
+ "started": "2026-10-24T11:34:27Z"
+}

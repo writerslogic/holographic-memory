@@ -1,0 +1,90 @@
+{
+  "dataset": "coco-nomic-768-normalized",
+  "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+  "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0",
+  "k": 100,
+  "generated": "2026-10-24T14:54:47.044377+00:00",
+  "export_scope": "Complete validated arms only; remaining arms interrupted. Official export_all_results function unchanged; raw copies gain recalls cache, immutable rescue originals retained.",
+  "measurement_containers": {
+    "glass": [
+      "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+    ],
+    "hms": [
+      "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+    ],
+    "lorann": [
+      "ta-01M5PATHQ0DF3TDTCC4S1PBKJR"
+    ]
+  },
+  "best_qps_at_recall": {
+    "glass": {
+      "0.90": {
+        "qps": 3593.6919421379457,
+        "recall": 0.97696,
+        "params": "Glass(L=400, R=16, efQuery=20, quant=SQ8U, search_quant=SQ8U, refine_quant=FP16)|20",
+        "build_time": 220.7417290210724,
+        "index_size": 671188.0
+      },
+      "0.95": {
+        "qps": 3593.6919421379457,
+        "recall": 0.97696,
+        "params": "Glass(L=400, R=16, efQuery=20, quant=SQ8U, search_quant=SQ8U, refine_quant=FP16)|20",
+        "build_time": 220.7417290210724,
+        "index_size": 671188.0
+      },
+      "0.99": {
+        "qps": 2936.5962525603454,
+        "recall": 0.99202,
+        "params": "Glass(L=400, R=32, efQuery=20, quant=SQ8U, search_quant=SQ8U, refine_quant=FP16)|20",
+        "build_time": 329.43437600135803,
+        "index_size": 690012.0
+      }
+    },
+    "hms": {
+      "0.90": {
+        "qps": 3247.0249426611363,
+        "recall": 0.99779,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8, learn_queries=32768)|40_100",
+        "build_time": 992.1780178546906,
+        "index_size": 567944.0
+      },
+      "0.95": {
+        "qps": 3247.0249426611363,
+        "recall": 0.99779,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8, learn_queries=32768)|40_100",
+        "build_time": 992.1780178546906,
+        "index_size": 567944.0
+      },
+      "0.99": {
+        "qps": 3247.0249426611363,
+        "recall": 0.99779,
+        "params": "HMS(metric=normalized, degree=32, build_ef=500, ef=40, rerank=100, code_bits=8, learn_queries=32768)|40_100",
+        "build_time": 992.1780178546906,
+        "index_size": 567944.0
+      }
+    },
+    "lorann": {
+      "0.90": {
+        "qps": 7339.07835874033,
+        "recall": 0.9163100000000001,
+        "params": "Lorann(quant_bits=8, n_clusters=2048, global_dim=256, rank=32, train_size=5, n_probe=16, rerank=200)|16_200",
+        "build_time": 61.88783288002014,
+        "index_size": 41472.0
+      },
+      "0.95": {
+        "qps": 6195.121904137111,
+        "recall": 0.95027,
+        "params": "Lorann(quant_bits=8, n_clusters=2048, global_dim=128, rank=32, train_size=5, n_probe=24, rerank=400)|24_400",
+        "build_time": 33.013962745666504,
+        "index_size": 29672.0
+      },
+      "0.99": {
+        "qps": 3312.745975361062,
+        "recall": 0.99386,
+        "params": "Lorann(quant_bits=8, n_clusters=2048, global_dim=256, rank=32, train_size=5, n_probe=48, rerank=800)|48_800",
+        "build_time": 61.88783288002014,
+        "index_size": 41472.0
+      }
+    }
+  }
+}

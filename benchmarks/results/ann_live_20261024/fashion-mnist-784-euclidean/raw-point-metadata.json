@@ -1,0 +1,2342 @@
+[
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 46532.59652816993,
+    "recall_at_10": 0.87894,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 10513.262695210671,
+    "recall_at_10": 0.99763,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 33644.59952673164,
+    "recall_at_10": 0.9538800000000001,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 6678.41221987612,
+    "recall_at_10": 0.9985799999999999,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 23193.401474449296,
+    "recall_at_10": 0.9761,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 21377.28219331124,
+    "recall_at_10": 0.98547,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 3937.757892008292,
+    "recall_at_10": 0.9992699999999999,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 16137.400350887994,
+    "recall_at_10": 0.9928100000000001,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 2971.9324372975852,
+    "recall_at_10": 0.9995799999999999,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 13021.696286757082,
+    "recall_at_10": 0.99558,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_1_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 1})",
+    "qps": 2434.15066660368,
+    "recall_at_10": 0.99968,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 78139.54181578364,
+    "recall_at_10": 0.87683,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 14187.694944046554,
+    "recall_at_10": 0.9976100000000001,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 51061.18985618929,
+    "recall_at_10": 0.95366,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 9285.471238931686,
+    "recall_at_10": 0.9986,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 39349.95656244781,
+    "recall_at_10": 0.9762299999999999,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 31881.131675340737,
+    "recall_at_10": 0.98543,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 4972.940697889902,
+    "recall_at_10": 0.9992699999999999,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 24028.277296241344,
+    "recall_at_10": 0.9927300000000001,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 3320.938647452964,
+    "recall_at_10": 0.9995799999999999,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 19538.88043901064,
+    "recall_at_10": 0.99559,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_2_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 2})",
+    "qps": 2524.4480246662947,
+    "recall_at_10": 0.9996700000000001,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 78788.17023322915,
+    "recall_at_10": 0.84932,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 14782.172596317694,
+    "recall_at_10": 0.99739,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 53667.581960605676,
+    "recall_at_10": 0.95281,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 9568.015125219223,
+    "recall_at_10": 0.99849,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 41807.541757165025,
+    "recall_at_10": 0.97475,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 34745.79584803751,
+    "recall_at_10": 0.98425,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 5146.3088707517345,
+    "recall_at_10": 0.99925,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 25670.28619621351,
+    "recall_at_10": 0.9921200000000001,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 3451.919375789413,
+    "recall_at_10": 0.9995499999999999,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 20330.91325427117,
+    "recall_at_10": 0.99523,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_16_level_3_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 16, 'level': 3})",
+    "qps": 2810.195378843362,
+    "recall_at_10": 0.9996499999999999,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 39652.400148236666,
+    "recall_at_10": 0.9315200000000001,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 8370.006497559823,
+    "recall_at_10": 0.9990399999999999,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 25933.219072209566,
+    "recall_at_10": 0.9788600000000001,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 5397.921114470232,
+    "recall_at_10": 0.9995499999999999,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 22677.356078972465,
+    "recall_at_10": 0.99047,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 18980.116669027317,
+    "recall_at_10": 0.99429,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 3384.1330679582134,
+    "recall_at_10": 0.99979,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 14179.96773395251,
+    "recall_at_10": 0.99732,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 2199.8784018019023,
+    "recall_at_10": 0.9998900000000001,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 11580.614451470969,
+    "recall_at_10": 0.99827,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_1_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 1})",
+    "qps": 1746.4801752016542,
+    "recall_at_10": 0.9998900000000001,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 60008.04055185083,
+    "recall_at_10": 0.92832,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 10504.878879560802,
+    "recall_at_10": 0.99908,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 35144.42187678055,
+    "recall_at_10": 0.9787699999999999,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 6977.535428305447,
+    "recall_at_10": 0.99956,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 28855.071905424968,
+    "recall_at_10": 0.9904400000000001,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 23686.930494571432,
+    "recall_at_10": 0.99426,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 3913.097833043557,
+    "recall_at_10": 0.99977,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 17428.60668929091,
+    "recall_at_10": 0.99733,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 2608.3613501452032,
+    "recall_at_10": 0.9998900000000001,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 14277.36867491862,
+    "recall_at_10": 0.9982900000000001,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_2_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 2})",
+    "qps": 2083.6616452272233,
+    "recall_at_10": 0.9998900000000001,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 72812.21573352035,
+    "recall_at_10": 0.89089,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 13423.826108441546,
+    "recall_at_10": 0.9989800000000001,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 48295.824452681234,
+    "recall_at_10": 0.9778399999999999,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 8552.290283740509,
+    "recall_at_10": 0.9995499999999999,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 38246.65388831036,
+    "recall_at_10": 0.98992,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 30606.801164346027,
+    "recall_at_10": 0.99398,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 4625.38732329908,
+    "recall_at_10": 0.99978,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 23063.17719803257,
+    "recall_at_10": 0.99695,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 3136.8269398754096,
+    "recall_at_10": 0.9998900000000001,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 18303.76461162087,
+    "recall_at_10": 0.9982200000000001,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_32_level_3_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 32, 'level': 3})",
+    "qps": 2409.6862596422834,
+    "recall_at_10": 0.9998900000000001,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 33482.08391308061,
+    "recall_at_10": 0.9434799999999999,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 7081.756276583153,
+    "recall_at_10": 0.9992599999999999,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 21747.345683589203,
+    "recall_at_10": 0.98407,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 5351.37511696513,
+    "recall_at_10": 0.9995900000000001,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 17835.59444270571,
+    "recall_at_10": 0.9931300000000001,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 13952.870393749141,
+    "recall_at_10": 0.9958899999999999,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 2885.0693418873043,
+    "recall_at_10": 0.99992,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 11004.148950851171,
+    "recall_at_10": 0.99813,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 1989.968892502688,
+    "recall_at_10": 0.99996,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 9370.868007016248,
+    "recall_at_10": 0.99882,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_1_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 1})",
+    "qps": 1551.792347495193,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 58100.01509881412,
+    "recall_at_10": 0.9400299999999999,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 9071.479984496982,
+    "recall_at_10": 0.9992699999999999,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 36884.09174450692,
+    "recall_at_10": 0.98407,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 7028.400286813019,
+    "recall_at_10": 0.9995900000000001,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 29437.12078942474,
+    "recall_at_10": 0.9931300000000001,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 23945.161903576613,
+    "recall_at_10": 0.99591,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 3736.8450359647495,
+    "recall_at_10": 0.9999,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 18602.236807849808,
+    "recall_at_10": 0.99809,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 2501.8449321687694,
+    "recall_at_10": 0.99996,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 14617.538938942567,
+    "recall_at_10": 0.99881,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_2_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 2})",
+    "qps": 1963.5191108796216,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 62446.647271990965,
+    "recall_at_10": 0.90086,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 11813.626371150252,
+    "recall_at_10": 0.9992699999999999,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 43690.848711869636,
+    "recall_at_10": 0.9834400000000001,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 8115.797103524446,
+    "recall_at_10": 0.9995799999999999,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 35014.07056234666,
+    "recall_at_10": 0.99285,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 27880.281680778626,
+    "recall_at_10": 0.9956099999999999,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 4459.226181521579,
+    "recall_at_10": 0.99983,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 19270.37910826972,
+    "recall_at_10": 0.99786,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 2890.0202376328466,
+    "recall_at_10": 0.9999399999999999,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 15777.39609829275,
+    "recall_at_10": 0.9987299999999999,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_48_level_3_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 48, 'level': 3})",
+    "qps": 2388.8315581758784,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 33775.241015664,
+    "recall_at_10": 0.9456899999999999,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 7660.14365837578,
+    "recall_at_10": 0.9993000000000001,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 23349.63346961316,
+    "recall_at_10": 0.9846999999999999,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 5248.643010025008,
+    "recall_at_10": 0.9996499999999999,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 18622.71184574373,
+    "recall_at_10": 0.99337,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 15748.108599255831,
+    "recall_at_10": 0.9961800000000001,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 3163.579684713377,
+    "recall_at_10": 0.99993,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 12002.696833967288,
+    "recall_at_10": 0.9982599999999999,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 2289.7004683992377,
+    "recall_at_10": 0.99996,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 10003.417705910819,
+    "recall_at_10": 0.99888,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_1_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 1})",
+    "qps": 1907.7257977106676,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 50069.88265348756,
+    "recall_at_10": 0.94213,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 9804.095917032599,
+    "recall_at_10": 0.99931,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 39090.016085950796,
+    "recall_at_10": 0.9846299999999999,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 6841.464228211051,
+    "recall_at_10": 0.9996499999999999,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 28446.952381598312,
+    "recall_at_10": 0.99343,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 23338.485901660508,
+    "recall_at_10": 0.9961800000000001,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 3627.762497899311,
+    "recall_at_10": 0.9999100000000001,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 17470.814316698663,
+    "recall_at_10": 0.99824,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 2628.2837222773446,
+    "recall_at_10": 0.99996,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 13941.827503496837,
+    "recall_at_10": 0.99888,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_2_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 2})",
+    "qps": 1935.6656121114968,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 67800.64756725825,
+    "recall_at_10": 0.90197,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 12412.576692563292,
+    "recall_at_10": 0.99931,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 46193.33494128233,
+    "recall_at_10": 0.98384,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 8376.273100232596,
+    "recall_at_10": 0.9996499999999999,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 34881.11425190256,
+    "recall_at_10": 0.9929600000000001,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 28458.14702988771,
+    "recall_at_10": 0.99566,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 4775.694139074439,
+    "recall_at_10": 0.9998400000000001,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 21040.79682354151,
+    "recall_at_10": 0.99799,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 3339.026940825968,
+    "recall_at_10": 0.9999499999999999,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 17055.743107238446,
+    "recall_at_10": 0.99877,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_64_level_3_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 64, 'level': 3})",
+    "qps": 2411.949660036931,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 62983.68459384174,
+    "recall_at_10": 0.71704,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 15134.029650300801,
+    "recall_at_10": 0.98049,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 49849.52334996844,
+    "recall_at_10": 0.84712,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 9544.320187140678,
+    "recall_at_10": 0.98837,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 37897.96301918434,
+    "recall_at_10": 0.9018200000000001,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 30680.839982561316,
+    "recall_at_10": 0.9293699999999999,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 5463.767840305928,
+    "recall_at_10": 0.99339,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 24376.54558124316,
+    "recall_at_10": 0.9561299999999999,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 3734.6443472098467,
+    "recall_at_10": 0.99484,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 19756.821238221073,
+    "recall_at_10": 0.9696,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_1_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 1})",
+    "qps": 2914.713762358665,
+    "recall_at_10": 0.9954700000000001,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 84108.29411304666,
+    "recall_at_10": 0.7162200000000001,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 16496.95257214239,
+    "recall_at_10": 0.98052,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 56758.63226211548,
+    "recall_at_10": 0.8471,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 10831.294542859017,
+    "recall_at_10": 0.9882500000000001,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 44663.3031411126,
+    "recall_at_10": 0.90155,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 37538.86745372645,
+    "recall_at_10": 0.92927,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 5526.357258767087,
+    "recall_at_10": 0.9934200000000001,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 28960.127818557306,
+    "recall_at_10": 0.95595,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 3553.385536244447,
+    "recall_at_10": 0.99482,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 22930.55781072235,
+    "recall_at_10": 0.96939,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_2_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 2})",
+    "qps": 2799.6587520741436,
+    "recall_at_10": 0.9954700000000001,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 77870.14414401034,
+    "recall_at_10": 0.69887,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 16640.873991215176,
+    "recall_at_10": 0.97937,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 56613.14857782258,
+    "recall_at_10": 0.84379,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 10704.747009574872,
+    "recall_at_10": 0.9878600000000001,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 46346.61751673507,
+    "recall_at_10": 0.89761,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 41967.84299521017,
+    "recall_at_10": 0.92591,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 5557.54691705704,
+    "recall_at_10": 0.99312,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 29123.531343716782,
+    "recall_at_10": 0.9532299999999999,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 4194.72850652486,
+    "recall_at_10": 0.9945499999999999,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 24109.823379890164,
+    "recall_at_10": 0.9672599999999999,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_8_level_3_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 8, 'level': 3})",
+    "qps": 2850.4085051547268,
+    "recall_at_10": 0.99537,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 33032.049949282075,
+    "recall_at_10": 0.94594,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 6712.300816027953,
+    "recall_at_10": 0.9993299999999999,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 23323.13321414968,
+    "recall_at_10": 0.98451,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 5004.477334307907,
+    "recall_at_10": 0.9996700000000001,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 19161.610116450654,
+    "recall_at_10": 0.9933299999999999,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 15142.575025948823,
+    "recall_at_10": 0.99626,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 2802.7225467029766,
+    "recall_at_10": 0.99993,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 11421.992140801114,
+    "recall_at_10": 0.99832,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 2107.434065433547,
+    "recall_at_10": 0.99996,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 9292.128073197344,
+    "recall_at_10": 0.99892,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_1_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 1})",
+    "qps": 1591.1268747115962,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 57596.739442393016,
+    "recall_at_10": 0.9422,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 10401.520684357558,
+    "recall_at_10": 0.9993399999999999,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 38451.49082694967,
+    "recall_at_10": 0.98446,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 6819.446533252147,
+    "recall_at_10": 0.9996700000000001,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 28983.421772200185,
+    "recall_at_10": 0.9933799999999999,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 24473.1649082352,
+    "recall_at_10": 0.99627,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 3626.9496900540403,
+    "recall_at_10": 0.9999100000000001,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 18058.153026803262,
+    "recall_at_10": 0.99831,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 2593.514174036427,
+    "recall_at_10": 0.99996,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 14643.919146566486,
+    "recall_at_10": 0.99893,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_2_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 2})",
+    "qps": 1930.206153533503,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_10.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 56684.53302844293,
+    "recall_at_10": 0.9019999999999999,
+    "query_ef": 10
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_120.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 10751.94868149494,
+    "recall_at_10": 0.99936,
+    "query_ef": 120
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_20.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 36527.126436181,
+    "recall_at_10": 0.9838800000000001,
+    "query_ef": 20
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_200.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 7105.739255889552,
+    "recall_at_10": 0.9996600000000001,
+    "query_ef": 200
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_30.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 29499.708822263423,
+    "recall_at_10": 0.993,
+    "query_ef": 30
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_40.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 24608.06257528119,
+    "recall_at_10": 0.99583,
+    "query_ef": 40
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_400.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 4274.769264292559,
+    "recall_at_10": 0.9998400000000001,
+    "query_ef": 400
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_60.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 18209.668659281157,
+    "recall_at_10": 0.9979799999999999,
+    "query_ef": 60
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_600.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 2792.1540433038763,
+    "recall_at_10": 0.9999499999999999,
+    "query_ef": 600
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_80.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 14537.781280826423,
+    "recall_at_10": 0.99882,
+    "query_ef": 80
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/glass/euclidean_784_L_200_R_96_level_3_800.hdf5",
+    "algorithm": "glass",
+    "parameters": "glass_({'L': 200, 'R': 96, 'level': 3})",
+    "qps": 2087.11620607888,
+    "recall_at_10": 0.99996,
+    "query_ef": 800
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 37543.60524963703,
+    "recall_at_10": 0.9624499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 40516.299045414766,
+    "recall_at_10": 0.9624499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 9035.187717515964,
+    "recall_at_10": 0.9997999999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 10398.261231303886,
+    "recall_at_10": 0.9997999999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 1165.0920499064368,
+    "recall_at_10": 0.99996
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 1803.024364900179,
+    "recall_at_10": 0.99996
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 31368.194328108177,
+    "recall_at_10": 0.9867699999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 29519.120937280284,
+    "recall_at_10": 0.9867699999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 7938.953606671721,
+    "recall_at_10": 0.99982
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 9092.005554522284,
+    "recall_at_10": 0.99982
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 27870.5184643753,
+    "recall_at_10": 0.9923
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 28408.686982530668,
+    "recall_at_10": 0.9923
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 5669.961332422744,
+    "recall_at_10": 0.9998699999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 7263.206163130108,
+    "recall_at_10": 0.9998699999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 20809.528227512925,
+    "recall_at_10": 0.99645
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 22497.647948592792,
+    "recall_at_10": 0.99645
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 4421.160370342847,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 6026.5179179645465,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 18673.120313137195,
+    "recall_at_10": 0.99777
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 19024.142218061465,
+    "recall_at_10": 0.99777
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 16484.620578578462,
+    "recall_at_10": 0.9981500000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 18309.445618470858,
+    "recall_at_10": 0.9981500000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 3185.1841501414624,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 4565.727284295635,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 13779.845955510817,
+    "recall_at_10": 0.99835
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 14504.043651448208,
+    "recall_at_10": 0.99835
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 13491.015165516712,
+    "recall_at_10": 0.99853
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 12489.533999056059,
+    "recall_at_10": 0.99853
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 14267.519390208101,
+    "recall_at_10": 0.9988699999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 14882.712218516599,
+    "recall_at_10": 0.9988699999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 2441.399170741143,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 3534.165377682967,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 11737.026824186261,
+    "recall_at_10": 0.99932
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 11859.767425157963,
+    "recall_at_10": 0.99932
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 1702.280330233059,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_32_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=32, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 2601.2402315593404,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 32671.389679736094,
+    "recall_at_10": 0.9731099999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 31805.100579942246,
+    "recall_at_10": 0.9731099999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 8614.391193173067,
+    "recall_at_10": 0.99982
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 9370.70889390977,
+    "recall_at_10": 0.99982
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 1104.8484739286775,
+    "recall_at_10": 0.99997
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 1665.8645756616872,
+    "recall_at_10": 0.99997
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 27749.72278752689,
+    "recall_at_10": 0.9921099999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 27210.06738447426,
+    "recall_at_10": 0.9921099999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 6761.83711312085,
+    "recall_at_10": 0.9998400000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 8138.077290608613,
+    "recall_at_10": 0.9998400000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 24236.084185685566,
+    "recall_at_10": 0.99527
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 25553.163970091442,
+    "recall_at_10": 0.99527
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 4891.806654450866,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 6237.401740903072,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 19427.55400088747,
+    "recall_at_10": 0.9976100000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 19849.403448926983,
+    "recall_at_10": 0.9976100000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 3930.1135162024852,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 5095.989380115515,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 15729.841366634377,
+    "recall_at_10": 0.99838
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 15938.839421941639,
+    "recall_at_10": 0.99838
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 14604.412413477565,
+    "recall_at_10": 0.99878
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 15440.66579271617,
+    "recall_at_10": 0.99878
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 2708.1110635041528,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 3790.3637934255057,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 15093.309765390535,
+    "recall_at_10": 0.9989399999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 14587.828080611907,
+    "recall_at_10": 0.9989399999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 14543.537991458976,
+    "recall_at_10": 0.9990600000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 14301.84178276552,
+    "recall_at_10": 0.9990600000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 13795.2238568374,
+    "recall_at_10": 0.99921
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 13663.362917766786,
+    "recall_at_10": 0.99921
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 2092.7036444980727,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 3021.9358339805094,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 10971.280295371287,
+    "recall_at_10": 0.9995200000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 11560.097677674697,
+    "recall_at_10": 0.9995200000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 1526.2940035439913,
+    "recall_at_10": 0.99996
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_48_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=48, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 2166.969817238592,
+    "recall_at_10": 0.99996
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_10_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=10, rerank=2000)",
+    "qps": 30941.50826338064,
+    "recall_at_10": 0.97707
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_10_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=10, rerank=64)",
+    "qps": 30220.658220770623,
+    "recall_at_10": 0.97707
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_120_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=120, rerank=2000)",
+    "qps": 7358.30026811815,
+    "recall_at_10": 0.99983
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_120_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=120, rerank=64)",
+    "qps": 8354.125511538574,
+    "recall_at_10": 0.99983
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_1440_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=1440, rerank=2000)",
+    "qps": 1032.0046625317461,
+    "recall_at_10": 0.99997
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_1440_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=1440, rerank=64)",
+    "qps": 1500.744557225497,
+    "recall_at_10": 0.99997
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_15_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=15, rerank=2000)",
+    "qps": 22628.881942338838,
+    "recall_at_10": 0.99448
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_15_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=15, rerank=64)",
+    "qps": 25556.76065640896,
+    "recall_at_10": 0.99448
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_160_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=160, rerank=2000)",
+    "qps": 6207.409843314961,
+    "recall_at_10": 0.99986
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_160_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=160, rerank=64)",
+    "qps": 6815.549245680305,
+    "recall_at_10": 0.99986
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_20_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=20, rerank=2000)",
+    "qps": 19956.87267924198,
+    "recall_at_10": 0.99656
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_20_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=20, rerank=64)",
+    "qps": 20773.599530473417,
+    "recall_at_10": 0.99656
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_240_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=240, rerank=2000)",
+    "qps": 4580.703269373775,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_240_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=240, rerank=64)",
+    "qps": 5644.049894952117,
+    "recall_at_10": 0.9999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_30_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=30, rerank=2000)",
+    "qps": 16857.349094656358,
+    "recall_at_10": 0.99807
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_30_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=30, rerank=64)",
+    "qps": 17382.452124015676,
+    "recall_at_10": 0.99807
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_320_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=320, rerank=2000)",
+    "qps": 3596.7287404704102,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_320_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=320, rerank=64)",
+    "qps": 4453.004880963478,
+    "recall_at_10": 0.99993
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_40_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=40, rerank=2000)",
+    "qps": 15090.230809110903,
+    "recall_at_10": 0.99857
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_40_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=40, rerank=64)",
+    "qps": 14872.74863862514,
+    "recall_at_10": 0.99857
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_45_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=45, rerank=2000)",
+    "qps": 14816.731307066688,
+    "recall_at_10": 0.99895
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_45_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=45, rerank=64)",
+    "qps": 14633.108549630519,
+    "recall_at_10": 0.99895
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_480_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=480, rerank=2000)",
+    "qps": 2650.29994431235,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_480_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=480, rerank=64)",
+    "qps": 3543.2259553492963,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_50_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=50, rerank=2000)",
+    "qps": 13983.19471170836,
+    "recall_at_10": 0.99909
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_50_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=50, rerank=64)",
+    "qps": 13789.631632450433,
+    "recall_at_10": 0.99909
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_55_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=55, rerank=2000)",
+    "qps": 12437.583808234305,
+    "recall_at_10": 0.99922
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_55_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=55, rerank=64)",
+    "qps": 12512.328702556011,
+    "recall_at_10": 0.99922
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_60_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=60, rerank=2000)",
+    "qps": 11849.946588697372,
+    "recall_at_10": 0.9993000000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_60_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=60, rerank=64)",
+    "qps": 12090.983098065353,
+    "recall_at_10": 0.9993000000000001
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_640_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=640, rerank=2000)",
+    "qps": 2227.944956856482,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_640_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=640, rerank=64)",
+    "qps": 2919.23133593456,
+    "recall_at_10": 0.9999499999999999
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_80_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=80, rerank=2000)",
+    "qps": 10211.076925174348,
+    "recall_at_10": 0.99954
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_80_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=80, rerank=64)",
+    "qps": 10347.073006951328,
+    "recall_at_10": 0.99954
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_960_2000.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=960, rerank=2000)",
+    "qps": 1503.231211097214,
+    "recall_at_10": 0.99996
+  },
+  {
+    "file": "results/fashion-mnist-784-euclidean/10/hms/euclidean_build_ef_500_code_bits_8_degree_64_960_64.hdf5",
+    "algorithm": "hms",
+    "parameters": "hms(degree=64, build_ef=500, code_bits=8, ef=960, rerank=64)",
+    "qps": 2141.107655502881,
+    "recall_at_10": 0.99996
+  }
+]

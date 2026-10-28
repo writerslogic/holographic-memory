@@ -1,50 +1,39 @@
-<img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" width="120" alt="Holographic Memory System" align="left">
+<a href="https://holographic-memory.com/"><img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" width="96" alt="Holographic Memory logo" align="left"></a>
 
-<h3>Holographic SDK</h3>
-<p><strong>Python HTTP client and agent-framework adapters for a Holographic Memory System service.</strong></p>
+# Holographic Memory SDK
+
+Python HTTP client and framework adapters for a Holographic Memory service.
+
+[Website](https://holographic-memory.com/) · [Documentation](https://docs.holographic-memory.com/) · [Source](https://github.com/writerslogic/holographic-memory) · [License](https://github.com/writerslogic/holographic-memory/blob/main/LICENSE)
 
 <br clear="left">
 
-<p align="center">
-  <a href="https://pypi.org/project/holographic-sdk/"><img src="https://img.shields.io/pypi/v/holographic-sdk?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=pypi&amp;logoColor=white" alt="PyPI version"></a>
-  <a href="https://pypi.org/project/holographic-sdk/"><img src="https://img.shields.io/badge/python-3.10%2B-007ec6?style=flat-square&amp;labelColor=20232a&amp;logo=python&amp;logoColor=white" alt="Python 3.10+"></a>
-  <a href="https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&amp;style=flat-square&amp;label=CI&amp;labelColor=20232a" alt="CI"></a>
-  <a href="https://scorecard.dev/viewer/?uri=github.com/writerslogic/holographic-memory"><img src="https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory?style=flat-square&amp;labelColor=20232a" alt="OpenSSF Scorecard"></a>
-  <a href="https://crates.io/crates/holographic-memory"><img src="https://img.shields.io/crates/v/holographic-memory?style=flat-square&amp;color=007ec6&amp;labelColor=20232a&amp;logo=rust" alt="crates.io version"></a>
-  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="License"></a>
-  <a href="https://github.com/sponsors/dcondrey"><img src="https://img.shields.io/badge/sponsor-dcondrey-EA4AAA?style=flat-square&amp;labelColor=20232a&amp;logo=githubsponsors&amp;logoColor=white" alt="Sponsor dcondrey"></a>
-</p>
-
-<p align="center">
-  <a href="#installation">Install</a> &middot;
-  <a href="#quick-start">Quick Start</a> &middot;
-  <a href="#source-evidence">Source Evidence</a> &middot;
-  <a href="#integrations">Integrations</a> &middot;
-  <a href="#vector-masking">Vector Masking</a> &middot;
-  <a href="https://github.com/writerslogic/holographic-memory">Core Engine</a>
-</p>
-
----
-
-The client talks to a service exposing `POST /api/v1/documents/batch`, `POST /api/v1/documents`, `DELETE /api/v1/documents/{id}` and `POST /api/v1/query`. The `holographic-memory` repository ships a reference implementation, `hms-server` (build with `--features server`); see `docs/SERVER.md`.
+The client talks to `hms-server`, which ships in the Holographic Memory repository. The server
+stores vectors you supply and exposes document and query endpoints. See the
+[server guide](https://docs.holographic-memory.com/latest/SERVER/) to run it.
 
 ## Installation
 
 ```bash
-pip install holographic-sdk
+uv add holographic-memory-sdk
 ```
 
 Framework adapters are optional extras. Install one, or all of them:
 
 ```bash
-pip install "holographic-sdk[langchain]"
-pip install "holographic-sdk[all]"
+uv add "holographic-memory-sdk[langchain]"
+uv add "holographic-memory-sdk[all]"
 ```
+
+The earlier standalone `langchain-holographic` distribution is retired. For LangChain, install
+`holographic-memory-sdk[langchain]` and import `HolographicVectorStore` from
+`holographic_sdk.langchain`. This adapter connects to `hms-server`; update the old
+`langchain_holographic` import and its local-store configuration when migrating.
 
 The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
 
 ```bash
-pip install "holographic-sdk[fast]"
+uv add "holographic-memory-sdk[fast]"
 ```
 
 Requires Python 3.10 or newer.
@@ -61,6 +50,7 @@ client.add_documents([
 ])
 
 response = client.query(query_vector=[0.10, -0.01, 0.90], top_k=3, filter={"lang": "en"})
+print(response["matches"])
 client.delete_document("doc-1")
 client.close()
 ```

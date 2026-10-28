@@ -98,6 +98,54 @@ fn schema(exposure: &Exposure, mut properties: Value, required: &[&str]) -> Valu
     })
 }
 
+fn output_schema(properties: Value, required: &[&str]) -> Value {
+    json!({
+        "type": "object",
+        "properties": properties,
+        "required": required,
+        "additionalProperties": false
+    })
+}
+
+fn memory_schema() -> Value {
+    output_schema(
+        json!({
+            "id": {"type": "string", "description": "Stable memory id."},
+            "text": {"type": "string", "description": "Full content, or a preview when `text_truncated` is true."},
+            "text_truncated": {"type": "boolean", "description": "Whether text is a preview."},
+            "bytes": {"type": "integer", "description": "Length of the full text in UTF-8 bytes."},
+            "title": {"type": "string", "description": "Optional display title."},
+            "tags": {"type": "array", "items": {"type": "string"}, "description": "Labels attached to the memory."},
+            "metadata": {"type": "object", "description": "Stored user metadata.", "additionalProperties": true},
+            "created_at": {"type": "integer", "description": "Creation time in Unix milliseconds."},
+            "updated_at": {"type": "integer", "description": "Last update time in Unix milliseconds."},
+            "version": {"type": "string", "description": "Pass to `remember.if_version` for a conditional update."}
+        }),
+        &[
+            "id",
+            "text",
+            "bytes",
+            "tags",
+            "metadata",
+            "created_at",
+            "updated_at",
+            "version",
+        ],
+    )
+}
+
+fn hit_schema() -> Value {
+    output_schema(
+        json!({
+            "memory": memory_schema(),
+            "score": {"type": "number", "description": "Relative combined rank score, not a probability."},
+            "lexical_score": {"type": "number", "description": "Lexical ranking contribution."},
+            "semantic_score": {"type": "number", "description": "Semantic ranking contribution when a model is configured."}
+        }),
+        &["memory", "score", "lexical_score"],
+    )
+}
+
 /// Tool descriptors, serialized as MCP `Tool` objects.
 pub fn definitions(exposure: &Exposure, limits: &Limits) -> Vec<Value> {
     let tags = json!({"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 64},
@@ -107,99 +155,144 @@ pub fn definitions(exposure: &Exposure, limits: &Limits) -> Vec<Value> {
     let all = vec![
         json!({
             "name": "remember",
-            "title": "Remember",
-            "description": "Store or replace a memory. Without `id` a new id is generated; with an existing `id` the memory is replaced. Use `if_version` for compare-and-set and `create_only` to refuse overwrites.",
+            "title": "Store memory",
+            "description": "Store a durable fact, decision or preference; use `recall` to find one instead. Omit `id` to create a memory; an existing `id` replaces its text, title, tags and metadata, clearing optional fields you omit. Use `if_version` with a known id to reject concurrent changes, or `create_only` to reject overwrites.",
             "inputSchema": schema(exposure, json!({
-                "text": {"type": "string", "maxLength": limits.max_text_bytes, "description": "The memory."},
+                "text": {"type": "string", "maxLength": limits.max_text_bytes, "description": "UTF-8 memory content; must be nonblank unless `allow_empty` is true. The server also enforces a byte limit and a 4,096-word limit."},
                 "id": {"type": "string", "minLength": 1, "maxLength": 256, "description": "Stable id; replaces an existing memory with this id."},
-                "title": {"type": "string", "maxLength": 256},
+                "title": {"type": "string", "maxLength": 256, "description": "Optional display title; does not change the id."},
                 "tags": tags,
                 "metadata": {"type": "object", "description": "Arbitrary JSON object; keys starting with \"hms.\" are reserved.", "additionalProperties": true},
-                "if_version": {"type": "string", "description": "Write only if the stored memory still has this version."},
-                "create_only": {"type": "boolean", "default": false},
-                "allow_empty": {"type": "boolean", "default": false, "description": "Permit blank text (file-like use)."}
+                "if_version": {"type": "string", "description": "Version from `remember` or `get`; write only if the stored version still matches. Cannot combine with `create_only`."},
+                "create_only": {"type": "boolean", "default": false, "description": "Reject the write if the chosen id already exists; cannot combine with `if_version`."},
+                "allow_empty": {"type": "boolean", "default": false, "description": "Permit blank text for file-like use; otherwise blank text is rejected."}
             }), &["text"]),
-            "annotations": {"title": "Remember", "readOnlyHint": false, "destructiveHint": false, "idempotentHint": false, "openWorldHint": false}
+            "outputSchema": output_schema(json!({
+                "id": {"type": "string", "description": "Id of the stored memory."},
+                "version": {"type": "string", "description": "New version for a later conditional update."},
+                "created": {"type": "boolean", "description": "True when this call created an id."},
+                "bytes": {"type": "integer", "description": "Stored text size in UTF-8 bytes."},
+                "namespace": {"type": "string", "description": "Store namespace used for the write."}
+            }), &["id", "version", "created", "bytes", "namespace"]),
+            "annotations": {"title": "Store memory", "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": false}
         }),
         json!({
             "name": "recall",
-            "title": "Recall",
-            "description": "Retrieve the memories most relevant to a natural-language query, best first, with their full text.",
+            "title": "Recall matching memories",
+            "description": "Retrieve full memories ranked for a natural-language question. `tags` require every listed label, and `min_score` drops low relative-score matches; use `search` for exact metadata-key filters, custom ranking weights or fusion, or text previews instead of full memories. Read-only; ranking is lexical by default, with semantic ranking when a model is configured.",
             "inputSchema": schema(exposure, json!({
-                "query": {"type": "string", "minLength": 1, "maxLength": 4096},
-                "k": {"type": "integer", "minimum": 1, "maximum": limits.max_top_k, "default": 5},
+                "query": {"type": "string", "minLength": 1, "maxLength": 4096, "description": "Natural-language question or phrase to match against stored memories; nonblank, at most 4,096 UTF-8 bytes."},
+                "k": {"type": "integer", "minimum": 1, "maximum": limits.max_top_k, "default": 5, "description": "Maximum number of ranked memories to return."},
                 "tags": tags,
-                "min_score": {"type": "number", "minimum": 0, "maximum": 1, "description": "Drop hits ranked below this relative score."}
+                "min_score": {"type": "number", "minimum": 0, "maximum": 1, "description": "Drop hits below this relative rank score (0 to 1); this is not a probability."}
             }), &["query"]),
-            "annotations": {"title": "Recall", "readOnlyHint": true, "openWorldHint": false}
+            "outputSchema": output_schema(json!({
+                "count": {"type": "integer", "description": "Number of returned hits."},
+                "results": {"type": "array", "items": hit_schema(), "description": "Ranked hits with full memory text."}
+            }), &["count", "results"]),
+            "annotations": {"title": "Recall matching memories", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
         }),
         json!({
             "name": "search",
-            "title": "Search",
-            "description": "Search with explicit control: metadata filter, tags, lexical and semantic weights, rank fusion. Returns previews and the score breakdown; use `get` for full text.",
+            "title": "Search memory with filters",
+            "description": "Find memories with metadata filters or ranking controls; use `recall` for simpler full-text answers. Read-only. Results contain text previews and relative ranking scores, not probabilities; use `get` to read a result in full. Semantic scores require a configured model.",
             "inputSchema": schema(exposure, json!({
-                "query": {"type": "string", "minLength": 1, "maxLength": 4096},
-                "k": {"type": "integer", "minimum": 1, "maximum": limits.max_top_k, "default": 10},
+                "query": {"type": "string", "minLength": 1, "maxLength": 4096, "description": "Natural-language phrase to match against stored memories; nonblank, at most 4,096 UTF-8 bytes."},
+                "k": {"type": "integer", "minimum": 1, "maximum": limits.max_top_k, "default": 10, "description": "Maximum number of ranked previews to return."},
                 "tags": tags,
                 "filter": filter,
-                "min_score": {"type": "number", "minimum": 0, "maximum": 1},
-                "lexical_weight": {"type": "number", "minimum": 0, "maximum": 100},
-                "semantic_weight": {"type": "number", "minimum": 0, "maximum": 100},
-                "fusion": {"type": "string", "enum": ["blend", "rrf"]}
+                "min_score": {"type": "number", "minimum": 0, "maximum": 1, "description": "Drop hits below this relative rank score (0 to 1); this is not a probability."},
+                "lexical_weight": {"type": "number", "minimum": 0, "maximum": 100, "description": "Weight for lexical BM25 ranking before fusion, from 0 to 100."},
+                "semantic_weight": {"type": "number", "minimum": 0, "maximum": 100, "description": "Weight for model-based semantic ranking before fusion, from 0 to 100; requires a configured model."},
+                "fusion": {"type": "string", "enum": ["blend", "rrf"], "description": "How to combine lexical and semantic ranks: weighted score blend or reciprocal rank fusion."}
             }), &["query"]),
-            "annotations": {"title": "Search", "readOnlyHint": true, "openWorldHint": false}
+            "outputSchema": output_schema(json!({
+                "count": {"type": "integer", "description": "Number of returned hits."},
+                "results": {"type": "array", "items": hit_schema(), "description": "Ranked hits with text previews and score details."}
+            }), &["count", "results"]),
+            "annotations": {"title": "Search memory with filters", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
         }),
         json!({
             "name": "get",
             "title": "Get memory",
-            "description": "Read one memory by id, with its full text, tags, metadata and version.",
-            "inputSchema": schema(exposure, json!({"id": {"type": "string", "minLength": 1, "maxLength": 256}}), &["id"]),
-            "annotations": {"title": "Get memory", "readOnlyHint": true, "openWorldHint": false}
+            "description": "Read one known memory id in full, including tags, metadata and version. Use an id from `list` or `search`; use `recall` when only a natural-language question is known. Read-only; an unknown id returns an error.",
+            "inputSchema": schema(exposure, json!({"id": {"type": "string", "minLength": 1, "maxLength": 256, "description": "Exact id of the memory to read, as returned by `remember`, `list` or `search`."}}), &["id"]),
+            "outputSchema": output_schema(json!({
+                "memory": memory_schema()
+            }), &["memory"]),
+            "annotations": {"title": "Get memory", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
         }),
         json!({
             "name": "forget",
-            "title": "Forget",
-            "description": "Delete memories by id, or every memory whose id starts with `prefix` (requires `confirm: true`).",
+            "title": "Delete memories",
+            "description": "Delete memories from the active store by exact id(s) or id prefix; use `remember` to update content instead. Deletion has no undo: inspect prefix matches with `list` first and set `confirm: true` for prefix deletion. Exact ids and a prefix cannot be combined, and a batch failure may leave earlier ids deleted.",
             "inputSchema": schema(exposure, json!({
-                "id": {"type": "string", "minLength": 1, "maxLength": 256},
-                "ids": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 256}, "maxItems": limits.max_forget},
-                "prefix": {"type": "string", "minLength": 1, "maxLength": 256},
-                "confirm": {"type": "boolean", "description": "Required with `prefix`."}
+                "id": {"type": "string", "minLength": 1, "maxLength": 256, "description": "One exact memory id to delete; cannot combine with `prefix`."},
+                "ids": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 256}, "maxItems": limits.max_forget, "description": "Exact memory ids to delete in one call; cannot combine with `prefix`."},
+                "prefix": {"type": "string", "minLength": 1, "maxLength": 256, "description": "Delete every id starting with this prefix; use `list` with the same prefix first."},
+                "confirm": {"type": "boolean", "description": "Set true to authorize prefix deletion; exact ids do not need it."}
             }), &[]),
-            "annotations": {"title": "Forget", "readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": false}
+            "outputSchema": output_schema(json!({
+                "deleted": {"type": "integer", "description": "Number of memories deleted."},
+                "missing": {"type": "array", "items": {"type": "string"}, "description": "Requested ids that were not present."}
+            }), &["deleted", "missing"]),
+            "annotations": {"title": "Delete memories", "readOnlyHint": false, "destructiveHint": true, "idempotentHint": true, "openWorldHint": false}
         }),
         json!({
             "name": "list",
             "title": "List memories",
-            "description": "Page through memories in id order, optionally by id prefix or tag. Returns text previews unless `full` is true; continue with `next_cursor`.",
+            "description": "Browse memories in id order, optionally limited by id prefix or tag; use `search` for relevance ranking. Read-only. Returns text previews unless `full` is true; pass `next_cursor` as `cursor` to continue.",
             "inputSchema": schema(exposure, json!({
-                "prefix": {"type": "string", "maxLength": 256},
-                "tag": {"type": "string", "minLength": 1, "maxLength": 64},
+                "prefix": {"type": "string", "maxLength": 256, "description": "Include only memory ids starting with this prefix."},
+                "tag": {"type": "string", "minLength": 1, "maxLength": 64, "description": "Include only memories carrying this tag."},
                 "cursor": {"type": "string", "maxLength": 256, "description": "`next_cursor` of the previous page."},
-                "limit": {"type": "integer", "minimum": 1, "maximum": limits.max_page, "default": 50},
-                "full": {"type": "boolean", "default": false}
+                "limit": {"type": "integer", "minimum": 1, "maximum": limits.max_page, "default": 50, "description": "Maximum memories in this page."},
+                "full": {"type": "boolean", "default": false, "description": "Return full text instead of a 240-character preview."}
             }), &[]),
-            "annotations": {"title": "List memories", "readOnlyHint": true, "openWorldHint": false}
+            "outputSchema": output_schema(json!({
+                "count": {"type": "integer", "description": "Number of memories in this page."},
+                "memories": {"type": "array", "items": memory_schema(), "description": "Memories in id order, with full text or previews."},
+                "next_cursor": {"type": ["string", "null"], "description": "Pass a string value as `cursor` to continue; null ends the listing."}
+            }), &["count", "memories", "next_cursor"]),
+            "annotations": {"title": "List memories", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
         }),
         json!({
             "name": "stats",
             "title": "Store statistics",
-            "description": "Counts, recall mode, encryption status, storage size and the active limits of the store.",
+            "description": "Inspect store counts, recall mode, encryption status, storage size and active limits without reading memory contents. Read-only; use `list` to inspect stored memories.",
             "inputSchema": schema(exposure, json!({}), &[]),
-            "annotations": {"title": "Store statistics", "readOnlyHint": true, "openWorldHint": false}
+            "outputSchema": output_schema(json!({
+                "namespace": {"type": "string", "description": "Store namespace being inspected."},
+                "store_path": {"type": "string", "description": "Local filesystem path of the store."},
+                "memories": {"type": "integer", "description": "Number of stored memories."},
+                "embedded_memories": {"type": "integer", "description": "Memories with a semantic embedding."},
+                "recall": {"type": "string", "description": "Active lexical or hybrid recall mode."},
+                "encryption_at_rest": {"type": "boolean", "description": "Whether the store is encrypted at rest."},
+                "storage_bytes": {"type": "integer", "description": "Approximate local store size in bytes."},
+                "dimensions": {"type": "integer", "description": "Configured vector dimensions."},
+                "limits": {"type": "object", "description": "Active text, metadata, tag, result and export caps.", "additionalProperties": {"type": "integer"}},
+                "server_version": {"type": "string", "description": "Version of the core server binary."}
+            }), &["namespace", "store_path", "memories", "embedded_memories", "recall", "encryption_at_rest", "storage_bytes", "dimensions", "limits", "server_version"]),
+            "annotations": {"title": "Store statistics", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
         }),
         json!({
             "name": "export",
-            "title": "Export memories",
-            "description": "Export memories as json, jsonl or markdown. Output is size-bounded; when `next_cursor` is returned, call again with it to continue.",
+            "title": "Export memory contents",
+            "description": "Export a portable copy of many memories as JSON, JSONL or Markdown. Use `get` for one known memory, `recall` or `search` to find matches, and `list` for short previews. The text payload is capped by the export byte limit; pass `next_cursor` as `cursor` for more. Pages read the live store, so concurrent writes can change later pages.",
             "inputSchema": schema(exposure, json!({
-                "format": {"type": "string", "enum": ["json", "jsonl", "markdown"], "default": "json"},
-                "prefix": {"type": "string", "maxLength": 256},
-                "tag": {"type": "string", "minLength": 1, "maxLength": 64},
-                "cursor": {"type": "string", "maxLength": 256},
-                "limit": {"type": "integer", "minimum": 1, "maximum": 10000, "default": 1000}
+                "format": {"type": "string", "enum": ["json", "jsonl", "markdown"], "default": "json", "description": "Serialization of the returned text payload."},
+                "prefix": {"type": "string", "maxLength": 256, "description": "Include only memory ids starting with this prefix."},
+                "tag": {"type": "string", "minLength": 1, "maxLength": 64, "description": "Include only memories carrying this tag."},
+                "cursor": {"type": "string", "maxLength": 256, "description": "`next_cursor` from the previous export segment."},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 10000, "default": 1000, "description": "Maximum memories in this export segment, also bounded by the server's byte limit."}
             }), &[]),
-            "annotations": {"title": "Export memories", "readOnlyHint": true, "openWorldHint": false}
+            "outputSchema": output_schema(json!({
+                "format": {"type": "string", "description": "Serialization used for the text payload."},
+                "count": {"type": "integer", "description": "Number of exported memories in this segment."},
+                "bytes": {"type": "integer", "description": "Size of the returned text payload in bytes."},
+                "next_cursor": {"type": ["string", "null"], "description": "Pass a string value as `cursor` for the next segment; null ends the export."}
+            }), &["format", "count", "bytes", "next_cursor"]),
+            "annotations": {"title": "Export memory contents", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
         }),
     ];
     all.into_iter()
@@ -612,6 +705,13 @@ mod tests {
             assert_eq!(schema["type"], "object");
             assert_eq!(schema["additionalProperties"], false);
             assert!(schema["properties"].get("namespace").is_none());
+            for property in schema["properties"].as_object().unwrap().values() {
+                assert!(property["description"]
+                    .as_str()
+                    .is_some_and(|s| !s.is_empty()));
+            }
+            assert!(tool["outputSchema"]["properties"].is_object());
+            let _: rmcp::model::Tool = serde_json::from_value(tool.clone()).unwrap();
         }
         let remember = all.iter().find(|t| t["name"] == "remember").unwrap();
         assert_eq!(

@@ -48,6 +48,7 @@ pub struct AccessCredential {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub valid_until: Option<String>,
     pub credential_subject: AccessSubject,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub proof: Option<DataIntegrityProof>,
 }
 

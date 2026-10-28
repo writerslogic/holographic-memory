@@ -1,0 +1,60 @@
+{
+ "avx512": false,
+ "best_qps_at_recall": {
+  "hms": {
+   "0.90": {
+    "build_time": 327.7096393108368,
+    "index_size": 182240.0,
+    "params": "HMS(metric=ip, degree=32, build_ef=500, ef=100, rerank=200, code_bits=8, learn_queries=32768)|100_200",
+    "qps": 6293.074640663291,
+    "recall": 0.9084
+   },
+   "0.95": {
+    "build_time": 327.7096393108368,
+    "index_size": 182240.0,
+    "params": "HMS(metric=ip, degree=32, build_ef=500, ef=128, rerank=200, code_bits=8, learn_queries=32768)|128_200",
+    "qps": 5162.219761942779,
+    "recall": 0.9574000000000001
+   },
+   "0.99": {
+    "build_time": 327.7096393108368,
+    "index_size": 182240.0,
+    "params": "HMS(metric=ip, degree=32, build_ef=500, ef=320, rerank=200, code_bits=8, learn_queries=32768)|320_200",
+    "qps": 2585.3057838028876,
+    "recall": 0.99034
+   }
+  },
+  "roargraph": {
+   "0.90": {
+    "build_time": 163.0549566745758,
+    "index_size": 569220.0,
+    "params": "RoarGraph(M_sq=100, M_pjbp=48, L_pjpq=500, L_pq=100)|100",
+    "qps": 8555.527366255155,
+    "recall": 0.90054
+   },
+   "0.95": {
+    "build_time": 208.6183021068573,
+    "index_size": 665620.0,
+    "params": "RoarGraph(M_sq=100, M_pjbp=64, L_pjpq=500, L_pq=130)|130",
+    "qps": 5913.690107154069,
+    "recall": 0.95223
+   },
+   "0.99": {
+    "build_time": 317.61427903175354,
+    "index_size": 858288.0,
+    "params": "RoarGraph(M_sq=100, M_pjbp=96, L_pjpq=500, L_pq=800)|800",
+    "qps": 1305.5127299723272,
+    "recall": 0.9911300000000001
+   }
+  }
+ },
+ "container": "ta-01M5PATPQ2VXH3W0CSHQ3H1BNR",
+ "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+ "dataset": "llama-128-ip",
+ "flags_sha": "ec7ab2242885",
+ "generated": "2026-10-24T08:24:48Z",
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "k": 100,
+ "nproc": 8,
+ "vibe_commit": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+}

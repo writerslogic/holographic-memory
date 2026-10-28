@@ -1,7 +1,7 @@
 ---
 template: home.html
 title: Holographic Memory
-description: Local-first document search and vector-symbolic associative memory. Hybrid BM25 and exact-cosine retrieval, crash-safe storage and superposed memory, with no service calls.
+description: Hybrid search, graph indexing, and vector-symbolic memory. Local-first retrieval and associative memory with crash-safe storage and no service calls.
 hide:
   - navigation
   - toc
@@ -23,3 +23,6 @@ search box, the [glossary](reference/glossary.md) or the [FAQ](reference/faq.md)
 selector in the header switches between `latest` (the newest tagged release that carries these
 docs), `dev` (the `main` branch) and each tagged release. How the site is built and checked is on
 [its own page](community/docs-pipeline.md).
+
+The [standards and provenance page](reference/standards.md) names the W3C, C2PA, CAWG, DIF,
+and Trust over IP features, their interoperability checks, and the limits on current claims.

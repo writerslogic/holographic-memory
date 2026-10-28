@@ -1,0 +1,11 @@
+{
+  "dataset": "fashion-mnist-784-euclidean",
+  "outcomes": {
+    "hms-d32": "done",
+    "hms-d48": "done",
+    "hms-d64": "done",
+    "glass": "done"
+  },
+  "elapsed_s": 4060.107519042,
+  "estimated_usd": 0.7154811694667348
+}

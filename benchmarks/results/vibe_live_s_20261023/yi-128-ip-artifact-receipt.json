@@ -1,0 +1,203 @@
+{
+ "cost_scope": "requested CPU/memory estimate for this artifact export only; excludes image and storage",
+ "dataset": "yi-128-ip",
+ "ended": "2026-10-24T09:02:04Z",
+ "estimated_hashing_usd": 0.00023067324917793277,
+ "hashing_container": "ta-01M5PJAA6V2WYV10AM96ED2DRR",
+ "hashing_cpus": 2,
+ "hashing_memory_gib": 4,
+ "hms_commit": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+ "ledgers": [
+  {
+   "at": "2026-10-24T06:51:26Z",
+   "dataset": "yi-128-ip",
+   "job": "_download",
+   "sha256": "23d76fdbb0808909d02be83f95c074c3ccf54018b03a80d54e8e31ad1815071e",
+   "state": "done"
+  },
+  {
+   "algorithm": "hms",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 1413.8,
+   "chosen_why": [
+    "HMS runs on every dataset"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yi-128-ip",
+   "end": "2026-10-24T07:21:27Z",
+   "expected": 180,
+   "failures": 0,
+   "flags_sha": "ec7ab2242885",
+   "heartbeat": 1792826419.942265,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+     "end": "2026-10-24T07:21:27Z",
+     "markers": 180,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "hms@12c80decb094",
+   "log_path": "/vol/vibe/run-s-20261023/logs/yi-128-ip/hms@12c80decb094.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/yi-128-ip/hms@12c80decb094/results",
+   "start": "2026-10-24T06:55:05Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 180,
+    "markers": 180,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 180
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "algorithm": "mlann-rf",
+   "attempts": 3,
+   "avx512": false,
+   "child_cpu_s": 791.6,
+   "chosen_why": [
+    "recall>=0.95: leader at 2397.1 QPS",
+    "recall>=0.99: leader at 503.2 QPS"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yi-128-ip",
+   "end": "2026-10-24T08:01:23Z",
+   "error_tail": "e), Definition(algorithm='mlann-rf', constructor='MLANN', module='vibe.algorithms.mlann', singularity_image='mlann', arguments=['ip', 'RF', 10, 14], query_argument_groups=[[0.0075], [0.0025], [0.00125], [0.0005], [0.00025], [0.000125], [0.0001], [7.5e-05], [5e-05], [2.5e-05], [1.75e-05], [1.25e-05], [1e-05], [7.5e-06], [5e-06], [2.5e-06], [1.75e-06], [1.25e-06], [1e-06], [7.5e-07]], disabled=False, ood=True, gpu=False), Definition(algorithm='mlann-rf', constructor='MLANN', module='vibe.algorithms.mlann', singularity_image='mlann', arguments=['ip', 'RF', 15, 14], query_argument_groups=[[0.0075], [0.0025], [0.00125], [0.0005], [0.00025], [0.000125], [0.0001], [7.5e-05], [5e-05], [2.5e-05], [1.75e-05], [1.25e-05], [1e-05], [7.5e-06], [5e-06], [2.5e-06], [1.75e-06], [1.25e-06], [1e-06], [7.5e-07]], disabled=False, ood=True, gpu=False)]\n2026-10-24 08:01:06,444 - vibe - INFO - Orchestrator: set scheduling policy to SCHED_BATCH.\n2026-10-24 08:01:06,454 - vibe - INFO - Orchestrator: IO priority set to idle (ionice -c3).\n2026-10-24 08:01:06,455 - vibe - INFO - Orchestrator: CPU niceness increased by +10.\n2026-10-24 08:01:06,608 - vibe.worker.0 - WARNING - numactl not found; falling back to taskset (no NUMA policy).\n2026-10-24 08:01:06,628 - vibe.worker.0 - INFO - Started process PID=3061\n2026-10-24 08:01:06,741 - vibe.worker.0 - INFO - ['ip', 'RF', 10, 18]\n2026-10-24 08:01:06,747 - vibe.worker.0 - INFO - Trying to instantiate vibe.algorithms.mlann.MLANN(['ip', 'RF', 10, 18])\n2026-10-24 08:01:06,965 - vibe.worker.0 - INFO - Got a train set of size (187843 * 128)\n2026-10-24 08:01:06,966 - vibe.worker.0 - INFO - Got 1000 queries\n2026-10-24 08:01:07,039 - vibe.worker.0 - INFO - Traceback (most recent call last):\n2026-10-24 08:01:07,039 - vibe.worker.0 - INFO -   File \"/work/jobs/mlann-rf/run_algorithm.py\", line 3, in <module>\n2026-10-24 08:01:07,040 - vibe.worker.0 - INFO -     run_from_cmdline()\n2026-10-24 08:01:07,040 - vibe.worker.0 - INFO -   File \"/opt/vibe/vibe/runner.py\", line 360, in run_from_cmdline\n2026-10-24 08:01:07,041 - vibe.worker.0 - INFO -     run(definition, args.dataset, args.count, args.runs)\n2026-10-24 08:01:07,041 - vibe.worker.0 - INFO -   File \"/opt/vibe/vibe/runner.py\", line 274, in run\n2026-10-24 08:01:07,041 - vibe.worker.0 - INFO -     build_time, index_size = build_index(algo, definition.constructor, X_train, X_learn, X_learn_neighbors)\n2026-10-24 08:01:07,041 - vibe.worker.0 - INFO -                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n2026-10-24 08:01:07,042 - vibe.worker.0 - INFO -   File \"/opt/vibe/vibe/runner.py\", line 236, in build_index\n2026-10-24 08:01:07,042 - vibe.worker.0 - INFO -     algo.fit_ood(X_train, X_learn, X_learn_neighbors)\n2026-10-24 08:01:07,042 - vibe.worker.0 - INFO -   File \"/opt/vibe/vibe/algorithms/mlann/module.py\", line 30, in fit_ood\n2026-10-24 08:01:07,043 - vibe.worker.0 - INFO -     self.index.build(X_learn, X_learn_neighbors, self.n_trees, self.depth)\n2026-10-24 08:01:07,043 - vibe.worker.0 - INFO -   File \"/opt/env/micromamba/lib/python3.11/site-packages/mlann.py\", line 58, in build\n2026-10-24 08:01:07,043 - vibe.worker.0 - INFO -     self.index.build(\n2026-10-24 08:01:07,044 - vibe.worker.0 - INFO - RuntimeError: The depth must belong to the set {1, ... , min(log2(n_train), 29)}.\n2026-10-24 08:01:07,106 - vibe.worker.0 - INFO - Process completed with return code: 1\n2026-10-24 08:01:07,612 - vibe.worker.0 - WARNING - numactl not found; falling back to taskset (no NUMA policy).\n2026-10-24 08:01:07,633 - vibe.worker.0 - INFO - Started process PID=3066\n2026-10-24 08:01:07,749 - vibe.worker.0 - INFO - ['ip', 'RF', 20, 17]\n2026-10-24 08:01:07,754 - vibe.worker.0 - INFO - Trying to instantiate vibe.algorithms.mlann.MLANN(['ip', 'RF', 20, 17])\n2026-10-24 08:01:07,917 - vibe.worker.0 - INFO - Got a train set of size (187843 * 128)\n2026-10-24 08:01:07,918 - vibe.worker.0 - INFO - Got 1000 queries\n=== 2026-10-24T08:01:21Z exit -15 \n\n[\"ip_RF_10_14.hdf5:0_0075: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:0_0025: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:0_00125: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:0_0005: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:0_00025: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:0_000125: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:0_0001: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:7_5e_05: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:5e_05: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:2_5e_05: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:1_75e_05: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:1_25e_05: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:1e_05: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:7_5e_06: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:5e_06: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:2_5e_06: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:1_75e_06: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:1_25e_06: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:1e_06: ValueError: no completion marker\", \"ip_RF_10_14.hdf5:7_5e_07: ValueError: no completion marker\"]",
+   "expected": 380,
+   "failures": 3,
+   "flags_sha": "ec7ab2242885",
+   "heartbeat": 1792828863.397791,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+     "end": "2026-10-24T07:57:33Z",
+     "markers": 0,
+     "outcome": "exit -15"
+    },
+    {
+     "attempt": 2,
+     "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+     "end": "2026-10-24T07:59:00Z",
+     "markers": 0,
+     "outcome": "exit -15"
+    },
+    {
+     "attempt": 3,
+     "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+     "end": "2026-10-24T08:01:23Z",
+     "markers": 0,
+     "outcome": "exit -15"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "mlann-rf",
+   "log_path": "/vol/vibe/run-s-20261023/logs/yi-128-ip/mlann-rf.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/yi-128-ip/mlann-rf/results",
+   "start": "2026-10-24T08:01:03Z",
+   "state": "failed",
+   "validation": {
+    "done": false,
+    "expected": 380,
+    "markers": 0,
+    "problems": [
+     "ip_RF_10_14.hdf5:0_0075: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:0_0025: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:0_00125: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:0_0005: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:0_00025: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:0_000125: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:0_0001: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:7_5e_05: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:5e_05: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:2_5e_05: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:1_75e_05: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:1_25e_05: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:1e_05: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:7_5e_06: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:5e_06: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:2_5e_06: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:1_75e_06: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:1_25e_06: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:1e_06: ValueError: no completion marker",
+     "ip_RF_10_14.hdf5:7_5e_07: ValueError: no completion marker"
+    ],
+    "test_count": 1000,
+    "valid": 0
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  },
+  {
+   "algorithm": "roargraph",
+   "attempts": 1,
+   "avx512": false,
+   "child_cpu_s": 992.9,
+   "chosen_why": [
+    "recall>=0.9: leader at 4403.7 QPS"
+   ],
+   "cleaned": {
+    "removed": []
+   },
+   "container_id": "ta-01M5PATPDV47G640F4XD2E0RPR",
+   "cpu_model": "AMD EPYC 7003 (Zen 3, Milan; family 25 model 1)",
+   "dataset": "yi-128-ip",
+   "end": "2026-10-24T07:41:38Z",
+   "expected": 108,
+   "failures": 0,
+   "flags_sha": "ec7ab2242885",
+   "heartbeat": 1792827663.19882,
+   "history": [
+    {
+     "attempt": 1,
+     "container": "ta-01M5PATPDV47G640F4XD2E0RPR",
+     "end": "2026-10-24T07:41:38Z",
+     "markers": 108,
+     "outcome": "exit 0"
+    }
+   ],
+   "hms_rev": "12c80decb094d57ee13ba187a01bf1de8788ca2f",
+   "job": "roargraph",
+   "log_path": "/vol/vibe/run-s-20261023/logs/yi-128-ip/roargraph.log",
+   "markers_at_start": 0,
+   "nproc": 8,
+   "result_path": "/vol/vibe/run-s-20261023/results/yi-128-ip/roargraph/results",
+   "start": "2026-10-24T07:22:07Z",
+   "state": "done",
+   "validation": {
+    "done": true,
+    "expected": 108,
+    "markers": 108,
+    "problems": [],
+    "test_count": 1000,
+    "valid": 108
+   },
+   "vibe_rev": "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
+  }
+ ],
+ "measurement_containers": [
+  "ta-01M5PATPDV47G640F4XD2E0RPR"
+ ],
+ "purpose": "artifact hashing only; no benchmark rerun",
+ "query_threads": 1,
+ "raw_hashes": "/vol/vibe/run-s-20261023/artifacts/yi-128-ip@12c80decb094/raw-results.sha256.json",
+ "raw_hdf5_bytes": 233914096,
+ "raw_hdf5_files": 10,
+ "started": "2026-10-24T09:01:57Z"
+}

@@ -1,0 +1,5 @@
+   Compiling pyo3-ffi v0.30.1
+   Compiling pyo3 v0.30.1
+   Compiling numpy v0.30.0
+   Compiling holographic-memory v0.6.1 (/Volumes/A/holographic-memory)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 33.29s

@@ -3,7 +3,7 @@
 `hms-import` copies memories from another vector store or memory system into an `hms-server`. It streams, resumes from a checkpoint, is idempotent, and ends with a fidelity report so nothing is lost silently.
 
 ```sh
-pip install 'holographic-sdk[import-chroma]'          # one extra per source, see the table
+uv add 'holographic-memory-sdk[import-chroma]'          # one extra per source, see the table
 export HMS_API_KEY=...                                  # destination credential (env, never logged)
 hms-import chroma --path ./chroma-db --hms-url http://127.0.0.1:8080 --tenant acme \
   --report migration.json                               # dry run first: add --dry-run

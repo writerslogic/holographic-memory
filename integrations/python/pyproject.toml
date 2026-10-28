@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "WritersLogic", email = "david@writerslogic.com" }]
-dependencies = ["holographic-sdk>=0.1.2", "httpx>=0.27"]
+dependencies = ["holographic-memory-sdk>=0.1.3", "httpx>=0.27"]
 
 # Framework dependency trees conflict: install exactly one framework extra per environment.
 # Lower bounds are the versions the adapters were tested against (docs/integrations/frameworks/MATRIX.md).
@@ -57,7 +57,7 @@ conflicts = [
 ]
 
 [tool.uv.sources]
-holographic-sdk = { path = "../../bindings/python/holographic-sdk" }
+holographic-memory-sdk = { path = "../../bindings/python/holographic-sdk" }
 
 [build-system]
 requires = ["hatchling"]

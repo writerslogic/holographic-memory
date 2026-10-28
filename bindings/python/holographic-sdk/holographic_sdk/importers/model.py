@@ -16,7 +16,7 @@ class MissingDependency(ImporterError):
     """An optional client library for a source is not installed."""
 
     def __init__(self, source: str, package: str, extra: Optional[str] = None):
-        hint = f"pip install 'holographic-sdk[{extra}]'" if extra else f"pip install {package}"
+        hint = f"uv add 'holographic-memory-sdk[{extra}]'" if extra else f"uv add {package}"
         super().__init__(f"source '{source}' needs the '{package}' package ({hint})")
 
 

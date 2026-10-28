@@ -89,6 +89,7 @@ pub struct ProvenanceConfig {
     pub enabled: bool,
     pub key_path: Option<String>,
     pub auto_sign: bool,
+    pub status_list_url: Option<String>,
     #[cfg(feature = "provenance-scitt")]
     pub scitt_endpoint: Option<String>,
 }

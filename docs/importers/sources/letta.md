@@ -5,7 +5,7 @@ LETTA_API_KEY=... hms-import letta --hms-url http://127.0.0.1:8080 --embedder my
 hms-import letta --base-url http://localhost:8283 --kinds passages,blocks,messages --agent-id agent-1234
 ```
 
-Requires `pip install 'holographic-sdk[import-letta]'`. Credentials: `LETTA_API_KEY` (optional for an unauthenticated
+Requires `uv add 'holographic-memory-sdk[import-letta]'`. Credentials: `LETTA_API_KEY` (optional for an unauthenticated
 self-hosted server). Without `--base-url` the SDK default (Letta Cloud) is used.
 
 The importer uses the real `letta_client.Letta` SDK. Agents come from `GET /v1/agents/` (or `--agent-id`,

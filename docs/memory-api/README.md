@@ -61,7 +61,7 @@ await memory.recall('where does Alice live')                       // Berlin
 await memory.recall('where does Alice live', { asOf: new Date('2021-06-01') })   // Paris
 ```
 
-Python (`holographic-sdk`, against `hms-server`):
+Python (`holographic-memory-sdk`, against `hms-server`):
 
 ```python
 from holographic_sdk import HolographicClient
