@@ -1,8 +1,9 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use anyhow::{ensure, Result};
+use anyhow::{ensure, Context, Result};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::BTreeSet;
 
 use super::packed_terms::WordId;
@@ -146,7 +147,18 @@ impl LexicalQuery {
 
 /// The clause's occurrences in `chunk`: a word's frequency, or a phrase's when `exact`,
 /// otherwise 1 at its first occurrence. `ids` holds one cache per phrase word and form.
+#[cfg(test)]
 fn frequency(clause: &Clause, chunk: &StoredChunk, exact: bool, ids: &mut [Vec<WordId>; 2]) -> u32 {
+    frequency_with_positions(clause, chunk, exact, ids, chunk.terms.positions.as_deref())
+}
+
+fn frequency_with_positions(
+    clause: &Clause,
+    chunk: &StoredChunk,
+    exact: bool,
+    ids: &mut [Vec<WordId>; 2],
+    positions: Option<&super::positions::Positions>,
+) -> u32 {
     let form = usize::from(chunk.stemmed);
     let words = &clause.words[form];
     if !clause.phrase {
@@ -176,11 +188,7 @@ fn frequency(clause: &Clause, chunk: &StoredChunk, exact: bool, ids: &mut [Vec<W
         }
         indices.push(index);
     }
-    let positions = chunk
-        .terms
-        .positions
-        .as_ref()
-        .expect("phrase capability checked");
+    let positions = positions.expect("phrase capability checked");
     let mut cursors: Vec<_> = indices
         .iter()
         .map(|&i| positions.iter(i).peekable())
@@ -207,6 +215,24 @@ fn frequency(clause: &Clause, chunk: &StoredChunk, exact: bool, ids: &mut [Vec<W
     count
 }
 
+fn positions_for_chunk<'a>(
+    store: &DocumentStore,
+    chunk: &'a StoredChunk,
+) -> Result<Cow<'a, super::positions::Positions>> {
+    match chunk.terms.positions.as_deref() {
+        Some(positions) => Ok(Cow::Borrowed(positions)),
+        None => {
+            let text = store.chunk_text(chunk).context("unsupported index: a candidate phrase needs stored positions or retained chunk text")?;
+            Ok(Cow::Owned(super::positions::Positions::from_text(
+                &text,
+                chunk.stemmed,
+                &chunk.terms,
+                chunk.terms.is_whole_document(),
+            )))
+        }
+    }
+}
+
 /// One dictionary-id cache per word and form of each clause: a dictionary may hold chunks
 /// of both forms, whose words differ.
 fn word_ids(query: &LexicalQuery) -> Vec<[Vec<WordId>; 2]> {
@@ -224,15 +250,13 @@ fn word_ids(query: &LexicalQuery) -> Vec<[Vec<WordId>; 2]> {
         .collect()
 }
 
-fn prepare(store: &DocumentStore, query: &LexicalQuery, options: &LexicalOptions) -> Result<Bm25> {
+fn prepare(options: &LexicalOptions) -> Result<Bm25> {
     ensure!(options.k <= 1_000_000, "lexical k exceeds 1000000");
     let bm25 = Bm25::from_options(&SearchOptions {
         bm25_k1: Some(options.bm25_k1),
         bm25_b: Some(options.bm25_b),
         ..Default::default()
     })?;
-    ensure!(!query.clauses.iter().any(|c| c.phrase) || store.nonpositional_chunks == 0,
-        "unsupported index: lexical phrase queries require IngestOptions::positions for every live chunk");
     Ok(bm25)
 }
 
@@ -307,7 +331,7 @@ pub(crate) fn execute(
     query: &LexicalQuery,
     options: &LexicalOptions,
 ) -> Result<LexicalResults> {
-    let bm25 = prepare(store, query, options)?;
+    let bm25 = prepare(options)?;
     if options.execution != LexicalExecution::Exhaustive
         && options.k == 0
         && options.count
@@ -359,11 +383,31 @@ fn exhaustive(
     let mut ids = word_ids(query);
     for (id, document) in &store.documents {
         for (chunk_index, chunk) in document.chunks.iter().enumerate() {
+            let possible = query.clauses.iter().any(|clause| {
+                clause.phrase
+                    && clause.words[usize::from(chunk.stemmed)].iter().all(|word| {
+                        chunk
+                            .terms
+                            .get(word)
+                            .is_some_and(|&frequency| frequency > 0)
+                    })
+            });
+            let positions = possible
+                .then(|| positions_for_chunk(store, chunk))
+                .transpose()?;
             let frequencies: Vec<_> = query
                 .clauses
                 .iter()
                 .zip(&mut ids)
-                .map(|(clause, ids)| frequency(clause, chunk, options.k > 0, ids))
+                .map(|(clause, ids)| {
+                    frequency_with_positions(
+                        clause,
+                        chunk,
+                        options.k > 0,
+                        ids,
+                        positions.as_deref(),
+                    )
+                })
                 .collect();
             if !matches(query, &frequencies) {
                 continue;

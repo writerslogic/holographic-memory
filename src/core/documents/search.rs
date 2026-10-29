@@ -218,7 +218,7 @@ pub(crate) fn capture_search(
 }
 
 fn capture_query(store: &DocumentStore, prepared: PreparedSearch) -> CapturedQuery {
-    if prepared.unfiltered && prepared.semantic_weight > 0.0 && store.dense_index_trained() {
+    if prepared.semantic_weight > 0.0 && store.dense_index_trained() {
         if let Some(index) = store.dense_index.as_ref().filter(|index| {
             prepared
                 .embedding
@@ -748,40 +748,118 @@ fn capture_indexed_query(
     prepared: PreparedSearch,
     dense: Arc<DenseIndex>,
 ) -> CapturedQuery {
-    let mut chunks = Vec::new();
-    let mut positions = SlotPositions::new(store.slot_count);
-    let dfs = std::array::from_fn(|form| {
-        prepared.query_terms[form]
+    let (count, words, dfs, ranked) = if prepared.unfiltered {
+        let dfs = std::array::from_fn(|form| {
+            prepared.query_terms[form]
+                .iter()
+                .map(|word| {
+                    (
+                        word.clone(),
+                        store.postings[form].get(word).map_or(0, PostingList::len),
+                    )
+                })
+                .collect()
+        });
+        let ranked = if prepared.lexical_weight > 0.0 {
+            LEXICAL_SCRATCH
+                .with(|scratch| scratch.borrow_mut().rank(store, &prepared))
+                .into_iter()
+                .map(|(score, slot)| (score, slot as usize))
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
+        (store.chunk_count, store.word_count, dfs, ranked)
+    } else {
+        let candidates = store.candidate_ids(&prepared.filters);
+        let documents: Vec<_> = match candidates {
+            Some(ids) => ids.into_iter().map(|id| &store.documents[id]).collect(),
+            None => store.documents.values().collect(),
+        };
+        let documents: Vec<_> = documents
+            .into_iter()
+            .filter(|document| matches_document(document, &prepared.filters))
+            .collect();
+        let count: usize = documents.iter().map(|document| document.chunks.len()).sum();
+        if count < super::dense::MIN_ROWS {
+            return capture_postings(store, prepared);
+        }
+        let words = documents
             .iter()
-            .map(|word| {
-                let source = store.postings[form].get(word);
-                if prepared.lexical_weight > 0.0 {
-                    if let Some(source) = source {
-                        source.for_each(|slot, frequency| {
-                            if frequency > 0 && positions.get(slot).is_none() {
-                                let (document, index) = store.owned_chunk(slot);
-                                let position = chunks.len() as u32;
-                                chunks.push(CapturedChunk {
-                                    document,
-                                    index,
-                                    word_count: store.slot_word_count(slot),
-                                    semantic_cache: None,
-                                });
-                                positions.insert(slot, position);
-                            }
-                        });
+            .flat_map(|document| &document.chunks)
+            .map(|chunk| chunk.word_count)
+            .sum();
+        let dfs: [BTreeMap<String, usize>; 2] = std::array::from_fn(|form| {
+            prepared.query_terms[form]
+                .iter()
+                .map(|word| {
+                    let df = documents
+                        .iter()
+                        .flat_map(|document| &document.chunks)
+                        .filter(|chunk| {
+                            chunk.stemmed == (form == 1) && chunk.terms.contains_key(word)
+                        })
+                        .count();
+                    (word.clone(), df)
+                })
+                .collect()
+        });
+        let mut ranked = Vec::new();
+        if prepared.lexical_weight > 0.0 {
+            let idfs: [Vec<_>; 2] = std::array::from_fn(|form| {
+                dfs[form]
+                    .iter()
+                    .map(|(word, &df)| (word, Bm25::idf(count as f64, df as f64)))
+                    .collect()
+            });
+            let average = (words as f64 / count as f64).max(1.0);
+            let compare = |a: &(f64, usize), b: &(f64, usize)| {
+                b.0.total_cmp(&a.0)
+                    .then_with(|| store.slot_order(a.1).cmp(&store.slot_order(b.1)))
+            };
+            for document in documents {
+                for (&slot, chunk) in store.slots[&document.id].iter().zip(&document.chunks) {
+                    let norm = prepared.bm25.norm(chunk.word_count as f64, average);
+                    let score: f64 = idfs[usize::from(chunk.stemmed)]
+                        .iter()
+                        .map(|(word, idf)| {
+                            prepared.bm25.weight(
+                                *idf,
+                                f64::from(chunk.terms.get(word).copied().unwrap_or(0)),
+                                norm,
+                            )
+                        })
+                        .sum();
+                    if score > 0.0 {
+                        ranked.push((score, slot));
+                        if ranked.len() >= 2 * prepared.limit {
+                            top_ranked(&mut ranked, prepared.limit, compare);
+                        }
                     }
                 }
-                (word.clone(), source.map_or(0, PostingList::len))
-            })
-            .collect()
-    });
+            }
+            top_ranked(&mut ranked, prepared.limit, compare);
+        }
+        (count, words, dfs, ranked)
+    };
+    let chunks = ranked
+        .into_iter()
+        .map(|(_, slot)| {
+            let (document, index) = store.owned_chunk(slot);
+            CapturedChunk {
+                document,
+                index,
+                word_count: store.slot_word_count(slot),
+                semantic_cache: None,
+            }
+        })
+        .collect();
     CapturedQuery {
         prepared,
         chunks,
         postings: Default::default(),
-        count: store.chunk_count,
-        words: store.word_count,
+        count,
+        words,
         use_postings: false,
         dense: Some(dense),
         dfs: Some(dfs),
@@ -856,7 +934,16 @@ fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
             .embedding
             .as_ref()
             .expect("indexed search lost its query embedding");
-        let (hits, _) = index.search(query, captured.prepared.limit, captured.prepared.minimum);
+        let (hits, _) = if captured.prepared.unfiltered {
+            index.search(query, captured.prepared.limit, captured.prepared.minimum)
+        } else {
+            index.search_where(
+                query,
+                captured.prepared.limit,
+                captured.prepared.minimum,
+                |document| matches_document(document, &captured.prepared.filters),
+            )
+        };
         let mut chunks = captured.chunks.clone();
         let mut positions: FastMap<_, _> = captured
             .chunks
@@ -1085,6 +1172,75 @@ mod tests {
     use crate::core::sync::RwLock;
     use serde_json::json;
     use std::sync::Barrier;
+
+    #[test]
+    fn audit_regression_filtered_hybrid_capture_bounds_owners_and_reuses_exact_index() {
+        let mut store = store(512);
+        let trained = super::super::build_dense_index(
+            super::super::capture_dense_index(&store, 3)
+                .unwrap()
+                .unwrap(),
+        )
+        .unwrap()
+        .unwrap();
+        assert!(super::super::publish_dense_index(&mut store, &trained));
+        for filter in [
+            None,
+            Some(json!({"group": 1})),
+            Some(json!({"nested": {"flag": 0}})),
+        ] {
+            for fusion in ["blend", "rrf"] {
+                let options = SearchOptions {
+                    k: Some(7),
+                    candidate_limit: Some(11),
+                    embedding: Some(vec![1.0, 0.0, 0.0]),
+                    filter: filter.clone(),
+                    fusion: Some(fusion.into()),
+                    min_semantic_score: Some(-1.0),
+                    ..Default::default()
+                };
+                let captured = capture_search(
+                    &store,
+                    vec![prepare_search("common rare7 missing", &options, Some(3)).unwrap()],
+                );
+                assert!(captured.queries[0].dense.is_some());
+                assert!(captured.queries[0].chunks.len() <= 11);
+                let expected = super::super::search_impl(
+                    &store,
+                    "common rare7 missing",
+                    &options,
+                    Some(3),
+                    false,
+                )
+                .unwrap();
+                assert_eq!(
+                    serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                    serde_json::to_value(expected).unwrap()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn audit_regression_zero_bm25_saturation_ignores_absent_terms() {
+        let store = store(128);
+        for filter in [None, Some(json!({"group": 1}))] {
+            let options = SearchOptions {
+                k: Some(7),
+                bm25_k1: Some(0.0),
+                filter,
+                source_uri: Some("source1".into()),
+                ..Default::default()
+            };
+            let actual = super::super::search(&store, "common missing", &options, Some(3)).unwrap();
+            let expected = super::super::search(&store, "common", &options, Some(3)).unwrap();
+            assert!(!expected.is_empty());
+            assert_eq!(
+                serde_json::to_value(actual).unwrap(),
+                serde_json::to_value(expected).unwrap()
+            );
+        }
+    }
 
     #[test]
     fn trained_semantic_capture_pins_one_index_and_only_lexical_posting_owners() {

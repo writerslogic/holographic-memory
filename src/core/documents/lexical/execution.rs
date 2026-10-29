@@ -601,7 +601,9 @@ pub(super) fn document_at_a_time(
                     }
                 }
                 if phrases {
-                    let positions = store.slot_positions(slot);
+                    let (document, chunk) = store.borrowed_chunk(slot);
+                    let chunk = &document.chunks[chunk];
+                    let positions = positions_for_chunk(store, chunk)?;
                     // The positions of a phrase are counted only where the count can
                     // change the ranking; otherwise its first occurrence settles the match.
                     let exact = options.k > 0
@@ -638,12 +640,28 @@ pub(super) fn document_at_a_time(
                         .zip(&indices)
                     {
                         if pending.is_some() && needed {
-                            *frequency_value = positional_frequency(
-                                positions,
-                                indices,
-                                &states,
-                                exact && clause.occur != Occur::MustNot,
-                            );
+                            *frequency_value = if chunk.terms.positions.is_some() {
+                                positional_frequency(
+                                    &positions,
+                                    indices,
+                                    &states,
+                                    exact && clause.occur != Occur::MustNot,
+                                )
+                            } else {
+                                let mut ids = std::array::from_fn(|form| {
+                                    clause.words[form]
+                                        .iter()
+                                        .map(|_| WordId::default())
+                                        .collect()
+                                });
+                                frequency_with_positions(
+                                    clause,
+                                    chunk,
+                                    exact && clause.occur != Occur::MustNot,
+                                    &mut ids,
+                                    Some(&positions),
+                                )
+                            };
                         }
                     }
                 }

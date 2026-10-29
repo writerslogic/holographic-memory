@@ -271,7 +271,11 @@ impl Bm25 {
     /// whose length normalization is `norm`.
     #[inline]
     pub(crate) fn weight(self, idf: f64, tf: f64, norm: f64) -> f64 {
-        idf * tf * self.k1_plus_one / (tf + norm)
+        if tf == 0.0 {
+            0.0
+        } else {
+            idf * tf * self.k1_plus_one / (tf + norm)
+        }
     }
 }
 
@@ -607,10 +611,6 @@ pub(crate) fn chunk_spans_with(
     ensure!(
         options.encode == EncodeMode::Lexical && options.positions,
         "whole-document ingest requires lexical encoding and positions"
-    );
-    ensure!(
-        input.embeddings.is_none(),
-        "whole-document lexical ingest does not accept embeddings"
     );
     validate_document_source(input)?;
     ensure!(

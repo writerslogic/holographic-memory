@@ -621,6 +621,7 @@ impl DocumentStore {
         self.word_counts[slot]
     }
 
+    #[cfg(test)]
     pub(super) fn slot_positions(&self, slot: usize) -> &Positions {
         self.position_sources[slot]
             .as_deref()

@@ -395,6 +395,122 @@ fn phrases_require_actual_positions_and_follow_ingest_analyzer() {
 }
 
 #[test]
+fn audit_regression_mixed_phrase_capabilities_preserve_complete_answers() {
+    let mut mixed = DocumentStore::default();
+    let mut positional = DocumentStore::default();
+    for (id, text, positions, retained) in [
+        ("indexed", "running foxes running foxes", true, false),
+        ("retained", "running foxes running foxes", false, true),
+        ("unrelated", "red blue", false, false),
+    ] {
+        let mut document = input(id, text);
+        document.store_text = Some(retained);
+        let prepared = documents::prepare_with_options(
+            document.clone(),
+            64,
+            None,
+            None,
+            TextEncoder::default(),
+            &options(positions, false),
+        )
+        .unwrap();
+        mixed.insert(id.into(), prepared);
+        let prepared = documents::prepare_with_options(
+            document,
+            64,
+            None,
+            None,
+            TextEncoder::default(),
+            &options(true, false),
+        )
+        .unwrap();
+        positional.insert(id.into(), prepared);
+    }
+    for query in ["\"running foxes\"", "+\"run fox\" -red", "red -\"run fox\""] {
+        for execution in [
+            LexicalExecution::Auto,
+            LexicalExecution::DocumentAtATime,
+            LexicalExecution::BlockMaxWand,
+            LexicalExecution::Exhaustive,
+        ] {
+            let options = LexicalOptions {
+                count: true,
+                execution,
+                ..Default::default()
+            };
+            let query = LexicalQuery::parse(query).unwrap();
+            assert_eq!(
+                execute(&mixed, &query, &options).unwrap(),
+                execute(&positional, &query, &options).unwrap()
+            );
+        }
+    }
+    insert(&mut mixed, "unavailable", "running foxes", false, false);
+    for execution in [LexicalExecution::Auto, LexicalExecution::Exhaustive] {
+        assert!(execute(
+            &mixed,
+            &LexicalQuery::parse("\"run fox\"").unwrap(),
+            &LexicalOptions {
+                execution,
+                ..Default::default()
+            }
+        )
+        .is_err());
+    }
+}
+
+#[test]
+fn audit_regression_whole_article_embeddings_compose_with_phrases_and_replay() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().display().to_string();
+    let config = crate::core::engine::fixture_config(2);
+    let core = HmsCore::new(64, Some(path.clone()), Some(config.clone())).unwrap();
+    let mut article = input("article", &format!("{} red blue", "x ".repeat(32769)));
+    article.embeddings = Some(vec![vec![1.0, 0.0]]);
+    article.store_text = Some(true);
+    core.memorize_document_with(
+        article,
+        &IngestOptions {
+            whole_document: true,
+            ..options(true, false)
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        core.count_lexical(&LexicalQuery::parse("\"red blue\"").unwrap())
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        core.search_vectors(
+            &[1.0, 0.0],
+            1,
+            &documents::VectorQueryOptions {
+                mode: documents::VectorIndexMode::Exact,
+                ..Default::default()
+            }
+        )
+        .unwrap()[0]
+            .document_id,
+        "article"
+    );
+    core.compact().unwrap();
+    drop(core);
+    let core = HmsCore::new(64, Some(path), Some(config)).unwrap();
+    assert_eq!(
+        core.count_lexical(&LexicalQuery::parse("\"red blue\"").unwrap())
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        core.search_vectors(&[1.0, 0.0], 1, &documents::VectorQueryOptions::default())
+            .unwrap()[0]
+            .document_id,
+        "article"
+    );
+}
+
+#[test]
 fn live_visibility_chunk_deduplication_and_reopen() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().display().to_string();

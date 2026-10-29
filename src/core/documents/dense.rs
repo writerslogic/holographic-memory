@@ -328,6 +328,16 @@ impl DenseIndex {
         limit: usize,
         minimum: f64,
     ) -> (Vec<DenseHit>, usize) {
+        self.search_where(query, limit, minimum, |_| true)
+    }
+
+    pub(super) fn search_where(
+        &self,
+        query: &[f64],
+        limit: usize,
+        minimum: f64,
+        matches: impl Fn(&StoredDocument) -> bool,
+    ) -> (Vec<DenseHit>, usize) {
         assert_eq!(
             query.len(),
             self.dimensions,
@@ -365,6 +375,9 @@ impl DenseIndex {
                 }
             } else {
                 for (row, point) in self.rows[node.start..node.end].iter().enumerate() {
+                    if !matches(&point.document) {
+                        continue;
+                    }
                     let score = point.stored().cosine(query);
                     dots += 1;
                     if !score.is_finite() || score < minimum {
