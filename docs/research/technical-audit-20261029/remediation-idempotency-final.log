@@ -1,0 +1,11 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.21s
+     Running unittests src/bin/hms-server/main.rs (target/debug/deps/hms_server-f5fbfc99ebfb0100)
+
+running 1 test
+{"detail":"injected post-commit effect failure","event":"committed_effect_failed","level":"error","ts":"2026-10-29T20:13:19.331Z"}
+test request::committed_tests::idempotent_retry_replays_a_committed_failure_without_repeating_work ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.06s
+

@@ -159,17 +159,23 @@ impl ProvenanceManager {
     }
 
     fn reserve_sequences(&self, count: usize) -> Result<u64> {
+        use std::sync::atomic::Ordering::SeqCst;
+
         let count = u64::try_from(count)?;
-        self.logical_clock
-            .fetch_update(
-                std::sync::atomic::Ordering::SeqCst,
-                std::sync::atomic::Ordering::SeqCst,
-                |next| {
-                    next.checked_add(count)
-                        .filter(|end| *end <= status_list::MAX_BYTES as u64 * 8)
-                },
-            )
-            .map_err(|_| anyhow::anyhow!("credential status sequence space is exhausted"))
+        let mut next = self.logical_clock.load(SeqCst);
+        loop {
+            let end = next
+                .checked_add(count)
+                .filter(|end| *end <= status_list::MAX_BYTES as u64 * 8)
+                .ok_or_else(|| anyhow::anyhow!("credential status sequence space is exhausted"))?;
+            match self
+                .logical_clock
+                .compare_exchange_weak(next, end, SeqCst, SeqCst)
+            {
+                Ok(_) => return Ok(next),
+                Err(current) => next = current,
+            }
+        }
     }
 
     #[cfg(feature = "provenance-scitt")]

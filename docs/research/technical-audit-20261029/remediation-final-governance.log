@@ -1,0 +1,21 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 33.50s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-59cf9a6bb4b9f8e4)
+
+running 6 tests
+test core::engine::governance::tests::governance_cas_rejects_a_concurrent_writer_without_publishing_the_plan ... ok
+test core::engine::governance::tests::governance_budget_errors_leave_authoritative_state_unchanged ... ok
+test core::engine::governance::tests::governance_atom_alias_deletion_is_durable_without_deleting_the_raw_vector ... ok
+test core::engine::governance::tests::governance_refinement_rebinds_owned_composites_and_survives_replay_and_compaction ... ok
+test core::engine::governance::tests::governance_transaction_limit_is_atomic_at_4096_operations ... ok
+test core::engine::governance::tests::governance_keeps_distinct_live_triple_owners ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 777 filtered out; finished in 2.36s
+
+     Running unittests src/bin/hms-mcp.rs (target/debug/deps/hms_mcp-df621c28560d5064)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+

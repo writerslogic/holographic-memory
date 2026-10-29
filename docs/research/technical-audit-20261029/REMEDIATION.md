@@ -15,7 +15,7 @@ Baseline: `de4a2fd6` preserves the 14 pre-existing audited storage/service fixes
 | D05, D06, D09, D15, D16, D17; embed limits/downloads | identity / `fix/audit-identity` | Integrated | Monotonic issuance; actual embedding-function fingerprint; strict COSE; typed valid benchmark evidence/clustered uncertainty; correct release SBOM graph. |
 | D07, D08, D10, D12; analytics budgets | retrieval / `fix/audit-retrieval` | Integrated | Canonical exact/scoring oracles; checked allocation/numeric bounds; composed filtered execution; explicit bounded analytics. |
 | D02, D04, D11, D13; typed contracts/effect recovery | coordinator + retrieval/identity isolated branches | Integrated; complete CI gate required | Recoverable restore; revision-conditional policy writes; coherent governance and sidecar outcomes; bounded MCP resources; useful generated API contracts. |
-| R18 native offline workflow validation | coordinator | Rust/HTTP pass; shared Node fixture included in final gate | Native ingest/recall/supersede/forget/restart/source checks using frozen local fixtures; no paid evaluation. |
+| R18 native offline workflow validation | coordinator | Rust/HTTP/Node pass, including restart and quote checks | Native ingest/recall/supersede/forget/restart/source checks using frozen local fixtures; no paid evaluation. |
 | Final integration and main publication | coordinator | Required PR checks and merge record are authoritative | Required default/all-feature lint/tests, MSRV, generated contracts, affected bindings/interop/package checks; resolve PR checks and merge; verify origin/main contains all fixes. |
 
 Shared decisions: model identity keeps the public EmbeddingSpace shape and uses a versioned effective-function fingerprint in revision; changed nominal managed-model stores require explicit reembedding, never relabeling. Memory policy work uses optimistic revision-conditional core commits rather than holding a mutex across policy callbacks or I/O. Resource exhaustion must be explicit; no silently partial results. Agent builds use private worktree target directories.
@@ -51,3 +51,21 @@ Final CI results apply to the integrated PR head; they must pass before publicat
 The native addon build now targets the Rust library rather than also compiling every research
 binary. Committed-effect HTTP failures remain replayable within the idempotency cache's TTL
 and capacity, so a retained key does not repeat an already durable mutation.
+
+## Final integrated local checks and PR
+
+[PR #334](https://github.com/writerslogic/holographic-memory/pull/334) is the authoritative final
+platform/feature/fuzz gate. Fresh integrated local checks pass: governance6, MCP28, native Node9
+(including async/sync governance and shared19-case lifecycle), packed CommonJS/ESM distribution,
+TypeScript, committed-failure replay1 and provenance22 after the atomic compatibility change.
+The complete required PR checks must pass before merge; component artifacts retain the earlier
+scoped source state rather than silently treating partial runs as completed final gates.
+
+First PR validation identified Rust1.99's deprecation of atomic fetch_update and a missing restore
+module in the server fuzz driver. The issuance path uses a checked compare-exchange loop to
+preserve the MSRV; the fuzz harness now compiles the shipped restore module. Six Python static
+review findings were corrected without suppressions;51 focused tests pass.
+
+The complete all-feature gate also retained the existing tenant-directory isolation assertions:
+server ownership files moved to the dedicated `tenant-locks/` control directory rather than
+relaxing those assertions or mixing non-tenant entries into `tenants/`.

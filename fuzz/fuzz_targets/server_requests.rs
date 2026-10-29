@@ -33,6 +33,8 @@ mod middleware;
 mod ops;
 #[path = "../../src/bin/hms-server/request.rs"]
 mod request;
+#[path = "../../src/bin/hms-server/restore.rs"]
+mod restore;
 #[path = "../../src/bin/hms-server/routes.rs"]
 mod routes;
 #[path = "../../src/bin/hms-server/serve.rs"]

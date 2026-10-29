@@ -28,6 +28,9 @@ pub struct Restore {
 }
 
 pub fn lock_tenant(root: &Path, name: &str) -> Result<File> {
+    let locks = root.join("tenant-locks");
+    std::fs::create_dir_all(&locks)?;
+    ensure!(directory(&locks)?, "missing tenant ownership directory");
     let mut options = OpenOptions::new();
     options.read(true).write(true).create(true).truncate(false);
     #[cfg(unix)]
@@ -35,7 +38,7 @@ pub fn lock_tenant(root: &Path, name: &str) -> Result<File> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600).custom_flags(libc::O_NOFOLLOW);
     }
-    let file = options.open(root.join(format!(".{name}.owner")))?;
+    let file = options.open(locks.join(format!("{name}.owner")))?;
     file.try_lock()
         .context("tenant is owned by another server")?;
     Ok(file)

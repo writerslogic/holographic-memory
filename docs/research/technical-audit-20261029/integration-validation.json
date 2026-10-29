@@ -48,19 +48,58 @@
       "version": "1.89",
       "command": "cargo +1.89 check --locked --offline --no-default-features",
       "log": "remediation-msrv.log"
+    },
+    "governance_final": {
+      "passed": 6,
+      "log": "remediation-final-governance.log"
+    },
+    "mcp_final": {
+      "passed": 28,
+      "log": "remediation-mcp-final.log"
+    },
+    "node_final": {
+      "passed": 9,
+      "skipped": 0,
+      "includes": [
+        "19-case shared lifecycle through3processes",
+        "async governance and sync compatibility across compaction/restart"
+      ],
+      "log": "remediation-node-tests.log"
+    },
+    "node_package": {
+      "passed": true,
+      "coverage": [
+        "packed CommonJS",
+        "ESM",
+        "native binding",
+        "document API"
+      ],
+      "log": "remediation-node-package.log"
+    },
+    "committed_failure_replay": {
+      "passed": 1,
+      "log": "remediation-idempotency-final.log"
+    },
+    "provenance_after_atomic_compatibility_fix": {
+      "passed": 22,
+      "log": "remediation-issuance-final.log"
+    },
+    "python_static_review": {
+      "passed": 51,
+      "source_commit": "457df8cb",
+      "scope": "4 owned files; explicit side effects and fail-closed capability branch"
     }
   },
   "pending_integration": [
-    "final default/all-features tests and clippy",
-    "full format/upgrade/layout gates after schema 5",
-    "expanded MCP 27-case suite",
-    "Node rebuild/generated declarations/public API/package checks including governanceAsync and lifecycle",
-    "committed-failure replay regression after harness authentication fix"
+    "final PR default/all-features tests and clippy on latest stable, including Rust1.99 deprecation fix",
+    "full format/upgrade/layout gate after schema5",
+    "server fuzz driver after adding restore module"
   ],
   "limits": [
     "Completed local runs pin their own preceding source; authoritative final PR checks must verify the integrated head.",
-    "No paid API/cloud jobs, downloaded model weights or held-out live benchmark.",
+    "No paid API/cloud benchmark or evaluation was run. Local audit/implementation runs downloaded no model weights; existing free CI packaging workflows have their own published-artifact inputs.",
     "Historical audit score is retained, not a post-fix measurement.",
     "Timing is descriptive execution evidence; no performance superiority claim."
-  ]
+  ],
+  "pr": "https://github.com/writerslogic/holographic-memory/pull/334"
 }

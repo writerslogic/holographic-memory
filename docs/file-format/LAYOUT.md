@@ -23,8 +23,12 @@ A store is one directory. The engine creates it on first open.
   audit.bin  hms_signing.key  hms_provenance.key  provenance_log.jsonl* kel.json  (ANCILLARY.md)
 ```
 
-Server data directory: `<data-dir>/tenants/<hex(utf8 tenant name)>/` is one store per tenant;
-nothing else in `<data-dir>` is read as store data. `hms-format verify <data-dir>` checks each.
+Server data directory: `<data-dir>/tenants/<hex(utf8 tenant name)>/` is one store per tenant.
+`hms-format verify <data-dir>` checks each store.
+Server ownership files live separately at `<data-dir>/tenant-locks/<hex>.owner`. Their lifetime
+advisory locks survive a live-store rename; they are control metadata, not store data. The
+`tenants/` namespace contains only tenant directories.
+Other server control metadata in `<data-dir>` is not read as store data.
 
 A snapshot is a copy of the whole directory taken while no engine holds the lock;
 `hms-admin migrate` makes a verified copy (lock file left out). There is no other snapshot

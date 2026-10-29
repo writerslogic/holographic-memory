@@ -473,7 +473,7 @@ impl AppState {
             dir.starts_with(&root) && dir.parent() == Some(root.as_path()),
             "tenant directory escapes the tenants root"
         );
-        let ownership = crate::restore::lock_tenant(&root, &tenant_hex(name))?;
+        let ownership = crate::restore::lock_tenant(&self.cfg.data_dir, &tenant_hex(name))?;
         crate::restore::recover(&dir, &self.snapshot_root(name), &self.staging_root())?;
         std::fs::create_dir_all(&dir)?;
         let core = self.open_core(&dir)?;

@@ -1,0 +1,31 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.08s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-59cf9a6bb4b9f8e4)
+
+running 22 tests
+test core::provenance::tests::audit_sequence_reservation_fails_without_wrapping ... ok
+test core::provenance::tests::cawg_untrusted_issuer_rejected ... ok
+test core::provenance::tests::full_fact_provenance_flow ... ok
+test core::provenance::tests::batch_provenance_merkle ... ok
+test core::provenance::tests::failed_revocation_write_leaves_the_credential_live ... ok
+test core::provenance::tests::credential_revocation ... ok
+test core::provenance::tests::batch_log_chains_and_reloads ... ok
+test core::provenance::tests::failed_log_append_leaves_head_and_records_unchanged ... ok
+test core::provenance::tests::full_triple_provenance_flow ... ok
+test core::provenance::tests::revocation_survives_reopen ... ok
+test core::provenance::tests::store_manifest_flow ... ok
+test core::provenance::tests::unreadable_provenance_state_fails_to_open ... ok
+test core::provenance::tests::key_rotation_preserves_old_records ... ok
+test core::provenance::tests::unallocatable_status_index_is_an_error ... ok
+test core::provenance::tests::standalone_verify_without_manager ... ok
+test core::provenance::tests::records_persist_to_disk ... ok
+test core::provenance::tests::audit_deleted_issuances_never_reuse_a_status_slot_after_reopen ... ok
+test core::provenance::tests::tampered_log_detected ... ok
+test core::provenance::tests::untrusted_key_rejected ... ok
+test core::provenance::tests::vc_only_record_requires_trust ... ok
+test core::provenance::tests::merkle_proofs_match_per_leaf_rebuild ... ok
+test core::provenance::tests::concurrent_revocations_all_persist ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 761 filtered out; finished in 2.37s
+

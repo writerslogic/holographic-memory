@@ -1,0 +1,37 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.49s
+     Running unittests src/bin/hms-mcp.rs (target/debug/deps/hms_mcp-df621c28560d5064)
+
+running 28 tests
+test memory::tests::preview_cuts_on_a_character_boundary ... ok
+test namespace_tests::project_namespace_keeps_existing_hash_suffix ... ok
+test memory::tests::search_list_and_forget_bounds ... ok
+test memory::tests::text_limit_is_inclusive ... ok
+test memory::tests::remember_bounds ... ok
+test server::tests::cancelled_request_keeps_work_slot_until_worker_finishes ... ok
+test session::tests::serialized_byte_limits_are_enforced_before_retaining_messages ... ok
+test http_server::tests::shutdown_cancels_a_request_waiting_for_its_body ... ok
+test session::tests::cancelled_initialization_reclaims_session_capacity ... ok
+test session::tests::concurrent_request_streams_keep_response_association_and_quota_is_exact ... ok
+test http_server::tests::real_http_session_capacity_and_delete_reclaim_the_slot ... ok
+test server::tests::queue_is_bounded_times_out_and_releases_cancelled_waiters ... ok
+test session::tests::session_capacity_idle_expiry_and_transport_drop_remove_both_maps ... ok
+test http_server::tests::slow_headers_and_connection_overflow_are_bounded ... ok
+test http_server::tests::http_admission_lives_through_streaming_and_shutdown_closes_streams ... ok
+test http_server::tests::response_byte_boundaries_and_slow_request_bodies_use_real_http ... ok
+test tools::tests::definitions_follow_exposure_and_namespace_argument ... ok
+test tools::tests::exposure_defaults_read_only_and_unknown_names ... ok
+test tools::tests::namespace_resolution_is_strict ... ok
+test store::tests::compare_and_set_and_create_only ... ok
+test store::tests::data_survives_reopen ... ok
+test store::tests::forget_by_ids_and_prefix_and_search_by_tag ... ok
+test store::tests::replace_keeps_created_at_and_changes_version ... ok
+test store::tests::list_pages_by_prefix_and_tag_without_gaps ... ok
+test store::tests::opening_a_namespace_does_not_block_an_existing_store ... ok
+test store::tests::text_round_trips_exactly_including_whitespace_and_blank ... ok
+test store::tests::concurrent_namespace_open_has_one_initializer_and_failure_is_retryable ... ok
+test store::tests::locked_store_and_store_cap_are_structured_errors ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+
