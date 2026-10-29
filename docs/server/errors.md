@@ -78,6 +78,9 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 Inspect the resulting state and reopen or reconcile it before retrying. A failure with this
 code does not mean that nothing was written. Use stable IDs and the idempotency key when
 retrying a logical operation.
+Unlike transient server errors, this response remains in the idempotency cache. The same
+key replays it without repeating the durable mutation; reconcile the state before starting
+a deliberate new attempt.
 
 ### not_implemented
 501. Reserved for operations a build does not provide.

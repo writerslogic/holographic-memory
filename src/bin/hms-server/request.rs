@@ -232,3 +232,56 @@ pub async fn json_write(
     .await?;
     Ok(json_response(result.0, &result.1))
 }
+
+#[cfg(test)]
+mod committed_tests {
+    use super::*;
+    use axum::body::Body;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[tokio::test]
+    async fn idempotent_retry_replays_a_committed_failure_without_repeating_work() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(dir.path(), 2, &[]);
+        let executions = Arc::new(AtomicUsize::new(0));
+        for attempt in 0..2 {
+            let request = Request::builder()
+                .method("POST")
+                .uri("/api/v1/documents")
+                .header("Authorization", "Bearer test-key")
+                .header("Idempotency-Key", "committed-failure")
+                .body(Body::from("{}"))
+                .unwrap();
+            let count = executions.clone();
+            let result = json_write(
+                state.clone(),
+                request,
+                Scope::Write,
+                move |state, tenant, _| {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    let input = serde_json::from_value(
+                        serde_json::json!({"id":"durable", "text":"committed once"}),
+                    )
+                    .unwrap();
+                    state
+                        .core(tenant)?
+                        .memorize_document(input)
+                        .map_err(ApiError::from_core)?;
+                    Err(ApiError::committed(anyhow::anyhow!(
+                        "injected post-commit effect failure"
+                    )))
+                },
+            )
+            .await;
+            if attempt == 0 {
+                assert_eq!(result.unwrap_err().code, "mutation_committed");
+            } else {
+                let response = result.unwrap();
+                assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+                assert_eq!(response.headers()["idempotent-replayed"], "true");
+            }
+        }
+        assert_eq!(executions.load(Ordering::SeqCst), 1);
+        assert!(state.core("default").unwrap().has_document("durable"));
+    }
+}

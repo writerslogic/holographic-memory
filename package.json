@@ -58,9 +58,9 @@
     ]
   },
   "scripts": {
-    "build": "napi build --release --features node-api,security",
-    "build:debug": "napi build --features node-api,security",
-    "build:platform": "napi build --platform --no-js --release --features node-api,security",
+    "build": "node scripts/build-node.cjs --release --features node-api,security",
+    "build:debug": "node scripts/build-node.cjs --features node-api,security",
+    "build:platform": "node scripts/build-node.cjs --platform --no-js --release --features node-api,security",
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version",

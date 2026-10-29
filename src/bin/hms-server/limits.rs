@@ -229,12 +229,18 @@ pub struct IdempotencyGuard {
 }
 
 impl IdempotencyGuard {
-    /// Record the outcome. Server-side failures and shed load are not recorded, so a retry runs.
+    /// Record the outcome. A durable mutation's incomplete effects remain replayable;
+    /// other server failures and shed load allow another attempt.
     pub fn complete(mut self, response: &StoredResponse) {
         self.done = true;
         let mut inner = self.inner.lock();
-        let retryable =
-            response.status.is_server_error() || matches!(response.status.as_u16(), 408 | 429);
+        let committed = response
+            .body
+            .get("code")
+            .and_then(serde_json::Value::as_str)
+            == Some("mutation_committed");
+        let retryable = !committed
+            && (response.status.is_server_error() || matches!(response.status.as_u16(), 408 | 429));
         if retryable {
             inner.records.remove(&self.key);
         } else if let Some(record) = inner.records.get_mut(&self.key) {
