@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Runtime.InteropServices;
+using System.Collections;
 using System.Text;
 using WritersLogic.HolographicMemory;
 using Xunit;
@@ -208,6 +209,58 @@ public sealed class StoreTests : IDisposable
         var hits = store.Search("", new SearchOptions { Embedding = new double[] { 0, 1, 0, 0 }, SemanticWeight = 1.0 });
         Assert.Equal("b", hits[0].DocumentId);
         Assert.NotNull(hits[0].SemanticScore);
+    }
+
+    [Theory]
+    [InlineData((1 << 24) - 1)]
+    [InlineData(1 << 24)]
+    public void NativeAllocationSizingPreservesTheArrayLimit(int count)
+    {
+        Assert.Equal(checked((nuint)count * 120), Store.NativeArrayBytes(count, 120, "documents"));
+        Assert.Equal(checked((nuint)count * 8), Store.NativeMatrixBytes(1, count, 8, "embeddings"));
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData((1 << 24) + 1)]
+    [InlineData(1 << 29)]
+    public void NativeAllocationSizingRejectsInvalidLengths(int count)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Store.NativeArrayBytes(count, 120, "documents"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Store.NativeMatrixBytes(count, 1, 8, "embeddings"));
+    }
+
+    [Fact]
+    public void NativeAllocationSizingRejectsProductOverflow()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Store.NativeMatrixBytes(65536, 257, 8, "embeddings"));
+        Assert.Throws<OverflowException>(() => Store.NativeArrayBytes(2, nuint.MaxValue, "documents"));
+    }
+
+    [Theory]
+    [InlineData((1 << 24) + 1)]
+    [InlineData(1 << 29)]
+    public void OversizedCallerCollectionsAreRejectedBeforeReadingElements(int count)
+    {
+        using var store = Store.Open(Dir("limits-" + count), 2048);
+        Assert.Throws<ArgumentOutOfRangeException>(() => store.Ingest(new LengthOnlyList<Document>(count)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => store.Search("x", new SearchOptions
+        {
+            DocumentIds = new LengthOnlyList<string>(count),
+        }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => store.Ingest(new Document("bad", "valid text")
+        {
+            Embeddings = new LengthOnlyList<double[]>(count),
+        }));
+        Assert.Empty(store.Search("valid text"));
+    }
+
+    private sealed class LengthOnlyList<T>(int count) : IReadOnlyList<T>
+    {
+        public int Count => count;
+        public T this[int index] => throw new InvalidOperationException("elements must not be read before validating the length");
+        public IEnumerator<T> GetEnumerator() => throw new InvalidOperationException();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     [Fact]
