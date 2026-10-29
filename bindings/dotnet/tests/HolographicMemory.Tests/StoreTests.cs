@@ -10,16 +10,14 @@ namespace HolographicMemory.Tests;
 
 public sealed class StoreTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "hms-dotnet-" + Guid.NewGuid().ToString("N"));
-
-    public StoreTests() => Directory.CreateDirectory(_root);
+    private readonly string _root = Directory.CreateTempSubdirectory("hms-dotnet-").FullName;
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, true); } catch (IOException) { }
+        Directory.Delete(_root, true);
     }
 
-    private string Dir(string name) => Path.Combine(_root, name);
+    private string Dir(string name) => Path.Join(_root, name);
 
     private static void Seed(Store store)
     {
@@ -142,9 +140,9 @@ public sealed class StoreTests : IDisposable
             Assert.True(store.SecurityStatus().EncryptionActive);
             store.Ingest(new Document("secret", "the launch code is swordfish unicorn"));
         }
-        foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+        foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories)
+            .Where(file => Path.GetFileName(file) != "documents.text")) // engine gap, see docs/runtimes/c
         {
-            if (Path.GetFileName(f) == "documents.text") continue; // engine gap, see docs/runtimes/c
             Assert.False(FileContains(f, "swordfish"u8.ToArray()), "plaintext in " + f);
         }
         var wrong = Assert.Throws<HmsException>(() => Store.Open(dir, 2048, new OpenOptions { EncryptionKey = "wrong" }));
@@ -180,7 +178,7 @@ public sealed class StoreTests : IDisposable
             store.Snapshot(snap);
             Assert.Equal(HmsStatus.InvalidArgument, Assert.Throws<HmsException>(() => store.Snapshot(snap)).Status);
             Assert.Equal(HmsStatus.InvalidArgument,
-                Assert.Throws<HmsException>(() => store.Snapshot(Path.Combine(Dir("src"), "inside"))).Status);
+                Assert.Throws<HmsException>(() => store.Snapshot(Path.Join(Dir("src"), "inside"))).Status);
         }
         using var copy = Store.Open(snap, 2048);
         Assert.Equal("rust", copy.Search("memory safety programming language")[0].DocumentId);

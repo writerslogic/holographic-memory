@@ -29,7 +29,7 @@ jobs:
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
           args: >-
-            --config .lychee.toml --no-progress --max-retries 5 --retry-wait-time 10
+            --config .lychee.toml --scheme http --scheme https --no-progress --max-retries 5 --retry-wait-time 10
             README.md CONTRIBUTING.md 'docs/**/*.md'
           output: lychee-report.md
           fail: false

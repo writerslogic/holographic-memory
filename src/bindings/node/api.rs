@@ -100,6 +100,40 @@ impl HolographicMemorySystem {
         run_async(move || core.delete_document(&id)).await
     }
 
+    /// One page of stored documents in id order, without their text. Pass the last id of the
+    /// previous page as `after` to continue; `limit` is 1..=1000 (default 100).
+    #[napi]
+    pub async fn list_documents(
+        &self,
+        after: Option<String>,
+        limit: Option<f64>,
+    ) -> Result<Vec<ListedDocument>> {
+        // An f64 so that a value outside u32 or a fraction is rejected, not wrapped or truncated.
+        let limit = limit.unwrap_or(100.0);
+        let core = self.core.clone();
+        run_async(move || {
+            anyhow::ensure!(
+                limit.fract() == 0.0 && (1.0..=1000.0).contains(&limit),
+                "limit must be an integer in 1..=1000"
+            );
+            let limit = limit as usize;
+            // Document ids cannot contain NUL, so `id + NUL` is the first key after `id`.
+            let from = after.map(|id| format!("{id}\0"));
+            Ok(core
+                .list_documents(from.as_deref(), limit)
+                .into_iter()
+                .map(|record| ListedDocument {
+                    id: record.id,
+                    version: record.version,
+                    source_uri: record.source_uri,
+                    metadata: record.metadata,
+                    chunk_count: record.chunk_count as u32,
+                })
+                .collect())
+        })
+        .await
+    }
+
     #[napi]
     // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
     pub fn security_status(&self) -> serde_json::Value {

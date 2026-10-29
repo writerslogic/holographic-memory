@@ -24,6 +24,10 @@
 
 - **System boundary**: Vector APIs retain representations; document APIs retain source passages by default, plus terms, metadata, source identifiers, and optional dense embeddings. Lossy encoding does not prevent inference.
 - **Storage boundary**: Arena payloads and index files can be encrypted. Schema metadata, filesystem structure, audit/provenance sidecars, and signing keys have separate policies; encryption does not conceal every file or access pattern.
+- **Document text cache**: `documents.text` currently retains plaintext source passages even
+  when store encryption is enabled. The binding tests explicitly exclude this file from
+  ciphertext checks. Do not treat the encryption option as complete document confidentiality
+  on disk; restrict filesystem access and use encrypted storage where that is required.
 - **N-API boundary**: Node.js callers interact via typed N-API bindings. Input validation occurs at the Rust boundary (ID length checks, dimension bounds, passphrase presence).
 
 ## Cryptographic Choices
@@ -53,7 +57,8 @@
 ## Limitations
 
 1. **No key rotation**: Changing the signing key invalidates verification of prior audit entries. Key rotation requires a re-signing migration (not yet implemented).
-2. **No access control**: HMS has no user/role model. Access control must be enforced by the calling application.
+2. **Library access control**: The embedded library has no user/role model; its caller
+   controls access. The separate HTTP server supports [scoped keys and tenant isolation](server/auth.md).
 3. **Passphrase in config**: The encryption passphrase is passed via `SecurityConfig`. The calling application is responsible for secure passphrase management (environment variables, secret managers).
 4. **CRC32 is not cryptographic**: Without the `security` feature, arena integrity relies on CRC32, which detects accidental corruption but not adversarial tampering.
 5. **No forward secrecy or externally anchored history**: A compromised signing key can forge entries. Per-entry signatures do not detect deletion, truncation, or reordering of otherwise valid records without an independently retained history.

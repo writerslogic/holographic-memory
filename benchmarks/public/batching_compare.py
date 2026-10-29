@@ -3,6 +3,7 @@
 Compares two lme-model outputs. facts: raw LLM strings (identical text, parsed fact lists);
 embed: little-endian f32 rows (cosine); rerank: p(yes) lists (abs diff)."""
 import json
+from pathlib import Path
 import re
 import struct
 import sys
@@ -28,7 +29,7 @@ def norm(s):
 if __name__ == "__main__":
     kind, a, b = sys.argv[1], sys.argv[2], sys.argv[3]
     if kind == "facts":
-        A, B = json.load(open(a)), json.load(open(b))
+        A, B = json.loads(Path(a).read_text(encoding="utf-8")), json.loads(Path(b).read_text(encoding="utf-8"))
         assert len(A) == len(B)
         n = len(A)
         ident = [i for i in range(n) if A[i] == B[i]]
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     elif kind == "embed":
         dim = int(sys.argv[4])
         def rows(p):
-            d = open(p, "rb").read()
+            d = Path(p).read_bytes()
             v = struct.unpack(f"<{len(d)//4}f", d)
             return [v[i:i+dim] for i in range(0, len(v), dim)]
         A, B = rows(a), rows(b)
@@ -61,6 +62,6 @@ if __name__ == "__main__":
             "max_abs_diff": max(abs(p-q) for x, y in zip(A, B) for p, q in zip(x, y)),
             "nan": sum(any(math.isnan(p) for p in x) for x in B)}))
     else:
-        A, B = json.load(open(a)), json.load(open(b))
+        A, B = json.loads(Path(a).read_text(encoding="utf-8")), json.loads(Path(b).read_text(encoding="utf-8"))
         d = [abs(x-y) for x, y in zip(A, B)]
         print(json.dumps({"items": len(A), "max_abs_diff_p_yes": max(d), "mean_abs_diff_p_yes": sum(d)/len(d)}))

@@ -10,10 +10,10 @@
 /node_modules
 package-lock.json
 !interop/w3c/package-lock.json
+!integrations/mcp/tests/package-lock.json
 interop/w3c/node_modules/
 *.node
 !index.js
-index.d.ts
 
 # OS
 .DS_Store
@@ -27,6 +27,10 @@ vectors_data.bin/
 
 # Environment / Private
 .cargo_home/
+.env
+.env.*
+!.env.example
+!.env.sample
 
 # Python
 __pycache__/
@@ -65,3 +69,13 @@ benchmarks/public/*.py.lock
 bindings/embed-models/**/packs/
 .hms-local/
 benchmarks/results/research/ann/*.graph
+
+# Historical benchmark inputs are restored locally from benchmarks/evidence/retired-inputs.json.
+/benchmarks/results/metal_sdpa_draft_2026-10-09/isolated/
+/benchmarks/results/metal_sdpa_draft_2026-10-09/dependencies/
+/benchmarks/results/query_aware_graph_v1/sources/
+/benchmarks/results/query_aware_graph_v4/runs/llama/snapshots/
+/benchmarks/results/query_aware_graph_v4/runs/yi/snapshots/
+/benchmarks/results/longmemeval_dev_answers_v1.json
+/benchmarks/results/longmemeval_dev_answers_v3.json
+/benchmarks/results/longmemeval_dev_answers_local30b_v1.json

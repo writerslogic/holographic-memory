@@ -145,15 +145,15 @@ internal static unsafe partial class Native
         var env = Environment.GetEnvironmentVariable("HMS_LIBRARY_PATH");
         if (!string.IsNullOrWhiteSpace(env))
         {
-            var file = Directory.Exists(env) ? System.IO.Path.Combine(env, FileName) : env;
+            var file = Directory.Exists(env) ? System.IO.Path.Join(env, FileName) : env;
             return NativeLibrary.Load(file);
         }
         var rid = RuntimeInformation.RuntimeIdentifier;
         foreach (var candidate in new[]
         {
-            System.IO.Path.Combine(AppContext.BaseDirectory, FileName),
-            System.IO.Path.Combine(AppContext.BaseDirectory, "runtimes", PortableRid(), "native", FileName),
-            System.IO.Path.Combine(AppContext.BaseDirectory, "runtimes", rid, "native", FileName),
+            System.IO.Path.Join(AppContext.BaseDirectory, FileName),
+            System.IO.Path.Join(AppContext.BaseDirectory, "runtimes", PortableRid(), "native", FileName),
+            System.IO.Path.Join(AppContext.BaseDirectory, "runtimes", rid, "native", FileName),
         })
         {
             if (File.Exists(candidate))

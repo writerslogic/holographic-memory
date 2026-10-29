@@ -89,9 +89,11 @@ class LlamaIndexSource(Source):
                 content = meta.pop("_node_content", None)
                 if isinstance(content, str):
                     try:
-                        text = json.loads(content).get("text")
+                        payload = json.loads(content)
                     except ValueError:
-                        pass
+                        text = None
+                    else:
+                        text = payload.get("text") if isinstance(payload, dict) else None
                 yield Record(id=nid, text=text, vector=embeddings.get(nid), metadata=meta, namespace=self.namespace)
                 continue
             node = entry.get("__data__", {})

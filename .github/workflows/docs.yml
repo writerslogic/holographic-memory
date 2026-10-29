@@ -65,7 +65,7 @@ jobs:
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
           args: >-
-            --offline --no-progress --include-fragments --exclude-path _site/dev/404.html
+            --offline --no-progress --include-fragments --index-files index.html --exclude-path _site/dev/404.html
             --exclude-path _site/latest/404.html --exclude '/assets/fonts/' --exclude-path 'api/rust/doc'
             --root-dir ${{ github.workspace }}/_site
             '_site/dev/**/*.html' '_site/latest/**/*.html'

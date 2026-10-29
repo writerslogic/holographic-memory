@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 import asyncio
 import json
 import os
@@ -147,11 +148,9 @@ class LiveServerTests(unittest.TestCase):
                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             try:
                 for _ in range(100):
-                    try:
+                    with suppress(httpx.RequestError):
                         if httpx.get("http://127.0.0.1:18897/readyz", timeout=1).status_code == 200:
                             break
-                    except httpx.RequestError:
-                        pass
                     time.sleep(0.1)
                 else:
                     self.fail("hms-server did not become ready")

@@ -109,7 +109,7 @@ class HnswlibSource(Source):
                     try:
                         found[label] = p.get_items([label])[0]
                     except RuntimeError:
-                        pass
+                        continue
             for j, label in enumerate(chunk):
                 row = i + j
                 extra = side.next(row)

@@ -35,12 +35,12 @@ fn mix(x: u64, k: u64) -> u64 {
     h
 }
 
-/// Unit-phasor vector of `dim` dims in Z_N, deterministic in (id, salt, seed).
-fn phasor(id: u64, salt: u64, seed: u64, n: u32, dim: usize) -> Cx {
+/// Unit-phasor vector of `dim` dims in Z_N, deterministic in (id, domain, seed).
+fn phasor(id: u64, domain: u64, seed: u64, n: u32, dim: usize) -> Cx {
     let mut re = vec![0.0; dim];
     let mut im = vec![0.0; dim];
     for d in 0..dim {
-        let p = (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ salt, seed) % n as u64) as f64;
+        let p = (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ domain, seed) % n as u64) as f64;
         let a = TAU * p / n as f64;
         re[d] = a.cos();
         im[d] = a.sin();

@@ -77,7 +77,17 @@ described in [Contributing](../../CONTRIBUTING.md#set-up), run from this checkou
 node integrations/organizational-knowledge/example/cli.cjs import ./toip-example toip integrations/organizational-knowledge/example/fixtures
 node integrations/organizational-knowledge/example/cli.cjs search ./toip-example toip "quartzmarker"
 node integrations/organizational-knowledge/example/cli.cjs forget ./toip-example toip Zoom zoom-example-project-chat-GMT20260101-100000
+node integrations/organizational-knowledge/example/cli.cjs forget-all ./toip-example toip Zoom
+node integrations/organizational-knowledge/example/cli.cjs prune ./toip-example toip Zoom /absolute/path/to/data/curated
 ```
+
+`forget-all` removes one source system's documents, or the whole namespace with
+`--all`; `prune` keeps the source system's documents found in the given files and
+removes the rest. Both preview unless `--apply` is given, and a run handles at
+most `--limit` documents (10,000 by default). They list the store through
+`listDocuments`, which a binding built before it was added lacks; rebuild with
+`npm run build`. A prune is only as complete as the files it is given. The Rust
+example forgets one document at a time.
 
 The CLI is lexical by default. From CommonJS in the checkout, import the adapter
 with `require('./integrations/organizational-knowledge/index.cjs')`; it is not
@@ -87,8 +97,9 @@ space. The Rust and JavaScript examples use the same identity tuple, dimensions,
 and default store configuration, so they can open one store sequentially.
 JavaScript validates the entire input set before writing, reports committed IDs
 on a partial failure, and supports file or directory input. The entire import is
-not one transaction. JavaScript checks the engine's chunk limits after opening
-the store and before its first write. Its file reader accepts up to 16 MiB of
+not one transaction. The JavaScript library checks the engine's chunk limits on
+the open store before its first write; its CLI checks them on a throwaway store
+first, so rejected input does not create yours. Its file reader accepts up to 16 MiB of
 JSON per file and 512 MiB in total; the Rust file reader accepts 8 MiB per file.
 Both enforce the engine's content and chunk limits. JavaScript also rejects
 `__proto__` metadata keys and represents numbers as IEEE doubles; large integer

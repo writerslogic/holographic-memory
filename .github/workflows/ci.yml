@@ -55,6 +55,8 @@ jobs:
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - name: Clippy, default features
         run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Generated TypeScript and JSON schemas
+        run: bash scripts/check-generated.sh
 
   features:
     name: clippy (${{ matrix.features }})
@@ -273,6 +275,8 @@ jobs:
           node-version: "22"
       - run: npm ci --ignore-scripts
       - run: npm run build
+      - name: Check generated TypeScript declarations
+        run: git diff --exit-code -- index.d.ts
       - name: Test public APIs
         run: npm test
       - name: Test TypeScript declarations

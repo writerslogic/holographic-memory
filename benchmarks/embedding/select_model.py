@@ -22,7 +22,6 @@ import argparse
 import hashlib
 import json
 import math
-import sys
 import time
 import urllib.request
 from pathlib import Path
@@ -210,4 +209,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

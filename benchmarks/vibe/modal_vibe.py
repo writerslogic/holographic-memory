@@ -26,6 +26,7 @@ Spend is estimated from container wall time at Modal's published CPU and memory 
 """
 from __future__ import annotations
 
+from contextlib import suppress
 import hashlib
 import json
 import math
@@ -1149,21 +1150,17 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
             rec = remote_json(entry.path)
             ledgers.setdefault(rec["dataset"], {})[rec["job"]] = rec
     standings = {}
-    try:
+    with suppress(FileNotFoundError, modal.exception.NotFoundError):
         for entry in VOL.iterdir(f"{root}/standings", recursive=False):
             if entry.path.endswith(f"@{hms_rev[:12]}.json"):
                 rec = remote_json(entry.path)
                 if rec.get("hms_commit") == hms_rev:
                     standings[rec["dataset"]] = rec
-    except (FileNotFoundError, modal.exception.NotFoundError):
-        pass
     spend_by_container = {}
-    try:
+    with suppress(FileNotFoundError, modal.exception.NotFoundError):
         for entry in VOL.iterdir(f"{root}/spend", recursive=False):
             if entry.path.endswith(".json"):
                 spend_by_container[Path(entry.path).stem] = remote_json(entry.path)
-    except (FileNotFoundError, modal.exception.NotFoundError):
-        pass
     for key, rec in SPEND.items():
         if key.startswith(f"{ns}:"):
             cid = key[len(ns) + 1:]

@@ -141,7 +141,7 @@ const SHAPES: Record<string, string> = {
 
 /** True only for the exact AST shapes, so a metadata field named `type` is not mistaken for one. */
 function isFilter(v: unknown): v is Filter {
-  if (typeof v !== 'object' || v === null) return false
+  if (v === null || typeof v !== 'object') return false
   const t = (v as { type?: unknown }).type
   return typeof t === 'string' && SHAPES[t] === Object.keys(v).sort().join(',')
 }

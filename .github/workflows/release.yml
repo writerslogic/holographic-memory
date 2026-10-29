@@ -384,7 +384,8 @@ jobs:
             [ "$attempt" = 20 ] && { echo "Published npm packages did not all become available" >&2; exit 1; }
             sleep 30
           done
-          npm_config_cache="$RUNNER_TEMP/npm-release-install" npm install --no-audit --no-fund "holographic-memory@${version}"
+          npm_config_cache="$RUNNER_TEMP/npm-release-install" npm install --ignore-scripts --save-exact --no-audit --no-fund "holographic-memory@${version}"
+          npm audit signatures
           node -e "
             const assert = require('node:assert/strict');
             (async () => {

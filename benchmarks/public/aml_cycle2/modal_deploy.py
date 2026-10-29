@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 import os
 import subprocess
 import sys
@@ -68,11 +69,9 @@ def api():
     subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
-        try:
+        with suppress(httpx.RequestError):
             if httpx.get("http://127.0.0.1:8777/readyz", timeout=2).status_code == 200:
                 break
-        except httpx.RequestError:
-            pass
         time.sleep(0.2)
     else:
         raise RuntimeError("hms-server did not become ready")

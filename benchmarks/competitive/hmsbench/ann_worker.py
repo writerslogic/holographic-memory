@@ -565,14 +565,20 @@ class Duckdb(Adapter):
     def build(self, train, params):
         import pyarrow as pa
         con = self._connect()
-        con.execute(f"CREATE TABLE t(id INTEGER, v FLOAT[{self.dim}])")
-        for lo in range(0, len(train), 20000):
-            hi = min(lo + 20000, len(train))
-            vec = pa.FixedSizeListArray.from_arrays(pa.array(train[lo:hi].reshape(-1), type=pa.float32()), self.dim)
-            batch = pa.table({"id": pa.array(np.arange(lo, hi), type=pa.int32()), "v": vec})
-            con.execute("INSERT INTO t SELECT * FROM batch")
-        con.execute(f"CREATE INDEX idx ON t USING HNSW (v) WITH (metric='{'cosine' if self.angular else 'l2sq'}', M={params['M']}, ef_construction={params['ef_construction']})")
-        con.close()
+        try:
+            con.execute(f"CREATE TABLE t(id INTEGER, v FLOAT[{self.dim}])")
+            for lo in range(0, len(train), 20000):
+                hi = min(lo + 20000, len(train))
+                vec = pa.FixedSizeListArray.from_arrays(pa.array(train[lo:hi].reshape(-1), type=pa.float32()), self.dim)
+                batch = pa.table({"id": pa.array(np.arange(lo, hi), type=pa.int32()), "v": vec})
+                con.register("hms_ingest_batch", batch)
+                try:
+                    con.execute("INSERT INTO t SELECT * FROM hms_ingest_batch")
+                finally:
+                    con.unregister("hms_ingest_batch")
+            con.execute(f"CREATE INDEX idx ON t USING HNSW (v) WITH (metric='{'cosine' if self.angular else 'l2sq'}', M={params['M']}, ef_construction={params['ef_construction']})")
+        finally:
+            con.close()
 
     def open(self, params, n):
         self.con = self._connect()
@@ -888,7 +894,6 @@ def run_serve(a, adapter, meta):
 def run_ops(a, adapter, meta):
     count = 100
     n = meta["n_train"]
-    train = normalize(load_rows(Path(a.data) / "train.f32", meta["dim"], meta.get("n_train")), adapter.angular)
     rng = np.random.default_rng(7)
     ids = rng.choice(n, size=2 * count, replace=False)
     replace_ids, delete_ids = ids[:count], ids[count:]

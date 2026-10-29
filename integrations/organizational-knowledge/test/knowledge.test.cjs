@@ -7,7 +7,7 @@ const os = require('node:os')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
 const { HolographicMemorySystem } = require('holographic-memory')
-const { KnowledgeError, OrganizationalKnowledge, documentId, validateImport } = require('../index.cjs')
+const { KnowledgeError, OrganizationalKnowledge, documentId, prepareImport, validateImport } = require('../index.cjs')
 
 const ADAPTER = path.resolve(__dirname, '..')
 const ROOT = path.resolve(ADAPTER, '..', '..')
@@ -331,10 +331,11 @@ function runChild(workdir, store, payload) {
     const { OrganizationalKnowledge } = require(${JSON.stringify(path.join(ADAPTER, 'index.cjs'))});
     (async () => {
       const [store, payloadJson] = process.argv.slice(1);
-      const { docs = [], forget = [] } = JSON.parse(payloadJson);
+      const { docs = [], forget = [], scope } = JSON.parse(payloadJson);
       const knowledge = new OrganizationalKnowledge(new HolographicMemorySystem(${DIMENSIONS}, store), { namespace: 'org' });
       if (docs.length) await knowledge.importDocuments(docs.map(document => ({ document, source: document.id })));
       if (forget.length) await knowledge.forget(forget, { apply: true });
+      if (scope) await knowledge.forgetScope(scope, { apply: true });
       const state = {};
       for (const token of ['persistalpha', 'persistbeta']) {
         const versions = {};
@@ -480,6 +481,22 @@ test('the CLI rejects malformed input before creating the store', async () => {
       assert.equal(fs.existsSync(store), false, `${name}: the store directory must not be created`)
     }
 
+    // The engine's 4096-chunk limit is checked on a throwaway store, which is removed again.
+    const scratchRoot = path.join(workdir, 'tmp')
+    fs.mkdirSync(scratchRoot)
+    fs.writeFileSync(path.join(inputs, 'too-many-chunks.json'), JSON.stringify(curated({ id: 'too-many-chunks', content: words(wordsForChunks(4097)) })))
+    const overLimit = spawnSync(process.execPath, [CLI, 'import', path.join(workdir, 'store'), 'toip', input('too-many-chunks.json')], {
+      cwd: workdir,
+      encoding: 'utf8',
+      timeout: CHILD_TIMEOUT_MS,
+      env: { ...process.env, TMPDIR: scratchRoot },
+    })
+    assert.notEqual(overLimit.status, 0)
+    assert.match(overLimit.stderr, /too-many-chunks\.json/)
+    assert.equal(overLimit.stderr.includes('panic'), false, overLimit.stderr)
+    assert.equal(fs.existsSync(path.join(workdir, 'store')), false, 'an over-limit document must not create the store')
+    assert.deepEqual(fs.readdirSync(scratchRoot), [], 'the throwaway store must be removed')
+
     const store = path.join(workdir, 'store')
     for (const args of [['search', store, ' ', 'query'], ['forget', store, 'toip', 'Zoom', 'id\nx', '--apply']]) {
       assert.notEqual(cli(workdir, ...args).status, 0, args.join(' '))
@@ -520,5 +537,221 @@ test('an embedder supplies chunk vectors, and the per-document embedding bound i
     const check = chunks => validateImport('org', [entry(curated({ content: words(wordsForChunks(chunks)) }), `chunks-${chunks}`)], memory, { embeddingDimensions: 512 })
     await check(2048)
     await rejectsWith(check(2049), 'invalid_document', { source: 'chunks-2049' }, [/exceed 1048576 values/])
+  })
+})
+
+// Fails one engine write on demand; every call still reaches the real store.
+function failingWrites(memory, method) {
+  const state = { failAt: Infinity, calls: 0 }
+  const proxy = new Proxy(memory, {
+    get(target, property) {
+      const value = Reflect.get(target, property, target)
+      if (property !== method) return typeof value === 'function' ? value.bind(target) : value
+      return (...args) => {
+        state.calls += 1
+        if (state.calls === state.failAt) throw new Error('injected write failure')
+        return value.apply(target, args)
+      }
+    },
+  })
+  return { proxy, state }
+}
+
+test('a failed write reports what was committed, and re-running the import completes it', async () => {
+  await withStore(async workdir => {
+    const { proxy, state } = failingWrites(openMemory(workdir), 'memorizeDocument')
+    const knowledge = new OrganizationalKnowledge(proxy, { namespace: 'org' })
+    const entries = ['a', 'b', 'c'].map(id => entry(curated({ id, content: `zebraquartz ${id}word` }), `${id}.json`))
+    state.failAt = 2
+    const failure = await knowledge.importDocuments(entries).then(() => null, error => error)
+    assert.ok(failure instanceof KnowledgeError)
+    assert.equal(failure.code, 'partial_failure')
+    assert.equal(failure.source, 'b.json')
+    assert.deepEqual(failure.committed, [documentId('org', 'Zoom', 'a')])
+    assert.match(failure.message, /1 of 3 document\(s\) committed.*injected write failure/)
+    assert.deepEqual(idsOf(await knowledge.search('zebraquartz', { k: 10 })), ['a'])
+
+    state.failAt = Infinity
+    const result = await knowledge.importDocuments(entries)
+    assert.equal(result.documents.length, 3)
+    assert.deepEqual(idsOf(await knowledge.search('zebraquartz', { k: 10 })), ['a', 'b', 'c'])
+  })
+})
+
+test('a failed delete reports what was removed, and repeating the forget finishes it', async () => {
+  await withStore(async workdir => {
+    const { proxy, state } = failingWrites(openMemory(workdir), 'deleteDocument')
+    const knowledge = new OrganizationalKnowledge(proxy, { namespace: 'org' })
+    await knowledge.importDocuments(['a', 'b'].map(id => entry(curated({ id, content: `zebraquartz ${id}word` }))))
+    const targets = ['a', 'b'].map(id => ({ sourceSystem: 'Zoom', id }))
+    state.failAt = 2
+    await rejectsWith(knowledge.forget(targets, { apply: true }), 'partial_failure', {}, [/1 of 2 target\(s\)/, /injected write failure/])
+    assert.deepEqual(idsOf(await knowledge.search('zebraquartz', { k: 10 })), ['b'])
+
+    state.failAt = Infinity
+    const result = await knowledge.forget(targets, { apply: true })
+    assert.deepEqual(result.removed.map(target => target.id), ['b'])
+    assert.deepEqual(result.absent.map(target => target.id), ['a'])
+    assert.equal((await knowledge.search('zebraquartz')).length, 0)
+  })
+})
+
+const hasListing = typeof HolographicMemorySystem.prototype.listDocuments === 'function'
+const needsListing = { skip: !hasListing && 'the loaded holographic-memory binding has no listDocuments; rebuild it' }
+const seedInputs = (namespace, sourceSystem, count, prefix = 'bulk') =>
+  prepareImport(namespace, Array.from({ length: count }, (_, index) => entry(curated({ source_system: sourceSystem, id: `${prefix}-${String(index).padStart(5, '0')}`, content: 'zebraquartz bulk' }), `${prefix}-${index}`))).map(item => item.input)
+const idsIn = result => result.targets.map(target => target.id).sort()
+const liveIds = hits => [...new Set(hits.map(hit => hit.identity?.id ?? 'unparsed'))].sort()
+
+test('forgetScope removes one source system in one namespace and leaves lookalike neighbours alone', needsListing, async () => {
+  await withStore(async workdir => {
+    const memory = openMemory(workdir)
+    const org = new OrganizationalKnowledge(memory, { namespace: 'org' })
+    const other = new OrganizationalKnowledge(memory, { namespace: 'org2' })
+    const docs = (system, ...ids) => ids.map(id => entry(curated({ source_system: system, id, content: `zebraquartz ${system} ${id}` })))
+    await org.importDocuments([...docs('Zoom', 'a', 'b'), ...docs('Zoom2', 'c'), ...docs('Wiki', 'd')])
+    await other.importDocuments(docs('Zoom', 'a'))
+    // Same id prefix as a namespace document, but not written by the adapter.
+    await memory.memorizeDocument({ id: JSON.stringify(['org', 'Zoom', 'foreign']), text: 'zebraquartz foreign', version: 'v', metadata: {} })
+    await memory.memorizeDocument({ id: JSON.stringify(['org', 'Zoom', 'a', 'b']), text: 'zebraquartz four parts', version: 'v', metadata: { hms_namespace: 'org' } })
+
+    const preview = await org.forgetScope({ sourceSystem: 'Zoom' })
+    assert.equal(preview.applied, false)
+    assert.deepEqual(idsIn(preview), ['a', 'b'])
+    assert.equal(preview.truncated, false)
+    assert.equal((await org.search('zebraquartz', { k: 50 })).length, 5)
+
+    const done = await org.forgetScope({ sourceSystem: 'Zoom' }, { apply: true })
+    assert.deepEqual(done.removed.map(target => target.id).sort(), ['a', 'b'])
+    assert.deepEqual(done.absent, [])
+    // The four-part id carries the namespace metadata but is not an identity this adapter wrote: untouched.
+    assert.deepEqual(liveIds(await org.search('zebraquartz', { k: 50 })), ['c', 'd', 'unparsed'])
+    assert.deepEqual(idsOf(await other.search('zebraquartz', { k: 50 })), ['a'])
+    const left = new Set((await memory.listDocuments(undefined, 100)).map(listed => listed.id))
+    assert.ok(left.has(JSON.stringify(['org', 'Zoom', 'foreign'])) && left.has(JSON.stringify(['org', 'Zoom', 'a', 'b'])))
+
+    assert.deepEqual((await org.forgetScope({ sourceSystem: 'Zoom' }, { apply: true })).removed, [])
+    const everything = await org.forgetScope({ all: true }, { apply: true })
+    assert.deepEqual(everything.removed.map(target => `${target.sourceSystem}/${target.id}`).sort(), ['Wiki/d', 'Zoom2/c'])
+    assert.deepEqual(idsOf(await other.search('zebraquartz', { k: 50 })), ['a'])
+  })
+})
+
+test('forgetScope with keep prunes what an upstream dropped, and a keep list cannot be empty or out of scope', needsListing, async () => {
+  await withStore(async workdir => {
+    const knowledge = new OrganizationalKnowledge(openMemory(workdir), { namespace: 'org' })
+    await knowledge.importDocuments(['a', 'b', 'c', 'd'].map(id => entry(curated({ id, content: `zebraquartz ${id}` }))))
+    const keep = [{ sourceSystem: 'Zoom', id: 'b' }, { sourceSystem: 'Zoom', id: 'd' }]
+
+    assert.deepEqual(idsIn(await knowledge.forgetScope({ sourceSystem: 'Zoom', keep })), ['a', 'c'])
+    await rejectsWith(knowledge.forgetScope({ sourceSystem: 'Zoom', keep: [] }, { apply: true }), 'invalid_request', { field: 'scope.keep' })
+    await rejectsWith(knowledge.forgetScope({ sourceSystem: 'Zoom', keep: [{ sourceSystem: 'Wiki', id: 'x' }] }, { apply: true }), 'invalid_request', { field: 'scope.keep' })
+    assert.equal((await knowledge.search('zebraquartz', { k: 10 })).length, 4)
+
+    await knowledge.forgetScope({ sourceSystem: 'Zoom', keep }, { apply: true })
+    assert.deepEqual(idsOf(await knowledge.search('zebraquartz', { k: 10 })), ['b', 'd'])
+    assert.deepEqual((await knowledge.forgetScope({ sourceSystem: 'Zoom', keep })).targets, [])
+  })
+})
+
+test('forgetScope pages through more than one listing page and honors limit-1, limit, limit+1', needsListing, async () => {
+  await withStore(async workdir => {
+    const memory = openMemory(workdir)
+    const knowledge = new OrganizationalKnowledge(memory, { namespace: 'org' })
+    // Neighbours on both sides of the namespace in id order.
+    await new OrganizationalKnowledge(memory, { namespace: 'ora' }).importDocuments([entry(curated({ id: 'before' }))])
+    await new OrganizationalKnowledge(memory, { namespace: 'orh' }).importDocuments([entry(curated({ id: 'after' }))])
+    await memory.memorizeDocuments(seedInputs('org', 'Zoom', 1005))
+
+    const all = await knowledge.forgetScope({ all: true }, { limit: 100_000 })
+    assert.equal(all.targets.length, 1005)
+    assert.equal(all.truncated, false)
+    assert.equal(new Set(all.targets.map(target => target.documentId)).size, 1005)
+    for (const [limit, count, truncated] of [[1004, 1004, true], [1005, 1005, false], [1006, 1005, false]]) {
+      const result = await knowledge.forgetScope({ all: true }, { limit })
+      assert.deepEqual([result.targets.length, result.truncated], [count, truncated], `limit ${limit}`)
+    }
+
+    const first = await knowledge.forgetScope({ all: true }, { apply: true, limit: 3 })
+    assert.equal(first.removed.length, 3)
+    assert.equal(first.truncated, true)
+    assert.equal((await knowledge.forgetScope({ all: true }, { limit: 100_000 })).targets.length, 1002)
+    assert.equal((await new OrganizationalKnowledge(memory, { namespace: 'ora' }).search('zebraquartz')).length, 1)
+    assert.equal((await new OrganizationalKnowledge(memory, { namespace: 'orh' }).search('zebraquartz')).length, 1)
+  })
+})
+
+test('forgetScope rejects malformed arguments before deleting anything', needsListing, async () => {
+  await withStore(async workdir => {
+    const knowledge = new OrganizationalKnowledge(openMemory(workdir), { namespace: 'org' })
+    await knowledge.importDocuments([entry(curated({ content: 'zebraquartz keepme' }))])
+    const bad = [
+      [undefined, {}], [{}, {}], [[], {}], [{ all: true, sourceSystem: 'Zoom' }, {}], [{ all: false }, {}], [{ sourceSystem: ' ' }, {}],
+      [{ sourceSystem: 7 }, {}], [{ all: true, unknown: 1 }, {}], [{ all: true, keep: 'doc-1' }, {}], [{ all: true, keep: [{ sourceSystem: 'Zoom' }] }, {}],
+      [{ all: true }, { apply: 'yes' }], [{ all: true }, { limit: 0 }], [{ all: true }, { limit: 100_001 }], [{ all: true }, { limit: 1.5 }],
+    ]
+    for (const [scope, options] of bad) {
+      await rejectsWith(knowledge.forgetScope(scope, { ...options, apply: options.apply ?? true }), 'invalid_request')
+    }
+    // `keep` in the options position must not be ignored: that would delete everything.
+    const misplaced = { keep: [{ sourceSystem: 'Zoom', id: 'doc-1' }], apply: true }
+    await rejectsWith(knowledge.forgetScope({ sourceSystem: 'Zoom' }, misplaced), 'invalid_request', { field: 'options' })
+    await rejectsWith(knowledge.forgetScope({ sourceSystem: 'Zoom' }, null), 'invalid_request', { field: 'options' })
+    assert.equal((await knowledge.search('keepme')).length, 1)
+  })
+})
+
+test('forgetScope reports a binding without listDocuments instead of guessing', async () => {
+  await withStore(async workdir => {
+    const real = openMemory(workdir)
+    const old = new Proxy(real, { get: (target, property) => (property === 'listDocuments' ? undefined : typeof target[property] === 'function' ? target[property].bind(target) : target[property]) })
+    await rejectsWith(new OrganizationalKnowledge(old, { namespace: 'org' }).forgetScope({ all: true }), 'unsupported_binding')
+  })
+})
+
+test('a forgetScope removal survives a restart and a later import restores the document', needsListing, async () => {
+  await withStore(async workdir => {
+    const store = path.join(workdir, 'store')
+    const alpha = curated({ id: 'alpha', identifier: 'urn:said:Epa', content: 'zebraquartz persistalpha' })
+    const beta = curated({ id: 'beta', identifier: 'urn:said:Epb', content: 'zebraquartz persistbeta' })
+    const written = runChild(workdir, store, { docs: [alpha, beta], scope: { sourceSystem: 'Zoom', keep: [{ sourceSystem: 'Zoom', id: 'beta' }] } })
+    assert.deepEqual(written, { persistalpha: {}, persistbeta: { beta: 'urn:said:Epb' } })
+    assert.deepEqual(runChild(workdir, store, {}), written)
+    assert.deepEqual(runChild(workdir, store, { docs: [alpha] }).persistalpha, { alpha: 'urn:said:Epa' })
+  })
+})
+
+test('the CLI forget-all and prune preview by default, apply on request, and never create a store', needsListing, async () => {
+  await withStore(async workdir => {
+    const store = path.join(workdir, 'store')
+    const missing = cli(workdir, 'forget-all', store, 'toip', 'Zoom', '--apply')
+    assert.equal(missing.status, 0, missing.stderr)
+    assert.match(missing.stdout, /does not exist/)
+    assert.equal(fs.existsSync(store), false)
+
+    assert.equal(cli(workdir, 'import', store, 'toip', FIXTURES).status, 0)
+    const preview = cli(workdir, 'forget-all', store, 'toip', 'Zoom')
+    assert.equal(preview.status, 0, preview.stderr)
+    assert.match(preview.stdout, /Dry run: would remove 2 document/)
+    assert.equal(JSON.parse(cli(workdir, 'search', store, 'toip', 'quartzmarker').stdout).length > 0, true)
+
+    const transcript = path.join(FIXTURES, 'zoom-example-project-transcript-GMT20260101-100000.json')
+    const noMatch = cli(workdir, 'prune', store, 'toip', 'Confluence', transcript)
+    assert.notEqual(noMatch.status, 0)
+    assert.match(noMatch.stderr, /forget-all/)
+    const pruned = cli(workdir, 'prune', store, 'toip', 'Zoom', transcript, '--apply')
+    assert.equal(pruned.status, 0, pruned.stderr)
+    assert.match(pruned.stdout, /Removed 1 document/)
+    const cleared = cli(workdir, 'forget-all', store, 'toip', '--all', '--apply')
+    assert.match(cleared.stdout, /Removed 2 document/)
+    assert.equal(cli(workdir, 'forget-all', store, 'toip', '--all', 'Zoom').status, 2)
+
+    // An existing directory that is not a store must stay untouched too.
+    const plain = path.join(workdir, 'plain')
+    fs.mkdirSync(plain)
+    for (const args of [['forget-all', plain, 'toip', '--all'], ['forget-all', plain, 'toip', '--all', '--apply'], ['search', plain, 'toip', 'word'], ['forget', plain, 'toip', 'Zoom', 'id', '--apply'], ['prune', plain, 'toip', 'Zoom', transcript]]) {
+      assert.equal(cli(workdir, ...args).status, 0, args.join(' '))
+      assert.deepEqual(fs.readdirSync(plain), [], `${args[0]} must not write into a directory that is not a store`)
+    }
   })
 })

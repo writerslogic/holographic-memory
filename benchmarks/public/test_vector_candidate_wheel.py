@@ -1,3 +1,4 @@
+from contextlib import suppress
 import hashlib
 import json
 import os
@@ -223,10 +224,8 @@ else:
             finally:
                 wheel.stop_owned(process)
                 if owned is not None:
-                    try:
+                    with suppress(ProcessLookupError):
                         os.killpg(owned["pgid"], signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
                 unrelated.terminate()
                 unrelated.wait(timeout=5)
 

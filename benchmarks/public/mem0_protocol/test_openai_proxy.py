@@ -237,7 +237,7 @@ def test_cancellation_retains_its_durable_reservation(tmp_path):
         await entered.wait()
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
-            await task
+            await asyncio.wait_for(task, timeout=1)
 
     asyncio.run(run())
     assert ledger.snapshot()["halted"] and ledger.snapshot()["reserved_usd"] == .54096

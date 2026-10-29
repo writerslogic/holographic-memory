@@ -16,8 +16,16 @@ at 1.0.0.
 | Python (`holographic-memory-py` wheels, `holographic-memory-sdk`) | PyPI version | documented classes and functions | underscore names; the `phase` substrate is experimental |
 | Node (`holographic-memory` on npm) | npm version | the exports in `index.d.ts`, `memory.d.ts`, `semantic.d.ts` | undocumented properties |
 | HTTP (`hms-server`) | URL prefix `/api/v1` | documented endpoints, request and response fields, error codes | new optional fields may appear; new endpoints |
-| C ABI | none | **there is no C ABI.** The `cdylib` exists for the Node and Python bindings only; nothing is exported for C callers and no promise is made | |
+| [C ABI](runtimes/c/README.md) | `holographic-memory-c` package version and `hms1_*` ABI major | documented v1 symbols, ownership rules and fixed value-struct layouts; size-tagged option structs grow append-only | Rust layouts, internal symbols and unversioned convenience macros |
+| [Go](runtimes/go/README.md), [Java](runtimes/java/README.md) and [.NET](runtimes/dotnet/README.md) | binding package version and underlying C ABI major | documented wrappers over the versioned C contract | private FFI helpers; package availability is recorded in each runtime guide |
+| [Swift](runtimes/swift/README.md) and [Kotlin](runtimes/kotlin/README.md) | UniFFI crate and binding package version | experimental until a stable binding contract is declared | generated UniFFI interfaces, metadata and packaging layouts |
+| [WebAssembly](runtimes/wasm/README.md) | WASM crate and npm package version | experimental until a stable binding contract is declared | generated JavaScript glue, scalar/SIMD artifact layout and experimental APIs |
 | Persisted format | per artefact, see below | yes | caches (below) |
+
+WritersLogic maintainers review changes to these contracts. C callers check
+`hms1_abi_version()` before using the library; a new ABI major uses a new symbol
+prefix so old and new majors can coexist. The language-specific runtime guides
+record supported platforms, build requirements and verification limits.
 
 Additive changes (new optional field, new endpoint, new function) are minor. Removing or
 changing behaviour is major. Security fixes may break an unsafe behaviour in a patch release

@@ -64,7 +64,7 @@ def uri_secret(uri: Optional[str]) -> Optional[str]:
         try:
             register_secret(urlsplit(uri).password)
         except ValueError:
-            pass
+            raise ValueError("malformed connection URI") from None
     return uri
 
 

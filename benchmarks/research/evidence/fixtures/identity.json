@@ -1,0 +1,99 @@
+{
+  "namespace": "synthetic-identity",
+  "sources": [
+    {
+      "id": "first-visit",
+      "version": "v1",
+      "text": "identityneedle I visited a ceramics fair.",
+      "observed_at": 100
+    },
+    {
+      "id": "ambiguous-visit",
+      "version": "v1",
+      "text": "I also described a fair; it may have been that visit or a second fair.",
+      "observed_at": 100
+    }
+  ],
+  "claims": [
+    {
+      "id": "first-visit",
+      "subject": "person:maya",
+      "predicate": "attended",
+      "event_key": "known-visit",
+      "event_candidates": [
+        "fair-a"
+      ],
+      "value": null,
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "first-visit",
+          "source_version": "v1",
+          "start": 0,
+          "end": 41,
+          "quote": "identityneedle I visited a ceramics fair."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "ambiguous-visit",
+      "subject": "person:maya",
+      "predicate": "attended",
+      "event_key": "ambiguous-mention",
+      "event_candidates": [
+        "fair-a",
+        "fair-b"
+      ],
+      "value": null,
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "ambiguous-visit",
+          "source_version": "v1",
+          "start": 0,
+          "end": 70,
+          "quote": "I also described a fair; it may have been that visit or a second fair."
+        }
+      ],
+      "supersedes": []
+    }
+  ],
+  "terms": "identityneedle",
+  "query": {
+    "selection": {
+      "subject": "person:maya",
+      "predicate": "attended",
+      "modality": "actual",
+      "event_window": null
+    },
+    "operation": {
+      "kind": "count_distinct"
+    },
+    "as_of": 100,
+    "known_at": null,
+    "max_worlds": 256
+  },
+  "limits": {
+    "max_sources": 32,
+    "max_source_bytes": 65536,
+    "max_packet_bytes": 131072,
+    "max_rounds": 3,
+    "initial_k": 1,
+    "repair_k": 8
+  }
+}

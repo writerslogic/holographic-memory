@@ -3,14 +3,12 @@
 """Run one frozen validation layout/revision pair, or a fixed legacy regression pair."""
 
 import argparse
-import json
 import os
 from pathlib import Path
 import re
 import shutil
 import socket
 import subprocess
-import sys
 
 from qag_execute import THREADS, digest, host, now, record, verify_inputs, write_new
 

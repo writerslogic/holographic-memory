@@ -12,6 +12,7 @@ import re
 import shutil
 import socket
 import subprocess
+import sys
 
 
 THREADS = ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS", "RAYON_NUM_THREADS")
@@ -42,6 +43,9 @@ def run(args):
         raise ValueError("invalid run ID")
     repo = Path(__file__).resolve().parents[2]
     extractor = repo / "benchmarks/results/query_aware_graph_v1/sources/qag_report_full_evaluation_v1.py"
+    if not extractor.exists():
+        subprocess.run([sys.executable, str(repo / "scripts/restore-retired-inputs.py"),
+                        "--path", str(extractor.relative_to(repo))], check=True)
     spec = importlib.util.spec_from_file_location("qag_serving_report", extractor)
     reporter = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(reporter)

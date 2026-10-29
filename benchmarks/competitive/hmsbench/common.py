@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Hardware class, statistics and subprocess measurement shared by the runner, workers and table."""
 
+from contextlib import suppress
 import contextlib
 import fcntl
 import json
@@ -34,24 +35,20 @@ def _sysctl(name):
 def cpu_model():
     if platform.system() == "Darwin":
         return _sysctl("machdep.cpu.brand_string")
-    try:
+    with suppress(OSError):
         for line in Path("/proc/cpuinfo").read_text().splitlines():
             if line.startswith("model name"):
                 return line.split(":", 1)[1].strip()
-    except OSError:
-        pass
     return platform.processor() or platform.machine()
 
 
 def memory_bytes():
     if platform.system() == "Darwin":
         return int(_sysctl("hw.memsize") or 0)
-    try:
+    with suppress(OSError):
         for line in Path("/proc/meminfo").read_text().splitlines():
             if line.startswith("MemTotal"):
                 return int(line.split()[1]) * 1024
-    except OSError:
-        pass
     return 0
 
 

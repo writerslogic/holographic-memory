@@ -1,6 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+from contextlib import suppress
 import hashlib
 import os
 from pathlib import Path
@@ -96,14 +97,12 @@ class LocalHostTests(unittest.TestCase):
                 for _ in range(150):
                     if process.poll() is not None:
                         self.fail("local host exited before readiness")
-                    try:
+                    with suppress(httpx.RequestError):
                         if httpx.get(base + "/healthz", timeout=1).status_code == 200:
                             return process
-                    except httpx.RequestError:
-                        pass
                     time.sleep(0.2)
                 process.terminate()
-                self.fail("local host did not become ready")
+                raise AssertionError("local host did not become ready")
 
             def assert_native_metadata() -> None:
                 response = httpx.post(f"http://127.0.0.1:{native_port}/api/v1/memory/recall",

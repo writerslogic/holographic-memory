@@ -138,7 +138,7 @@ class PineconeSource(Source):
             resuming = resume_ns is not None and ns == resume_ns
             token = resume_token if resuming else None
             skip = (resume_offset + 1) if resuming else 0
-            record_ns = "" if ns == "__default__" else ns
+            record_ns = "" if ns in _DEFAULT_NS_KEYS else ns
             while True:
                 kwargs: Dict[str, Any] = {"namespace": ns, "limit": self.page_size}
                 if self.prefix:

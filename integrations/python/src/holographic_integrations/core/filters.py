@@ -47,7 +47,8 @@ def _ordered(a: Any, b: Any, op: str) -> bool:
 
 class Filter(ABC):
     @abstractmethod
-    def matches(self, metadata: Mapping[str, Any]) -> bool: ...
+    def matches(self, metadata: Mapping[str, Any]) -> bool:
+        raise NotImplementedError
 
 
 @dataclass(frozen=True)

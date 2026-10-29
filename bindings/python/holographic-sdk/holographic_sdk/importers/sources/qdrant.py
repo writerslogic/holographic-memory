@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import argparse
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
@@ -163,6 +165,6 @@ class QdrantSource(Source):
         if self._client is not None:
             try:
                 self._client.close()
-            except Exception:
-                pass
+            except Exception as error:
+                logging.getLogger(__name__).warning("Qdrant client cleanup failed (%s)", type(error).__name__)
             self._client = None

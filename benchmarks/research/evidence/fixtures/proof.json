@@ -1,0 +1,67 @@
+{
+  "problem": {
+    "nodes": [
+      {
+        "id": "source-a",
+        "supports": [
+          []
+        ]
+      },
+      {
+        "id": "source-b",
+        "supports": [
+          []
+        ]
+      },
+      {
+        "id": "source-protected",
+        "supports": [
+          []
+        ]
+      },
+      {
+        "id": "contact-address",
+        "supports": [
+          [
+            "source-a"
+          ],
+          [
+            "source-b"
+          ]
+        ]
+      },
+      {
+        "id": "tea-preference",
+        "supports": [
+          [
+            "source-protected"
+          ]
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "source-a",
+        "cost": 1
+      },
+      {
+        "id": "source-b",
+        "cost": 2
+      },
+      {
+        "id": "source-protected",
+        "cost": 5
+      }
+    ],
+    "targets": [
+      "contact-address"
+    ],
+    "protected": [
+      "tea-preference"
+    ]
+  },
+  "limits": {
+    "max_sources": 3,
+    "max_steps": 10000
+  }
+}

@@ -6,6 +6,8 @@ const { NAMESPACE_KEY, adaptDocument, documentId, isPlainObject, parseDocumentId
 
 const MAX_IMPORT_DOCUMENTS = 10_000
 const MAX_FORGET_TARGETS = 10_000
+const SCAN_PAGE = 1000
+const MAX_SCOPE_LIMIT = 100_000
 // The engine rejects a document whose chunk embeddings total more than this many values.
 const MAX_EMBEDDING_VALUES = 1_048_576
 
@@ -64,8 +66,8 @@ async function validateImport(namespace, entries, memory, { embeddingDimensions 
   return prepared
 }
 
-function checkTarget(target, index) {
-  const field = `targets[${index}]`
+function checkTarget(target, index, list = 'targets') {
+  const field = `${list}[${index}]`
   if (!isPlainObject(target) || Object.keys(target).some(key => key !== 'sourceSystem' && key !== 'id')) {
     requestFailure(field, 'must be exactly { sourceSystem, id }')
   }
@@ -180,20 +182,28 @@ class OrganizationalKnowledge {
     return this.#serialize(() => this.#forget(targets, { apply }))
   }
 
-  async #forget(targets, { apply }) {
-    if (!Array.isArray(targets) || targets.length === 0 || targets.length > MAX_FORGET_TARGETS) {
-      requestFailure('targets', `must hold 1..=${MAX_FORGET_TARGETS} entries`)
+  #plan(targets, list, { maxTargets = MAX_FORGET_TARGETS } = {}) {
+    if (!Array.isArray(targets) || targets.length === 0 || targets.length > maxTargets) {
+      requestFailure(list, `must hold 1..=${maxTargets} entries`)
     }
-    if (typeof apply !== 'boolean') requestFailure('apply', 'must be a boolean')
     const seen = new Set()
-    const planned = targets.map((target, index) => {
-      const { sourceSystem, id, fail } = checkTarget(target, index)
+    return targets.map((target, index) => {
+      const { sourceSystem, id, fail } = checkTarget(target, index, list)
       const key = documentId(this.#namespace, sourceSystem, id, fail)
-      if (seen.has(key)) requestFailure(`targets[${index}]`, 'duplicates an earlier target')
+      if (seen.has(key)) requestFailure(`${list}[${index}]`, 'duplicates an earlier target')
       seen.add(key)
       return { sourceSystem, id, documentId: key }
     })
+  }
+
+  async #forget(targets, { apply }) {
+    const planned = this.#plan(targets, 'targets')
+    if (typeof apply !== 'boolean') requestFailure('apply', 'must be a boolean')
     if (!apply) return { namespace: this.#namespace, applied: false, targets: planned }
+    return { namespace: this.#namespace, applied: true, targets: planned, ...(await this.#remove(planned)) }
+  }
+
+  async #remove(planned) {
     const removed = []
     const absent = []
     try {
@@ -207,7 +217,85 @@ class OrganizationalKnowledge {
         { cause },
       )
     }
-    return { namespace: this.#namespace, applied: true, targets: planned, removed, absent }
+    return { removed, absent }
+  }
+
+  /**
+   * Removes every document of a source system, or of the whole namespace, from HMS retrieval,
+   * except an optional `keep` list. With `keep` set to the identities an upstream still holds,
+   * it prunes what the upstream dropped. `scope` is `{ sourceSystem }` or `{ all: true }`, plus an
+   * optional nonempty `keep` of `{ sourceSystem, id }` targets. Without `apply: true` it only
+   * reports what it would remove. At most `limit` documents (default 10,000) are handled per
+   * call; `truncated` says more match. With `apply: true`, repeat until it is false; a preview
+   * always shows the same first `limit` documents. Only documents this
+   * namespace's adapter wrote (identity and `hms_namespace` agree) are matched. Requires a binding
+   * with `listDocuments`. Same limits as `forget`: not physical erasure, not an upstream delete,
+   * and importing a removed document again restores it.
+   */
+  async forgetScope(scope, options = {}) {
+    // An ignored misplaced `keep` would widen a prune to everything, so unknown options are errors.
+    if (!isPlainObject(options) || Object.keys(options).some(key => key !== 'apply' && key !== 'limit')) {
+      requestFailure('options', 'must be { apply, limit } only; put keep inside scope')
+    }
+    const { apply = false, limit = 10_000 } = options
+    return this.#serialize(() => this.#forgetScope(scope, { apply, limit }))
+  }
+
+  async #forgetScope(scope, { apply, limit }) {
+    const names = ['sourceSystem', 'all', 'keep']
+    if (!isPlainObject(scope) || Object.keys(scope).some(key => !names.includes(key))) {
+      requestFailure('scope', 'must be { sourceSystem } or { all: true }, with an optional keep list')
+    }
+    const { sourceSystem, all, keep } = scope
+    if ((sourceSystem === undefined) === (all === undefined)) requestFailure('scope', 'set exactly one of sourceSystem or all')
+    if (all !== undefined && all !== true) requestFailure('scope.all', 'must be true')
+    if (sourceSystem !== undefined) {
+      documentId(this.#namespace, sourceSystem, 'id', (field, message) => requestFailure(`scope.${field}`, message))
+    }
+    if (typeof apply !== 'boolean') requestFailure('apply', 'must be a boolean')
+    if (!Number.isInteger(limit) || limit < 1 || limit > MAX_SCOPE_LIMIT) requestFailure('limit', `must be an integer in 1..=${MAX_SCOPE_LIMIT}`)
+    const kept = new Set()
+    if (keep !== undefined) {
+      for (const target of this.#plan(keep, 'scope.keep')) {
+        if (sourceSystem !== undefined && target.sourceSystem !== sourceSystem) {
+          requestFailure('scope.keep', `${target.documentId} is outside the source system ${sourceSystem}`)
+        }
+        kept.add(target.documentId)
+      }
+    }
+    if (typeof this.#memory.listDocuments !== 'function') {
+      throw new KnowledgeError('unsupported_binding', 'this holographic-memory binding has no listDocuments; rebuild it from a source that exports it')
+    }
+
+    const { planned, truncated } = await this.#scan(sourceSystem, kept, limit)
+    const result = { namespace: this.#namespace, applied: apply, scope: sourceSystem === undefined ? { all: true } : { sourceSystem }, targets: planned, truncated }
+    return apply ? { ...result, ...(planned.length > 0 ? await this.#remove(planned) : { removed: [], absent: [] }) } : result
+  }
+
+  /** Walks the namespace's slice of the id-ordered document listing, keeping up to `limit` matches. */
+  async #scan(sourceSystem, kept, limit) {
+    // Every identity in the scope is a JSON array that starts with this prefix, so they are contiguous.
+    const parts = sourceSystem === undefined ? [this.#namespace] : [this.#namespace, sourceSystem]
+    const prefix = `${JSON.stringify(parts).slice(0, -1)},`
+    const prefixBytes = Buffer.from(prefix)
+    const planned = []
+    // Starts after `["ns"`, which sorts before the prefix; ids that sort before it are skipped.
+    let after = prefix.slice(0, -1)
+    for (;;) {
+      const page = await this.#memory.listDocuments(after, SCAN_PAGE)
+      for (const record of page) {
+        if (!record.id.startsWith(prefix)) {
+          if (Buffer.compare(Buffer.from(record.id), prefixBytes) > 0) return { planned, truncated: false }
+          continue
+        }
+        const identity = parseDocumentId(record.id)
+        if (identity?.namespace !== this.#namespace || record.metadata?.[NAMESPACE_KEY] !== this.#namespace || kept.has(record.id)) continue
+        if (planned.length === limit) return { planned, truncated: true }
+        planned.push({ sourceSystem: identity.sourceSystem, id: identity.id, documentId: record.id })
+      }
+      if (page.length < SCAN_PAGE) return { planned, truncated: false }
+      after = page.at(-1).id
+    }
   }
 }
 

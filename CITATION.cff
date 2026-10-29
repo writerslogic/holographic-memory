@@ -1,0 +1,18 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+cff-version: 1.2.0
+message: "If you use this software in research, cite it using this metadata."
+title: Holographic Memory
+authors:
+  - name: WritersLogic Contributors
+version: 0.6.4
+license: Apache-2.0
+repository-code: https://github.com/writerslogic/holographic-memory
+url: https://holographic-memory.com
+abstract: >-
+  Holographic Memory is a local Rust library for hybrid document and vector
+  search, graph indexing, agent memory and vector-symbolic operations. It
+  provides persistent stores, Node.js and native Python bindings, a C ABI,
+  an HTTP server and an MCP server. Runtime capabilities and experimental
+  features are documented separately.

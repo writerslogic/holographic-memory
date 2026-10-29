@@ -68,10 +68,28 @@ export interface ForgetResult {
   absent?: PlannedTarget[]
 }
 
+export type ForgetScope = ({ sourceSystem: string; all?: never } | { all: true; sourceSystem?: never }) & {
+  /** Documents to leave in place; must not be empty when given. */
+  keep?: ForgetTarget[]
+}
+
+export interface ForgetScopeResult {
+  namespace: string
+  applied: boolean
+  scope: { sourceSystem: string } | { all: true }
+  /** The documents matched, at most `limit`. */
+  targets: PlannedTarget[]
+  /** More documents matched than `limit`. Applying and repeating continues; a preview repeats the same first `limit`. */
+  truncated: boolean
+  removed?: PlannedTarget[]
+  absent?: PlannedTarget[]
+}
+
 export type KnowledgeErrorCode =
   | 'invalid_document'
   | 'invalid_request'
   | 'duplicate_identity'
+  | 'unsupported_binding'
   | 'partial_failure'
 
 export class KnowledgeError extends Error {
@@ -101,6 +119,8 @@ export class OrganizationalKnowledge {
   importDocuments(entries: Iterable<ImportEntry>): Promise<ImportResult>
   search(query: string, options?: Omit<SearchOptions, 'filter'> & { filter?: Record<string, unknown> }): Promise<Hit[]>
   forget(targets: ForgetTarget[], options?: { apply?: boolean }): Promise<ForgetResult>
+  /** Needs a binding that exports `listDocuments`. Dry run unless `apply` is true; `limit` defaults to 10,000. */
+  forgetScope(scope: ForgetScope, options?: { apply?: boolean; limit?: number }): Promise<ForgetScopeResult>
 }
 
 /** The HMS document ID for an identity. Throws `invalid_request` for unusable parts. */

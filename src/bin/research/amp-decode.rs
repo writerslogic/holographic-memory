@@ -30,11 +30,12 @@ fn mix(x: u64, k: u64) -> u64 {
     h
 }
 
-fn phasor(id: u64, salt: u64, seed: u64) -> Cx {
+fn phasor(id: u64, domain: u64, seed: u64) -> Cx {
     let mut re = vec![0.0; D];
     let mut im = vec![0.0; D];
     for d in 0..D {
-        let a = TAU * (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ salt, seed) % 256) as f64 / 256.0;
+        let a =
+            TAU * (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ domain, seed) % 256) as f64 / 256.0;
         re[d] = a.cos();
         im[d] = a.sin();
     }

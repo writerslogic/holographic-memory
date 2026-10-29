@@ -40,10 +40,10 @@ fn luts(n: u32) -> (Vec<i64>, Vec<i64>) {
     (c, s)
 }
 
-/// Random phase vector in Z_N, deterministic in (id, salt, seed).
-fn phasor(id: u64, salt: u64, seed: u64, n: u32) -> Vec<u16> {
+/// Random phase vector in Z_N, deterministic in (id, domain, seed).
+fn phasor(id: u64, domain: u64, seed: u64, n: u32) -> Vec<u16> {
     (0..D)
-        .map(|d| (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ salt, seed) % n as u64) as u16)
+        .map(|d| (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ domain, seed) % n as u64) as u16)
         .collect()
 }
 

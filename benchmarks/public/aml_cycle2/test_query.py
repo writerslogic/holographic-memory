@@ -229,7 +229,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(body_read)
         self.assertEqual(count,16)
         tasks[0].cancel()
-        with self.assertRaises(asyncio.CancelledError):await tasks[0]
+        with self.assertRaises(asyncio.CancelledError):await asyncio.wait_for(tasks[0], 1)
         release.set()
         self.assertTrue(all(row.status_code==200 for row in await asyncio.gather(*tasks[1:])))
         self.assertEqual((await self.client.post('/search',json=payload('x'))).status_code,200)

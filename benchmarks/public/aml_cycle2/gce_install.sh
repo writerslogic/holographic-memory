@@ -60,7 +60,29 @@ binary_sha256=$(sha256sum "$root/src/target/release/hms-server" | cut -d' ' -f1)
 printf '%s  %s\n' "$binary_sha256" "$root/src/target/release/hms-server" > "$root/native.sha256"
 
 python3 -m venv "$root/uv-bootstrap"
-"$root/uv-bootstrap/bin/pip" install --disable-pip-version-check uv==0.12.10
+cat > "$root/uv-bootstrap-requirements.txt" <<'HMS_UV_REQUIREMENTS'
+uv==0.12.10 \
+    --hash=sha256:0334577671a65b621faddfdf5f9e9dd4eb08eaa7231c4405c4a7f4f17d224d9f \
+    --hash=sha256:0ac914e9750bb1de2518d444cc1cff084f4eff3eefe9cdd5814b775443a16df1 \
+    --hash=sha256:27e8350faffb35d8ecaa5ed39236709809bb9a883f1d11d13c0964d6051b2384 \
+    --hash=sha256:2ad71395c31b5db20c56327f62ee0299f75833308d4413284aba87324d092afa \
+    --hash=sha256:46ca83d33bf87a67d0c5aa5b64f5576fc5c8e700a0ecf4900d409f8a1a1c9810 \
+    --hash=sha256:4f097c6b7f63eceb3faf5102009f9a8cc22fd7d8a341858d2fd540f46a592f7a \
+    --hash=sha256:5c0bcf0598742eb417f1aa41ec82f0d89bd7b7f42d0a519bea495a9419d8d8ee \
+    --hash=sha256:5dc26c73826d2119292d49d71c5a9d5ba9dd97dd02459d816b8226f47f3dc6bd \
+    --hash=sha256:7e3a70d9dff95481afccd7d41e7ec42fdc230d53487b3e7e633f9b35610401b5 \
+    --hash=sha256:a34e1be296e6e30fdbfee9b84a45d082ce7df4dd4e588ebcfc44249505c10f02 \
+    --hash=sha256:b610e8cf7c6d51dc119d352e699b674534d0de327b4d2a67eb5d71ec364b8970 \
+    --hash=sha256:bd0afae6918795c6a61a649e64d735e339f3d62f8310235da6f19eb3f66f323b \
+    --hash=sha256:c1fd0fcabc18dccaf541ca44a061c245045c937bec75c0491e94d59cd33ca97f \
+    --hash=sha256:c49cd1f6e5ded1bd844119da8b184d5c044ae51441c476af2382fdb8af99edb8 \
+    --hash=sha256:de4b06934bd025ceeeb48af5c6f9a82407a2fe2b5b35e456cfb3198ef5029de0 \
+    --hash=sha256:efbbc586d40014b9dd3bc37a2ad5803d12919458f0f9d16f122db5d91626f5ab \
+    --hash=sha256:f43c06b19137bb05877b0ec59c4932878db5d1aeb6f7b5c33259c22e0359c4fe \
+    --hash=sha256:f7d6248ad9f2d282fea795f248da8fa666ab382df50d8385bd98e01049440a0c \
+    --hash=sha256:f7f2bc56fbd367b1066e8461a82e51e8886bbab52b1f8d1793af8ce52232348c
+HMS_UV_REQUIREMENTS
+"$root/uv-bootstrap/bin/pip" install --disable-pip-version-check --require-hashes -r "$root/uv-bootstrap-requirements.txt"
 "$root/uv-bootstrap/bin/uv" venv --python 3.12 "$root/venv"
 "$root/uv-bootstrap/bin/uv" pip install --python "$root/venv/bin/python" \
   fastapi==0.119.0 httpx==0.28.1 uvicorn==0.38.0

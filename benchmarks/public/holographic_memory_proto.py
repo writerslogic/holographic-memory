@@ -640,14 +640,14 @@ class Memory:
         import numpy as np
         flat, hier = {}, {}
         for e, ii in self.idx.items():
-            memb = rng.random((len(ii), K)) < 0.5
+            memb = np.less(rng.random((len(ii), K)), 0.5)
             for row in memb:
                 if not row.any():
                     row[rng.integers(K)] = True
             flat[e] = [majority(np.stack([self.fvec[i] for i, m in zip(ii, memb[:, k]) if m]), self.tie)
                        if memb[:, k].any() else None for k in range(K)]
             js = sorted(self.sess_traces[e])
-            memb = rng.random((len(js), K)) < 0.5
+            memb = np.less(rng.random((len(js), K)), 0.5)
             for row in memb:
                 if not row.any():
                     row[rng.integers(K)] = True
@@ -1125,6 +1125,8 @@ def rank_turns(export_dir: Path, eval_utils: Path, out: Path, D: int = 16384, se
     origin = date(min(d for d in dates if d).year, 1, 1)
     per_seed = [_rank_turns_seed(ex, tx, emb, temb, qemb, mean, origin, dim, D, ev, s) for s in range(seeds)]
     variants, std = _mean_std([r["variants"] for r in per_seed])
+    if not isinstance(variants, dict) or not isinstance(std, dict):
+        raise TypeError("turn ranking metrics must be dictionaries")
     res = {"D": D, "seeds": seeds, "variants": variants, "variants_std": std,
            "variants_per_seed": [r["variants"] for r in per_seed],
            "sizes": per_seed[0]["sizes"], "bytes_per_question": per_seed[0]["bytes_per_question"],
@@ -1207,7 +1209,7 @@ def _rank_turns_seed(ex, tx, emb, temb, qemb, mean, origin, dim, D, ev, seed: in
             st = np.stack([flip(t, f, crng) for t in mem.sess])
             put(f"hier_flip{f}", mem.coarse(qc["orig"], lambda j, w=w4: w[j // 4]), mem.fine(qc["orig"], st), False)
         srng = np.random.default_rng(qi * 7 + 1 + S)
-        memb_a = srng.random((len(codes), SHARDS)) < 0.5
+        memb_a = np.less(srng.random((len(codes), SHARDS)), 0.5)
         for r in memb_a:
             if not r.any():
                 r[srng.integers(SHARDS)] = True

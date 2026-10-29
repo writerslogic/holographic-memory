@@ -307,8 +307,6 @@ def create_app(hms_url: str, token: str, commit: Any = None, *, source_provenanc
         if len(body) > MAX_BODY:
             raise HTTPException(status_code=413, detail="Add body exceeds 64 MiB")
         try:
-            import json
-
             request_id, user_id, session_id, facts = add_facts(json.loads(body), source_provenance=source_provenance)
         except (ValueError, UnicodeDecodeError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 import argparse
 import asyncio
 import hashlib
@@ -99,12 +100,10 @@ async def serve(args: argparse.Namespace) -> None:
                     raise RuntimeError("shutdown requested during startup")
                 if native.poll() is not None:
                     raise RuntimeError("native memory engine exited during startup")
-                try:
+                with suppress(httpx.RequestError):
                     response = await client.get(f"http://127.0.0.1:{args.native_port}/readyz")
                     if response.status_code == 200:
                         break
-                except httpx.RequestError:
-                    pass
                 await asyncio.sleep(0.2)
             else:
                 raise RuntimeError("native memory engine did not become ready")
@@ -134,7 +133,7 @@ async def serve(args: argparse.Namespace) -> None:
             except asyncio.TimeoutError:
                 native.kill()
                 await asyncio.to_thread(native.wait)
-            await monitor
+            await asyncio.wait_for(monitor, timeout=5)
     finally:
         if native.poll() is None:
             native.terminate()

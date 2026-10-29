@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-10-29T06:13:41.240546+00:00",
+  "scope": "Local synthetic correctness and public optional dependency pin; no model/API/cloud calls, performance measurement or production-readiness claim.",
+  "engine_revision": "5ccca1e489190014db6e3fe342cad50b9e57718a",
+  "bridge": {
+    "repository": "https://github.com/writerslogic/narrative-lens",
+    "revision": "97d47eca34474409e963064dc8319559a99044f8"
+  },
+  "platform": "macOS arm64",
+  "checks": [
+    {
+      "command": "cargo test --locked --manifest-path benchmarks/research/evidence/Cargo.toml --features narrative-lens",
+      "rust": "1.96.0",
+      "passed": 81,
+      "failed": 0
+    },
+    {
+      "command": "cargo clippy --locked --manifest-path benchmarks/research/evidence/Cargo.toml --all-targets --features narrative-lens -- -D warnings",
+      "rust": "1.96.0",
+      "result": "pass"
+    },
+    {
+      "command": "cargo check --locked --manifest-path benchmarks/research/evidence/Cargo.toml --features narrative-lens",
+      "rust": "1.89.0",
+      "result": "pass"
+    },
+    {
+      "command": "cargo fmt --manifest-path benchmarks/research/evidence/Cargo.toml -- --check",
+      "result": "pass"
+    }
+  ],
+  "source_files": {
+    "benchmarks/research/evidence/.gitignore": "2fa82639f42445e5ed9b4621d7ba5cf5386cc913c6924e5cd71d01fc28263786",
+    "benchmarks/research/evidence/Cargo.lock": "ef9e9db4d54710026847b23dc59ba1804dab3815db6eff8ed3d26d2a500fd1c8",
+    "benchmarks/research/evidence/Cargo.toml": "c2448fba3296641d32009e72e286ef635ae2616bdf4a719b941cc69fc46c02f9",
+    "benchmarks/research/evidence/RUN.md": "76712a5c2a4f3874bba68005a8583251d6957d40401ae4e79245145ffea79007",
+    "benchmarks/research/evidence/fixtures/forgetting-demo.json": "4c06aa5b5d4cc8834a3ac28f5113da64f120e3247d8d0e55bf334a8e05411e39",
+    "benchmarks/research/evidence/fixtures/identity.json": "97e98843d194797b5a0232d741f05946f2b8e2920f3a88b860a1cd7b23a64875",
+    "benchmarks/research/evidence/fixtures/payments.json": "0bc7423935953ab3adb893f5970bf38359568a1d203f8dc700a0e2e0fbd61408",
+    "benchmarks/research/evidence/fixtures/proof.json": "c7eebf29a7e660b2ceff85751fc0e932756ec5885308e574d587749141cb892b",
+    "benchmarks/research/evidence/src/contract.rs": "e871f33020cc91c1cae1852c1168bc1e9878a22b57b92255f65adec3a083044c",
+    "benchmarks/research/evidence/src/execute.rs": "b0fd325c41c9e21f7351f65e34ce4b96e722ad54554099f93e95cce753ad0642",
+    "benchmarks/research/evidence/src/lib.rs": "b3e7215b2ed82169ade8f792cd519dda0ddb792123dfff64f47efe446727fb31",
+    "benchmarks/research/evidence/src/main.rs": "124c6d6f5957050533fa23165744792874256d7b3f505be6d9617fef59014c27",
+    "benchmarks/research/evidence/src/narrative.rs": "d8c8ebbff5b591837dace96ebaecdc48b3ef6e40d2e0dc20babb6e69477657ae",
+    "benchmarks/research/evidence/src/proof.rs": "7800799143466b0b84117ed8d66d1be1f26a64d387b0f19c8327c7ded0300fd0",
+    "benchmarks/research/evidence/src/retrieval.rs": "8c577d4a85e4296b565aeeed2634c951eaa5e7b4fd270704001346294c7cc3ce",
+    "benchmarks/research/evidence/src/store.rs": "a5dba27a9a27a70e82c24f87f11f28219adcb6e68a8dbb165c850de966d59d2a",
+    "benchmarks/research/evidence/tests/cli.rs": "3056c189d4f4f2b9a09054223a2a92e9b519501e1733fc0791253123141f89ef",
+    "benchmarks/research/evidence/tests/execution.rs": "2379a94cb01e48bd9c4b9b7fd50f602b78a5d343ccdd1214b52544c2cd921d50",
+    "benchmarks/research/evidence/tests/proof.rs": "97f7bd511d9b7c0e818ffef1279b21e1d5561626920661529757aa71d6772a84",
+    "benchmarks/research/evidence/tests/retrieval.rs": "7b3b022b5c9db1c7a70c28bef84b16a9b71bb816f07fb291e5d90e60fbb8e229",
+    "benchmarks/research/evidence/tests/store.rs": "8da1d46f15e36f0df76a150171f5753a8ff839027dc241afeee41e9bd3f270be"
+  }
+}

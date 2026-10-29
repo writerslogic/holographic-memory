@@ -1,0 +1,250 @@
+{
+  "namespace": "synthetic-payments",
+  "sources": [
+    {
+      "id": "anchor",
+      "version": "v1",
+      "text": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt.",
+      "observed_at": 100
+    },
+    {
+      "id": "amount",
+      "version": "v1",
+      "text": "The receipt total for the Café λ workshop was USD 4.25.",
+      "observed_at": 100
+    },
+    {
+      "id": "repeat",
+      "version": "v1",
+      "text": "I mentioned that same Café λ workshop payment again: USD 4.25.",
+      "observed_at": 100
+    },
+    {
+      "id": "second",
+      "version": "v1",
+      "text": "I paid USD 2.75 for the separate ceramics workshop.",
+      "observed_at": 100
+    },
+    {
+      "id": "planned",
+      "version": "v1",
+      "text": "I plan to pay USD 9.99 for next month's pottery workshop.",
+      "observed_at": 100
+    },
+    {
+      "id": "attendance",
+      "version": "v1",
+      "text": "I attended a concert; its listed ticket price was USD 88.00, without a payment statement.",
+      "observed_at": 100
+    }
+  ],
+  "claims": [
+    {
+      "id": "unknown-amount",
+      "subject": "person:maya",
+      "predicate": "paid_for",
+      "event_key": "cafe-workshop",
+      "event_candidates": [
+        "cafe-workshop"
+      ],
+      "value": null,
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "anchor",
+          "source_version": "v1",
+          "start": 0,
+          "end": 78,
+          "quote": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "known-amount",
+      "subject": "person:maya",
+      "predicate": "paid_for",
+      "event_key": "cafe-workshop",
+      "event_candidates": [
+        "cafe-workshop"
+      ],
+      "value": {
+        "minor": 425,
+        "unit": "USD_cent"
+      },
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "amount",
+          "source_version": "v1",
+          "start": 0,
+          "end": 57,
+          "quote": "The receipt total for the Café λ workshop was USD 4.25."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "repeated-payment",
+      "subject": "person:maya",
+      "predicate": "paid_for",
+      "event_key": "cafe-workshop",
+      "event_candidates": [
+        "cafe-workshop"
+      ],
+      "value": {
+        "minor": 425,
+        "unit": "USD_cent"
+      },
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "repeat",
+          "source_version": "v1",
+          "start": 0,
+          "end": 64,
+          "quote": "I mentioned that same Café λ workshop payment again: USD 4.25."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "second-payment",
+      "subject": "person:maya",
+      "predicate": "paid_for",
+      "event_key": "ceramics-workshop",
+      "event_candidates": [
+        "ceramics-workshop"
+      ],
+      "value": {
+        "minor": 275,
+        "unit": "USD_cent"
+      },
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "second",
+          "source_version": "v1",
+          "start": 0,
+          "end": 51,
+          "quote": "I paid USD 2.75 for the separate ceramics workshop."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "planned-payment",
+      "subject": "person:maya",
+      "predicate": "paid_for",
+      "event_key": "pottery-workshop",
+      "event_candidates": [
+        "pottery-workshop"
+      ],
+      "value": {
+        "minor": 999,
+        "unit": "USD_cent"
+      },
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "planned",
+      "evidence": [
+        {
+          "source_id": "planned",
+          "source_version": "v1",
+          "start": 0,
+          "end": 57,
+          "quote": "I plan to pay USD 9.99 for next month's pottery workshop."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "attendance-only",
+      "subject": "person:maya",
+      "predicate": "attended",
+      "event_key": "concert",
+      "event_candidates": [
+        "concert"
+      ],
+      "value": {
+        "minor": 8800,
+        "unit": "USD_cent"
+      },
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "attendance",
+          "source_version": "v1",
+          "start": 0,
+          "end": 89,
+          "quote": "I attended a concert; its listed ticket price was USD 88.00, without a payment statement."
+        }
+      ],
+      "supersedes": []
+    }
+  ],
+  "terms": "retrievalneedle",
+  "query": {
+    "selection": {
+      "subject": "person:maya",
+      "predicate": "paid_for",
+      "modality": "actual",
+      "event_window": null
+    },
+    "operation": {
+      "kind": "sum",
+      "unit": "USD_cent"
+    },
+    "as_of": 100,
+    "known_at": null,
+    "max_worlds": 256
+  },
+  "limits": {
+    "max_sources": 32,
+    "max_source_bytes": 65536,
+    "max_packet_bytes": 131072,
+    "max_rounds": 3,
+    "initial_k": 1,
+    "repair_k": 8
+  }
+}

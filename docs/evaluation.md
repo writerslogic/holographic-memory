@@ -215,6 +215,129 @@ uv run --no-project python benchmarks/public/longmemeval_quality.py
 uv run --no-project python -m unittest discover -s benchmarks/public -p 'test_longmemeval_quality.py'
 ```
 
+## Candidate improvements to memory quality
+
+The following designs are hypotheses about improving memory quality, not measured
+score improvements. A standalone [local research prototype](../benchmarks/research/evidence/RUN.md)
+implements source-checked claims, distinct counts/sums/comparisons, bounded evidence
+repair and deletion planning over declared proofs. It uses supplied annotations
+and typed queries; it does not extract assertions from natural-language questions
+or change the production engine. The optional, revision-pinned `narrative-lens` bridge
+uses its entity resolver with explicit corrections, without model inference.
+The [synthetic development receipt](../benchmarks/results/evidence_program_v1/README.md)
+records reproducible examples and deletion/replay checks; it reports no benchmark
+score or extraction-quality measurement.
+The broader designs below extend the existing
+[evidence-ledger proposal](../benchmarks/results/longmemeval_role_failure_diagnostic_v1.json)
+and use the recorded failures to identify mechanisms, not question-specific
+rules. The earlier 93/100 exploratory result is not a native production score or
+evidence that only seven general memory failures remain.
+
+### Execute answers over attributed claims and events
+
+Keep a query-specific table of assertions with entity and event identity,
+predicate and argument roles, value/unit, polarity/modality, event-time interval,
+observation time, validity, and original source/version/span. Preserve alternative
+identity assignments. Distinguish payment from attendance, participation from
+leadership, plans from completed events, and a new observation from a new event.
+
+Compile supported questions into bounded, typed operations such as distinct
+count, sum, comparison, temporal selection and relation joins. Execute these
+operations deterministically and return their operands and source references.
+If all admissible identity/time interpretations yield the same result, uncertainty
+in those interpretations need not force abstention. Otherwise retain the
+conditional result or unresolved operands. Exhausting a retrieval pool does not
+prove complete enumeration; bounds over observed candidates are not bounds over
+all events. Incomplete solver search must remain explicit.
+
+HMS already has exact triple postings, multi-hop traversal, bitemporal facts and
+source/premise recovery. The new work is evidence-addressed event assertions and
+their executable relation semantics, not another generic graph. Exact execution
+cannot establish that a model extracted the correct assertion. The local
+`narrative-lens` entity corrections, evidence ranges and explicit uncertainty
+types are possible adapter inputs; some are uncommitted work and its fiction
+annotations are not automatic organizational truth extraction.
+
+### Retrieve missing operands and counterevidence
+
+After initial retrieval, identify the specific missing binding or defeater:
+which event an alias names, whether an action happened, an unknown amount, or
+an explicit cancellation or correction. Issue bounded searches for those gaps
+and pack complete premise groups by additional answer-relevant coverage within
+the same total context and round budgets. Preserve the direct retrieval path for
+questions that need no structured operations.
+
+This extends existing static subqueries and premise expansion with feedback from
+the evidence actually found. The existing
+[challenge experiment](../benchmarks/research/challenge/src/lib.rs) already
+retrieves scoped counterevidence; use it as a baseline rather than recreating
+that mechanism. An inspected derivation record should link each
+output value to its source spans, interpretation and operation. Quote matching
+and NLI are checks on parts of that record, not proof of factual truth. NLI must
+report model unavailability separately from a neutral result. Iterative retrieval
+has relevant precedent in [IRCoT](https://aclanthology.org/2023.acl-long.557/);
+temporal graph memory and graph/passage integration are explored in
+[Zep](https://arxiv.org/abs/2501.13956) and
+[HippoRAG 2](https://arxiv.org/abs/2502.14802). Their reported gains do not predict
+HMS gains.
+
+### Forget scoped information across its derivations
+
+The existing Bemula adapter reviews truncated turn text in independent batches;
+the published run's zero purged IDs returned does not establish correct target
+selection or protection against inference. Compile a request into entity,
+attribute, temporal scope, exceptions, replacement information and future-retention
+intent. Select proposition occurrences and copies across turns, summaries and
+derived records; preserve unrelated information from mixed turns. Make deletion,
+residual replacement and invalidation one recoverable operation. Use source and
+scope generations to reject stale replay while permitting explicitly allowed
+new learning. Retraction must invalidate dependent postings, caches and evidence.
+
+For declared inference rules, represent alternative support as sets of required
+premises. Copies and summaries retain their underlying source dependencies;
+they are not independent support. Seek a bounded deletion or coarsening plan
+that breaks every known proof of the forbidden target while respecting protected facts. If preservation
+constraints make this impossible, report that conflict. These checks cover only
+the recorded evidence and rule vocabulary, not arbitrary model inference or
+guessing. HMS already has exact forgetting scopes and research claim-family
+deletion; the new invariant spans alternative derivations and replay. The
+`narrative-lens` actor-forgetting action retains proposition/evidence history and
+must not be substituted for HMS privacy deletion.
+
+### Compare mechanisms before a live benchmark
+
+Use this order of local/free development checks:
+
+| Comparison | What it isolates |
+|---|---|
+| Same retained sources: reader, ledger-only reader, ledger plus typed operations | Extraction and evidence use, separate from retrieval |
+| Supplied correct assertions versus extracted assertions | Reasoning/retrieval ceiling versus extraction errors |
+| Static searches versus missing-operand searches at equal budgets | Evidence coverage after final packing |
+| Bounded proof-aware forgetting versus current scope selection | Forgotten/preserved proposition sets and alternative support |
+
+Use independently generated cases with homonyms, reversed relations, repeated
+events, updates, ambiguous dates, mixed sensitive/unrelated facts and alternate
+proofs. Rename entities, reorder independent observations and split/merge turns
+without changing the expected semantics. Measure unsupported answers, false
+merges, operand coverage, extraction failures, latency, memory and mutation cost.
+Test crash/retry/reopen, stale replay and sensitive-marker absence for deletion.
+
+Associative sketches are a later candidate-generation experiment. The tested
+[global phase sidecar](../benchmarks/results/holographic_context_v1/README.md)
+lost to exact intersection, and
+[phase-routing screens](../benchmarks/results/holographic_router_synthetic_v1/README.md)
+also failed their gates. Any different scoped sketch must beat exact postings
+and conventional semantic expansion under matched memory/output budgets, resolve
+to exact current source IDs, and rebuild affected segments after deletion. It
+cannot establish absence, exact counts or erasure.
+
+No paid development calls or new live benchmark runs are authorized by this
+work. Preserve the sealed held-out split. A later explicitly authorized
+live comparison must use the native pipeline, freeze extraction/retrieval/reader
+policies and budgets, count every model stage, retain regressions, and separate
+retrieval coverage from end-to-end QA and forgetting metrics. These directions
+target memory quality; they do not establish SIFT/VIBE ANN improvements.
+
 ## Checked-in inputs and reports
 
 The [2026-09-14 reports](../benchmarks/results/review-2026-09-14) were produced locally on an Apple M4,
@@ -241,6 +364,63 @@ cache, so the timed workload includes fallback retrieval.
 cargo run --release --bin hms-eval -- \
   --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
 ```
+
+### Dataset format
+
+A dataset is a UTF-8 JSON object with nonempty `documents` and `queries` arrays.
+Queries are evaluation inputs, not documents to ingest. Each query's nonempty
+`relevantIds` array names existing document IDs; repeated labels count once.
+Use unique document IDs and independently worded queries.
+
+| Field | Required | Meaning |
+|---|---|---|
+| `documents[].id` | yes | Nonempty document identifier |
+| `documents[].text` | yes | Original source text to index |
+| `documents[].sourceUri` | no | Source reference retained with chunks |
+| `documents[].version` | no | Application-defined source version |
+| `documents[].metadata` | no | JSON metadata retained with the document |
+| `documents[].chunkWords` | no | Target word count per chunk, 1–4096; defaults to 256 |
+| `documents[].overlapWords` | no | Word overlap below `chunkWords`; defaults to the smaller of 32 and `chunkWords - 1` |
+| `documents[].storeText` | no | Whether to retain chunk text; defaults to true |
+| `documents[].embeddings` | no | One finite numeric vector per generated chunk |
+| `documents[].titleWeight` | no | First-line term weighting in the first chunk, 1–16; 1 or absent leaves it unchanged |
+| `queries[].text` | yes | Query text, used for lexical retrieval |
+| `queries[].relevantIds` | yes | Document IDs judged relevant; binary labels, without grades |
+| `queries[].embedding` | no | Query vector in the same embedding space as the documents |
+| `embeddingSpace` | no | Object with required `model`, `revision`, `dimensions`, `normalization` and `metric` fields; see [embedding compatibility](production-readiness.md) |
+
+For text-only lexical evaluation, omit all embedding fields. Embedding evaluation
+requires compatible vectors and the embedding-space configuration described in
+the document API; the harness does not generate vectors or load a model. Unknown
+top-level fields such as `description` are ignored. Invalid JSON, missing fields,
+empty datasets and labels referencing absent IDs fail the run.
+
+Save this complete example as `my.json`:
+
+```json
+{
+  "documents": [
+    {"id": "backup", "text": "Restore lost records from a verified backup on a separate disk."},
+    {"id": "index", "text": "Schedule search index maintenance outside the ingestion path."}
+  ],
+  "queries": [
+    {"text": "How can I restore lost records?", "relevantIds": ["backup"]}
+  ]
+}
+```
+
+```sh
+cargo run --release --bin hms-eval -- --dataset my.json --dimensions 4096 --k 3
+```
+
+`--k` is the number of distinct document IDs scored per query (1–1000, default
+10). Retrieval collects at most 1,000 chunk candidates, keeps the first occurrence
+of each document ID, then scores the first `k`. Recall is the fraction of labeled
+documents retrieved, averaged across queries. MRR uses the first relevant rank;
+nDCG uses binary relevance. `--assert-min-recall 0.90` fails if average recall@k
+is below 0.90; it does not impose a floor on every query or on MRR/nDCG. Omitting
+the flag sets a zero recall floor. Latency covers retrieval before document
+deduplication, excludes ingestion, and is reported in microseconds.
 
 The JSON output contains document-deduplicated recall@k, MRR@k, nDCG@k, and query latency. CI
 runs this fixture alongside the existing synthetic self-recall floor. Add domain documents

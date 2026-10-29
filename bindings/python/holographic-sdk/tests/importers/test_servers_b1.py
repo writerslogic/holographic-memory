@@ -272,6 +272,7 @@ def test_redis_mock_ft_info_discovery_and_json_documents():
             if a[0] == "JSON.GET":
                 d = self.docs[a[1]]
                 return d if isinstance(d, str) else json.dumps([d])
+            raise AssertionError("unexpected Redis command: " + a[0])
 
         def scan(self, cursor, match, count):
             return 0, list(self.docs)

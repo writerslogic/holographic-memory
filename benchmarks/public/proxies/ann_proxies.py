@@ -298,7 +298,7 @@ def pool_usage(sim, q, truth, nq):
     for ef in (128, 384):
         fresh_frac, ins_frac, steps_n = [], [], []
         for i in range(nq):
-            ids, ev, (steps, seen, pool, ins) = sim.search(q[i], ef, rerank=64, trace=True)
+            _, _, (steps, _, _, ins) = sim.search(q[i], ef, rerank=64, trace=True)
             nfresh = sum(s[3] for s in steps)
             fresh_frac.append(nfresh / (len(steps) * sim.g.degree))
             ins_frac.append(ins / max(nfresh, 1))

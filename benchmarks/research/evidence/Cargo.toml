@@ -1,0 +1,25 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "hms-research-evidence"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+description = "Local research prototype for attributed claims, bounded answer operations and evidence repair"
+
+[workspace]
+
+[dependencies]
+holographic-memory = { path = "../../.." }
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
+tempfile = "3"
+narrative-lens = { git = "https://github.com/writerslogic/narrative-lens", rev = "97d47eca34474409e963064dc8319559a99044f8", optional = true, default-features = false }
+
+[features]
+default = []
+narrative-lens = ["dep:narrative-lens"]

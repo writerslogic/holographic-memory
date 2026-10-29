@@ -10,6 +10,7 @@ plan.json: {"rounds": 2, "max_load": 8, "max_wait_secs": 900, "out_dir": "...",
             "arms": [{"name": "...", "argv": ["/path/public-bench", "lme-model", ...]}]}
 An arm's argv gets `--out <out_dir>/<name>_r<round>.out` appended."""
 import json
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -21,7 +22,7 @@ def load1():
     return [float(x) for x in v.strip("{} \n").split()]
 
 
-plan = json.load(open(sys.argv[1]))
+plan = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 deadline = time.monotonic() + plan["max_wait_secs"]
 runs = []
 for r in range(plan["rounds"]):
@@ -47,4 +48,4 @@ for r in range(plan["rounds"]):
         runs.append(run)
         print(json.dumps({k: run[k] for k in ("arm", "round", "exit", "wall_secs", "load_avg_before")}),
               flush=True)
-json.dump({"plan": plan, "runs": runs}, open(sys.argv[2], "w"), indent=1)
+Path(sys.argv[2]).write_text(json.dumps({"plan": plan, "runs": runs}, indent=1), encoding="utf-8")

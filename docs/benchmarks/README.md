@@ -13,6 +13,11 @@ governs everything below is that **every number in that file traces to a committ
 under `benchmarks/results/competitive/`, and a comparator that beats HMS is reported as beating
 HMS.**
 
+Historical source snapshots and large raw output caches are indexed in the
+[evidence archive guide](../../benchmarks/evidence/README.md). Restore their pinned
+bytes before replaying an older experiment. The retained summaries describe their
+recorded revisions; no benchmark was rerun as part of source cleanup.
+
 ```sh
 ./benchmarks/competitive/hms-bench list                    # systems, suites, what was not run
 ./benchmarks/competitive/hms-bench run --suite light       # the hosted-runner subset (about an hour)

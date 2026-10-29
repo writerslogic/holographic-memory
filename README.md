@@ -48,7 +48,7 @@ telemetry and no model downloads unless you turn on a feature that asks for one.
 | Vector index | Graph index with a memory-mapped vertex file, an updatable delta for inserts and deletes, optional query-aware routing trained on sample queries |
 | Memory API | `remember`, `recall`, `forget` and `explain` with time validity and supersession; conversation memory with source provenance |
 | Storage | Atomic replace and delete, crash-safe journal and checkpoints, verified compaction, one writer per store |
-| Security | Optional AES-256-GCM encryption at rest, signed audit log, COSE/SCITT provenance |
+| Security | Optional AES-256-GCM storage encryption with [documented coverage and limits](docs/SECURITY.md), signed audit log, COSE/SCITT provenance |
 | Vector-symbolic layer | Sparse hypervectors with bind, bundle and permute, triples with multi-hop queries, Hopfield cleanup |
 
 ## Who it's for
@@ -192,6 +192,12 @@ To build the native module from source instead (Rust required):
 ```sh
 npm ci --omit=optional && npm run build
 ```
+
+The organizational-knowledge examples target this source checkout and require
+the rebuild above. The npm 0.6.4 release does not expose the new `listDocuments`
+method used for scoped pruning. See the
+[integration guide](docs/integrations/organizational-knowledge.md) for source
+provenance, namespace isolation, dry runs and deletion limits.
 
 ```js quickstart-check
 const { HolographicMemorySystem } = require('holographic-memory')

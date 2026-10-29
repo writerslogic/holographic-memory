@@ -11,6 +11,16 @@ pub struct AuditEntryJs {
     pub signed: bool,
 }
 
+/// A stored document as `listDocuments` returns it: identity and provenance, not text.
+#[napi(object)]
+pub struct ListedDocument {
+    pub id: String,
+    pub version: String,
+    pub source_uri: Option<String>,
+    pub metadata: serde_json::Value,
+    pub chunk_count: u32,
+}
+
 #[napi(object)]
 pub struct StructuralResultJs {
     pub entity_id: String,

@@ -54,6 +54,7 @@ jobs:
           uv venv "$RUNNER_TEMP/sdk-venv"
           uv pip install --python "$RUNNER_TEMP/sdk-venv/bin/python" dist/*.whl
           "$RUNNER_TEMP/sdk-venv/bin/python" -I -c "import holographic_sdk; print(holographic_sdk.__name__, 'imports')"
+          "$RUNNER_TEMP/sdk-venv/bin/python" -I -c "from importlib.resources import files; assert files('holographic_sdk').joinpath('py.typed').is_file(), 'wheel is missing its PEP 561 marker'"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sdk-dist

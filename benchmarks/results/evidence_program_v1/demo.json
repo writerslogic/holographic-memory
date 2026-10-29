@@ -1,0 +1,961 @@
+{
+  "research_prototype": true,
+  "supplied_annotations": "oracle-extraction control; no extraction or model calls",
+  "cases": [
+    {
+      "name": "payment_sum_with_source_repair",
+      "report": {
+        "query": {
+          "selection": {
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "modality": "actual",
+            "event_window": null
+          },
+          "operation": {
+            "kind": "sum",
+            "unit": "USD_cent"
+          },
+          "as_of": 100,
+          "known_at": null,
+          "max_worlds": 256
+        },
+        "terms": "retrievalneedle",
+        "answer": {
+          "status": "resolved",
+          "lower": 700,
+          "upper": 700,
+          "unit": "USD_cent",
+          "observed_only": true,
+          "worlds": 1,
+          "claim_ids": [
+            "known-amount",
+            "repeated-payment",
+            "second-payment",
+            "unknown-amount"
+          ],
+          "evidence": [
+            {
+              "source_id": "amount",
+              "source_version": "v1",
+              "start": 0,
+              "end": 57,
+              "quote": "The receipt total for the Café λ workshop was USD 4.25."
+            },
+            {
+              "source_id": "anchor",
+              "source_version": "v1",
+              "start": 0,
+              "end": 78,
+              "quote": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt."
+            },
+            {
+              "source_id": "repeat",
+              "source_version": "v1",
+              "start": 0,
+              "end": 64,
+              "quote": "I mentioned that same Café λ workshop payment again: USD 4.25."
+            },
+            {
+              "source_id": "second",
+              "source_version": "v1",
+              "start": 0,
+              "end": 51,
+              "quote": "I paid USD 2.75 for the separate ceramics workshop."
+            }
+          ],
+          "gaps": []
+        },
+        "sources": [
+          {
+            "id": "amount",
+            "version": "v1",
+            "text": "The receipt total for the Café λ workshop was USD 4.25.",
+            "observed_at": 100
+          },
+          {
+            "id": "anchor",
+            "version": "v1",
+            "text": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt.",
+            "observed_at": 100
+          },
+          {
+            "id": "repeat",
+            "version": "v1",
+            "text": "I mentioned that same Café λ workshop payment again: USD 4.25.",
+            "observed_at": 100
+          },
+          {
+            "id": "second",
+            "version": "v1",
+            "text": "I paid USD 2.75 for the separate ceramics workshop.",
+            "observed_at": 100
+          }
+        ],
+        "claims": [
+          {
+            "id": "known-amount",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "cafe-workshop",
+            "event_candidates": [
+              "cafe-workshop"
+            ],
+            "value": {
+              "minor": 425,
+              "unit": "USD_cent"
+            },
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "amount",
+                "source_version": "v1",
+                "start": 0,
+                "end": 57,
+                "quote": "The receipt total for the Café λ workshop was USD 4.25."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "repeated-payment",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "cafe-workshop",
+            "event_candidates": [
+              "cafe-workshop"
+            ],
+            "value": {
+              "minor": 425,
+              "unit": "USD_cent"
+            },
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "repeat",
+                "source_version": "v1",
+                "start": 0,
+                "end": 64,
+                "quote": "I mentioned that same Café λ workshop payment again: USD 4.25."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "second-payment",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "ceramics-workshop",
+            "event_candidates": [
+              "ceramics-workshop"
+            ],
+            "value": {
+              "minor": 275,
+              "unit": "USD_cent"
+            },
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "second",
+                "source_version": "v1",
+                "start": 0,
+                "end": 51,
+                "quote": "I paid USD 2.75 for the separate ceramics workshop."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "unknown-amount",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "cafe-workshop",
+            "event_candidates": [
+              "cafe-workshop"
+            ],
+            "value": null,
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "anchor",
+                "source_version": "v1",
+                "start": 0,
+                "end": 78,
+                "quote": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt."
+              }
+            ],
+            "supersedes": []
+          }
+        ],
+        "steps": [
+          {
+            "phase": "lexical",
+            "candidates": [
+              "anchor"
+            ],
+            "admitted": [
+              "anchor"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": []
+          },
+          {
+            "phase": "scope_repair",
+            "candidates": [
+              "amount",
+              "repeat",
+              "second"
+            ],
+            "admitted": [
+              "amount",
+              "repeat",
+              "second"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": [
+              {
+                "kind": "missing_value",
+                "claim_id": "unknown-amount"
+              }
+            ]
+          }
+        ],
+        "source_bytes": 250,
+        "catalogue_candidates": 4,
+        "catalogue_source_bytes": 396,
+        "packet_bytes": 2269,
+        "limits": {
+          "max_sources": 32,
+          "max_source_bytes": 65536,
+          "max_packet_bytes": 131072,
+          "max_rounds": 3,
+          "initial_k": 1,
+          "repair_k": 8
+        }
+      }
+    },
+    {
+      "name": "distinct_actual_payments",
+      "report": {
+        "query": {
+          "selection": {
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "modality": "actual",
+            "event_window": null
+          },
+          "operation": {
+            "kind": "count_distinct"
+          },
+          "as_of": 100,
+          "known_at": null,
+          "max_worlds": 256
+        },
+        "terms": "retrievalneedle",
+        "answer": {
+          "status": "resolved",
+          "lower": 2,
+          "upper": 2,
+          "unit": "count",
+          "observed_only": true,
+          "worlds": 1,
+          "claim_ids": [
+            "known-amount",
+            "repeated-payment",
+            "second-payment",
+            "unknown-amount"
+          ],
+          "evidence": [
+            {
+              "source_id": "amount",
+              "source_version": "v1",
+              "start": 0,
+              "end": 57,
+              "quote": "The receipt total for the Café λ workshop was USD 4.25."
+            },
+            {
+              "source_id": "anchor",
+              "source_version": "v1",
+              "start": 0,
+              "end": 78,
+              "quote": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt."
+            },
+            {
+              "source_id": "repeat",
+              "source_version": "v1",
+              "start": 0,
+              "end": 64,
+              "quote": "I mentioned that same Café λ workshop payment again: USD 4.25."
+            },
+            {
+              "source_id": "second",
+              "source_version": "v1",
+              "start": 0,
+              "end": 51,
+              "quote": "I paid USD 2.75 for the separate ceramics workshop."
+            }
+          ],
+          "gaps": []
+        },
+        "sources": [
+          {
+            "id": "amount",
+            "version": "v1",
+            "text": "The receipt total for the Café λ workshop was USD 4.25.",
+            "observed_at": 100
+          },
+          {
+            "id": "anchor",
+            "version": "v1",
+            "text": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt.",
+            "observed_at": 100
+          },
+          {
+            "id": "repeat",
+            "version": "v1",
+            "text": "I mentioned that same Café λ workshop payment again: USD 4.25.",
+            "observed_at": 100
+          },
+          {
+            "id": "second",
+            "version": "v1",
+            "text": "I paid USD 2.75 for the separate ceramics workshop.",
+            "observed_at": 100
+          }
+        ],
+        "claims": [
+          {
+            "id": "known-amount",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "cafe-workshop",
+            "event_candidates": [
+              "cafe-workshop"
+            ],
+            "value": {
+              "minor": 425,
+              "unit": "USD_cent"
+            },
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "amount",
+                "source_version": "v1",
+                "start": 0,
+                "end": 57,
+                "quote": "The receipt total for the Café λ workshop was USD 4.25."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "repeated-payment",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "cafe-workshop",
+            "event_candidates": [
+              "cafe-workshop"
+            ],
+            "value": {
+              "minor": 425,
+              "unit": "USD_cent"
+            },
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "repeat",
+                "source_version": "v1",
+                "start": 0,
+                "end": 64,
+                "quote": "I mentioned that same Café λ workshop payment again: USD 4.25."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "second-payment",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "ceramics-workshop",
+            "event_candidates": [
+              "ceramics-workshop"
+            ],
+            "value": {
+              "minor": 275,
+              "unit": "USD_cent"
+            },
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "second",
+                "source_version": "v1",
+                "start": 0,
+                "end": 51,
+                "quote": "I paid USD 2.75 for the separate ceramics workshop."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "unknown-amount",
+            "subject": "person:maya",
+            "predicate": "paid_for",
+            "event_key": "cafe-workshop",
+            "event_candidates": [
+              "cafe-workshop"
+            ],
+            "value": null,
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "anchor",
+                "source_version": "v1",
+                "start": 0,
+                "end": 78,
+                "quote": "retrievalneedle I paid for the Café λ workshop; the amount is on my receipt."
+              }
+            ],
+            "supersedes": []
+          }
+        ],
+        "steps": [
+          {
+            "phase": "lexical",
+            "candidates": [
+              "anchor"
+            ],
+            "admitted": [
+              "anchor"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": []
+          },
+          {
+            "phase": "scope_repair",
+            "candidates": [
+              "amount",
+              "repeat",
+              "second"
+            ],
+            "admitted": [
+              "amount",
+              "repeat",
+              "second"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": []
+          }
+        ],
+        "source_bytes": 250,
+        "catalogue_candidates": 4,
+        "catalogue_source_bytes": 396,
+        "packet_bytes": 2269,
+        "limits": {
+          "max_sources": 32,
+          "max_source_bytes": 65536,
+          "max_packet_bytes": 131072,
+          "max_rounds": 3,
+          "initial_k": 1,
+          "repair_k": 8
+        }
+      }
+    },
+    {
+      "name": "identity_range",
+      "report": {
+        "query": {
+          "selection": {
+            "subject": "person:maya",
+            "predicate": "attended",
+            "modality": "actual",
+            "event_window": null
+          },
+          "operation": {
+            "kind": "count_distinct"
+          },
+          "as_of": 100,
+          "known_at": null,
+          "max_worlds": 256
+        },
+        "terms": "identityneedle",
+        "answer": {
+          "status": "bounded",
+          "lower": 1,
+          "upper": 2,
+          "unit": "count",
+          "observed_only": true,
+          "worlds": 2,
+          "claim_ids": [
+            "ambiguous-visit",
+            "first-visit"
+          ],
+          "evidence": [
+            {
+              "source_id": "ambiguous-visit",
+              "source_version": "v1",
+              "start": 0,
+              "end": 70,
+              "quote": "I also described a fair; it may have been that visit or a second fair."
+            },
+            {
+              "source_id": "first-visit",
+              "source_version": "v1",
+              "start": 0,
+              "end": 41,
+              "quote": "identityneedle I visited a ceramics fair."
+            }
+          ],
+          "gaps": []
+        },
+        "sources": [
+          {
+            "id": "ambiguous-visit",
+            "version": "v1",
+            "text": "I also described a fair; it may have been that visit or a second fair.",
+            "observed_at": 100
+          },
+          {
+            "id": "first-visit",
+            "version": "v1",
+            "text": "identityneedle I visited a ceramics fair.",
+            "observed_at": 100
+          }
+        ],
+        "claims": [
+          {
+            "id": "ambiguous-visit",
+            "subject": "person:maya",
+            "predicate": "attended",
+            "event_key": "ambiguous-mention",
+            "event_candidates": [
+              "fair-a",
+              "fair-b"
+            ],
+            "value": null,
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "ambiguous-visit",
+                "source_version": "v1",
+                "start": 0,
+                "end": 70,
+                "quote": "I also described a fair; it may have been that visit or a second fair."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "first-visit",
+            "subject": "person:maya",
+            "predicate": "attended",
+            "event_key": "known-visit",
+            "event_candidates": [
+              "fair-a"
+            ],
+            "value": null,
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "first-visit",
+                "source_version": "v1",
+                "start": 0,
+                "end": 41,
+                "quote": "identityneedle I visited a ceramics fair."
+              }
+            ],
+            "supersedes": []
+          }
+        ],
+        "steps": [
+          {
+            "phase": "lexical",
+            "candidates": [
+              "first-visit"
+            ],
+            "admitted": [
+              "first-visit"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": []
+          },
+          {
+            "phase": "scope_repair",
+            "candidates": [
+              "ambiguous-visit"
+            ],
+            "admitted": [
+              "ambiguous-visit"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": []
+          }
+        ],
+        "source_bytes": 111,
+        "catalogue_candidates": 2,
+        "catalogue_source_bytes": 111,
+        "packet_bytes": 1097,
+        "limits": {
+          "max_sources": 32,
+          "max_source_bytes": 65536,
+          "max_packet_bytes": 131072,
+          "max_rounds": 3,
+          "initial_k": 1,
+          "repair_k": 8
+        }
+      }
+    },
+    {
+      "name": "identity_budget_abstention",
+      "report": {
+        "query": {
+          "selection": {
+            "subject": "person:maya",
+            "predicate": "attended",
+            "modality": "actual",
+            "event_window": null
+          },
+          "operation": {
+            "kind": "count_distinct"
+          },
+          "as_of": 100,
+          "known_at": null,
+          "max_worlds": 1
+        },
+        "terms": "identityneedle",
+        "answer": {
+          "status": "unresolved",
+          "lower": null,
+          "upper": null,
+          "unit": "count",
+          "observed_only": true,
+          "worlds": 1,
+          "claim_ids": [
+            "ambiguous-visit",
+            "first-visit"
+          ],
+          "evidence": [
+            {
+              "source_id": "ambiguous-visit",
+              "source_version": "v1",
+              "start": 0,
+              "end": 70,
+              "quote": "I also described a fair; it may have been that visit or a second fair."
+            },
+            {
+              "source_id": "first-visit",
+              "source_version": "v1",
+              "start": 0,
+              "end": 41,
+              "quote": "identityneedle I visited a ceramics fair."
+            }
+          ],
+          "gaps": [
+            {
+              "kind": "identity_budget"
+            }
+          ]
+        },
+        "sources": [
+          {
+            "id": "ambiguous-visit",
+            "version": "v1",
+            "text": "I also described a fair; it may have been that visit or a second fair.",
+            "observed_at": 100
+          },
+          {
+            "id": "first-visit",
+            "version": "v1",
+            "text": "identityneedle I visited a ceramics fair.",
+            "observed_at": 100
+          }
+        ],
+        "claims": [
+          {
+            "id": "ambiguous-visit",
+            "subject": "person:maya",
+            "predicate": "attended",
+            "event_key": "ambiguous-mention",
+            "event_candidates": [
+              "fair-a",
+              "fair-b"
+            ],
+            "value": null,
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "ambiguous-visit",
+                "source_version": "v1",
+                "start": 0,
+                "end": 70,
+                "quote": "I also described a fair; it may have been that visit or a second fair."
+              }
+            ],
+            "supersedes": []
+          },
+          {
+            "id": "first-visit",
+            "subject": "person:maya",
+            "predicate": "attended",
+            "event_key": "known-visit",
+            "event_candidates": [
+              "fair-a"
+            ],
+            "value": null,
+            "event_time": {
+              "start": 10,
+              "end": 20
+            },
+            "valid_from": 0,
+            "valid_to": null,
+            "positive": true,
+            "modality": "actual",
+            "evidence": [
+              {
+                "source_id": "first-visit",
+                "source_version": "v1",
+                "start": 0,
+                "end": 41,
+                "quote": "identityneedle I visited a ceramics fair."
+              }
+            ],
+            "supersedes": []
+          }
+        ],
+        "steps": [
+          {
+            "phase": "lexical",
+            "candidates": [
+              "first-visit"
+            ],
+            "admitted": [
+              "first-visit"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": []
+          },
+          {
+            "phase": "scope_repair",
+            "candidates": [
+              "ambiguous-visit"
+            ],
+            "admitted": [
+              "ambiguous-visit"
+            ],
+            "skipped_for_budget": [],
+            "gaps_before": []
+          }
+        ],
+        "source_bytes": 111,
+        "catalogue_candidates": 2,
+        "catalogue_source_bytes": 111,
+        "packet_bytes": 1097,
+        "limits": {
+          "max_sources": 32,
+          "max_source_bytes": 65536,
+          "max_packet_bytes": 131072,
+          "max_rounds": 3,
+          "initial_k": 1,
+          "repair_k": 8
+        }
+      }
+    }
+  ],
+  "forgetting": {
+    "mapping": "isolated demo only: primitive IDs equal exact pinned source IDs",
+    "pinned_sources": [
+      {
+        "id": "source-a",
+        "version": "demo-v1"
+      },
+      {
+        "id": "source-b",
+        "version": "demo-v1"
+      },
+      {
+        "id": "source-protected",
+        "version": "demo-v1"
+      }
+    ],
+    "cut": {
+      "status": "solved",
+      "plan": {
+        "removed_sources": [
+          "source-a",
+          "source-b"
+        ],
+        "cost": 3,
+        "evidence": {
+          "witnesses": [
+            {
+              "node_id": "source-protected",
+              "support_index": 0,
+              "premises": []
+            },
+            {
+              "node_id": "tea-preference",
+              "support_index": 0,
+              "premises": [
+                "source-protected"
+              ]
+            }
+          ],
+          "targets": [
+            {
+              "node_id": "contact-address",
+              "derivable": false
+            }
+          ],
+          "protected": [
+            {
+              "node_id": "tea-preference",
+              "derivable": true
+            }
+          ]
+        }
+      },
+      "baseline": {
+        "witnesses": [
+          {
+            "node_id": "source-a",
+            "support_index": 0,
+            "premises": []
+          },
+          {
+            "node_id": "source-b",
+            "support_index": 0,
+            "premises": []
+          },
+          {
+            "node_id": "source-protected",
+            "support_index": 0,
+            "premises": []
+          },
+          {
+            "node_id": "contact-address",
+            "support_index": 0,
+            "premises": [
+              "source-a"
+            ]
+          },
+          {
+            "node_id": "tea-preference",
+            "support_index": 0,
+            "premises": [
+              "source-protected"
+            ]
+          }
+        ],
+        "targets": [
+          {
+            "node_id": "contact-address",
+            "derivable": true
+          }
+        ],
+        "protected": [
+          {
+            "node_id": "tea-preference",
+            "derivable": true
+          }
+        ]
+      },
+      "completed_candidates": 8,
+      "total_candidates": 8,
+      "steps_used": 108
+    },
+    "forgotten_sources_absent_after_reopen": [
+      "source-a",
+      "source-b"
+    ],
+    "protected_sources_present": [
+      "source-protected"
+    ],
+    "same_version_replay_rejected": true,
+    "fresh_version_relearned": [
+      {
+        "id": "source-a",
+        "version": "demo-v2"
+      },
+      {
+        "id": "source-b",
+        "version": "demo-v2"
+      }
+    ]
+  }
+}

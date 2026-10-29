@@ -252,15 +252,15 @@ def finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries) -> d
         try:
             env["versions"][p] = version(p)
         except PackageNotFoundError:
-            pass
+            continue
     report = {"dataset": {k: v for k, v in meta.items() if k != "_dir"}, "environment": env, "repeats": repeats,
               "max_load": MAX_LOAD, "qps_at_recall": at_recall, "competitors": rows, "extra_systems": extra_runs,
               "hms": [{k: v for k, v in r.items() if k != "dataset"} for r in hms],
               "notes": ["Queries run single-threaded one at a time for every system; builds use all cores.",
                         "HMS takes dense input through its sparse encoder; its latency includes encoding (query_total).",
-                        "hnswlib index_bytes is an estimate (vectors + level-0 links); FAISS sizes are serialized bytes; "
+                        ("hnswlib index_bytes is an estimate (vectors + level-0 links); FAISS sizes are serialized bytes; "
                         "rabitqlib sizes are saved-index bytes; NGT is the index directory; Lucene is the on-heap graph "
-                        "plus the float vectors.",
+                        "plus the float vectors."),
                         "Extra systems (--extra) are timed by the same loop; Lucene runs its loop in Java (lucene_hnsw/)."]}
     if queries:
         report["smoke_test"] = f"only the first {queries} test queries: NOT a publishable measurement"

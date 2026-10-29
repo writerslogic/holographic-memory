@@ -1,5 +1,6 @@
 """Prepare or execute an explicitly featured local candidate wheel build."""
 
+from contextlib import suppress
 import argparse
 import hashlib
 import json
@@ -200,10 +201,8 @@ def stop_owned(process):
         if time.monotonic() >= deadline:
             break
         time.sleep(0.01)
-    try:
+    with suppress(ProcessLookupError):
         os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
     process.wait(timeout=1)
 
 

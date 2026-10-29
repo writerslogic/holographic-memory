@@ -1,0 +1,177 @@
+{
+  "namespace": "synthetic-forgetting",
+  "sources": [
+    {
+      "id": "source-a",
+      "version": "demo-v1",
+      "text": "The synthetic contact address is cedar@example.test.",
+      "observed_at": 100
+    },
+    {
+      "id": "source-b",
+      "version": "demo-v1",
+      "text": "A second record repeats the contact address cedar@example.test.",
+      "observed_at": 100
+    },
+    {
+      "id": "source-protected",
+      "version": "demo-v1",
+      "text": "The preferred drink is tea.",
+      "observed_at": 100
+    }
+  ],
+  "claims": [
+    {
+      "id": "contact-a",
+      "subject": "person:maya",
+      "predicate": "has_contact",
+      "event_key": "contact-mention-a",
+      "event_candidates": [
+        "contact-address"
+      ],
+      "value": null,
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "source-a",
+          "source_version": "demo-v1",
+          "start": 0,
+          "end": 52,
+          "quote": "The synthetic contact address is cedar@example.test."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "contact-b",
+      "subject": "person:maya",
+      "predicate": "has_contact",
+      "event_key": "contact-mention-b",
+      "event_candidates": [
+        "contact-address"
+      ],
+      "value": null,
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "source-b",
+          "source_version": "demo-v1",
+          "start": 0,
+          "end": 63,
+          "quote": "A second record repeats the contact address cedar@example.test."
+        }
+      ],
+      "supersedes": []
+    },
+    {
+      "id": "preference",
+      "subject": "person:maya",
+      "predicate": "prefers",
+      "event_key": "tea-preference",
+      "event_candidates": [
+        "tea-preference"
+      ],
+      "value": null,
+      "event_time": {
+        "start": 10,
+        "end": 20
+      },
+      "valid_from": 0,
+      "valid_to": null,
+      "positive": true,
+      "modality": "actual",
+      "evidence": [
+        {
+          "source_id": "source-protected",
+          "source_version": "demo-v1",
+          "start": 0,
+          "end": 27,
+          "quote": "The preferred drink is tea."
+        }
+      ],
+      "supersedes": []
+    }
+  ],
+  "problem": {
+    "nodes": [
+      {
+        "id": "source-a",
+        "supports": [
+          []
+        ]
+      },
+      {
+        "id": "source-b",
+        "supports": [
+          []
+        ]
+      },
+      {
+        "id": "source-protected",
+        "supports": [
+          []
+        ]
+      },
+      {
+        "id": "contact-address",
+        "supports": [
+          [
+            "source-a"
+          ],
+          [
+            "source-b"
+          ]
+        ]
+      },
+      {
+        "id": "tea-preference",
+        "supports": [
+          [
+            "source-protected"
+          ]
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "source-a",
+        "cost": 1
+      },
+      {
+        "id": "source-b",
+        "cost": 2
+      },
+      {
+        "id": "source-protected",
+        "cost": 5
+      }
+    ],
+    "targets": [
+      "contact-address"
+    ],
+    "protected": [
+      "tea-preference"
+    ]
+  },
+  "limits": {
+    "max_sources": 3,
+    "max_steps": 10000
+  },
+  "protected_source_ids": [
+    "source-protected"
+  ]
+}

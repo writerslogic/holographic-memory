@@ -23,11 +23,17 @@ node integrations/organizational-knowledge/example/cli.cjs import ./toip-js-stor
 node integrations/organizational-knowledge/example/cli.cjs search ./toip-js-store toip quartzmarker --k 5
 node integrations/organizational-knowledge/example/cli.cjs forget ./toip-js-store toip Zoom zoom-example-project-chat-GMT20260101-100000
 node integrations/organizational-knowledge/example/cli.cjs forget ./toip-js-store toip Zoom zoom-example-project-chat-GMT20260101-100000 --apply
+node integrations/organizational-knowledge/example/cli.cjs forget-all ./toip-js-store toip Zoom              # preview a source system
+node integrations/organizational-knowledge/example/cli.cjs forget-all ./toip-js-store toip --all --apply
+node integrations/organizational-knowledge/example/cli.cjs prune ./toip-js-store toip Zoom ./data/curated --apply
 ```
 
 `import` takes files and directories (each `.json` directly inside, not recursive; one
 document per file, at most 16 MiB). The fixtures are synthetic. `forget` without
-`--apply` prints the document ID and does not open the store.
+`--apply` prints the document ID and does not open the store. `forget-all` and `prune` are
+previews unless `--apply` is given, take `--limit N` (default 10,000 per run), and, like `search`
+and `forget --apply`, do not create a store: a path without a `store.json` is treated as missing. `prune SOURCE_SYSTEM PATH...` keeps the SOURCE_SYSTEM documents found in PATH and
+removes the rest of that source system's documents in the namespace; it refuses when PATH holds none.
 
 ```js
 const { HolographicMemorySystem } = require('holographic-memory')
@@ -44,7 +50,20 @@ main().then(console.log, error => { console.error(error); process.exitCode = 1 }
 ```
 
 Types are in `index.d.cts`. An optional `DocumentMemory` `embedder` and `rerank` can be passed
-to the constructor; the default is local lexical retrieval with no model.
+to the constructor; the default is local lexical retrieval with no model. The CLI does not
+take an embedder. With a local ONNX model (needs `@huggingface/transformers`, an optional peer
+dependency this checkout does not install, and a model directory holding `onnx/model.onnx` plus
+the tokenizer files), the store must be created with the embedder's embedding space:
+
+```js
+const { createLocalEmbedder } = require('holographic-memory/semantic')
+
+const embedder = await createLocalEmbedder({ modelPath: '/path/to/model-dir', modelId: 'BAAI/bge-small-en-v1.5', revision: 'local' })
+const { model, revision, dimensions } = embedder.space
+const memory = new HolographicMemorySystem(4096, './toip-js-store', { embeddingModel: model, embeddingRevision: revision, embeddingDimensions: dimensions })
+const knowledge = new OrganizationalKnowledge(memory, { namespace: 'toip', embedder })
+const hits = await knowledge.search('governance reporting', { lexicalWeight: 0, semanticWeight: 1 })
+```
 
 ## Mapping
 
@@ -73,10 +92,10 @@ instead of accumulating. Hit offsets are UTF-8 byte offsets into the exact curat
   `source_url` that is not an absolute http(s) URL without credentials, whitespace, or control
   characters; `hms_namespace` in the input; metadata over 64 KiB; the nested model; and the
   engine's chunking limits (4096 chunks, 64 KiB per chunk, and with an `embedder` 1,048,576
-  embedding values per document). The CLI validates adapter rules before opening the store,
-  so malformed input does not create one. The engine's chunking limits can only be checked on
-  an open store: they are checked before the first write, but a document that violates them
-  leaves an empty store behind.
+  embedding values per document). The CLI validates everything, including the engine's chunking
+  limits on a throwaway store in the system temp directory, before it opens STORE, so rejected
+  input does not create it. A library caller's `importDocuments` checks the same limits on its
+  own open store before the first write.
 - **Bounded input.** At most 10,000 documents per import; files are at most 16 MiB each and
   512 MiB in total. Split larger syncs; identities are independent, so this is safe.
 - **Overlapping calls.** Writes (`importDocuments`, `forget`) on one instance run one after
@@ -88,6 +107,15 @@ instead of accumulating. Hit offsets are UTF-8 byte offsets into the exact curat
   re-running the import is idempotent.
 - **Forget.** Explicit `{ sourceSystem, id }` targets inside the namespace; no wildcard.
   Without `apply: true` it only reports IDs. Repeating is safe (`absent` lists missing ones).
+- **Forget by scope.** `forgetScope({ sourceSystem | all: true, keep? }, { apply, limit })` removes
+  a source system's documents, or the namespace's, except an optional nonempty `keep` list of
+  `{ sourceSystem, id }` (a prune: pass the identities the upstream still holds). It lists the store
+  through `listDocuments`, matches only documents whose identity and `hms_namespace` both belong to
+  this namespace, previews unless `apply: true`, and handles at most `limit` documents per call;
+  `truncated: true` means more match, so apply and repeat (a preview shows the same first `limit`
+  each time). Options other than `apply` and `limit` are rejected: `keep` belongs in the scope. It throws `unsupported_binding` when the loaded
+  binding has no `listDocuments`. A prune is only as complete as the `keep` list: documents missing
+  from it are removed, so a partial export of the upstream removes the rest.
 - **Reimport restores.** Importing a forgotten document again makes it searchable again.
   Forgetting is not durable against a later sync from an upstream that still holds it.
 
@@ -98,8 +126,10 @@ instead of accumulating. Hit offsets are UTF-8 byte offsets into the exact curat
 - Forget removes the document from HMS retrieval. It does not claim physical erasure of
   journals, page cache, backups, snapshots, or model inferences, and it does not remove
   anything upstream. Upstream deletion is not detected or propagated.
-- The node binding has no document listing, and an empty query returns nothing, so there is
-  no namespace-wide or source-system-wide forget, and no prune of documents upstream dropped.
+- Namespace-wide forget and prune need the binding's `listDocuments`, added alongside this adapter
+  in `src/bindings/node`; a binding built before that has none, and `forgetScope` then fails with
+  `unsupported_binding`. Rebuild with `npm run build`. Upstream deletions are still not detected:
+  pruning needs a complete list of what the upstream holds.
 - `identifier` is stored, not verified: SAIDs are not checked and are not authentication.
 - Speaker identities and recording timestamps are not inferred; offsets refer to curated text.
 - A `filter` is an exact match on a top-level metadata value: `organizational_unit` must
@@ -136,4 +166,19 @@ node --test integrations/organizational-knowledge/test/*.test.cjs
 ```
 
 `document.test.cjs` needs no engine. `knowledge.test.cjs` uses the real native binding,
-temporary stores, and child processes for reopen.
+temporary stores, and child processes for reopen; the `forgetScope` and `forget-all` tests are
+skipped when the binding has no `listDocuments`. The binding's own test is
+`tests/node/list-documents.test.cjs`. Last run on Node 20.20.2 and 26.8.1, macOS arm64
+only, against the checkout's binding and a binding built from the 5ccca1e4 source.
+
+`embedder.test.cjs` is skipped unless a local ONNX model directory is given:
+
+```sh
+HMS_TEST_ONNX_MODEL_DIR=/path/to/model-dir node --test integrations/organizational-knowledge/test/embedder.test.cjs
+```
+
+It checks only that a real embedder's vectors are stored and searched through the adapter
+(three synthetic documents, one model) and that forget removes the document from semantic
+results. It ran once against `BAAI/bge-small-en-v1.5` (384 dimensions), exported to ONNX locally
+from cached weights with optimum, so it is not an official ONNX release. It says nothing about
+retrieval quality.

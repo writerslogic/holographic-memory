@@ -6,7 +6,7 @@
 fn export_ts_bindings() {
     use ts_rs::TS;
 
-    let cfg = ts_rs::Config::default();
+    let cfg = ts_rs::Config::from_env();
     crate::RetrievalResult::export_all(&cfg).unwrap();
     crate::ConceptCandidate::export_all(&cfg).unwrap();
     crate::TextMetrics::export_all(&cfg).unwrap();
@@ -22,8 +22,10 @@ fn export_ts_bindings() {
 #[test]
 fn export_json_schemas() {
     use schemars::schema_for;
-    let dir = std::path::Path::new("schemas");
-    std::fs::create_dir_all(dir).unwrap();
+    let dir = std::env::var_os("HMS_SCHEMA_EXPORT_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| "schemas".into());
+    std::fs::create_dir_all(&dir).unwrap();
 
     let schemas: Vec<(&str, schemars::Schema)> = vec![
         ("RetrievalResult", schema_for!(crate::RetrievalResult)),

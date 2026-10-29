@@ -27,9 +27,9 @@ fn mix(x: u64, k: u64) -> u64 {
     h
 }
 
-fn phase_vec(id: u64, salt: u64, seed: u64) -> Vec<u16> {
+fn phase_vec(id: u64, domain: u64, seed: u64) -> Vec<u16> {
     (0..D)
-        .map(|d| (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ salt, seed) % N as u64) as u16)
+        .map(|d| (mix(id.wrapping_mul(0x9E37) ^ (d as u64) ^ domain, seed) % N as u64) as u16)
         .collect()
 }
 

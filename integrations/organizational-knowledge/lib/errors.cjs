@@ -5,6 +5,7 @@
  * - `invalid_document`: a curated document failed validation (`source`, `field`).
  * - `invalid_request`: bad arguments, filter, or forget target.
  * - `duplicate_identity`: two documents in one import share a namespaced identity.
+ * - `unsupported_binding`: the loaded native binding lacks an API this call needs.
  * - `partial_failure`: a write failed after earlier writes committed (`committed` or
  *   `removed`/`absent` list what is already done; re-running is idempotent).
  */

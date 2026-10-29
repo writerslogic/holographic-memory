@@ -164,7 +164,7 @@ def main():
     # (2)+(3): matched D and M, coupled vs dense, with per-block profile at the crossing.
     c, w = 32, 3
     r_blocks = c + w - 1
-    d = 986  # divisible by R=34; M below divisible by C=32
+    d = 29 * r_blocks  # divisible by R=34; M below divisible by C=32
     m = (round(0.30 * d) // c) * c  # 288 -> M/D=0.292
     log.info(
         f"\n(2) CROSS + (3) PROFILE  D={d} M={m} M/D={m / d:.3f}  C={c} w={w} (matched storage)"

@@ -3,7 +3,6 @@
 """Run all three frozen default-encoding regressions within one outer timing lock."""
 
 import argparse
-import json
 import os
 from pathlib import Path
 import re

@@ -27,9 +27,11 @@ class Embedder(Protocol):
 
     dim: int
 
-    def embed_documents(self, texts: Sequence[str]) -> List[List[float]]: ...
+    def embed_documents(self, texts: Sequence[str]) -> List[List[float]]:
+        raise NotImplementedError
 
-    def embed_query(self, text: str) -> List[float]: ...
+    def embed_query(self, text: str) -> List[float]:
+        raise NotImplementedError
 
 
 async def aembed_documents(embedder: Embedder, texts: Sequence[str]) -> List[List[float]]:
