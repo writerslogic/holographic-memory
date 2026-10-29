@@ -222,7 +222,7 @@ impl DecodedTerms {
             // Shared prefixes repeat earlier bytes, so the decoded size is bounded separately:
             // a frame's terms never exceed the largest frame payload.
             ensure!(
-                bytes.len() + shared + suffix.len() <= crate::core::storage::MAX_RAW_FRAME_SIZE,
+                bytes.len() + shared + suffix.len() <= crate::core::MAX_RAW_FRAME_SIZE,
                 "binary journal term dictionary exceeds the frame size limit"
             );
             let start = bytes.len();

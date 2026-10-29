@@ -102,3 +102,4 @@ pub use phase_resonator::{
     phase_resonator_factorize, FactorResult, PhaseResonator, ResonatorConfig,
 };
 pub use schema::EmbeddingSpace;
+pub(crate) const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;

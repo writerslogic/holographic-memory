@@ -49,7 +49,7 @@ const INCREMENTAL_ALLOCATION: bool = cfg!(unix);
 pub(crate) const HEADER_SIZE: usize = 16;
 /// Maximum decompressed frame payload (50 MB). Used consistently in
 /// `discover_offset` and `read_frame` to reject corrupt/malicious data.
-pub(crate) const MAX_RAW_FRAME_SIZE: usize = 50 * 1024 * 1024;
+pub(crate) use super::MAX_RAW_FRAME_SIZE;
 /// Version word of the end-of-log marker: a zero-length header written after every frame in
 /// the frame's own flush range, so the committed end of the log is recorded at no extra cost.
 /// A frame that fails its checks with the marker (or a valid frame) after it was committed
