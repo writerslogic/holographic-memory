@@ -536,7 +536,7 @@ fn stage_store(source: &Path, staging: &Path) -> Result<Staged> {
 fn rewrite_arena(context: &mut StepContext<'_>) -> Result<()> {
     let base = context.source.join(ARENA_DIRECTORY);
     let generation = crate::core::durable_file::arena_generation(&base)?;
-    let ids = super::verify::list_segments(&generation)?;
+    let ids = crate::core::storage::list_segments(&generation)?;
     ensure!(!ids.is_empty(), "the source arena has no segments");
     // Frames are staged without a sync each; `finish` makes the arena durable once.
     let directory = context.staging.join(ARENA_DIRECTORY);

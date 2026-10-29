@@ -26,7 +26,7 @@ use crate::auth::Scope;
 use crate::config::*;
 use crate::error::{ApiError, ApiResult};
 use crate::request::*;
-use crate::tenants::{AppState, CoreGuard};
+use crate::tenants::{AppState, CoreGuard, QuotaLease};
 use crate::types::*;
 use crate::vindex;
 
@@ -135,14 +135,19 @@ pub fn check_metadata_size(metadata: &Value) -> Result<usize, ApiError> {
 }
 
 /// Reject a write that would take the tenant past `max_documents_per_tenant`; `fresh` counts
-/// the documents it would add and is only evaluated when a quota is set.
-pub fn enforce_quota(
+/// the documents it would add and is only evaluated when a quota is set. Keep the returned
+/// lease through the commit or rollback so another writer checks the committed count.
+pub fn enforce_quota<'a>(
     state: &AppState,
-    core: &CoreGuard,
+    core: &'a CoreGuard,
     fresh: impl FnOnce() -> u64,
-) -> Result<(), ApiError> {
+) -> Result<Option<QuotaLease<'a>>, ApiError> {
     let quota = state.cfg.max_documents_per_tenant;
-    if quota > 0 && core.document_count() as u64 + fresh() > quota {
+    if quota == 0 {
+        return Ok(None);
+    }
+    let lease = core.quota_lease();
+    if core.document_count() as u64 + fresh() > quota {
         state
             .metrics
             .quota_rejections
@@ -154,7 +159,7 @@ pub fn enforce_quota(
         )
         .retry_after(60));
     }
-    Ok(())
+    Ok(Some(lease))
 }
 
 fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usize, ApiError> {
@@ -170,7 +175,7 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
     let mut inputs: Vec<DocumentInput> =
         final_docs.into_iter().flatten().map(|d| d.input).collect();
     let core = state.core(tenant)?;
-    enforce_quota(state, &core, || {
+    let _quota = enforce_quota(state, &core, || {
         inputs.iter().filter(|d| !core.has_document(&d.id)).count() as u64
     })?;
     // Every document with a vector enters the persisted vector index first, stamped with the
@@ -437,6 +442,12 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) -> 
             let line = buffer[start..end].trim_ascii();
             if !line.is_empty() {
                 pending.push((line_no, line.to_vec()));
+                if pending.len() == state.cfg.stream_batch {
+                    tally.apply(
+                        commit_group(&state, &tenant, &permit, std::mem::take(&mut pending))
+                            .await?,
+                    );
+                }
             }
             start = end + 1;
             scanned = start;
@@ -449,15 +460,14 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) -> 
                 line_no + 1
             )));
         }
-        if pending.len() >= state.cfg.stream_batch || (ended && !pending.is_empty()) {
-            tally
-                .apply(commit_group(&state, &tenant, &permit, std::mem::take(&mut pending)).await?);
-        }
     }
     let last = buffer.trim_ascii();
     if !last.is_empty() {
         line_no += 1;
-        tally.apply(commit_group(&state, &tenant, &permit, vec![(line_no, last.to_vec())]).await?);
+        pending.push((line_no, last.to_vec()));
+    }
+    if !pending.is_empty() {
+        tally.apply(commit_group(&state, &tenant, &permit, pending).await?);
     }
     Ok(json_response(
         StatusCode::OK,

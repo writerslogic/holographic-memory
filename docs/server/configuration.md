@@ -61,7 +61,7 @@ With neither `HMS_API_KEY` nor `--keys-file`, the server only starts if `--no-au
 | `--queue-timeout-ms` | `HMS_QUEUE_TIMEOUT_MS` | `1000` | Longest a queued request waits before 503. |
 | `--rate-limit-rps` | `HMS_RATE_LIMIT_RPS` | `0` | Per-tenant sustained requests per second (token bucket); 429 `rate_limited` with `Retry-After`. 0 disables. |
 | `--rate-limit-burst` | `HMS_RATE_LIMIT_BURST` | `0` | Per-tenant burst. 0 means one second of the sustained rate. |
-| `--max-documents-per-tenant` | `HMS_MAX_DOCUMENTS_PER_TENANT` | `0` | Per-tenant document quota; a write that would exceed it gets 429 `quota_exceeded`. Replacing an existing id never counts. 0 disables. |
+| `--max-documents-per-tenant` | `HMS_MAX_DOCUMENTS_PER_TENANT` | `0` | Per-tenant document ingest and memory `remember` quota ([scope and retry limits](../SERVER.md#limits-and-backpressure)); exceeding it gets 429 `quota_exceeded`. Replacing an existing id never counts. 0 disables. |
 | `--idempotency-ttl-seconds` | `HMS_IDEMPOTENCY_TTL_SECONDS` | `600` | How long an `Idempotency-Key` replays its response. |
 | `--idempotency-capacity` | `HMS_IDEMPOTENCY_CAPACITY` | `10000` | Records kept in memory; the oldest are evicted first. |
 

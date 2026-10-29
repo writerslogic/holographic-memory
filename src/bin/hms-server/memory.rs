@@ -120,11 +120,13 @@ async fn run(op: &'static str, scope: Scope, state: Arc<AppState>, req: Request)
         };
         validate_memory_request(op, &request, state)?;
         let core = state.core(tenant)?;
-        if op == "remember" {
+        let _quota = if op == "remember" {
             enforce_quota(state, &core, || {
                 new_facts(&request, |id| core.has_document(id))
-            })?;
-        }
+            })?
+        } else {
+            None
+        };
         let response = core.memory().call(op, request).map_err(memory_error)?;
         if scope == Scope::Write {
             core.bump();

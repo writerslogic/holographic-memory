@@ -37,7 +37,7 @@ pub struct Inner {
     pub limits: Limits,
     pub resources: bool,
     pub prompts: bool,
-    pub gate: Semaphore,
+    pub gate: Arc<Semaphore>,
 }
 
 #[derive(Clone)]
@@ -61,7 +61,7 @@ impl HmsMcp {
                 limits,
                 resources,
                 prompts,
-                gate: Semaphore::new(max_concurrent),
+                gate: Arc::new(Semaphore::new(max_concurrent)),
             }),
         }
     }
@@ -74,12 +74,16 @@ impl HmsMcp {
         let permit = self
             .inner
             .gate
-            .acquire()
+            .clone()
+            .acquire_owned()
             .await
             .map_err(|_| ErrorData::internal_error("server is shutting down", None))?;
         let inner = Arc::clone(&self.inner);
-        let out = tokio::task::spawn_blocking(move || work(&inner)).await;
-        drop(permit);
+        let out = tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            work(&inner)
+        })
+        .await;
         out.map_err(|e| {
             crate::log::error(&format!("worker failed: {e}"));
             ErrorData::internal_error("internal error; see the server log", None)
@@ -507,5 +511,62 @@ impl ServerHandler for HmsMcp {
             "messages": [{"role": "user", "content": {"type": "text", "text": text}}]
         }))?
         .into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::memory::test_limits;
+    use crate::store::{StoreOptions, StoreRoot};
+
+    #[tokio::test]
+    async fn cancelled_request_keeps_work_slot_until_worker_finishes() {
+        let dir = tempfile::tempdir().unwrap();
+        let limits = test_limits();
+        let handler = HmsMcp::new(
+            Arc::new(HmsBackend::new(
+                StoreOptions {
+                    root: StoreRoot::Namespaced(dir.path().to_path_buf()),
+                    dim: 256,
+                    max_stores: 1,
+                    encrypt: None,
+                    #[cfg(feature = "local-models")]
+                    stages: None,
+                    #[cfg(feature = "local-models")]
+                    embedding_dim: None,
+                },
+                limits.clone(),
+            )),
+            Exposure::new(&[], false, false, "default".into()).unwrap(),
+            limits,
+            false,
+            false,
+            1,
+        );
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let (release_tx, release_rx) = std::sync::mpsc::channel();
+        let worker_handler = handler.clone();
+        let request = tokio::spawn(async move {
+            worker_handler
+                .run(move |_| {
+                    started_tx.send(()).unwrap();
+                    release_rx.recv().unwrap();
+                })
+                .await
+        });
+        started_rx.await.unwrap();
+        request.abort();
+        assert!(request.await.unwrap_err().is_cancelled());
+        let slot_retained = handler.inner.gate.available_permits() == 0;
+        release_tx.send(()).unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(5), handler.run(|_| ()))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(
+            slot_retained,
+            "cancelled request released a running worker's slot"
+        );
     }
 }

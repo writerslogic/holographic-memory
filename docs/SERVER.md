@@ -83,7 +83,7 @@ Index maintenance also builds the tenant's optional document index over stored e
 
 ### Bulk ingest
 
-`POST /api/v1/documents/stream` with `Content-Type: application/x-ndjson` reads one document object per line (blank lines ignored, the last line may lack a newline) and commits every `--stream-batch` valid lines in one transaction. Rejected lines are reported with their 1-based line number (the first 100) and do not stop the stream. The stream is not atomic across batches: after a failure mid-stream, the committed batches stay. Size limits are `--max-stream-bytes` and `--max-stream-line-bytes`, independent of `--max-body-bytes`; a stalled upload times out after `--body-timeout-seconds` of silence.
+`POST /api/v1/documents/stream` with `Content-Type: application/x-ndjson` reads one document object per line (blank lines ignored, the last line may lack a newline) and groups every `--stream-batch` nonblank lines into one batch, independent of transport frames. Valid documents in each batch commit in one transaction. Rejected lines are reported with their 1-based line number (the first 100) and do not stop the stream. The stream is not atomic across batches: after a failure mid-stream, the committed batches stay. Size limits are `--max-stream-bytes` and `--max-stream-line-bytes`, independent of `--max-body-bytes`; a stalled upload times out after `--body-timeout-seconds` of silence.
 
 ### Retries and conditional requests
 
@@ -102,6 +102,11 @@ Stores open on first use. Simultaneous first requests share one initialization; 
 - `--rate-limit-rps`/`--rate-limit-burst` is a per-tenant token bucket (429 `rate_limited`, `Retry-After`). `--max-documents-per-tenant` is a per-tenant document quota (429 `quota_exceeded`). Both are off by default.
 - `--max-connections` caps simultaneous connections; `--header-read-timeout-seconds` drops clients that dribble headers; `--body-timeout-seconds` bounds body reads. A disconnected client releases body admission immediately, but a running blocking operation keeps its work slot until it finishes.
 - Parsing, validation, store initialization, ingest, search and maintenance run on blocking workers; the async runtime only moves bytes.
+
+Document ingestion and memory `remember` serialize quota checks through commit, so concurrent
+requests share the same limit. Supply explicit memory ids for retries at a full quota:
+requests without ids are conservatively counted as new facts. Summaries created by an opt-in
+consolidation policy currently bypass quota admission.
 
 ## Shutdown
 

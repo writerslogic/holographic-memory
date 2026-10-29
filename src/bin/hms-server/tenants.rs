@@ -90,7 +90,19 @@ pub struct Tenant {
     /// Set while a snapshot or restore holds the store exclusively; requests are turned away
     /// at once instead of occupying work slots while they wait.
     quiesced: AtomicBool,
+    quota_active: Mutex<bool>,
+    quota_ready: Condvar,
     pub compaction: Mutex<CompactionStatus>,
+}
+
+#[must_use]
+pub struct QuotaLease<'a>(&'a Tenant);
+
+impl Drop for QuotaLease<'_> {
+    fn drop(&mut self) {
+        *self.0.quota_active.lock() = false;
+        self.0.quota_ready.notify_one();
+    }
 }
 
 /// An open store: the engine, the memory API over it and the persisted vector index next to
@@ -162,6 +174,15 @@ impl std::ops::Deref for CoreGuard {
 }
 
 impl CoreGuard {
+    pub fn quota_lease(&self) -> QuotaLease<'_> {
+        let mut active = self.tenant.quota_active.lock();
+        while *active {
+            self.tenant.quota_ready.wait(&mut active);
+        }
+        *active = true;
+        QuotaLease(&self.tenant)
+    }
+
     fn open(&self) -> &Open {
         self.guard
             .as_ref()
@@ -446,6 +467,8 @@ impl AppState {
             last_used_ms: AtomicU64::new(self.now_ms()),
             generation: AtomicU64::new(generation),
             quiesced: AtomicBool::new(false),
+            quota_active: Mutex::new(false),
+            quota_ready: Condvar::new(),
             // Nothing changed since the open, so there is nothing to compact yet.
             compaction: Mutex::new(CompactionStatus {
                 generation_at_last_run: Some(generation),
@@ -942,6 +965,105 @@ pub fn dir_size(path: &Path) -> u64 {
 mod tests {
     use super::*;
     use std::sync::mpsc;
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn quota_serializes_document_and_memory_writes_and_releases_failed_writes() {
+        use holographic_memory::core::memory_api::Clock;
+        use serde_json::{json, Value};
+        use tower_service::Service;
+
+        struct BlockingClock {
+            started: Arc<tokio::sync::Notify>,
+            release: Mutex<Option<mpsc::Receiver<()>>>,
+        }
+
+        impl Clock for BlockingClock {
+            fn now_millis(&self) -> i64 {
+                let release = self.release.lock().take().expect("clock called twice");
+                self.started.notify_one();
+                release
+                    .recv_timeout(Duration::from_secs(10))
+                    .expect("clock was not released");
+                0
+            }
+        }
+
+        async fn post(state: Arc<AppState>, path: &'static str, body: Value) -> (u16, Value) {
+            let request = axum::http::Request::builder()
+                .method("POST")
+                .uri(path)
+                .header("Authorization", "Bearer test-key")
+                .header("Content-Type", "application/json")
+                .body(axum::body::Body::from(body.to_string()))
+                .unwrap();
+            let response = crate::routes::router(state).call(request).await.unwrap();
+            let status = response.status().as_u16();
+            let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+                .await
+                .unwrap();
+            (status, serde_json::from_slice(&bytes).unwrap())
+        }
+
+        for (text, memory_status, document_status) in [("stored fact", 200, 429), ("", 422, 200)] {
+            let directory = tempfile::tempdir().unwrap();
+            let state =
+                crate::tests::state_with(directory.path(), 2, &["--max-documents-per-tenant", "1"]);
+            let tenant = state.core("default").unwrap().tenant.clone();
+            let started = Arc::new(tokio::sync::Notify::new());
+            let (release_tx, release_rx) = mpsc::channel();
+            {
+                let mut guard = tenant.core.write();
+                let open = guard.as_mut().unwrap();
+                open.memory = Memory::new(open.core.clone()).with_clock(Arc::new(BlockingClock {
+                    started: started.clone(),
+                    release: Mutex::new(Some(release_rx)),
+                }));
+            }
+            let remembering = tokio::spawn(post(
+                state.clone(),
+                "/api/v1/memory/remember",
+                json!({"id": "fact", "text": text}),
+            ));
+            tokio::time::timeout(Duration::from_secs(5), started.notified())
+                .await
+                .unwrap();
+            let mutex_free = tenant.quota_active.try_lock().is_some();
+            let read_count = state.core("default").unwrap().document_count();
+            let documenting = tokio::spawn(post(
+                state.clone(),
+                "/api/v1/documents",
+                json!({"id": "doc", "vector": [1, 0]}),
+            ));
+            let queued = tokio::time::timeout(Duration::from_secs(5), async {
+                while !tenant.quota_ready.notify_one() {
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .is_ok();
+            release_tx.send(()).unwrap();
+            let memory = tokio::time::timeout(Duration::from_secs(5), remembering)
+                .await
+                .unwrap()
+                .unwrap();
+            let document = tokio::time::timeout(Duration::from_secs(5), documenting)
+                .await
+                .unwrap()
+                .unwrap();
+            assert!(
+                mutex_free,
+                "quota admission held its mutex during the write"
+            );
+            assert_eq!(read_count, 0);
+            assert!(queued, "document write did not wait for memory admission");
+            assert_eq!(memory.0, memory_status, "{}", memory.1);
+            assert_eq!(document.0, document_status, "{}", document.1);
+            let core = state.core("default").unwrap();
+            assert_eq!(core.document_count(), 1);
+            assert_eq!(core.has_document("fact"), memory_status == 200);
+            assert_eq!(core.has_document("doc"), document_status == 200);
+        }
+    }
 
     fn dirty(state: &AppState, name: &str) -> bool {
         state

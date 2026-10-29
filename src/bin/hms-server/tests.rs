@@ -530,3 +530,80 @@ async fn an_abandoned_restore_upload_leaves_no_archive_behind() {
         .collect();
     assert!(left.is_empty(), "staging still holds {left:?}");
 }
+
+async fn stream_documents(state: Arc<AppState>, chunks: Vec<Vec<u8>>) -> (u16, Value) {
+    use tower_service::Service;
+
+    let mut app = routes::router(state);
+    let chunks = futures_util::stream::iter(chunks.into_iter().map(Ok::<_, std::io::Error>));
+    let request = axum::http::Request::builder()
+        .method("POST")
+        .uri("/api/v1/documents/stream")
+        .header("Authorization", "Bearer test-key")
+        .header("Content-Type", "application/x-ndjson")
+        .body(axum::body::Body::from_stream(chunks))
+        .unwrap();
+    let response = app.call(request).await.unwrap();
+    let status = response.status().as_u16();
+    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .unwrap();
+    (status, serde_json::from_slice(&bytes).unwrap())
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn stream_batch_commit_boundaries_are_independent_of_body_frames() {
+    for (documents, final_newline, quota, committed) in [(3, true, "2", 2), (2, false, "1", 0)] {
+        let mut payload = (0..documents)
+            .map(|i| format!("{{\"id\":\"doc{i}\",\"vector\":[1,0]}}\n"))
+            .collect::<String>()
+            .into_bytes();
+        if !final_newline {
+            payload.pop();
+        }
+        for frame_size in [payload.len(), 1] {
+            let directory = tempfile::tempdir().unwrap();
+            let state = state_with(
+                directory.path(),
+                1,
+                &["--stream-batch", "2", "--max-documents-per-tenant", quota],
+            );
+            let chunks = payload.chunks(frame_size).map(<[u8]>::to_vec).collect();
+            let (status, body) = stream_documents(state.clone(), chunks).await;
+            assert_eq!(status, 429, "frame size {frame_size}: {body}");
+            assert_eq!(body["code"], "quota_exceeded");
+            let core = state.core("default").unwrap();
+            assert_eq!(core.document_count(), committed, "frame size {frame_size}");
+            for i in 0..documents {
+                assert_eq!(core.has_document(&format!("doc{i}")), i < committed);
+            }
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn stream_batch_preserves_line_errors_and_final_unterminated_document() {
+    let payload = concat!(
+        "\n{\"id\":\"a\",\"vector\":[1,0]}\n \r\n",
+        "{bad}\n",
+        "{\"id\":\"b\",\"vector\":[1,0]}\n",
+        "{\"id\":\"c\",\"vector\":[1,0]}\n",
+        "{\"id\":\"d\",\"vector\":[1,0]}"
+    )
+    .as_bytes();
+    for frame_size in [payload.len(), 7] {
+        let directory = tempfile::tempdir().unwrap();
+        let state = state_with(directory.path(), 1, &["--stream-batch", "2"]);
+        let chunks = payload.chunks(frame_size).map(<[u8]>::to_vec).collect();
+        let (status, body) = stream_documents(state.clone(), chunks).await;
+        assert_eq!(status, 200, "frame size {frame_size}: {body}");
+        assert_eq!(body["added"], 4);
+        assert_eq!(body["rejected"], 1);
+        assert_eq!(body["errors_truncated"], false);
+        assert_eq!(body["errors"].as_array().unwrap().len(), 1);
+        assert_eq!(body["errors"][0]["line"], 4);
+        let core = state.core("default").unwrap();
+        assert_eq!(core.document_count(), 4);
+        assert!(core.has_document("d"));
+    }
+}

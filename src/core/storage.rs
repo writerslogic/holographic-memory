@@ -20,6 +20,23 @@ pub(crate) const FORMAT_MANIFEST: &str = "format.json";
 pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
 pub(crate) const STORAGE_FORMAT_VERSION: u32 = 4;
 
+pub(crate) fn list_segments(dir: &Path) -> Result<Vec<usize>> {
+    let mut ids = Vec::new();
+    for entry in std::fs::read_dir(dir)? {
+        let name = entry?.file_name();
+        if let Some(id) = name
+            .to_str()
+            .and_then(|name| name.strip_prefix("seg_"))
+            .and_then(|value| value.strip_suffix(".bin"))
+            .and_then(|value| value.parse::<usize>().ok())
+        {
+            ids.push(id);
+        }
+    }
+    ids.sort_unstable();
+    Ok(ids)
+}
+
 /// The fixed segment size of format 3, and the step by which a format-4 active segment's
 /// file grows toward its declared size.
 pub(crate) const SEGMENT_SIZE: usize = 64 * 1024 * 1024;
@@ -157,23 +174,19 @@ impl PersistentArena {
     pub(crate) fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let base = path.as_ref().to_path_buf();
         std::fs::create_dir_all(&base)?;
-        let manifest = Self::validate_or_create_manifest(&base)?;
         let data_path = super::durable_file::arena_generation(&base)?;
+        let ids = list_segments(&data_path)?;
+        ensure!(
+            ids.iter().enumerate().all(|(expected, &id)| expected == id),
+            "arena segments are not contiguous from 0: {ids:?}"
+        );
+        let manifest = Self::validate_or_create_manifest(&base)?;
         if let Some(store) = base.parent() {
             super::durable_file::verify_manifests(store, &base)?;
         }
 
-        let mut id = 0;
-        loop {
-            let p = data_path.join(format!("seg_{}.bin", id));
-            if !p.exists() {
-                break;
-            }
-            id += 1;
-        }
-
-        let active_id = if id > 0 { id - 1 } else { 0 };
-        let mut segments = Vec::new();
+        let active_id = ids.last().copied().unwrap_or(0);
+        let mut segments = Vec::with_capacity(active_id);
 
         for i in 0..active_id {
             let p = data_path.join(format!("seg_{}.bin", i));
@@ -188,15 +201,16 @@ impl PersistentArena {
         let file = OpenOptions::new()
             .read(true)
             .write(true)
-            .create(true)
+            .create(ids.is_empty())
             .truncate(false)
-            .open(&active_path)?;
+            .open(&active_path)
+            .with_context(|| format!("opening arena segment {}", active_path.display()))?;
+        let length = file.metadata()?.len();
+        ensure!(
+            length <= manifest.segment_size as u64,
+            "active segment exceeds its declared size"
+        );
         let active_capacity = if manifest.version >= 4 && INCREMENTAL_ALLOCATION {
-            let length = file.metadata()?.len();
-            ensure!(
-                length <= manifest.segment_size as u64,
-                "active segment exceeds its declared size"
-            );
             usize::try_from(length)
                 .context("arena capacity exceeds address space")?
                 .max(SEGMENT_SIZE)
@@ -207,10 +221,12 @@ impl PersistentArena {
         };
         // A reopened segment already has its durable length (growth syncs it); only a new or
         // resized file needs the length change and the full sync.
-        let length = file.metadata()?.len();
         if length != active_capacity as u64 {
             file.set_len(active_capacity as u64)?;
             file.sync_all()?;
+        }
+        if ids.is_empty() {
+            super::durable_file::sync_directory(&data_path)?;
         }
         let mut active = ActiveSegment::new(file)?;
         let mut_map = &mut active.map;

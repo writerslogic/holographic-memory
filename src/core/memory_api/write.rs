@@ -5,7 +5,7 @@
 
 use anyhow::Result;
 use serde_json::{Map, Value};
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::index::Index;
 use super::stamp::{stable_hash, Placement, Stamp, KEY};
@@ -95,14 +95,14 @@ impl Memory {
         let _writer = self.writer.lock();
         self.ensure_fresh();
         let now = self.clock.now_millis();
-        let planned = {
+        let mut planned = {
             let index = self.index.read();
             let mut planned: Vec<Planned> = Vec::with_capacity(inputs.len());
-            let mut seen: HashMap<String, usize> = HashMap::new();
+            let mut seen = HashSet::with_capacity(inputs.len());
             for input in inputs {
                 let fact = self.plan_one(&index, &planned, input, now)?;
                 check!(
-                    seen.insert(fact.id.clone(), planned.len()).is_none(),
+                    seen.insert(fact.id.clone()),
                     "fact id {:?} appears twice in one call",
                     fact.id
                 );
@@ -111,17 +111,14 @@ impl Memory {
             planned
         };
         let documents: Vec<DocumentInput> = planned
-            .iter()
-            .filter_map(|fact| fact.document.clone())
+            .iter_mut()
+            .filter_map(|fact| fact.document.take())
             .collect();
         let before = self.core.revision();
         if !documents.is_empty() {
             self.core.memorize_documents(documents)?;
         }
-        let written: Vec<&Planned> = planned
-            .iter()
-            .filter(|fact| fact.document.is_some())
-            .collect();
+        let written: Vec<&Planned> = planned.iter().filter(|fact| !fact.idempotent).collect();
         if !written.is_empty() {
             self.settle(before, 1, |index| {
                 // Other facts' stamps can name a replaced fact; when the index links it to
@@ -154,14 +151,12 @@ impl Memory {
                         })
                     };
                     // `lookup` borrows the index immutably, so resolve before inserting.
-                    let hints: Vec<(String, Millis, Millis)> = fact
+                    let known: HashMap<String, (Millis, Millis)> = fact
                         .stamp
                         .superseded_by
                         .iter()
-                        .filter_map(|id| lookup(id).map(|(e, i)| (id.clone(), e, i)))
+                        .filter_map(|id| lookup(id).map(|times| (id.clone(), times)))
                         .collect();
-                    let known: HashMap<String, (Millis, Millis)> =
-                        hints.into_iter().map(|(id, e, i)| (id, (e, i))).collect();
                     index.insert(&fact.id, &fact.stamp, &|id| known.get(id).copied());
                 }
                 true
@@ -240,7 +235,7 @@ impl Memory {
             explicit.len() <= MAX_LINKS,
             "at most {MAX_LINKS} supersedes"
         );
-        let metadata_bytes = serde_json::to_vec(&Value::Object(user_metadata.clone()))?;
+        let metadata_bytes = serde_json::to_vec(&user_metadata)?;
         let embedding_bytes: Vec<u8> = input
             .embedding
             .iter()

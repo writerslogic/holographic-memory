@@ -63,6 +63,9 @@ newline; absent on stores written before sidecars, and then unverified.
 `store.json`. With a `CURRENT` pointer the engine reads `vectors_data.bin/format.json`, falling
 back to the generation's copy.
 
+Journal segments must be numbered contiguously from `seg_0.bin`. Opening rejects gaps and
+active segments larger than `segment_size` without resizing or recovering those files.
+
 ## CURRENT
 
 ASCII name, no newline, matching `gen-[A-Za-z0-9-]+`. The directory must exist and not be a
@@ -71,9 +74,9 @@ symlink. Without `CURRENT` the live segments are in `vectors_data.bin/` itself.
 ## Open sequence and what open writes
 
 1. create the directory; take the lock; validate or create `store.json`
-2. open the arena: create or validate `format.json`, find the live generation, recover the
-   active segment (JOURNAL.md), write the end marker at the recovered end, extend the active
-   file to its allocation size
+2. open the arena: find the live generation and check segment numbering, create or validate
+   `format.json`, check the active segment's size, recover the active segment (JOURNAL.md),
+   write the end marker at the recovered end, extend the active file to its allocation size
 3. zero and unlink a `documents.text.canonical` left by an interrupted purge; then, with a
    checkpoint in the live generation and no frames after it, map it and leave
    `documents.text` alone until the store is built from it; with frames after it, truncate and

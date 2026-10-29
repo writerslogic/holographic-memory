@@ -17,7 +17,9 @@ use super::{
     Report, Severity, TenantReport, CURRENT, SALT_LEN, STORAGE_FORMAT_CURRENT,
     STORAGE_FORMAT_OLDEST, STORE_SCHEMA_OLDEST, STORE_SCHEMA_VERSION,
 };
-use crate::core::storage::{FormatManifest, FORMAT_MAGIC, LEGACY_SEGMENT_SIZE, SEGMENT_SIZE};
+use crate::core::storage::{
+    list_segments, FormatManifest, FORMAT_MAGIC, LEGACY_SEGMENT_SIZE, SEGMENT_SIZE,
+};
 
 /// Directory of the arena inside a store.
 const ARENA_DIRECTORY: &str = "vectors_data.bin";
@@ -303,23 +305,6 @@ struct ArenaState {
     /// Name of the generation directory and journal length: the engine's checkpoint.
     checkpoint: Option<(String, u64)>,
     replay: Option<Replay>,
-}
-
-pub(super) fn list_segments(dir: &Path) -> Result<Vec<usize>> {
-    let mut ids = Vec::new();
-    for entry in std::fs::read_dir(dir)? {
-        let name = entry?.file_name();
-        if let Some(id) = name
-            .to_string_lossy()
-            .strip_prefix("seg_")
-            .and_then(|v| v.strip_suffix(".bin"))
-            .and_then(|v| v.parse::<usize>().ok())
-        {
-            ids.push(id);
-        }
-    }
-    ids.sort_unstable();
-    Ok(ids)
 }
 
 /// The directory holding the live segments of the arena at `arena` (the one `CURRENT` names).
