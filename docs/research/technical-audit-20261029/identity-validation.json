@@ -123,13 +123,18 @@
     "limitation": "cargo-cyclonedx was unavailable locally; artifact generation and inspection remain a release-CI check"
   },
   "stdio_configured_cap": {
+    "revision": "88113ad7",
     "sdk_version": "rmcp 3.7.0",
     "existing_sdk_reader_bound_bytes": 16777216,
     "finding": "AsyncRwTransport::new already has a 16 MiB incoming-line bound; the default JsonRpcMessageCodec max_length of usize::MAX does not make that stdin reader unbounded.",
     "change": "Use SDK AsyncRwTransport::new_server(...).with_max_line_length(cli.max_request_bytes) so the same configured budget bounds HTTP request bodies and complete stdin lines, including LF or CRLF.",
     "mechanism": "SDK read_line checks length before appending bytes or parsing JSON and discards oversized lines through their terminator with cancellation-safe state. No custom parser or new stdout logging was added.",
     "focused_test_command": "cargo test --locked --features mcp --bin hms-mcp stdio_server::tests::",
-    "status": "pending",
+    "status": "passed",
+    "passed": 2,
+    "failed": 0,
+    "seconds": 0.05,
+    "seconds_including_compile": 36.30,
     "coverage": "Configured limit-1, limit and limit+1 with LF and CRLF; following valid frame recovery; cancelled receive during discard; 2 MiB invalid UTF-8 input streamed through a bounded duplex buffer. This is behavioral framing coverage, not an allocation/RSS measurement."
   },
   "limits_and_follow_up": [
