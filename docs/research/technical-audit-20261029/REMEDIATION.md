@@ -69,3 +69,9 @@ review findings were corrected without suppressions;51 focused tests pass.
 The complete all-feature gate also retained the existing tenant-directory isolation assertions:
 server ownership files moved to the dedicated `tenant-locks/` control directory rather than
 relaxing those assertions or mixing non-tenant entries into `tenants/`.
+
+The subsequent full platform run cleared the earlier namespace and fuzz-driver failures.
+Latest Rust Clippy identified the large native transport-error variant; boxing that failure-only
+payload reduces the enum while preserving its error context (no lint suppression). Scoped MCP
+Clippy passes locally. Stdio now honors the configured request-byte cap through the SDK reader,
+whose prior default was16MiB; two boundary/recovery/cancellation regressions pass.

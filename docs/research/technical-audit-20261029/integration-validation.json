@@ -88,12 +88,30 @@
       "passed": 51,
       "source_commit": "457df8cb",
       "scope": "4 owned files; explicit side effects and fail-closed capability branch"
+    },
+    "server_namespace_regressions": {
+      "server_tests": 15,
+      "abuse_tests": 3,
+      "failed": 0,
+      "log": "remediation-server-layout-final.log"
+    },
+    "fuzz_driver_compile": {
+      "passed": true,
+      "log": "remediation-fuzz-server.log"
+    },
+    "mcp_clippy": {
+      "passed": true,
+      "log": "remediation-mcp-clippy-final.log"
+    },
+    "configured_stdio_cap": {
+      "passed": 2,
+      "source_commit": "88113ad7",
+      "evidence_commit": "ea7b6898",
+      "scope": "configured cap replaces SDK default16MiB; LF/CRLF boundaries, oversize discard, cancellation and recovery"
     }
   },
   "pending_integration": [
-    "final PR default/all-features tests and clippy on latest stable, including Rust1.99 deprecation fix",
-    "full format/upgrade/layout gate after schema5",
-    "server fuzz driver after adding restore module"
+    "full latest-head PR checks after boxing the SDK transport error and enforcing configured stdio cap"
   ],
   "limits": [
     "Completed local runs pin their own preceding source; authoritative final PR checks must verify the integrated head.",

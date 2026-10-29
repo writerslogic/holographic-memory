@@ -52,7 +52,7 @@ pub enum TransportError {
     )]
     Limit,
     #[error("MCP session transport failed: {0}")]
-    Native(<WorkerTransport<LocalSessionWorker> as Transport<RoleServer>>::Error),
+    Native(Box<<WorkerTransport<LocalSessionWorker> as Transport<RoleServer>>::Error>),
 }
 
 struct Activity {
@@ -260,7 +260,9 @@ impl Transport<RoleServer> for SessionTransport {
             if !allowed {
                 return Err(TransportError::Limit);
             }
-            future.await.map_err(TransportError::Native)
+            future
+                .await
+                .map_err(|error| TransportError::Native(Box::new(error)))
         }
     }
 
@@ -275,7 +277,10 @@ impl Transport<RoleServer> for SessionTransport {
         if let Some(shared) = self.shared.upgrade() {
             shared.retire(&self.id);
         }
-        self.inner.close().await.map_err(TransportError::Native)
+        self.inner
+            .close()
+            .await
+            .map_err(|error| TransportError::Native(Box::new(error)))
     }
 }
 
