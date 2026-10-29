@@ -175,7 +175,7 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
         """Records after the committed prefix. A non-seekable source is re-read from the start and
         the prefix is checked against the checkpoint's hash; if the order or content changed, the
         import restarts from record 0 (safe: writes replace by id)."""
-        nonlocal start_pos, cursor, prefix_hash
+        nonlocal start_pos, cursor, prefix_hash, position, last_cursor
         it = source.records(None)
         if start_pos:
             running, skipped = "", 0
@@ -193,6 +193,7 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
             stats.counts.clear(); stats.rejects.clear(); stats.skips.clear()
             stats.namespaces.clear(); stats.coercions.clear(); stats.source_dims.clear()
             start_pos, cursor, prefix_hash = 0, None, ""
+            position, last_cursor = 0, None
             it = source.records(None)
         yield from it
 

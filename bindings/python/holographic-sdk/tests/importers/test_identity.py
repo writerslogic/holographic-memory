@@ -14,7 +14,7 @@ from holographic_sdk.importers.report import Stats
 from holographic_sdk.importers.sources.base import ColumnMap, Source
 from holographic_sdk.importers.sources.files import JsonlSource
 
-from .conftest import API_KEY, DIM, CrashAfter, vec
+from .conftest import API_KEY, CrashAfter, vec
 
 
 def mapped(record, **options):
@@ -239,5 +239,29 @@ def test_resume_revalidates_content_even_when_the_source_has_cursors(tmp_path, s
         assert hit["text"] == source.items[0].text
         assert hit["metadata"]["revision"] == source.items[0].metadata["revision"]
         assert report.stats.counts["docs_acked"] == 6
+    finally:
+        sink.close()
+
+
+def test_changed_prefix_restarts_its_checkpoint_position_before_another_crash(tmp_path, server):
+    source = MutableSource(True)
+    tenant = server.tenant("restart-position")
+    checkpoint = tmp_path / "checkpoint.json"
+    options = ImportOptions(batch_size=2, verify_sample=0, checkpoint_path=str(checkpoint))
+    for attempt in range(2):
+        crashing = CrashAfter(server.url, api_key=API_KEY, tenant=tenant, crash_after=1)
+        try:
+            with pytest.raises(ImporterError, match="simulated crash"):
+                run_import(source, crashing, options, tenant=tenant)
+        finally:
+            crashing.close()
+        assert json.loads(checkpoint.read_text())["position"] == 2
+        source.items[0].text = "changed prefix"
+    sink = server.sink(tenant)
+    try:
+        report = run_import(source, sink, options, tenant=tenant)
+        assert report.resumed_from == 2
+        assert report.stats.counts["docs_acked"] == 6
+        assert json.loads(checkpoint.read_text())["position"] == 6
     finally:
         sink.close()
