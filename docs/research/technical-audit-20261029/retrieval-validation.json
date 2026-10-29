@@ -228,7 +228,21 @@
           "passed": 1,
           "failed": 0
         },
-        "goldenUpgradeLayoutIntegration": "pending; compilation interrupted at coordinator request, no completed integration result claimed"
+        "goldenUpgradeLayoutIntegration": "pending coordinator full gate; current canonical frame regeneration, manifest and version fixture tests individually passed before interruption",
+        "appendOnlyGoldenGate": {
+          "command": "scripts/format-gate.sh de4a2fd6",
+          "exitCode": 0,
+          "output": "golden stores unchanged"
+        },
+        "partialGoldenIntegration": {
+          "command": "cargo test --offline --locked --test format_golden --test format_upgrade_regressions --test format_layout",
+          "completedIndividualTests": [
+            "every_current_version_has_a_golden",
+            "golden_files_match_their_manifest",
+            "canonical_corpus_regenerates_the_current_goldens"
+          ],
+          "status": "Interrupted by SIGINT at coordinator request during format_golden; no full suite, upgrade or layout pass claimed."
+        }
       },
       "acceptance": [
         "New stores use schema5; ordinary schema2/3/4 opens and writes retain their format.",
@@ -251,7 +265,7 @@
     "cargo test --offline --locked --test format_golden --test format_upgrade_regressions --test format_layout",
     "cargo clippy --offline --locked --lib -- -D warnings (earlier retrieval-only state passed; final governance state pending)",
     "cargo check --offline --locked --features node-api --lib",
-    "Coordinator full default/all-feature, Node generated declarations and actual sync/async restart regression, format drift/upgrade and append-only golden gates"
+    "Coordinator full default/all-feature, Node generated declarations and actual sync/async restart regression, format drift/upgrade/layout gates. Append-only golden gate already passes."
   ],
   "localLogs": {
     "runtime": "/Volumes/A/hms-audit-fixes/retrieval-governance-final-gate.log",
@@ -259,5 +273,15 @@
     "goldenGeneration": "/Volumes/A/hms-audit-fixes/retrieval-governance-golden-generation.log",
     "status": "Completed counts and exact contracts are retained in this versioned artifact; external logs are supplemental."
   },
-  "implementationCommit": "this commit; resolved by the subsequent evidence metadata commit"
+  "implementationCommit": "81fe33f586393023cfff1fd58ec9c07458f4ae66",
+  "implementationCommits": [
+    "8f8ff1ee908b0d277133a5fdd32f572903a0ae5d",
+    "05f78fe5d11dcd0766d55b67e45aa58adafaf95c",
+    "ba6a00d3462f9ea283267438632ea4d0c26dc3db",
+    "e5fd32969912bbe2ff8ba71c085f1b497238eb55",
+    "4b836f1642e2ff797fca185ebf8c0d73fea8e30f",
+    "7994621270ce855b1dd6c1f2222536ff1bdfbf45",
+    "81fe33f586393023cfff1fd58ec9c07458f4ae66"
+  ],
+  "evidenceCommitPolicy": "Implementation commits are listed in dependency order; this metadata-only commit resolves the containing implementation hash and adds no source changes."
 }
