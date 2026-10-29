@@ -73,7 +73,7 @@ An unknown or disabled tool, a malformed request or an unknown resource or promp
 | Project directory | `--project` / `HMS_MCP_PROJECT` | working directory; its nearest `.git` ancestor is the root |
 | Per-call namespace | `--namespace-arg` / `HMS_MCP_NAMESPACE_ARG` | off |
 
-Each namespace is its own engine store at `<data-dir>/stores/<namespace>`. Namespace names are `[a-z0-9_-]{1,64}`; the `project` strategy derives `<directory-name>-<8 hex digits of a path hash>`, so two projects with the same folder name do not collide. With `--namespace-arg` every tool takes an optional `namespace`, which is how a multi-user application keeps one store per user. At most `--max-stores` (16) are open at once.
+Each namespace is its own engine store at `<data-dir>/stores/<namespace>`. Namespace names are `[a-z0-9_-]{1,64}`; the `project` strategy derives `<directory-name>-<8 hex digits of a path hash>`, so two projects with the same folder name do not collide. With `--namespace-arg` every tool takes an optional `namespace`, which is how a multi-user application keeps one store per user. At most `--max-stores` (16) active or opening stores occupy the cache. The least recently used idle store is closed before another namespace is opened; durable data remains available on reopen. Active requests retain their store lease. When every slot is active, admission returns `too_many_stores` and can be retried after an operation finishes. Initialization and flushing release the global namespace-map lock before disk I/O.
 
 ### Sharing a store
 

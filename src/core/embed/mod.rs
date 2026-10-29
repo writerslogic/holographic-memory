@@ -8,7 +8,8 @@
 //!   path, by `HMS_EMBED_PACK` / `HMS_EMBED_MODEL_DIR`, in the cache, or (feature
 //!   `local-embed-download`, never when offline) fetched once from the pinned upstream files.
 //! * Outputs are bit-identical for any thread count and any batch composition.
-//! * Memory is bounded by the weights plus `max_batch_tokens` of activations.
+//! * Forward passes use a soft token budget, with one full sequence always admitted. Input
+//!   token buffers and output vectors also scale with the number of texts in each call.
 //!
 //! ```no_run
 //! use holographic_memory::core::embed::{EmbedOptions, Embedder};
@@ -76,7 +77,8 @@ pub struct EmbedOptions {
     pub passage_prefix: Option<String>,
     /// Most sequences stacked into one forward pass.
     pub batch_size: usize,
-    /// Most tokens stacked into one forward pass; bounds activation memory.
+    /// Soft token budget per forward pass. One sequence may exceed it, up to max_length.
+    /// Tokenized inputs and output buffers for the whole call are additional allocations.
     pub max_batch_tokens: usize,
     /// Worker threads of the embedder's private pool; 0 uses the available parallelism.
     pub threads: usize,
@@ -137,6 +139,7 @@ pub struct Embedder {
     max_batch_tokens: usize,
     pool: rayon::ThreadPool,
     source: PathBuf,
+    space: crate::core::schema::EmbeddingSpace,
 }
 
 impl std::fmt::Debug for Embedder {
@@ -168,10 +171,14 @@ impl Embedder {
         if !damaged {
             return loaded;
         }
-        std::fs::remove_file(&located.path)
-            .with_context(|| format!("remove damaged cache entry {}", located.path.display()))?;
-        let again = locate::resolve(options)?;
-        Self::from_pack(&again.path, again.sha256.as_deref(), options)
+        #[cfg(feature = "local-embed-download")]
+        {
+            let spec = registry::find(&options.model)?;
+            let path = fetch::download_pack(spec, &locate::cache_dir(options)?)?;
+            Self::from_pack(&path, Some(spec.pack_sha256), options)
+        }
+        #[cfg(not(feature = "local-embed-download"))]
+        loaded
     }
 
     /// Loads a pack file. `expected_sha256` is checked against the bytes actually parsed.
@@ -213,17 +220,37 @@ impl Embedder {
             .thread_name(|i| format!("hms-embed-{i}"))
             .build()
             .context("build the embedder thread pool")?;
+        let pooling = options.pooling.unwrap_or(loaded.meta.pooling);
+        let normalize = options.normalize.unwrap_or(loaded.meta.normalize);
+        let query_prefix = options
+            .query_prefix
+            .clone()
+            .unwrap_or_else(|| loaded.meta.query_prefix.clone());
+        let passage_prefix = options
+            .passage_prefix
+            .clone()
+            .unwrap_or_else(|| loaded.meta.passage_prefix.clone());
+        let space = crate::core::schema::EmbeddingSpace::effective(
+            loaded.meta.model.clone(),
+            arch.hidden,
+            if normalize { "l2" } else { "none" },
+            &(
+                "bert-unpadded-exact-gelu-v1",
+                &loaded.sha256,
+                pooling,
+                normalize,
+                max_length,
+                &query_prefix,
+                &passage_prefix,
+                "utf8-prefix-32-bytes-per-token-v1",
+            ),
+        )?;
         Ok(Self {
-            pooling: options.pooling.unwrap_or(loaded.meta.pooling),
-            normalize: options.normalize.unwrap_or(loaded.meta.normalize),
-            query_prefix: options
-                .query_prefix
-                .clone()
-                .unwrap_or_else(|| loaded.meta.query_prefix.clone()),
-            passage_prefix: options
-                .passage_prefix
-                .clone()
-                .unwrap_or_else(|| loaded.meta.passage_prefix.clone()),
+            space,
+            pooling,
+            normalize,
+            query_prefix,
+            passage_prefix,
             max_length,
             batch_size: options.batch_size,
             max_batch_tokens: options.max_batch_tokens,
@@ -284,13 +311,7 @@ impl Embedder {
     /// The store embedding space for documents embedded by this model: the schema check
     /// rejects a store opened with a different model, revision, quantization or dimension.
     pub fn space(&self) -> crate::core::schema::EmbeddingSpace {
-        crate::core::schema::EmbeddingSpace {
-            model: self.meta.model.clone(),
-            revision: format!("{}+{}", self.meta.revision, self.quantization.name()),
-            dimensions: self.arch.hidden,
-            normalization: "l2".into(),
-            metric: "cosine".into(),
-        }
+        self.space.clone()
     }
 
     pub fn embed_query<S: AsRef<str> + Sync>(&self, texts: &[S]) -> Result<Vec<Vec<f32>>> {
@@ -302,6 +323,8 @@ impl Embedder {
     }
 
     /// One vector per text, in input order (L2-normalized unless disabled).
+    /// Text is silently truncated to max_length tokens after a UTF-8 byte prefix cap of
+    /// max(256, 32 * max_length). Use bounded source chunks when complete coverage is needed.
     pub fn embed<S: AsRef<str> + Sync>(
         &self,
         texts: &[S],

@@ -141,7 +141,6 @@ impl Backend {
             default_device, Embedder, EmbeddingQueryTask, Generator, ModelSource, ModelStages,
             Reranker, StageParams, PINNED,
         };
-        use holographic_memory::EmbeddingSpace;
 
         anyhow::ensure!(root.is_dir(), "local model root is unavailable");
         let definitions = [
@@ -167,7 +166,7 @@ impl Backend {
         let mut embedder = Embedder::load(&sources[0], &device)?;
         embedder.set_query_task(EmbeddingQueryTask::Conversation);
         embedder.set_batch(4);
-        let dimensions = embedder.dimensions();
+        let embedding_space = embedder.space();
         let mut reranker = Reranker::load(&sources[1], &device)?;
         reranker.set_batch(4);
         let mut generator = Generator::load(&sources[2], &device)?;
@@ -194,13 +193,7 @@ impl Backend {
         };
         Ok(Self {
             config: HmsConfig {
-                embedding_space: Some(EmbeddingSpace {
-                    model: definitions[0].1.into(),
-                    revision: sources[0].revision.clone(),
-                    dimensions,
-                    normalization: "l2".into(),
-                    metric: "cosine".into(),
-                }),
+                embedding_space: Some(embedding_space),
                 ..HmsConfig::default()
             },
             profile,

@@ -297,8 +297,8 @@ impl HmsConfig {
         );
         if let Some(space) = &self.embedding_space {
             anyhow::ensure!(!space.model.is_empty() && !space.revision.is_empty() && (1..=65536).contains(&space.dimensions)
-                && space.metric == "cosine" && space.normalization == "l2",
-                "embedding space requires model, revision, dimensions 1..=65536, normalization l2 and metric cosine");
+                && space.metric == "cosine" && matches!(space.normalization.as_str(), "l2" | "none"),
+                "embedding space requires model, revision, dimensions 1..=65536, normalization l2/none and metric cosine");
         }
         Ok(())
     }

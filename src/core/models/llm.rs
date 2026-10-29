@@ -47,7 +47,7 @@ struct Row {
 
 impl Generator {
     pub fn load(source: &ModelSource, device: &Device) -> Result<Self> {
-        let mut l = load(source, device, super::dtype_for(device, true))?;
+        let mut l = load(source, device, super::dtype_for(device, true), false)?;
         // The rotary table only needs the positions a generation can reach (the 2507 models
         // declare 262144). Uncapped and in f32, Metal produced NaN logits; capped and in bf16 it
         // decodes correctly. Which of the two changes was required was not isolated.

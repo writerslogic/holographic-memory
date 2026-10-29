@@ -2121,13 +2121,13 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
         .collect::<Result<_>>()?;
     let store = TempStore::new("lme-device")?;
     let config = HmsConfig {
-        embedding_space: Some(EmbeddingSpace {
-            model: "Qwen/Qwen3-Embedding-0.6B".into(),
-            revision: source("Qwen/Qwen3-Embedding-0.6B").revision,
-            dimensions: dims,
-            normalization: "l2".into(),
-            metric: "cosine".into(),
-        }),
+        embedding_space: Some(
+            stages
+                .embedder
+                .as_ref()
+                .context("missing local embedder")?
+                .space(),
+        ),
         ..HmsConfig::default()
     };
     let core = HmsCore::new(16384, Some(store.0.display().to_string()), Some(config))?;

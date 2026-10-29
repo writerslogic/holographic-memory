@@ -660,11 +660,9 @@ impl HmsCore {
             stages.params.validate()?;
         }
         if let Some(e) = stages.as_ref().and_then(|s| s.embedder.as_ref()) {
-            let space = self.config.embedding_space.as_ref().map(|s| s.dimensions);
             ensure!(
-                space == Some(e.dimensions()),
-                "the embedder's {} dimensions do not match the store embedding space {space:?}",
-                e.dimensions()
+                self.config.embedding_space.as_ref() == Some(&e.space()),
+                "the embedder's effective model identity does not match the store embedding space; reopen with the original model or re-embed original source documents into a new store"
             );
         }
         *self.model_stages.write() = stages;

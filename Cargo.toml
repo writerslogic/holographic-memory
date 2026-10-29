@@ -170,7 +170,7 @@ experimental-query-x4 = ["experimental"]
 experimental-build-search = ["experimental"]
 # On-device embedding, re-ranking, fact extraction and query rewriting (candle, Qwen3).
 # Weights load from local directories only; the library never downloads.
-local-models = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers"]
+local-models = ["dep:candle-core", "dep:candle-nn", "dep:candle-transformers", "dep:tokenizers", "sha2"]
 # Pure-Rust local text embeddings: int8/f16 BERT-family inference, tokenizer from the model
 # pack, sha256-pinned packs. No network code; packs load from a path, an env var or the cache.
 local-embed = ["dep:tokenizers", "sha2", "dep:libm"]

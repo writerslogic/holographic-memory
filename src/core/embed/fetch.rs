@@ -9,7 +9,7 @@
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{ensure, Context, Result};
 use sha2::{Digest, Sha256};
 
 use super::pack::{self, hex};
@@ -65,14 +65,82 @@ fn install(work: &Path, cache: &Path, name: &str, bytes: &[u8]) -> Result<PathBu
     Ok(dest)
 }
 
-pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
+struct FetchCoordinator {
+    active: std::sync::Mutex<std::collections::HashSet<PathBuf>>,
+    ready: std::sync::Condvar,
+}
+
+fn coordinator() -> &'static FetchCoordinator {
+    static STATE: std::sync::OnceLock<FetchCoordinator> = std::sync::OnceLock::new();
+    STATE.get_or_init(|| FetchCoordinator {
+        active: std::sync::Mutex::new(Default::default()),
+        ready: std::sync::Condvar::new(),
+    })
+}
+
+struct FetchLease(PathBuf);
+
+impl FetchLease {
+    fn acquire(path: PathBuf) -> Self {
+        let state = coordinator();
+        let mut active = state.active.lock().unwrap_or_else(|e| e.into_inner());
+        while active.contains(&path) {
+            active = state.ready.wait(active).unwrap_or_else(|e| e.into_inner());
+        }
+        active.insert(path.clone());
+        Self(path)
+    }
+}
+
+impl Drop for FetchLease {
+    fn drop(&mut self) {
+        let state = coordinator();
+        state
+            .active
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&self.0);
+        state.ready.notify_all();
+    }
+}
+
+fn build_pack(
+    spec: &ModelSpec,
+    cache: &Path,
+    build: impl FnOnce(&Path) -> Result<Vec<u8>>,
+) -> Result<PathBuf> {
+    ensure!(
+        !spec.id.is_empty()
+            && spec
+                .id
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"-_".contains(&b)),
+        "invalid model cache id"
+    );
     std::fs::create_dir_all(cache)
         .with_context(|| format!("create cache directory {}", cache.display()))?;
-    let work = cache.join(format!(".fetch-{}-{}", spec.id, std::process::id()));
-    // A leftover of an interrupted fetch; usually there is none to remove.
-    let _ = std::fs::remove_dir_all(&work);
-    std::fs::create_dir_all(&work)?;
-    let result = (|| -> Result<PathBuf> {
+    let cache = cache.canonicalize()?;
+    let dest = cache.join(spec.pack_name());
+    let _lease = FetchLease::acquire(dest.clone());
+    if dest.is_file() && pack::sha256_file(&dest)?.eq_ignore_ascii_case(spec.pack_sha256) {
+        return Ok(dest);
+    }
+    let work = tempfile::Builder::new()
+        .prefix(".hms-embed-fetch-")
+        .tempdir_in(&cache)?;
+    let bytes = build(work.path())?;
+    let got = pack::sha256_hex(&bytes);
+    ensure!(
+        got.eq_ignore_ascii_case(spec.pack_sha256),
+        "converted pack for {} has sha256 {got}, expected {}; refusing to install it",
+        spec.id,
+        spec.pack_sha256
+    );
+    install(work.path(), &cache, &spec.pack_name(), &bytes)
+}
+
+pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
+    build_pack(spec, cache, |work| {
         let base = std::env::var(ENV_MIRROR)
             .ok()
             .filter(|v| !v.is_empty())
@@ -82,25 +150,65 @@ pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
             let url = format!("{base}/{}/resolve/{}/{}", spec.repo, spec.revision, f.name);
             download_file(&url, &work.join(f.name), f.sha256, f.size)?;
         }
-        let bytes = spec.convert(&work)?;
-        let got = pack::sha256_hex(&bytes);
-        if !got.eq_ignore_ascii_case(spec.pack_sha256) {
-            bail!(
-                "converted pack for {} has sha256 {got}, the registry pins {}; the upstream files verified, so this build's converter differs from the one that produced the pin",
-                spec.id,
-                spec.pack_sha256
-            );
-        }
-        install(&work, cache, &spec.pack_name(), &bytes)
-    })();
-    // Best effort: the fetch outcome matters more than removing its scratch directory.
-    let _ = std::fs::remove_dir_all(&work);
-    result
+        spec.convert(work)
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn concurrent_fetches_build_once_and_failures_release_the_reservation() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let cache = tempfile::tempdir().unwrap();
+        let bytes = super::super::testing::tiny_pack_bytes(
+            super::super::Quantization::Int8,
+            super::super::Pooling::Mean,
+        );
+        let sha = pack::sha256_hex(&bytes);
+        let source = &super::super::MODELS[0];
+        let spec = ModelSpec {
+            id: "test",
+            repo: "test",
+            revision: "test",
+            license: "MIT",
+            pooling: source.pooling,
+            query_prefix: "",
+            passage_prefix: "",
+            max_length: 64,
+            quantization: source.quantization,
+            int8_group: 16,
+            files: &[],
+            pack_sha256: Box::leak(sha.into_boxed_str()),
+            pack_bytes: bytes.len() as u64,
+        };
+        assert!(build_pack(&spec, cache.path(), |_| anyhow::bail!("injected failure")).is_err());
+        let calls = AtomicUsize::new(0);
+        let barrier = std::sync::Barrier::new(8);
+        std::thread::scope(|scope| {
+            let handles: Vec<_> = (0..8)
+                .map(|_| {
+                    scope.spawn(|| {
+                        barrier.wait();
+                        build_pack(&spec, cache.path(), |_| {
+                            calls.fetch_add(1, Ordering::SeqCst);
+                            Ok(bytes.clone())
+                        })
+                        .unwrap()
+                    })
+                })
+                .collect();
+            for handle in handles {
+                assert_eq!(
+                    pack::sha256_file(&handle.join().unwrap()).unwrap(),
+                    spec.pack_sha256
+                );
+            }
+        });
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!(std::fs::read_dir(cache.path()).unwrap().count(), 1);
+    }
 
     #[test]
     fn a_failed_install_leaves_nothing_in_the_cache() {

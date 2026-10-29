@@ -135,3 +135,27 @@ Reproduce with `benchmarks/embedding/` (`select_model.py`, `run_engine_eval.py`,
 embedder code is linked, and the only changes to default code paths are one enum variant
 (`TextEncoder::LocalEmbedV1`, rejected by config validation unless the feature is on) and one branch in
 document preparation that default encoders never take.
+
+## Effective model identity and migration
+
+Native embedders bind the complete embedding function to the store schema. The revision is a
+versioned fingerprint of the pack or model-file bytes, effective pooling, normalization,
+query/passage instruction, token and UTF-8 prefix truncation, and inference profile. Disabling
+normalization records `none`. Worker counts and batch sizes do not change the pure-Rust identity.
+Candle query tasks and numeric precision are part of its identity. The core and MCP backend
+validate the installed embedder against that identity, including same-dimensional replacements.
+
+Previously created managed-model stores with nominal revisions cannot establish their original
+embedding function. Preserve them with the original binary and configuration; re-embed original
+source documents into a new destination. Rewriting `store.json` to a new fingerprint does not
+migrate vectors. External embeddings supplied with an explicit application-managed space retain
+their existing schema contract. Standalone semantic-index format 2 persists the effective space;
+format 1 must likewise be rebuilt from source texts, because its effective options were not saved.
+
+`max_batch_tokens` is a soft forward-pass budget: one sequence can exceed it, up to `max_length`.
+The whole call also retains tokenized inputs and output vectors; concurrent calls have separate
+scratch buffers. Bound input counts or stream bounded batches when constraining peak memory.
+Texts are silently limited to `max_length` tokens after a UTF-8 prefix cap of
+`max(256, 32 * max_length)` bytes. Chunk sources before embedding when complete coverage is needed.
+Model fetches in one process share a per-cache-file reservation; independent processes use unique
+staging directories and publish only verified complete pack bytes atomically.
