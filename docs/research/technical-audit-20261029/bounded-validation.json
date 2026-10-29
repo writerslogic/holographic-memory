@@ -4,7 +4,16 @@
   "spdx_license_identifier": "Apache-2.0",
   "scope": "REPORT.md section IV: six additional bounded concerns",
   "base_revision": "0c075265c27c21373bf5a43aad5c951abcf366d3",
+  "source_commits": ["6cd497cfed4cc4dc5e8b03bd4049ad84fc4c2d94", "107f0e86"],
+  "ci": {
+    "pull_request": "https://github.com/writerslogic/holographic-memory/pull/335",
+    "authoritative_results": "The final PR head's checks and merge record; all non-optional checks must complete successfully before merge",
+    "native_node_features": "node-api,security,local-embed",
+    "native_python_features": "python,local-embed-download",
+    "local_status_scope": "The completed checks below record local evidence; final native/platform results are recorded by PR CI rather than inferred from source inspection"
+  },
   "environment": {
+    "scope": "Local validation; GitHub CI is recorded separately above",
     "platform": "aarch64-apple-darwin",
     "rustc": "1.96.0",
     "python": "3.13 via uv",
@@ -58,10 +67,11 @@
       "pin_problems": 0
     }
   },
-  "pending": [
+  "final_ci_checks": [
     "Native Node and Python synthetic-fixture report/limit checks",
     "Integrated exact-head PR feature/platform/format/documentation gates"
   ],
+  "retained_logs": ["bounded-embedding.log", "bounded-encoder.log", "bounded-integrity.log", "bounded-checked-encoding.log", "bounded-imports.log", "bounded-clippy.log", "bounded-docs.log"],
   "limits": [
     "No measured performance or RSS improvement, pretrained task quality, hardware power-loss guarantee or independent cryptographic/finite-precision DP certification is claimed.",
     "Per-call budgets exclude caller-owned input storage, foreign-runtime object copies, retained results, separately loaded models and host transport/task queues.",

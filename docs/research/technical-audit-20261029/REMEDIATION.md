@@ -89,7 +89,9 @@ reads return the changed state instead of304. The same test passes for both rout
 
 ## Additional bounded concerns
 
-Follow-up to REPORT.md §IV, on branch `fix/audit-bounded-concerns`, based on the merged PR above.
+Follow-up to REPORT.md §IV: [PR #335](https://github.com/writerslogic/holographic-memory/pull/335),
+based on the merged PR above. Its final-head checks and merge record are the authoritative
+integrated gate; this section records implementation and local evidence.
 
 | Concern | Resolution and acceptance evidence |
 |---|---|
@@ -100,8 +102,8 @@ Follow-up to REPORT.md §IV, on branch `fix/audit-bounded-concerns`, based on th
 | Encoder stability | Add opt-in `multiscale-words-v2`, resolving majority ties by frequency descending then coordinate ascending, with independent reference selection, boundary/cache parity, explicit source reencoding and a new golden store. Keep default V1 and all existing goldens unchanged. No claim that legacy equal-key selection is portable across future toolchains. |
 | Privacy/erasure claims | Preserve the existing narrow masking and bundling-only DP threat models. Explicitly distinguish signed engine-operation claims from universal physical erasure; independent cryptographic/finite-precision DP certification remains unverified. |
 
-Validation is in progress; the follow-up's exact-head CI gate and final recorded local results
-must pass before publication. Shared binding checks use deterministic two-layer random-weight
+The follow-up's exact-head CI gate must pass before publication. Shared binding checks use
+deterministic two-layer random-weight
 fixtures, not downloaded pretrained weights or a claim of model quality. Caller-owned inputs,
 foreign-runtime copies, separately loaded models, hardware power loss and retained results are
 outside a Rust embedder call's allocation limits.
@@ -109,4 +111,6 @@ outside a Rust embedder call's allocation limits.
 Local checks pass: embedding25, encoder8, importer42, committed-sidecar1, encoder/migration7,
 golden-format6, ingest2, and checked embedding-store7. All-feature/all-target Clippy passes with
 Rust1.99; strict MkDocs and workflow lint pass. The final binding/runtime and platform checks
-remain the PR's exact-head gate. See [bounded-validation.json](bounded-validation.json).
+are recorded by the PR's exact-head gate. See [bounded-validation.json](bounded-validation.json)
+and its retained passing logs. The source commits are `6cd497c` and `107f0e86`; later evidence-only
+commits do not claim additional implementation or performance gains.

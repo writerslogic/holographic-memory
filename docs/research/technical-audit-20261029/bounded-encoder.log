@@ -1,0 +1,15 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 49.87s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-80f49de327c83d61)
+
+running 8 tests
+test core::encoding::tests::test_empty_input ... ok
+test core::encoding::tests::rotation_matches_permute ... ok
+test core::encoding::tests::test_multi_scale_captures_short_text ... ok
+test core::encoding::tests::test_morphological_similarity ... ok
+test core::encoding::tests::words_v2_majority_uses_frequency_then_coordinate_independent_of_input_order ... ok
+test core::encoding::tests::test_word_overlap_similarity ... ok
+test core::encoding::tests::test_word_identity_matters ... ok
+test core::encoding::tests::memoized_path_matches_reference_at_density_boundaries ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 658 filtered out; finished in 51.92s

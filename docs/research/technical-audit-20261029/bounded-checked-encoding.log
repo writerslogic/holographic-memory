@@ -1,0 +1,15 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 56s
+     Running tests/embed_store.rs (target/debug/deps/embed_store-883d23621e61d035)
+
+running 7 tests
+test encoder_without_its_embedder_fails_at_open_not_at_query ... ok
+test a_store_rejects_a_different_model_pack ... ok
+test effective_options_and_same_metadata_different_weights_cannot_relabel_a_store ... ok
+test unnormalized_model_outputs_keep_truthful_identity_and_cosine_search ... ok
+test embedding_limits_fail_before_mutation_and_batches_share_one_admission ... ok
+test a_lexical_store_can_adopt_an_embedder_and_default_encoding_is_unchanged ... ok
+test corpus_round_trip_through_ingest_and_search ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.23s

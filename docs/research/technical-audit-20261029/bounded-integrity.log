@@ -1,0 +1,94 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling crypto-common v0.2.2
+   Compiling darling_core v0.20.11
+   Compiling subtle v2.6.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling phc v0.6.1
+   Compiling rustls-webpki v0.103.16
+   Compiling monostate v0.1.18
+   Compiling ahash v0.8.12
+   Compiling webpki-roots v1.0.10
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+   Compiling nalgebra v0.35.0
+   Compiling ciborium v0.2.2
+   Compiling rcgen v0.14.10
+   Compiling password-hash v0.6.1
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.5
+   Compiling rustls v0.23.46
+   Compiling criterion v0.8.2
+   Compiling digest v0.11.3
+   Compiling universal-hash v0.6.1
+   Compiling cipher v0.5.2
+   Compiling aead v0.6.1
+   Compiling polyval v0.7.3
+   Compiling curve25519-dalek v5.0.0
+   Compiling sha2 v0.11.1
+   Compiling ghash v0.6.0
+   Compiling blake2 v0.11.0
+   Compiling aes v0.9.3
+   Compiling ctr v0.10.1
+   Compiling argon2 v0.6.0
+   Compiling aes-gcm v0.11.1
+   Compiling ed25519-dalek v3.0.0
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling derive_builder_core v0.20.2
+   Compiling derive_builder_macro v0.20.2
+   Compiling derive_builder v0.20.2
+   Compiling tokenizers v0.23.2
+   Compiling ureq v3.5.0
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 29s
+     Running tests/committed_sidecars.rs (target/debug/deps/committed_sidecars-a523f351bff0d999)
+
+running 1 test
+test failed_audit_sync_does_not_hide_durable_create_or_delete ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/embed_store.rs (target/debug/deps/embed_store-883d23621e61d035)
+
+running 6 tests
+test encoder_without_its_embedder_fails_at_open_not_at_query ... ok
+test a_store_rejects_a_different_model_pack ... ok
+test effective_options_and_same_metadata_different_weights_cannot_relabel_a_store ... ok
+test unnormalized_model_outputs_keep_truthful_identity_and_cosine_search ... ok
+test a_lexical_store_can_adopt_an_embedder_and_default_encoding_is_unchanged ... ok
+test corpus_round_trip_through_ingest_and_search ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.43s
+
+     Running tests/encoder_versions.rs (target/debug/deps/encoder_versions-b10cac68bebe12f8)
+
+running 7 tests
+test incompatible_encoders_preserve_schema_and_recover_after_compaction ... ok
+test reencoding_changes_only_the_new_store_and_rejects_incomplete_input ... ok
+test new_encoder_recovers_acknowledged_writes_after_abrupt_exit ... ok
+test abrupt_exit_child ... ok
+test capped_union_requires_experimental_before_creating_a_store ... ok
+test words_v2_requires_explicit_reencoding_and_survives_reopen ... ok
+test encoders_match_prechange_vectors_at_density_boundaries ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.86s
+
+     Running tests/format_golden.rs (target/debug/deps/format_golden-72c87c5785682406)
+
+running 7 tests
+test generate_goldens ... ignored, writes tests/golden; run deliberately
+test every_current_version_has_a_golden ... ok
+test golden_files_match_their_manifest ... ok
+test canonical_corpus_regenerates_the_current_goldens ... ok
+test verify_agrees_with_every_golden ... ok
+test old_formats_stay_writable_in_place ... ok
+test every_golden_opens_with_current_code ... ok
+
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 37.00s
+
+     Running tests/ingest_encode.rs (target/debug/deps/ingest_encode-05719053ea2bac23)
+
+running 2 tests
+test encode_modes_keep_lexical_results_and_defer_or_skip_vectors ... ok
+test memoized_encoder_matches_reference_bit_for_bit has been running for over 60 seconds
+test memoized_encoder_matches_reference_bit_for_bit ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 77.14s
