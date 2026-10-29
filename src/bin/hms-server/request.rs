@@ -245,13 +245,15 @@ mod committed_tests {
         let state = crate::tests::state_with(dir.path(), 2, &[]);
         let executions = Arc::new(AtomicUsize::new(0));
         for attempt in 0..2 {
-            let request = Request::builder()
+            let mut request = Request::builder()
                 .method("POST")
                 .uri("/api/v1/documents")
                 .header("Authorization", "Bearer test-key")
                 .header("Idempotency-Key", "committed-failure")
                 .body(Body::from("{}"))
                 .unwrap();
+            let principal = state.auth.authenticate(request.headers()).unwrap();
+            request.extensions_mut().insert(Arc::new(principal));
             let count = executions.clone();
             let result = json_write(
                 state.clone(),
