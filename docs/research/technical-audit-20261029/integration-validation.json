@@ -108,10 +108,23 @@
       "source_commit": "88113ad7",
       "evidence_commit": "ea7b6898",
       "scope": "configured cap replaces SDK default16MiB; LF/CRLF boundaries, oversize discard, cancellation and recovery"
+    },
+    "latest_all_target_all_feature_clippy": {
+      "rust": "1.99.0",
+      "passed": true,
+      "log": "remediation-latest-clippy.log"
+    },
+    "committed_cleanup_cache_invalidation": {
+      "passed": 1,
+      "cases": [
+        "document deletion plus failed purge",
+        "memory forgetting plus failed purge"
+      ],
+      "log": "remediation-cache-final.log"
     }
   },
   "pending_integration": [
-    "full latest-head PR checks after boxing the SDK transport error and enforcing configured stdio cap"
+    "complete final PR checks for current head"
   ],
   "limits": [
     "Completed local runs pin their own preceding source; authoritative final PR checks must verify the integrated head.",

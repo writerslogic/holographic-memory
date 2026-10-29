@@ -2093,7 +2093,6 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
         params: Default::default(),
     };
     let load_secs = t.elapsed().as_secs_f64();
-    let dims = stages.embedder.as_ref().map_or(0, Embedder::dimensions);
     // Sessions in file order: consecutive user turns sharing the `<session>_<n>` prefix.
     let mut sessions: Vec<(String, Vec<String>)> = Vec::new();
     for line in fs::read_to_string(data.join("turn.jsonl"))?.lines() {

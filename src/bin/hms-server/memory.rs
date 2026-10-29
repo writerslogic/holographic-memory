@@ -132,10 +132,12 @@ async fn run(op: &'static str, scope: Scope, state: Arc<AppState>, req: Request)
                 new_facts(&request, |id| core.has_document(id))
             })?;
         }
-        let response = core.memory().call(op, request).map_err(memory_error)?;
-        if scope == Scope::Write {
+        let before = core.revision();
+        let response = core.memory().call(op, request);
+        if scope == Scope::Write && (response.is_ok() || core.revision() != before) {
             core.bump();
         }
+        let response = response.map_err(memory_error)?;
         Ok((StatusCode::OK, response))
     })
     .await

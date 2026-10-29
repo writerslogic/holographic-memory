@@ -75,3 +75,10 @@ Latest Rust Clippy identified the large native transport-error variant; boxing t
 payload reduces the enum while preserving its error context (no lint suppression). Scoped MCP
 Clippy passes locally. Stdio now honors the configured request-byte cap through the SDK reader,
 whose prior default was16MiB; two boundary/recovery/cancellation regressions pass.
+
+Final local `cargo +1.99.0 clippy --all-targets --all-features -- -D warnings` passes. The last
+all-target warning was an obsolete local dimension binding after the model-space identity
+change; it was removed after confirming its use is now supplied by `Embedder::space()`.
+A fault-injection regression verifies both document deletion and Memory forgetting advance
+HTTP cache generations when data is durable but purge/index persistence fails. Conditional
+reads return the changed state instead of304. The same test passes for both route families.

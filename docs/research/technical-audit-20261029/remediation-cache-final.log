@@ -1,0 +1,20 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 49.52s
+     Running unittests src/bin/hms-server/main.rs (target/debug/deps/hms_server-f5fbfc99ebfb0100)
+
+running 1 test
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":69.99179099999999,"level":"info","method":"POST","request_id":"e4216b453f9a0e4e","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-29T20:43:40.066Z"}
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":0.285167,"level":"info","method":"GET","request_id":"71c6f238758d1019","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-29T20:43:40.067Z"}
+{"detail":"data mutation is durable, but compaction index persistence failed; reopen or reconcile before retrying: failed to persist temporary file: Is a directory (os error 21): Is a directory (os error 21)","event":"committed_effect_failed","level":"error","ts":"2026-10-29T20:43:40.237Z"}
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":168.842167,"level":"error","method":"DELETE","request_id":"4f34d8aac410222e","route":"/api/v1/documents/{id}","status":500,"tenant":null,"ts":"2026-10-29T20:43:40.237Z"}
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":0.151041,"level":"info","method":"GET","request_id":"0dde4c12c8ed2a26","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-29T20:43:40.238Z"}
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":63.888583,"level":"info","method":"POST","request_id":"edbb66abedeb4eb3","route":"/api/v1/memory/remember","status":200,"tenant":null,"ts":"2026-10-29T20:43:40.305Z"}
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":0.22612500000000002,"level":"info","method":"GET","request_id":"ec2f19f64ae4c1f8","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-29T20:43:40.306Z"}
+{"detail":"data mutation is durable, but forgotten-data purge failed; reopen or reconcile before retrying: data mutation is durable, but compaction index persistence failed; reopen or reconcile before retrying: failed to persist temporary file: Is a directory (os error 21): Is a directory (os error 21)","event":"committed_effect_failed","level":"error","ts":"2026-10-29T20:43:40.409Z"}
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":102.08091599999999,"level":"error","method":"POST","request_id":"218d0c89c2193b1f","route":"/api/v1/memory/forget","status":500,"tenant":null,"ts":"2026-10-29T20:43:40.409Z"}
+{"bytes_in":null,"event":"request","key_id":"legacy","latency_ms":0.12316700000000001,"level":"info","method":"GET","request_id":"6315748dc978ff49","route":"/api/v1/documents","status":200,"tenant":null,"ts":"2026-10-29T20:43:40.410Z"}
+test import_tests::committed_cleanup_failure_invalidates_cached_document_reads ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 52 filtered out; finished in 0.42s
+

@@ -614,20 +614,26 @@ pub async fn delete_doc(
                 }
             }
         }
-        if core.delete_document(&id).map_err(ApiError::from_core)? {
-            if let Some(vectors) = core.vectors() {
-                vectors
-                    .remove(&[id.as_str()])
-                    .map_err(ApiError::committed)?;
+        let before = core.revision();
+        let result = (|| {
+            if core.delete_document(&id).map_err(ApiError::from_core)? {
+                if let Some(vectors) = core.vectors() {
+                    vectors
+                        .remove(&[id.as_str()])
+                        .map_err(ApiError::committed)?;
+                }
+                if purge {
+                    core.compact_scrubbing().map_err(ApiError::committed)?;
+                }
+                Ok(())
+            } else {
+                Err(ApiError::not_found("document not found"))
             }
-            if purge {
-                core.compact_scrubbing().map_err(ApiError::committed)?;
-            }
+        })();
+        if result.is_ok() || core.revision() != before {
             core.bump();
-            Ok(())
-        } else {
-            Err(ApiError::not_found("document not found"))
         }
+        result
     })
     .await?;
     Ok(json_response(

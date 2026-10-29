@@ -32,6 +32,81 @@ fn imported(id: &str, owner: char) -> Value {
 }
 
 #[tokio::test]
+async fn committed_cleanup_failure_invalidates_cached_document_reads() {
+    for memory in [false, true] {
+        let dir = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(dir.path(), 2, &[]);
+        let (path, input) = if memory {
+            (
+                "/api/v1/memory/remember",
+                json!({"id":"doc", "text":"retained fact"}),
+            )
+        } else {
+            (
+                "/api/v1/documents",
+                json!({"id":"doc", "text":"retained fact", "vector":[1,0]}),
+            )
+        };
+        assert_eq!(call(state.clone(), "POST", path, input).await.0, 200);
+        let request = Request::builder()
+            .uri("/api/v1/documents")
+            .header("Authorization", "Bearer test-key")
+            .body(Body::empty())
+            .unwrap();
+        let response = crate::routes::router(state.clone())
+            .call(request)
+            .await
+            .unwrap();
+        let tag = response.headers()["etag"].clone();
+        let blocked = dir.path().join("tenants/64656661756c74/indices.json");
+        if blocked.is_file() {
+            std::fs::remove_file(&blocked).unwrap();
+        }
+        std::fs::create_dir(&blocked).unwrap();
+        let (status, problem) = if memory {
+            call(
+                state.clone(),
+                "POST",
+                "/api/v1/memory/forget",
+                json!({
+                    "scope":{"kind":"ids", "ids":["doc"]}, "purge":true, "dryRun":false
+                }),
+            )
+            .await
+        } else {
+            call(
+                state.clone(),
+                "DELETE",
+                "/api/v1/documents/doc?purge=true",
+                Value::Null,
+            )
+            .await
+        };
+        assert_eq!(status, 500, "{problem}");
+        assert_eq!(problem["code"], "mutation_committed");
+        let request = Request::builder()
+            .uri("/api/v1/documents")
+            .header("Authorization", "Bearer test-key")
+            .header("If-None-Match", tag)
+            .body(Body::empty())
+            .unwrap();
+        let response = crate::routes::router(state.clone())
+            .call(request)
+            .await
+            .unwrap();
+        assert_eq!(response.status().as_u16(), 200);
+        let body = axum::body::to_bytes(response.into_body(), 65536)
+            .await
+            .unwrap();
+        assert_eq!(
+            serde_json::from_slice::<Value>(&body).unwrap()["documents"],
+            json!([])
+        );
+        std::fs::remove_dir(&blocked).unwrap();
+    }
+}
+
+#[tokio::test]
 async fn import_ownership_is_checked_on_upsert_batch_and_conditional_delete() {
     let dir = tempfile::tempdir().unwrap();
     let state = crate::tests::state_with(dir.path(), 2, &[]);
