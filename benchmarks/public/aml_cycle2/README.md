@@ -19,7 +19,7 @@ Run the focused local contract checks with:
 cd benchmarks/public/aml_cycle2
 HMS_BIN=/path/to/exact-s/hms-server HMS_QUERY_TEST_BINARY=/path/to/exact-s/hms-server \
   uv run --no-project --python 3.12 \
-  --with fastapi==0.119.0 --with httpx==0.28.1 --with uvicorn==0.38.0 \
+  --with fastapi==0.162.0 --with httpx==0.28.1 --with uvicorn==0.54.0 \
   python -m unittest -v test_adapter test_query test_local_host experimental.test_evidence_selection
 ```
 
@@ -54,6 +54,18 @@ server with Rust 1.96, and installs a loopback-only systemd service. It does
 not install a token or expose a public port. Provision the token privately and
 configure a TLS reverse proxy only after checking the VM's identity, source,
 disk lifetime, and firewall rules.
+
+Copy `runtime-requirements.txt` alongside the installer. Fresh installations use
+the hash-locked runtime dependencies in that file. Regenerate it from the repository root:
+
+```sh
+uv pip compile --python-version 3.12 --generate-hashes --no-annotate --no-header \
+  benchmarks/public/aml_cycle2/runtime-requirements.in \
+  -o benchmarks/public/aml_cycle2/runtime-requirements.txt
+```
+
+This refresh changes the runtime of new installations, not the environment
+recorded by historical runs.
 
 
 ## Optional source provenance

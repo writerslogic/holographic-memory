@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["fastapi==0.119.0", "httpx==0.28.1", "uvicorn==0.38.0"]
+# dependencies = ["fastapi==0.162.0", "httpx==0.28.1", "uvicorn==0.54.0"]
 # ///
 """Serve the AML adapter with a pinned native binary on a persistent local disk."""
 

@@ -14,6 +14,11 @@ native_commit=12c80decb094d57ee13ba187a01bf1de8788ca2f
 adapter_commit=a25cb4c53731eaa950155dfc1c9f1a8e9184b15c
 adapter_sha256=1d5875e28b2b273e5bbe26c00bf60ca0be2b5621313313e82636a2230026f452
 root=/opt/hms-aml
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+test -f "$script_dir/runtime-requirements.txt" || {
+  echo 'Keep runtime-requirements.txt next to gce_install.sh.' >&2
+  exit 1
+}
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
@@ -84,8 +89,9 @@ uv==0.12.10 \
 HMS_UV_REQUIREMENTS
 "$root/uv-bootstrap/bin/pip" install --disable-pip-version-check --require-hashes -r "$root/uv-bootstrap-requirements.txt"
 "$root/uv-bootstrap/bin/uv" venv --python 3.12 "$root/venv"
+install -m 0644 "$script_dir/runtime-requirements.txt" "$root/runtime-requirements.txt"
 "$root/uv-bootstrap/bin/uv" pip install --python "$root/venv/bin/python" \
-  fastapi==0.119.0 httpx==0.28.1 uvicorn==0.38.0
+  --require-hashes -r "$root/runtime-requirements.txt"
 
 cat > /etc/systemd/system/hms-aml.service <<EOF
 [Unit]

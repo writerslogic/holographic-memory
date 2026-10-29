@@ -64,6 +64,18 @@
 5. **No forward secrecy or externally anchored history**: A compromised signing key can forge entries. Per-entry signatures do not detect deletion, truncation, or reordering of otherwise valid records without an independently retained history.
 6. **Salt reuse across sessions**: The Argon2 salt is generated once per storage path. This is acceptable for single-user local storage but not for multi-tenant deployments.
 
+### Optional model dependency review
+
+`local-models` pulls Candle 0.11 and its transitive `zip` 8.6 dependency. That
+version is affected by [GHSA-m665-v7pm-7grj](https://github.com/zip-rs/zip2/security/advisories/GHSA-m665-v7pm-7grj).
+HMS loads these models through `VarBuilder::from_mmaped_safetensors` in
+`src/core/models/mod.rs`; it does not call Candle's PyTorch ZIP reader, ZIP
+streaming, or filesystem extraction. The advisory's inspection/extraction
+chain is therefore not reachable through this integration. This disposition
+does not declare ZIP 8.6 safe for arbitrary use. Reassess before adding a ZIP
+model loader or archive-validation/extraction path, and upgrade the transitive
+dependency when Candle supports a patched version.
+
 ## Audit Trail
 
 The audit log at `{storage_path}/audit.bin` is an append-only binary file with fixed-size 105-byte entries:

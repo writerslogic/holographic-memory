@@ -22,7 +22,7 @@ volume = modal.Volume.from_name("hms-aml-cycle2-text-s", create_if_missing=True)
 image = (
     modal.Image.from_registry("rust:1.96-bookworm", add_python="3.12")
     .apt_install("build-essential", "pkg-config", "libssl-dev")
-    .pip_install("fastapi==0.119.0", "httpx==0.28.1", "uvicorn==0.38.0")
+    .pip_install("fastapi==0.162.0", "httpx==0.28.1", "uvicorn==0.54.0")
     .add_local_dir(
         ROOT,
         "/work/src",
