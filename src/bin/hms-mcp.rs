@@ -7,12 +7,16 @@
 
 #[path = "hms-mcp/config.rs"]
 mod config;
+#[path = "hms-mcp/http.rs"]
+mod http_server;
 #[path = "hms-mcp/log.rs"]
 mod log;
 #[path = "hms-mcp/memory.rs"]
 mod memory;
 #[path = "hms-mcp/server.rs"]
 mod server;
+#[path = "hms-mcp/session.rs"]
+mod session;
 #[path = "hms-mcp/store.rs"]
 mod store;
 #[path = "hms-mcp/tools.rs"]
@@ -24,16 +28,11 @@ use std::sync::Arc;
 use anyhow::{bail, Context, Result};
 use axum::extract::{Request, State};
 use axum::http::{header, StatusCode};
-use axum::middleware::{self, Next};
+use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
-use axum::Router;
 use clap::Parser;
-use rmcp::transport::streamable_http_server::session::local::LocalSessionManager;
-use rmcp::transport::streamable_http_server::{StreamableHttpServerConfig, StreamableHttpService};
 use rmcp::ServiceExt;
 use subtle::ConstantTimeEq;
-use tokio_util::sync::CancellationToken;
 
 use config::{Cli, NamespaceStrategy, Transport};
 use memory::Limits;
@@ -189,44 +188,7 @@ async fn shutdown_signal() {
 }
 
 async fn serve_http(cli: &Cli, handler: server::HmsMcp) -> Result<()> {
-    let token = config::http_token()?.map(Arc::new);
-    let cancel = CancellationToken::new();
-    let mut hosts: Vec<String> = ["localhost", "127.0.0.1", "::1"].map(String::from).into();
-    hosts.extend(cli.allow_hosts.iter().cloned());
-    let http_config = StreamableHttpServerConfig::default()
-        .with_allowed_hosts(hosts)
-        .with_allowed_origins(cli.allow_origins.clone())
-        .enforce_origin_validation()
-        .with_max_request_body_bytes(cli.max_request_bytes)
-        .with_cancellation_token(cancel.child_token());
-    let service = StreamableHttpService::new(
-        move || Ok(handler.clone()),
-        Arc::new(LocalSessionManager::default()),
-        http_config,
-    );
-    let mut mcp = Router::new().nest_service(&cli.path, service);
-    match &token {
-        Some(token) => {
-            mcp = mcp.layer(middleware::from_fn_with_state(Arc::clone(token), bearer));
-        }
-        None => {
-            log::warn("HTTP transport without HMS_MCP_TOKEN: any local process can use the store")
-        }
-    }
-    let app = mcp.route("/health", get(|| async { "ok" }));
-    let listener = tokio::net::TcpListener::bind(cli.bind)
-        .await
-        .with_context(|| format!("cannot bind {}", cli.bind))?;
-    let addr = listener.local_addr()?;
-    // The one line stdout is allowed to carry in HTTP mode: scripts wait for it.
-    println!("hms-mcp listening on http://{addr}{}", cli.path);
-    axum::serve(listener, app)
-        .with_graceful_shutdown(async move {
-            shutdown_signal().await;
-            cancel.cancel();
-        })
-        .await?;
-    Ok(())
+    http_server::serve(cli, handler).await
 }
 
 #[tokio::main]

@@ -62,6 +62,8 @@ pub struct Cli {
     /// Largest HTTP request body.
     #[arg(long, env = "HMS_MCP_MAX_REQUEST_BYTES", default_value_t = 1 << 20)]
     pub max_request_bytes: usize,
+    #[command(flatten)]
+    pub http: crate::http_server::HttpLimits,
 
     /// Root directory for stores. Default: the platform data directory, `hms-mcp` inside it.
     #[arg(long, env = "HMS_MCP_DATA_DIR")]
@@ -177,6 +179,7 @@ pub fn valid_namespace(name: &str) -> bool {
 
 impl Cli {
     pub fn validate(&self) -> Result<()> {
+        self.http.validate()?;
         if !valid_namespace(&self.namespace) {
             bail!("--namespace must be 1 to 64 characters of [a-z0-9_-]");
         }

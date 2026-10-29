@@ -128,8 +128,39 @@ HMS_MCP_TOKEN="$(openssl rand -hex 24)" hms-mcp --transport http --bind 127.0.0.
 - Loopback by default. A non-loopback `--bind` is refused unless `--allow-remote` is given and `HMS_MCP_TOKEN` is set. There is no TLS; put a TLS proxy in front if it leaves the machine.
 - `HMS_MCP_TOKEN` (at least 16 characters, environment only) requires `Authorization: Bearer <token>` on the MCP endpoint, compared in constant time. `/health` answers `ok` without auth.
 - `Host` must be a loopback name (extend with `--allow-host`) and a request carrying an `Origin` header must match `--allow-origin`; both reject DNS rebinding and cross-site calls with 403. Requests without `Origin` (non-browser clients) pass.
-- Request bodies are capped (`--max-request-bytes`, 1 MiB). SIGINT or SIGTERM drains in-flight requests, flushes every store and exits 0.
+- Request bodies are capped (`--max-request-bytes`, 1 MiB). HTTP/1.1 connections, request admission, response streams and legacy protocol sessions have separate limits below. Requests above HTTP admission capacity return 503 immediately; excess TCP connections close before parsing.
+- SIGINT or SIGTERM cancels HTTP streams and sessions, allows the configured connection shutdown grace, then flushes stores before exit.
 - It prints `hms-mcp listening on http://<addr><path>` on stdout once bound (`--bind 127.0.0.1:0` picks a free port).
+
+| HTTP resource | Flag | Default |
+| --- | --- | --- |
+| Accepted TCP connections, including idle keep-alive | `--max-http-connections` | 64 |
+| Requests and response streams sharing admission capacity | `--max-http-inflight` | 32 |
+| Header / response-header deadline, including request body reads | `--http-header-timeout-ms` / `--http-request-timeout-ms` | 5,000 / 30,000 ms |
+| Response-body production deadline / absolute TCP-connection lifetime | `--http-stream-timeout-ms` / `--http-connection-timeout-ms` | 300,000 / 600,000 ms |
+| Encoded response or SSE-stream bytes | `--max-http-response-bytes` | 32 MiB |
+| Retained legacy sessions | `--max-http-sessions` | 16 |
+| Idle legacy-session retention | `--http-session-idle-ms` | 300,000 ms |
+| Legacy session operations / cumulative serialized outbound bytes | `--max-http-session-requests` / `--max-http-session-bytes` | 4,096 / 64 MiB |
+| Connection shutdown grace | `--http-shutdown-grace-ms` | 10,000 ms |
+
+The environment variable for each flag is its uppercase spelling with `HMS_MCP_` prepended
+and hyphens replaced by underscores. Headers also have fixed caps of 64 fields and a 16 KiB
+read buffer. Admission permits remain held until the response finishes or is dropped;
+they do not become available when response headers are sent. The response deadline is
+checked while polling body frames; a writer blocked by its peer remains bounded by the
+absolute TCP lifetime.
+
+Protocol revisions before `2026-07-28` retain in-memory session/replay state. Session
+limits apply before that state can grow without bound: outbound messages are counted
+before entering SDK replay caches, and request/notification/stream operations consume a
+session quota. Idle sessions are removed from both application and SDK maps within one
+reaper tick (at most one second). Interrupted initialization also retires the session.
+At the session cap the SDK currently returns HTTP 500; after expiry or retirement the
+client must initialize again. `2026-07-28` stateless requests use the HTTP limits instead.
+Response byte or lifetime limits can end a stream after a mutation has been accepted;
+reconcile the stored value/version before retrying an unacknowledged mutation. These are
+memory/transport bounds, not a durable replay or exactly-once delivery guarantee.
 
 ## Security and logging
 
