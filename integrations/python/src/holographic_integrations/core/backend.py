@@ -119,6 +119,7 @@ class _Shared:
         if config.input_dim is None:
             raise ValueError("input_dim or an embedder is required")
         self._probe = [1.0] + [0.0] * (config.input_dim - 1)
+        self._document_ids_capability: Optional[bool] = None
 
     def server_id(self, record_id: str) -> str:
         if not isinstance(record_id, str) or not record_id:
@@ -211,6 +212,41 @@ class _Shared:
         eligible = [match for match in matches if parsed is None or parsed.matches(self.to_hit(match).metadata)]
         eligible.sort(key=lambda match: (-float(match["score"]), match["id"]))
         return eligible[:k]
+
+    def cache_document_ids_capability(self, response: httpx.Response) -> None:
+        if response.status_code not in (200, 404, 405):
+            raise _error(response)
+        supported = False
+        if response.status_code == 200:
+            try:
+                properties = response.json()["components"]["schemas"]["QueryIn"]["properties"]
+                supported = isinstance(properties, dict) and "document_ids" in properties
+            except (ValueError, KeyError, TypeError):
+                pass
+        self._document_ids_capability = supported
+
+    def require_document_ids_capability(self) -> None:
+        if not self._document_ids_capability:
+            raise HmsError("residual filtering requires a server with document_ids support; upgrade hms-server", code="unsupported_capability")
+
+    def checked_matches(self, response: httpx.Response, request: Dict[str, Any]) -> List[Dict[str, Any]]:
+        try:
+            payload = response.json()
+        except ValueError:
+            raise HmsError("service returned an invalid query response", code="invalid_response") from None
+        if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
+            raise HmsError("service returned an invalid query response", code="invalid_response")
+        matches = payload["matches"]
+        if "document_ids" in request:
+            allowed = set(request["document_ids"])
+            for match in matches:
+                try:
+                    selected = self.metadata_match(match, None) if isinstance(match, dict) else None
+                except (TypeError, ValueError):
+                    selected = None
+                if selected is None or selected[0] not in allowed:
+                    raise HmsError("service returned a document outside the selected ids or collection", code="invalid_response")
+        return matches
 
     def mask(self, vector: List[float]) -> List[float]:
         return self._client_mask(vector)
@@ -311,6 +347,9 @@ class HmsBackend(_Shared):
             cursor = following
 
     def _filtered_matches(self, body: Dict[str, Any], filter: FilterLike, k: int) -> List[Dict[str, Any]]:
+        if self._document_ids_capability is None:
+            self.cache_document_ids_capability(self._send("GET", "/openapi.json"))
+        self.require_document_ids_capability()
         ids: List[str] = []
         best: List[Dict[str, Any]] = []
         for sid, _ in self._metadata(filter):
@@ -328,7 +367,7 @@ class HmsBackend(_Shared):
         res = self._send("POST", "/api/v1/query", body)
         if res.status_code != 200:
             raise _error(res)
-        return res.json().get("matches", [])
+        return self.checked_matches(res, body)
 
     def get(self, ids: Sequence[str]) -> List[Optional[Record]]:
         """Records for `ids` in order; `None` where an id is absent."""
@@ -460,6 +499,9 @@ class AsyncHmsBackend(_Shared):
             cursor = following
 
     async def _filtered_matches(self, body: Dict[str, Any], filter: FilterLike, k: int) -> List[Dict[str, Any]]:
+        if self._document_ids_capability is None:
+            self.cache_document_ids_capability(await self._send("GET", "/openapi.json"))
+        self.require_document_ids_capability()
         ids: List[str] = []
         best: List[Dict[str, Any]] = []
         async for sid, _ in self._metadata(filter):
@@ -477,7 +519,7 @@ class AsyncHmsBackend(_Shared):
         res = await self._send("POST", "/api/v1/query", body)
         if res.status_code != 200:
             raise _error(res)
-        return res.json().get("matches", [])
+        return self.checked_matches(res, body)
 
     async def get(self, ids: Sequence[str]) -> List[Optional[Record]]:
         gate = asyncio.Semaphore(8)

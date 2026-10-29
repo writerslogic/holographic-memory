@@ -30,6 +30,7 @@ They come from `hms-server` (see `docs/SERVER.md`), and each adapter's page list
 
 - The framework core scans the service's metadata cursor in tenant/collection scope. `list` returns at most `max_fetch` matching records and accurately reports more matches; `forget_where` scans every page. Text retrieval still uses exact id-filtered queries. Framework-specific public enumeration limits remain documented on each adapter page.
 - Top-level equality filters run in the service. Other operators select document ids from paginated metadata before ranking. Vector-mode recall merges exact cosine results across bounded id groups. Fused text-mode residual queries require at most 1000 eligible records and raise `HmsError(code="filter_limit")` beyond that bound; independently normalized fused scores cannot be merged safely. `overfetch` remains accepted for configuration compatibility.
+- Residual queries verify `QueryIn.document_ids` support once from OpenAPI and fail with `unsupported_capability` on older servers. Returned rows must belong to the selected ids and collection, or the adapter raises `invalid_response`. Direct equality-only queries retain their existing compatibility.
 - `k` greater than `max_fetch` raises `ValueError` instead of silently truncating.
 - Scores are cosine similarity in vector mode and a fused rank score in text mode.
 - Metadata keys beginning `_hms_` are reserved.
