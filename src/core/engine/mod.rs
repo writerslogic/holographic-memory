@@ -1090,6 +1090,8 @@ impl HmsCore {
         structural::fuzzy_structural_query(&ctx, known, target_role)
     }
 
+    /// Uses default QueryLimits; panics if a work, frontier or byte limit is exhausted.
+    /// Use [`Self::multi_hop_with_limits`] to handle budget errors.
     pub fn multi_hop(&self, start: &str, relations: &[&str]) -> Vec<multi_hop::MultiHopResult> {
         let _transaction = self.mutation_gate.read();
         let (ctx, rules) = match (self.meaning_ctx(), &self.rule_store) {

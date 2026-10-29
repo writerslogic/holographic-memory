@@ -165,10 +165,11 @@ fn main() -> Result<()> {
     memory.compact()?;
 
     println!("\n== relations: structured multi-hop queries ==");
-    let works = memory.multi_hop("mira", &["works_at"]);
+    let works = memory.multi_hop_with_limits("mira", &["works_at"], Default::default())?;
     println!("mira works_at -> {}", works[0].entity_id);
     ensure!(works[0].entity_id == "acme");
-    let city = memory.multi_hop("mira", &["works_at", "based_in"]);
+    let city =
+        memory.multi_hop_with_limits("mira", &["works_at", "based_in"], Default::default())?;
     println!("mira works_at, based_in -> {}", city[0].entity_id);
     ensure!(city[0].entity_id == "lisbon");
 
@@ -181,7 +182,11 @@ fn main() -> Result<()> {
     ensure!(recall(&memory, "green tea", &top3)?[0] == "pref-drink");
     ensure!(recall(&memory, "lighthouse novel recommended", &top3)?[0] == "book");
     ensure!(recall(&memory, "staging token deploy script", &top3)?.is_empty());
-    ensure!(memory.multi_hop("mira", &["works_at", "based_in"])[0].entity_id == "lisbon");
+    ensure!(
+        memory.multi_hop_with_limits("mira", &["works_at", "based_in"], Default::default())?[0]
+            .entity_id
+            == "lisbon"
+    );
     println!("\nok");
     Ok(())
 }

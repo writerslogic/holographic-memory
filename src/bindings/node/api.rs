@@ -513,8 +513,7 @@ impl HolographicMemorySystem {
     pub async fn synthesize_concepts(&self) -> Result<Vec<ConceptCandidate>> {
         let core = self.core.clone();
         run_async(move || {
-            let results = core.synthesize_concepts();
-            Ok(results)
+            core.synthesize_concepts_with_limits(crate::core::query_limits::QueryLimits::default())
         })
         .await
     }
@@ -669,7 +668,11 @@ impl HolographicMemorySystem {
         let core = self.core.clone();
         run_async(move || {
             let rel_refs: Vec<&str> = relations.iter().map(|s| s.as_str()).collect();
-            let results = core.multi_hop(&start_entity, &rel_refs);
+            let results = core.multi_hop_with_limits(
+                &start_entity,
+                &rel_refs,
+                crate::core::query_limits::QueryLimits::default(),
+            )?;
             Ok(results
                 .into_iter()
                 .map(|r| MultiHopResultJs {

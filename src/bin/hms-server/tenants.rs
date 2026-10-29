@@ -412,14 +412,30 @@ impl AppState {
     }
 
     fn open_core(&self, dir: &Path) -> Result<Open> {
+        let space = EmbeddingSpace {
+            model: self.cfg.embedding_model.clone(),
+            revision: self.cfg.embedding_revision.clone(),
+            dimensions: self.cfg.input_dim,
+            normalization: "l2".into(),
+            metric: "cosine".into(),
+        };
+        #[cfg(feature = "local-models")]
+        let space = match self
+            .stages
+            .as_ref()
+            .and_then(|stages| stages.embedder.as_ref())
+        {
+            Some(embedder) => {
+                anyhow::ensure!(
+                    embedder.dimensions() == self.cfg.input_dim,
+                    "installed model dimensions differ from --input-dim"
+                );
+                embedder.space()
+            }
+            None => space,
+        };
         let config = HmsConfig {
-            embedding_space: Some(EmbeddingSpace {
-                model: self.cfg.embedding_model.clone(),
-                revision: self.cfg.embedding_revision.clone(),
-                dimensions: self.cfg.input_dim,
-                normalization: "l2".into(),
-                metric: "cosine".into(),
-            }),
+            embedding_space: Some(space),
             ..HmsConfig::default()
         };
         let core = HmsCore::new(self.cfg.dim, Some(dir.display().to_string()), Some(config))?;
