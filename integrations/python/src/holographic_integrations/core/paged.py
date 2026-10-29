@@ -3,7 +3,6 @@
 
 """Ordered, unbounded append logs of text items on top of the memory backend.
 
-The service can neither list nor page, and one query returns at most `max_fetch` records.
 `PagedLog` stores an ordered sequence of strings (chat items, serialized messages) by
 partitioning it into pages of `page_size` consecutive sequence numbers; a page is read with
 one equality-filtered query. The last page is located by exponential then binary search,
@@ -32,6 +31,9 @@ _PAGE = "hms_page"
 _PARTS = "hms_parts"
 _BLOB_OF = "hms_blob_of"
 _PART = "hms_part"
+_LEADING = "hms_text_leading"
+_TRAILING = "hms_text_trailing"
+_BLANK = "hms_text_blank"
 
 
 class _Layout:
@@ -59,6 +61,23 @@ class _Layout:
     def part_ids(self, seq: int, parts: int) -> List[str]:
         return [f"{self.item_id(seq)}.{n}" for n in range(1, parts)]
 
+    @staticmethod
+    def record(ident: str, text: str, metadata: dict) -> Record:
+        trimmed = text.strip()
+        if not trimmed:
+            return Record(ident, "_", {**metadata, _BLANK: text})
+        return Record(ident, trimmed, {
+            **metadata,
+            _LEADING: text[:len(text) - len(text.lstrip())],
+            _TRAILING: text[len(text.rstrip()):],
+        })
+
+    @staticmethod
+    def piece(record: Record) -> str:
+        if _BLANK in record.metadata:
+            return record.metadata[_BLANK]
+        return record.metadata.get(_LEADING, "") + record.text + record.metadata.get(_TRAILING, "")
+
     def records(self, first_seq: int, texts: Sequence[str]) -> List[Record]:
         blobs: List[Record] = []
         mains: List[Record] = []
@@ -70,9 +89,9 @@ class _Layout:
                     f"item needs {len(chunks)} parts; limit is max_parts={self.max_parts} x chunk_chars={self.chunk_chars}"
                 )
             for n, chunk in enumerate(chunks[1:], start=1):
-                blobs.append(Record(f"{self.item_id(seq)}.{n}", chunk, {_LOG: self.name, _BLOB_OF: seq, _PART: n}))
+                blobs.append(self.record(f"{self.item_id(seq)}.{n}", chunk, {_LOG: self.name, _BLOB_OF: seq, _PART: n}))
             mains.append(
-                Record(self.item_id(seq), chunks[0],
+                self.record(self.item_id(seq), chunks[0],
                        {_LOG: self.name, _SEQ: seq, _PAGE: seq // self.page_size, _PARTS: len(chunks)})
             )
             seq += 1
@@ -83,7 +102,7 @@ class _Layout:
         parts = head.metadata.get(_PARTS, 1)
         if len(tail) != parts - 1:
             raise HmsError(f"item {head.id} is missing parts ({len(tail) + 1} of {parts})")
-        return head.text + "".join(r.text for r in sorted(tail, key=lambda r: r.metadata[_PART]))
+        return _Layout.piece(head) + "".join(_Layout.piece(r) for r in sorted(tail, key=lambda r: r.metadata[_PART]))
 
 
 def _by_seq(records: Sequence[Record]) -> List[Record]:

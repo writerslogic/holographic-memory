@@ -44,7 +44,7 @@ class Hit:
 
 @dataclass(frozen=True)
 class Page:
-    """Result of an enumeration. `truncated` is true when more records matched than the service returns per query."""
+    """A bounded enumeration; `truncated` means additional matching records exist."""
 
     records: List[Record]
     truncated: bool

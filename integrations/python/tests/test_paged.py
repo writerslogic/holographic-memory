@@ -54,3 +54,16 @@ def test_parts_limit_and_option_validation(server):
             PagedLog(b, "q", page_size=21)
         with pytest.raises(ValueError):
             PagedLog(b, "q", chunk_chars=8001)
+
+
+@pytest.mark.parametrize("size", [99, 100, 101])
+def test_log_preserves_whitespace_and_blank_chunks_at_boundaries(server, size):
+    config = HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
+    with HmsBackend(config) as backend:
+        log = PagedLog(backend, "exact", chunk_chars=100, max_parts=4)
+        items = ["", " \t\n", " " * size + "alpha\t beta\n" + " " * size,
+                 "é" * size + " \t " + "日本語 " * 5 + "\n"]
+        log.append(items)
+        assert log.read() == items
+        assert log.pop() == items[-1]
+        assert log.read() == items[:-1]

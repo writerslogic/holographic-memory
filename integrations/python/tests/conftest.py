@@ -36,7 +36,7 @@ def server_factory(tmp_path_factory):
         key = (dim, tuple(sorted(flags.items())))
         if key not in servers:
             data = tmp_path_factory.mktemp(f"hms-data-{dim}")
-            args = [BIN, "--bind", "127.0.0.1:0", "--input-dim", str(dim), "--dim", "1024", "--data-dir", str(data)]
+            args = [BIN, "--bind", "127.0.0.1:0", "--no-auth", "--input-dim", str(dim), "--dim", "1024", "--data-dir", str(data)]
             for name, value in flags.items():
                 args += [f"--{name.replace('_', '-')}", str(value)]
             proc = subprocess.Popen(args, stdout=subprocess.PIPE, text=True)
