@@ -24,10 +24,11 @@
 
 - **System boundary**: Vector APIs retain representations; document APIs retain source passages by default, plus terms, metadata, source identifiers, and optional dense embeddings. Lossy encoding does not prevent inference.
 - **Storage boundary**: Arena payloads and index files can be encrypted. Schema metadata, filesystem structure, audit/provenance sidecars, and signing keys have separate policies; encryption does not conceal every file or access pattern.
-- **Document text cache**: `documents.text` currently retains plaintext source passages even
-  when store encryption is enabled. The binding tests explicitly exclude this file from
-  ciphertext checks. Do not treat the encryption option as complete document confidentiality
-  on disk; restrict filesystem access and use encrypted storage where that is required.
+- **Document text cache**: With store encryption enabled, version 2 `documents.text`
+  records use AES-256-GCM with their segment offsets as authenticated data. Equal passages
+  receive independent nonces; altered or relocated records fail authentication. Legacy
+  plaintext caches are rebuilt from the arena at open. Schema metadata, filesystem structure,
+  audit/provenance sidecars and signing keys retain the separate policies described above.
 - **N-API boundary**: Node.js callers interact via typed N-API bindings. Input validation occurs at the Rust boundary (ID length checks, dimension bounds, passphrase presence).
 
 ## Cryptographic Choices
