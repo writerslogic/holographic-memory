@@ -140,15 +140,19 @@ impl IndexedMemory {
 
     pub fn rebuild_indices(&self) {
         let vecs = self.vectors.read();
+        let mut postings = self.postings.write();
+        let tombstones = self.tombstones.read();
         let entries: Vec<(u32, &[u32])> = vecs
             .iter()
             .enumerate()
+            .filter(|(i, _)| !tombstones.is_deleted(*i as u32))
             .map(|(i, (_, v))| (i as u32, v.indices()))
             .collect();
-        self.postings.write().rebuild(&entries);
-        self.idf
-            .write()
-            .recompute(&self.postings.read(), vecs.len() as u32);
+        postings.rebuild(&entries);
+        self.idf.write().recompute(
+            &postings,
+            u32::try_from(entries.len()).expect("indexed memory exceeds u32 live slots"),
+        );
     }
 
     pub fn all_vectors(&self) -> Vec<(u32, String, EntangledHVec)> {
@@ -305,6 +309,63 @@ pub fn hopfield_cleanup(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rebuild_uses_only_live_vectors_and_never_restores_deleted_coordinates() {
+        let memory = IndexedMemory::new(256, 3.0);
+        let old = EntangledHVec::from_indices(vec![1, 2, 3], 256);
+        let live_a = EntangledHVec::from_indices(vec![1, 2], 256);
+        let live_b = EntangledHVec::from_indices(vec![2, 4], 256);
+        memory.insert("ghost".into(), old.clone());
+        memory.insert("a".into(), live_a.clone());
+        memory.insert("b".into(), live_b.clone());
+        assert!(memory.delete("ghost"));
+        memory.rebuild_indices();
+        let fresh = IndexedMemory::new(256, 3.0);
+        fresh.insert("a".into(), live_a);
+        fresh.insert("b".into(), live_b);
+        fresh.rebuild_indices();
+        let fingerprint = |memory: &IndexedMemory, query: &EntangledHVec| {
+            let mut hits: Vec<_> = memory
+                .overlap_scan(query)
+                .into_iter()
+                .map(|(slot, score)| (memory.get_by_idx(slot).unwrap().0, score.to_bits()))
+                .collect();
+            hits.sort_unstable();
+            hits
+        };
+        let query = EntangledHVec::from_indices(vec![1, 2, 3, 4], 256);
+        assert_eq!(fingerprint(&memory, &query), fingerprint(&fresh, &query));
+        memory.insert("ghost".into(), EntangledHVec::from_indices(vec![5], 256));
+        assert!(memory
+            .overlap_scan(&EntangledHVec::from_indices(vec![3], 256))
+            .is_empty());
+        assert_eq!(
+            memory
+                .overlap_scan(&EntangledHVec::from_indices(vec![5], 256))
+                .len(),
+            1
+        );
+        memory.delete("a");
+        memory.delete("b");
+        memory.delete("ghost");
+        memory.rebuild_indices();
+        assert!(memory.overlap_scan(&query).is_empty());
+        memory.insert("ghost".into(), old);
+        assert_eq!(memory.overlap_scan(&query).len(), 1);
+    }
+
+    #[test]
+    fn deleted_coordinates_do_not_match_a_reused_id_after_rebuild() {
+        let memory = IndexedMemory::new(256, 3.0);
+        memory.insert("fact".into(), EntangledHVec::from_indices(vec![1, 2], 256));
+        memory.delete("fact");
+        memory.rebuild_indices();
+        memory.insert("fact".into(), EntangledHVec::from_indices(vec![3, 4], 256));
+        assert!(memory
+            .overlap_scan(&EntangledHVec::from_indices(vec![1], 256))
+            .is_empty());
+    }
 
     #[test]
     fn test_indexed_memory_insert_get() {
