@@ -15,6 +15,46 @@
         ],
         "type": "object"
       },
+      "ChainLink": {
+        "properties": {
+          "effectiveFrom": {
+            "description": "When the link takes effect on the valid-time axis.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "ingestTime": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/ChainRelation"
+          }
+        },
+        "required": [
+          "id",
+          "relation",
+          "effectiveFrom",
+          "ingestTime"
+        ],
+        "type": "object"
+      },
+      "ChainRelation": {
+        "oneOf": [
+          {
+            "const": "predecessor",
+            "description": "This fact (transitively) supersedes the linked one.",
+            "type": "string"
+          },
+          {
+            "const": "successor",
+            "description": "The linked fact (transitively) supersedes this one.",
+            "type": "string"
+          }
+        ]
+      },
       "CompactionRun": {
         "properties": {
           "status": {
@@ -93,6 +133,34 @@
         ],
         "type": "object"
       },
+      "ConsolidationReport": {
+        "description": "What a consolidation run did or would do.",
+        "properties": {
+          "created": {
+            "description": "Facts written; each supersedes its sources.",
+            "items": {
+              "$ref": "#/components/schemas/Remembered"
+            },
+            "type": "array"
+          },
+          "dryRun": {
+            "type": "boolean"
+          },
+          "forgotten": {
+            "description": "Sources removed. Empty unless destructive consolidation was explicitly allowed.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "created",
+          "forgotten",
+          "dryRun"
+        ],
+        "type": "object"
+      },
       "Deleted": {
         "properties": {
           "deleted": {
@@ -165,6 +233,573 @@
         ],
         "type": "object"
       },
+      "ExplainReply": {
+        "properties": {
+          "explanation": {
+            "$ref": "#/components/schemas/Explanation"
+          }
+        },
+        "required": [
+          "explanation"
+        ],
+        "type": "object"
+      },
+      "ExplainRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "default": null,
+            "description": "Evaluate validity and supersession at this time. Absent: the clock's now.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "candidateLimit": {
+            "default": null,
+            "description": "Candidates ranked before the validity filter; the default is document search's.\nRaise it when most top candidates are history.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "embedding": {
+            "default": null,
+            "items": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "entities": {
+            "default": null,
+            "description": "Only facts mentioning at least one of these entities.",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "explain": {
+            "default": false,
+            "description": "Attach an [`Explanation`] to every result. Costs nothing when false.",
+            "type": "boolean"
+          },
+          "filter": {
+            "default": null,
+            "description": "Exact top-level metadata matches, as in document search."
+          },
+          "fusion": {
+            "default": null,
+            "description": "`\"blend\"` (default) or `\"rrf\"`, as in document search.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "history": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HistoryMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Absent: the configured default."
+          },
+          "id": {
+            "type": "string"
+          },
+          "k": {
+            "default": null,
+            "description": "Results to return; the configured default (10) when absent. At most 1000.",
+            "format": "uint32",
+            "maximum": 1000,
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "knownAt": {
+            "default": null,
+            "description": "Evaluate what the store knew at this ingest time: later facts and later supersessions\nare ignored. Absent: everything stored.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "lexicalWeight": {
+            "default": null,
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "minSemanticScore": {
+            "default": null,
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "query": {
+            "type": "string"
+          },
+          "semanticWeight": {
+            "default": null,
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "subject": {
+            "default": null,
+            "description": "Only facts about this subject.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "query",
+          "id"
+        ],
+        "type": "object"
+      },
+      "Explanation": {
+        "description": "Why a fact matched and how it was adjusted.",
+        "properties": {
+          "asOf": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "chain": {
+            "items": {
+              "$ref": "#/components/schemas/ChainLink"
+            },
+            "type": "array"
+          },
+          "finalScore": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "fusion": {
+            "type": "string"
+          },
+          "historicalFactor": {
+            "description": "The multiplier for a non-current fact (`historicalWeight`); 1 for a current one.",
+            "format": "double",
+            "type": "number"
+          },
+          "knownAt": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "lexicalScore": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lexicalWeight": {
+            "format": "double",
+            "type": "number"
+          },
+          "matchedTerms": {
+            "description": "Query words that match the fact's text (after stemming).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rank": {
+            "description": "1-based position among the ranked candidates, after the recency policy.",
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "recencyFactor": {
+            "description": "The recency policy's multiplier; 1 when none is configured.",
+            "format": "double",
+            "type": "number"
+          },
+          "retrievalScore": {
+            "description": "The fused document search score before the recency policy.",
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "retrieved": {
+            "description": "False when the fact was not among the ranked candidates for the query (explain\nstill reports its terms, validity and chain).",
+            "type": "boolean"
+          },
+          "semanticScore": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "semanticWeight": {
+            "format": "double",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FactStatus"
+          },
+          "validFrom": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "validTo": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "withinValidity": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "retrieved",
+          "lexicalWeight",
+          "semanticWeight",
+          "fusion",
+          "matchedTerms",
+          "recencyFactor",
+          "historicalFactor",
+          "status",
+          "asOf",
+          "withinValidity",
+          "chain"
+        ],
+        "type": "object"
+      },
+      "FactOrNull": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/FactRecord"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "FactRecord": {
+        "description": "A stored fact with its history links, as `get` and `history` return it.",
+        "properties": {
+          "effectiveFrom": {
+            "description": "When the fact takes effect on the valid-time axis.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "entities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "eventTime": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "ingestTime": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metadata": true,
+          "status": {
+            "$ref": "#/components/schemas/FactStatus"
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supersededBy": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "supersedes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "validFrom": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "validTo": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "effectiveFrom",
+          "entities",
+          "supersedes",
+          "supersededBy",
+          "metadata"
+        ],
+        "type": "object"
+      },
+      "FactStatus": {
+        "description": "A fact's standing at the time recall evaluates it.",
+        "oneOf": [
+          {
+            "enum": [
+              "current"
+            ],
+            "type": "string"
+          },
+          {
+            "const": "superseded",
+            "description": "A newer fact supersedes it; it stays stored as history.",
+            "type": "string"
+          },
+          {
+            "const": "expired",
+            "description": "Its validity interval ended.",
+            "type": "string"
+          },
+          {
+            "const": "not-yet-valid",
+            "description": "Its validity interval has not started.",
+            "type": "string"
+          }
+        ]
+      },
+      "ForgetReport": {
+        "properties": {
+          "dryRun": {
+            "type": "boolean"
+          },
+          "forgotten": {
+            "description": "Ids removed (or, for a dry run, that would be removed), sorted.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "purged": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "forgotten",
+          "dryRun",
+          "purged"
+        ],
+        "type": "object"
+      },
+      "ForgetRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dryRun": {
+            "default": false,
+            "description": "Report what would be removed without removing it.",
+            "type": "boolean"
+          },
+          "includeChain": {
+            "default": false,
+            "description": "Also remove every fact linked to a matched one by supersession, in both directions,\nso no version of the chain survives. Default: only the matched facts; a successor's\nremoval makes its predecessor current again.",
+            "type": "boolean"
+          },
+          "purge": {
+            "default": false,
+            "description": "Compact the store afterwards. Deleted text stays in the append-only journal until a\ncompaction rewrites it; this makes the removal physical.",
+            "type": "boolean"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ForgetScope"
+          }
+        },
+        "required": [
+          "scope"
+        ],
+        "type": "object"
+      },
+      "ForgetScope": {
+        "description": "What `forget` removes.",
+        "oneOf": [
+          {
+            "description": "These fact ids.",
+            "properties": {
+              "ids": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "kind": {
+                "const": "ids",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "ids"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Every fact about a subject.",
+            "properties": {
+              "kind": {
+                "const": "subject",
+                "type": "string"
+              },
+              "subject": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "subject"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Every fact mentioning an entity.",
+            "properties": {
+              "entity": {
+                "type": "string"
+              },
+              "kind": {
+                "const": "entity",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "entity"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Facts ingested before this time.",
+            "properties": {
+              "kind": {
+                "const": "ingestedBefore",
+                "type": "string"
+              },
+              "time": {
+                "format": "int64",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "kind",
+              "time"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Facts whose event time (else valid-from, else ingest time) is before this time.",
+            "properties": {
+              "kind": {
+                "const": "eventBefore",
+                "type": "string"
+              },
+              "time": {
+                "format": "int64",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "kind",
+              "time"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Facts whose caller metadata contains all these top-level values.",
+            "properties": {
+              "filter": true,
+              "kind": {
+                "const": "matching",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "filter"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "GetReply": {
+        "properties": {
+          "fact": {
+            "$ref": "#/components/schemas/FactOrNull"
+          }
+        },
+        "required": [
+          "fact"
+        ],
+        "type": "object"
+      },
       "Health": {
         "properties": {
           "status": {
@@ -173,6 +808,52 @@
         },
         "required": [
           "status"
+        ],
+        "type": "object"
+      },
+      "HistoryMode": {
+        "description": "Which facts recall returns.",
+        "oneOf": [
+          {
+            "const": "current",
+            "description": "Only facts that are current at the evaluation time. The default.",
+            "type": "string"
+          },
+          {
+            "const": "all",
+            "description": "Every fact, with its status; ranking is unchanged.",
+            "type": "string"
+          },
+          {
+            "const": "historical",
+            "description": "Only facts that are not current: superseded, expired or not yet valid.",
+            "type": "string"
+          }
+        ]
+      },
+      "HistoryReply": {
+        "properties": {
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/FactRecord"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "history"
+        ],
+        "type": "object"
+      },
+      "IdRequest": {
+        "description": "`get` and `history` retain their legacy acceptance of extra request fields.",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ],
         "type": "object"
       },
@@ -397,6 +1078,438 @@
             ]
           }
         },
+        "type": "object"
+      },
+      "RecallReply": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/Recalled"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "type": "object"
+      },
+      "RecallRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "default": null,
+            "description": "Evaluate validity and supersession at this time. Absent: the clock's now.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "candidateLimit": {
+            "default": null,
+            "description": "Candidates ranked before the validity filter; the default is document search's.\nRaise it when most top candidates are history.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "embedding": {
+            "default": null,
+            "items": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "entities": {
+            "default": null,
+            "description": "Only facts mentioning at least one of these entities.",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "explain": {
+            "default": false,
+            "description": "Attach an [`Explanation`] to every result. Costs nothing when false.",
+            "type": "boolean"
+          },
+          "filter": {
+            "default": null,
+            "description": "Exact top-level metadata matches, as in document search."
+          },
+          "fusion": {
+            "default": null,
+            "description": "`\"blend\"` (default) or `\"rrf\"`, as in document search.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "history": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HistoryMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Absent: the configured default."
+          },
+          "k": {
+            "default": null,
+            "description": "Results to return; the configured default (10) when absent. At most 1000.",
+            "format": "uint32",
+            "maximum": 1000,
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "knownAt": {
+            "default": null,
+            "description": "Evaluate what the store knew at this ingest time: later facts and later supersessions\nare ignored. Absent: everything stored.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "lexicalWeight": {
+            "default": null,
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "minSemanticScore": {
+            "default": null,
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "query": {
+            "type": "string"
+          },
+          "semanticWeight": {
+            "default": null,
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "subject": {
+            "default": null,
+            "description": "Only facts about this subject.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "Recalled": {
+        "description": "One fact returned by recall.",
+        "properties": {
+          "entities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "eventTime": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Explanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "ingestTime": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "metadata": {
+            "description": "The caller's metadata, without the reserved `_mem` key."
+          },
+          "score": {
+            "description": "The document search score after the recency policy.",
+            "format": "double",
+            "type": "number"
+          },
+          "sourceUri": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FactStatus"
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supersededBy": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "supersedes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "validFrom": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "validTo": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "score",
+          "status",
+          "entities",
+          "supersedes",
+          "supersededBy",
+          "metadata"
+        ],
+        "type": "object"
+      },
+      "RememberBatch": {
+        "additionalProperties": false,
+        "properties": {
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/RememberInput"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "facts"
+        ],
+        "type": "object"
+      },
+      "RememberInput": {
+        "additionalProperties": false,
+        "description": "One fact to remember.",
+        "properties": {
+          "embedding": {
+            "default": null,
+            "description": "A dense embedding of the text, when the store has an embedding space.",
+            "items": {
+              "format": "double",
+              "type": "number"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "entities": {
+            "default": null,
+            "description": "Entities the fact mentions; matched exactly by `RecallOptions::entities`.",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "eventTime": {
+            "default": null,
+            "description": "When the thing the fact describes happened (for example a conversation's date). It is\nnot the ingest time, which the store records itself.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "id": {
+            "default": null,
+            "description": "Caller-chosen id. Absent: a deterministic id derived from the content, so retrying the\nsame call stores the same fact once. Ids may not start with `hms:`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "default": null,
+            "description": "Caller metadata (a JSON object); exact top-level matches work as recall filters.\nThe key `_mem` is reserved."
+          },
+          "sourceUri": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subject": {
+            "default": null,
+            "description": "What the fact is about; the key supersession policies match on.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supersedes": {
+            "default": null,
+            "description": "Ids of facts this one replaces. They are kept and stay queryable as history.",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "text": {
+            "default": "",
+            "minLength": 1,
+            "type": "string"
+          },
+          "validFrom": {
+            "default": null,
+            "description": "Start of the interval in which the fact holds. Absent: unbounded.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "validTo": {
+            "default": null,
+            "description": "End (exclusive) of the interval in which the fact holds. Absent: unbounded.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "RememberReply": {
+        "properties": {
+          "remembered": {
+            "items": {
+              "$ref": "#/components/schemas/Remembered"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "remembered"
+        ],
+        "type": "object"
+      },
+      "RememberRequest": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/RememberInput"
+          },
+          {
+            "$ref": "#/components/schemas/RememberBatch"
+          }
+        ]
+      },
+      "Remembered": {
+        "description": "What `remember` did with one fact.",
+        "properties": {
+          "created": {
+            "description": "False when the identical fact was already stored under this id (an idempotent retry).",
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "ingestTime": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "supersededBy": {
+            "description": "Facts that already supersede this one (a late-arriving older fact).",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "supersedes": {
+            "description": "Facts this one supersedes, explicit and policy-resolved.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "created",
+          "supersedes",
+          "supersededBy",
+          "ingestTime"
+        ],
         "type": "object"
       },
       "Restored": {
@@ -1327,20 +2440,36 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "additionalProperties": false,
+                "properties": {
+                  "dryRun": {
+                    "default": true,
+                    "description": "Report what would be removed without removing it.",
+                    "type": "boolean"
+                  },
+                  "includeChain": {
+                    "default": false,
+                    "description": "Also remove every fact linked to a matched one by supersession, in both directions,\nso no version of the chain survives. Default: only the matched facts; a successor's\nremoval makes its predecessor current again.",
+                    "type": "boolean"
+                  },
+                  "purge": {
+                    "default": false,
+                    "description": "Compact the store afterwards. Deleted text stays in the append-only journal until a\ncompaction rewrites it; this makes the removal physical.",
+                    "type": "boolean"
+                  }
+                },
                 "type": "object"
               }
             }
           },
-          "required": true
+          "required": false
         },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/ForgetReport"
                 }
               }
             },
@@ -1398,20 +2527,30 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
+                "additionalProperties": false,
+                "properties": {
+                  "allowDestructive": {
+                    "default": false,
+                    "description": "Honor a policy's request to remove consolidated sources. Without it sources remain as\nsuperseded history.",
+                    "type": "boolean"
+                  },
+                  "dryRun": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
                 "type": "object"
               }
             }
           },
-          "required": true
+          "required": false
         },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/ConsolidationReport"
                 }
               }
             },
@@ -1469,8 +2608,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
-                "type": "object"
+                "$ref": "#/components/schemas/ExplainRequest"
               }
             }
           },
@@ -1481,8 +2619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/ExplainReply"
                 }
               }
             },
@@ -1540,8 +2677,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
-                "type": "object"
+                "$ref": "#/components/schemas/ForgetRequest"
               }
             }
           },
@@ -1552,8 +2688,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/ForgetReport"
                 }
               }
             },
@@ -1611,8 +2746,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
-                "type": "object"
+                "$ref": "#/components/schemas/IdRequest"
               }
             }
           },
@@ -1623,8 +2757,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/GetReply"
                 }
               }
             },
@@ -1682,8 +2815,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
-                "type": "object"
+                "$ref": "#/components/schemas/IdRequest"
               }
             }
           },
@@ -1694,8 +2826,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/HistoryReply"
                 }
               }
             },
@@ -1753,8 +2884,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
-                "type": "object"
+                "$ref": "#/components/schemas/RecallRequest"
               }
             }
           },
@@ -1765,8 +2895,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/RecallReply"
                 }
               }
             },
@@ -1824,8 +2953,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "description": "See docs/memory-api/README.md for the request and response fields.",
-                "type": "object"
+                "$ref": "#/components/schemas/RememberRequest"
               }
             }
           },
@@ -1836,8 +2964,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "description": "See docs/memory-api/README.md for the request and response fields.",
-                  "type": "object"
+                  "$ref": "#/components/schemas/RememberReply"
                 }
               }
             },

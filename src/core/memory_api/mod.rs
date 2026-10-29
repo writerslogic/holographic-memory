@@ -45,6 +45,8 @@ macro_rules! invalid {
     };
 }
 
+#[cfg(feature = "server")]
+pub mod contract;
 #[cfg(feature = "conversation-memory")]
 mod conversation;
 mod index;
@@ -90,6 +92,7 @@ pub enum MemoryError {
 }
 
 /// What `remember` does when an id exists with different content.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum IdConflict {
@@ -102,6 +105,7 @@ pub enum IdConflict {
 }
 
 /// Plain-data configuration; every field has a default that changes no behavior.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 pub struct MemoryConfig {

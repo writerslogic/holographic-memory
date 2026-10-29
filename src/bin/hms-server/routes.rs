@@ -12,6 +12,10 @@ use axum::http::Method;
 use axum::middleware::from_fn_with_state;
 use axum::routing::{delete, get, post, put, MethodRouter};
 use axum::Router;
+use holographic_memory::core::memory_api::{
+    contract as memory_contract, ConsolidateOptions, ConsolidationReport, ForgetOptions,
+    ForgetReport,
+};
 use schemars::generate::SchemaSettings;
 use schemars::{JsonSchema, SchemaGenerator};
 use serde_json::{json, Map, Value};
@@ -26,9 +30,10 @@ fn schema<T: JsonSchema>(g: &mut SchemaGenerator) -> Value {
     serde_json::to_value(g.subschema_for::<T>()).expect("schema serializes")
 }
 
-/// The memory API's bodies are defined by the engine's memory module, not by this server.
-fn memory_object(_: &mut SchemaGenerator) -> Value {
-    json!({"type": "object", "description": "See docs/memory-api/README.md for the request and response fields."})
+fn maintenance_request<T: JsonSchema>(g: &mut SchemaGenerator) -> Value {
+    let mut schema = serde_json::to_value(T::json_schema(g)).expect("schema serializes");
+    schema["properties"]["dryRun"]["default"] = true.into();
+    schema
 }
 
 fn doc_array(g: &mut SchemaGenerator) -> Value {
@@ -39,6 +44,7 @@ fn doc_array(g: &mut SchemaGenerator) -> Value {
 pub enum Request {
     None,
     Json(SchemaFn),
+    OptionalJson(SchemaFn),
     /// An optional `{}` body.
     OptionalEmptyObject,
     Raw(&'static str, &'static str),
@@ -132,14 +138,14 @@ pub static OPS: &[Op] = &[
     Op { method: "post", path: "/api/v1/query", id: "query", tag: "documents", summary: "Nearest documents to a vector, best first, with exact cosine scores.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<documents::QueryIn>), status: 200, reply: Reply::Json(schema::<types::Matches>), params: &[], handler: || post(documents::query) },
     Op { method: "post", path: "/api/v1/search", id: "search", tag: "documents", summary: "Text search: document ids and scores, best first (BM25, or the on-device model stages when configured); stored text and metadata on request.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<documents::SearchIn>), status: 200, reply: Reply::Json(schema::<types::SearchHits>), params: &[], handler: || post(documents::search) },
     Op { method: "get", path: "/api/v1/stats", id: "stats", tag: "documents", summary: "Document and vector counts and storage use for the tenant.", scope: Some(Scope::Read), tenant: true, request: Request::None, status: 200, reply: Reply::Json(schema::<types::Stats>), params: CONDITIONAL, handler: || get(documents::stats) },
-    Op { method: "post", path: "/api/v1/memory/remember", id: "memoryRemember", tag: "memory", summary: "Store one fact or an array of facts with validity time, source and supersession. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::remember) },
-    Op { method: "post", path: "/api/v1/memory/recall", id: "memoryRecall", tag: "memory", summary: "Retrieve facts for a query, honoring validity time and supersession. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::recall) },
-    Op { method: "post", path: "/api/v1/memory/explain", id: "memoryExplain", tag: "memory", summary: "Recall with the evidence behind each result and its supersession chain. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::explain) },
-    Op { method: "post", path: "/api/v1/memory/forget", id: "memoryForget", tag: "memory", summary: "Forget facts by id, source or scope. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::forget) },
-    Op { method: "post", path: "/api/v1/memory/get", id: "memoryGet", tag: "memory", summary: "Fetch one fact by id. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::get) },
-    Op { method: "post", path: "/api/v1/memory/history", id: "memoryHistory", tag: "memory", summary: "A fact's version and supersession history. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::history) },
-    Op { method: "post", path: "/api/v1/memory/applyForgetting", id: "memoryApplyForgetting", tag: "memory", summary: "Apply the configured forgetting policy. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::apply_forgetting) },
-    Op { method: "post", path: "/api/v1/memory/consolidate", id: "memoryConsolidate", tag: "memory", summary: "Run the configured consolidation policy. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::Json(memory_object), status: 200, reply: Reply::Json(memory_object), params: IDEMPOTENCY, handler: || post(memory::consolidate) },
+    Op { method: "post", path: "/api/v1/memory/remember", id: "memoryRemember", tag: "memory", summary: "Store one fact or an array of facts with validity time, source and supersession. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::Json(schema::<memory_contract::RememberRequest>), status: 200, reply: Reply::Json(schema::<memory_contract::RememberReply>), params: IDEMPOTENCY, handler: || post(memory::remember) },
+    Op { method: "post", path: "/api/v1/memory/recall", id: "memoryRecall", tag: "memory", summary: "Retrieve facts for a query, honoring validity time and supersession. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<memory_contract::RecallRequest>), status: 200, reply: Reply::Json(schema::<memory_contract::RecallReply>), params: IDEMPOTENCY, handler: || post(memory::recall) },
+    Op { method: "post", path: "/api/v1/memory/explain", id: "memoryExplain", tag: "memory", summary: "Recall with the evidence behind each result and its supersession chain. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<memory_contract::ExplainRequest>), status: 200, reply: Reply::Json(schema::<memory_contract::ExplainReply>), params: IDEMPOTENCY, handler: || post(memory::explain) },
+    Op { method: "post", path: "/api/v1/memory/forget", id: "memoryForget", tag: "memory", summary: "Forget facts by id, source or scope. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::Json(schema::<memory_contract::ForgetRequest>), status: 200, reply: Reply::Json(schema::<ForgetReport>), params: IDEMPOTENCY, handler: || post(memory::forget) },
+    Op { method: "post", path: "/api/v1/memory/get", id: "memoryGet", tag: "memory", summary: "Fetch one fact by id. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<memory_contract::IdRequest>), status: 200, reply: Reply::Json(schema::<memory_contract::GetReply>), params: IDEMPOTENCY, handler: || post(memory::get) },
+    Op { method: "post", path: "/api/v1/memory/history", id: "memoryHistory", tag: "memory", summary: "A fact's version and supersession history. See docs/memory-api.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<memory_contract::IdRequest>), status: 200, reply: Reply::Json(schema::<memory_contract::HistoryReply>), params: IDEMPOTENCY, handler: || post(memory::history) },
+    Op { method: "post", path: "/api/v1/memory/applyForgetting", id: "memoryApplyForgetting", tag: "memory", summary: "Apply the configured forgetting policy. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::OptionalJson(maintenance_request::<ForgetOptions>), status: 200, reply: Reply::Json(schema::<ForgetReport>), params: IDEMPOTENCY, handler: || post(memory::apply_forgetting) },
+    Op { method: "post", path: "/api/v1/memory/consolidate", id: "memoryConsolidate", tag: "memory", summary: "Run the configured consolidation policy. See docs/memory-api.", scope: Some(Scope::Write), tenant: true, request: Request::OptionalJson(maintenance_request::<ConsolidateOptions>), status: 200, reply: Reply::Json(schema::<ConsolidationReport>), params: IDEMPOTENCY, handler: || post(memory::consolidate) },
     Op { method: "post", path: "/api/v1/index/maintain", id: "maintainIndex", tag: "index", summary: "Train the tenant's document index over stored embeddings.", scope: Some(Scope::Write), tenant: true, request: Request::OptionalEmptyObject, status: 200, reply: Reply::Json(schema::<types::Maintained>), params: &[], handler: || post(documents::maintain_index) },
     Op { method: "get", path: "/api/v1/compaction", id: "compactionStatus", tag: "index", summary: "Compaction status and schedule for the tenant.", scope: Some(Scope::Read), tenant: true, request: Request::None, status: 200, reply: Reply::Json(schema::<types::CompactionStatusBody>), params: &[], handler: || get(admin::compaction_status) },
     Op { method: "post", path: "/api/v1/compaction", id: "runCompaction", tag: "index", summary: "Compact the tenant's store now.", scope: Some(Scope::Admin), tenant: true, request: Request::None, status: 200, reply: Reply::Json(schema::<types::CompactionRun>), params: &[], handler: || post(admin::run_compaction) },
@@ -254,10 +260,10 @@ fn build_openapi() -> Value {
         operation.insert("parameters".into(), Value::Array(parameters));
         match op.request {
             Request::None => {}
-            Request::Json(f) => {
+            Request::Json(f) | Request::OptionalJson(f) => {
                 operation.insert(
                     "requestBody".into(),
-                    json!({"required": true, "content": json_content("application/json", f(&mut generator))}),
+                    json!({"required": matches!(op.request, Request::Json(_)), "content": json_content("application/json", f(&mut generator))}),
                 );
             }
             Request::OptionalEmptyObject => {

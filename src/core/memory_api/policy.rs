@@ -160,6 +160,7 @@ impl RecencyPolicy for NoRecency {
 }
 
 /// Which time a recency decay measures from.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RecencyBasis {
@@ -194,6 +195,7 @@ impl RecencyPolicy for ExponentialRecency {
 }
 
 /// A stored fact as maintenance policies see it.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FactSummary {
@@ -404,6 +406,7 @@ pub trait MemoryObserver: Send + Sync {
 }
 
 /// Built-in supersession policies by name.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SupersessionSpec {
@@ -414,6 +417,7 @@ pub enum SupersessionSpec {
     LatestBySubject,
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(
     rename_all = "kebab-case",
@@ -433,6 +437,7 @@ pub enum RecencySpec {
     },
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(
     rename_all = "kebab-case",
@@ -454,6 +459,7 @@ pub enum ForgettingSpec {
     },
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ConsolidationSpec {
