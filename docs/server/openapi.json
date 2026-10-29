@@ -178,6 +178,19 @@
           "id": {
             "type": "string"
           },
+          "import_adopt_legacy": {
+            "default": false,
+            "description": "Explicitly adopt a matching legacy source record without an owner stamp.",
+            "type": "boolean"
+          },
+          "import_identity": {
+            "default": null,
+            "description": "Import-owner digest; must match metadata.hms_import_identity.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "metadata": {
             "default": null
           },
@@ -1018,6 +1031,17 @@
       },
       "QueryIn": {
         "properties": {
+          "document_ids": {
+            "default": null,
+            "description": "Intersect metadata filtering with 1..=1000 explicit document IDs; uses exact scoring.",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
           "ef": {
             "default": null,
             "description": "Beam width of a graph-index query, 1..=4096 (recall knob). Default: `--query-ef`.",
@@ -2313,6 +2337,15 @@
             "required": false,
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "description": "Required matching lowercase SHA-256 owner digest when deleting an imported document.",
+            "in": "query",
+            "name": "import_identity",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
