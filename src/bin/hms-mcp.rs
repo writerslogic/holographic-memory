@@ -17,6 +17,8 @@ mod memory;
 mod server;
 #[path = "hms-mcp/session.rs"]
 mod session;
+#[path = "hms-mcp/stdio.rs"]
+mod stdio_server;
 #[path = "hms-mcp/store.rs"]
 mod store;
 #[path = "hms-mcp/tools.rs"]
@@ -245,8 +247,9 @@ async fn main() -> Result<()> {
     );
     let result = match cli.transport {
         Transport::Stdio => {
+            let (read, write) = rmcp::transport::stdio();
             let running = handler
-                .serve(rmcp::transport::stdio())
+                .serve(stdio_server::bounded(read, write, cli.max_request_bytes))
                 .await
                 .context("stdio session failed to start")?;
             tokio::select! {

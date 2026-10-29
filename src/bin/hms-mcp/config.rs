@@ -59,7 +59,7 @@ pub struct Cli {
     /// Permit binding a non-loopback address (requires `HMS_MCP_TOKEN`).
     #[arg(long, env = "HMS_MCP_ALLOW_REMOTE")]
     pub allow_remote: bool,
-    /// Largest HTTP request body.
+    /// Largest HTTP request body or stdin JSON-RPC line (line ending included).
     #[arg(long, env = "HMS_MCP_MAX_REQUEST_BYTES", default_value_t = 1 << 20)]
     pub max_request_bytes: usize,
     #[command(flatten)]
