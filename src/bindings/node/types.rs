@@ -21,6 +21,18 @@ pub struct ListedDocument {
     pub chunk_count: u32,
 }
 
+impl From<crate::core::documents::DocumentRecord> for ListedDocument {
+    fn from(record: crate::core::documents::DocumentRecord) -> Self {
+        Self {
+            id: record.id,
+            version: record.version,
+            source_uri: record.source_uri,
+            metadata: record.metadata,
+            chunk_count: record.chunk_count as u32,
+        }
+    }
+}
+
 #[napi(object)]
 pub struct StructuralResultJs {
     pub entity_id: String,

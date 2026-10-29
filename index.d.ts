@@ -24,6 +24,7 @@ export declare class HolographicMemorySystem {
    * previous page as `after` to continue; `limit` is 1..=1000 (default 100).
    */
   listDocuments(after?: string | undefined | null, limit?: number | undefined | null): Promise<Array<ListedDocument>>
+  getDocumentInfo(id: string): Promise<ListedDocument | null>
   securityStatus(): any
   get vectorCount(): number
   get nsgTrained(): boolean

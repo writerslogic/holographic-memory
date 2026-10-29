@@ -11,6 +11,12 @@ const store = (opts = {}) => new HmsStore({ path: mkdtempSync(join(tmpdir(), 'hm
 const recs = (n, meta = {}) =>
   Array.from({ length: n }, (_, i) => ({ id: `d${i}`, text: `alpha beta gamma number${i} topic${i % 3}`, metadata: { n: i, parity: i % 2, ...meta } }))
 
+test('older native bindings fail before a partial framework workflow', () => {
+  const embedder = new HashingEmbedder(384)
+  const memory = { securityStatus: () => ({ embeddingSpace: embedder.space }) }
+  assert.throws(() => new HmsStore({ memory, embedder }), (error) => error.code === 'backend' && /current native binding/.test(error.message))
+})
+
 test('round trip: remember, recall, get, list, forget', async () => {
   const s = store()
   await s.remember(recs(5))
@@ -88,7 +94,7 @@ for (const delta of [-1, 0, 1]) {
     await s.remember(recs(10 + delta))
     const page = await s.list()
     assert.equal(page.records.length, Math.min(10, 10 + delta))
-    assert.equal(page.truncated, 10 + delta >= 10)
+    assert.equal(page.truncated, 10 + delta > 10)
     await assert.rejects(s.recall('alpha', { k: 11 }), (e) => e.code === 'limit_exceeded')
   })
 }
@@ -99,6 +105,43 @@ test('forgetWhere pages past maxFetch', async () => {
   assert.equal(await s.forgetWhere({ kind: 'x' }), 25)
   assert.deepEqual((await s.list()).records.map((r) => r.id), ['keep'])
 })
+
+test('residual filters find and delete matches beyond the metadata page and query caps', async () => {
+  const s = store({ maxFetch: 10 })
+  await s.remember(recs(1001))
+  const filter = { n: { $gte: 995 } }
+  const expected = ['d995', 'd996', 'd997', 'd998', 'd999', 'd1000'].sort()
+  assert.deepEqual((await s.list(filter)).records.map((record) => record.id).sort(), expected)
+  assert.deepEqual((await s.recall('alpha', { k: 10, filter })).map((hit) => hit.id).sort(), expected)
+  assert.equal(await s.forgetWhere(filter), expected.length)
+  assert.deepEqual((await s.list(filter)).records, [])
+  await s.close()
+})
+
+test('fused residual filter admission distinguishes limit minus one, limit and limit plus one', async () => {
+  const s = store()
+  await s.remember(recs(1001))
+  for (const count of [999, 1000]) {
+    assert.equal((await s.recall('alpha', { k: 1, filter: { n: { $lt: count } } })).length, 1)
+  }
+  await assert.rejects(s.recall('alpha', { k: 1, filter: { n: { $lt: 1001 } } }), (error) => error.code === 'filter_limit')
+  await s.close()
+})
+
+for (const chunks of [999, 1000, 1001]) {
+  test(`record assembly preserves its declared passage boundary (${chunks})`, async () => {
+    const s = store({ chunkWords: 2, overlapWords: 1 })
+    const text = Array.from({ length: chunks + 1 }, (_, i) => `word${i}`).join(' ')
+    await s.remember([{ id: 'long', text }])
+    assert.equal((await s.memory.getDocumentInfo('long')).chunkCount, chunks)
+    if (chunks > 1000) {
+      await assert.rejects(s.get(['long']), (error) => error.code === 'limit_exceeded')
+    } else {
+      assert.equal((await s.get(['long']))[0].text, text)
+    }
+    await s.close()
+  })
+}
 
 test('custom vectors rank by cosine; fusion and weights are passed through', async () => {
   const e = new HashingEmbedder(384)

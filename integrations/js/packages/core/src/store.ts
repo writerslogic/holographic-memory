@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 import { createRequire } from 'node:module'
-import type { DocumentInput, DocumentResult, HmsConfigJs, HolographicMemorySystem, SearchOptions } from 'holographic-memory'
+import type { DocumentInput, DocumentResult, HmsConfigJs, HolographicMemorySystem, ListedDocument, SearchOptions } from 'holographic-memory'
 import { HashingEmbedder, type Embedder, type Reranker } from './embedders.js'
 import { HmsError } from './errors.js'
 import { matches, parseFilter, splitFilter, type FilterLike, type Metadata } from './filters.js'
@@ -75,7 +75,7 @@ export interface HmsStoreOptions {
   fusion?: 'blend' | 'rrf'
   chunkWords?: number
   overlapWords?: number
-  /** Candidates fetched per requested result when a filter has client-side terms (default 5). */
+  /** Legacy configuration accepted for compatibility; residual filters now select metadata first. */
   overfetch?: number
   /** Ceiling on passages fetched per query, at most 1000 (the engine limit; default 1000). */
   maxFetch?: number
@@ -104,12 +104,17 @@ function loadNative(): typeof import('holographic-memory') {
   }
 }
 
+function requireMetadata(memory: HolographicMemorySystem): void {
+  if (typeof memory.listDocuments !== 'function' || typeof memory.getDocumentInfo !== 'function') {
+    throw new HmsError('install a current native binding with metadata paging and document info support', 'backend')
+  }
+}
+
 export class HmsStore {
   readonly memory: HolographicMemorySystem
   readonly embedder: Embedder
   readonly collection: string
   private readonly opts: HmsStoreOptions
-  private readonly overfetch: number
   private readonly maxFetch: number
   private readonly probe: number[]
   private writes: Promise<unknown> = Promise.resolve()
@@ -117,9 +122,9 @@ export class HmsStore {
 
   constructor(opts: HmsStoreOptions = {}) {
     this.opts = opts
-    this.overfetch = opts.overfetch ?? 5
+    const overfetch = opts.overfetch ?? 5
     this.maxFetch = opts.maxFetch ?? NATIVE_MAX
-    if (!Number.isInteger(this.overfetch) || this.overfetch < 1) throw new HmsError('overfetch must be an integer >= 1', 'invalid_argument')
+    if (!Number.isInteger(overfetch) || overfetch < 1) throw new HmsError('overfetch must be an integer >= 1', 'invalid_argument')
     if (!Number.isInteger(this.maxFetch) || this.maxFetch < 1 || this.maxFetch > NATIVE_MAX) {
       throw new HmsError(`maxFetch must be 1..${NATIVE_MAX}`, 'invalid_argument')
     }
@@ -128,6 +133,7 @@ export class HmsStore {
     }
     this.collection = opts.collection ?? ''
     if (opts.memory) {
+      requireMetadata(opts.memory)
       this.memory = opts.memory
       const space = (opts.memory.securityStatus() as { embeddingSpace?: Record<string, unknown> }).embeddingSpace
       if (opts.embedder) this.embedder = opts.embedder
@@ -141,6 +147,7 @@ export class HmsStore {
     } else {
       this.embedder = opts.embedder ?? new HashingEmbedder(384)
       const { HolographicMemorySystem: Native } = loadNative()
+      requireMetadata(Native.prototype)
       const s = this.embedder.space
       this.memory = new Native(opts.dimensions ?? 4096, opts.path ?? null, {
         embeddingModel: s.model,
@@ -248,6 +255,26 @@ export class HmsStore {
     return this.native(() => this.memory.searchDocuments(text, options))
   }
 
+  private async *metadata(filter?: FilterLike): AsyncGenerator<ListedDocument> {
+    const parsed = parseFilter(filter)
+    let cursor: string | undefined
+    for (;;) {
+      const page = await this.native(() => this.memory.listDocuments(cursor, 1000))
+      for (const record of page) {
+        const md = record.metadata as Metadata
+        if (md?.[COLLECTION_KEY] !== this.collection) continue
+        if (parsed && !matches(parsed, this.clean(md))) continue
+        yield record
+      }
+      if (page.length < 1000) return
+      const next = page[page.length - 1]?.id
+      if (next === undefined || (cursor !== undefined && next <= cursor)) {
+        throw new HmsError('native metadata cursor did not advance', 'backend')
+      }
+      cursor = next
+    }
+  }
+
   /** Top-`k` records by fused BM25 and cosine rank (best passage per record). */
   async recall(query: string, options: RecallOptions = {}): Promise<Hit[]> {
     this.assertOpen()
@@ -255,18 +282,38 @@ export class HmsStore {
     if (!Number.isInteger(k) || k < 1) throw new HmsError('k must be an integer >= 1', 'invalid_argument')
     if (k > this.maxFetch) throw new HmsError(`k=${k} exceeds maxFetch=${this.maxFetch}`, 'limit_exceeded')
     const { pushed, residual } = splitFilter(parseFilter(options.filter))
-    const want = residual ? Math.min(this.maxFetch, k * this.overfetch) : k
-    // Hits are passages: several can belong to one record, so ask for more than `want`.
-    const nativeK = Math.min(this.maxFetch, want * 2)
+    let eligible: string[] | undefined
+    if (residual) {
+      eligible = []
+      for await (const record of this.metadata(options.filter)) {
+        if (eligible.length === NATIVE_MAX) {
+          throw new HmsError('fused residual filtering supports at most 1000 matching records; narrow the filter', 'filter_limit')
+        }
+        eligible.push(record.id)
+      }
+      if (!eligible.length) return []
+    }
+    // Hits are passages: several can belong to one record, so ask for more than `k`.
+    const nativeK = Math.min(this.maxFetch, k * 2)
     const embedding = Array.from(options.vector ?? (await this.embedder.encodeQuery(query)))
     const so: SearchOptions = this.searchOptions({
       k: nativeK,
       candidateLimit: Math.min(NATIVE_MAX, Math.max(nativeK, 100)),
       filter: this.scope(pushed),
       embedding,
+      documentIds: eligible,
     })
     if (options.minSemanticScore !== undefined) so.minSemanticScore = options.minSemanticScore
     let raw = await this.search(query, so)
+    const desired = eligible ? Math.min(k, eligible.length) : k
+    while (new Set(raw.map((hit) => hit.documentId)).size < desired && raw.length === so.k) {
+      if (so.k === this.maxFetch) {
+        throw new HmsError('the passage budget cannot prove a complete record result; increase maxFetch', 'limit_exceeded')
+      }
+      so.k = Math.min(this.maxFetch, (so.k as number) * 2)
+      so.candidateLimit = Math.min(NATIVE_MAX, Math.max(so.k, 100))
+      raw = await this.search(query, so)
+    }
     if (this.opts.rerank && raw.length) {
       if (raw.some((r) => r.text == null)) throw new HmsError('reranking needs stored text', 'backend')
       const scores = await this.opts.rerank(query, raw.map((r) => r.text as string))
@@ -305,6 +352,11 @@ export class HmsStore {
     const worker = async (): Promise<void> => {
       for (let i = cursor++; i < sids.length; i = cursor++) {
         const sid = sids[i] as string
+        const info = await this.native(() => this.memory.getDocumentInfo(sid))
+        if (!info || (info.metadata as Metadata)?.[COLLECTION_KEY] !== this.collection) continue
+        if (info.chunkCount > NATIVE_MAX) {
+          throw new HmsError('record exceeds the native passage read limit; split it before storing', 'limit_exceeded')
+        }
         const rows = await this.search('', {
           k: NATIVE_MAX,
           candidateLimit: NATIVE_MAX,
@@ -315,6 +367,9 @@ export class HmsStore {
         })
         const mine = rows.filter((r) => r.documentId === sid)
         if (!mine.length) continue
+        if (mine.length !== info.chunkCount || mine.some((row) => row.version !== info.version)) {
+          throw new HmsError('record changed while reading its passages; retry the operation', 'concurrent_mutation')
+        }
         const parts = mine.filter((r) => r.text != null).sort((a, b) => a.startByte - b.startByte)
         const total = Math.max(...parts.map((p) => p.endByte))
         const buf = Buffer.alloc(total)
@@ -337,30 +392,19 @@ export class HmsStore {
     return sids.map((s) => found.get(s))
   }
 
-  /** Up to `limit` records matching `filter` (default and ceiling: `maxFetch` passages). */
+  /** Up to `limit` matching records in id order (default and ceiling: `maxFetch`). */
   async list(filter?: FilterLike, limit?: number): Promise<Page> {
     this.assertOpen()
-    const { pushed, residual } = splitFilter(parseFilter(filter))
-    const n = residual ? this.maxFetch : Math.min(limit ?? this.maxFetch, this.maxFetch)
-    const raw = await this.search('', {
-      k: n,
-      candidateLimit: NATIVE_MAX,
-      embedding: this.probe,
-      minSemanticScore: -1,
-      filter: this.scope(pushed),
-    })
-    const seen = new Set<string>()
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) throw new HmsError('limit must be a positive integer', 'invalid_argument')
+    const want = Math.min(limit ?? this.maxFetch, this.maxFetch)
     const sids: string[] = []
-    for (const r of raw) {
-      if (seen.has(r.documentId)) continue
-      seen.add(r.documentId)
-      if (residual && !matches(residual, this.clean(r.metadata))) continue
-      sids.push(r.documentId)
+    for await (const record of this.metadata(filter)) {
+      sids.push(record.id)
+      if (sids.length > want) break
     }
-    const want = limit === undefined ? sids.length : Math.min(limit, sids.length)
     const full = await this.assemble(sids.slice(0, want))
     const records = sids.slice(0, want).flatMap((s) => (full.has(s) ? [full.get(s) as StoredRecord] : []))
-    const truncated = raw.length >= n && (residual !== undefined || limit === undefined || limit > n)
+    const truncated = sids.length > want
     return { records, truncated }
   }
 
@@ -378,18 +422,12 @@ export class HmsStore {
   }
 
   /**
-   * Delete everything matching `filter`, paging through `list` until nothing is left. With
-   * client-side filter terms it stops when a full candidate page holds no match.
+   * Delete every matching record while paging metadata without retaining document text.
    */
   async forgetWhere(filter?: FilterLike): Promise<number> {
     let total = 0
-    for (;;) {
-      const page = await this.list(filter)
-      if (!page.records.length) return total
-      const removed = await this.forget(page.records.map((r) => r.id))
-      total += removed
-      if (removed === 0) return total
-    }
+    for await (const record of this.metadata(filter)) total += await this.forget([this.userId(record.id)])
+    return total
   }
 
   /** Build the engine's optional indexes over stored embeddings. */

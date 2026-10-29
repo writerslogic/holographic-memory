@@ -122,16 +122,16 @@ impl HolographicMemorySystem {
             Ok(core
                 .list_documents(from.as_deref(), limit)
                 .into_iter()
-                .map(|record| ListedDocument {
-                    id: record.id,
-                    version: record.version,
-                    source_uri: record.source_uri,
-                    metadata: record.metadata,
-                    chunk_count: record.chunk_count as u32,
-                })
+                .map(ListedDocument::from)
                 .collect())
         })
         .await
+    }
+
+    #[napi]
+    pub async fn get_document_info(&self, id: String) -> Result<Option<ListedDocument>> {
+        let core = self.core.clone();
+        run_async(move || Ok(core.get_document(&id).map(ListedDocument::from))).await
     }
 
     #[napi]
