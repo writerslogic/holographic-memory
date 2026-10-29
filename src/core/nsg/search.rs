@@ -98,9 +98,8 @@ pub(super) fn greedy_search(
     }
     let candidates = greedy_search_internal(index, query, ef_search.max(k));
 
-    candidates
+    let mut results: Vec<_> = candidates
         .iter()
-        .take(k)
         .map(|&(_dist, idx)| {
             let id = &index.id_map[idx as usize];
             let sim = query.similarity(&index.vectors[idx as usize]);
@@ -109,7 +108,10 @@ pub(super) fn greedy_search(
                 similarity: sim,
             }
         })
-        .collect()
+        .collect();
+    results.sort_unstable();
+    results.truncate(k);
+    results
 }
 
 #[cfg(test)]
@@ -117,6 +119,30 @@ mod tests {
     use super::*;
     use crate::core::config::NSGConfig;
     use crate::core::nsg::training;
+
+    #[test]
+    fn audit_regression_variable_density_reranks_before_truncation() {
+        let query = EntangledHVec::from_indices((0..10).collect(), 256);
+        let index = NSGIndex {
+            neighbors: vec![vec![1], vec![0]],
+            vectors: vec![
+                EntangledHVec::from_indices(vec![0], 256),
+                EntangledHVec::from_indices((0..20).collect(), 256),
+            ],
+            id_map: vec!["a".into(), "b".into()],
+            navigating_node: 0,
+            trained: true,
+            config: NSGConfig::default(),
+        };
+        let hits = greedy_search(&index, &query, 1, 2);
+        assert_eq!(hits[0].id, "b");
+        assert_eq!(hits[0].similarity, 0.5);
+        let hits = greedy_search(&index, &query, 2, 2);
+        assert_eq!(
+            hits.iter().map(|hit| hit.id.as_str()).collect::<Vec<_>>(),
+            ["b", "a"]
+        );
+    }
 
     fn build_test_index(n: usize, dim: usize) -> NSGIndex {
         let vectors: Vec<EntangledHVec> = (0..n)

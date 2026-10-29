@@ -78,6 +78,40 @@ impl SparseInvertedIndex {
         k: usize,
         accumulator: &mut Accumulator,
     ) -> Vec<SlotHit> {
+        self.query_with_ties(query_dims, k, accumulator, decimal_cmp)
+    }
+
+    pub(crate) fn query_with_ties(
+        &self,
+        query_dims: &[u32],
+        k: usize,
+        accumulator: &mut Accumulator,
+        compare: impl Fn(u32, u32) -> std::cmp::Ordering,
+    ) -> Vec<SlotHit> {
+        struct Candidate<'a> {
+            hit: SlotHit,
+            compare: &'a dyn Fn(u32, u32) -> std::cmp::Ordering,
+        }
+        impl PartialEq for Candidate<'_> {
+            fn eq(&self, other: &Self) -> bool {
+                self.cmp(other).is_eq()
+            }
+        }
+        impl Eq for Candidate<'_> {}
+        impl PartialOrd for Candidate<'_> {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                Some(self.cmp(other))
+            }
+        }
+        impl Ord for Candidate<'_> {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                other
+                    .hit
+                    .similarity
+                    .total_cmp(&self.hit.similarity)
+                    .then_with(|| (self.compare)(self.hit.slot, other.hit.slot))
+            }
+        }
         debug_assert!(
             self.postings
                 .iter()
@@ -125,9 +159,12 @@ impl SparseInvertedIndex {
                 1.0
             };
 
-            let hit = SlotHit {
-                slot: doc_id,
-                similarity,
+            let hit = Candidate {
+                hit: SlotHit {
+                    slot: doc_id,
+                    similarity,
+                },
+                compare: &compare,
             };
             // `Ord` is total over distinct slots, so the k smallest hits (the k best) do not
             // depend on the order the heap saw them: a hit no better than the worst kept one
@@ -144,6 +181,9 @@ impl SparseInvertedIndex {
         // With the reversed `Ord` (smaller similarity = Greater), into_sorted_vec (ascending
         // Ord) returns DESCENDING similarity.
         heap.into_sorted_vec()
+            .into_iter()
+            .map(|candidate| candidate.hit)
+            .collect()
     }
 }
 

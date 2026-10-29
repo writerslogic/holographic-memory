@@ -10,7 +10,6 @@ use rayon::prelude::*;
 
 use crate::core::entangled::EntangledHVec;
 use crate::core::hash::{fx64, FastMap};
-use crate::core::hopfield::{hopfield_query, HopfieldConfig};
 use crate::core::index::inverted::{Accumulator, SparseInvertedIndex};
 use crate::core::ivf::IVFIndex;
 use crate::core::nsg::NSGIndex;
@@ -182,13 +181,15 @@ impl Shard {
                 }
             }
             router::IndexRoute::Inverted => {
-                let mut acc = self.accumulator.lock();
-                let results = self
-                    .inverted
-                    .read()
-                    .query(&query_vec.indices, k as usize, &mut acc);
-
                 let reg = self.registry.read();
+                let mut acc = self.accumulator.lock();
+                let results = self.inverted.read().query_with_ties(
+                    &query_vec.indices,
+                    k as usize,
+                    &mut acc,
+                    |a, b| reg[a as usize].cmp(&reg[b as usize]),
+                );
+
                 let mapped: Vec<RetrievalResult> = results
                     .into_iter()
                     .filter_map(|r| {
@@ -204,7 +205,7 @@ impl Shard {
                     })
                     .collect();
 
-                if !mapped.is_empty() {
+                if mapped.len() == (k as usize).min(vectors.len()) {
                     return mapped;
                 }
             }
@@ -217,15 +218,6 @@ impl Shard {
                             return reranked;
                         }
                     }
-                }
-            }
-            router::IndexRoute::Hopfield => {
-                let patterns: Vec<(&str, &EntangledHVec)> =
-                    vectors.iter().map(|(id, vec)| (id.as_str(), vec)).collect();
-                let config = HopfieldConfig::default();
-                let results = hopfield_query(query_vec, &patterns, &config, k as usize);
-                if !results.is_empty() {
-                    return results;
                 }
             }
             router::IndexRoute::BruteForce => {
@@ -256,6 +248,7 @@ impl Shard {
             b.similarity
                 .partial_cmp(&a.similarity)
                 .unwrap_or(std::cmp::Ordering::Equal)
+                .then(a.id.cmp(&b.id))
         });
         results
     }
@@ -286,6 +279,7 @@ impl Shard {
                     .similarity
                     .partial_cmp(&self.similarity)
                     .unwrap_or(std::cmp::Ordering::Equal)
+                    .then(self.id.cmp(other.id))
             }
         }
 
@@ -294,18 +288,16 @@ impl Shard {
         for (id, vec) in vectors.iter() {
             let sim = query_vec.similarity(vec);
 
+            let candidate = Candidate {
+                similarity: sim,
+                id: id.as_str(),
+            };
             if heap.len() < k {
-                heap.push(Candidate {
-                    similarity: sim,
-                    id: id.as_str(),
-                });
+                heap.push(candidate);
             } else if let Some(top) = heap.peek() {
-                if sim > top.similarity {
+                if candidate < *top {
                     heap.pop();
-                    heap.push(Candidate {
-                        similarity: sim,
-                        id: id.as_str(),
-                    });
+                    heap.push(candidate);
                 }
             }
         }
@@ -557,6 +549,35 @@ impl ShardSet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::hopfield::HopfieldConfig;
+
+    #[test]
+    fn audit_regression_sparse_scores_and_ties_survive_route_thresholds() -> Result<()> {
+        let dim = 256;
+        let query = EntangledHVec::from_indices((0..16).collect(), dim);
+        let shard = Shard::new(dim);
+        for i in (0..1001).rev() {
+            shard.insert(format!("p{i:04}"), query.clone(), dim)?;
+            if [999, 1000, 1001].contains(&(1001 - i)) {
+                let mut expected: Vec<_> = shard.vectors.read().keys().cloned().collect();
+                expected.sort_unstable();
+                let hits = shard.query(&query, 5, dim);
+                assert_eq!(
+                    hits.iter().map(|hit| &hit.id).collect::<Vec<_>>(),
+                    expected[..5].iter().collect::<Vec<_>>()
+                );
+                assert!(hits.iter().all(|hit| hit.similarity == 1.0));
+            }
+        }
+        let sparse = EntangledHVec::from_indices(vec![0], dim);
+        let hits = shard.query(&sparse, 5, dim);
+        assert_eq!(
+            hits.iter().map(|hit| hit.id.as_str()).collect::<Vec<_>>(),
+            ["p0000", "p0001", "p0002", "p0003", "p0004"]
+        );
+        assert!(hits.iter().all(|hit| hit.similarity == 1.0 / 16.0));
+        Ok(())
+    }
 
     fn fingerprint(results: &[RetrievalResult]) -> Vec<(String, u64)> {
         results

@@ -39,10 +39,9 @@
 //! - third implementation slot: [`VectorIndexKind::Scan`] is reserved for the graph-free
 //!   scan under research in `benchmarks/research/scan`; nothing implements it here.
 //!
-//! Scores: candidates are ranked by the `f32` dot, then every returned hit is re-scored with
-//! [`super::Embedding::cosine`] (the `f64` accumulation every other path uses), so a result
-//! does not depend on which index produced it; ties break on `(document id, chunk)`
-//! ascending, like the generic path.
+//! Scores: exact-mode selection uses [`super::Embedding::cosine`], the canonical `f64`
+//! accumulation. Graph candidates use the `f32` dot before canonical re-scoring; graph
+//! membership remains approximate. Ties break on `(document id, chunk)` ascending.
 
 use std::{cmp::Ordering, collections::BinaryHeap, sync::Arc};
 
@@ -270,6 +269,52 @@ pub(crate) struct ExactScan {
 impl ExactScan {
     fn row(&self, row: u32) -> &[f32] {
         &self.rows[row as usize]
+    }
+
+    fn search_canonical(&self, query: &[f64], k: usize) -> Vec<(u32, f64)> {
+        #[derive(Clone, Copy)]
+        struct Candidate {
+            row: u32,
+            score: f64,
+        }
+        impl PartialEq for Candidate {
+            fn eq(&self, other: &Self) -> bool {
+                self.cmp(other) == Ordering::Equal
+            }
+        }
+        impl Eq for Candidate {}
+        impl PartialOrd for Candidate {
+            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+                Some(self.cmp(other))
+            }
+        }
+        impl Ord for Candidate {
+            fn cmp(&self, other: &Self) -> Ordering {
+                other
+                    .score
+                    .total_cmp(&self.score)
+                    .then(self.row.cmp(&other.row))
+            }
+        }
+        let k = k.min(self.rows.len());
+        let mut best = BinaryHeap::<Candidate>::with_capacity(k);
+        for (row, values) in self.rows.iter().enumerate() {
+            let candidate = Candidate {
+                row: row as u32,
+                score: values.cosine(query),
+            };
+            if best.len() < k {
+                best.push(candidate);
+            } else if let Some(mut worst) = best.peek_mut() {
+                if candidate < *worst {
+                    *worst = candidate;
+                }
+            }
+        }
+        best.into_sorted_vec()
+            .into_iter()
+            .map(|hit| (hit.row, hit.score))
+            .collect()
     }
 }
 
@@ -645,6 +690,10 @@ pub(crate) fn rank_vector_snapshot(
         query.len(),
         snapshot.dim
     );
+    ensure!(
+        exact_query.len() == snapshot.dim,
+        "canonical query dimension mismatch"
+    );
     ensure!((1..=MAX_K).contains(&k), "require 1 <= k <= {MAX_K}");
     ensure!(
         (1..=MAX_EF).contains(&options.ef),
@@ -661,10 +710,16 @@ pub(crate) fn rank_vector_snapshot(
     };
     let stale = staleness(generation, snapshot.generation);
     let extra = usize::try_from(stale).unwrap_or(usize::MAX).min(4 * k);
-    // A small margin covers candidates the `f32` scan ranks just outside `k` that the `f64`
-    // re-score moves inside it.
     let fetch = (k + extra + 8).min(snapshot.rows());
-    let hits = index.search(query, fetch, options.ef)?;
+    let hits = if index.kind() == VectorIndexKind::Exact {
+        snapshot.exact.search_canonical(exact_query, fetch)
+    } else {
+        index
+            .search(query, fetch, options.ef)?
+            .into_iter()
+            .map(|(row, score)| (row, f64::from(score)))
+            .collect()
+    };
     let mut found: Vec<Hit> = Vec::with_capacity(fetch);
     if stale == 0 {
         for (row, score) in hits {
@@ -672,7 +727,7 @@ pub(crate) fn rank_vector_snapshot(
             found.push(Hit {
                 document: Arc::clone(&row.document),
                 chunk: row.chunk,
-                score: f64::from(score),
+                score,
             });
         }
     } else {
@@ -686,7 +741,7 @@ pub(crate) fn rank_vector_snapshot(
                 found.push(Hit {
                     document: Arc::clone(&row.document),
                     chunk: row.chunk,
-                    score: f64::from(score),
+                    score,
                 });
             }
         }
@@ -805,6 +860,52 @@ mod tests {
         );
         assert_eq!(scan.search(&[1.0, 0.0, 0.0, 0.0], 10, 0).unwrap().len(), 4);
         assert!(scan.search(&[1.0, 0.0, 0.0], 1, 0).is_err());
+    }
+
+    #[test]
+    fn audit_regression_exact_snapshot_retains_all_canonical_rounding_winners() {
+        for distractors in [8, 9, 10, 100] {
+            let mut store = DocumentStore::default();
+            for i in 0..=distractors {
+                let input: DocumentInput = serde_json::from_value(json!({
+                    "id": if i == distractors { "z".to_owned() } else { format!("a{i:03}") },
+                    "text": "rounding regression",
+                    "embeddings": [[1.0, if i == distractors { 0.0001 } else { 0.0 }]],
+                }))
+                .unwrap();
+                let document = prepare(input, 1024, Some(2), TextEncoder::default()).unwrap();
+                store.insert(document.id.clone(), document);
+            }
+            let snapshot =
+                build_vector_snapshot(capture_vector_rows(&store, 2).unwrap().unwrap(), usize::MAX)
+                    .unwrap();
+            let query = super::super::normalize_embedding(&[1.0, 0.0001], 2).unwrap();
+            let rounded: Vec<f32> = query.iter().map(|&x| x as f32).collect();
+            let store = RwLock::new(store);
+            for minimum in [-1.0, 0.999_999_999] {
+                let hits = search_vector_snapshot(
+                    &snapshot,
+                    &store,
+                    &rounded,
+                    &query,
+                    1,
+                    &VectorQueryOptions {
+                        mode: VectorIndexMode::Exact,
+                        min_score: minimum,
+                        ..Default::default()
+                    },
+                )
+                .unwrap()
+                .unwrap();
+                assert_eq!(
+                    hits.len(),
+                    1,
+                    "{distractors} distractors, threshold {minimum}"
+                );
+                assert_eq!(hits[0].document_id, "z", "{distractors} distractors");
+                assert_eq!(hits[0].semantic_score, Some(1.0));
+            }
+        }
     }
 
     #[test]
