@@ -116,21 +116,24 @@ def rel(path):
 
 
 def _has_ci(c):
-    return c["n"] > 1 and c["ci"][0] < c["ci"][1]
+    return c["n"] > 1 and c.get("uncertainty", "sampled") == "sampled" and c["ci"][0] <= c["ci"][1]
 
 
 def advantage(metric, mine, theirs):
     """HMS advantage factor (>1 means HMS is better) with a conservative interval, or None."""
     if mine["value"] is None or theirs["value"] is None:
         return None
+    if any(c.get("validity", "valid") != "valid" for c in (mine, theirs)):
+        return {"factor": None, "ci": None, "unverified": True}
     if analyze.comparison_note(metric, mine, theirs):
         return None
     higher = analyze.direction(metric) == analyze.HIGHER
     if mine["value"] <= 0 or theirs["value"] <= 0:
         if mine["value"] == theirs["value"]:
-            return {"factor": 1.0, "ci": None}
+            return {"factor": 1.0, "ci": None, "deterministic": mine.get("uncertainty") == theirs.get("uncertainty") == "deterministic"}
         better = (mine["value"] > theirs["value"]) == higher
-        return {"factor": float("inf") if better else 0.0, "ci": None}
+        return {"factor": float("inf") if better else 0.0, "ci": None,
+                "deterministic": mine.get("uncertainty") == theirs.get("uncertainty") == "deterministic"}
     point = mine["value"] / theirs["value"] if higher else theirs["value"] / mine["value"]
     if _has_ci(mine) and _has_ci(theirs):
         (ml, mh), (tl, th) = mine["ci"], theirs["ci"]
@@ -138,10 +141,12 @@ def advantage(metric, mine, theirs):
             return {"factor": point, "ci": None}
         lo, hi = (ml / th, mh / tl) if higher else (tl / mh, th / ml)
         return {"factor": point, "ci": [lo, hi]}
-    return {"factor": point, "ci": None}
+    return {"factor": point, "ci": None, "deterministic": mine.get("uncertainty") == theirs.get("uncertainty") == "deterministic"}
 
 
 def fx(factor):
+    if factor is None:
+        return "n/v"
     if factor == float("inf"):
         return "inf"
     return f"{factor:.2f}x"
@@ -150,8 +155,12 @@ def fx(factor):
 def verdict(adv):
     if adv is None:
         return "n/m"
+    if adv.get("unverified"):
+        return "n/v"
     if adv["ci"]:
         return "WIN" if adv["ci"][0] > 1 else "LOSS" if adv["ci"][1] < 1 else "TIE"
+    if not adv.get("deterministic", False):
+        return "n/v"
     return "WIN" if adv["factor"] > 1.05 else "LOSS" if adv["factor"] < 1 / 1.05 else "TIE"
 
 
@@ -181,13 +190,26 @@ def metrics_for(path, data):
     kind = data["kind"]
     fn = analyze.ann_metrics if kind == "ann" else analyze.text_metrics
     spec = ANN_METRICS if kind == "ann" else TEXT_METRICS
-    first = fn(rel(path), data)
+    def measured(level=0.95):
+        metrics = fn(rel(path), data, level=level)
+        revision = data.get("commit", "")
+        pinned = bool(re.fullmatch(r"[0-9a-fA-F]{40}", revision))
+        for metric, systems in metrics.items():
+            status = data.get("measurement_validity", {}).get(metric, {})
+            for c in systems.values():
+                validity = analyze.Validity(status.get("status", "valid"))
+                c["validity"] = analyze.Validity.UNVERIFIED if not pinned and validity == analyze.Validity.VALID else validity
+                c["validity_reason"] = status.get("reason", "") or ("" if pinned else "source revision is not pinned")
+                if c["validity"] == "invalid":
+                    c.update(value=None, ci=[None, None], n=0, note=c["validity_reason"])
+        return metrics
+    first = measured()
     ref = reference(data)
     family = sum(1 for k, *_ in spec if k not in analyze.NO_VERDICT and ref in first.get(k, {})
                  and first[k][ref]["value"] is not None and best_other(k, first[k])[0] is not None
-                 and not analyze.comparison_note(k, first[k][ref], best_other(k, first[k])[1]))
+                 and verdict(advantage(k, first[k][ref], best_other(k, first[k])[1])) in ("WIN", "TIE", "LOSS"))
     level = 1 - 0.05 / max(family, 1)
-    return fn(rel(path), data, level=level), level, family
+    return measured(level), level, family
 
 
 def section(path, data):
@@ -239,6 +261,7 @@ def render_section(sec, cells_out):
         for system, c in cells.items():
             cells_out.append({"section": sec["title"], "file": rel(path), "hardware_class": hw["class"], "metric": key, "system": system,
                               "value": c["value"], "ci": c["ci"] if c["value"] is not None else None, "n": c["n"], "source": c["source"],
+                              "validity": c["validity"], "validity_reason": c["validity_reason"], "uncertainty": c["uncertainty"],
                               "text": fmt(c["value"], dec)})
         if mine is None:
             continue

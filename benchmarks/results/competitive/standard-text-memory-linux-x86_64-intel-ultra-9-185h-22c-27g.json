@@ -1,5 +1,15 @@
 {
   "schema_version": 1,
+  "measurement_validity": {
+    "build_peak_rss_mib": {
+      "status": "invalid",
+      "reason": "Linux child inherited the orchestrator high-water mark; measured before the isolated-spawner fix"
+    },
+    "serving_rss_mib": {
+      "status": "invalid",
+      "reason": "Linux child inherited the orchestrator high-water mark; measured before the isolated-spawner fix"
+    }
+  },
   "kind": "text",
   "suite": "standard",
   "commit": "unknown",

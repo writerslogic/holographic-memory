@@ -338,7 +338,7 @@ def run_text(dataset, spec, systems, out_path=None):
     hw = hardware()
     results = {"schema_version": SCHEMA_VERSION, "kind": "text", "suite": spec["name"], "commit": commit(), "date": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                "hardware": hw, "dataset": meta | {"id": dataset},
-               "protocol": {"rounds": spec["rounds"], "build_repeats": spec["build_repeats"], "k": 100, "passes_per_round": 3,
+               "protocol": {"measurement_version": 2, "resampling_unit": "independent process-round summaries", "operating_point_validation": "exploratory sweep; independent frozen-setting confirmation not implied", "rounds": spec["rounds"], "build_repeats": spec["build_repeats"], "k": 100, "passes_per_round": 3,
                             "retrieval": "lexical only, OR over the lowercase alphanumeric query word set, top 100; each system's own analyzer and default BM25",
                             "timing": "one query at a time, single client thread; HMS timed inside its process, Python systems inside their worker",
                             "hms_rows": "hms = `--encode lexical` (BM25 index only, like-for-like); hms-eager = default eager encoding (chunk hypervectors at ingest); every build repeat is one cold process",

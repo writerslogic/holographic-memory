@@ -142,7 +142,7 @@ def test_verdicts_follow_the_interval_and_orientation():
     slow = {"value": 4.0, "ci": [4.0, 4.0], "n": 1, "source": "", "unit": "s", "note": ""}
     fast = {"value": 2.0, "ci": [2.0, 2.0], "n": 1, "source": "", "unit": "s", "note": ""}
     adv = table.advantage("build_seconds", slow, fast)
-    assert adv["factor"] == 0.5 and table.verdict(adv) == "LOSS"
+    assert adv["factor"] == 0.5 and table.verdict(adv) == "n/v"
     tie = fake_ann(1000, 1000, spread=0.0)
     m = analyze.ann_metrics("x.json", tie, level=0.99)
     assert table.verdict(table.advantage("qps@recall0.95", m["qps@recall0.95"][registry.HMS], m["qps@recall0.95"]["hnswlib"])) == "TIE"
@@ -192,7 +192,7 @@ def test_raw_pass_timings_from_older_files_summarise_like_stored_summaries():
 
 @pytest.mark.parametrize("kind", ["ann", "text"])
 @pytest.mark.parametrize("classes, expected", [
-    ({"hms-server": "per-request-flush", "qdrant-server": "per-request-flush"}, "WIN"),
+    ({"hms-server": "per-request-flush", "qdrant-server": "per-request-flush"}, "n/v"),
     ({"hms-server": "per-request-flush", "qdrant-server": "periodic"}, "n/v"),
     ({"hms-server": "per-request-flush", "qdrant-server": "undocumented"}, "n/v"),
     ({"hms-server": "per-request-flush"}, "n/v"),
@@ -220,17 +220,46 @@ def test_server_operation_verdicts_require_matching_recorded_classes(kind, class
     assert len(derived) == 2
     assert {c["verdict"] for c in derived} == {expected}
     rows = [line for line in markdown.splitlines() if line.startswith(("| Replace one", "| Delete one"))]
-    if expected == "WIN":
-        assert all("†" not in line for line in rows)
+    matching = classes.get("hms-server") == classes.get("qdrant-server") == "per-request-flush"
+    if matching:
         assert all(c["factor"] == 2 for c in derived)
-        assert len([r for r in tally["WIN"] if r[0] in operation_keys]) == 2
+        assert not any(r[0] in operation_keys for r in tally["WIN"])
     else:
         assert all("†" in line for line in rows)
         assert all(c["factor"] is None and c["ci"] is None for c in derived)
-        assert not any(g["metric"] in operation_keys for g in gaps)
-        assert not any(r[0] in operation_keys for status in ("WIN", "TIE", "LOSS", "n/m") for r in tally[status])
         assert "durability classes " + (classes.get("hms-server") or "unrecorded") in markdown
         assert "vs " + (classes.get("qdrant-server") or "unrecorded") + "; no verdict" in markdown
-    data["systems"]["qdrant-server"].pop("ops")
-    without_ops = table.section(Path("server.json"), data)
-    assert sec["family"] == without_ops["family"] + (2 if expected == "WIN" else 0)
+    assert not any(g["metric"] in operation_keys for g in gaps)
+
+
+def test_audit_unreplicated_timing_never_proves_superiority():
+    mine = analyze.cell(1.0, source="x", unit="ms")
+    other = analyze.cell(10.0, source="x", unit="ms")
+    assert table.verdict(table.advantage("replace_ms_per_op", mine, other)) == "n/v"
+    mine = analyze.cell(1.0, unit="MiB", uncertainty="deterministic")
+    other = analyze.cell(2.0, unit="MiB", uncertainty="deterministic")
+    assert table.verdict(table.advantage("disk_mib", mine, other)) == "WIN"
+
+
+def test_audit_invalid_measurement_and_unknown_revision_cannot_win():
+    data = fake_ann(2000, 1000)
+    data["commit"] = "unknown"
+    m, _, _ = table.metrics_for(Path("x.json"), data)
+    assert table.verdict(table.advantage("qps@recall0.95", m["qps@recall0.95"][registry.HMS], m["qps@recall0.95"]["hnswlib"])) == "n/v"
+    data["measurement_validity"] = {"qps@recall0.95": {"status": "valid"}}
+    m, _, _ = table.metrics_for(Path("x.json"), data)
+    assert m["qps@recall0.95"][registry.HMS]["validity"] == "unverified"
+    data["commit"] = "a" * 40
+    data["measurement_validity"] = {"serving_rss_mib": {"status": "invalid", "reason": "inherited process high-water mark"}}
+    m, _, _ = table.metrics_for(Path("x.json"), data)
+    assert m["serving_rss_mib"][registry.HMS]["value"] is None
+    assert "high-water" in m["serving_rss_mib"][registry.HMS]["note"]
+
+
+def test_audit_text_uncertainty_counts_process_rounds_not_passes():
+    rounds = [{"passes": [{"queries": 1, "total_ns": ns, "p50_ns": ns, "p99_ns": ns}] * 3,
+               "peak_rss_bytes": 1024, "cold_start_s": 1.0} for ns in (100, 200, 400)]
+    data = {"systems": {"hms": {"serve_rounds": rounds, "build_runs": [{"ingest_s": 1.0, "peak_rss_bytes": 1024, "disk_bytes": 1024}]}}}
+    cells = analyze.text_metrics("x", data)
+    assert cells["qps"]["hms"]["n"] == 3
+    assert cells["p99_latency"]["hms"]["n"] == 3
