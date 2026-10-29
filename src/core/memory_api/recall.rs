@@ -213,7 +213,7 @@ impl Memory {
             let mut records: Vec<FactRecord> = index
                 .component(id)
                 .iter()
-                .filter_map(|member| self.record(&index, member, now))
+                .filter_map(|member| self.record(index, member, now))
                 .collect();
             records.sort_by(|a, b| {
                 (a.effective_from, a.ingest_time, &a.id).cmp(&(

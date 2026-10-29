@@ -100,6 +100,23 @@ impl ApiError {
         self
     }
 
+    pub fn from_core(error: anyhow::Error) -> Self {
+        if error.is::<holographic_memory::CommittedMutationError>() {
+            Self::committed(error)
+        } else {
+            Self::internal(error)
+        }
+    }
+
+    pub fn committed(error: anyhow::Error) -> Self {
+        crate::log_event!(Error, "committed_effect_failed", "detail" => format!("{error:#}"));
+        Self::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "mutation_committed",
+            "data mutation is durable; reopen or reconcile before retrying",
+        )
+    }
+
     /// Detail goes to the log only; the client sees a fixed message.
     pub fn internal(e: impl std::fmt::Display) -> Self {
         crate::log_event!(Error, "internal_error", "detail" => format!("{e:#}"));

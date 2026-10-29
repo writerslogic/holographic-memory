@@ -103,12 +103,7 @@ fn memory_error(error: anyhow::Error) -> ApiError {
             message.clone(),
         )
         .retry_after(1),
-        None if error.is::<holographic_memory::CommittedMutationError>() => ApiError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "mutation_committed",
-            error.to_string(),
-        ),
-        None => ApiError::internal(error),
+        None => ApiError::from_core(error),
     }
 }
 

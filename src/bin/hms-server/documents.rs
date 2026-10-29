@@ -284,13 +284,17 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
         ..Default::default()
     };
     if let Err(error) = core.memorize_documents_with(inputs, &options) {
+        if error.is::<holographic_memory::CommittedMutationError>() {
+            core.bump();
+            return Err(ApiError::from_core(error));
+        }
         if let Some(vectors) = core.vectors().filter(|_| !staged.is_empty()) {
             let ids: Vec<&str> = staged.iter().map(|(id, _, _)| id.as_str()).collect();
             if let Err(undo) = vectors.remove(&ids) {
                 crate::log_event!(Error, "vector_index_undo_failed", "tenant" => tenant, "detail" => format!("{undo:#}"));
             }
         }
-        return Err(ApiError::internal(error));
+        return Err(ApiError::from_core(error));
     }
     core.bump();
     state
@@ -610,12 +614,14 @@ pub async fn delete_doc(
                 }
             }
         }
-        if core.delete_document(&id).map_err(ApiError::internal)? {
+        if core.delete_document(&id).map_err(ApiError::from_core)? {
             if let Some(vectors) = core.vectors() {
-                vectors.remove(&[id.as_str()]).map_err(ApiError::internal)?;
+                vectors
+                    .remove(&[id.as_str()])
+                    .map_err(ApiError::committed)?;
             }
             if purge {
-                core.compact_scrubbing().map_err(ApiError::internal)?;
+                core.compact_scrubbing().map_err(ApiError::committed)?;
             }
             core.bump();
             Ok(())
