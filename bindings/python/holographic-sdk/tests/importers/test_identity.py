@@ -73,7 +73,8 @@ def test_checkpoint_upgrade_requires_an_explicit_restart(tmp_path):
     path.write_text(json.dumps({"version": 1, "fingerprint": "same", "position": 3}))
     with pytest.raises(ImporterError, match="unsupported version"):
         Checkpoint.open(str(path), "same", False)
-    assert Checkpoint.open(str(path), "same", True).position == 0
+    checkpoint = Checkpoint.open(str(path), "same", True)
+    assert checkpoint.position == 0
 
 
 @pytest.mark.parametrize("position", [-1, 1.5, True, "1", 1 << 63])
@@ -82,7 +83,8 @@ def test_checkpoint_positions_are_validated_without_truncation(tmp_path, positio
     path.write_text(json.dumps({"version": 2, "fingerprint": "same", "position": position}))
     with pytest.raises(ImporterError, match="invalid position"):
         Checkpoint.open(str(path), "same", False)
-    assert Checkpoint.open(str(path), "same", True).position == 0
+    checkpoint = Checkpoint.open(str(path), "same", True)
+    assert checkpoint.position == 0
 
 
 def source_file(path, rows):

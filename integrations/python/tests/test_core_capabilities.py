@@ -55,9 +55,10 @@ def test_old_servers_fail_closed_and_cache_the_capability_result(asynchronous):
     async def operation(backend, async_backend):
         for _ in range(2):
             with pytest.raises(HmsError) as error:
-                result = backend.recall("alpha", filter={"n": {"$gt": 1}}, k=1)
                 if async_backend:
-                    await result
+                    await backend.recall("alpha", filter={"n": {"$gt": 1}}, k=1)
+                else:
+                    backend.recall("alpha", filter={"n": {"$gt": 1}}, k=1)
             assert error.value.code == "unsupported_capability"
 
     requests = run_case(asynchronous, False, "valid", operation)
@@ -92,9 +93,10 @@ def test_supported_id_selection_discovers_the_capability_once(asynchronous):
 def test_id_selection_rejects_responses_outside_its_verified_population(asynchronous, response_kind):
     async def operation(backend, async_backend):
         with pytest.raises(HmsError) as error:
-            result = backend.recall("alpha", filter={"n": {"$gt": 1}}, k=1)
             if async_backend:
-                await result
+                await backend.recall("alpha", filter={"n": {"$gt": 1}}, k=1)
+            else:
+                backend.recall("alpha", filter={"n": {"$gt": 1}}, k=1)
         assert error.value.code == "invalid_response"
 
     run_case(asynchronous, True, response_kind, operation)

@@ -65,5 +65,6 @@ def test_log_preserves_whitespace_and_blank_chunks_at_boundaries(server, size):
                  "é" * size + " \t " + "日本語 " * 5 + "\n"]
         log.append(items)
         assert log.read() == items
-        assert log.pop() == items[-1]
+        popped = log.pop()
+        assert popped == items[-1]
         assert log.read() == items[:-1]

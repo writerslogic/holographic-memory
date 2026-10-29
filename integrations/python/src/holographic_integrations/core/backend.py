@@ -222,7 +222,7 @@ class _Shared:
                 properties = response.json()["components"]["schemas"]["QueryIn"]["properties"]
                 supported = isinstance(properties, dict) and "document_ids" in properties
             except (ValueError, KeyError, TypeError):
-                pass
+                supported = False
         self._document_ids_capability = supported
 
     def require_document_ids_capability(self) -> None:
