@@ -1,0 +1,8 @@
+{
+  "copyright": "2024-2026 WritersLogic Contributors",
+  "dimensions": 32,
+  "license": "Apache-2.0",
+  "model": "test/tiny",
+  "sha256": "99004ed810f1d63780b02973e87d3021e51dd49133bb992748c202bc31ac8893",
+  "source": "core::embed::testing::tiny_pack_bytes(Int8, Mean); deterministic synthetic weights, no pretrained model"
+}

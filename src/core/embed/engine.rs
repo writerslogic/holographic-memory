@@ -30,7 +30,7 @@ pub(crate) struct Encoder {
     layers: Vec<Layer>,
 }
 
-/// Reusable activation buffers; sized by the largest batch seen, bounded by the token budget.
+/// Reusable activation buffers; the soft batch budget always admits one full sequence.
 #[derive(Default)]
 pub(crate) struct Scratch {
     h: Vec<f32>,

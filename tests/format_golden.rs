@@ -126,6 +126,13 @@ fn specs() -> Vec<Spec> {
             ..BASE
         },
         Spec {
+            name: "v5-words-v2",
+            description: "Schema 5 with multiscale-words-v2: majority ties use frequency descending, coordinate ascending.",
+            encoder: "multiscale-words-v2",
+            schema: 5,
+            ..BASE
+        },
+        Spec {
             name: "v4-compacted",
             description: "After compaction: CURRENT points at a gen-* arena generation, and \
                           journal frames written after the compaction follow it.",

@@ -219,6 +219,31 @@ class MutableSource(Source):
         yield from self.items[0 if cursor is None else cursor + 1:]
 
 
+def test_completed_migration_retains_deleted_source_records_and_reports_consistency(tmp_path, server):
+    source = MutableSource(True)
+    tenant = server.tenant("source-deletion")
+    options = ImportOptions(verify_sample=0, checkpoint_path=str(tmp_path / "checkpoint.json"))
+    sink = server.sink(tenant)
+    try:
+        run_import(source, sink, options, tenant=tenant)
+        source.items.pop(0)
+        source.items[0].text = "changed after completed migration"
+        report = run_import(source, sink, options, tenant=tenant)
+        assert report.resumed_from is None
+        records = {doc["id"]: doc for doc in sink.documents()}
+        assert set(records) == {str(i) for i in range(6)}
+        hit = sink.query(vector=source.items[0].vector, top_k=1, filter={"hms_source_id": "1"})[0]
+        assert hit["text"] == source.items[0].text
+        assert report.to_dict()["source_consistency"] == {
+            "mode": "observed_stream",
+            "snapshot_isolation": "source_managed",
+            "resume_validation": "content_verified_prefix_v2",
+            "deleted_source_records": "retained",
+        }
+    finally:
+        sink.close()
+
+
 @pytest.mark.parametrize("seekable", [False, True])
 @pytest.mark.parametrize("field", ["text", "metadata", "vector"])
 def test_resume_revalidates_content_even_when_the_source_has_cursors(tmp_path, server, seekable, field):

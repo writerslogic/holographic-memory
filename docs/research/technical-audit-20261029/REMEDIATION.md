@@ -5,6 +5,10 @@
 
 The user authorized implementation, verification, merging and pushing all audit defect and architectural fixes to `main` on 29 October 2026. The historical assessment remains in REPORT.md; this file records implementation and acceptance evidence.
 
+PR [#334](https://github.com/writerslogic/holographic-memory/pull/334) merged to `main` as
+`0c075265c27c21373bf5a43aad5c951abcf366d3`. Its final head had 152 successful checks,
+16 neutral/skipped entries, and no pending or failed checks; GitHub verified the merge signature.
+
 Constraints: no paid API/cloud credits, model downloads or live benchmarks; use local/free checks. Preserve unrelated work. Use signed, DCO-signed-off commits and the repository PR/check workflow. Do not claim speculative research or certification as delivered implementation.
 
 Baseline: `de4a2fd6` preserves the 14 pre-existing audited storage/service fixes. Its exact prior working tree passed 894 focused Rust tests, strict TypeScript checks and version checks. Root integration branch is `fix/technical-audit-20261029` in `/Volumes/A/holographic-memory`.
@@ -82,3 +86,22 @@ change; it was removed after confirming its use is now supplied by `Embedder::sp
 A fault-injection regression verifies both document deletion and Memory forgetting advance
 HTTP cache generations when data is durable but purge/index persistence fails. Conditional
 reads return the changed state instead of304. The same test passes for both route families.
+
+## Additional bounded concerns
+
+Follow-up to REPORT.md §IV, on branch `fix/audit-bounded-concerns`, based on the merged PR above.
+
+| Concern | Resolution and acceptance evidence |
+|---|---|
+| Sidecar effects after commit | Retain the public typed committed outcome and retained-key HTTP replay. Add an actual failed audit-sync create/delete/reopen regression. Explicitly document that reopening does not reconstruct missing sidecar effects, that the replay cache is process-local, and that external repair requires caller-owned durable effect IDs. No automatic outbox or exactly-once delivery claim. |
+| Import resume/synchronization | Existing content-bound prefix checks and owned split replacement remain. Reports now declare observed-stream/source-managed snapshot semantics and retention of source-deleted records. A completed rerun regression proves updates do not accidentally prune absent source records. Identity/core importer suite: 42 pass against the merged baseline's local HTTP binary. |
+| Local pack downloads | Retain unique temporary ownership and per-cache-file single flight. Add local HTTP corruption/retry/concurrency coverage of the actual downloader and cache publication; no model registry or model-weight download. |
+| Embedding resource/fidelity contract | Add positive configurable hard text/byte/token/output/concurrent-call limits, checked allocation sizes and fail-fast admission. Rust/Node/Python report both UTF-8 byte and token truncation in input order. The soft per-forward budget and limits' scope are explicit; numerical agreement is not downstream task equivalence. |
+| Encoder stability | Add opt-in `multiscale-words-v2`, resolving majority ties by frequency descending then coordinate ascending, with independent reference selection, boundary/cache parity, explicit source reencoding and a new golden store. Keep default V1 and all existing goldens unchanged. No claim that legacy equal-key selection is portable across future toolchains. |
+| Privacy/erasure claims | Preserve the existing narrow masking and bundling-only DP threat models. Explicitly distinguish signed engine-operation claims from universal physical erasure; independent cryptographic/finite-precision DP certification remains unverified. |
+
+Validation is in progress; the follow-up's exact-head CI gate and final recorded local results
+must pass before publication. Shared binding checks use deterministic two-layer random-weight
+fixtures, not downloaded pretrained weights or a claim of model quality. Caller-owned inputs,
+foreign-runtime copies, separately loaded models, hardware power loss and retained results are
+outside a Rust embedder call's allocation limits.

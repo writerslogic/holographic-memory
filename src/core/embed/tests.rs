@@ -26,6 +26,23 @@ fn corpus() -> Vec<String> {
         .collect()
 }
 
+#[test]
+#[ignore = "writes the shared synthetic native-binding fixture; run deliberately"]
+fn generate_binding_fixture() {
+    assert_eq!(std::env::var("HMS_EMBED_FIXTURE_WRITE").as_deref(), Ok("1"));
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
+    let bytes = tiny_pack_bytes(Quantization::Int8, Pooling::Mean);
+    std::fs::write(root.join("tiny-embed-int8.hmsemb"), &bytes).unwrap();
+    std::fs::write(root.join("tiny-embed-int8.json"), serde_json::to_vec_pretty(&serde_json::json!({
+        "copyright": "2024-2026 WritersLogic Contributors",
+        "license": "Apache-2.0",
+        "model": "test/tiny",
+        "source": "core::embed::testing::tiny_pack_bytes(Int8, Mean); deterministic synthetic weights, no pretrained model",
+        "dimensions": 32,
+        "sha256": sha256_hex(&bytes)
+    })).unwrap()).unwrap();
+}
+
 fn cos(a: &[f32], b: &[f32]) -> f32 {
     a.iter().zip(b).map(|(x, y)| x * y).sum()
 }
@@ -156,6 +173,239 @@ fn token_budget_splits_batches_without_changing_results() {
     .embed_passages(&texts)
     .unwrap();
     assert_eq!(wide, narrow);
+}
+
+#[test]
+fn call_limits_check_boundaries_before_inference_and_preserve_identity() {
+    let error = Embedder::new(&EmbedOptions {
+        model: "missing-fixture.hmsemb".into(),
+        limits: EmbedLimits {
+            max_tokens: 0,
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("embedding limits must be positive"));
+    let dir = tempfile::tempdir().unwrap();
+    let (path, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let original = Embedder::from_pack(&path, Some(&sha), &opts(1, 4)).unwrap();
+    let limited = Embedder::from_pack(
+        &path,
+        Some(&sha),
+        &EmbedOptions {
+            limits: EmbedLimits {
+                max_texts: 2,
+                max_input_bytes: 8,
+                max_tokens: 8,
+                ..Default::default()
+            },
+            ..opts(1, 4)
+        },
+    )
+    .unwrap();
+    assert_eq!(limited.space(), original.space());
+    for count in [1, 2, 3] {
+        assert_eq!(
+            limited.embed_passages(&vec!["cat"; count]).is_ok(),
+            count <= 2
+        );
+    }
+    for bytes in [7, 8, 9] {
+        assert_eq!(
+            limited.embed_passages(&["x".repeat(bytes)]).is_ok(),
+            bytes <= 8
+        );
+    }
+    let prefixed = Embedder::from_pack(
+        &path,
+        Some(&sha),
+        &EmbedOptions {
+            query_prefix: Some("cat ".into()),
+            limits: EmbedLimits {
+                max_input_bytes: 8,
+                ..Default::default()
+            },
+            ..opts(1, 4)
+        },
+    )
+    .unwrap();
+    for bytes in [3, 4, 5] {
+        assert_eq!(
+            prefixed.embed_query(&["x".repeat(bytes)]).is_ok(),
+            bytes <= 4
+        );
+    }
+    for bytes in [255, 256, 257] {
+        let embedder = Embedder::from_pack(
+            &path,
+            Some(&sha),
+            &EmbedOptions {
+                limits: EmbedLimits {
+                    max_output_bytes: bytes,
+                    ..Default::default()
+                },
+                ..opts(1, 4)
+            },
+        )
+        .unwrap();
+        assert_eq!(embedder.embed_query(&["cat"]).is_ok(), bytes >= 256);
+    }
+    let limits = EmbedLimits {
+        max_texts: usize::MAX,
+        max_output_bytes: usize::MAX,
+        ..Default::default()
+    };
+    assert!(limits.output_values(usize::MAX, 2).is_err());
+    assert!(limits.output_values(usize::MAX / 2, 1).is_err());
+}
+
+#[test]
+fn token_limits_fail_before_writing_and_release_admission() {
+    let dir = tempfile::tempdir().unwrap();
+    let (path, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let embedder = Embedder::from_pack(
+        &path,
+        Some(&sha),
+        &EmbedOptions {
+            limits: EmbedLimits {
+                max_tokens: 8,
+                max_concurrent_calls: 1,
+                ..Default::default()
+            },
+            ..opts(2, 4)
+        },
+    )
+    .unwrap();
+    for total in [7, 8, 9] {
+        let text = vec!["cat"; total - 2].join(" ");
+        let mut out = vec![123.0; embedder.dimensions()];
+        let result = embedder.embed_into(&[text], EmbedKind::Passage, &mut out);
+        assert_eq!(result.is_ok(), total <= 8);
+        if total > 8 {
+            assert!(result.unwrap_err().to_string().contains("tokens limit"));
+            assert!(out.iter().all(|&value| value == 123.0));
+        }
+    }
+    assert!(embedder
+        .embed_passages(&["cat", "dog", "mat"])
+        .unwrap_err()
+        .to_string()
+        .contains("tokens limit"));
+    assert!(embedder.embed_query(&["cat"]).is_ok());
+}
+
+#[test]
+fn concurrent_call_limit_is_fail_fast_and_releases_after_failure() {
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        Barrier,
+    };
+    struct GatedInput<'a> {
+        entered: &'a Barrier,
+        release: &'a Barrier,
+        first: AtomicBool,
+    }
+    impl AsRef<str> for GatedInput<'_> {
+        fn as_ref(&self) -> &str {
+            if self.first.swap(false, Ordering::SeqCst) {
+                self.entered.wait();
+                self.release.wait();
+            }
+            "cat"
+        }
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let (path, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let embedder = Embedder::from_pack(
+        &path,
+        Some(&sha),
+        &EmbedOptions {
+            limits: EmbedLimits {
+                max_concurrent_calls: 1,
+                ..Default::default()
+            },
+            ..opts(1, 4)
+        },
+    )
+    .unwrap();
+    let entered = Barrier::new(2);
+    let release = Barrier::new(2);
+    std::thread::scope(|scope| {
+        let running = scope.spawn(|| {
+            embedder.embed_passages(&[GatedInput {
+                entered: &entered,
+                release: &release,
+                first: AtomicBool::new(true),
+            }])
+        });
+        entered.wait();
+        let rejected = embedder.embed_query(&["dog"]);
+        release.wait();
+        assert!(rejected
+            .unwrap_err()
+            .to_string()
+            .contains("concurrent calls limit"));
+        assert!(running.join().unwrap().is_ok());
+    });
+    assert!(embedder.embed_query(&["dog"]).is_ok());
+    assert!(embedder
+        .embed_into(&["cat"], EmbedKind::Query, &mut [])
+        .is_err());
+    assert!(embedder.embed_query(&["cat"]).is_ok());
+}
+
+#[test]
+fn truncation_reports_preserve_input_order_and_utf8_boundaries() {
+    let dir = tempfile::tempdir().unwrap();
+    let (path, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let embedder = Embedder::from_pack(
+        &path,
+        Some(&sha),
+        &EmbedOptions {
+            max_length: Some(8),
+            ..opts(2, 4)
+        },
+    )
+    .unwrap();
+    let texts = vec![
+        "cat ".repeat(5),
+        "cat ".repeat(6),
+        "cat ".repeat(7),
+        format!("{}🦀", "é".repeat(127)),
+    ];
+    let batch = embedder
+        .embed_with_report(&texts, EmbedKind::Passage)
+        .unwrap();
+    assert_eq!(batch.embeddings, embedder.embed_passages(&texts).unwrap());
+    assert_eq!(
+        batch
+            .inputs
+            .iter()
+            .map(|input| input.token_truncated)
+            .collect::<Vec<_>>(),
+        [false, false, true, false]
+    );
+    assert_eq!(
+        batch
+            .inputs
+            .iter()
+            .map(|input| input.tokens)
+            .take(3)
+            .collect::<Vec<_>>(),
+        [7, 8, 8]
+    );
+    assert!(batch.inputs[3].byte_truncated);
+    assert_eq!(batch.inputs[3].retained_bytes, 254);
+    assert_eq!(batch.inputs[3].input_bytes, texts[3].len());
+    for bytes in [255, 256, 257] {
+        let report = embedder
+            .embed_with_report(&["x".repeat(bytes)], EmbedKind::Query)
+            .unwrap();
+        assert_eq!(report.inputs[0].byte_truncated, bytes > 256);
+    }
 }
 
 #[test]

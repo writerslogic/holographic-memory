@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "copyright": "2024-2026 WritersLogic Contributors",
+  "spdx_license_identifier": "Apache-2.0",
+  "scope": "REPORT.md section IV: six additional bounded concerns",
+  "base_revision": "0c075265c27c21373bf5a43aad5c951abcf366d3",
+  "environment": {
+    "platform": "aarch64-apple-darwin",
+    "rustc": "1.96.0",
+    "python": "3.13 via uv",
+    "paid_api_calls": 0,
+    "cloud_jobs": 0,
+    "pretrained_model_downloads": 0
+  },
+  "completed": {
+    "embedding": {
+      "command": "CARGO_TARGET_DIR=target cargo test --locked --features local-embed-download --lib core::embed::",
+      "passed": 25,
+      "ignored_fixture_generator": 1,
+      "coverage": "Hard call limits; allocation overflow; prefix bytes; token and UTF-8 truncation; fail-fast concurrency and error release; unchanged successful vectors; actual localhost HTTP download corruption/retry/single-flight"
+    },
+    "encoder": {
+      "command": "CARGO_TARGET_DIR=target cargo test --locked --features local-embed-download --lib core::encoding::",
+      "passed": 8,
+      "coverage": "V2 tie ordering and input-order independence; cached/reference equality at density/counting boundaries; legacy algorithms retained"
+    },
+    "importers": {
+      "command": "PYTHONPATH=bindings/python/holographic-sdk HMS_SERVER_BIN=target/debug/hms-server uv run --no-project --offline --python 3.13 --with pytest --with httpx --with numpy==2.5.4 python -m pytest -q bindings/python/holographic-sdk/tests/importers/test_identity.py bindings/python/holographic-sdk/tests/importers/test_core.py",
+      "passed": 42,
+      "server_binary_source": "Merged baseline; importer changes run directly from this working tree",
+      "coverage": "Content-bound resume, collision/ownership/split cleanup, completed-rerun updates and explicit source-deletion retention"
+    },
+    "documentation": {
+      "command": "uv run --no-project --offline --python 3.13 --with-requirements docs/requirements.txt mkdocs build --strict --site-dir target/bounded-docs",
+      "passed": true,
+      "limitation": "Rustdoc is supplied separately by the CI documentation gate"
+    },
+    "workflow_lint": {
+      "actionlint": "passed",
+      "offline_pins_checked": 207,
+      "pin_problems": 0
+    }
+  },
+  "pending": [
+    "Focused format, migration, source-preservation, committed-sidecar and ingestion integration tests",
+    "Native Node and Python synthetic-fixture report/limit checks",
+    "Integrated exact-head PR feature/platform/format/documentation gates"
+  ],
+  "limits": [
+    "No measured performance or RSS improvement, pretrained task quality, hardware power-loss guarantee or independent cryptographic/finite-precision DP certification is claimed.",
+    "Per-call budgets exclude caller-owned input storage, foreign-runtime object copies, retained results, separately loaded models and host transport/task queues.",
+    "Typed committed outcomes and process-local HTTP replay do not supply a durable sidecar outbox, repair worker or exactly-once external delivery.",
+    "Imports do not create snapshot isolation across source pages or propagate general source deletions.",
+    "V1 remains the default and retains historical unstable-selection ties; V2 is opt-in and requires source reencoding into a new store."
+  ]
+}

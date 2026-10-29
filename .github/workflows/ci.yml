@@ -283,6 +283,12 @@ jobs:
         run: npm run test:types
       - name: Test packed distribution
         run: npm run test:package
+      - name: Test optional local embedding addon with synthetic offline weights
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          node scripts/build-node.cjs --release --features node-api,security,local-embed --no-js --output-dir target/node-embed
+          HMS_EMBED_ADDON="$PWD/target/node-embed/holographic-memory.node" node --test tests/node/embedding-limits.test.cjs
 
   workflows:
     name: workflow lint and pins

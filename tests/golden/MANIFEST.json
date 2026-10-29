@@ -870,6 +870,40 @@
         312,
         "bdc9a19c"
       ]
+    },
+    "v5-words-v2": {
+      "documents.text": [
+        926,
+        "7ec875f8"
+      ],
+      "golden.json": [
+        3337,
+        "55817879"
+      ],
+      "indices.json": [
+        120,
+        "a13c86f6"
+      ],
+      "store.json": [
+        225,
+        "70bd8bb1"
+      ],
+      "store.json.crc32": [
+        9,
+        "cb7dc765"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        2952,
+        "51c59725"
+      ]
     }
   }
 }

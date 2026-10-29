@@ -50,7 +50,9 @@ fn encoders_match_prechange_vectors_at_density_boundaries() -> Result<()> {
                 let expected = match encoder {
                     TextEncoder::MultiscaleWordsV1 => &row.majority,
                     TextEncoder::MultiscaleCappedUnionV1 => &row.capped_union,
-                    TextEncoder::LocalEmbedV1 => unreachable!("not in the golden list"),
+                    TextEncoder::LocalEmbedV1 | TextEncoder::MultiscaleWordsV2 => {
+                        unreachable!("not in the golden list")
+                    }
                 };
                 let actual = hms.encode_text(&row.text);
                 assert_eq!(actual.indices(), expected, "{encoder:?}, D{dim}");
@@ -79,6 +81,49 @@ fn capped_union_requires_experimental_before_creating_a_store() -> Result<()> {
     .expect("experimental encoder must be unavailable");
     assert!(error.to_string().contains("experimental feature"));
     assert!(!target.exists());
+    Ok(())
+}
+
+#[test]
+fn words_v2_requires_explicit_reencoding_and_survives_reopen() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    let original = root.path().join("v1");
+    let destination = root.path().join("v2");
+    let source = root.path().join("original.jsonl");
+    let input = document(
+        "manual",
+        "Café records explain backups and safe recovery steps.",
+    );
+    let old = HmsCore::new(1024, Some(original.display().to_string()), None)?;
+    old.memorize_document(input.clone())?;
+    let before = serde_json::to_value(old.search_documents("backups", &SearchOptions::default())?)?;
+    drop(old);
+    let schema = std::fs::read(original.join("store.json"))?;
+    let v2 = config(TextEncoder::MultiscaleWordsV2);
+    assert!(HmsCore::new(1024, Some(original.display().to_string()), Some(v2.clone())).is_err());
+    assert_eq!(std::fs::read(original.join("store.json"))?, schema);
+    std::fs::write(&source, format!("{}\n", serde_json::to_string(&input)?))?;
+    reencode_documents(&source, &destination, 1024, v2.clone())?;
+    let core = HmsCore::new(
+        1024,
+        Some(destination.display().to_string()),
+        Some(v2.clone()),
+    )?;
+    assert_eq!(
+        serde_json::to_value(core.search_documents("backups", &SearchOptions::default())?)?,
+        before
+    );
+    let vector = core.encode_text(&input.text);
+    core.compact()?;
+    drop(core);
+    let core = HmsCore::new(1024, Some(destination.display().to_string()), Some(v2))?;
+    assert_eq!(core.encode_text(&input.text).indices(), vector.indices());
+    assert!(core
+        .query(&vector, 10)
+        .iter()
+        .any(|hit| hit.similarity > 0.0));
+    assert!(HmsCore::new(1024, Some(destination.display().to_string()), None).is_err());
+    assert_eq!(std::fs::read(original.join("store.json"))?, schema);
     Ok(())
 }
 
@@ -113,9 +158,9 @@ fn incompatible_encoders_preserve_schema_and_recover_after_compaction() -> Resul
             let schema = std::fs::read(dir.path().join("store.json"))?;
             let other = match encoder {
                 TextEncoder::MultiscaleWordsV1 => TextEncoder::MultiscaleCappedUnionV1,
-                TextEncoder::MultiscaleCappedUnionV1 | TextEncoder::LocalEmbedV1 => {
-                    TextEncoder::MultiscaleWordsV1
-                }
+                TextEncoder::MultiscaleCappedUnionV1
+                | TextEncoder::LocalEmbedV1
+                | TextEncoder::MultiscaleWordsV2 => TextEncoder::MultiscaleWordsV1,
             };
             assert!(HmsCore::new(dim, Some(path.clone()), Some(config(other))).is_err());
             assert_eq!(std::fs::read(dir.path().join("store.json"))?, schema);
