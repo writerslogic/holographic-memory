@@ -79,7 +79,8 @@ Inspect the resulting state and reopen or reconcile it before retrying. A failur
 code does not mean that nothing was written. Use stable IDs and the idempotency key when
 retrying a logical operation.
 Unlike transient server errors, this response remains in the idempotency cache. The same
-key replays it without repeating the durable mutation; reconcile the state before starting
+key replays it while retained by the configured TTL/capacity, without repeating the durable
+mutation; reconcile the state before starting
 a deliberate new attempt.
 
 ### not_implemented
