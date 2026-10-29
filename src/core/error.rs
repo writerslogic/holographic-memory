@@ -4,6 +4,21 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+#[derive(Debug, Error)]
+#[error("data mutation is durable, but {effect} failed; reopen or reconcile before retrying")]
+pub struct CommittedMutationError {
+    pub effect: &'static str,
+    #[source]
+    pub source: anyhow::Error,
+}
+
+pub(crate) fn after_commit<T>(
+    effect: &'static str,
+    result: anyhow::Result<T>,
+) -> anyhow::Result<T> {
+    result.map_err(|source| CommittedMutationError { effect, source }.into())
+}
+
 #[derive(Debug, Error, Clone, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "node-api",

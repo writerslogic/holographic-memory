@@ -197,13 +197,22 @@ impl HmsCore {
         // then finds identical metadata and writes nothing.
         let checkpoint = self.arena.checkpoint();
         _transaction.release();
-        self.persist_indices_detached(checkpoint)?;
-        self.persist_indices(&self.shards.read())?;
+        crate::core::error::after_commit(
+            "compaction index persistence",
+            self.persist_indices_detached(checkpoint),
+        )?;
+        crate::core::error::after_commit(
+            "compaction index persistence",
+            self.persist_indices(&self.shards.read()),
+        )?;
         if let Some(audit) = &self.audit {
-            audit.record(
-                crate::core::audit::AuditOp::Compact,
-                "",
-                self.sign_fn().as_deref(),
+            crate::core::error::after_commit(
+                "compaction audit append",
+                audit.record(
+                    crate::core::audit::AuditOp::Compact,
+                    "",
+                    self.sign_fn().as_deref(),
+                ),
             )?;
         }
         if scrub {

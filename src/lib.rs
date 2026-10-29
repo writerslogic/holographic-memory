@@ -13,7 +13,7 @@ pub use crate::core::documents::{
     chunk_document, DocumentChunk, DocumentInput, DocumentRecord, DocumentResult, SearchOptions,
 };
 pub use crate::core::entangled::EntangledHVec;
-pub use crate::core::error::HmsError;
+pub use crate::core::error::{CommittedMutationError, HmsError};
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::core::memory_api::{Memory, MemoryConfig};
 pub use crate::core::types::{

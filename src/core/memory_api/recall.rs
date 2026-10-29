@@ -198,29 +198,32 @@ impl Memory {
 
     /// One stored fact, or none.
     pub fn get(&self, id: &str) -> Result<Option<FactRecord>> {
-        self.ensure_fresh();
-        let index = self.index.read();
-        Ok(self.record(&index, id, self.clock.now_millis()))
+        let now = self.clock.now_millis();
+        self.with_snapshot(|index| Ok(self.record(index, id, now)))
     }
 
     /// Every version of the fact `id` belongs to: it, what it superseded and what superseded
     /// it, in effect order, each with its status now.
     pub fn history(&self, id: &str) -> Result<Vec<FactRecord>> {
-        self.ensure_fresh();
-        let index = self.index.read();
         let now = self.clock.now_millis();
-        if !self.core.has_document(id) {
-            return Err(MemoryError::NotFound(format!("unknown fact {id:?}")).into());
-        }
-        let mut records: Vec<FactRecord> = index
-            .component(id)
-            .iter()
-            .filter_map(|member| self.record(&index, member, now))
-            .collect();
-        records.sort_by(|a, b| {
-            (a.effective_from, a.ingest_time, &a.id).cmp(&(b.effective_from, b.ingest_time, &b.id))
-        });
-        Ok(records)
+        self.with_snapshot(|index| {
+            if !self.core.has_document(id) {
+                return Err(MemoryError::NotFound(format!("unknown fact {id:?}")).into());
+            }
+            let mut records: Vec<FactRecord> = index
+                .component(id)
+                .iter()
+                .filter_map(|member| self.record(&index, member, now))
+                .collect();
+            records.sort_by(|a, b| {
+                (a.effective_from, a.ingest_time, &a.id).cmp(&(
+                    b.effective_from,
+                    b.ingest_time,
+                    &b.id,
+                ))
+            });
+            Ok(records)
+        })
     }
 
     fn record(&self, index: &Index, id: &str, now: Millis) -> Option<FactRecord> {
@@ -255,7 +258,7 @@ impl Memory {
     /// show a fact next to an unindexed successor and report both as current. After a miss the
     /// index is brought to the store's revision and the search repeats; it takes no writer lock,
     /// so an observer callback running under one may still recall. After `SNAPSHOT_ATTEMPTS`
-    /// the last attempt is used as is.
+    /// an explicit retryable error is returned.
     fn run(
         &self,
         query: &str,
@@ -267,8 +270,14 @@ impl Memory {
         let mut attempt = 1;
         loop {
             let (run, consistent) = self.run_once(query, options, history, k, force_wide)?;
-            if consistent || attempt == SNAPSHOT_ATTEMPTS {
+            if consistent {
                 return Ok(run);
+            }
+            if attempt == SNAPSHOT_ATTEMPTS {
+                return Err(MemoryError::Concurrent(
+                    "memory changed during recall; retry the operation".into(),
+                )
+                .into());
             }
             attempt += 1;
             self.ensure_fresh();

@@ -14,6 +14,7 @@ use super::{FactView, IdConflict, Memory, MemoryError};
 use crate::core::documents::{chunk_document, DocumentInput};
 
 const MAX_BATCH: usize = 4096;
+const WRITE_ATTEMPTS: usize = 16;
 const MAX_TEXT_BYTES: usize = 64 * 1024;
 const CHUNK_WORDS: u32 = 4096;
 const MAX_ID_BYTES: usize = 4096;
@@ -92,11 +93,38 @@ impl Memory {
             !inputs.is_empty() && inputs.len() <= MAX_BATCH,
             "remember requires 1..={MAX_BATCH} facts"
         );
-        let _writer = self.writer.lock();
-        self.ensure_fresh();
         let now = self.clock.now_millis();
-        let mut planned = {
+        for _ in 0..WRITE_ATTEMPTS {
+            let Some(before) = self.planning_revision() else {
+                continue;
+            };
+            match self.remember_at_revision(inputs.clone(), now, before) {
+                Ok(Some(outcomes)) => return Ok(outcomes),
+                Ok(None) => {}
+                Err(error) => return Err(error),
+            }
+        }
+        Err(MemoryError::Concurrent(
+            "memory changed while planning remember; retry the operation".into(),
+        )
+        .into())
+    }
+
+    fn remember_at_revision(
+        &self,
+        inputs: Vec<RememberInput>,
+        now: Millis,
+        before: u64,
+    ) -> Result<Option<Vec<Remembered>>> {
+        check!(
+            !inputs.is_empty() && inputs.len() <= MAX_BATCH,
+            "remember requires 1..={MAX_BATCH} facts"
+        );
+        let planning = (|| -> Result<Option<Vec<Planned>>> {
             let index = self.index.read();
+            if index.revision != Some(before) {
+                return Ok(None);
+            }
             let mut planned: Vec<Planned> = Vec::with_capacity(inputs.len());
             let mut seen = HashSet::with_capacity(inputs.len());
             for input in inputs {
@@ -108,19 +136,25 @@ impl Memory {
                 );
                 planned.push(fact);
             }
-            planned
+            Ok(Some(planned))
+        })();
+        let mut planned = match planning {
+            Ok(Some(planned)) => planned,
+            Ok(None) => return Ok(None),
+            Err(_) if self.core.revision() != before => return Ok(None),
+            Err(error) => return Err(error),
         };
         let documents: Vec<DocumentInput> = planned
             .iter_mut()
             .filter_map(|fact| fact.document.take())
             .collect();
-        let before = self.core.revision();
-        if !documents.is_empty() {
-            self.core.memorize_documents(documents)?;
+        let changed = !documents.is_empty();
+        if !self.core.change_memory_documents(documents, &[], before)? {
+            return Ok(None);
         }
         let written: Vec<&Planned> = planned.iter().filter(|fact| !fact.idempotent).collect();
         if !written.is_empty() {
-            self.settle(before, 1, |index| {
+            self.settle(before, u64::from(changed), |index| {
                 // Other facts' stamps can name a replaced fact; when the index links it to
                 // anything, only a rebuild from the store reproduces those links. An
                 // unlinked one is updated in place: its old stamp out, the new one in.
@@ -179,7 +213,7 @@ impl Memory {
                 }
             }
         }
-        Ok(outcomes)
+        Ok(Some(outcomes))
     }
 
     fn plan_one(
@@ -434,8 +468,30 @@ impl Memory {
     /// store compacts. The text segment is zeroed and synced once before this returns; `purge`
     /// then compacts and overwrites what the compaction replaced.
     pub fn forget(&self, scope: &ForgetScope, options: &ForgetOptions) -> Result<ForgetReport> {
-        let _writer = self.writer.lock();
-        self.ensure_fresh();
+        let mut completed = BTreeSet::new();
+        for _ in 0..WRITE_ATTEMPTS {
+            let Some(before) = self.planning_revision() else {
+                continue;
+            };
+            match self.forget_at_revision(scope, options, before, &mut completed) {
+                Ok(Some(report)) => return Ok(report),
+                Ok(None) => {}
+                Err(error) => return Err(error),
+            }
+        }
+        Err(MemoryError::Concurrent(
+            "memory changed during forgetting; retry to finish any committed prefix".into(),
+        )
+        .into())
+    }
+
+    fn forget_at_revision(
+        &self,
+        scope: &ForgetScope,
+        options: &ForgetOptions,
+        before: u64,
+        completed: &mut BTreeSet<String>,
+    ) -> Result<Option<ForgetReport>> {
         let mut ids = self.resolve_scope(scope)?;
         if options.include_chain {
             let index = self.index.read();
@@ -456,23 +512,58 @@ impl Memory {
         }
         let forgotten: Vec<String> = stamps.iter().map(|(id, _)| id.clone()).collect();
         if options.dry_run || forgotten.is_empty() {
-            return Ok(ForgetReport {
+            if !self.core.memory_revision_matches(before) {
+                return Ok(None);
+            }
+            let forgotten = if options.dry_run {
+                forgotten
+            } else {
+                completed.iter().cloned().collect()
+            };
+            let purged = if !options.dry_run && !completed.is_empty() {
+                self.core.sync_text_segment()?;
+                if options.purge {
+                    self.core.compact_scrubbing()?;
+                }
+                if let Some(observer) = &self.observer {
+                    observer.on_forgotten(&forgotten);
+                }
+                options.purge
+            } else {
+                false
+            };
+            return Ok(Some(ForgetReport {
                 forgotten,
                 dry_run: options.dry_run,
-                purged: false,
-            });
+                purged,
+            }));
         }
         let rewrites = self.bridge_survivors(&forgotten)?;
-        let before = self.core.revision();
+        let mut revision = before;
         let mut commits = 0;
         // Survivors are re-linked before anything is deleted: a crash between the two leaves
         // extra but valid links, and the same call finishes the job.
         for batch in rewrites.chunks(MAX_BATCH) {
-            self.core.memorize_documents(batch.to_vec())?;
+            if !self
+                .core
+                .change_memory_documents(batch.to_vec(), &[], revision)?
+            {
+                return Ok(None);
+            }
+            revision = revision.wrapping_add(1);
             commits += 1;
         }
-        let (_, delete_commits) = self.core.delete_documents(&forgotten)?;
-        commits += delete_commits;
+        for batch in forgotten.chunks(MAX_BATCH) {
+            if !self
+                .core
+                .change_memory_documents(Vec::new(), batch, revision)?
+            {
+                return Ok(None);
+            }
+            completed.extend(batch.iter().cloned());
+            revision = revision.wrapping_add(1);
+            commits += 1;
+        }
         self.core.sync_text_segment()?;
         if rewrites.is_empty() {
             self.settle(before, commits, |index| {
@@ -490,14 +581,15 @@ impl Memory {
             self.index.write().revision = None;
             purged = true;
         }
+        let forgotten: Vec<String> = completed.iter().cloned().collect();
         if let Some(observer) = &self.observer {
             observer.on_forgotten(&forgotten);
         }
-        Ok(ForgetReport {
+        Ok(Some(ForgetReport {
             forgotten,
             dry_run: false,
             purged,
-        })
+        }))
     }
 
     /// Rewrites of the surviving facts whose links run through facts about to be removed, so

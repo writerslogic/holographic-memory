@@ -90,29 +90,39 @@ impl HmsCore {
         })
     }
 
-    /// Deletes documents in transactions of at most [`DELETE_BATCH`]; returns how many
-    /// existed and how many transactions were committed. Deleting an absent id is a no-op,
-    /// so a retry after a crash between transactions completes the rest.
-    pub(crate) fn delete_documents(&self, ids: &[String]) -> Result<(usize, u64)> {
-        let mut deleted = 0;
-        let mut commits = 0;
-        for batch in ids.chunks(DELETE_BATCH) {
-            let mutations: Vec<Mutation> = {
-                // The store answers for a checkpoint it is served from without being rebuilt.
-                let store = self.documents.read();
-                batch
-                    .iter()
-                    .filter(|id| store.contains_key(id))
-                    .map(|id| Mutation::DeleteDocument { id: id.clone() })
-                    .collect()
-            };
-            if mutations.is_empty() {
-                continue;
-            }
-            self.commit(&mutations)?;
-            deleted += mutations.len();
-            commits += 1;
+    pub(crate) fn memory_revision_matches(&self, revision: u64) -> bool {
+        let _writer = self.mutation_gate.maintenance();
+        self.revision() == revision
+    }
+
+    pub(crate) fn change_memory_documents(
+        &self,
+        inputs: Vec<crate::DocumentInput>,
+        deleted: &[String],
+        revision: u64,
+    ) -> Result<bool> {
+        anyhow::ensure!(
+            inputs
+                .len()
+                .checked_add(deleted.len())
+                .is_some_and(|n| n <= DELETE_BATCH),
+            "memory transaction requires at most 4096 document changes"
+        );
+        let mut mutations = if inputs.is_empty() {
+            Vec::new()
+        } else {
+            self.prepare_batch(inputs, &Default::default())?.0
+        };
+        mutations.extend(
+            deleted
+                .iter()
+                .cloned()
+                .map(|id| Mutation::DeleteDocument { id }),
+        );
+        if mutations.is_empty() {
+            return Ok(self.memory_revision_matches(revision));
         }
-        Ok((deleted, commits))
+        let payload = super::document_batch::serialize_transaction(self, &mutations)?;
+        self.commit_serialized_if_revision(&mutations, &payload, revision)
     }
 }

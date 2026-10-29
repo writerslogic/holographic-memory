@@ -759,12 +759,15 @@ impl HmsCore {
         let existed = self.shards.read().get_vector(id).is_some();
         self.commit(&[Mutation::Delete { id: id.to_owned() }])?;
         if let Some(ref audit) = self.audit {
-            audit.record(AuditOp::Delete, id, self.sign_fn().as_deref())?;
+            super::error::after_commit(
+                "audit append",
+                audit.record(AuditOp::Delete, id, self.sign_fn().as_deref()),
+            )?;
         }
         #[cfg(feature = "provenance")]
         if let Some(ref mgr) = self.provenance {
             if self.config.provenance.auto_sign {
-                mgr.record_deletion(id, reason)?;
+                super::error::after_commit("deletion provenance", mgr.record_deletion(id, reason))?;
             }
         }
         Ok(existed)
@@ -814,7 +817,10 @@ impl HmsCore {
         #[cfg(feature = "provenance")]
         if let Some(ref mgr) = self.provenance {
             if self.config.provenance.auto_sign {
-                mgr.create_fact_provenance(id, text.as_bytes(), source_uri)?;
+                super::error::after_commit(
+                    "fact provenance",
+                    mgr.create_fact_provenance(id, text.as_bytes(), source_uri),
+                )?;
             }
         }
         Ok(())
@@ -833,7 +839,10 @@ impl HmsCore {
             vector,
         }])?;
         if let Some(ref audit) = self.audit {
-            audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref())?;
+            super::error::after_commit(
+                "audit append",
+                audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref()),
+            )?;
         }
         Ok(())
     }

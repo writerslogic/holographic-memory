@@ -514,6 +514,7 @@ fn memory_error_code(error: anyhow::Error) -> &'static str {
         Some(MemoryError::Invalid(_)) => "invalid_memory_request",
         Some(MemoryError::Conflict(_)) => "immutable_conflict",
         Some(MemoryError::NotFound(_)) => "memory_source_missing",
+        Some(MemoryError::Concurrent(_)) => "memory_concurrent_mutation",
         None => "memory_operation_failed",
     }
 }
