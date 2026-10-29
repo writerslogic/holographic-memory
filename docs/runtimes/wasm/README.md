@@ -67,12 +67,16 @@ A store saves as one snapshot (magic `HMSD`, checksum, LZ4-compressed JSON) unde
 | --- | --- | --- |
 | `IndexedDbStorage` | browsers | one put is one transaction |
 | `OpfsStorage` | browsers (origin private file system) | `createWritable()` swap file; Worker fallback uses a sync access handle |
-| `FileStorage` | Node, Deno, Bun | write temp file, fsync, rename |
+| `FileStorage` | Node, Deno, Bun | sync temp file, rename, sync directory entries on Unix |
 | `MemoryStorage` | anywhere | n/a |
 
 Autosave (default on when a storage adapter is given, 500 ms debounce) re-exports the whole store, so
 its cost grows with store size; set `autosave: false` and call `save()` at your own cadence for large
 stores. `exportSnapshot()` / `openStore({ snapshot })` move a store between hosts.
+Concurrent `close()` calls share one completion and wait for pending saves and encryption
+changes. New mutations are rejected while closing. A failed flush leaves the store open
+with its unsaved state for retry. Directory syncing is unavailable through this adapter on
+Windows; atomic publication there does not imply the Unix power-loss durability guarantee.
 
 ## Tests
 

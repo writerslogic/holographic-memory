@@ -296,7 +296,8 @@ public sealed class Store : IDisposable
         {
             var p = NativeMemory.AllocZeroed(size == 0 ? 1 : size);
             if (p == null) throw new OutOfMemoryException();
-            _blocks.Add((IntPtr)p);
+            try { _blocks.Add((IntPtr)p); }
+            catch { NativeMemory.Free(p); throw; }
             return p;
         }
 
