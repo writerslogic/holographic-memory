@@ -218,7 +218,10 @@ impl HmsCore {
         if scrub {
             // Still under the compaction lock: a concurrent compaction must not capture
             // documents whose text offsets the canonical rebuild is replacing.
-            self.canonicalize_derived_state(!canonical_first)?;
+            crate::core::error::after_commit(
+                "compaction derived-state reconciliation",
+                self.canonicalize_derived_state(!canonical_first),
+            )?;
         }
         Ok(())
     }
@@ -386,6 +389,36 @@ mod tests {
             "embeddings": [[1.0, 0.0]],
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn published_compaction_failure_reports_a_committed_outcome_and_reopens() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = Some(dir.path().display().to_string());
+        let core = HmsCore::new(256, path.clone(), Some(config()))?;
+        core.memorize_document(document("kept", "v1"))?;
+        let before = core.revision();
+        let error = core
+            .compact_impl(
+                || {},
+                || {
+                    std::fs::create_dir(dir.path().join("indices.json")).unwrap();
+                },
+                false,
+            )
+            .unwrap_err();
+        assert!(error.is::<crate::CommittedMutationError>(), "{error:#}");
+        assert!(core.revision() != before);
+        assert!(core.has_document("kept"));
+        std::fs::remove_dir(dir.path().join("indices.json"))?;
+        drop(core);
+        let core = HmsCore::new(256, path, Some(config()))?;
+        assert_eq!(
+            core.get_document("kept").unwrap().text.as_deref(),
+            Some("needle durable source")
+        );
+        core.compact()?;
+        Ok(())
     }
 
     fn seed(core: &HmsCore) -> Result<()> {

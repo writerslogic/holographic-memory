@@ -110,7 +110,7 @@ impl Memory {
         .into())
     }
 
-    fn remember_at_revision(
+    pub(super) fn remember_at_revision(
         &self,
         inputs: Vec<RememberInput>,
         now: Millis,
@@ -485,7 +485,7 @@ impl Memory {
         .into())
     }
 
-    fn forget_at_revision(
+    pub(super) fn forget_at_revision(
         &self,
         scope: &ForgetScope,
         options: &ForgetOptions,
@@ -521,9 +521,15 @@ impl Memory {
                 completed.iter().cloned().collect()
             };
             let purged = if !options.dry_run && !completed.is_empty() {
-                self.core.sync_text_segment()?;
+                crate::core::error::after_commit(
+                    "forgotten-text synchronization",
+                    self.core.sync_text_segment(),
+                )?;
                 if options.purge {
-                    self.core.compact_scrubbing()?;
+                    crate::core::error::after_commit(
+                        "forgotten-data purge",
+                        self.core.compact_scrubbing(),
+                    )?;
                 }
                 if let Some(observer) = &self.observer {
                     observer.on_forgotten(&forgotten);
@@ -564,7 +570,10 @@ impl Memory {
             revision = revision.wrapping_add(1);
             commits += 1;
         }
-        self.core.sync_text_segment()?;
+        crate::core::error::after_commit(
+            "forgotten-text synchronization",
+            self.core.sync_text_segment(),
+        )?;
         if rewrites.is_empty() {
             self.settle(before, commits, |index| {
                 for (id, stamp) in &stamps {
@@ -577,7 +586,10 @@ impl Memory {
         }
         let mut purged = false;
         if options.purge {
-            self.core.compact_scrubbing()?;
+            crate::core::error::after_commit(
+                "forgotten-data purge",
+                self.core.compact_scrubbing(),
+            )?;
             self.index.write().revision = None;
             purged = true;
         }

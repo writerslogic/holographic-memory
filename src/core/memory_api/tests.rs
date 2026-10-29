@@ -117,6 +117,120 @@ fn conditional_changes_never_overwrite_a_raw_core_write() {
 }
 
 #[test]
+fn forgetting_policy_replans_instead_of_deleting_a_replaced_source() {
+    struct ReplaceDuringSelection(Arc<HmsCore>, std::sync::atomic::AtomicBool);
+    impl ForgettingPolicy for ReplaceDuringSelection {
+        fn select(&self, _: &[FactSummary], _: Millis) -> Vec<String> {
+            if !self.1.swap(true, std::sync::atomic::Ordering::SeqCst) {
+                self.0
+                    .memorize_document(
+                        serde_json::from_value(serde_json::json!({
+                            "id":"source", "text":"foreign replacement"
+                        }))
+                        .unwrap(),
+                    )
+                    .unwrap();
+            }
+            vec!["source".into()]
+        }
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let memory = Memory::new(core.clone());
+    memory.remember(fact("source", "outdated fact")).unwrap();
+    let report = memory
+        .apply_forgetting_with(
+            &ReplaceDuringSelection(core.clone(), false.into()),
+            &ForgetOptions::default(),
+        )
+        .unwrap();
+    assert!(report.forgotten.is_empty());
+    assert_eq!(
+        core.get_document("source").unwrap().text.as_deref(),
+        Some("foreign replacement")
+    );
+}
+
+#[test]
+fn continuous_foreign_writes_return_contention_without_a_stale_commit() {
+    struct AlwaysWrite(Arc<HmsCore>);
+    impl SupersessionPolicy for AlwaysWrite {
+        fn resolve(&self, _: &FactView, _: &[FactView]) -> Resolution {
+            self.0
+                .memorize_document(
+                    serde_json::from_value(serde_json::json!({
+                        "id":"foreign", "text":"writer advances revision"
+                    }))
+                    .unwrap(),
+                )
+                .unwrap();
+            Resolution::default()
+        }
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let memory = Memory::new(core.clone()).with_supersession(Arc::new(AlwaysWrite(core.clone())));
+    let error = memory
+        .remember(RememberInput {
+            subject: Some("subject".into()),
+            ..fact("planned", "must not be committed")
+        })
+        .unwrap_err();
+    assert!(matches!(
+        error.downcast_ref::<MemoryError>(),
+        Some(MemoryError::Concurrent(_))
+    ));
+    assert!(!core.has_document("planned"));
+    assert!(core.has_document("foreign"));
+}
+
+#[test]
+fn consolidation_replans_when_its_source_changes_during_the_policy_callback() {
+    struct ReplaceDuringPlan(Arc<HmsCore>, std::sync::atomic::AtomicBool);
+    impl ConsolidationPolicy for ReplaceDuringPlan {
+        fn plan(&self, facts: &[FactSummary], _: Millis) -> Vec<ConsolidationAction> {
+            if !facts.iter().any(|fact| fact.id == "source") {
+                return vec![];
+            }
+            if !self.1.swap(true, std::sync::atomic::Ordering::SeqCst) {
+                self.0
+                    .memorize_document(
+                        serde_json::from_value(serde_json::json!({
+                            "id":"source", "text":"changed foreign source"
+                        }))
+                        .unwrap(),
+                    )
+                    .unwrap();
+            }
+            vec![ConsolidationAction {
+                sources: vec!["source".into()],
+                summary: fact("summary", "stale summary"),
+                forget_sources: true,
+            }]
+        }
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let memory = Memory::new(core.clone());
+    memory.remember(fact("source", "original fact")).unwrap();
+    let result = memory
+        .consolidate_with(
+            &ReplaceDuringPlan(core.clone(), false.into()),
+            &ConsolidateOptions {
+                allow_destructive: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert!(result.created.is_empty());
+    assert!(!core.has_document("summary"));
+    assert_eq!(
+        core.get_document("source").unwrap().text.as_deref(),
+        Some("changed foreign source")
+    );
+}
+
+#[test]
 fn replacing_a_fact_leaves_the_index_equal_to_a_rebuild() {
     let dir = tempfile::tempdir().unwrap();
     let core = Arc::new(HmsCore::new(64, Some(dir.path().display().to_string()), None).unwrap());

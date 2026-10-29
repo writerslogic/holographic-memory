@@ -275,7 +275,11 @@ async fn main() -> Result<()> {
         limits(&cli),
         !cli.no_resources,
         !cli.no_prompts,
-        cli.max_concurrent,
+        server::WorkLimits {
+            concurrent: cli.max_concurrent,
+            pending: cli.max_pending,
+            queue_timeout: std::time::Duration::from_millis(cli.queue_timeout_ms),
+        },
     );
     let result = match cli.transport {
         Transport::Stdio => {

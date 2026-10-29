@@ -110,9 +110,14 @@ hms-mcp --encrypt            # needs a build with --features security
 | `forget` batch | `--max-forget` | 1000 |
 | `export` payload | `--max-export-bytes` | 4 MiB per call, paged |
 | Concurrent tool calls | `--max-concurrent` | 4 |
+| Waiting tool calls | `--max-pending` | 32; overload returns `server_busy` |
+| Worker wait deadline | `--queue-timeout-ms` | 5000; expired work does not run |
 | Dimensions per store | `--dim` | 4096, fixed once the store exists |
 
 Every flag has an `HMS_MCP_*` environment variable (see `hms-mcp --help`). Long documents are not split for you: a memory that does not fit one chunk is rejected with `too_large` and the advice to split it, which keeps `get` exact.
+
+Cancelled calls retain their worker permit until the blocking operation finishes. Cancellation
+does not roll back a committed write; retry with the same ID and content for an idempotent outcome.
 
 ## HTTP transport
 
