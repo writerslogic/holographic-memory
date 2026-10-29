@@ -308,6 +308,22 @@ impl Memory {
         .into())
     }
 
+    fn with_revision<T>(&self, mut read: impl FnMut() -> Result<T>) -> Result<T> {
+        for _ in 0..16 {
+            let Some(revision) = self.planning_revision() else {
+                continue;
+            };
+            let result = read();
+            if self.core.memory_revision_matches(revision) {
+                return result;
+            }
+        }
+        Err(MemoryError::Concurrent(
+            "memory changed while assembling the result; retry the operation".into(),
+        )
+        .into())
+    }
+
     fn planning_revision(&self) -> Option<u64> {
         self.ensure_fresh();
         let revision = self.core.revision();

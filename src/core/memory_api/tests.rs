@@ -231,6 +231,86 @@ fn consolidation_replans_when_its_source_changes_during_the_policy_callback() {
 }
 
 #[test]
+fn reentrant_policy_callbacks_do_not_hold_the_memory_index_lock() {
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        OnceLock, Weak,
+    };
+    struct Reenter {
+        memory: OnceLock<Weak<Memory>>,
+        wrote: AtomicBool,
+    }
+    impl Reenter {
+        fn write_once(&self) {
+            if !self.wrote.swap(true, Ordering::SeqCst) {
+                self.memory
+                    .get()
+                    .unwrap()
+                    .upgrade()
+                    .unwrap()
+                    .remember(fact("callback", "callback durable fact"))
+                    .unwrap();
+            }
+        }
+    }
+    impl SupersessionPolicy for Reenter {
+        fn resolve(&self, _: &FactView, _: &[FactView]) -> Resolution {
+            self.write_once();
+            Resolution::default()
+        }
+    }
+    impl RecencyPolicy for Reenter {
+        fn factor(&self, _: &RecencyContext) -> f64 {
+            self.write_once();
+            1.0
+        }
+    }
+    for recall in [false, true] {
+        let dir = tempfile::tempdir().unwrap();
+        let core =
+            Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+        let policy = Arc::new(Reenter {
+            memory: OnceLock::new(),
+            wrote: false.into(),
+        });
+        let memory = if recall {
+            Memory::new(core.clone()).with_recency(policy.clone())
+        } else {
+            Memory::new(core.clone()).with_supersession(policy.clone())
+        };
+        let memory = Arc::new(memory);
+        policy.memory.set(Arc::downgrade(&memory)).unwrap();
+        let (send, receive) = std::sync::mpsc::channel();
+        let worker = memory.clone();
+        std::thread::spawn(move || {
+            let result = worker
+                .remember(RememberInput {
+                    subject: Some("subject".into()),
+                    ..fact("outer", "outer durable fact")
+                })
+                .and_then(|_| {
+                    if recall {
+                        worker
+                            .recall("durable fact", &Default::default())
+                            .map(|hits| {
+                                assert_eq!(hits.len(), 2);
+                            })
+                    } else {
+                        Ok(())
+                    }
+                });
+            send.send(result).unwrap();
+        });
+        receive
+            .recv_timeout(std::time::Duration::from_secs(10))
+            .expect("policy callback deadlocked on its own memory index")
+            .unwrap();
+        assert!(core.has_document("callback"));
+        assert!(core.has_document("outer"));
+    }
+}
+
+#[test]
 fn replacing_a_fact_leaves_the_index_equal_to_a_rebuild() {
     let dir = tempfile::tempdir().unwrap();
     let core = Arc::new(HmsCore::new(64, Some(dir.path().display().to_string()), None).unwrap());

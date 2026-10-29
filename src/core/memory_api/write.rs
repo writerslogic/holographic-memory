@@ -7,7 +7,6 @@ use anyhow::Result;
 use serde_json::{Map, Value};
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use super::index::Index;
 use super::stamp::{stable_hash, Placement, Stamp, KEY};
 use super::types::*;
 use super::{FactView, IdConflict, Memory, MemoryError};
@@ -121,14 +120,13 @@ impl Memory {
             "remember requires 1..={MAX_BATCH} facts"
         );
         let planning = (|| -> Result<Option<Vec<Planned>>> {
-            let index = self.index.read();
-            if index.revision != Some(before) {
+            if self.index.read().revision != Some(before) {
                 return Ok(None);
             }
             let mut planned: Vec<Planned> = Vec::with_capacity(inputs.len());
             let mut seen = HashSet::with_capacity(inputs.len());
             for input in inputs {
-                let fact = self.plan_one(&index, &planned, input, now)?;
+                let fact = self.plan_one(&planned, input, now)?;
                 check!(
                     seen.insert(fact.id.clone()),
                     "fact id {:?} appears twice in one call",
@@ -218,7 +216,6 @@ impl Memory {
 
     fn plan_one(
         &self,
-        index: &Index,
         earlier: &[Planned],
         mut input: RememberInput,
         now: Millis,
@@ -317,7 +314,7 @@ impl Memory {
                         .into());
                     }
                     check!(
-                        existing.is_some() || index.edges(&id).is_empty(),
+                        existing.is_some() || self.index.read().edges(&id).is_empty(),
                         "document {id:?} is not a memory fact and is superseded by others"
                     );
                     replaces = true;
@@ -347,7 +344,9 @@ impl Memory {
         let mut superseded_by: Vec<String> = Vec::new();
         if self.supersession_active {
             if let Some(subject) = &subject {
-                let mut group: Vec<FactView> = index
+                let mut group: Vec<FactView> = self
+                    .index
+                    .read()
                     .members(subject)
                     .into_iter()
                     .filter(|member| member.id != id)
@@ -406,13 +405,13 @@ impl Memory {
         }
         for old in &supersedes {
             check!(
-                !index.supersedes_transitively(old, &id),
+                !self.index.read().supersedes_transitively(old, &id),
                 "superseding {old:?} would make a cycle"
             );
         }
         for newer in &superseded_by {
             check!(
-                !index.supersedes_transitively(&id, newer),
+                !self.index.read().supersedes_transitively(&id, newer),
                 "being superseded by {newer:?} would make a cycle"
             );
         }
