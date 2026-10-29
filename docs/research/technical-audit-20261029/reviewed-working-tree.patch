@@ -1,0 +1,950 @@
+diff --git a/docs/SERVER.md b/docs/SERVER.md
+index 6ca15a81..cb28b2f9 100644
+--- a/docs/SERVER.md
++++ b/docs/SERVER.md
+@@ -83,7 +83,7 @@ Index maintenance also builds the tenant's optional document index over stored e
+ 
+ ### Bulk ingest
+ 
+-`POST /api/v1/documents/stream` with `Content-Type: application/x-ndjson` reads one document object per line (blank lines ignored, the last line may lack a newline) and commits every `--stream-batch` valid lines in one transaction. Rejected lines are reported with their 1-based line number (the first 100) and do not stop the stream. The stream is not atomic across batches: after a failure mid-stream, the committed batches stay. Size limits are `--max-stream-bytes` and `--max-stream-line-bytes`, independent of `--max-body-bytes`; a stalled upload times out after `--body-timeout-seconds` of silence.
++`POST /api/v1/documents/stream` with `Content-Type: application/x-ndjson` reads one document object per line (blank lines ignored, the last line may lack a newline) and groups every `--stream-batch` nonblank lines into one batch, independent of transport frames. Valid documents in each batch commit in one transaction. Rejected lines are reported with their 1-based line number (the first 100) and do not stop the stream. The stream is not atomic across batches: after a failure mid-stream, the committed batches stay. Size limits are `--max-stream-bytes` and `--max-stream-line-bytes`, independent of `--max-body-bytes`; a stalled upload times out after `--body-timeout-seconds` of silence.
+ 
+ ### Retries and conditional requests
+ 
+@@ -103,6 +103,11 @@ Stores open on first use. Simultaneous first requests share one initialization;
+ - `--max-connections` caps simultaneous connections; `--header-read-timeout-seconds` drops clients that dribble headers; `--body-timeout-seconds` bounds body reads. A disconnected client releases body admission immediately, but a running blocking operation keeps its work slot until it finishes.
+ - Parsing, validation, store initialization, ingest, search and maintenance run on blocking workers; the async runtime only moves bytes.
+ 
++Document ingestion and memory `remember` serialize quota checks through commit, so concurrent
++requests share the same limit. Supply explicit memory ids for retries at a full quota:
++requests without ids are conservatively counted as new facts. Summaries created by an opt-in
++consolidation policy currently bypass quota admission.
++
+ ## Shutdown
+ 
+ SIGINT or SIGTERM makes `/readyz` fail at once. With `--shutdown-delay-seconds` the server keeps serving for that long so a load balancer can drain it; then the listener closes, open connections get `--shutdown-grace-seconds` to finish, admitted work (including operations whose clients disconnected) runs to completion, every open store is flushed and the metadata logs are synced, and the process exits 0. An interrupted flush exits non-zero.
+diff --git a/docs/file-format/LAYOUT.md b/docs/file-format/LAYOUT.md
+index 1303e195..ca88e51a 100644
+--- a/docs/file-format/LAYOUT.md
++++ b/docs/file-format/LAYOUT.md
+@@ -63,6 +63,9 @@ newline; absent on stores written before sidecars, and then unverified.
+ `store.json`. With a `CURRENT` pointer the engine reads `vectors_data.bin/format.json`, falling
+ back to the generation's copy.
+ 
++Journal segments must be numbered contiguously from `seg_0.bin`. Opening rejects gaps and
++active segments larger than `segment_size` without resizing or recovering those files.
++
+ ## CURRENT
+ 
+ ASCII name, no newline, matching `gen-[A-Za-z0-9-]+`. The directory must exist and not be a
+@@ -71,9 +74,9 @@ symlink. Without `CURRENT` the live segments are in `vectors_data.bin/` itself.
+ ## Open sequence and what open writes
+ 
+ 1. create the directory; take the lock; validate or create `store.json`
+-2. open the arena: create or validate `format.json`, find the live generation, recover the
+-   active segment (JOURNAL.md), write the end marker at the recovered end, extend the active
+-   file to its allocation size
++2. open the arena: find the live generation and check segment numbering, create or validate
++   `format.json`, check the active segment's size, recover the active segment (JOURNAL.md),
++   write the end marker at the recovered end, extend the active file to its allocation size
+ 3. zero and unlink a `documents.text.canonical` left by an interrupted purge; then, with a
+    checkpoint in the live generation and no frames after it, map it and leave
+    `documents.text` alone until the store is built from it; with frames after it, truncate and
+diff --git a/docs/server/configuration.md b/docs/server/configuration.md
+index 987ae447..50808d76 100644
+--- a/docs/server/configuration.md
++++ b/docs/server/configuration.md
+@@ -61,7 +61,7 @@ With neither `HMS_API_KEY` nor `--keys-file`, the server only starts if `--no-au
+ | `--queue-timeout-ms` | `HMS_QUEUE_TIMEOUT_MS` | `1000` | Longest a queued request waits before 503. |
+ | `--rate-limit-rps` | `HMS_RATE_LIMIT_RPS` | `0` | Per-tenant sustained requests per second (token bucket); 429 `rate_limited` with `Retry-After`. 0 disables. |
+ | `--rate-limit-burst` | `HMS_RATE_LIMIT_BURST` | `0` | Per-tenant burst. 0 means one second of the sustained rate. |
+-| `--max-documents-per-tenant` | `HMS_MAX_DOCUMENTS_PER_TENANT` | `0` | Per-tenant document quota; a write that would exceed it gets 429 `quota_exceeded`. Replacing an existing id never counts. 0 disables. |
++| `--max-documents-per-tenant` | `HMS_MAX_DOCUMENTS_PER_TENANT` | `0` | Per-tenant document ingest and memory `remember` quota ([scope and retry limits](../SERVER.md#limits-and-backpressure)); exceeding it gets 429 `quota_exceeded`. Replacing an existing id never counts. 0 disables. |
+ | `--idempotency-ttl-seconds` | `HMS_IDEMPOTENCY_TTL_SECONDS` | `600` | How long an `Idempotency-Key` replays its response. |
+ | `--idempotency-capacity` | `HMS_IDEMPOTENCY_CAPACITY` | `10000` | Records kept in memory; the oldest are evicted first. |
+ 
+diff --git a/src/bin/hms-mcp/server.rs b/src/bin/hms-mcp/server.rs
+index 064a16b1..3e83364a 100644
+--- a/src/bin/hms-mcp/server.rs
++++ b/src/bin/hms-mcp/server.rs
+@@ -37,7 +37,7 @@ pub struct Inner {
+     pub limits: Limits,
+     pub resources: bool,
+     pub prompts: bool,
+-    pub gate: Semaphore,
++    pub gate: Arc<Semaphore>,
+ }
+ 
+ #[derive(Clone)]
+@@ -61,7 +61,7 @@ impl HmsMcp {
+                 limits,
+                 resources,
+                 prompts,
+-                gate: Semaphore::new(max_concurrent),
++                gate: Arc::new(Semaphore::new(max_concurrent)),
+             }),
+         }
+     }
+@@ -74,12 +74,16 @@ impl HmsMcp {
+         let permit = self
+             .inner
+             .gate
+-            .acquire()
++            .clone()
++            .acquire_owned()
+             .await
+             .map_err(|_| ErrorData::internal_error("server is shutting down", None))?;
+         let inner = Arc::clone(&self.inner);
+-        let out = tokio::task::spawn_blocking(move || work(&inner)).await;
+-        drop(permit);
++        let out = tokio::task::spawn_blocking(move || {
++            let _permit = permit;
++            work(&inner)
++        })
++        .await;
+         out.map_err(|e| {
+             crate::log::error(&format!("worker failed: {e}"));
+             ErrorData::internal_error("internal error; see the server log", None)
+@@ -509,3 +513,60 @@ impl ServerHandler for HmsMcp {
+         .into())
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::memory::test_limits;
++    use crate::store::{StoreOptions, StoreRoot};
++
++    #[tokio::test]
++    async fn cancelled_request_keeps_work_slot_until_worker_finishes() {
++        let dir = tempfile::tempdir().unwrap();
++        let limits = test_limits();
++        let handler = HmsMcp::new(
++            Arc::new(HmsBackend::new(
++                StoreOptions {
++                    root: StoreRoot::Namespaced(dir.path().to_path_buf()),
++                    dim: 256,
++                    max_stores: 1,
++                    encrypt: None,
++                    #[cfg(feature = "local-models")]
++                    stages: None,
++                    #[cfg(feature = "local-models")]
++                    embedding_dim: None,
++                },
++                limits.clone(),
++            )),
++            Exposure::new(&[], false, false, "default".into()).unwrap(),
++            limits,
++            false,
++            false,
++            1,
++        );
++        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
++        let (release_tx, release_rx) = std::sync::mpsc::channel();
++        let worker_handler = handler.clone();
++        let request = tokio::spawn(async move {
++            worker_handler
++                .run(move |_| {
++                    started_tx.send(()).unwrap();
++                    release_rx.recv().unwrap();
++                })
++                .await
++        });
++        started_rx.await.unwrap();
++        request.abort();
++        assert!(request.await.unwrap_err().is_cancelled());
++        let slot_retained = handler.inner.gate.available_permits() == 0;
++        release_tx.send(()).unwrap();
++        tokio::time::timeout(std::time::Duration::from_secs(5), handler.run(|_| ()))
++            .await
++            .unwrap()
++            .unwrap();
++        assert!(
++            slot_retained,
++            "cancelled request released a running worker's slot"
++        );
++    }
++}
+diff --git a/src/bin/hms-server/documents.rs b/src/bin/hms-server/documents.rs
+index b098475a..f114fc9d 100644
+--- a/src/bin/hms-server/documents.rs
++++ b/src/bin/hms-server/documents.rs
+@@ -26,7 +26,7 @@ use crate::auth::Scope;
+ use crate::config::*;
+ use crate::error::{ApiError, ApiResult};
+ use crate::request::*;
+-use crate::tenants::{AppState, CoreGuard};
++use crate::tenants::{AppState, CoreGuard, QuotaLease};
+ use crate::types::*;
+ use crate::vindex;
+ 
+@@ -135,14 +135,19 @@ pub fn check_metadata_size(metadata: &Value) -> Result<usize, ApiError> {
+ }
+ 
+ /// Reject a write that would take the tenant past `max_documents_per_tenant`; `fresh` counts
+-/// the documents it would add and is only evaluated when a quota is set.
+-pub fn enforce_quota(
++/// the documents it would add and is only evaluated when a quota is set. Keep the returned
++/// lease through the commit or rollback so another writer checks the committed count.
++pub fn enforce_quota<'a>(
+     state: &AppState,
+-    core: &CoreGuard,
++    core: &'a CoreGuard,
+     fresh: impl FnOnce() -> u64,
+-) -> Result<(), ApiError> {
++) -> Result<Option<QuotaLease<'a>>, ApiError> {
+     let quota = state.cfg.max_documents_per_tenant;
+-    if quota > 0 && core.document_count() as u64 + fresh() > quota {
++    if quota == 0 {
++        return Ok(None);
++    }
++    let lease = core.quota_lease();
++    if core.document_count() as u64 + fresh() > quota {
+         state
+             .metrics
+             .quota_rejections
+@@ -154,7 +159,7 @@ pub fn enforce_quota(
+         )
+         .retry_after(60));
+     }
+-    Ok(())
++    Ok(Some(lease))
+ }
+ 
+ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usize, ApiError> {
+@@ -170,7 +175,7 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
+     let mut inputs: Vec<DocumentInput> =
+         final_docs.into_iter().flatten().map(|d| d.input).collect();
+     let core = state.core(tenant)?;
+-    enforce_quota(state, &core, || {
++    let _quota = enforce_quota(state, &core, || {
+         inputs.iter().filter(|d| !core.has_document(&d.id)).count() as u64
+     })?;
+     // Every document with a vector enters the persisted vector index first, stamped with the
+@@ -437,6 +442,12 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) ->
+             let line = buffer[start..end].trim_ascii();
+             if !line.is_empty() {
+                 pending.push((line_no, line.to_vec()));
++                if pending.len() == state.cfg.stream_batch {
++                    tally.apply(
++                        commit_group(&state, &tenant, &permit, std::mem::take(&mut pending))
++                            .await?,
++                    );
++                }
+             }
+             start = end + 1;
+             scanned = start;
+@@ -449,15 +460,14 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) ->
+                 line_no + 1
+             )));
+         }
+-        if pending.len() >= state.cfg.stream_batch || (ended && !pending.is_empty()) {
+-            tally
+-                .apply(commit_group(&state, &tenant, &permit, std::mem::take(&mut pending)).await?);
+-        }
+     }
+     let last = buffer.trim_ascii();
+     if !last.is_empty() {
+         line_no += 1;
+-        tally.apply(commit_group(&state, &tenant, &permit, vec![(line_no, last.to_vec())]).await?);
++        pending.push((line_no, last.to_vec()));
++    }
++    if !pending.is_empty() {
++        tally.apply(commit_group(&state, &tenant, &permit, pending).await?);
+     }
+     Ok(json_response(
+         StatusCode::OK,
+diff --git a/src/bin/hms-server/memory.rs b/src/bin/hms-server/memory.rs
+index 9b66d93d..074b7000 100644
+--- a/src/bin/hms-server/memory.rs
++++ b/src/bin/hms-server/memory.rs
+@@ -120,11 +120,13 @@ async fn run(op: &'static str, scope: Scope, state: Arc<AppState>, req: Request)
+         };
+         validate_memory_request(op, &request, state)?;
+         let core = state.core(tenant)?;
+-        if op == "remember" {
++        let _quota = if op == "remember" {
+             enforce_quota(state, &core, || {
+                 new_facts(&request, |id| core.has_document(id))
+-            })?;
+-        }
++            })?
++        } else {
++            None
++        };
+         let response = core.memory().call(op, request).map_err(memory_error)?;
+         if scope == Scope::Write {
+             core.bump();
+diff --git a/src/bin/hms-server/tenants.rs b/src/bin/hms-server/tenants.rs
+index f93b7aab..5d69095f 100644
+--- a/src/bin/hms-server/tenants.rs
++++ b/src/bin/hms-server/tenants.rs
+@@ -90,9 +90,21 @@ pub struct Tenant {
+     /// Set while a snapshot or restore holds the store exclusively; requests are turned away
+     /// at once instead of occupying work slots while they wait.
+     quiesced: AtomicBool,
++    quota_active: Mutex<bool>,
++    quota_ready: Condvar,
+     pub compaction: Mutex<CompactionStatus>,
+ }
+ 
++#[must_use]
++pub struct QuotaLease<'a>(&'a Tenant);
++
++impl Drop for QuotaLease<'_> {
++    fn drop(&mut self) {
++        *self.0.quota_active.lock() = false;
++        self.0.quota_ready.notify_one();
++    }
++}
++
+ /// An open store: the engine, the memory API over it and the persisted vector index next to
+ /// it. Dropping it releases the store lock.
+ pub struct Open {
+@@ -162,6 +174,15 @@ impl std::ops::Deref for CoreGuard {
+ }
+ 
+ impl CoreGuard {
++    pub fn quota_lease(&self) -> QuotaLease<'_> {
++        let mut active = self.tenant.quota_active.lock();
++        while *active {
++            self.tenant.quota_ready.wait(&mut active);
++        }
++        *active = true;
++        QuotaLease(&self.tenant)
++    }
++
+     fn open(&self) -> &Open {
+         self.guard
+             .as_ref()
+@@ -446,6 +467,8 @@ impl AppState {
+             last_used_ms: AtomicU64::new(self.now_ms()),
+             generation: AtomicU64::new(generation),
+             quiesced: AtomicBool::new(false),
++            quota_active: Mutex::new(false),
++            quota_ready: Condvar::new(),
+             // Nothing changed since the open, so there is nothing to compact yet.
+             compaction: Mutex::new(CompactionStatus {
+                 generation_at_last_run: Some(generation),
+@@ -943,6 +966,105 @@ mod tests {
+     use super::*;
+     use std::sync::mpsc;
+ 
++    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
++    async fn quota_serializes_document_and_memory_writes_and_releases_failed_writes() {
++        use holographic_memory::core::memory_api::Clock;
++        use serde_json::{json, Value};
++        use tower_service::Service;
++
++        struct BlockingClock {
++            started: Arc<tokio::sync::Notify>,
++            release: Mutex<Option<mpsc::Receiver<()>>>,
++        }
++
++        impl Clock for BlockingClock {
++            fn now_millis(&self) -> i64 {
++                let release = self.release.lock().take().expect("clock called twice");
++                self.started.notify_one();
++                release
++                    .recv_timeout(Duration::from_secs(10))
++                    .expect("clock was not released");
++                0
++            }
++        }
++
++        async fn post(state: Arc<AppState>, path: &'static str, body: Value) -> (u16, Value) {
++            let request = axum::http::Request::builder()
++                .method("POST")
++                .uri(path)
++                .header("Authorization", "Bearer test-key")
++                .header("Content-Type", "application/json")
++                .body(axum::body::Body::from(body.to_string()))
++                .unwrap();
++            let response = crate::routes::router(state).call(request).await.unwrap();
++            let status = response.status().as_u16();
++            let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
++                .await
++                .unwrap();
++            (status, serde_json::from_slice(&bytes).unwrap())
++        }
++
++        for (text, memory_status, document_status) in [("stored fact", 200, 429), ("", 422, 200)] {
++            let directory = tempfile::tempdir().unwrap();
++            let state =
++                crate::tests::state_with(directory.path(), 2, &["--max-documents-per-tenant", "1"]);
++            let tenant = state.core("default").unwrap().tenant.clone();
++            let started = Arc::new(tokio::sync::Notify::new());
++            let (release_tx, release_rx) = mpsc::channel();
++            {
++                let mut guard = tenant.core.write();
++                let open = guard.as_mut().unwrap();
++                open.memory = Memory::new(open.core.clone()).with_clock(Arc::new(BlockingClock {
++                    started: started.clone(),
++                    release: Mutex::new(Some(release_rx)),
++                }));
++            }
++            let remembering = tokio::spawn(post(
++                state.clone(),
++                "/api/v1/memory/remember",
++                json!({"id": "fact", "text": text}),
++            ));
++            tokio::time::timeout(Duration::from_secs(5), started.notified())
++                .await
++                .unwrap();
++            let mutex_free = tenant.quota_active.try_lock().is_some();
++            let read_count = state.core("default").unwrap().document_count();
++            let documenting = tokio::spawn(post(
++                state.clone(),
++                "/api/v1/documents",
++                json!({"id": "doc", "vector": [1, 0]}),
++            ));
++            let queued = tokio::time::timeout(Duration::from_secs(5), async {
++                while !tenant.quota_ready.notify_one() {
++                    tokio::task::yield_now().await;
++                }
++            })
++            .await
++            .is_ok();
++            release_tx.send(()).unwrap();
++            let memory = tokio::time::timeout(Duration::from_secs(5), remembering)
++                .await
++                .unwrap()
++                .unwrap();
++            let document = tokio::time::timeout(Duration::from_secs(5), documenting)
++                .await
++                .unwrap()
++                .unwrap();
++            assert!(
++                mutex_free,
++                "quota admission held its mutex during the write"
++            );
++            assert_eq!(read_count, 0);
++            assert!(queued, "document write did not wait for memory admission");
++            assert_eq!(memory.0, memory_status, "{}", memory.1);
++            assert_eq!(document.0, document_status, "{}", document.1);
++            let core = state.core("default").unwrap();
++            assert_eq!(core.document_count(), 1);
++            assert_eq!(core.has_document("fact"), memory_status == 200);
++            assert_eq!(core.has_document("doc"), document_status == 200);
++        }
++    }
++
+     fn dirty(state: &AppState, name: &str) -> bool {
+         state
+             .cfg
+diff --git a/src/bin/hms-server/tests.rs b/src/bin/hms-server/tests.rs
+index 0f5ef3cd..2d8ced49 100644
+--- a/src/bin/hms-server/tests.rs
++++ b/src/bin/hms-server/tests.rs
+@@ -530,3 +530,80 @@ async fn an_abandoned_restore_upload_leaves_no_archive_behind() {
+         .collect();
+     assert!(left.is_empty(), "staging still holds {left:?}");
+ }
++
++async fn stream_documents(state: Arc<AppState>, chunks: Vec<Vec<u8>>) -> (u16, Value) {
++    use tower_service::Service;
++
++    let mut app = routes::router(state);
++    let chunks = futures_util::stream::iter(chunks.into_iter().map(Ok::<_, std::io::Error>));
++    let request = axum::http::Request::builder()
++        .method("POST")
++        .uri("/api/v1/documents/stream")
++        .header("Authorization", "Bearer test-key")
++        .header("Content-Type", "application/x-ndjson")
++        .body(axum::body::Body::from_stream(chunks))
++        .unwrap();
++    let response = app.call(request).await.unwrap();
++    let status = response.status().as_u16();
++    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
++        .await
++        .unwrap();
++    (status, serde_json::from_slice(&bytes).unwrap())
++}
++
++#[tokio::test(flavor = "current_thread")]
++async fn stream_batch_commit_boundaries_are_independent_of_body_frames() {
++    for (documents, final_newline, quota, committed) in [(3, true, "2", 2), (2, false, "1", 0)] {
++        let mut payload = (0..documents)
++            .map(|i| format!("{{\"id\":\"doc{i}\",\"vector\":[1,0]}}\n"))
++            .collect::<String>()
++            .into_bytes();
++        if !final_newline {
++            payload.pop();
++        }
++        for frame_size in [payload.len(), 1] {
++            let directory = tempfile::tempdir().unwrap();
++            let state = state_with(
++                directory.path(),
++                1,
++                &["--stream-batch", "2", "--max-documents-per-tenant", quota],
++            );
++            let chunks = payload.chunks(frame_size).map(<[u8]>::to_vec).collect();
++            let (status, body) = stream_documents(state.clone(), chunks).await;
++            assert_eq!(status, 429, "frame size {frame_size}: {body}");
++            assert_eq!(body["code"], "quota_exceeded");
++            let core = state.core("default").unwrap();
++            assert_eq!(core.document_count(), committed, "frame size {frame_size}");
++            for i in 0..documents {
++                assert_eq!(core.has_document(&format!("doc{i}")), i < committed);
++            }
++        }
++    }
++}
++
++#[tokio::test(flavor = "current_thread")]
++async fn stream_batch_preserves_line_errors_and_final_unterminated_document() {
++    let payload = concat!(
++        "\n{\"id\":\"a\",\"vector\":[1,0]}\n \r\n",
++        "{bad}\n",
++        "{\"id\":\"b\",\"vector\":[1,0]}\n",
++        "{\"id\":\"c\",\"vector\":[1,0]}\n",
++        "{\"id\":\"d\",\"vector\":[1,0]}"
++    )
++    .as_bytes();
++    for frame_size in [payload.len(), 7] {
++        let directory = tempfile::tempdir().unwrap();
++        let state = state_with(directory.path(), 1, &["--stream-batch", "2"]);
++        let chunks = payload.chunks(frame_size).map(<[u8]>::to_vec).collect();
++        let (status, body) = stream_documents(state.clone(), chunks).await;
++        assert_eq!(status, 200, "frame size {frame_size}: {body}");
++        assert_eq!(body["added"], 4);
++        assert_eq!(body["rejected"], 1);
++        assert_eq!(body["errors_truncated"], false);
++        assert_eq!(body["errors"].as_array().unwrap().len(), 1);
++        assert_eq!(body["errors"][0]["line"], 4);
++        let core = state.core("default").unwrap();
++        assert_eq!(core.document_count(), 4);
++        assert!(core.has_document("d"));
++    }
++}
+diff --git a/src/core/admin.rs b/src/core/admin.rs
+index 381c7864..158ae776 100644
+--- a/src/core/admin.rs
++++ b/src/core/admin.rs
+@@ -12,8 +12,8 @@ use std::path::Path;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+ use super::storage::{
+-    is_log_end, FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE, LEGACY_SEGMENT_SIZE,
+-    MAX_RAW_FRAME_SIZE, SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
++    is_log_end, list_segments, FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE,
++    LEGACY_SEGMENT_SIZE, MAX_RAW_FRAME_SIZE, SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
+ };
+ use super::store_lock::{StoreLock, LOCK_FILE};
+ use super::{HmsConfig, HmsCore};
+@@ -87,20 +87,21 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
+     }
+ 
+     let arena_path = super::durable_file::arena_generation(&arena_path)?;
+-    let mut segment_count = 0usize;
++    let ids = list_segments(&arena_path)?;
++    ensure!(!ids.is_empty(), "store contains no arena segments");
++    ensure!(
++        ids.iter().enumerate().all(|(expected, &id)| expected == id),
++        "arena segments are not contiguous from 0: {ids:?}"
++    );
++    let segment_count = ids.len();
+     let mut frame_count = 0usize;
+     let mut logical_bytes = 0u64;
+     let mut allocated_bytes = 0u64;
+-    loop {
+-        let segment_path = arena_path.join(format!("seg_{segment_count}.bin"));
+-        if !segment_path.exists() {
+-            break;
+-        }
++    for id in ids {
++        let segment_path = arena_path.join(format!("seg_{id}.bin"));
+         let file = File::open(&segment_path)?;
+         let metadata = file.metadata()?;
+-        let final_segment = !arena_path
+-            .join(format!("seg_{}.bin", segment_count + 1))
+-            .exists();
++        let final_segment = id + 1 == segment_count;
+         let valid_size = if manifest.version >= 4 && final_segment {
+             (SEGMENT_SIZE as u64..=manifest.segment_size as u64).contains(&metadata.len())
+                 && metadata.len() % SEGMENT_SIZE as u64 == 0
+@@ -122,23 +123,6 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
+         let (frames, bytes) = inspect_segment(&mmap, &segment_path, verify_checksums)?;
+         frame_count += frames;
+         logical_bytes += bytes as u64;
+-        segment_count += 1;
+-    }
+-    if segment_count == 0 {
+-        bail!("store contains no arena segments");
+-    }
+-    for entry in std::fs::read_dir(&arena_path)? {
+-        let name = entry?.file_name();
+-        let name = name.to_string_lossy();
+-        if let Some(id) = name
+-            .strip_prefix("seg_")
+-            .and_then(|value| value.strip_suffix(".bin"))
+-            .and_then(|value| value.parse::<usize>().ok())
+-        {
+-            if id >= segment_count {
+-                bail!("arena segments are not contiguous (unexpected seg_{id}.bin)");
+-            }
+-        }
+     }
+ 
+     Ok(StoreInspection {
+diff --git a/src/core/format/upgrade.rs b/src/core/format/upgrade.rs
+index 76d4eace..d79fde3c 100644
+--- a/src/core/format/upgrade.rs
++++ b/src/core/format/upgrade.rs
+@@ -536,7 +536,7 @@ fn stage_store(source: &Path, staging: &Path) -> Result<Staged> {
+ fn rewrite_arena(context: &mut StepContext<'_>) -> Result<()> {
+     let base = context.source.join(ARENA_DIRECTORY);
+     let generation = crate::core::durable_file::arena_generation(&base)?;
+-    let ids = super::verify::list_segments(&generation)?;
++    let ids = crate::core::storage::list_segments(&generation)?;
+     ensure!(!ids.is_empty(), "the source arena has no segments");
+     // Frames are staged without a sync each; `finish` makes the arena durable once.
+     let directory = context.staging.join(ARENA_DIRECTORY);
+diff --git a/src/core/format/verify.rs b/src/core/format/verify.rs
+index 39508a54..2af436cd 100644
+--- a/src/core/format/verify.rs
++++ b/src/core/format/verify.rs
+@@ -17,7 +17,9 @@ use super::{
+     Report, Severity, TenantReport, CURRENT, SALT_LEN, STORAGE_FORMAT_CURRENT,
+     STORAGE_FORMAT_OLDEST, STORE_SCHEMA_OLDEST, STORE_SCHEMA_VERSION,
+ };
+-use crate::core::storage::{FormatManifest, FORMAT_MAGIC, LEGACY_SEGMENT_SIZE, SEGMENT_SIZE};
++use crate::core::storage::{
++    list_segments, FormatManifest, FORMAT_MAGIC, LEGACY_SEGMENT_SIZE, SEGMENT_SIZE,
++};
+ 
+ /// Directory of the arena inside a store.
+ const ARENA_DIRECTORY: &str = "vectors_data.bin";
+@@ -305,23 +307,6 @@ struct ArenaState {
+     replay: Option<Replay>,
+ }
+ 
+-pub(super) fn list_segments(dir: &Path) -> Result<Vec<usize>> {
+-    let mut ids = Vec::new();
+-    for entry in std::fs::read_dir(dir)? {
+-        let name = entry?.file_name();
+-        if let Some(id) = name
+-            .to_string_lossy()
+-            .strip_prefix("seg_")
+-            .and_then(|v| v.strip_suffix(".bin"))
+-            .and_then(|v| v.parse::<usize>().ok())
+-        {
+-            ids.push(id);
+-        }
+-    }
+-    ids.sort_unstable();
+-    Ok(ids)
+-}
+-
+ /// The directory holding the live segments of the arena at `arena` (the one `CURRENT` names).
+ pub fn resolve_generation(arena: &Path) -> Result<PathBuf> {
+     crate::core::durable_file::arena_generation(arena)
+diff --git a/src/core/memory_api/write.rs b/src/core/memory_api/write.rs
+index 3d234516..09f73756 100644
+--- a/src/core/memory_api/write.rs
++++ b/src/core/memory_api/write.rs
+@@ -5,7 +5,7 @@
+ 
+ use anyhow::Result;
+ use serde_json::{Map, Value};
+-use std::collections::{BTreeSet, HashMap};
++use std::collections::{BTreeSet, HashMap, HashSet};
+ 
+ use super::index::Index;
+ use super::stamp::{stable_hash, Placement, Stamp, KEY};
+@@ -95,14 +95,14 @@ impl Memory {
+         let _writer = self.writer.lock();
+         self.ensure_fresh();
+         let now = self.clock.now_millis();
+-        let planned = {
++        let mut planned = {
+             let index = self.index.read();
+             let mut planned: Vec<Planned> = Vec::with_capacity(inputs.len());
+-            let mut seen: HashMap<String, usize> = HashMap::new();
++            let mut seen = HashSet::with_capacity(inputs.len());
+             for input in inputs {
+                 let fact = self.plan_one(&index, &planned, input, now)?;
+                 check!(
+-                    seen.insert(fact.id.clone(), planned.len()).is_none(),
++                    seen.insert(fact.id.clone()),
+                     "fact id {:?} appears twice in one call",
+                     fact.id
+                 );
+@@ -111,17 +111,14 @@ impl Memory {
+             planned
+         };
+         let documents: Vec<DocumentInput> = planned
+-            .iter()
+-            .filter_map(|fact| fact.document.clone())
++            .iter_mut()
++            .filter_map(|fact| fact.document.take())
+             .collect();
+         let before = self.core.revision();
+         if !documents.is_empty() {
+             self.core.memorize_documents(documents)?;
+         }
+-        let written: Vec<&Planned> = planned
+-            .iter()
+-            .filter(|fact| fact.document.is_some())
+-            .collect();
++        let written: Vec<&Planned> = planned.iter().filter(|fact| !fact.idempotent).collect();
+         if !written.is_empty() {
+             self.settle(before, 1, |index| {
+                 // Other facts' stamps can name a replaced fact; when the index links it to
+@@ -154,14 +151,12 @@ impl Memory {
+                         })
+                     };
+                     // `lookup` borrows the index immutably, so resolve before inserting.
+-                    let hints: Vec<(String, Millis, Millis)> = fact
++                    let known: HashMap<String, (Millis, Millis)> = fact
+                         .stamp
+                         .superseded_by
+                         .iter()
+-                        .filter_map(|id| lookup(id).map(|(e, i)| (id.clone(), e, i)))
++                        .filter_map(|id| lookup(id).map(|times| (id.clone(), times)))
+                         .collect();
+-                    let known: HashMap<String, (Millis, Millis)> =
+-                        hints.into_iter().map(|(id, e, i)| (id, (e, i))).collect();
+                     index.insert(&fact.id, &fact.stamp, &|id| known.get(id).copied());
+                 }
+                 true
+@@ -240,7 +235,7 @@ impl Memory {
+             explicit.len() <= MAX_LINKS,
+             "at most {MAX_LINKS} supersedes"
+         );
+-        let metadata_bytes = serde_json::to_vec(&Value::Object(user_metadata.clone()))?;
++        let metadata_bytes = serde_json::to_vec(&user_metadata)?;
+         let embedding_bytes: Vec<u8> = input
+             .embedding
+             .iter()
+diff --git a/src/core/storage.rs b/src/core/storage.rs
+index 899decc1..80bf2a17 100644
+--- a/src/core/storage.rs
++++ b/src/core/storage.rs
+@@ -20,6 +20,23 @@ pub(crate) const FORMAT_MANIFEST: &str = "format.json";
+ pub(crate) const FORMAT_MAGIC: &str = "HMS_ARENA";
+ pub(crate) const STORAGE_FORMAT_VERSION: u32 = 4;
+ 
++pub(crate) fn list_segments(dir: &Path) -> Result<Vec<usize>> {
++    let mut ids = Vec::new();
++    for entry in std::fs::read_dir(dir)? {
++        let name = entry?.file_name();
++        if let Some(id) = name
++            .to_str()
++            .and_then(|name| name.strip_prefix("seg_"))
++            .and_then(|value| value.strip_suffix(".bin"))
++            .and_then(|value| value.parse::<usize>().ok())
++        {
++            ids.push(id);
++        }
++    }
++    ids.sort_unstable();
++    Ok(ids)
++}
++
+ /// The fixed segment size of format 3, and the step by which a format-4 active segment's
+ /// file grows toward its declared size.
+ pub(crate) const SEGMENT_SIZE: usize = 64 * 1024 * 1024;
+@@ -157,23 +174,19 @@ impl PersistentArena {
+     pub(crate) fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+         let base = path.as_ref().to_path_buf();
+         std::fs::create_dir_all(&base)?;
+-        let manifest = Self::validate_or_create_manifest(&base)?;
+         let data_path = super::durable_file::arena_generation(&base)?;
++        let ids = list_segments(&data_path)?;
++        ensure!(
++            ids.iter().enumerate().all(|(expected, &id)| expected == id),
++            "arena segments are not contiguous from 0: {ids:?}"
++        );
++        let manifest = Self::validate_or_create_manifest(&base)?;
+         if let Some(store) = base.parent() {
+             super::durable_file::verify_manifests(store, &base)?;
+         }
+ 
+-        let mut id = 0;
+-        loop {
+-            let p = data_path.join(format!("seg_{}.bin", id));
+-            if !p.exists() {
+-                break;
+-            }
+-            id += 1;
+-        }
+-
+-        let active_id = if id > 0 { id - 1 } else { 0 };
+-        let mut segments = Vec::new();
++        let active_id = ids.last().copied().unwrap_or(0);
++        let mut segments = Vec::with_capacity(active_id);
+ 
+         for i in 0..active_id {
+             let p = data_path.join(format!("seg_{}.bin", i));
+@@ -188,15 +201,16 @@ impl PersistentArena {
+         let file = OpenOptions::new()
+             .read(true)
+             .write(true)
+-            .create(true)
++            .create(ids.is_empty())
+             .truncate(false)
+-            .open(&active_path)?;
++            .open(&active_path)
++            .with_context(|| format!("opening arena segment {}", active_path.display()))?;
++        let length = file.metadata()?.len();
++        ensure!(
++            length <= manifest.segment_size as u64,
++            "active segment exceeds its declared size"
++        );
+         let active_capacity = if manifest.version >= 4 && INCREMENTAL_ALLOCATION {
+-            let length = file.metadata()?.len();
+-            ensure!(
+-                length <= manifest.segment_size as u64,
+-                "active segment exceeds its declared size"
+-            );
+             usize::try_from(length)
+                 .context("arena capacity exceeds address space")?
+                 .max(SEGMENT_SIZE)
+@@ -207,11 +221,13 @@ impl PersistentArena {
+         };
+         // A reopened segment already has its durable length (growth syncs it); only a new or
+         // resized file needs the length change and the full sync.
+-        let length = file.metadata()?.len();
+         if length != active_capacity as u64 {
+             file.set_len(active_capacity as u64)?;
+             file.sync_all()?;
+         }
++        if ids.is_empty() {
++            super::durable_file::sync_directory(&data_path)?;
++        }
+         let mut active = ActiveSegment::new(file)?;
+         let mut_map = &mut active.map;
+ 
+diff --git a/src/core/storage/recovery_tests.rs b/src/core/storage/recovery_tests.rs
+index a91e1614..83960beb 100644
+--- a/src/core/storage/recovery_tests.rs
++++ b/src/core/storage/recovery_tests.rs
+@@ -3,6 +3,126 @@
+ 
+ use super::*;
+ 
++#[test]
++fn segment_gaps_are_rejected_without_changing_the_arena() -> Result<()> {
++    use std::io::Read;
++
++    for missing_zero in [false, true] {
++        let dir = tempfile::tempdir()?;
++        let arena = PersistentArena::new(dir.path())?;
++        arena.write_slice(b"acknowledged history")?;
++        drop(arena);
++        let original = dir.path().join("seg_0.bin");
++        if missing_zero {
++            std::fs::rename(&original, dir.path().join("seg_1.bin"))?;
++        } else {
++            std::fs::write(dir.path().join("seg_2.bin"), b"later history")?;
++        }
++        let manifest = std::fs::read(dir.path().join(FORMAT_MANIFEST))?;
++        let ids = if missing_zero { vec![1] } else { vec![0, 2] };
++        let mut before = Vec::new();
++        for id in &ids {
++            let path = dir.path().join(format!("seg_{id}.bin"));
++            let mut file = File::open(&path)?;
++            let mut prefix = Vec::new();
++            (&mut file).take(64).read_to_end(&mut prefix)?;
++            before.push((path, file.metadata()?.len(), prefix));
++        }
++
++        let error = PersistentArena::new(dir.path()).err().expect("segment gap");
++        assert!(error.to_string().contains("not contiguous"), "{error:#}");
++        assert_eq!(std::fs::read(dir.path().join(FORMAT_MANIFEST))?, manifest);
++        if missing_zero {
++            assert!(!original.exists());
++        } else {
++            assert!(!dir.path().join("seg_1.bin").exists());
++        }
++        for (path, length, prefix) in before {
++            let mut file = File::open(path)?;
++            let mut actual = Vec::new();
++            (&mut file).take(64).read_to_end(&mut actual)?;
++            assert_eq!(file.metadata()?.len(), length);
++            assert_eq!(actual, prefix);
++        }
++    }
++    Ok(())
++}
++
++#[test]
++fn noncanonical_segment_names_cannot_create_a_new_active_segment() -> Result<()> {
++    for alias in ["seg_00.bin", "seg_+0.bin"] {
++        let dir = tempfile::tempdir()?;
++        let arena = PersistentArena::new(dir.path())?;
++        let offset = arena.write_slice(b"acknowledged history")?;
++        drop(arena);
++        let canonical = dir.path().join("seg_0.bin");
++        let renamed = dir.path().join(alias);
++        std::fs::rename(&canonical, &renamed)?;
++
++        assert!(PersistentArena::new(dir.path()).is_err());
++        assert!(!canonical.exists());
++        std::fs::rename(renamed, canonical)?;
++        let restored = PersistentArena::new(dir.path())?;
++        assert_eq!(restored.read_frame(offset)?.0, b"acknowledged history");
++    }
++    Ok(())
++}
++
++#[test]
++fn active_segment_size_bounds_preserve_oversized_files() -> Result<()> {
++    use std::io::{Read, Seek, SeekFrom, Write};
++
++    for (version, length) in [
++        (3, SEGMENT_SIZE - 1),
++        (3, SEGMENT_SIZE),
++        (3, SEGMENT_SIZE + 1),
++        (2, LEGACY_SEGMENT_SIZE + 1),
++        (4, LEGACY_SEGMENT_SIZE + 1),
++    ] {
++        let dir = tempfile::tempdir()?;
++        let segment_size = if version == 3 {
++            SEGMENT_SIZE
++        } else {
++            LEGACY_SEGMENT_SIZE
++        };
++        let manifest = FormatManifest {
++            magic: FORMAT_MAGIC.into(),
++            version,
++            segment_size,
++        };
++        super::super::durable_file::atomic_write(
++            &dir.path().join(FORMAT_MANIFEST),
++            &serde_json::to_vec(&manifest)?,
++        )?;
++        let path = dir.path().join("seg_0.bin");
++        let mut file = File::create(&path)?;
++        file.set_len(length as u64)?;
++        if length > segment_size {
++            file.seek(SeekFrom::End(-1))?;
++            file.write_all(&[0xa5])?;
++        }
++        drop(file);
++
++        let opened = PersistentArena::new(dir.path());
++        if length <= segment_size {
++            assert_eq!(opened?.stats().capacity_bytes, segment_size);
++        } else {
++            let error = opened.err().expect("oversized active segment");
++            assert!(
++                error.to_string().contains("exceeds its declared size"),
++                "{error:#}"
++            );
++            let mut file = File::open(path)?;
++            assert_eq!(file.metadata()?.len(), length as u64);
++            file.seek(SeekFrom::End(-1))?;
++            let mut sentinel = [0];
++            file.read_exact(&mut sentinel)?;
++            assert_eq!(sentinel, [0xa5]);
++        }
++    }
++    Ok(())
++}
++
+ #[test]
+ fn torn_append_with_only_a_landed_end_marker_is_recoverable() -> Result<()> {
+     use crate::core::format::scan::{scan_segment, SegmentEnd};

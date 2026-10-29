@@ -1,0 +1,4 @@
+
+> holographic-memory@0.6.4 test:types
+> tsc --noEmit --strict --target es2022 --module nodenext --moduleResolution nodenext --types node tests/node/types.test.mts tests/node/memory-types.test.mts
+

@@ -1,0 +1,21 @@
+
+running 6 tests
+test cose_accepts_an_unauthenticated_algorithm_header ... COSE with algorithm only in unprotected header accepted: true
+ok
+test cose_accepts_unprocessed_critical_header ... COSE with absent unknown critical parameter accepted: true
+ok
+test exact_vector_top1_omits_the_higher_cosine ... exact k=1: a0 0.999999995000; k=10 best: z 1.000000000000
+ok
+test filtered_index_norm_overflows_in_debug ... 
+thread 'filtered_index_norm_overflows_in_debug' (26768992) panicked at src/core/qgraph/filter.rs:316:21:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+filtered index caught arithmetic panic: true
+ok
+test provenance_reuses_a_deleted_credentials_revocation_slot ... old status slot: 0; new status slot: 0; new credential already revoked: true
+ok
+test two_memory_wrappers_both_accept_conflicting_id ... same-id concurrent outcomes: Ok(Remembered { id: "shared-id", created: true, supersedes: [], superseded_by: [], ingest_time: 1793298394684 }); Ok(Remembered { id: "shared-id", created: true, supersedes: [], superseded_by: [], ingest_time: 1793298394684 })
+ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+

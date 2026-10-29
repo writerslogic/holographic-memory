@@ -1,0 +1,238 @@
+{
+  "audit_date": "2026-10-29",
+  "head": "a736d982558c79e961c5b4f816fe554af76b6222",
+  "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+  "host": "Darwin arm64",
+  "rust_validation": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--features",
+      "security,provenance,conversation-memory,server,mcp",
+      "--lib",
+      "--bin",
+      "hms-server",
+      "--bin",
+      "hms-mcp",
+      "--test",
+      "reliability",
+      "--test",
+      "format_crash",
+      "--test",
+      "format_upgrade_regressions",
+      "--test",
+      "memory_api",
+      "--test",
+      "conversation_memory",
+      "--test",
+      "store_lifecycle",
+      "--test",
+      "allocation_bounds",
+      "--test",
+      "server_abuse",
+      "--test",
+      "server_ops",
+      "--test",
+      "server_api"
+    ],
+    "exit_code": 0,
+    "passed": 894,
+    "failed": 0,
+    "ignored": 12,
+    "harnesses": [
+      {
+        "harness": "unittests src/lib.rs",
+        "status": "ok",
+        "passed": 735,
+        "failed": 0,
+        "ignored": 12,
+        "elapsed_seconds": 177.5
+      },
+      {
+        "harness": "unittests src/bin/hms-mcp.rs",
+        "status": "ok",
+        "passed": 16,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 0.38
+      },
+      {
+        "harness": "unittests src/bin/hms-server/main.rs",
+        "status": "ok",
+        "passed": 44,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 3.07
+      },
+      {
+        "harness": "tests/allocation_bounds.rs",
+        "status": "ok",
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 0.14
+      },
+      {
+        "harness": "tests/conversation_memory.rs",
+        "status": "ok",
+        "passed": 15,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 0.92
+      },
+      {
+        "harness": "tests/format_crash.rs",
+        "status": "ok",
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 38.94
+      },
+      {
+        "harness": "tests/format_upgrade_regressions.rs",
+        "status": "ok",
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 3.99
+      },
+      {
+        "harness": "tests/memory_api.rs",
+        "status": "ok",
+        "passed": 29,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 3.01
+      },
+      {
+        "harness": "tests/reliability.rs",
+        "status": "ok",
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 10.57
+      },
+      {
+        "harness": "tests/server_abuse.rs",
+        "status": "ok",
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 13.42
+      },
+      {
+        "harness": "tests/server_api.rs",
+        "status": "ok",
+        "passed": 13,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 1.83
+      },
+      {
+        "harness": "tests/server_ops.rs",
+        "status": "ok",
+        "passed": 13,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 4.17
+      },
+      {
+        "harness": "tests/store_lifecycle.rs",
+        "status": "ok",
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "elapsed_seconds": 0.88
+      }
+    ],
+    "ignored_test_names": [
+      "test core::documents::search::latency_bench::lexical_latency_microbench ... ignored",
+      "test core::engine::document_memory_census::reopened_index_memory_census ... ignored, opens the diagnostic index supplied by HMS_MEMORY_INDEX",
+      "test core::qgraph::fastscan::tests::block_scan_microbenchmark ... ignored, microbenchmark: run in release with --ignored --nocapture",
+      "test core::qgraph::kernels::tests::dot_kernel_microbench ... ignored, microbenchmark: run in release with --ignored --nocapture",
+      "test core::qgraph::kernels::tests::microbench_fwht ... ignored",
+      "test core::qgraph::kernels::tests::microbench_i8_x4 ... ignored",
+      "test core::qgraph::kernels::tests::raw_screen_microbenchmark ... ignored, microbenchmark: run in release with --ignored --nocapture",
+      "test core::qgraph::tests::build_visited_reset_workload ... ignored, synthetic visited-reset timing diagnostic; run in isolation with --release",
+      "test core::qgraph::update::delta::tests::delta_search_live_set ... ignored, development delta search timing measurement",
+      "test core::qgraph::update::merge::tests::replacement_entry_large_live_set ... ignored, development memory and timing measurement",
+      "test core::qgraph::update::tests::consolidation_live_set_peak ... ignored, development consolidation memory and timing measurement",
+      "test core::qgraph::vertex::tests::microbench_pool ... ignored"
+    ]
+  },
+  "typescript": {
+    "command": [
+      "npm",
+      "run",
+      "test:types"
+    ],
+    "exit_code": 0
+  },
+  "version_unit_tests": {
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--offline",
+      "python",
+      "-m",
+      "unittest",
+      "scripts/ci/test_versions.py"
+    ],
+    "exit_code": 0,
+    "passed": 2
+  },
+  "safe_boundary_diagnostics": {
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--offline",
+      "python",
+      "docs/research/technical-audit-20261029/boundary_checks.py"
+    ],
+    "exit_code": 0,
+    "mapper_collisions_reproduced": 2,
+    "unsafe_native_writes_executed": false
+  },
+  "rust_defect_diagnostics": {
+    "exit_code": 0,
+    "reproduced": 6,
+    "assertion_semantics": "These assert broken current behavior for audit reproduction, not correct behavior.",
+    "command_manifest": "reproduction-command.json"
+  },
+  "production_diff_preserved": true,
+  "working_tree_diff_sha256": "ac8e4b6317da79bb8cff377747b28f77dcc9cac43ec69f05eb21299bd1c199a5",
+  "paid_services_used": false,
+  "limits": [
+    "Not all features/platforms/bindings or release gates executed",
+    "No power-cut or snapshot-restore process-kill reproduction",
+    "No live benchmark, model download or paid API call",
+    "Prior benchmark/interop artifacts distinguished from fresh checks"
+  ],
+  "artifact_sha256": {
+    "boundary_checks.log": "ca28ce0a57d15f62685363b03b2ce21c4ee3e0ae2f051e34dd40d1715b7b2dae",
+    "boundary_checks.py": "537129593d9ce00d24c28d15ec7fea65be31ba33438781209b92b5769d0dda43",
+    "REPORT.md": "0b4b3f4c14c0e3b22d970db9cafdcc4f8c5f0c8a01baf1e9ba0f35ae835b6f74",
+    "reproduction-command.json": "9ab87cf9b7891ee643885bf5214929190dca5b6c715c4087f3b58c79a30d2089",
+    "reproductions.log": "37fba3560e4dc043f61672e26ce6c6745d40ac6bdd894fdf13f6034b318245f2",
+    "reproductions.rs": "fb863a6f71296550e9c137cf486761b0f114c025b1291939c606340fdf4a4b3f",
+    "reviewed-working-tree.patch": "ac8e4b6317da79bb8cff377747b28f77dcc9cac43ec69f05eb21299bd1c199a5",
+    "scorecard.json": "660911c10ba777ca6968d8e292a2716e0c991b929f87b9729ad088c0eb91fb69",
+    "source-manifest.json": "e4d67e9a4ce6c017cc35596760e4321b61044007e6dd6700abaecf6823290bfe",
+    "typecheck.log": "263aec849dd34b394d0b0bae44060e445da9e11b8aa99d4d272f28e832b82e8d",
+    "validation.log": "5ebfa9e09e71a9216041145750a5b7efe737ec8170e6aba8f44dacbdf9353c3b",
+    "version_checks.log": "b3fb1021e60663ee9427fd2c32bf51a92c7b65fc02086f27b8959a5b01316395"
+  },
+  "report_quality_gate": {
+    "sections": 9,
+    "metric_rows": 30,
+    "numeric_roadmap_priorities_checked": 17,
+    "local_links_valid": true,
+    "tracked_source_unchanged": true,
+    "innovation_excluded_from_current_quality": true,
+    "restore_kill_injection_unverified": true
+  }
+}

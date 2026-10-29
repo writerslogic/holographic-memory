@@ -1,0 +1,17 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 44.11s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-59cf9a6bb4b9f8e4)
+
+running 8 tests
+test core::memory_api::tests::concurrent_wrappers_cannot_both_create_different_facts_with_one_id ... ok
+test core::memory_api::tests::concurrent_subject_updates_replan_against_the_committed_predecessor ... ok
+test core::memory_api::tests::consolidation_replans_when_its_source_changes_during_the_policy_callback ... ok
+test core::memory_api::tests::forgetting_policy_replans_instead_of_deleting_a_replaced_source ... ok
+test core::memory_api::tests::conditional_changes_never_overwrite_a_raw_core_write ... ok
+test core::memory_api::tests::replacing_a_fact_leaves_the_index_equal_to_a_rebuild ... ok
+test core::memory_api::tests::continuous_foreign_writes_return_contention_without_a_stale_commit ... ok
+test core::memory_api::tests::reentrant_policy_callbacks_do_not_hold_the_memory_index_lock ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 768 filtered out; finished in 0.34s
+

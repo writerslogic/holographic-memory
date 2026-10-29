@@ -45,6 +45,15 @@ merged correctly. Reduce the selection or use a suitable server-side search cont
 
 ## Persistence and format
 
+New stores use schema 5 for scoped meaning maintenance. Existing schema 2/3/4 stores retain
+their schema during ordinary opens and writes; durable governance returns explicit upgrade
+guidance. Upgrade a copy with `hms-format plan /path/to/store`, then
+`hms-format upgrade /path/to/store /path/to/upgraded-store`. Verify the copy before switching
+paths. The upgrade preserves source bytes and existing checkpoints; it does not reembed or
+relabel model vectors. Older binaries reject schema 5 instead of omitting its scoped mutations.
+Node offers `governMemoryAsync()` for maintenance off the event loop; the synchronous
+`governMemory()` remains available and reports checked errors.
+
 Failed WASM saves retain the in-memory store for retry. Mobile snapshots reject destinations
 within the live store after canonical path resolution. The server restores a tenant through a
 recoverable intent rather than relying on in-process rename rollback.

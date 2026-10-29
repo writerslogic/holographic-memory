@@ -1,0 +1,14 @@
+{
+  "importer_namespace_collision": [
+    "a::b::c",
+    "a::b::c"
+  ],
+  "importer_part_collision": [
+    "doc#part-0",
+    "doc#part-0"
+  ],
+  "dotnet_x64_document_struct_bytes": 120,
+  "dotnet_unchecked_int32_document_allocation_bytes": 0,
+  "dotnet_unchecked_int32_id_allocation_bytes": 0,
+  "unsafe_native_writes_executed": false
+}

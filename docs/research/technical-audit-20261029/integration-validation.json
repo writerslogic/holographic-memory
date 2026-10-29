@@ -1,0 +1,66 @@
+{
+  "format_version": 1,
+  "fixture_sha256": "339f1d9643da4f320a1fb84661e1158e126e3821d0e4eaa8e58d4d264a9a17b3",
+  "fixture_cases": 19,
+  "fresh_opens": 3,
+  "scope": "Frozen synthetic offline native lifecycle; no model answer-quality claim",
+  "completed": {
+    "rust_native": {
+      "passed": 1,
+      "cases": 19,
+      "log": "remediation-lifecycle-rerun.log"
+    },
+    "real_http": {
+      "passed": 4,
+      "lifecycle_cases": 19,
+      "log": "remediation-lifecycle-rerun.log"
+    },
+    "memory_api_integration": {
+      "passed": 29,
+      "log": "remediation-lifecycle.log"
+    },
+    "focused_rust": {
+      "library": 763,
+      "mcp": 19,
+      "http": 51,
+      "existing_development_ignores": 12,
+      "log": "remediation-focused.log"
+    },
+    "memory_policy_regressions": {
+      "passed": 8,
+      "log": "remediation-policies.log"
+    },
+    "openapi_independent": {
+      "actual_pairs": 12,
+      "invalid_shapes": 8,
+      "log": "remediation-schema.log"
+    },
+    "docs_generator": {
+      "passed": 18,
+      "log": "remediation-doc-tests.log"
+    },
+    "strict_docs": {
+      "passed": true,
+      "rustdoc_embedding": "separate CI check",
+      "log": "remediation-doc-build.log"
+    },
+    "msrv": {
+      "version": "1.89",
+      "command": "cargo +1.89 check --locked --offline --no-default-features",
+      "log": "remediation-msrv.log"
+    }
+  },
+  "pending_integration": [
+    "final default/all-features tests and clippy",
+    "full format/upgrade/layout gates after schema 5",
+    "expanded MCP 27-case suite",
+    "Node rebuild/generated declarations/public API/package checks including governanceAsync and lifecycle",
+    "committed-failure replay regression after harness authentication fix"
+  ],
+  "limits": [
+    "Completed local runs pin their own preceding source; authoritative final PR checks must verify the integrated head.",
+    "No paid API/cloud jobs, downloaded model weights or held-out live benchmark.",
+    "Historical audit score is retained, not a post-fix measurement.",
+    "Timing is descriptive execution evidence; no performance superiority claim."
+  ]
+}
