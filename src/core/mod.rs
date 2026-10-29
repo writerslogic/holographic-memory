@@ -69,6 +69,7 @@ pub mod private_query;
 pub mod provenance;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod qgraph;
+pub mod query_limits;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod role;
 #[cfg(not(target_arch = "wasm32"))]

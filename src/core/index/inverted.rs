@@ -72,6 +72,7 @@ impl SparseInvertedIndex {
 
     /// Perform k-NN query using the epoch-stamped accumulator strategy: the `k` most similar
     /// document slots, most similar first.
+    #[cfg(test)]
     pub fn query(
         &self,
         query_dims: &[u32],

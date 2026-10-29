@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::hash::FastMap;
+use crate::core::query_limits::{QueryBudget, QueryLimitExceeded};
 use crate::core::sync::RwLock;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -155,6 +156,44 @@ impl TripleStore {
             false
         });
         found
+    }
+
+    pub(crate) fn visit_bounded(
+        &self,
+        subject: Option<&str>,
+        relation: Option<&str>,
+        object: Option<&str>,
+        budget: &mut QueryBudget,
+        mut visitor: impl FnMut(&TripleRecord, &mut QueryBudget) -> Result<(), QueryLimitExceeded>,
+    ) -> Result<(), QueryLimitExceeded> {
+        let triples = self.triples.read();
+        let mut accept = |t: &TripleRecord| {
+            budget.work(1)?;
+            if !t.deleted
+                && subject.is_none_or(|s| t.subject_id == s)
+                && relation.is_none_or(|r| t.relation_id == r)
+                && object.is_none_or(|o| t.object_id == o)
+            {
+                visitor(t, budget)?;
+            }
+            Ok(())
+        };
+        let indexed = subject
+            .map(|s| (&self.by_subject, s))
+            .or_else(|| relation.map(|r| (&self.by_relation, r)))
+            .or_else(|| object.map(|o| (&self.by_object, o)));
+        if let Some((index, key)) = indexed {
+            if let Some(indices) = index.read().get(key) {
+                for &i in indices {
+                    accept(&triples[i])?;
+                }
+            }
+        } else {
+            for triple in triples.iter() {
+                accept(triple)?;
+            }
+        }
+        Ok(())
     }
 
     pub(crate) fn has_composite(&self, id: &str) -> bool {

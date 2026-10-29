@@ -31,3 +31,23 @@ The standalone `FilteredIndex` accepts dimensions from 1 through 66,051 so every
 u8 Euclidean distance fits its `u32` result. It accepts at most 1,048,576 labels in its
 dense label tables, validates training and CSR shapes, and bounds result capacity by the
 live candidate count. Use a compact label mapping for sparse external label identifiers.
+
+## Reasoning budgets
+
+Use `multi_hop_with_limits` and `synthesize_concepts_with_limits` with
+`holographic_memory::core::query_limits::QueryLimits` to handle resource limits explicitly.
+Their defaults are 10,000,000 work units, 16,384 frontier entries and 64 MiB of accounted
+bytes. Work includes scanned triples, candidate visits, sorting and comparisons. Byte
+accounting conservatively covers retained inputs, intermediate frontiers and working
+buffers; it is not a process RSS measurement.
+
+Budget exhaustion returns an error identifying the resource and limit. Results are
+complete or absent because of the error; there are no silently truncated answers.
+Multi-hop retrieval preserves distinct paths even when they reach the same endpoint.
+Concept synthesis generates one candidate frontier per seed instead of retaining every
+pair of neighbors. Common dimensions can still require quadratic work, so the work
+limit remains necessary.
+
+The legacy Rust `multi_hop` and `synthesize_concepts` signatures retain their `Vec` return
+types and apply the default limits. They panic on budget exhaustion. Call the checked
+companions in applications that must report or recover from an exhausted budget.
