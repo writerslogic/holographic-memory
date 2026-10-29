@@ -233,6 +233,29 @@ export function defineSuite({ test, api, FileStorage, scratch }) {
     await copy.close();
   });
 
+  test("a failed encryption change cannot close or export in the previous plaintext mode", async () => {
+    let bytes;
+    const storage = {
+      async get() { return null; },
+      async set(_key, value) { bytes = value.slice(); },
+      async delete() {},
+    };
+    const store = await filled(api, { storage, autosave: false });
+    const change = store.setEncryption({ passphrase: "pw", kdf: "unknown" });
+    const outcomes = await Promise.allSettled([change, store.close()]);
+    assert.deepEqual(outcomes.map((outcome) => outcome.status), ["rejected", "rejected"]);
+    assert.equal(bytes, undefined);
+    assert.equal(await store.hasDocument("rust"), true);
+    await assert.rejects(store.save(), /unknown kdf/);
+    await assert.rejects(store.exportSnapshot(), /unknown kdf/);
+    const encryption = { passphrase: "retry encryption", iterations: 1000 };
+    await store.setEncryption(encryption);
+    await store.close();
+    const copy = await api.openStore({ snapshot: bytes, encryption });
+    assert.equal((await copy.stats()).documents, 5);
+    await copy.close();
+  });
+
   for (const kdf of ["pbkdf2", "argon2id"]) {
     test(`encrypted persistence with ${kdf}`, async () => {
       const dir = await scratch();

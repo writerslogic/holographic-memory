@@ -58,6 +58,7 @@ export class HolographicStore {
   #dirty = false;
   #saving: Promise<void> = Promise.resolve();
   #changingEncryption: Promise<void> = Promise.resolve();
+  #encryptionFailure: { error: unknown } | null = null;
   #closing: Promise<void> | null = null;
   #autosaveError: unknown;
 
@@ -206,6 +207,8 @@ export class HolographicStore {
 
   /** The serialized store: the exact bytes `save()` writes (encrypted when encryption is on). */
   async exportSnapshot(): Promise<Uint8Array> {
+    await this.#changingEncryption;
+    this.#encryptionReady();
     const plain = this.#store.exportBytes();
     return this.#cipher ? seal(this.#cipher, plain) : plain;
   }
@@ -216,10 +219,17 @@ export class HolographicStore {
     const run = this.#changingEncryption.then(async () => {
       const cipher = options ? await newCipher(options, this.#getWasm) : null;
       this.#cipher = cipher;
+      this.#encryptionFailure = null;
       this.#changed();
     });
-    this.#changingEncryption = run.catch(() => undefined);
+    this.#changingEncryption = run.catch((error: unknown) => {
+      this.#encryptionFailure = { error };
+    });
     return run;
+  }
+
+  #encryptionReady(): void {
+    if (this.#encryptionFailure) throw this.#encryptionFailure.error;
   }
 
   /** Writes the snapshot to the storage adapter now. Concurrent saves run in order. */
@@ -230,6 +240,7 @@ export class HolographicStore {
     this.#timer = undefined;
     const run = this.#saving.then(async () => {
       await this.#changingEncryption;
+      this.#encryptionReady();
       this.#dirty = false;
       try {
         await storage.set(this.#key, await this.exportSnapshot());
@@ -246,6 +257,7 @@ export class HolographicStore {
   /** Saves any pending change and waits for in-flight saves. */
   async flush(): Promise<void> {
     await this.#changingEncryption;
+    this.#encryptionReady();
     do {
       if (this.#storage && (this.#dirty || this.#timer !== undefined)) await this.save();
       await this.#saving;
