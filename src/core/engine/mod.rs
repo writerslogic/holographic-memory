@@ -719,13 +719,30 @@ impl HmsCore {
         self.dimensions
     }
 
-    /// Encode text into a sparse hypervector using multi-scale n-grams and word tokens.
+    /// Encode text; panics on model/resource failure. Use `try_encode_text` for fallible models.
     pub fn encode_text(&self, text: &str) -> EntangledHVec {
+        self.try_encode_text(text)
+            .expect("text encoding failed; use try_encode_text to handle model or resource errors")
+    }
+
+    pub fn try_encode_text(&self, text: &str) -> Result<EntangledHVec> {
         #[cfg(feature = "local-embed")]
         if self.config.text_encoder == super::encoding::TextEncoder::LocalEmbedV1 {
-            return self.encode_text_with_embedder(text);
+            return Ok(self.encode_texts_with_embedder(&[text])?.remove(0));
         }
-        self.config.text_encoder.encode(text, self.dimensions)
+        Ok(self.config.text_encoder.encode(text, self.dimensions))
+    }
+
+    pub(crate) fn try_encode_texts(&self, texts: &[&str]) -> Result<Vec<EntangledHVec>> {
+        use rayon::prelude::*;
+        #[cfg(feature = "local-embed")]
+        if self.config.text_encoder == super::encoding::TextEncoder::LocalEmbedV1 {
+            return self.encode_texts_with_embedder(texts);
+        }
+        texts
+            .par_iter()
+            .map(|text| self.try_encode_text(text))
+            .collect()
     }
 
     /// Compute word, sentence, syllable, and character-class counts for text.
@@ -791,7 +808,7 @@ impl HmsCore {
         mutation::validate_public_id(id)?;
         let mut mutations = vec![Mutation::Vector {
             id: id.to_owned(),
-            vector: self.encode_text(text),
+            vector: self.try_encode_text(text)?,
         }];
         let mut children = Vec::new();
         if self.config.meaning.auto_decompose {

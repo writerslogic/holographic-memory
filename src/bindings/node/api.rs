@@ -190,9 +190,9 @@ impl HolographicMemorySystem {
 
     #[napi]
     // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
-    pub fn explain_query(&self, text: String, k: u32) -> QueryExplanation {
-        let query = self.core.encode_text(&text);
-        self.core.explain_query(&query, k)
+    pub fn explain_query(&self, text: String, k: u32) -> Result<QueryExplanation> {
+        let query = self.core.try_encode_text(&text).map_err(napi_err)?;
+        Ok(self.core.explain_query(&query, k))
     }
 
     #[napi]
@@ -236,7 +236,7 @@ impl HolographicMemorySystem {
             let _span =
                 info_span!("memorize_text", id = %id, trace_id = trace_id.as_deref().unwrap_or(""))
                     .entered();
-            let vec = core.encode_text(&text);
+            let vec = core.try_encode_text(&text)?;
             core.memorize(id, vec)
         })
         .await
@@ -258,7 +258,7 @@ impl HolographicMemorySystem {
             .to_owned();
         run_async(move || {
             let _span = info_span!("memorize_text_buffer", id = %id, trace_id = trace_id.as_deref().unwrap_or("")).entered();
-            let vec = core.encode_text(&text_str);
+            let vec = core.try_encode_text(&text_str)?;
             core.memorize(id, vec)
         })
         .await
@@ -352,7 +352,7 @@ impl HolographicMemorySystem {
         run_async(move || {
             let _span =
                 info_span!("query", k = k, trace_id = trace_id.as_deref().unwrap_or("")).entered();
-            let q_vec = core.encode_text(&text);
+            let q_vec = core.try_encode_text(&text)?;
             let results = core.query(&q_vec, k);
             Ok(results)
         })
@@ -396,7 +396,10 @@ impl HolographicMemorySystem {
     ) -> Result<Vec<Vec<RetrievalResult>>> {
         let core = self.core.clone();
         run_async(move || {
-            let queries: Vec<EntangledHVec> = texts.iter().map(|t| core.encode_text(t)).collect();
+            let queries: Vec<EntangledHVec> = texts
+                .iter()
+                .map(|t| core.try_encode_text(t))
+                .collect::<anyhow::Result<_>>()?;
             Ok(core.query_batch(&queries, k))
         })
         .await
@@ -425,7 +428,7 @@ impl HolographicMemorySystem {
     pub async fn analyze_components(&self, text: String) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
-            let vec = core.encode_text(&text);
+            let vec = core.try_encode_text(&text)?;
             let results = core.analyze_components(&vec);
             Ok(results)
         })
@@ -442,11 +445,15 @@ impl HolographicMemorySystem {
     ) -> Result<Vec<Option<String>>> {
         let core = self.core.clone();
         run_async(move || {
-            let vec = core.encode_text(&product_text);
+            let vec = core.try_encode_text(&product_text)?;
             let domain_vecs: Vec<Vec<EntangledHVec>> = domains
                 .iter()
-                .map(|d| d.iter().map(|s| core.encode_text(s)).collect())
-                .collect();
+                .map(|d| {
+                    d.iter()
+                        .map(|s| core.try_encode_text(s))
+                        .collect::<anyhow::Result<_>>()
+                })
+                .collect::<anyhow::Result<_>>()?;
             let results = core.factorize_diffusion(&vec, &domain_vecs, max_iter as usize);
 
             // Map EntangledHVec results back to IDs from the domain strings
@@ -512,7 +519,7 @@ impl HolographicMemorySystem {
         run_async(move || {
             let _span =
                 info_span!("find_analogy", trace_id = trace_id.as_deref().unwrap_or("")).entered();
-            let results = core.find_analogy(&a, &b, &c, k.unwrap_or(5));
+            let results = core.try_find_analogy(&a, &b, &c, k.unwrap_or(5))?;
             Ok(results)
         })
         .await
@@ -616,7 +623,10 @@ impl HolographicMemorySystem {
     pub async fn bundle_texts(&self, texts: Vec<String>) -> Result<Vec<u32>> {
         let core = self.core.clone();
         run_async(move || {
-            let vecs: Vec<EntangledHVec> = texts.iter().map(|t| core.encode_text(t)).collect();
+            let vecs: Vec<EntangledHVec> = texts
+                .iter()
+                .map(|t| core.try_encode_text(t))
+                .collect::<anyhow::Result<_>>()?;
             let bundled = core.bundle(&vecs);
             Ok(bundled.indices().to_vec())
         })
@@ -645,8 +655,8 @@ impl HolographicMemorySystem {
             let known_vecs: Vec<EntangledHVec> = known_subjects
                 .iter()
                 .chain(known_relations.iter())
-                .map(|t| core.encode_text(t))
-                .collect();
+                .map(|t| core.try_encode_text(t))
+                .collect::<anyhow::Result<_>>()?;
             let mut bindings: Vec<(&str, &EntangledHVec)> = Vec::new();
             for (i, v) in known_vecs.iter().enumerate() {
                 if i < known_subjects.len() {
@@ -700,7 +710,7 @@ impl HolographicMemorySystem {
     pub async fn meaning_cleanup(&self, text: String) -> Result<Option<CleanupResultJs>> {
         let core = self.core.clone();
         run_async(move || {
-            let vec = core.encode_text(&text);
+            let vec = core.try_encode_text(&text)?;
             Ok(core
                 .meaning_cleanup(&vec)
                 .map(|(id, confidence)| CleanupResultJs { id, confidence }))
@@ -1042,7 +1052,7 @@ impl HolographicMemorySystem {
     ) -> Result<Vec<RetrievalResult>> {
         let core = self.core.clone();
         run_async(move || {
-            let q_vec = core.encode_text(&text);
+            let q_vec = core.try_encode_text(&text)?;
             core.federated_query(&peer_paths, &q_vec, k)
         })
         .await

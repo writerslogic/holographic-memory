@@ -9,7 +9,7 @@
 use std::sync::Arc;
 
 use holographic_memory::core::embed::testing::{write_tiny, WORDS};
-use holographic_memory::core::embed::{EmbedOptions, Embedder, Pooling, Quantization};
+use holographic_memory::core::embed::{EmbedLimits, EmbedOptions, Embedder, Pooling, Quantization};
 use holographic_memory::core::encoding::TextEncoder;
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
@@ -58,6 +58,81 @@ fn config(path: &std::path::Path, sha: &str) -> HmsConfig {
         }),
         ..HmsConfig::default()
     }
+}
+
+#[test]
+fn embedding_limits_fail_before_mutation_and_batches_share_one_admission() {
+    use holographic_memory::MemorizeBatchItem;
+    let dir = tempfile::tempdir().unwrap();
+    let (pack, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let mut cfg = config(&pack, &sha);
+    cfg.local_embed.as_mut().unwrap().limits = EmbedLimits {
+        max_input_bytes: 64,
+        max_concurrent_calls: 1,
+        ..Default::default()
+    };
+    let path = dir.path().join("bounded").display().to_string();
+    let core = HmsCore::new(1024, Some(path.clone()), Some(cfg.clone())).unwrap();
+    let items: Vec<_> = (0..8)
+        .map(|i| MemorizeBatchItem {
+            id: format!("original-{i}"),
+            text: "cat".into(),
+        })
+        .collect();
+    core.memorize_batch(&items).unwrap();
+    assert_eq!(core.vector_count(), 8);
+    let oversized = "cat ".repeat(17);
+    assert!(core.try_encode_text(&oversized).is_err());
+    assert!(std::panic::catch_unwind(
+        std::panic::AssertUnwindSafe(|| core.encode_text(&oversized))
+    )
+    .is_err());
+    assert!(core.memorize_meaning("meaning", &oversized).is_err());
+    assert!(core
+        .memorize_triplet(
+            "triple".into(),
+            "cat".into(),
+            oversized.clone(),
+            "dog".into()
+        )
+        .is_err());
+    assert!(core
+        .memorize_sequence("sequence".into(), &["cat".into(), oversized.clone()])
+        .is_err());
+    assert!(core
+        .memorize_batch(&[
+            MemorizeBatchItem {
+                id: "tentative".into(),
+                text: "dog".into()
+            },
+            MemorizeBatchItem {
+                id: "rejected".into(),
+                text: oversized.clone()
+            },
+        ])
+        .is_err());
+    assert_eq!(core.vector_count(), 8);
+    assert!(core
+        .query_triplet("cat".into(), oversized.clone(), 10)
+        .is_err());
+    assert!(core.try_find_analogy("cat", "dog", &oversized, 10).is_err());
+    assert!(core.query_sequence(&[oversized], 10).is_err());
+    let query = core.try_encode_text("cat").unwrap();
+    assert_eq!(core.query(&query, 16).len(), 8);
+    assert!(core
+        .query(&query, 16)
+        .iter()
+        .all(|hit| hit.similarity == 1.0));
+    assert!(core.try_encode_text(" \t").unwrap().indices().is_empty());
+    core.flush().unwrap();
+    drop(core);
+    let core = HmsCore::new(1024, Some(path), Some(cfg)).unwrap();
+    assert_eq!(core.vector_count(), 8);
+    assert_eq!(core.query(&query, 16).len(), 8);
+    assert!(core
+        .query(&query, 16)
+        .iter()
+        .all(|hit| hit.similarity == 1.0));
 }
 
 #[test]

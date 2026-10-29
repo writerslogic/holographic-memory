@@ -96,7 +96,7 @@ Follow-up to REPORT.md §IV, on branch `fix/audit-bounded-concerns`, based on th
 | Sidecar effects after commit | Retain the public typed committed outcome and retained-key HTTP replay. Add an actual failed audit-sync create/delete/reopen regression. Explicitly document that reopening does not reconstruct missing sidecar effects, that the replay cache is process-local, and that external repair requires caller-owned durable effect IDs. No automatic outbox or exactly-once delivery claim. |
 | Import resume/synchronization | Existing content-bound prefix checks and owned split replacement remain. Reports now declare observed-stream/source-managed snapshot semantics and retention of source-deleted records. A completed rerun regression proves updates do not accidentally prune absent source records. Identity/core importer suite: 42 pass against the merged baseline's local HTTP binary. |
 | Local pack downloads | Retain unique temporary ownership and per-cache-file single flight. Add local HTTP corruption/retry/concurrency coverage of the actual downloader and cache publication; no model registry or model-weight download. |
-| Embedding resource/fidelity contract | Add positive configurable hard text/byte/token/output/concurrent-call limits, checked allocation sizes and fail-fast admission. Rust/Node/Python report both UTF-8 byte and token truncation in input order. The soft per-forward budget and limits' scope are explicit; numerical agreement is not downstream task equivalence. |
+| Embedding resource/fidelity contract | Add positive configurable hard text/byte/token/output/concurrent-call limits, checked allocation sizes and fail-fast admission. Node rejects numeric coercion/wrap inputs. Rust/Node/Python report both UTF-8 byte and token truncation in input order. Checked sparse encoding propagates failures before durable writes; core batches share one admission instead of exhausting their own call limit. The soft per-forward budget and limits' scope are explicit; numerical agreement is not downstream task equivalence. |
 | Encoder stability | Add opt-in `multiscale-words-v2`, resolving majority ties by frequency descending then coordinate ascending, with independent reference selection, boundary/cache parity, explicit source reencoding and a new golden store. Keep default V1 and all existing goldens unchanged. No claim that legacy equal-key selection is portable across future toolchains. |
 | Privacy/erasure claims | Preserve the existing narrow masking and bundling-only DP threat models. Explicitly distinguish signed engine-operation claims from universal physical erasure; independent cryptographic/finite-precision DP certification remains unverified. |
 
@@ -105,3 +105,8 @@ must pass before publication. Shared binding checks use deterministic two-layer 
 fixtures, not downloaded pretrained weights or a claim of model quality. Caller-owned inputs,
 foreign-runtime copies, separately loaded models, hardware power loss and retained results are
 outside a Rust embedder call's allocation limits.
+
+Local checks pass: embedding25, encoder8, importer42, committed-sidecar1, encoder/migration7,
+golden-format6, ingest2, and checked embedding-store7. All-feature/all-target Clippy passes with
+Rust1.99; strict MkDocs and workflow lint pass. The final binding/runtime and platform checks
+remain the PR's exact-head gate. See [bounded-validation.json](bounded-validation.json).

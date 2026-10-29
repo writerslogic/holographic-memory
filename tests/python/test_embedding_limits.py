@@ -50,3 +50,16 @@ def test_limits_reject_unknown_or_zero_settings_before_loading(pack):
         hm.Embedder(path, sha256=sha, limits={"max_text": 1})
     with pytest.raises(ValueError, match="must be positive"):
         hm.Embedder(path, sha256=sha, limits={"maxTokens": 0})
+
+
+def test_failed_index_batch_preserves_existing_text_and_does_not_add_prefix(pack):
+    path, sha = pack
+    embedder = hm.Embedder(path, sha256=sha, threads=1, offline=True, limits={"max_input_bytes": 8})
+    index = hm.SemanticIndex(embedder)
+    index.add(["original"], ["cat"])
+    with pytest.raises(ValueError, match="max_input_bytes"):
+        index.add(["original", "tentative"], ["dog", "cat " * 3])
+    hits = index.search("cat", 10)
+    assert len(hits) == 1
+    assert hits[0][0] == "original"
+    assert hits[0][2] == "cat"

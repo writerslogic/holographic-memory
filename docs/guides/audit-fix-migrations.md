@@ -61,3 +61,16 @@ recoverable intent rather than relying on in-process rename rollback.
 The original [audit](../research/technical-audit-20261029/REPORT.md) is a historical baseline.
 Its scores do not describe the fixed implementation; [remediation evidence](../research/technical-audit-20261029/REMEDIATION.md)
 records what was implemented and validated, with remaining verification limits.
+
+## Embedding limits and text encoding
+
+Local embedding calls now enforce positive configurable text, byte, token, output and concurrency
+limits; split larger calls or configure `EmbedOptions::limits` for the workload. The soft batch
+token budget remains separate. [Embedding reports](../embeddings/README.md#options) expose both
+truncation stages. Rust model callers should use `try_encode_text` and `try_find_analogy` to
+handle failures; the legacy infallible wrappers panic instead of turning failures into valid
+empty vectors. Durable writes and Node APIs propagate checked errors before mutation.
+
+The default text encoder remains V1. Opt into `multiscale-words-v2` by
+[reencoding original sources into a new store](../file-format/ENCODERS.md#text-encoders-text_encoder);
+do not relabel an existing schema or rewrite old golden vectors.

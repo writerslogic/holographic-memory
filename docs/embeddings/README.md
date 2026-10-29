@@ -115,6 +115,11 @@ Node exposes `embedQueryWithReport` and `embedPassagesWithReport`; Python expose
 same fields with snake_case input keys). Python's `limits` dictionary accepts snake_case or
 camelCase keys. Existing vector-only methods retain their output shapes and truncation policy.
 
+Rust store callers can use `HmsCore::try_encode_text` and `try_find_analogy` to propagate
+model and resource failures. Their legacy infallible counterparts panic on failure instead of
+logging an error and returning an empty vector. Batch writes embed together under one admission;
+encoding failures return before the journal transaction, preserving existing records.
+
 ## Model packs, hashes and air-gapped installs
 
 A pack is one file (`<id>-int8.hmsemb`: header, tokenizer, quantized tensors). The registry in

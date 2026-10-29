@@ -45,3 +45,14 @@ test('local embedding call limits reject excess work and retain usable admission
     assert.equal((await large.embedQuery(['cat'])).length, 1)
   }
 })
+
+test('failed semantic-index batches preserve text and exclude tentative rows', { skip: !LocalEmbedder }, async () => {
+  const embedder = await LocalEmbedder.load({ ...options, limits: { maxInputBytes: 8 } })
+  const index = binding.SemanticIndex.create(embedder)
+  await index.add(['original'], ['cat'])
+  await assert.rejects(index.add(['original', 'tentative'], ['dog', 'cat '.repeat(3)]), /max_input_bytes/)
+  const hits = await index.search('cat', 10)
+  assert.equal(hits.length, 1)
+  assert.equal(hits[0].id, 'original')
+  assert.equal(hits[0].text, 'cat')
+})

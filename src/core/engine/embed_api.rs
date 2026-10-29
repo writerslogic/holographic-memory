@@ -69,21 +69,29 @@ impl HmsCore {
         self.text_embedder.read().clone()
     }
 
-    pub(super) fn encode_text_with_embedder(&self, text: &str) -> EntangledHVec {
-        let empty = || EntangledHVec::from_indices(Vec::new(), self.dimensions);
-        let Some(embedder) = self.text_embedder() else {
-            return empty();
+    pub(super) fn encode_texts_with_embedder(&self, texts: &[&str]) -> Result<Vec<EntangledHVec>> {
+        let embedder = self
+            .text_embedder()
+            .ok_or_else(|| anyhow::anyhow!("local text encoder has no installed embedder"))?;
+        embedder.validate_inputs(texts, crate::core::embed::EmbedKind::Passage)?;
+        let nonempty: Vec<_> = texts
+            .iter()
+            .copied()
+            .enumerate()
+            .filter(|(_, text)| !text.trim().is_empty())
+            .collect();
+        let inputs: Vec<_> = nonempty.iter().map(|(_, text)| *text).collect();
+        let embedded = if inputs.is_empty() {
+            Vec::new()
+        } else {
+            embedder.embed_passages(&inputs)?
         };
-        if text.trim().is_empty() {
-            return empty();
+        let mut vectors =
+            vec![EntangledHVec::from_indices(Vec::new(), self.dimensions); texts.len()];
+        for ((index, _), dense) in nonempty.into_iter().zip(embedded) {
+            vectors[index] = EntangledHVec::from_dense(&dense, self.dimensions);
         }
-        match embedder.embed_passages(&[text]) {
-            Ok(v) => EntangledHVec::from_dense(&v[0], self.dimensions),
-            Err(e) => {
-                tracing::error!(error = %e, "local embedder failed; encoding as empty");
-                empty()
-            }
-        }
+        Ok(vectors)
     }
 
     /// Fills `embeddings` of every input that has none, embedding all their chunks in one pass.

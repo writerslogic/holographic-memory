@@ -394,7 +394,11 @@ impl Embedder {
         Ok(EmbeddingBatch { embeddings, inputs })
     }
 
-    fn validate_inputs<S: AsRef<str>>(&self, texts: &[S], kind: EmbedKind) -> Result<usize> {
+    pub(crate) fn validate_inputs<S: AsRef<str>>(
+        &self,
+        texts: &[S],
+        kind: EmbedKind,
+    ) -> Result<usize> {
         let values = self.limits.output_values(texts.len(), self.dimensions())?;
         let prefix = match kind {
             EmbedKind::Query => &self.query_prefix,

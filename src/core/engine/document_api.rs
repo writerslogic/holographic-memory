@@ -614,11 +614,14 @@ impl HmsCore {
                 "chunk IDs are reserved"
             );
         }
+        let texts: Vec<_> = items.iter().map(|item| item.text.as_str()).collect();
+        let vectors = self.try_encode_texts(&texts)?;
         let mutations: Vec<_> = items
-            .par_iter()
-            .map(|item| Mutation::Vector {
+            .iter()
+            .zip(vectors)
+            .map(|(item, vector)| Mutation::Vector {
                 id: item.id.clone(),
-                vector: self.encode_text(&item.text),
+                vector,
             })
             .collect();
         self.commit(&mutations)
