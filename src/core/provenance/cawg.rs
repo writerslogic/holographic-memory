@@ -195,7 +195,6 @@ pub(crate) fn verify_cawg_ica_references(
     assertion_cbor: &[u8],
 ) -> Result<(serde_json::Value, Vec<ReferencedAssertion>)> {
     use ciborium::value::Value;
-    use coset::{CoseSign1, TaggedCborSerializable};
 
     let assertion: Value = ciborium::from_reader(assertion_cbor)
         .map_err(|e| anyhow::anyhow!("identity assertion CBOR parse failed: {e}"))?;
@@ -250,8 +249,7 @@ pub(crate) fn verify_cawg_ica_references(
         _ => return Err(anyhow::anyhow!("missing signature byte string")),
     };
 
-    let sign1 = CoseSign1::from_tagged_slice(sig_bytes)
-        .map_err(|e| anyhow::anyhow!("COSE_Sign1 deserialization failed: {e}"))?;
+    let sign1 = super::cose::decode_sign1(sig_bytes)?;
     if !matches!(
         sign1.protected.header.content_type.as_ref(),
         Some(coset::RegisteredLabel::Text(content_type)) if content_type == COSE_CONTENT_TYPE_VC
