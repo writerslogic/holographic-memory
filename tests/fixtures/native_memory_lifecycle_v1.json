@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Frozen synthetic offline lifecycle and cross-surface contract; no model or answer-quality claim",
+  "transcript": [
+    {"id": "u1", "speaker": "user", "time": 100, "text": "Alice's harbor office is in Paris."},
+    {"id": "u2", "speaker": "user", "time": 200, "text": "Alice's harbor office moved to Berlin."},
+    {"id": "u3", "speaker": "user", "time": 100, "text": "The staging token is citrustrace."}
+  ],
+  "phases": [
+    [
+      {"op": "remember", "request": {"id": "city-v1", "text": "Alice's harbor office is in Paris.", "subject": "alice/office", "validFrom": 100, "sourceUri": "fixture:transcript/u1", "metadata": {"sourceId": "u1", "speaker": "user"}}, "expect": {"/remembered/0/created": true}},
+      {"op": "remember", "request": {"id": "secret", "text": "The staging token is citrustrace.", "validFrom": 100, "sourceUri": "fixture:transcript/u3"}, "expect": {"/remembered/0/created": true}},
+      {"op": "remember", "request": {"id": "city-v1", "text": "Alice's harbor office is in Paris.", "subject": "alice/office", "validFrom": 100, "sourceUri": "fixture:transcript/u1", "metadata": {"sourceId": "u1", "speaker": "user"}}, "expect": {"/remembered/0/created": false}},
+      {"op": "remember", "request": {"id": "city-v1", "text": "Unrelated overwrite"}, "error": "conflict"},
+      {"op": "remember", "request": {"id": "city-v2", "text": "Alice's harbor office moved to Berlin.", "subject": "alice/office", "validFrom": 200, "supersedes": ["city-v1"], "sourceUri": "fixture:transcript/u2", "metadata": {"sourceId": "u2", "speaker": "user"}}, "expect": {"/remembered/0/supersedes": ["city-v1"]}}
+    ],
+    [
+      {"op": "recall", "request": {"query": "harbor office", "subject": "alice/office", "asOf": 150, "candidateLimit": 32, "k": 1}, "expect": {"/results/0/id": "city-v1", "/results/0/text": "Alice's harbor office is in Paris.", "/results/0/sourceUri": "fixture:transcript/u1", "/results/0/metadata/sourceId": "u1"}},
+      {"op": "recall", "request": {"query": "harbor office", "subject": "alice/office", "asOf": 250, "candidateLimit": 32, "k": 1}, "expect": {"/results/0/id": "city-v2", "/results/0/text": "Alice's harbor office moved to Berlin.", "/results/0/sourceUri": "fixture:transcript/u2"}},
+      {"op": "get", "request": {"id": "city-v1"}, "expect": {"/fact/status": "superseded", "/fact/supersededBy": ["city-v2"]}},
+      {"op": "explain", "request": {"query": "harbor office", "id": "city-v2", "asOf": 250}, "expect": {"/explanation/status": "current", "/explanation/chain/0/id": "city-v1"}},
+      {"op": "recall", "request": {"query": "nebulousnonmatch", "asOf": 250}, "expect": {"/results": []}},
+      {"op": "forget", "request": {"scope": {"ids": ["secret"]}, "dryRun": false, "purge": true}, "expect": {"/forgotten": ["secret"], "/purged": true}},
+      {"op": "forget", "request": {"scope": {"ids": ["city-v1"]}, "dryRun": false}, "expect": {"/forgotten": ["city-v1"]}}
+    ],
+    [
+      {"op": "get", "request": {"id": "secret"}, "expect": {"/fact": null}},
+      {"op": "get", "request": {"id": "city-v1"}, "expect": {"/fact": null}},
+      {"op": "recall", "request": {"query": "citrustrace", "history": "all", "asOf": 250}, "expect": {"/results": []}},
+      {"op": "recall", "request": {"query": "harbor office", "subject": "alice/office", "asOf": 250, "k": 1}, "expect": {"/results/0/id": "city-v2", "/results/0/text": "Alice's harbor office moved to Berlin.", "/results/0/sourceUri": "fixture:transcript/u2"}},
+      {"op": "history", "request": {"id": "city-v2"}, "expect": {"/history/0/id": "city-v2", "/history/0/supersedes": []}},
+      {"op": "applyForgetting", "request": {}, "expect": {"/forgotten": [], "/dryRun": true}},
+      {"op": "consolidate", "request": {}, "expect": {"/created": [], "/dryRun": true}}
+    ]
+  ]
+}
