@@ -75,7 +75,7 @@ impl Inner {
         Ok(Arc::new(Self {
             core: RwLock::new(Some(Arc::new(core))),
             gate: RwLock::new(()),
-            path: PathBuf::from(path),
+            path: std::fs::canonicalize(path)?,
             dimensions: options.dimensions,
             encrypted: options.encryption_key.is_some(),
         }))
@@ -158,8 +158,16 @@ impl Inner {
         if destination.is_empty() {
             return Err(HmsError::invalid("destination must not be empty"));
         }
-        let core = self.core()?;
         let destination = Path::new(destination);
+        let name = destination
+            .file_name()
+            .ok_or_else(|| HmsError::invalid("destination has no file name"))?;
+        let parent = destination
+            .parent()
+            .filter(|path| !path.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        std::fs::create_dir_all(parent)?;
+        let destination = parent.canonicalize()?.join(name);
         if destination.starts_with(&self.path) {
             return Err(HmsError::invalid(
                 "the snapshot cannot live inside the store",
@@ -167,6 +175,7 @@ impl Inner {
         }
         // Writers wait here; searches keep running against the engine's own snapshot.
         let _exclusive = self.gate.write();
+        let core = self.core()?;
         guarded(|| {
             core.compact()?;
             core.flush()?;
@@ -174,7 +183,7 @@ impl Inner {
         })?;
         let written = snapshot::write(
             &self.path,
-            destination,
+            &destination,
             self.dimensions,
             core.document_count() as u64,
         )?;
