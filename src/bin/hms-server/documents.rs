@@ -26,7 +26,7 @@ use crate::auth::Scope;
 use crate::config::*;
 use crate::error::{ApiError, ApiResult};
 use crate::request::*;
-use crate::tenants::{AppState, CoreGuard, QuotaLease};
+use crate::tenants::{AppState, CoreGuard};
 use crate::types::*;
 use crate::vindex;
 
@@ -41,12 +41,19 @@ pub struct DocIn {
     pub vector: Option<Vec<f64>>,
     #[serde(default)]
     pub metadata: Option<Value>,
+    /// Import-owner digest; must match metadata.hms_import_identity.
+    #[serde(default)]
+    pub import_identity: Option<String>,
+    /// Explicitly adopt a matching legacy source record without an owner stamp.
+    #[serde(default)]
+    pub import_adopt_legacy: bool,
 }
 
 pub struct ValidDoc {
     pub input: DocumentInput,
     /// Length of the metadata's JSON serialization, measured once at validation.
     pub metadata_bytes: usize,
+    pub import_adopt_legacy: bool,
 }
 
 pub fn dense(values: &[f64], input_dim: usize, what: &str) -> Result<(), ApiError> {
@@ -86,6 +93,12 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
         Some(m @ Value::Object(_)) => m,
         Some(_) => return Err(ApiError::bad("metadata must be a JSON object")),
     };
+    match (&doc.import_identity, metadata.get("hms_import_identity")) {
+        (None, None) if !doc.import_adopt_legacy => {},
+        (Some(identity), Some(Value::String(stamp)))
+            if valid_import_identity(identity) && identity == stamp => {},
+        _ => return Err(ApiError::bad("import_identity must be a lowercase SHA-256 digest matching metadata.hms_import_identity")),
+    }
     let metadata_bytes = check_metadata_size(&metadata)?;
     // With an on-device embedder a document may omit its vector; the server embeds its text.
     let embeddings = match doc.vector {
@@ -116,6 +129,7 @@ pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<Val
         Ok(chunks) if chunks.len() == 1 => Ok(ValidDoc {
             input,
             metadata_bytes,
+            import_adopt_legacy: doc.import_adopt_legacy,
         }),
         Ok(_) => Err(ApiError::bad(format!(
             "text must fit one chunk of at most {CHUNK_WORDS} words; split the document and send one vector per part"
@@ -135,18 +149,17 @@ pub fn check_metadata_size(metadata: &Value) -> Result<usize, ApiError> {
 }
 
 /// Reject a write that would take the tenant past `max_documents_per_tenant`; `fresh` counts
-/// the documents it would add and is only evaluated when a quota is set. Keep the returned
-/// lease through the commit or rollback so another writer checks the committed count.
-pub fn enforce_quota<'a>(
+/// the documents it would add and is only evaluated when a quota is set. The caller holds
+/// the tenant mutation lease through this check and its commit or rollback.
+pub fn enforce_quota(
     state: &AppState,
-    core: &'a CoreGuard,
+    core: &CoreGuard,
     fresh: impl FnOnce() -> u64,
-) -> Result<Option<QuotaLease<'a>>, ApiError> {
+) -> Result<(), ApiError> {
     let quota = state.cfg.max_documents_per_tenant;
     if quota == 0 {
-        return Ok(None);
+        return Ok(());
     }
-    let lease = core.quota_lease();
     if core.document_count() as u64 + fresh() > quota {
         state
             .metrics
@@ -159,7 +172,50 @@ pub fn enforce_quota<'a>(
         )
         .retry_after(60));
     }
-    Ok(Some(lease))
+    Ok(())
+}
+
+pub fn valid_import_identity(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
+fn check_import_owner(existing: &Value, incoming: &Value, adopt: bool) -> Result<(), ApiError> {
+    match (
+        existing.get("hms_import_identity"),
+        incoming.get("hms_import_identity"),
+    ) {
+        (None, None) => Ok(()),
+        (Some(Value::String(old)), Some(Value::String(new))) if old == new => Ok(()),
+        (None, Some(_)) if adopt => {
+            let same_source = ["hms_source", "hms_namespace", "hms_source_id"]
+                .iter()
+                .all(|key| {
+                    existing.get(*key).is_some() && existing.get(*key) == incoming.get(*key)
+                });
+            let old_parts = existing
+                .get("hms_import_parts")
+                .or_else(|| existing.get("hms_parts"))
+                .and_then(Value::as_u64)
+                .unwrap_or(1);
+            let new_parts = incoming.get("hms_import_parts").and_then(Value::as_u64);
+            if same_source
+                && existing.get("hms_part") == incoming.get("hms_part")
+                && new_parts == Some(old_parts)
+            {
+                Ok(())
+            } else {
+                Err(ApiError::conflict(
+                    "legacy import identity or split layout does not match",
+                ))
+            }
+        }
+        _ => Err(ApiError::conflict(
+            "document belongs to a different import identity; refusing replacement",
+        )),
+    }
 }
 
 fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usize, ApiError> {
@@ -168,14 +224,31 @@ fn store_docs(state: &AppState, tenant: &str, docs: Vec<ValidDoc>) -> Result<usi
     let mut final_docs: Vec<Option<ValidDoc>> = Vec::with_capacity(n);
     for doc in docs {
         if let Some(previous) = positions.insert(doc.input.id.clone(), final_docs.len()) {
+            if let Some(old) = &final_docs[previous] {
+                check_import_owner(
+                    old.input.metadata.as_ref().expect("validated metadata"),
+                    doc.input.metadata.as_ref().expect("validated metadata"),
+                    doc.import_adopt_legacy,
+                )?;
+            }
             final_docs[previous] = None;
         }
         final_docs.push(Some(doc));
     }
-    let mut inputs: Vec<DocumentInput> =
-        final_docs.into_iter().flatten().map(|d| d.input).collect();
+    let final_docs: Vec<ValidDoc> = final_docs.into_iter().flatten().collect();
     let core = state.core(tenant)?;
-    let _quota = enforce_quota(state, &core, || {
+    let _mutation = core.quota_lease();
+    for doc in &final_docs {
+        if let Some(existing) = core.get_document(&doc.input.id) {
+            check_import_owner(
+                &existing.metadata,
+                doc.input.metadata.as_ref().expect("validated metadata"),
+                doc.import_adopt_legacy,
+            )?;
+        }
+    }
+    let mut inputs: Vec<DocumentInput> = final_docs.into_iter().map(|d| d.input).collect();
+    enforce_quota(state, &core, || {
         inputs.iter().filter(|d| !core.has_document(&d.id)).count() as u64
     })?;
     // Every document with a vector enters the persisted vector index first, stamped with the
@@ -496,12 +569,47 @@ pub async fn delete_doc(
         .uri()
         .query()
         .is_some_and(|q| q.split('&').any(|pair| pair == "purge=true"));
+    let identities: Vec<_> = req
+        .uri()
+        .query()
+        .unwrap_or("")
+        .split('&')
+        .filter_map(|pair| pair.strip_prefix("import_identity="))
+        .collect();
+    if identities.len() > 1
+        || identities
+            .first()
+            .is_some_and(|identity| !valid_import_identity(identity))
+    {
+        return Err(ApiError::bad(
+            "import_identity must be one lowercase SHA-256 digest",
+        ));
+    }
+    let identity = identities.first().map(|value| value.to_string());
     let permit = acquire(&state).await?;
     blocking(permit, move || {
         if id.is_empty() || id.len() > MAX_ID_BYTES || id.starts_with("hms:") {
             return Err(ApiError::bad("invalid id"));
         }
         let core = state.core(&tenant)?;
+        let _mutation = core.quota_lease();
+        if let Some(record) = core.get_document(&id) {
+            match (
+                record
+                    .metadata
+                    .get("hms_import_identity")
+                    .and_then(Value::as_str),
+                identity.as_deref(),
+            ) {
+                (None, None) => {}
+                (Some(old), Some(expected)) if old == expected => {}
+                _ => {
+                    return Err(ApiError::conflict(
+                        "document import identity does not match deletion condition",
+                    ))
+                }
+            }
+        }
         if core.delete_document(&id).map_err(ApiError::internal)? {
             if let Some(vectors) = core.vectors() {
                 vectors.remove(&[id.as_str()]).map_err(ApiError::internal)?;
@@ -609,6 +717,9 @@ pub async fn search(State(state): State<Arc<AppState>>, req: Request) -> ApiResu
 
 #[derive(Deserialize, JsonSchema)]
 pub struct QueryIn {
+    /// Intersect metadata filtering with 1..=1000 explicit document IDs; uses exact scoring.
+    #[serde(default)]
+    pub document_ids: Option<Vec<String>>,
     /// Query embedding: exactly `--input-dim` finite numbers.
     #[serde(default)]
     pub query_vector: Option<Vec<f64>>,
@@ -675,12 +786,30 @@ pub async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
             Some(Value::Object(m)) => Some(m),
             Some(_) => return Err(ApiError::bad("filter must be a JSON object")),
         };
+        let document_ids = q.document_ids;
+        if let Some(ids) = &document_ids {
+            let mut seen = std::collections::HashSet::new();
+            if ids.is_empty()
+                || ids.len() > 1000
+                || ids.iter().any(|id| {
+                    id.is_empty()
+                        || id.len() > MAX_ID_BYTES
+                        || id.starts_with("hms:")
+                        || id.chars().any(char::is_control)
+                        || !seen.insert(id)
+                })
+            {
+                return Err(ApiError::bad(
+                    "document_ids requires 1..=1000 unique valid document IDs",
+                ));
+            }
+        }
         let core = state.core(&tenant)?;
         let options = query_options(&state.cfg, q.index.as_deref(), q.ef)?;
         let hits = match (q.query_vector, q.query) {
             (Some(v), None) => {
                 dense(&v, state.cfg.input_dim, "query_vector")?;
-                vector_search(&core, v, top_k as u32, filter, &options)?
+                vector_search(&core, v, top_k as u32, filter, document_ids, &options)?
             }
             #[cfg(feature = "local-models")]
             (v, Some(text)) if state.stages.is_some() => {
@@ -694,6 +823,7 @@ pub async fn query(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
                     k: Some(top_k as u32),
                     candidate_limit: Some((top_k as u32).max(100)),
                     filter: filter.map(Value::Object),
+                    document_ids,
                     embedding: v,
                     ..SearchOptions::default()
                 };
@@ -741,9 +871,10 @@ fn vector_search(
     query_vector: Vec<f64>,
     top_k: u32,
     filter: Option<serde_json::Map<String, Value>>,
+    document_ids: Option<Vec<String>>,
     route: &VectorQueryOptions,
 ) -> Result<Vec<Match>, ApiError> {
-    let Some(filter) = filter else {
+    if filter.is_none() && document_ids.is_none() {
         if route.mode != VectorIndexMode::Exact {
             if let Some(vectors) = core.vectors().filter(|vectors| vectors.covers(core)) {
                 let query =
@@ -776,7 +907,7 @@ fn vector_search(
                 }
             });
     };
-    if route.mode == VectorIndexMode::Graph {
+    if route.mode == VectorIndexMode::Graph && document_ids.is_none() {
         return Err(ApiError::bad(
             "index \"graph\" does not apply to filtered queries; omit index or send \"exact\"",
         ));
@@ -784,7 +915,8 @@ fn vector_search(
     let options = SearchOptions {
         k: Some(top_k),
         candidate_limit: Some(top_k.max(100)),
-        filter: Some(Value::Object(filter)),
+        filter: filter.map(Value::Object),
+        document_ids,
         embedding: Some(query_vector),
         lexical_weight: Some(0.0),
         semantic_weight: Some(1.0),

@@ -81,6 +81,7 @@ pub struct CompactionStatus {
 pub struct Tenant {
     pub name: String,
     pub dir: PathBuf,
+    _ownership: std::fs::File,
     core: Arc<RwLock<Option<Open>>>,
     last_used_ms: AtomicU64,
     /// Bumped by every committed change made through this server; feeds ETags and compaction.
@@ -456,6 +457,8 @@ impl AppState {
             dir.starts_with(&root) && dir.parent() == Some(root.as_path()),
             "tenant directory escapes the tenants root"
         );
+        let ownership = crate::restore::lock_tenant(&root, &tenant_hex(name))?;
+        crate::restore::recover(&dir, &self.snapshot_root(name), &self.staging_root())?;
         std::fs::create_dir_all(&dir)?;
         let core = self.open_core(&dir)?;
         // Half the range leaves room to count up without wrapping.
@@ -463,6 +466,7 @@ impl AppState {
         Ok(Tenant {
             name: name.to_string(),
             dir,
+            _ownership: ownership,
             core: Arc::new(RwLock::new(Some(core))),
             last_used_ms: AtomicU64::new(self.now_ms()),
             generation: AtomicU64::new(generation),
@@ -830,7 +834,6 @@ impl AppState {
             if let Some(core) = write.open() {
                 core.settle()?;
             }
-            write.close();
             let backup_id = format!(
                 "pre-restore-{}",
                 crate::log::rfc3339(SystemTime::now())
@@ -839,33 +842,28 @@ impl AppState {
             );
             let root = self.snapshot_root(name);
             create_dir_durably(&root)?;
-            let backup = root.join(&backup_id);
-            let tenants_root = parent(&tenant.dir)?;
-            let moved = (|| -> Result<()> {
-                std::fs::rename(&tenant.dir, &backup)
-                    .context("cannot set the current store aside")?;
-                sync_dir(&root)?;
-                sync_dir(tenants_root)?;
-                std::fs::rename(staged, &tenant.dir)
-                    .context("cannot move the restored store into place")?;
-                sync_dir(tenants_root)?;
-                sync_dir(parent(staged)?)?;
-                Ok(())
-            })();
-            let reopened = moved.and_then(|()| self.open_core(&tenant.dir));
+            let restore = crate::restore::Restore::begin(
+                &tenant.dir,
+                &root,
+                &self.staging_root(),
+                staged,
+                &backup_id,
+            )?;
+            write.close();
+            let reopened = restore.publish().and_then(|()| self.open_core(&tenant.dir));
             match reopened {
                 Ok(core) => {
+                    if let Err(error) = restore.finish() {
+                        drop(core);
+                        restore.rollback().context("restore rollback failed")?;
+                        write.reopen(self.open_core(&tenant.dir)?);
+                        return Err(error);
+                    }
                     write.reopen(core);
                     Ok(backup_id)
                 }
                 Err(error) => {
-                    // Undo: discard whatever now sits at the tenant path and bring the old store back.
-                    if backup.is_dir() {
-                        let _ = std::fs::remove_dir_all(&tenant.dir);
-                        std::fs::rename(&backup, &tenant.dir).context("rollback failed")?;
-                        sync_dir(tenants_root).context("rollback failed")?;
-                        sync_dir(&root).context("rollback failed")?;
-                    }
+                    restore.rollback().context("restore rollback failed")?;
                     write.reopen(
                         self.open_core(&tenant.dir)
                             .context("rollback reopen failed")?,
@@ -893,11 +891,6 @@ pub fn valid_snapshot_id(id: &str) -> bool {
         && id
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_'))
-}
-
-fn parent(path: &Path) -> Result<&Path> {
-    path.parent()
-        .with_context(|| format!("{} has no parent directory", path.display()))
 }
 
 /// `create_dir_all`, with every directory it created synced into its parent.

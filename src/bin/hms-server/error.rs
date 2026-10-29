@@ -40,8 +40,18 @@ pub const CODES: &[(&str, u16, &str)] = &[
     ("rate_limited", 429, "Rate limit exceeded"),
     ("quota_exceeded", 429, "Tenant quota exceeded"),
     ("internal", 500, "Internal server error"),
+    (
+        "mutation_committed",
+        500,
+        "Mutation committed; reconciliation required",
+    ),
     ("not_ready", 503, "Server not ready"),
     ("server_busy", 503, "Server busy"),
+    (
+        "concurrent_mutation",
+        503,
+        "Concurrent mutation; retry required",
+    ),
     ("tenant_limit", 503, "Too many open tenants"),
     (
         "tenant_busy",

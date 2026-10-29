@@ -97,6 +97,17 @@ fn memory_error(error: anyhow::Error) -> ApiError {
         Some(MemoryError::Invalid(message)) => ApiError::bad(message.clone()),
         Some(MemoryError::NotFound(message)) => ApiError::not_found(message.clone()),
         Some(MemoryError::Conflict(message)) => ApiError::conflict(message.clone()),
+        Some(MemoryError::Concurrent(message)) => ApiError::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "concurrent_mutation",
+            message.clone(),
+        )
+        .retry_after(1),
+        None if error.is::<holographic_memory::CommittedMutationError>() => ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "mutation_committed",
+            error.to_string(),
+        ),
         None => ApiError::internal(error),
     }
 }
@@ -120,13 +131,12 @@ async fn run(op: &'static str, scope: Scope, state: Arc<AppState>, req: Request)
         };
         validate_memory_request(op, &request, state)?;
         let core = state.core(tenant)?;
-        let _quota = if op == "remember" {
+        let _mutation = (scope == Scope::Write).then(|| core.quota_lease());
+        if op == "remember" {
             enforce_quota(state, &core, || {
                 new_facts(&request, |id| core.has_document(id))
-            })?
-        } else {
-            None
-        };
+            })?;
+        }
         let response = core.memory().call(op, request).map_err(memory_error)?;
         if scope == Scope::Write {
             core.bump();

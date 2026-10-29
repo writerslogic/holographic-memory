@@ -95,12 +95,23 @@ const IDEMPOTENCY: &[Param] = &[Param {
         "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
     kind: "string",
 }];
-const PURGE: &[Param] = &[Param {
-    name: "purge",
-    location: "query",
-    description: "true also rewrites the journal and scrubs what the deleted document left behind.",
-    kind: "boolean",
-}];
+const PURGE: &[Param] = &[
+    Param {
+        name: "purge",
+        location: "query",
+        description:
+            "true also rewrites the journal and scrubs what the deleted document left behind.",
+        kind: "boolean",
+    },
+    Param {
+        name: "import_identity",
+        location: "query",
+        description:
+            "Required matching lowercase SHA-256 owner digest when deleting an imported document.",
+        kind: "string",
+    },
+];
+
 const CONDITIONAL: &[Param] = &[Param {
     name: "If-None-Match",
     location: "header",
