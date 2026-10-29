@@ -20,8 +20,8 @@
       {"op": "get", "request": {"id": "city-v1"}, "expect": {"/fact/status": "superseded", "/fact/supersededBy": ["city-v2"]}},
       {"op": "explain", "request": {"query": "harbor office", "id": "city-v2", "asOf": 250}, "expect": {"/explanation/status": "current", "/explanation/chain/0/id": "city-v1"}},
       {"op": "recall", "request": {"query": "nebulousnonmatch", "asOf": 250}, "expect": {"/results": []}},
-      {"op": "forget", "request": {"scope": {"ids": ["secret"]}, "dryRun": false, "purge": true}, "expect": {"/forgotten": ["secret"], "/purged": true}},
-      {"op": "forget", "request": {"scope": {"ids": ["city-v1"]}, "dryRun": false}, "expect": {"/forgotten": ["city-v1"]}}
+      {"op": "forget", "request": {"scope": {"kind": "ids", "ids": ["secret"]}, "dryRun": false, "purge": true}, "expect": {"/forgotten": ["secret"], "/purged": true}},
+      {"op": "forget", "request": {"scope": {"kind": "ids", "ids": ["city-v1"]}, "dryRun": false}, "expect": {"/forgotten": ["city-v1"]}}
     ],
     [
       {"op": "get", "request": {"id": "secret"}, "expect": {"/fact": null}},

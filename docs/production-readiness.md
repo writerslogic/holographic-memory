@@ -123,6 +123,23 @@ the filesystem and hardware. The tests exercise process interruption, not a simu
 controller or power failure. Call `flush()` before controlled shutdown and measure recovery
 with representative stores. Audit/provenance sidecars are separate from the arena transaction;
 an error in those sidecars can be returned after the main data mutation has committed.
+Those failures, publication failures after a durable append, and failed post-publication
+compaction cleanup carry `CommittedMutationError`. HTTP reports `mutation_committed`;
+Node errors carry the same code prefix. Inspect the resulting state and reopen or reconcile
+it before retrying. This contract distinguishes durable data from completed auxiliary effects;
+it does not supply an automatic sidecar repair service or exactly-once external delivery.
+
+Memory policy writes compare the planned core revision inside the journal writer lease.
+Independent wrappers and raw document writers therefore cannot commit stale conflict or
+supersession decisions. Snapshot reads and policy operations have bounded retries and may
+return `MemoryError::Concurrent` (`concurrent_mutation` over HTTP/Node). Retrying the same
+fact ID/content is idempotent. Multi-batch forgetting can commit a prefix before contention;
+retry the same scope to finish it.
+
+Tenant restore publishes a durable intent before moving directories. A lifetime parent lock
+survives the move; recovery processes the intent before a missing tenant directory can be
+created. An interrupted uncommitted restore rolls back to the complete old store. These are
+process-interruption guarantees, subject to the filesystem/hardware limits above.
 
 ## Index maintenance
 
@@ -167,12 +184,16 @@ combines ranked candidates by a weighted blend of min-max normalized BM25 and co
 Unfiltered lexical queries use exact matching postings and cached collection statistics.
 Filtered queries retain adaptive scan/postings scoring with exact filtered statistics.
 Untrained dense retrieval scans eligible chunks and keeps embeddings in memory. Explicit
-`train_document_index()` builds a separate exact f64 box tree for unfiltered document semantic
-and hybrid queries; conservative bounds can skip vector dot products while preserving scores,
+`train_document_index()` builds a separate exact f64 box tree for document semantic
+and hybrid queries, including broad filtered searches; conservative bounds can skip vector dot products while preserving scores,
 ordering and source fields. Rust `maintain_indices()` also builds an eligible document index;
 Node exposes `trainDocumentIndex()` and `documentIndexTrained`. The server/SDK maintenance
 route is documented in [SERVER.md](SERVER.md). NSG/IVF remain separate sparse-vector strategies.
 Measure corpus size, memory, and latency before selecting a deployment capacity.
+
+See [retrieval contracts](guides/retrieval-contracts.md) for exact versus approximate routing,
+filter/phrase composition and explicit reasoning budgets, and [upgrade notes](guides/audit-fix-migrations.md)
+for model and importer compatibility.
 
 Document search prepares queries before acquiring the read gate, captures immutable document
 owners and relevant postings/statistics under the gate, then scores and builds results after
