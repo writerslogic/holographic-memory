@@ -153,8 +153,12 @@ fn run(command: Command) -> Result<u8> {
 
 fn print_plan(plan: &format::UpgradePlan) {
     println!(
-        "{}: storage format {} (this build writes {})",
-        plan.source, plan.storage_format, plan.target_storage_format
+        "{}: storage format {} (target {}), store schema {} (target {})",
+        plan.source,
+        plan.storage_format,
+        plan.target_storage_format,
+        plan.store_schema,
+        plan.target_store_schema
     );
     if plan.up_to_date {
         println!("up to date");

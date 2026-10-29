@@ -5,6 +5,16 @@ use super::*;
 use crate::core;
 use napi_derive::napi;
 
+fn governance_report(report: core::cognition::governor::GovernanceReport) -> GovernanceReportJs {
+    GovernanceReportJs {
+        composites_merged: report.composites_merged as u32,
+        composites_forgotten: report.composites_forgotten as u32,
+        atoms_forgotten: report.atoms_forgotten as u32,
+        idf_refreshed: report.idf_refreshed,
+        atoms_refined: report.refinement.atoms_refined as u32,
+    }
+}
+
 #[napi]
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
 pub struct HolographicMemorySystem {
@@ -771,15 +781,17 @@ impl HolographicMemorySystem {
 
     #[napi]
     // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
-    pub fn govern_memory(&self) -> GovernanceReportJs {
-        let report = self.core.govern_memory();
-        GovernanceReportJs {
-            composites_merged: report.composites_merged as u32,
-            composites_forgotten: report.composites_forgotten as u32,
-            atoms_forgotten: report.atoms_forgotten as u32,
-            idf_refreshed: report.idf_refreshed,
-            atoms_refined: report.refinement.atoms_refined as u32,
-        }
+    pub fn govern_memory(&self) -> Result<GovernanceReportJs> {
+        self.core
+            .govern_memory()
+            .map(governance_report)
+            .map_err(napi_err)
+    }
+
+    #[napi]
+    pub async fn govern_memory_async(&self) -> Result<GovernanceReportJs> {
+        let core = self.core.clone();
+        run_async(move || core.govern_memory().map(governance_report)).await
     }
 
     // === Agency API ===

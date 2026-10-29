@@ -38,7 +38,10 @@ pub const STORAGE_FORMAT_OLDEST: u32 = 2;
 /// [`TRANSACTION_MAGIC`] frames, schema 3 stores [`BINARY_TRANSACTION_MAGIC`] frames; a store
 /// keeps the schema it was created with. Schema 4 stores also write binary frames and may hold
 /// a document checkpoint in place of the frames before it (`docs/file-format/CHECKPOINT.md`).
-pub const STORE_SCHEMA_VERSION: u32 = 4;
+/// Schema 5 adds namespace-scoped meaning maintenance, retaining binary frame encoding.
+pub const STORE_SCHEMA_VERSION: u32 = 5;
+/// First schema supporting namespace-scoped meaning maintenance mutations.
+pub const MEANING_MAINTENANCE_SCHEMA_VERSION: u32 = 5;
 /// First `store.json` schema whose journal generations may hold a document checkpoint.
 pub const CHECKPOINT_SCHEMA_VERSION: u32 = 4;
 /// Oldest `store.json` schema this build opens.

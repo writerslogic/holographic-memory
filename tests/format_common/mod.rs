@@ -102,6 +102,7 @@ impl Golden {
             config.security.encryption_enabled = true;
             config.security.encryption_passphrase = Some(PASSPHRASE.into());
         }
+        config.meaning.enabled = self.meta["meaningEnabled"] == true;
         if self.meta["audit"] == true {
             config.security.audit_enabled = true;
         }
@@ -205,6 +206,20 @@ pub fn file_fingerprints(dir: &Path) -> Result<BTreeMap<String, (u64, u32)>> {
 
 /// Checks a store opened by the current code against a golden's `expect` object.
 pub fn check_expectations(core: &HmsCore, expect: &Value, dimensions: u32) -> Result<()> {
+    if let Some(meaning) = expect.get("meaning") {
+        ensure!(
+            core.meaning_atom_count() as u64 == meaning["atoms"].as_u64().unwrap(),
+            "atom count differs"
+        );
+        ensure!(
+            core.meaning_composite_count() as u64 == meaning["composites"].as_u64().unwrap(),
+            "composite count differs"
+        );
+        ensure!(
+            core.meaning_triple_count() as u64 == meaning["triples"].as_u64().unwrap(),
+            "triple count differs"
+        );
+    }
     for document in expect["documents"].as_array().into_iter().flatten() {
         let id = document["id"].as_str().context("document id")?;
         ensure!(core.has_document(id), "document {id} is missing");

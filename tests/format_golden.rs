@@ -39,6 +39,7 @@ enum Kind {
     Text,
     Embed,
     Memory,
+    Governance,
 }
 
 struct Spec {
@@ -191,6 +192,13 @@ fn specs() -> Vec<Spec> {
             ..BASE
         },
         Spec {
+            name: "v5-governance",
+            kind: Kind::Governance,
+            description: "Schema 5: namespace-scoped atom deletion and durable index refresh preserve a raw-vector alias and a live owned triple.",
+            schema: 5,
+            ..BASE
+        },
+        Spec {
             name: "v4-schema4-plain",
             description: "Schema 4: binary HMS-TXN-3 frames in a store that may hold document \
                           checkpoints; the v4-plain corpus and operations (vectors and \
@@ -294,6 +302,10 @@ fn config_for(spec: &Spec) -> Result<HmsConfig> {
         config.security.encryption_passphrase = Some(PASSPHRASE.into());
     }
     config.security.audit_enabled = spec.audit;
+    if spec.kind == Kind::Governance {
+        config.meaning.enabled = true;
+        config.cognition.governor_forget_unreferenced = true;
+    }
     if spec.checkpoint {
         config.document_checkpoint.min_journal_bytes = 0;
     }
@@ -497,6 +509,15 @@ fn build(spec: &Spec, store: &Path) -> Result<Value> {
                 ],
             })
         }
+        Kind::Governance => {
+            core.memorize("alias".into(), EntangledHVec::new_deterministic(dim, 7))?;
+            core.memorize_triplet("owned".into(), "alice".into(), "knows".into(), "bob".into())?;
+            core.govern_memory()?;
+            json!({
+                "vectors": [{"id": "alias", "seed": 7}],
+                "meaning": {"atoms": 3, "composites": 1, "triples": 1},
+            })
+        }
         Kind::Memory => {
             let facts = memory_facts(core.clone())?;
             core.flush()?;
@@ -539,7 +560,7 @@ fn meta_for(spec: &Spec, expect: Value) -> Value {
     if spec.encoder == "multiscale-capped-union-v1" {
         features.push("experimental");
     }
-    json!({
+    let mut meta = json!({
         "name": spec.name,
         "description": spec.description,
         "provenance": spec.provenance,
@@ -555,7 +576,11 @@ fn meta_for(spec: &Spec, expect: Value) -> Value {
         "features": features,
         "verifyVerdict": "ok",
         "expect": expect,
-    })
+    });
+    if spec.kind == Kind::Governance {
+        meta["meaningEnabled"] = true.into();
+    }
+    meta
 }
 
 /// Writes every golden store that does not exist yet. Existing goldens are never rewritten:

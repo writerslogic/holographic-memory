@@ -836,6 +836,40 @@
         2952,
         "51c59725"
       ]
+    },
+    "v5-governance": {
+      "documents.text": [
+        8,
+        "5706c951"
+      ],
+      "golden.json": [
+        752,
+        "f6fa8c0d"
+      ],
+      "indices.json": [
+        119,
+        "bdef2562"
+      ],
+      "store.json": [
+        224,
+        "bf540a24"
+      ],
+      "store.json.crc32": [
+        9,
+        "b903d809"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/seg_0.bin": [
+        312,
+        "bdc9a19c"
+      ]
     }
   }
 }

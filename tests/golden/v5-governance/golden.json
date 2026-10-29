@@ -1,0 +1,34 @@
+{
+  "audit": false,
+  "description": "Schema 5: namespace-scoped atom deletion and durable index refresh preserve a raw-vector alias and a live owned triple.",
+  "dimensions": 1024,
+  "embeddingSpace": null,
+  "encrypted": false,
+  "expect": {
+    "meaning": {
+      "atoms": 3,
+      "composites": 1,
+      "triples": 1
+    },
+    "vectorCount": 2,
+    "vectors": [
+      {
+        "id": "alias",
+        "seed": 7
+      }
+    ]
+  },
+  "features": [],
+  "meaningEnabled": true,
+  "name": "v5-governance",
+  "padTo": {
+    "vectors_data.bin/seg_0.bin": 67108864
+  },
+  "provenance": "current-code",
+  "schema": 5,
+  "storageFormat": 4,
+  "textEncoder": "multiscale-words-v1",
+  "textSegment": 2,
+  "transaction": "HMS-TXN-3",
+  "verifyVerdict": "ok"
+}

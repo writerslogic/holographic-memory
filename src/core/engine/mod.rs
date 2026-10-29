@@ -7,6 +7,7 @@ mod document_api;
 mod document_batch;
 #[cfg(feature = "local-embed")]
 mod embed_api;
+mod governance;
 mod image;
 pub(crate) mod journal;
 pub(crate) mod knowledge;
@@ -42,7 +43,7 @@ use super::agency::questions::{Question, QuestionGenerator};
 use super::agency::self_modify::{ProposalKind, SelfModifier};
 use super::atom_memory::AtomMemory;
 use super::audit::{AuditLog, AuditOp};
-use super::cognition::governor::{GovernanceReport, GovernorConfig, MemoryGovernor};
+use super::cognition::governor::GovernanceReport;
 use super::cognition::r#loop::{CognitionConfig as CognitionLoopConfig, CognitionLoop, Insight};
 use super::composite_memory::CompositeMemory;
 use super::config::HmsConfig;
@@ -1234,24 +1235,8 @@ impl HmsCore {
         CognitionLoop::run_once(atom_mem, tri_store, &cfg)
     }
 
-    pub fn govern_memory(&self) -> GovernanceReport {
-        let (atom_mem, comp_mem, tri_store) = match (
-            &self.atom_memory,
-            &self.composite_memory,
-            &self.triple_store,
-        ) {
-            (Some(a), Some(c), Some(t)) => (a, c, t),
-            _ => return GovernanceReport::default(),
-        };
-        let cc = &self.config.cognition;
-        let gov_config = GovernorConfig {
-            duplicate_threshold: cc.governor_duplicate_threshold,
-            max_scan_size: cc.governor_max_scan_size,
-            forget_unreferenced_atoms: cc.governor_forget_unreferenced,
-            refine_atoms: cc.refine_atoms,
-            ..Default::default()
-        };
-        MemoryGovernor::govern(atom_mem, comp_mem, tri_store, &gov_config)
+    pub fn govern_memory(&self) -> Result<GovernanceReport> {
+        self.govern_memory_with_limits(super::query_limits::QueryLimits::default())
     }
 
     pub fn cognition_enabled(&self) -> bool {

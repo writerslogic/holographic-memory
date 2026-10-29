@@ -14,7 +14,7 @@ A store is one directory. The engine creates it on first open.
     seg_0.bin seg_1.bin ...  journal segments
     CURRENT                  only after a compaction: names the live generation directory
     gen-<pid>-<nanos>/       the live generation after a compaction: seg_*.bin, format.json,
-                             and in schema 4 stores documents.ckpt (CHECKPOINT.md)
+                             and in schemas 4–5 documents.ckpt (CHECKPOINT.md)
   documents.text             cache (CACHES.md)
   indices.json               cache (CACHES.md); older stores also have indices.json.crc32, ignored
   nsg_index.bin ivf_index.bin  or nsg_index_<i>.bin ivf_index_<i>.bin    caches
@@ -37,7 +37,7 @@ sidecar first). Keys, in this order:
 
 | Key | Type | Meaning |
 |---|---|---|
-| `version` | integer | 2 |
+| `version` | integer | 5 for new stores; 2, 3 and 4 remain supported |
 | `dimensions` | integer | hypervector dimension, 1..=1000000, fixed for the store |
 | `text_encoder` | string | see [ENCODERS.md](ENCODERS.md) |
 | `vector_encoder` | string | `signed-projection-v2` |
@@ -47,7 +47,7 @@ sidecar first). Keys, in this order:
 | `embedding_space` | object or null | `{model, revision, dimensions, normalization, metric}` |
 
 On open the engine builds the same object from its configuration and requires equality. A
-different value is refused ("incompatible store schema"); a `version` above 4 is refused as
+different value is refused ("incompatible store schema"); a `version` above 5 is refused as
 newer than supported; a store with `vectors_data.bin` but no `store.json` is refused as legacy.
 The sidecar `store.json.crc32` is the CRC32 of the file bytes as 8 lowercase hex digits and a
 newline; absent on stores written before sidecars, and then unverified.

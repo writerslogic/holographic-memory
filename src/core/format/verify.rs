@@ -584,7 +584,12 @@ fn check_arena(
                     let checked = scan::transaction_json(payload)
                         .expect("a transaction payload")
                         .and_then(|json| {
-                            scan::check_transaction(&json, schema.dimensions, &mut replay)
+                            scan::check_transaction_with_schema(
+                                &json,
+                                schema.dimensions,
+                                schema.raw["version"].as_u64().unwrap_or(0) as u32,
+                                &mut replay,
+                            )
                         });
                     match checked {
                         Ok(_) => {}

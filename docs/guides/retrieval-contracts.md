@@ -51,3 +51,27 @@ limit remains necessary.
 The legacy Rust `multi_hop` and `synthesize_concepts` signatures retain their `Vec` return
 types and apply the default limits. They panic on budget exhaustion. Call the checked
 companions in applications that must report or recover from an exhausted budget.
+
+
+## Durable meaning governance
+
+`HmsCore::govern_memory` returns `Result<GovernanceReport>` and uses the default
+`QueryLimits`; `govern_memory_with_limits` accepts explicit limits. It captures a coherent
+revision and bounded live snapshots, plans on isolated memories outside the mutation gate,
+and publishes one journal transaction only if the revision is still current.
+`GovernanceConflict` means another writer invalidated the plan; no governance change was
+committed, and callers may retry. Work, frontier, byte, operation-count and serialized-size
+exhaustion also fail before publication. The atomic transaction is capped at 4,096 operations
+and 32 MiB; byte accounting is a conservative allocation budget, not an RSS measurement.
+
+Live triple owners survive consolidation even when their vectors are identical. Scoped
+atom/composite deletions preserve unrelated raw vectors with the same ID. Refinement
+recomposes affected owned composites and their matching raw-vector mirrors; ambiguous or
+missing ownership fails explicitly. Reopen and compaction retain these changes. The
+standalone `MemoryGovernor` primitive operates only on the supplied in-memory stores;
+applications persisting an `HmsCore` use its durable governance methods.
+
+New stores use schema 5. Meaning-enabled stores with schemas 2–4 keep their writer format
+and must first be explicitly copied with `hms-format upgrade <source> <destination>` before
+durable governance. The source remains unchanged, and current arenas/checkpoints are copied
+without re-encoding their existing journal frames.

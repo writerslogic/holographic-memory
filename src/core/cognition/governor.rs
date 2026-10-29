@@ -12,6 +12,10 @@ use crate::core::cognition::refiner::{DistributionalRefiner, RefinementReport, R
 use crate::core::composite_memory::CompositeMemory;
 use crate::core::triple_store::TripleStore;
 
+#[derive(Debug, thiserror::Error)]
+#[error("store changed during governance planning; retry governance")]
+pub struct GovernanceConflict;
+
 /// Result of a governance cycle.
 #[derive(Clone, Debug, Default)]
 pub struct GovernanceReport {
@@ -66,7 +70,9 @@ impl MemoryGovernor {
         triple_store: &TripleStore,
         config: &GovernorConfig,
     ) -> GovernanceReport {
-        let composites_merged = Self::consolidate_composites(composite_memory, config);
+        let composites_merged = Self::consolidate_where(composite_memory, config, |id| {
+            !triple_store.has_composite(id)
+        });
         let composites_forgotten = Self::forget_stale_composites(composite_memory, triple_store);
 
         let atoms_forgotten = if config.forget_unreferenced_atoms {
@@ -98,15 +104,26 @@ impl MemoryGovernor {
         composite_memory: &CompositeMemory,
         config: &GovernorConfig,
     ) -> usize {
+        Self::consolidate_where(composite_memory, config, |_| true)
+    }
+
+    fn consolidate_where(
+        composite_memory: &CompositeMemory,
+        config: &GovernorConfig,
+        removable: impl Fn(&str) -> bool,
+    ) -> usize {
         if config.max_scan_size == 0
             || config.duplicate_threshold.is_nan()
             || config.duplicate_threshold > 1.0
         {
             return 0;
         }
-        let all = composite_memory
+        let all: Vec<_> = composite_memory
             .inner()
-            .vector_page(&mut 0, config.max_scan_size);
+            .vector_page(&mut 0, config.max_scan_size)
+            .into_iter()
+            .filter(|(_, id, _)| removable(id))
+            .collect();
         let positions: crate::core::hash::FastMap<_, _> = all
             .iter()
             .enumerate()

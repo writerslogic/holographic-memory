@@ -62,6 +62,13 @@ pub(super) enum Mutation {
         id: String,
         vector: EntangledHVec,
     },
+    DeleteAtom {
+        id: String,
+    },
+    DeleteComposite {
+        id: String,
+    },
+    RefreshMeaningIndices {},
     StoredTriple(crate::core::triple_store::TripleRecord),
     Document(Arc<crate::core::documents::StoredDocument>),
     /// The hypervectors of a document memorized with deferred encoding, one per chunk, computed
@@ -367,6 +374,27 @@ impl HmsCore {
                 }
             }
             Mutation::DeleteDocument { id } => validate_id(id)?,
+            Mutation::DeleteAtom { id } | Mutation::DeleteComposite { id } => {
+                validate_id(id)?;
+                ensure!(
+                    self.schema >= crate::core::format::MEANING_MAINTENANCE_SCHEMA_VERSION,
+                    "scoped meaning deletion requires schema 5; use hms-format upgrade"
+                );
+                ensure!(
+                    self.meaning_enabled(),
+                    "scoped meaning deletion requires meaning memory"
+                );
+            }
+            Mutation::RefreshMeaningIndices {} => {
+                ensure!(
+                    self.schema >= crate::core::format::MEANING_MAINTENANCE_SCHEMA_VERSION,
+                    "meaning index refresh requires schema 5; use hms-format upgrade"
+                );
+                ensure!(
+                    self.meaning_enabled(),
+                    "meaning index refresh requires meaning memory"
+                );
+            }
             Mutation::StoredTriple(t) => {
                 ensure!(
                     self.meaning_enabled(),
@@ -565,6 +593,28 @@ impl HmsCore {
                 if let Some(atoms) = &self.atom_memory {
                     atoms.insert_with_vec(id, vector);
                 }
+            }
+            (Mutation::DeleteAtom { id }, _) => {
+                self.atom_memory
+                    .as_ref()
+                    .expect("validated meaning configuration")
+                    .delete(id);
+            }
+            (Mutation::DeleteComposite { id }, _) => {
+                self.composite_memory
+                    .as_ref()
+                    .expect("validated meaning configuration")
+                    .delete(id);
+            }
+            (Mutation::RefreshMeaningIndices {}, _) => {
+                self.atom_memory
+                    .as_ref()
+                    .expect("validated meaning configuration")
+                    .rebuild_indices();
+                self.composite_memory
+                    .as_ref()
+                    .expect("validated meaning configuration")
+                    .rebuild_indices();
             }
             (
                 Mutation::Composite { id, vector },
@@ -1497,6 +1547,13 @@ mod tests {
                 Mutation::Delete {
                     id: "absent-vector".into(),
                 },
+                Mutation::DeleteAtom {
+                    id: "absent-atom".into(),
+                },
+                Mutation::DeleteComposite {
+                    id: "absent-composite".into(),
+                },
+                Mutation::RefreshMeaningIndices {},
                 Mutation::Triplet {
                     id: "triple".into(),
                     subject: "s".into(),

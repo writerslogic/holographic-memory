@@ -20,7 +20,7 @@ use serde::Serialize;
 
 use super::scan::{self, SegmentEnd};
 use super::verify::{verify_path, VerifyOptions};
-use super::{Report, Verdict, STORAGE_FORMAT_CURRENT};
+use super::{Report, Verdict, STORAGE_FORMAT_CURRENT, STORE_SCHEMA_VERSION};
 use crate::core::storage::StagedArena;
 use crate::core::store_lock::{StoreLock, LOCK_FILE};
 
@@ -45,6 +45,8 @@ pub struct UpgradePlan {
     /// Arena manifest version found (1 for a store with no manifest).
     pub storage_format: u32,
     pub target_storage_format: u32,
+    pub store_schema: u32,
+    pub target_store_schema: u32,
     pub up_to_date: bool,
     pub steps: Vec<UpgradeStep>,
 }
@@ -78,12 +80,46 @@ struct Migration {
 
 struct Detected {
     storage_format: u32,
+    store_schema: u32,
     text_segment: Option<u8>,
     has_caches: bool,
 }
 
 /// Every upgrade step that exists. Order matters only between steps that apply together.
 static MIGRATIONS: &[Migration] = &[
+    Migration {
+        step: UpgradeStep {
+            id: "store-schema-2-to-5",
+            artefact: "store-schema",
+            from: 2,
+            to: 5,
+            description: "enable namespace-scoped durable meaning maintenance; existing journal frames remain readable",
+        },
+        applies: |d| d.store_schema == 2,
+        run: upgrade_schema,
+    },
+    Migration {
+        step: UpgradeStep {
+            id: "store-schema-3-to-5",
+            artefact: "store-schema",
+            from: 3,
+            to: 5,
+            description: "enable namespace-scoped durable meaning maintenance; existing journal frames remain readable",
+        },
+        applies: |d| d.store_schema == 3,
+        run: upgrade_schema,
+    },
+    Migration {
+        step: UpgradeStep {
+            id: "store-schema-4-to-5",
+            artefact: "store-schema",
+            from: 4,
+            to: 5,
+            description: "enable namespace-scoped durable meaning maintenance; existing journal frames remain readable",
+        },
+        applies: |d| d.store_schema == 4,
+        run: upgrade_schema,
+    },
     Migration {
         step: UpgradeStep {
             id: "arena-1-to-4",
@@ -152,6 +188,7 @@ static MIGRATIONS: &[Migration] = &[
 
 fn detect(source: &Path, report: &Report) -> Detected {
     Detected {
+        store_schema: report.versions.store_schema.unwrap_or(STORE_SCHEMA_VERSION),
         storage_format: report
             .versions
             .storage_format
@@ -178,8 +215,9 @@ fn plan_from(source: &Path, report: &Report) -> Result<UpgradePlan> {
     );
     refuse_unupgradable(report)?;
     let detected = detect(source, report);
-    let arena_current = detected.storage_format == STORAGE_FORMAT_CURRENT;
-    let steps = if arena_current {
+    let current = detected.storage_format == STORAGE_FORMAT_CURRENT
+        && detected.store_schema == STORE_SCHEMA_VERSION;
+    let steps = if current {
         Vec::new()
     } else {
         MIGRATIONS
@@ -192,7 +230,9 @@ fn plan_from(source: &Path, report: &Report) -> Result<UpgradePlan> {
         source: source.display().to_string(),
         storage_format: detected.storage_format,
         target_storage_format: STORAGE_FORMAT_CURRENT,
-        up_to_date: arena_current,
+        store_schema: detected.store_schema,
+        target_store_schema: STORE_SCHEMA_VERSION,
+        up_to_date: current,
         steps,
     })
 }
@@ -301,6 +341,12 @@ fn upgrade_data_dir(
             .min()
             .unwrap_or(STORAGE_FORMAT_CURRENT),
         target_storage_format: STORAGE_FORMAT_CURRENT,
+        store_schema: plans
+            .iter()
+            .map(|p| p.store_schema)
+            .min()
+            .unwrap_or(STORE_SCHEMA_VERSION),
+        target_store_schema: STORE_SCHEMA_VERSION,
         up_to_date: !behind,
         steps: plans
             .iter()
@@ -339,6 +385,9 @@ fn upgrade_data_dir(
                 frames += tenant.report.frames;
             } else {
                 let staged = stage_store(&from, &to)?;
+                if tenant_plan.storage_format == STORAGE_FORMAT_CURRENT {
+                    copied_verdicts.insert(tenant.name.clone(), tenant.report.verdict);
+                }
                 frames += staged.frames;
             }
         }
@@ -416,10 +465,14 @@ fn stage_and_publish(
     destination: &Path,
     plan: UpgradePlan,
 ) -> Result<UpgradeReport> {
+    let original = verify_path(source, &VerifyOptions::default())?;
     let staged = stage_store(source, staging)?;
     let verification = verify_path(staging, &VerifyOptions::default())?;
     ensure!(
-        matches!(verification.verdict, Verdict::Ok),
+        verification.verdict == Verdict::Ok
+            || (plan.storage_format == STORAGE_FORMAT_CURRENT
+                && original.verdict == Verdict::Recoverable
+                && verification.verdict == Verdict::Recoverable),
         "the upgraded store does not verify: {:?}",
         verification.findings
     );
@@ -503,6 +556,15 @@ fn stage_store(source: &Path, staging: &Path) -> Result<Staged> {
         (migration.run)(&mut context)
             .with_context(|| format!("upgrade step {} failed", migration.step.id))?;
     }
+    if detected.storage_format == STORAGE_FORMAT_CURRENT {
+        crate::core::admin::copy_tree(
+            &source.join(ARENA_DIRECTORY),
+            &staging.join(ARENA_DIRECTORY),
+        )?;
+        return Ok(Staged {
+            frames: report.frames,
+        });
+    }
     ensure!(context.frames > 0, "the store has no journal frames");
     // The staged arena must hold exactly the frames that were read, in order.
     let mut scanned = Vec::new();
@@ -529,6 +591,13 @@ fn stage_store(source: &Path, staging: &Path) -> Result<Staged> {
     Ok(Staged {
         frames: context.frames,
     })
+}
+
+fn upgrade_schema(context: &mut StepContext<'_>) -> Result<()> {
+    let path = context.staging.join("store.json");
+    let mut schema: serde_json::Value = serde_json::from_slice(&std::fs::read(&path)?)?;
+    schema["version"] = STORE_SCHEMA_VERSION.into();
+    crate::core::durable_file::atomic_write(&path, &serde_json::to_vec_pretty(&schema)?)
 }
 
 /// Reads every committed frame of the source arena in order and appends it to a new

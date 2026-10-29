@@ -3,13 +3,15 @@
 
 # Frame payloads: transactions
 
-The decompressed payload of a plaintext frame (or the decrypted payload of an encrypted one) is
+The decompressed payload of a plaintext frame (or the decrypted payload of an encrypted one)
+is a transaction. Schema 2 writes this JSON form:
 
 ```
 "HMS-TXN-2\0"  followed by  a JSON array of 1..=4096 mutations (UTF-8, no trailing bytes)
 ```
 
-A transaction is applied atomically: one frame, all or none. Another `HMS-TXN-<digits>\0` magic
+Schemas 3–5 write the `HMS-TXN-3` binary form described below; readers accept both forms.
+A transaction is applied atomically: one frame, all or none. An unknown `HMS-TXN-<digits>\0` magic
 is a different journal version: newer ones are refused with "newer than supported", older ones
 (none were released) with the re-encode message. Any other prefix is refused.
 
@@ -26,6 +28,9 @@ Each mutation is a JSON object with exactly one key naming the variant (serde ex
 | `Derived` | `{id, children}` | record meaning children of `id` |
 | `DeleteDocument` | `{id}` | remove the document and its chunk vectors |
 | `Delete` | `{id}` | remove the vector `id` and what derives from it |
+| `DeleteAtom` | `{id}` | schema 5, meaning memory: remove only the atom; preserve raw vectors, composites and triples with the same id |
+| `DeleteComposite` | `{id}` | schema 5, meaning memory: remove only the composite; preserve raw vectors and atoms with the same id; governance emits it only for an unowned composite |
+| `RefreshMeaningIndices` | `{}` | schema 5, meaning memory: rebuild atom/composite postings and IDF weights from their live vectors |
 | `Triplet` | `{id, subject, relation, object}` | meaning memory; needs `meaning_enabled` |
 | `Relation` | `{sourceId, relationType, targetId, properties, validFrom, validTo}` | replace the edge |
 | `RemoveRelation` | `{source, relation, target}` | remove the edge |
@@ -64,7 +69,13 @@ replay with the limits above; a failure fails the open. Later records win: a sec
 with the same id replaces the first, a `Delete` removes the earlier `Vector`. The journal
 keeps deleted data until compaction.
 
-## Binary frames (`HMS-TXN-3`, schema 3 stores)
+Scoped maintenance mutations require `meaning_enabled` and store schema 5. They use the
+existing JSON mutation tag inside `HMS-TXN-3`; schemas 2–4 reject them on validation and
+replay. A governance transaction applies atom changes, recomposes affected owned triples,
+and refreshes derived indices atomically. An explicit `hms-format upgrade` changes the
+schema in a new copy; normal opens never opt old stores into these mutations.
+
+## Binary frames (`HMS-TXN-3`, schemas 3–5)
 
 A store records its journal format in `store.json` `version`: 2 writes the JSON array above,
 3 (new stores since 0.7.0) writes binary payloads; readers accept both in any store. Varints

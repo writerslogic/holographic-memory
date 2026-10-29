@@ -238,6 +238,29 @@ impl TripleStore {
             .collect()
     }
 
+    pub(crate) fn bounded_snapshot(
+        &self,
+        budget: &mut QueryBudget,
+    ) -> Result<Vec<TripleRecord>, QueryLimitExceeded> {
+        let mut snapshot = Vec::new();
+        self.visit_bounded(None, None, None, budget, |triple, budget| {
+            let bytes = [
+                &triple.subject_id,
+                &triple.relation_id,
+                &triple.object_id,
+                &triple.composite_id,
+            ]
+            .iter()
+            .fold(512usize, |total, id| {
+                total.saturating_add(id.len().saturating_mul(4))
+            });
+            budget.reserve(bytes)?;
+            snapshot.push(triple.clone());
+            Ok(())
+        })?;
+        Ok(snapshot)
+    }
+
     pub fn load_triple(&self, record: TripleRecord) {
         self.add(
             &record.subject_id,

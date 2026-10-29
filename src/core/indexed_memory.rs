@@ -7,6 +7,7 @@ use crate::core::sync::RwLock;
 use super::entangled::EntangledHVec;
 use super::idf::IdfWeights;
 use super::posting::PostingShard;
+use super::query_limits::{QueryBudget, QueryLimitExceeded};
 use super::tombstone::TombstoneMap;
 
 pub struct IndexedMemory {
@@ -163,6 +164,34 @@ impl IndexedMemory {
             .filter(|(i, _)| !tombstones.is_deleted(*i as u32))
             .map(|(i, (id, v))| (i as u32, id.clone(), v.clone()))
             .collect()
+    }
+
+    pub(crate) fn bounded_snapshot(
+        &self,
+        budget: &mut QueryBudget,
+    ) -> Result<Vec<(String, EntangledHVec)>, QueryLimitExceeded> {
+        let vectors = self.vectors.read();
+        let tombstones = self.tombstones.read();
+        let mut snapshot = Vec::new();
+        for (slot, (id, vector)) in vectors.iter().enumerate() {
+            budget.work(1)?;
+            if !tombstones.is_deleted(slot as u32) {
+                budget.reserve(
+                    id.len()
+                        .saturating_mul(4)
+                        .saturating_add(vector.indices().len().saturating_mul(64))
+                        .saturating_add(256),
+                )?;
+                snapshot.push((id.clone(), vector.clone()));
+            }
+        }
+        budget.work(
+            snapshot
+                .len()
+                .saturating_mul(snapshot.len().max(1).ilog2() as usize + 1),
+        )?;
+        snapshot.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+        Ok(snapshot)
     }
 
     pub(crate) fn vector_page(
