@@ -11,7 +11,7 @@ import os
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from .checkpoint import Checkpoint
-from .common import redact_uri, scrub, stable_hash, vector_list
+from .common import redact_uri, scrub, stable_hash, to_jsonable, vector_list
 from .mapping import Mapper, Projector, Target, load_embedder, valid_vector
 from .model import HmsDoc, ImporterError, Record, Reject
 from .options import ImportOptions
@@ -36,6 +36,14 @@ def _doc_bytes(doc: HmsDoc) -> int:
 
 def _chain(prev: str, ident: str) -> str:
     return hashlib.sha256((prev + "\x00" + ident).encode("utf-8", "surrogatepass")).hexdigest()
+
+
+def _record_fingerprint(record: Record) -> str:
+    return stable_hash(
+        "hms-import-prefix-v2", record.namespace, str(record.id), record.text,
+        to_jsonable(vector_list(record.vector)), to_jsonable(record.metadata),
+        to_jsonable(record.created_at), to_jsonable(record.updated_at), record.error,
+    )
 
 
 def default_checkpoint_path(opts: ImportOptions, fingerprint: str) -> str:
@@ -141,7 +149,9 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
         stats.restore(ckpt.stats)
         report.resumed_from = ckpt.position
 
-    mapper = Mapper(source.name, opts, target, stats, tenant)
+    mapper = Mapper(source.name, opts, target, stats, tenant, stable_hash(source.name, descriptor))
+    if sink is not None:
+        sink.split_policy = opts.split_policy
     reservoir = Reservoir(opts.verify_sample, opts.seed)
     projector_cache: Dict[int, Projector] = {}
     seen_tenants: Dict[Optional[str], None] = {}
@@ -160,21 +170,17 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
     start_pos = ckpt.position if ckpt else 0
     cursor = ckpt.cursor if ckpt else None
     prefix_hash = ckpt.prefix_hash if ckpt else ""
-    seekable_resume = bool(start_pos) and source.seekable and cursor is not None
 
     def open_stream() -> Iterator[Record]:
         """Records after the committed prefix. A non-seekable source is re-read from the start and
         the prefix is checked against the checkpoint's hash; if the order or content changed, the
         import restarts from record 0 (safe: writes replace by id)."""
-        nonlocal start_pos, cursor, prefix_hash, seekable_resume
-        if seekable_resume:
-            yield from source.records(cursor)
-            return
+        nonlocal start_pos, cursor, prefix_hash
         it = source.records(None)
         if start_pos:
             running, skipped = "", 0
             for rec in it:
-                running = _chain(running, str(rec.id))
+                running = _chain(running, _record_fingerprint(rec))
                 skipped += 1
                 if skipped >= start_pos:
                     break
@@ -194,7 +200,7 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
     last_cursor = cursor
     batch: List[HmsDoc] = []
     batch_bytes = 0
-    pending_ids: List[str] = []
+    pending_hashes: List[str] = []
     pending_cursor: Any = cursor
     pending_samples: List[Tuple[Record, List[HmsDoc]]] = []
     batches_done = 0
@@ -246,10 +252,12 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
             mid = len(docs) // 2
             commit(docs[:mid])
             commit(docs[mid:])
+        finally:
+            report.server["stale_parts_deleted_this_run"] = sink.stale_parts_deleted
 
     def flush() -> None:
         nonlocal batch, batch_bytes, position, last_cursor, batches_done, prefix_hash
-        if not pending_ids:
+        if not pending_hashes:
             return
         if batch:
             if dry:
@@ -259,13 +267,13 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
                 commit(batch)
         for rec, docs in pending_samples:
             reservoir.offer(rec, docs)
-        for ident in pending_ids:
+        for ident in pending_hashes:
             prefix_hash = _chain(prefix_hash, ident)
-        position += len(pending_ids)
+        position += len(pending_hashes)
         last_cursor = pending_cursor
         batches_done += 1
         batch, batch_bytes = [], 0
-        pending_ids.clear()
+        pending_hashes.clear()
         pending_samples.clear()
         if ckpt is not None and batches_done % max(1, opts.checkpoint_every) == 0:
             rejects.flush()
@@ -275,10 +283,10 @@ def _run(source, sink, opts, tenant, target, say, stats, descriptor, report, dry
 
     try:
         for rec in open_stream():
-            if opts.limit is not None and position - start_pos + len(pending_ids) >= opts.limit:
+            if opts.limit is not None and position - start_pos + len(pending_hashes) >= opts.limit:
                 break
             stats.count("records_read")
-            pending_ids.append(str(rec.id))
+            pending_hashes.append(_record_fingerprint(rec))
             pending_cursor = rec.cursor
             try:
                 docs = mapper.map(rec)

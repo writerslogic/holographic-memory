@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 from dataclasses import dataclass, field
 from typing import Any, Dict
 
 from .model import ImporterError
 
-VERSION = 1
+VERSION = 2
 
 
 @dataclass
@@ -28,7 +29,7 @@ class Checkpoint:
     cursor: Any = None  # cursor of the last committed record, for seekable sources
     complete: bool = False
     stats: Dict[str, Any] = field(default_factory=dict)
-    prefix_hash: str = ""  # chained hash of every committed record id, in order
+    prefix_hash: str = ""  # chained hash of committed source identities and contents, in order
 
     @classmethod
     def open(cls, path: str, fingerprint: str, restart: bool) -> "Checkpoint":
@@ -36,21 +37,31 @@ class Checkpoint:
 
         A checkpoint written for a different source, target or mapping is an error,
         because resuming it would mix two imports."""
+        if restart:
+            return cls(path, fingerprint)
         if os.path.exists(path):
             try:
                 with open(path, "r", encoding="utf-8") as fh:
                     data = json.load(fh)
             except (OSError, ValueError) as exc:
                 raise ImporterError(f"checkpoint {path} is unreadable ({exc}); remove it or pass --restart") from exc
+            if not isinstance(data, dict):
+                raise ImporterError(f"checkpoint {path} must be a JSON object; pass --restart after moving it aside")
             if data.get("version") != VERSION:
                 raise ImporterError(f"checkpoint {path} has an unsupported version; remove it or pass --restart")
-            if data.get("fingerprint") != fingerprint and not restart:
+            if data.get("fingerprint") != fingerprint:
                 raise ImporterError(
                     f"checkpoint {path} belongs to a different source, target or mapping options; "
                     "use another --checkpoint path or pass --restart"
                 )
-            if data.get("fingerprint") == fingerprint and not data.get("complete") and not restart:
-                return cls(path, fingerprint, int(data["position"]), data.get("cursor"), False,
+            position = data.get("position")
+            if isinstance(position, bool) or not isinstance(position, int) or not 0 <= position < 1 << 63:
+                raise ImporterError(f"checkpoint {path} has an invalid position; pass --restart")
+            prefix = data.get("prefix_hash", "")
+            if not isinstance(prefix, str) or (position and re.fullmatch(r"[0-9a-f]{64}", prefix) is None):
+                raise ImporterError(f"checkpoint {path} has an invalid content fingerprint; pass --restart")
+            if not data.get("complete"):
+                return cls(path, fingerprint, position, data.get("cursor"), False,
                            data.get("stats", {}), data.get("prefix_hash", ""))
         return cls(path, fingerprint)
 
@@ -73,6 +84,12 @@ class Checkpoint:
                 fh.flush()
                 os.fsync(fh.fileno())
             os.replace(tmp, self.path)
+            if os.name != "nt":
+                directory_fd = os.open(directory, os.O_RDONLY)
+                try:
+                    os.fsync(directory_fd)
+                finally:
+                    os.close(directory_fd)
         except BaseException:
             if os.path.exists(tmp):
                 os.unlink(tmp)

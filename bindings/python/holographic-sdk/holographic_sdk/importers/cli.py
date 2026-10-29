@@ -11,7 +11,7 @@ from typing import List, Mapping, Optional
 
 from .common import register_secret, scrub
 from .model import ImporterError, MissingDependency
-from .options import ID_PREFIX_MODES, NAMESPACE_MODES, OVERSIZE_MODES, VECTOR_MODES, ImportOptions
+from .options import ID_MAPPINGS, ID_PREFIX_MODES, NAMESPACE_MODES, OVERSIZE_MODES, SPLIT_POLICIES, VECTOR_MODES, ImportOptions
 from .pipeline import exit_code, run_import
 from .sink import HmsSink
 from .sources import source_class, source_names
@@ -48,6 +48,12 @@ def _common_parser() -> argparse.ArgumentParser:
                    help="metadata (default): hms_namespace key and id prefix; tenant: one HMS tenant per namespace")
     m.add_argument("--default-namespace", default="", help="namespace for records that have none")
     m.add_argument("--id-prefix-namespace", choices=ID_PREFIX_MODES, default="auto")
+    m.add_argument("--id-mapping", choices=ID_MAPPINGS, default="v1",
+                   help="v1 preserves existing ids; v2 hashes typed source/namespace/id/part identities")
+    m.add_argument("--adopt-legacy", action="store_true",
+                   help="explicitly adopt unstamped imports with matching original source identity and part metadata")
+    m.add_argument("--split-policy", choices=SPLIT_POLICIES, default="reject",
+                   help="reject changed layouts (default), or replace and conditionally remove obsolete owned parts")
     m.add_argument("--tenant-prefix", default="", help="prefix for namespace-derived tenant ids")
     m.add_argument("--oversize-metadata", choices=OVERSIZE_MODES, default="reject",
                    help="reject (default) or truncate (drop the largest keys, listed in hms_dropped_keys)")
@@ -103,6 +109,9 @@ def options_from_args(args: argparse.Namespace) -> ImportOptions:
         namespace_mode=args.namespace_mode,
         default_namespace=args.default_namespace,
         id_prefix_namespace=args.id_prefix_namespace,
+        id_mapping=args.id_mapping,
+        adopt_legacy=args.adopt_legacy,
+        split_policy=args.split_policy,
         tenant_prefix=args.tenant_prefix,
         batch_size=args.batch_size,
         checkpoint_path=args.checkpoint,

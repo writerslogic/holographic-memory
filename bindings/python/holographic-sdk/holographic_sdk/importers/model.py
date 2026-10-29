@@ -50,6 +50,7 @@ class HmsDoc:
     metadata: Dict[str, Any]
     tenant: Optional[str] = None
     source_key: Any = None
+    adopt_legacy: bool = False
 
     def payload(self) -> Dict[str, Any]:
         out: Dict[str, Any] = {"id": self.id, "metadata": self.metadata}
@@ -57,6 +58,10 @@ class HmsDoc:
             out["text"] = self.text
         if self.vector is not None:
             out["vector"] = self.vector
+        if "hms_import_identity" in self.metadata:
+            out["import_identity"] = self.metadata["hms_import_identity"]
+            if self.adopt_legacy:
+                out["import_adopt_legacy"] = True
         return out
 
 

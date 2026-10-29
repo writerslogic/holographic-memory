@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from .common import Coercion, normalize_ts, to_jsonable, vector_list
+from .common import Coercion, normalize_ts, stable_hash, to_jsonable, vector_list
 from .model import HmsDoc, ImporterError, Record, Reject
 from .options import ImportOptions
 from .report import Stats
@@ -20,6 +20,7 @@ from .report import Stats
 MAX_ID_BYTES = 256
 _TENANT_RE = re.compile(r"[^A-Za-z0-9_-]")
 RESERVED_PREFIX = "hms_"
+MAX_RECORD_PARTS = 1000
 
 
 @dataclass
@@ -160,6 +161,13 @@ def hms_id(namespace: str, source_id: str, opts: ImportOptions) -> str:
     return "h:" + hashlib.sha256(ident.encode("utf-8")).hexdigest()
 
 
+def mapped_part_id(base_id: str, record_identity: str, mapping: str, parts: int, index: int) -> str:
+    if mapping == "v2":
+        return "h2:" + stable_hash(["hms-import-document-v2", record_identity, index])
+    ident = f"{base_id}#part-{index}" if parts > 1 else base_id
+    return ident if valid_hms_id(ident) else "h:" + hashlib.sha256(ident.encode("utf-8")).hexdigest()
+
+
 class Mapper:
     """Turns `Record`s into `HmsDoc`s under the options; counts every conversion."""
 
@@ -170,12 +178,14 @@ class Mapper:
         target: Target,
         stats: Stats,
         default_tenant: Optional[str] = None,
+        source_identity: Optional[str] = None,
     ):
         self.source_name = source_name
         self.opts = opts
         self.target = target
         self.stats = stats
         self.default_tenant = default_tenant
+        self.source_identity = source_identity or stable_hash(source_name)
         self._projectors: Dict[int, Projector] = {}
         self._auto_space: Optional[str] = None
 
@@ -271,18 +281,27 @@ class Mapper:
         base_id = hms_id(namespace, sid, opts)
         rewritten = base_id.startswith("h:") and not valid_hms_id(_composed_id(namespace, sid, opts))
         parts = split_text(text, opts.max_text_words, opts.max_text_bytes) if text is not None else [None]
+        if len(parts) > MAX_RECORD_PARTS:
+            raise Reject("too_many_parts", f"a source record must fit at most {MAX_RECORD_PARTS} document parts")
+        record_identity = stable_hash(["hms-import-record-v2", self.source_identity, namespace, sid])
+        meta.update({
+            "hms_import_source": self.source_identity,
+            "hms_import_record": record_identity,
+            "hms_import_parts": len(parts),
+            "hms_import_base_id": base_id,
+            "hms_id_mapping": opts.id_mapping,
+        })
         tenant = tenant_for(namespace, opts, self.default_tenant)
         docs: List[HmsDoc] = []
         for index, part in enumerate(parts):
-            ident = base_id
+            ident = mapped_part_id(base_id, record_identity, opts.id_mapping, len(parts), index)
             doc_meta = dict(meta)
+            doc_meta["hms_import_identity"] = stable_hash(["hms-import-part-v2", record_identity, index])
             if len(parts) > 1:
-                ident = f"{base_id}#part-{index}"
-                if not valid_hms_id(ident):
-                    ident = "h:" + hashlib.sha256(ident.encode("utf-8")).hexdigest()
                 doc_meta.update({"hms_parent_id": base_id, "hms_part": index, "hms_parts": len(parts)})
             self._fit_metadata(doc_meta, sid)
-            docs.append(HmsDoc(ident, part, list(vec) if vec is not None else None, doc_meta, tenant, (namespace, sid)))
+            docs.append(HmsDoc(ident, part, list(vec) if vec is not None else None, doc_meta, tenant,
+                               (namespace, sid), opts.adopt_legacy))
         if rewritten:
             self.stats.count("ids_rewritten")
         if len(parts) > 1:

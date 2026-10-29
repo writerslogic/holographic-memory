@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional
 VECTOR_MODES = ("auto", "carry", "reencode", "project", "none")
 NAMESPACE_MODES = ("metadata", "tenant")
 ID_PREFIX_MODES = ("auto", "always", "never")
+ID_MAPPINGS = ("v1", "v2")
+SPLIT_POLICIES = ("reject", "replace")
 OVERSIZE_MODES = ("reject", "truncate")
 
 
@@ -38,6 +40,9 @@ class ImportOptions:
     namespace_mode: str = "metadata"  # metadata: hms_namespace key; tenant: one HMS tenant per namespace
     default_namespace: str = ""  # namespace assigned to records the source gives none
     id_prefix_namespace: str = "auto"  # prefix ids with "<namespace>::" (auto: when namespace is non-empty)
+    id_mapping: str = "v1"
+    adopt_legacy: bool = False
+    split_policy: str = "reject"
     tenant_prefix: str = ""  # prepended to namespace-derived tenant ids
 
     batch_size: int = 256
@@ -73,6 +78,12 @@ class ImportOptions:
             raise ValueError(f"namespace_mode must be one of {NAMESPACE_MODES}")
         if self.id_prefix_namespace not in ID_PREFIX_MODES:
             raise ValueError(f"id_prefix_namespace must be one of {ID_PREFIX_MODES}")
+        if self.id_mapping not in ID_MAPPINGS:
+            raise ValueError(f"id_mapping must be one of {ID_MAPPINGS}")
+        if self.id_mapping == "v2" and self.id_prefix_namespace != "auto":
+            raise ValueError("id_prefix_namespace applies only to id_mapping v1")
+        if self.split_policy not in SPLIT_POLICIES:
+            raise ValueError(f"split_policy must be one of {SPLIT_POLICIES}")
         if self.oversize_metadata not in OVERSIZE_MODES:
             raise ValueError(f"oversize_metadata must be one of {OVERSIZE_MODES}")
         if self.batch_size < 1:
@@ -97,4 +108,7 @@ class ImportOptions:
             self.max_text_bytes,
             self.oversize_metadata,
             self.max_metadata_bytes,
+            self.id_mapping,
+            self.adopt_legacy,
+            self.split_policy,
         ]
