@@ -32,6 +32,8 @@ struct Header {
     model: String,
     revision: String,
     pack_sha256: String,
+    #[serde(default)]
+    embedding_space: Option<crate::core::schema::EmbeddingSpace>,
     dimensions: usize,
     ids: Vec<String>,
     texts: Vec<String>,
@@ -135,6 +137,9 @@ impl SemanticIndex {
     pub fn top_k(&self, query: &[f32], k: usize) -> Vec<Hit> {
         let dim = self.embedder.dimensions();
         assert_eq!(query.len(), dim, "query vector has the wrong dimension");
+        if k == 0 || self.is_empty() {
+            return Vec::new();
+        }
         let mut scored: Vec<(f32, usize)> = self
             .vectors
             .chunks_exact(dim)
@@ -161,10 +166,11 @@ impl SemanticIndex {
     /// Writes the index atomically (temporary file, then rename).
     pub fn save(&self, path: &Path) -> Result<()> {
         let header = serde_json::to_vec(&Header {
-            format: 1,
+            format: 2,
             model: self.embedder.model().into(),
             revision: self.embedder.revision().into(),
             pack_sha256: self.embedder.pack_sha256().into(),
+            embedding_space: Some(self.embedder.space()),
             dimensions: self.embedder.dimensions(),
             ids: self.ids.clone(),
             texts: self.texts.clone(),
@@ -206,10 +212,12 @@ impl SemanticIndex {
         );
         let header: Header = serde_json::from_slice(&bytes[16..16 + hl]).context("index header")?;
         ensure!(
-            header.format == 1,
-            "unsupported index format {}",
+            header.format == 2,
+            "unsupported or legacy index format {}; rebuild from source texts to bind the effective embedding function",
             header.format
         );
+        ensure!(header.embedding_space.as_ref() == Some(&embedder.space()),
+            "semantic index embedding function changed; rebuild from original source texts with the intended model and options");
         if header.pack_sha256 != embedder.pack_sha256() {
             bail!(
                 "the index was built with {} {} (pack {}) but the embedder is {} {} (pack {}); rebuild it with the same model",
@@ -231,8 +239,12 @@ impl SemanticIndex {
             "index ids and texts differ in length"
         );
         let data = &bytes[16 + hl..];
+        let expected = n
+            .checked_mul(header.dimensions)
+            .and_then(|n| n.checked_mul(4))
+            .context("index shape overflows address space")?;
         ensure!(
-            data.len() == n * header.dimensions * 4,
+            data.len() == expected,
             "index vector data has the wrong size"
         );
         let vectors = super::pack::f32s_le(data);

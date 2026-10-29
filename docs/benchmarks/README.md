@@ -99,6 +99,23 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
   section per file; rows from different classes are never put side by side. Hosted-runner rows are
   shared virtual machines: read the ratios, not the absolute numbers.
 
+## Evidence validity
+
+Every generated cell carries `validity` (`valid`, `unverified` or `invalid`) and an uncertainty
+kind (`sampled`, `unreplicated` or `deterministic`) in `comparison.cells.json`. A source revision
+that is not a full commit identifier cannot support a comparative verdict. Explicit historical
+measurement invalidations retain raw observations but remove the affected metric from scoring.
+The old workstation text RSS rows inherited the orchestrator's high-water mark; they are invalid,
+not evidence of equal process residency. New runs use the isolated measurement spawner.
+
+Unreplicated timings remain descriptive and receive `n/v`, even when their ratio exceeds 5%.
+The deterministic 5% band applies only to explicitly deterministic byte counts. Text timing
+passes are summarized within their process-round before bootstrapping independent process-round
+summaries; adding passes does not create more independent observations. Sweep selection and
+confirmation are distinct: existing sweep-selected operating points remain exploratory evidence;
+freeze settings before a new independent confirmation campaign. These corrections reinterpret
+existing bytes and do not claim a fresh performance measurement.
+
 ## Known measurement boundaries (read before quoting a ratio)
 
 * HMS is timed through its Rust API; Python comparators through their bindings; Lucene through the

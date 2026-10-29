@@ -44,6 +44,12 @@ no cross-origin isolation is needed.
 A store is saved as one checksummed, compressed snapshot under a key. Implement `StorageAdapter`
 (`get`, `set`, `delete`, optional `keys`) to use any backend; `set` must replace the value atomically.
 `store.exportSnapshot()` returns the same bytes, and `openStore({ snapshot })` restores them.
+`close()` waits for in-flight saves and encryption changes and rejects new mutations while
+closing. If persistence fails, it leaves the store open with unsaved data so you can retry
+`save()` or `close()`. File storage syncs the replacement file and, on Unix, its directory entries;
+Windows retains atomic rename without a claim of directory-sync power-loss durability.
+A failed encryption change blocks export/save/close until a successful retry or an explicit
+`setEncryption(null)`; unsaved data remains available in memory.
 
 ## Encryption
 

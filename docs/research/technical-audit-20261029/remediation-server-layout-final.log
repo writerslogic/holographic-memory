@@ -1,0 +1,33 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 26s
+     Running tests/server.rs (target/debug/deps/server-7a6751efb4baa6d2)
+
+running 15 tests
+test failed_tenant_initialization_releases_reservation_and_retries ... ok
+test auth_is_enforced_when_key_is_set ... ok
+test concurrent_distinct_first_access_enforces_tenant_reservations_at_cap ... ok
+test oversized_body_is_rejected ... ok
+test concurrent_first_access_opens_one_store_and_preserves_all_writes ... ok
+test add_batch_query_filter_delete ... ok
+test finite_f64_extremes_preserve_cosine_and_survive_restart ... ok
+test graceful_shutdown_persists_data ... ok
+test scores_are_exact_cosine_and_documents_must_fit_one_chunk ... ok
+test malformed_and_invalid_requests_get_json_errors ... ok
+test upsert_replaces_text_and_metadata ... ok
+test explicit_index_maintenance_preserves_exact_queries_and_tenant_isolation ... ok
+test tenants_are_isolated_and_validated ... ok
+test configured_work_and_batch_limits_reject_native_limit_overflow_at_startup ... ok
+test batch_last_write_wins_and_aggregate_rejection_preserve_atomicity ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.38s
+
+     Running tests/server_abuse.rs (target/debug/deps/server_abuse-f895da6cd59d40d0)
+
+running 3 tests
+test hostile_paths_methods_and_headers_never_reach_a_5xx ... ok
+test hostile_bodies_get_clean_client_errors_and_the_store_survives ... ok
+test abandoned_and_stalled_connections_do_not_leak_work_slots_or_memory ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.18s
+

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 import time
+from urllib.parse import quote
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
@@ -13,6 +14,7 @@ import httpx
 from ..client import HolographicClient
 from .common import register_secret, scrub
 from .model import HmsDoc, ImporterError
+from .inventory import ImportInventory
 
 _RETRY_STATUS = {408, 425, 429, 500, 502, 503, 504}
 
@@ -65,6 +67,10 @@ class HmsSink:
             mask_salt=mask_salt,
         )
         self._clients: Dict[Optional[str], HolographicClient] = {}
+        self.split_policy = "reject"
+        self.stale_parts_deleted = 0
+        self._inventory: Optional[ImportInventory] = None
+        self._identity_contract = False
 
     def client(self, tenant: Optional[str]) -> HolographicClient:
         tenant = tenant or self.tenant
@@ -77,6 +83,9 @@ class HmsSink:
         for c in self._clients.values():
             c.close()
         self._clients.clear()
+        if self._inventory is not None:
+            self._inventory.close()
+            self._inventory = None
 
     # -- request plumbing -----------------------------------------------------------
 
@@ -132,12 +141,56 @@ class HmsSink:
         return info
 
     def send(self, docs: List[HmsDoc]) -> None:
+        if not self._identity_contract:
+            try:
+                spec = self._call(_get, self.client(None), "/openapi.json").json()
+                properties = spec["components"]["schemas"]["DocIn"]["properties"]
+                if "import_identity" not in properties or "import_adopt_legacy" not in properties:
+                    raise KeyError("import_identity")
+            except (BatchRejected, ValueError, KeyError, TypeError):
+                raise ImporterError("destination lacks atomic import identity checks; upgrade hms-server before importing") from None
+            self._identity_contract = True
+        if self._inventory is None:
+            self._inventory = ImportInventory()
         by_tenant: Dict[Optional[str], List[HmsDoc]] = {}
         for d in docs:
             by_tenant.setdefault(d.tenant, []).append(d)
         for tenant, group in by_tenant.items():
             client = self.client(tenant)
+            key = tenant or self.tenant or "default"
+            if key not in self._inventory.loaded:
+                self._inventory.load(key, self.documents(tenant))
+            obsolete = self._inventory.prepare(key, group, self.split_policy)
             self._call(client.add_documents, [d.payload() for d in group])
+            for doc in group:
+                self._inventory.record(key, doc.id, doc.metadata)
+            self._inventory.db.commit()
+            for ident, identity in obsolete:
+                try:
+                    self._call(_delete_owned, client, ident, identity)
+                    self.stale_parts_deleted += 1
+                except BatchRejected as exc:
+                    if exc.status != 404:
+                        raise
+                self._inventory.remove(key, ident)
+            self._inventory.db.commit()
+
+    def documents(self, tenant: Optional[str] = None):
+        client = self.client(tenant)
+        cursor = None
+        while True:
+            params: Dict[str, Any] = {"limit": 1000}
+            if cursor is not None:
+                params["after"] = cursor
+            page = self._call(_get, client, "/api/v1/documents", params).json()
+            documents = page["documents"]
+            yield from documents
+            following = page.get("next_cursor")
+            if following is None:
+                return
+            if not isinstance(following, str) or (cursor is not None and following <= cursor):
+                raise ImporterError("destination returned a non-advancing document cursor")
+            cursor = following
 
     def query(
         self,
@@ -172,3 +225,15 @@ def _post(client: HolographicClient, path: str, body: Dict[str, Any]) -> httpx.R
     res = client.client.post(f"{client.url}{path}", json=body)
     res.raise_for_status()
     return res
+
+
+def _get(client: HolographicClient, path: str, params: Optional[Dict[str, Any]] = None) -> httpx.Response:
+    res = client.client.get(f"{client.url}{path}", params=params)
+    res.raise_for_status()
+    return res
+
+
+def _delete_owned(client: HolographicClient, ident: str, identity: str) -> None:
+    res = client.client.delete(f"{client.url}/api/v1/documents/{quote(ident, safe='')}",
+                               params={"import_identity": identity})
+    res.raise_for_status()

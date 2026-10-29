@@ -45,6 +45,8 @@ macro_rules! invalid {
     };
 }
 
+#[cfg(feature = "server")]
+pub mod contract;
 #[cfg(feature = "conversation-memory")]
 mod conversation;
 mod index;
@@ -56,7 +58,7 @@ mod stamp;
 mod types;
 mod write;
 
-use crate::core::sync::{Mutex, RwLock};
+use crate::core::sync::RwLock;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -84,9 +86,13 @@ pub enum MemoryError {
     /// The id exists with different content and `onIdConflict` is `reject`.
     #[error("{0}")]
     Conflict(String),
+    /// Concurrent writes prevented a coherent plan or recall; retry the operation.
+    #[error("{0}")]
+    Concurrent(String),
 }
 
 /// What `remember` does when an id exists with different content.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum IdConflict {
@@ -99,6 +105,7 @@ pub enum IdConflict {
 }
 
 /// Plain-data configuration; every field has a default that changes no behavior.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 pub struct MemoryConfig {
@@ -161,7 +168,8 @@ impl MemoryConfig {
 
 /// The memory API over one engine.
 ///
-/// Safe to share across threads. Writes are serialized; recall runs concurrently with them.
+/// Safe to share across threads. Policy plans use revision-conditional commits; reads retry
+/// when their document and policy snapshots differ. Persistent commits are serialized.
 /// Several `Memory` values over one core stay correct: each notices the others' writes by
 /// the store revision and rebuilds its index, at the cost of one scan.
 pub struct Memory {
@@ -178,7 +186,6 @@ pub struct Memory {
     observer: Option<Arc<dyn MemoryObserver>>,
     clock: Arc<dyn Clock>,
     index: RwLock<Index>,
-    writer: Mutex<()>,
 }
 
 impl Memory {
@@ -228,7 +235,6 @@ impl Memory {
             observer: None,
             clock: Arc::new(SystemClock),
             index: RwLock::new(Index::default()),
-            writer: Mutex::new(()),
         })
     }
 
@@ -278,6 +284,50 @@ impl Memory {
     /// with the fact id as the document id.
     pub fn core(&self) -> &Arc<HmsCore> {
         &self.core
+    }
+
+    fn with_snapshot<T>(&self, mut read: impl FnMut(&Index) -> Result<T>) -> Result<T> {
+        for _ in 0..16 {
+            let Some(revision) = self.planning_revision() else {
+                continue;
+            };
+            let result = {
+                let index = self.index.read();
+                if index.revision != Some(revision) {
+                    continue;
+                }
+                read(&index)
+            };
+            if self.core.memory_revision_matches(revision) {
+                return result;
+            }
+        }
+        Err(MemoryError::Concurrent(
+            "memory changed during the snapshot; retry the operation".into(),
+        )
+        .into())
+    }
+
+    fn with_revision<T>(&self, mut read: impl FnMut() -> Result<T>) -> Result<T> {
+        for _ in 0..16 {
+            let Some(revision) = self.planning_revision() else {
+                continue;
+            };
+            let result = read();
+            if self.core.memory_revision_matches(revision) {
+                return result;
+            }
+        }
+        Err(MemoryError::Concurrent(
+            "memory changed while assembling the result; retry the operation".into(),
+        )
+        .into())
+    }
+
+    fn planning_revision(&self) -> Option<u64> {
+        self.ensure_fresh();
+        let revision = self.core.revision();
+        (self.index.read().revision == Some(revision)).then_some(revision)
     }
 
     /// Brings the index up to the store's current revision.

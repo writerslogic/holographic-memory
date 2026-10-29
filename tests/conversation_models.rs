@@ -14,7 +14,7 @@ use holographic_memory::core::models::{
     default_device, Embedder, EmbeddingQueryTask, ModelSource, ModelStages, PINNED,
 };
 use holographic_memory::core::HmsConfig;
-use holographic_memory::{EmbeddingSpace, HmsCore};
+use holographic_memory::HmsCore;
 
 #[test]
 fn conversation_sources_reject_user_only_fact_extraction() -> Result<()> {
@@ -33,20 +33,14 @@ fn conversation_sources_reject_user_only_fact_extraction() -> Result<()> {
 fn conversation_embedding_retrieves_original_assistant_evidence() -> Result<()> {
     let model_dir = std::env::var_os("HMS_CONVERSATION_MODEL_DIR")
         .context("set HMS_CONVERSATION_MODEL_DIR to Qwen3-Embedding-0.6B")?;
-    let (model, revision) = PINNED
+    let (_, revision) = PINNED
         .iter()
         .find(|(name, _)| *name == "Qwen/Qwen3-Embedding-0.6B")
         .context("missing pinned embedding model")?;
     let mut embedder = Embedder::load(&ModelSource::new(model_dir, *revision), &default_device()?)?;
     embedder.set_query_task(EmbeddingQueryTask::Conversation);
     let config = HmsConfig {
-        embedding_space: Some(EmbeddingSpace {
-            model: (*model).into(),
-            revision: (*revision).into(),
-            dimensions: embedder.dimensions(),
-            normalization: "l2".into(),
-            metric: "cosine".into(),
-        }),
+        embedding_space: Some(embedder.space()),
         ..Default::default()
     };
     let dir = tempfile::tempdir()?;

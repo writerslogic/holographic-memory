@@ -4,7 +4,6 @@
 use crate::core::entangled::EntangledHVec;
 
 const BRUTE_FORCE_THRESHOLD: usize = 1000;
-const HOPFIELD_MAX_PATTERNS: usize = 10_000;
 const SPARSE_INDEX_THRESHOLD: usize = 4;
 // A floor of 128 materially improves self-recall on the seeded 1,200-vector quality corpus
 // while remaining bounded for interactive queries.
@@ -20,7 +19,6 @@ pub(crate) enum IndexRoute {
     NSG,
     Inverted,
     IVF,
-    Hopfield,
     BruteForce,
 }
 
@@ -38,7 +36,6 @@ impl IndexRoute {
             Self::NSG => "nsg",
             Self::Inverted => "inverted",
             Self::IVF => "ivf",
-            Self::Hopfield => "hopfield",
             Self::BruteForce => "brute_force",
         }
     }
@@ -125,17 +122,6 @@ impl QueryPlanner {
             };
         }
 
-        // Hopfield associative retrieval for mid-sized collections without trained indices.
-        // Entmax attention gives better ranking than brute-force similarity scan.
-        if n <= HOPFIELD_MAX_PATTERNS {
-            return QueryPlan {
-                route: IndexRoute::Hopfield,
-                ef_search,
-                n_probe,
-                rationale: "mid-sized unindexed collections use associative retrieval",
-            };
-        }
-
         QueryPlan {
             route: IndexRoute::BruteForce,
             ef_search,
@@ -154,7 +140,7 @@ mod tests {
         use IndexRoute::*;
         const ALL: [bool; 3] = [true; 3];
         const NONE: [bool; 3] = [false; 3];
-        let (exact, hopfield) = (BRUTE_FORCE_THRESHOLD, HOPFIELD_MAX_PATTERNS);
+        let exact = BRUTE_FORCE_THRESHOLD;
         let sparse = SPARSE_INDEX_THRESHOLD;
         // (name, [nsg, inverted, ivf] available, vectors, dimensions, query indices, route).
         // 64 active of 16384 is D/256, the density benchmarks/results/route_sweep.json
@@ -171,10 +157,10 @@ mod tests {
             ("D/32 - 1", ALL, 5000, 1000, 1000 / 32 - 1, Inverted),
             ("D/32", ALL, 5000, 1000, 1000 / 32, NSG),
             ("no NSG", [false, true, true], 5000, 1000, 40, IVF),
-            ("no graph", [false, true, false], 5000, 1000, 40, Hopfield),
-            ("hopfield - 1", NONE, hopfield - 1, 1000, 10, Hopfield),
-            ("hopfield", NONE, hopfield, 1000, 10, Hopfield),
-            ("hopfield + 1", NONE, hopfield + 1, 1000, 10, BruteForce),
+            ("no graph", [false, true, false], 5000, 1000, 40, BruteForce),
+            ("unindexed - 1", NONE, 9999, 1000, 10, BruteForce),
+            ("unindexed", NONE, 10000, 1000, 10, BruteForce),
+            ("unindexed + 1", NONE, 10001, 1000, 10, BruteForce),
         ];
         for (name, [nsg, inverted, ivf], vectors, dimensions, active, route) in cases {
             let query = EntangledHVec::from_indices((0..active as u32).collect(), dimensions);

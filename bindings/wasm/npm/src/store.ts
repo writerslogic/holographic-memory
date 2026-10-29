@@ -57,6 +57,9 @@ export class HolographicStore {
   #timer: ReturnType<typeof setTimeout> | undefined;
   #dirty = false;
   #saving: Promise<void> = Promise.resolve();
+  #changingEncryption: Promise<void> = Promise.resolve();
+  #encryptionFailure: { error: unknown } | null = null;
+  #closing: Promise<void> | null = null;
   #autosaveError: unknown;
 
   private constructor(
@@ -128,8 +131,13 @@ export class HolographicStore {
     return this.#inner;
   }
 
+  #writable(): void {
+    if (!this.#inner || this.#closing) throw new Error("the store is closing or closed");
+  }
+
   /** Stores or replaces a document; resolves to its chunk count. */
   async memorizeDocument(input: DocumentInput): Promise<number> {
+    this.#writable();
     const count = this.#store.memorizeDocument(plainEmbeddings(input));
     this.#changed();
     return count;
@@ -137,6 +145,7 @@ export class HolographicStore {
 
   /** Stores or replaces several documents atomically; resolves to each one's chunk count. */
   async memorizeDocuments(inputs: DocumentInput[]): Promise<number[]> {
+    this.#writable();
     const counts = Array.from(this.#store.memorizeDocuments(inputs.map(plainEmbeddings)));
     this.#changed();
     return counts;
@@ -154,6 +163,7 @@ export class HolographicStore {
 
   /** Removes a document; resolves to whether it existed. */
   async deleteDocument(id: string): Promise<boolean> {
+    this.#writable();
     const existed = this.#store.deleteDocument(id);
     if (existed) this.#changed();
     return existed;
@@ -173,6 +183,7 @@ export class HolographicStore {
 
   /** Builds the dense index over stored embeddings; resolves to whether one is current. */
   async trainDocumentIndex(): Promise<boolean> {
+    this.#writable();
     return this.#store.trainDocumentIndex();
   }
 
@@ -196,14 +207,29 @@ export class HolographicStore {
 
   /** The serialized store: the exact bytes `save()` writes (encrypted when encryption is on). */
   async exportSnapshot(): Promise<Uint8Array> {
+    await this.#changingEncryption;
+    this.#encryptionReady();
     const plain = this.#store.exportBytes();
     return this.#cipher ? seal(this.#cipher, plain) : plain;
   }
 
   /** Turns encryption on, changes it, or (with `null`) off; the next save uses it. */
   async setEncryption(options: EncryptionOptions | null): Promise<void> {
-    this.#cipher = options ? await newCipher(options, this.#getWasm) : null;
-    this.#changed();
+    this.#writable();
+    const run = this.#changingEncryption.then(async () => {
+      const cipher = options ? await newCipher(options, this.#getWasm) : null;
+      this.#cipher = cipher;
+      this.#encryptionFailure = null;
+      this.#changed();
+    });
+    this.#changingEncryption = run.catch((error: unknown) => {
+      this.#encryptionFailure = { error };
+    });
+    return run;
+  }
+
+  #encryptionReady(): void {
+    if (this.#encryptionFailure) throw this.#encryptionFailure.error;
   }
 
   /** Writes the snapshot to the storage adapter now. Concurrent saves run in order. */
@@ -213,9 +239,12 @@ export class HolographicStore {
     clearTimeout(this.#timer);
     this.#timer = undefined;
     const run = this.#saving.then(async () => {
+      await this.#changingEncryption;
+      this.#encryptionReady();
       this.#dirty = false;
       try {
         await storage.set(this.#key, await this.exportSnapshot());
+        this.#autosaveError = undefined;
       } catch (error) {
         this.#dirty = true;
         throw error;
@@ -227,8 +256,12 @@ export class HolographicStore {
 
   /** Saves any pending change and waits for in-flight saves. */
   async flush(): Promise<void> {
-    if (this.#storage && (this.#dirty || this.#timer !== undefined)) await this.save();
-    await this.#saving;
+    await this.#changingEncryption;
+    this.#encryptionReady();
+    do {
+      if (this.#storage && (this.#dirty || this.#timer !== undefined)) await this.save();
+      await this.#saving;
+    } while (this.#storage && this.#dirty);
     if (this.#autosaveError !== undefined) {
       const error = this.#autosaveError;
       this.#autosaveError = undefined;
@@ -236,16 +269,20 @@ export class HolographicStore {
     }
   }
 
-  /** Flushes, then releases the module's memory. The store cannot be used afterwards. */
-  async close(): Promise<void> {
-    if (!this.#inner) return;
-    try {
-      await this.flush();
-    } finally {
+  /** Flushes, then releases memory. A failed flush leaves the store open for retry. */
+  close(): Promise<void> {
+    if (!this.#inner) return Promise.resolve();
+    if (this.#closing) return this.#closing;
+    this.#closing = this.flush().then(() => {
       clearTimeout(this.#timer);
-      this.#inner.free();
+      this.#timer = undefined;
+      this.#inner!.free();
       this.#inner = null;
-    }
+    }, (error: unknown) => {
+      this.#closing = null;
+      throw error;
+    });
+    return this.#closing;
   }
 
   #changed(): void {

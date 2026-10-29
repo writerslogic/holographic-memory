@@ -8,13 +8,14 @@ set is the memory API: `remember`, `recall`, `get`, `list`, `forget`. It is impl
 on top of `hms-server`'s documents endpoints; when the SDK grows native remember/recall/
 forget/explain, only this module changes.
 
-Limits this module works around, all inherited from `hms-server` (docs/SERVER.md):
+Enumeration uses the service's metadata cursor. Residual filters select document ids before
+ranking; vector scores merge across bounded id groups. Fused text queries require their
+eligible set to fit one group because independently normalized scores cannot be merged.
 
-- There is no get-by-id or list endpoint. `get` is a query with an id filter, and `list` is a
-  query with the caller's filter and a probe vector, so one `list` returns at most
-  `max_fetch` records (the server's `--max-top-k`, default 100) and reports `truncated`.
-- Filters are equality only. Anything else is evaluated here after an over-fetch of
-  `overfetch * k` candidates (bounded by `max_fetch`), so results can fall short of `k`.
+Limits inherited from `hms-server` (docs/SERVER.md):
+
+- `get` fetches text through an exact id-filtered vector query.
+- One `list` returns at most `max_fetch` records and reports whether more matched.
 - Ids are 1..256 bytes, may not start with `hms:`; text is at most 64 KiB per record.
 """
 
@@ -118,6 +119,7 @@ class _Shared:
         if config.input_dim is None:
             raise ValueError("input_dim or an embedder is required")
         self._probe = [1.0] + [0.0] * (config.input_dim - 1)
+        self._document_ids_capability: Optional[bool] = None
 
     def server_id(self, record_id: str) -> str:
         if not isinstance(record_id, str) or not record_id:
@@ -181,6 +183,71 @@ class _Shared:
             hits = [h for h in hits if residual.matches(h.metadata)]
         return hits[:k]
 
+    def metadata_match(self, document: Dict[str, Any], filter: Optional[Filter]) -> Optional[Tuple[str, str]]:
+        metadata = document.get("metadata") or {}
+        if not isinstance(metadata, dict):
+            return None
+        if metadata.get(COLLECTION_KEY) != (self.config.collection or ""):
+            return None
+        rid = metadata.get(ID_KEY)
+        if not isinstance(rid, str) or document.get("id") != self.server_id(rid):
+            return None
+        clean = {key: value for key, value in metadata.items() if key not in (ID_KEY, COLLECTION_KEY)}
+        if filter is not None and not filter.matches(clean):
+            return None
+        return document["id"], rid
+
+    def list_limit(self, limit: Optional[int]) -> int:
+        if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
+            raise ValueError("limit must be a positive integer")
+        return min(self.config.max_fetch if limit is None else limit, self.config.max_fetch)
+
+    @staticmethod
+    def check_cursor(previous: Optional[str], following: Any) -> None:
+        if not isinstance(following, str) or (previous is not None and following <= previous):
+            raise HmsError("service returned a non-advancing metadata cursor", code="invalid_response")
+
+    def best_matches(self, matches: List[Dict[str, Any]], filter: FilterLike, k: int) -> List[Dict[str, Any]]:
+        parsed = parse(filter)
+        eligible = [match for match in matches if parsed is None or parsed.matches(self.to_hit(match).metadata)]
+        eligible.sort(key=lambda match: (-float(match["score"]), match["id"]))
+        return eligible[:k]
+
+    def cache_document_ids_capability(self, response: httpx.Response) -> None:
+        if response.status_code not in (200, 404, 405):
+            raise _error(response)
+        supported = False
+        if response.status_code == 200:
+            try:
+                properties = response.json()["components"]["schemas"]["QueryIn"]["properties"]
+                supported = isinstance(properties, dict) and "document_ids" in properties
+            except (ValueError, KeyError, TypeError):
+                supported = False
+        self._document_ids_capability = supported
+
+    def require_document_ids_capability(self) -> None:
+        if not self._document_ids_capability:
+            raise HmsError("residual filtering requires a server with document_ids support; upgrade hms-server", code="unsupported_capability")
+
+    def checked_matches(self, response: httpx.Response, request: Dict[str, Any]) -> List[Dict[str, Any]]:
+        try:
+            payload = response.json()
+        except ValueError:
+            raise HmsError("service returned an invalid query response", code="invalid_response") from None
+        if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
+            raise HmsError("service returned an invalid query response", code="invalid_response")
+        matches = payload["matches"]
+        if "document_ids" in request:
+            allowed = set(request["document_ids"])
+            for match in matches:
+                try:
+                    selected = self.metadata_match(match, None) if isinstance(match, dict) else None
+                except (TypeError, ValueError):
+                    selected = None
+                if selected is None or selected[0] not in allowed:
+                    raise HmsError("service returned a document outside the selected ids or collection", code="invalid_response")
+        return matches
+
     def mask(self, vector: List[float]) -> List[float]:
         return self._client_mask(vector)
 
@@ -216,9 +283,9 @@ class HmsBackend(_Shared):
     def __exit__(self, *exc: Any) -> None:
         self.close()
 
-    def _send(self, method: str, path: str, body: Any = None) -> httpx.Response:
+    def _send(self, method: str, path: str, body: Any = None, *, params: Any = None) -> httpx.Response:
         for attempt in range(_MAX_RETRIES + 1):
-            res = self._http.request(method, f"{self.base}{path}", json=body)
+            res = self._http.request(method, f"{self.base}{path}", json=body, params=params)
             if res.status_code in _RETRY_STATUSES and attempt < _MAX_RETRIES:
                 time.sleep(min(float(res.headers.get("retry-after", "1")), 5.0))
                 continue
@@ -254,13 +321,53 @@ class HmsBackend(_Shared):
         else:
             vec = vector if vector is not None else self.config.embedder.embed_query(query)
             body = self.query_body(self.mask(vec), None, fetch, pushed)
-        return self.finish(self._matches(body), residual, k)
+        if residual is not None:
+            return self.finish(self._filtered_matches(body, parse(filter), k), residual, k)
+        return self.finish(self._matches(body), None, k)
+
+    def _metadata(self, filter: FilterLike = None):
+        parsed = parse(filter)
+        cursor = None
+        while True:
+            params = {"limit": 1000}
+            if cursor is not None:
+                params["after"] = cursor
+            res = self._send("GET", "/api/v1/documents", params=params)
+            if res.status_code != 200:
+                raise _error(res)
+            page = res.json()
+            for document in page["documents"]:
+                selected = self.metadata_match(document, parsed)
+                if selected is not None:
+                    yield selected
+            following = page.get("next_cursor")
+            if following is None:
+                return
+            self.check_cursor(cursor, following)
+            cursor = following
+
+    def _filtered_matches(self, body: Dict[str, Any], filter: FilterLike, k: int) -> List[Dict[str, Any]]:
+        if self._document_ids_capability is None:
+            self.cache_document_ids_capability(self._send("GET", "/openapi.json"))
+        self.require_document_ids_capability()
+        ids: List[str] = []
+        best: List[Dict[str, Any]] = []
+        for sid, _ in self._metadata(filter):
+            if body.get("query") is not None and len(ids) == 1000:
+                raise HmsError("text-mode residual filtering supports at most 1000 matching records; narrow the filter", code="filter_limit")
+            ids.append(sid)
+            if len(ids) == 1000 and body.get("query") is None:
+                best = self.best_matches(best + self._matches({**body, "top_k": k, "document_ids": ids}), filter, k)
+                ids = []
+        if ids:
+            best = self.best_matches(best + self._matches({**body, "top_k": k, "document_ids": ids}), filter, k)
+        return best
 
     def _matches(self, body: Dict[str, Any]) -> List[Dict[str, Any]]:
         res = self._send("POST", "/api/v1/query", body)
         if res.status_code != 200:
             raise _error(res)
-        return res.json().get("matches", [])
+        return self.checked_matches(res, body)
 
     def get(self, ids: Sequence[str]) -> List[Optional[Record]]:
         """Records for `ids` in order; `None` where an id is absent."""
@@ -272,15 +379,14 @@ class HmsBackend(_Shared):
         return out
 
     def list(self, filter: FilterLike = None, limit: Optional[int] = None) -> Page:
-        """Up to `limit` records matching `filter` (default and ceiling: `max_fetch`)."""
-        want = min(limit or self.config.max_fetch, self.config.max_fetch)
-        parsed = parse(filter)
-        pushed, residual = split(parsed)
-        n = want if residual is None else self.config.max_fetch
-        matches = self._matches(self.query_body(self.mask(self._probe), None, n, self.scope(pushed)))
-        hits = self.finish(matches, residual, n)[:want]
-        truncated = len(matches) >= n and (residual is not None or limit is None or limit > n)
-        return Page([self.to_record(h) for h in hits], truncated)
+        """Enumerate matching metadata in id order, then fetch the bounded result texts."""
+        want = self.list_limit(limit)
+        ids = []
+        for _, rid in self._metadata(filter):
+            ids.append(rid)
+            if len(ids) > want:
+                break
+        return Page([record for record in self.get(ids[:want]) if record is not None], len(ids) > want)
 
     def forget(self, ids: Sequence[str]) -> int:
         """Delete by id. Returns how many existed."""
@@ -295,20 +401,11 @@ class HmsBackend(_Shared):
         return removed
 
     def forget_where(self, filter: FilterLike = None) -> int:
-        """Delete everything matching `filter`, paging through `list` until nothing is left.
-
-        With a filter that has non-equality terms, stops when a full candidate page holds no
-        match, so matches beyond the first `max_fetch` candidates can remain.
-        """
+        """Delete every matching record by scanning paginated metadata without retaining text."""
         total = 0
-        while True:
-            page = self.list(filter)
-            if not page.records:
-                return total
-            removed = self.forget([r.id for r in page.records])
-            total += removed
-            if removed == 0:
-                return total
+        for _, rid in self._metadata(filter):
+            total += self.forget([rid])
+        return total
 
     def maintain(self) -> bool:
         """Train the service's document index; true when an index is now trained."""
@@ -340,9 +437,9 @@ class AsyncHmsBackend(_Shared):
     async def __aexit__(self, *exc: Any) -> None:
         await self.aclose()
 
-    async def _send(self, method: str, path: str, body: Any = None) -> httpx.Response:
+    async def _send(self, method: str, path: str, body: Any = None, *, params: Any = None) -> httpx.Response:
         for attempt in range(_MAX_RETRIES + 1):
-            res = await self._http.request(method, f"{self.base}{path}", json=body)
+            res = await self._http.request(method, f"{self.base}{path}", json=body, params=params)
             if res.status_code in _RETRY_STATUSES and attempt < _MAX_RETRIES:
                 await asyncio.sleep(min(float(res.headers.get("retry-after", "1")), 5.0))
                 continue
@@ -376,13 +473,53 @@ class AsyncHmsBackend(_Shared):
         else:
             vec = vector if vector is not None else await aembed_query(self.config.embedder, query)
             body = self.query_body(self.mask(vec), None, fetch, pushed)
-        return self.finish(await self._matches(body), residual, k)
+        if residual is not None:
+            return self.finish(await self._filtered_matches(body, parse(filter), k), residual, k)
+        return self.finish(await self._matches(body), None, k)
+
+    async def _metadata(self, filter: FilterLike = None):
+        parsed = parse(filter)
+        cursor = None
+        while True:
+            params = {"limit": 1000}
+            if cursor is not None:
+                params["after"] = cursor
+            res = await self._send("GET", "/api/v1/documents", params=params)
+            if res.status_code != 200:
+                raise _error(res)
+            page = res.json()
+            for document in page["documents"]:
+                selected = self.metadata_match(document, parsed)
+                if selected is not None:
+                    yield selected
+            following = page.get("next_cursor")
+            if following is None:
+                return
+            self.check_cursor(cursor, following)
+            cursor = following
+
+    async def _filtered_matches(self, body: Dict[str, Any], filter: FilterLike, k: int) -> List[Dict[str, Any]]:
+        if self._document_ids_capability is None:
+            self.cache_document_ids_capability(await self._send("GET", "/openapi.json"))
+        self.require_document_ids_capability()
+        ids: List[str] = []
+        best: List[Dict[str, Any]] = []
+        async for sid, _ in self._metadata(filter):
+            if body.get("query") is not None and len(ids) == 1000:
+                raise HmsError("text-mode residual filtering supports at most 1000 matching records; narrow the filter", code="filter_limit")
+            ids.append(sid)
+            if len(ids) == 1000 and body.get("query") is None:
+                best = self.best_matches(best + await self._matches({**body, "top_k": k, "document_ids": ids}), filter, k)
+                ids = []
+        if ids:
+            best = self.best_matches(best + await self._matches({**body, "top_k": k, "document_ids": ids}), filter, k)
+        return best
 
     async def _matches(self, body: Dict[str, Any]) -> List[Dict[str, Any]]:
         res = await self._send("POST", "/api/v1/query", body)
         if res.status_code != 200:
             raise _error(res)
-        return res.json().get("matches", [])
+        return self.checked_matches(res, body)
 
     async def get(self, ids: Sequence[str]) -> List[Optional[Record]]:
         gate = asyncio.Semaphore(8)
@@ -396,14 +533,13 @@ class AsyncHmsBackend(_Shared):
         return list(await asyncio.gather(*(one(r) for r in ids)))
 
     async def list(self, filter: FilterLike = None, limit: Optional[int] = None) -> Page:
-        want = min(limit or self.config.max_fetch, self.config.max_fetch)
-        parsed = parse(filter)
-        pushed, residual = split(parsed)
-        n = want if residual is None else self.config.max_fetch
-        matches = await self._matches(self.query_body(self.mask(self._probe), None, n, self.scope(pushed)))
-        hits = self.finish(matches, residual, n)[:want]
-        truncated = len(matches) >= n and (residual is not None or limit is None or limit > n)
-        return Page([self.to_record(h) for h in hits], truncated)
+        want = self.list_limit(limit)
+        ids = []
+        async for _, rid in self._metadata(filter):
+            ids.append(rid)
+            if len(ids) > want:
+                break
+        return Page([record for record in await self.get(ids[:want]) if record is not None], len(ids) > want)
 
     async def forget(self, ids: Sequence[str]) -> int:
         removed = 0
@@ -418,14 +554,9 @@ class AsyncHmsBackend(_Shared):
 
     async def forget_where(self, filter: FilterLike = None) -> int:
         total = 0
-        while True:
-            page = await self.list(filter)
-            if not page.records:
-                return total
-            removed = await self.forget([r.id for r in page.records])
-            total += removed
-            if removed == 0:
-                return total
+        async for _, rid in self._metadata(filter):
+            total += await self.forget([rid])
+        return total
 
     async def maintain(self) -> bool:
         res = await self._send("POST", "/api/v1/index/maintain", {})

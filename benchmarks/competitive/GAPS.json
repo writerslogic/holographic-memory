@@ -1,225 +1,6 @@
 [
  {
   "status": "LOSS",
-  "dataset": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "heavy",
-  "metric": "build_seconds",
-  "label": "Build time",
-  "comparator": "hnswlib",
-  "hms": 312.6031632165,
-  "comparator_value": 182.4948315215006,
-  "unit": "s",
-  "advantage_factor": 0.5837907385316825,
-  "advantage_ci": [
-   0.5781119188137492,
-   0.589564147610273
-  ],
-  "level": 0.9944444444444445,
-  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "graph construction cost: parallel build with a cheaper construction search (quantized_search) and a smaller build_ef, at a recall cost to be measured; for text, a lexical-only ingest path that skips dense-slot encoding",
-  "code_path": "src/core/qgraph (Graph::build_owned, VGraph::from_graph_with)"
- },
- {
-  "status": "LOSS",
-  "dataset": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "heavy",
-  "metric": "build_peak_rss_mib",
-  "label": "Peak RSS, build",
-  "comparator": "hnswlib",
-  "hms": 2967.65234375,
-  "comparator_value": 1524.958984375,
-  "unit": "MiB",
-  "advantage_factor": 0.5138603878539302,
-  "advantage_ci": [
-   0.5107265282990651,
-   0.5170153558848817
-  ],
-  "level": 0.9944444444444445,
-  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "stream the build instead of holding the f32 matrix plus graph (ledger 1A target: peak build RSS <= 2x final index bytes)",
-  "code_path": "src/core/qgraph/vertex.rs (VGraph search/refine), src/bin/public-bench.rs (ann-qgraph)"
- },
- {
-  "status": "LOSS",
-  "dataset": "sift-128-euclidean (1,000,000 vectors, 10,000 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "heavy",
-  "metric": "serving_rss_mib",
-  "label": "RSS, serving",
-  "comparator": "hnswlib",
-  "hms": 2203.828125,
-  "comparator_value": 1019.3671875,
-  "unit": "MiB",
-  "advantage_factor": 0.4625438689779858,
-  "advantage_ci": [
-   0.45825494112459664,
-   0.808316090743517
-  ],
-  "level": 0.9944444444444445,
-  "file": "benchmarks/results/competitive/heavy-ann-sift-128-euclidean-n1000000-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "persist the index memory-mapped and drop the build-time allocations; for text the serving V40 RSS campaign in the ledger (2A) is the open lever",
-  "code_path": "src/core/qgraph/vertex.rs (index arrays), build-time allocations in Graph::build_owned"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_seconds",
-  "label": "Ingest/build time",
-  "comparator": "SQLite FTS5",
-  "hms": 2.156009168,
-  "comparator_value": 1.1806630159990164,
-  "unit": "s",
-  "advantage_factor": 0.547615025725631,
-  "advantage_ci": [
-   0.5359224463376934,
-   0.5540055039027528
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever",
-  "code_path": "src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "disk_mib",
-  "label": "On-disk size",
-  "comparator": "Apache Lucene 9.12.3 (JVM)",
-  "hms": 20.562817573547363,
-  "comparator_value": 12.16652774810791,
-  "unit": "MiB",
-  "advantage_factor": 0.5916761020026411,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "compact postings and file-backed text (ledger 2B/2C) and removing preallocated arena slack",
-  "code_path": "src/core/storage.rs (arena preallocation), src/core/documents/postings.rs"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "cold_start_s",
-  "label": "Cold start to first answer",
-  "comparator": "tantivy",
-  "hms": 0.840599199,
-  "comparator_value": 0.024903889,
-  "unit": "s",
-  "advantage_factor": 0.029626353474552856,
-  "advantage_ci": [
-   0.025072086268905124,
-   0.03547397841370828
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever",
-  "code_path": "src/core/storage.rs and src/core/engine/mod.rs (open: arena and document map load)"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "install_mib",
-  "label": "Install size",
-  "comparator": "SQLite FTS5",
-  "hms": 2.4908218383789062,
-  "comparator_value": 0.0,
-  "unit": "MiB",
-  "advantage_factor": 0.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "strip symbols, split optional features out of the default binary",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "ndcg@10",
-  "label": "nDCG@10",
-  "comparator": "SQLite FTS5",
-  "hms": 0.26537791112001474,
-  "comparator_value": 0.26781574230549227,
-  "unit": "nDCG",
-  "advantage_factor": 0.9908973566509144,
-  "advantage_ci": [
-   0.6868425334852687,
-   1.415209364705616
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "recall@100",
-  "label": "recall@100",
-  "comparator": "SQLite FTS5",
-  "hms": 0.5422345043845044,
-  "comparator_value": 0.5545597791097792,
-  "unit": "recall",
-  "advantage_factor": 0.9777746688642652,
-  "advantage_ci": [
-   0.7952072682533653,
-   1.2009674952633824
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_peak_rss_mib",
-  "label": "Peak RSS, build",
-  "comparator": "SQLite FTS5",
-  "hms": 2479.68359375,
-  "comparator_value": 2479.68359375,
-  "unit": "MiB",
-  "advantage_factor": 1.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:fiqa (57,600 documents, 500 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "serving_rss_mib",
-  "label": "Peak RSS, serving",
-  "comparator": "SQLite FTS5",
-  "hms": 2479.68359375,
-  "comparator_value": 2479.68359375,
-  "unit": "MiB",
-  "advantage_factor": 1.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-fiqa-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers",
-  "code_path": "src/core/storage.rs (arena), src/core/documents/index.rs, postings.rs"
- },
- {
-  "status": "LOSS",
   "dataset": "memory (4,559 documents, 100 queries)",
   "hardware_class": "modal-x86_64-8vcpu-32g",
   "suite": "heavy",
@@ -234,7 +15,7 @@
    0.7881216865843764,
    0.8522430387421328
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever",
   "code_path": "src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents"
@@ -255,7 +36,7 @@
    0.9050063055400769,
    0.9106252397391638
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -274,9 +55,9 @@
   "advantage_factor": 0.39185705396035203,
   "advantage_ci": [
    0.3751389295115531,
-   0.4061390309960879
+   0.40562744507974724
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers",
   "code_path": "src/core/storage.rs (arena), src/core/documents/index.rs, postings.rs"
@@ -295,48 +76,12 @@
   "advantage_factor": 0.11592304280412175,
   "advantage_ci": [
    0.10199690466669294,
-   0.13173235262756608
+   0.1309635616594516
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever",
   "code_path": "src/core/storage.rs and src/core/engine/mod.rs (open: arena and document map load)"
- },
- {
-  "status": "LOSS",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "modal-x86_64-8vcpu-32g",
-  "suite": "heavy",
-  "metric": "delete_ms_per_op",
-  "label": "Delete one document (durable)",
-  "comparator": "Apache Lucene 9.12.3 (JVM)",
-  "hms": 3.1620943699999997,
-  "comparator_value": 1.48195727,
-  "unit": "ms",
-  "advantage_factor": 0.4686632012187543,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
-  "hypothesis": "batching commits (memorize_batch) or a group commit; the per-op figure is one durable commit",
-  "code_path": "src/core/engine/mod.rs commit (one durable transaction per call), src/core/durable_file.rs"
- },
- {
-  "status": "LOSS",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "modal-x86_64-8vcpu-32g",
-  "suite": "heavy",
-  "metric": "install_mib",
-  "label": "Install size",
-  "comparator": "Whoosh",
-  "hms": 2.3764114379882812,
-  "comparator_value": 1.9728384017944336,
-  "unit": "MiB",
-  "advantage_factor": 0.8301754360619107,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
-  "hypothesis": "strip symbols, split optional features out of the default binary",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
  },
  {
   "status": "TIE",
@@ -351,10 +96,10 @@
   "unit": "nDCG",
   "advantage_factor": 0.9859267230723582,
   "advantage_ci": [
-   0.5863661209554932,
-   1.7115849053375807
+   0.597111272490446,
+   1.6477744218570605
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -372,10 +117,10 @@
   "unit": "recall",
   "advantage_factor": 0.9775571002979145,
   "advantage_ci": [
-   0.7781995661605206,
-   1.2384823848238482
+   0.7894450489662675,
+   1.2235241099594412
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -388,15 +133,15 @@
   "metric": "qps",
   "label": "QPS (single thread)",
   "comparator": "tantivy",
-  "hms": 2225.4180373733425,
-  "comparator_value": 2398.9123473654536,
+  "hms": 2288.679292332942,
+  "comparator_value": 2503.8034244261294,
   "unit": "QPS",
-  "advantage_factor": 0.9276779286318456,
+  "advantage_factor": 0.914081061638258,
   "advantage_ci": [
-   0.8290962899138458,
-   1.1532091283714843
+   0.8284177664215303,
+   1.0424314827306465
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -409,15 +154,15 @@
   "metric": "p50_latency",
   "label": "p50 latency",
   "comparator": "tantivy",
-  "hms": 425.0055,
-  "comparator_value": 399.576,
+  "hms": 420.2165,
+  "comparator_value": 379.59749999999997,
   "unit": "us",
-  "advantage_factor": 0.9401666566667962,
+  "advantage_factor": 0.9033379222377036,
   "advantage_ci": [
-   0.8451476850165692,
-   1.1179099835171429
+   0.8335007932902637,
+   1.0377587215452972
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "none identified; the median is within noise of the leader",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -430,312 +175,18 @@
   "metric": "p99_latency",
   "label": "p99 latency",
   "comparator": "tantivy",
-  "hms": 785.917,
-  "comparator_value": 733.1395,
+  "hms": 774.961,
+  "comparator_value": 720.3705,
   "unit": "us",
-  "advantage_factor": 0.9328459621054132,
+  "advantage_factor": 0.9295571002927889,
   "advantage_ci": [
-   0.6017699497075266,
-   1.1891119605923361
+   0.8633152085842004,
+   1.0215991950268095
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-memory-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "tail queries are the long ones; MaxScore-style early termination for long queries (the ledger's impact-index work, category 1C) is the candidate",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "LOSS",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_seconds",
-  "label": "Ingest/build time",
-  "comparator": "SQLite FTS5",
-  "hms": 1.213714217,
-  "comparator_value": 0.8815983789991151,
-  "unit": "s",
-  "advantage_factor": 0.7263640539518498,
-  "advantage_ci": [
-   0.6816500525451691,
-   0.7524685473792635
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever",
-  "code_path": "src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents"
- },
- {
-  "status": "LOSS",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "cold_start_s",
-  "label": "Cold start to first answer",
-  "comparator": "tantivy",
-  "hms": 0.301695743,
-  "comparator_value": 0.022639198,
-  "unit": "s",
-  "advantage_factor": 0.075039832431444,
-  "advantage_ci": [
-   0.06342166788421132,
-   0.07958810349136666
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever",
-  "code_path": "src/core/storage.rs and src/core/engine/mod.rs (open: arena and document map load)"
- },
- {
-  "status": "LOSS",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "install_mib",
-  "label": "Install size",
-  "comparator": "SQLite FTS5",
-  "hms": 2.4908218383789062,
-  "comparator_value": 0.0,
-  "unit": "MiB",
-  "advantage_factor": 0.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "strip symbols, split optional features out of the default binary",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "ndcg@10",
-  "label": "nDCG@10",
-  "comparator": "Apache Lucene 9.12.3 (JVM)",
-  "hms": 0.4561419499447157,
-  "comparator_value": 0.46265299364569407,
-  "unit": "nDCG",
-  "advantage_factor": 0.9859267230723582,
-  "advantage_ci": [
-   0.5863661209554932,
-   1.7115849053375807
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "recall@100",
-  "label": "recall@100",
-  "comparator": "SQLite FTS5",
-  "hms": 0.8203333333333334,
-  "comparator_value": 0.8391666666666667,
-  "unit": "recall",
-  "advantage_factor": 0.9775571002979145,
-  "advantage_ci": [
-   0.7781995661605206,
-   1.2384823848238482
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_peak_rss_mib",
-  "label": "Peak RSS, build",
-  "comparator": "SQLite FTS5",
-  "hms": 2479.68359375,
-  "comparator_value": 2479.68359375,
-  "unit": "MiB",
-  "advantage_factor": 1.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "memory (4,559 documents, 100 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "serving_rss_mib",
-  "label": "Peak RSS, serving",
-  "comparator": "SQLite FTS5",
-  "hms": 2479.68359375,
-  "comparator_value": 2479.68359375,
-  "unit": "MiB",
-  "advantage_factor": 1.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-memory-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers",
-  "code_path": "src/core/storage.rs (arena), src/core/documents/index.rs, postings.rs"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_seconds",
-  "label": "Ingest/build time",
-  "comparator": "SQLite FTS5",
-  "hms": 0.230839372,
-  "comparator_value": 0.13541231199997128,
-  "unit": "s",
-  "advantage_factor": 0.586608388451045,
-  "advantage_ci": [
-   0.5749993450484218,
-   0.6180015362419568
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever",
-  "code_path": "src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "disk_mib",
-  "label": "On-disk size",
-  "comparator": "Apache Lucene 9.12.3 (JVM)",
-  "hms": 2.0628175735473633,
-  "comparator_value": 1.4865550994873047,
-  "unit": "MiB",
-  "advantage_factor": 0.7206430265818039,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "compact postings and file-backed text (ledger 2B/2C) and removing preallocated arena slack",
-  "code_path": "src/core/storage.rs (arena preallocation), src/core/documents/postings.rs"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "cold_start_s",
-  "label": "Cold start to first answer",
-  "comparator": "tantivy",
-  "hms": 0.08889909,
-  "comparator_value": 0.020183307,
-  "unit": "s",
-  "advantage_factor": 0.22703614851400616,
-  "advantage_ci": [
-   0.20513040681600855,
-   0.3101172748804045
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever",
-  "code_path": "src/core/storage.rs and src/core/engine/mod.rs (open: arena and document map load)"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "install_mib",
-  "label": "Install size",
-  "comparator": "SQLite FTS5",
-  "hms": 2.4908218383789062,
-  "comparator_value": 0.0,
-  "unit": "MiB",
-  "advantage_factor": 0.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "strip symbols, split optional features out of the default binary",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "ndcg@10",
-  "label": "nDCG@10",
-  "comparator": "SQLite FTS5",
-  "hms": 0.29158226275481797,
-  "comparator_value": 0.29140981016338025,
-  "unit": "nDCG",
-  "advantage_factor": 1.0005917871856855,
-  "advantage_ci": [
-   0.697305228868484,
-   1.4372579007721404
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "recall@100",
-  "label": "recall@100",
-  "comparator": "Apache Lucene 9.12.3 (JVM)",
-  "hms": 0.22742500506264265,
-  "comparator_value": 0.22757113786424402,
-  "unit": "recall",
-  "advantage_factor": 0.9993578588085782,
-  "advantage_ci": [
-   0.6635054962097233,
-   1.4991496541933793
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_peak_rss_mib",
-  "label": "Peak RSS, build",
-  "comparator": "SQLite FTS5",
-  "hms": 747.8046875,
-  "comparator_value": 747.8046875,
-  "unit": "MiB",
-  "advantage_factor": 1.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "serving_rss_mib",
-  "label": "Peak RSS, serving",
-  "comparator": "SQLite FTS5",
-  "hms": 747.8046875,
-  "comparator_value": 747.8046875,
-  "unit": "MiB",
-  "advantage_factor": 1.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-nfcorpus-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers",
-  "code_path": "src/core/storage.rs (arena), src/core/documents/index.rs, postings.rs"
  },
  {
   "status": "LOSS",
@@ -753,7 +204,7 @@
    0.4718837248719092,
    0.4934232916761346
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever",
   "code_path": "src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents"
@@ -774,7 +225,7 @@
    0.5843410119570357,
    0.5963126031920748
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -793,9 +244,9 @@
   "advantage_factor": 0.5270144787976752,
   "advantage_ci": [
    0.49976426214049974,
-   0.5397919059052789
+   0.5384187469577916
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers",
   "code_path": "src/core/storage.rs (arena), src/core/documents/index.rs, postings.rs"
@@ -813,7 +264,7 @@
   "unit": "MiB",
   "advantage_factor": 0.7206351672036472,
   "advantage_ci": null,
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "compact postings and file-backed text (ledger 2B/2C) and removing preallocated arena slack",
   "code_path": "src/core/storage.rs (arena preallocation), src/core/documents/postings.rs"
@@ -831,31 +282,13 @@
   "unit": "s",
   "advantage_factor": 0.38888056860276743,
   "advantage_ci": [
-   0.3512312881629002,
-   0.4257809228672659
+   0.35136586480765936,
+   0.4250738506114756
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever",
   "code_path": "src/core/storage.rs and src/core/engine/mod.rs (open: arena and document map load)"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "modal-x86_64-8vcpu-32g",
-  "suite": "heavy",
-  "metric": "install_mib",
-  "label": "Install size",
-  "comparator": "Whoosh",
-  "hms": 2.3764114379882812,
-  "comparator_value": 1.9728384017944336,
-  "unit": "MiB",
-  "advantage_factor": 0.8301754360619107,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
-  "hypothesis": "strip symbols, split optional features out of the default binary",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
  },
  {
   "status": "TIE",
@@ -870,10 +303,10 @@
   "unit": "nDCG",
   "advantage_factor": 1.0005917871856855,
   "advantage_ci": [
-   0.697305228868484,
-   1.4372579007721404
+   0.7019718318493078,
+   1.419067575689336
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -891,33 +324,12 @@
   "unit": "recall",
   "advantage_factor": 0.9993578588085782,
   "advantage_ci": [
-   0.6635054962097233,
-   1.4991496541933793
+   0.6898622199107787,
+   1.4495060916111866
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:nfcorpus (3,633 documents, 324 queries)",
-  "hardware_class": "modal-x86_64-8vcpu-32g",
-  "suite": "heavy",
-  "metric": "qps",
-  "label": "QPS (single thread)",
-  "comparator": "tantivy",
-  "hms": 9532.397213390766,
-  "comparator_value": 7104.529336208195,
-  "unit": "QPS",
-  "advantage_factor": 1.3417352173927914,
-  "advantage_ci": [
-   0.9232678600604773,
-   1.691775745900554
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
-  "hypothesis": "",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
  },
  {
@@ -928,177 +340,18 @@
   "metric": "p99_latency",
   "label": "p99 latency",
   "comparator": "tantivy",
-  "hms": 298.151,
-  "comparator_value": 300.3295,
+  "hms": 279.0985,
+  "comparator_value": 293.677,
   "unit": "us",
-  "advantage_factor": 1.0073067002961587,
+  "advantage_factor": 1.052234247048981,
   "advantage_ci": [
-   0.43182822384353303,
-   1.3293070793655584
+   0.83855065098133,
+   1.2085832069677596
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-nfcorpus-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "tail queries are the long ones; MaxScore-style early termination for long queries (the ledger's impact-index work, category 1C) is the candidate",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_seconds",
-  "label": "Ingest/build time",
-  "comparator": "SQLite FTS5",
-  "hms": 0.312045625,
-  "comparator_value": 0.19639155000004394,
-  "unit": "s",
-  "advantage_factor": 0.6293680611610688,
-  "advantage_ci": [
-   0.609407506493104,
-   0.7071508607359359
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever",
-  "code_path": "src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "disk_mib",
-  "label": "On-disk size",
-  "comparator": "Apache Lucene 9.12.3 (JVM)",
-  "hms": 2.9104738235473633,
-  "comparator_value": 1.9866275787353516,
-  "unit": "MiB",
-  "advantage_factor": 0.6825787480589661,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "compact postings and file-backed text (ledger 2B/2C) and removing preallocated arena slack",
-  "code_path": "src/core/storage.rs (arena preallocation), src/core/documents/postings.rs"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "cold_start_s",
-  "label": "Cold start to first answer",
-  "comparator": "tantivy",
-  "hms": 0.117377458,
-  "comparator_value": 0.024623582,
-  "unit": "s",
-  "advantage_factor": 0.2097811830274941,
-  "advantage_ci": [
-   0.19980521036725324,
-   0.22216611410755446
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever",
-  "code_path": "src/core/storage.rs and src/core/engine/mod.rs (open: arena and document map load)"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "install_mib",
-  "label": "Install size",
-  "comparator": "SQLite FTS5",
-  "hms": 2.4908218383789062,
-  "comparator_value": 0.0,
-  "unit": "MiB",
-  "advantage_factor": 0.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "strip symbols, split optional features out of the default binary",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "ndcg@10",
-  "label": "nDCG@10",
-  "comparator": "Apache Lucene 9.12.3 (JVM)",
-  "hms": 0.7026997341473034,
-  "comparator_value": 0.7021782838562147,
-  "unit": "nDCG",
-  "advantage_factor": 1.0007426180830101,
-  "advantage_ci": [
-   0.8969990949315977,
-   1.1158108977856072
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "recall@100",
-  "label": "recall@100",
-  "comparator": "SQLite FTS5",
-  "hms": 0.9264112072517512,
-  "comparator_value": 0.9321796456530697,
-  "unit": "recall",
-  "advantage_factor": 0.9938118811881188,
-  "advantage_ci": [
-   0.9401930368838332,
-   1.0484512419607754
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "build_peak_rss_mib",
-  "label": "Peak RSS, build",
-  "comparator": "SQLite FTS5",
-  "hms": 73.18359375,
-  "comparator_value": 73.18359375,
-  "unit": "MiB",
-  "advantage_factor": 1.0,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
- },
- {
-  "status": "TIE",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "linux-x86_64-intel-ultra-9-185h-22c-27g",
-  "suite": "standard",
-  "metric": "serving_rss_mib",
-  "label": "Peak RSS, serving",
-  "comparator": "tantivy",
-  "hms": 195.8359375,
-  "comparator_value": 173.6640625,
-  "unit": "MiB",
-  "advantage_factor": 0.8867834204332389,
-  "advantage_ci": [
-   0.2576314603543559,
-   2.750562895043811
-  ],
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/standard-text-beir-scifact-linux-x86_64-intel-ultra-9-185h-22c-27g.json",
-  "hypothesis": "the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers",
-  "code_path": "src/core/storage.rs (arena), src/core/documents/index.rs, postings.rs"
  },
  {
   "status": "LOSS",
@@ -1108,15 +361,15 @@
   "metric": "qps",
   "label": "QPS (single thread)",
   "comparator": "tantivy",
-  "hms": 2711.3249243811115,
-  "comparator_value": 2878.759871806599,
+  "hms": 2732.645695786485,
+  "comparator_value": 2964.8401183361775,
   "unit": "QPS",
-  "advantage_factor": 0.9418378208390087,
+  "advantage_factor": 0.9216839987041201,
   "advantage_ci": [
-   0.6244517038425386,
-   0.9998104460633791
+   0.8690787906042919,
+   0.9845285499304655
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -1129,15 +382,15 @@
   "metric": "p50_latency",
   "label": "p50 latency",
   "comparator": "tantivy",
-  "hms": 373.98199999999997,
-  "comparator_value": 337.5965,
+  "hms": 372.6545,
+  "comparator_value": 334.0,
   "unit": "us",
-  "advantage_factor": 0.9027078843366794,
+  "advantage_factor": 0.8962725527264531,
   "advantage_ci": [
-   0.6917660325481555,
-   0.9600187114351012
+   0.8499859949062956,
+   0.958956318606801
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "none identified; the median is within noise of the leader",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -1158,7 +411,7 @@
    0.28145959367491674,
    0.3235699898373578
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever",
   "code_path": "src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents"
@@ -1179,7 +432,7 @@
    0.5881304580288719,
    0.6100251828756446
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -1198,9 +451,9 @@
   "advantage_factor": 0.34111361079865016,
   "advantage_ci": [
    0.3351063829787234,
-   0.34694683819353567
+   0.346758470916315
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "the whole store is resident after open; memory-mapped postings and file-backed text (ledger 2A/2B) are the open levers",
   "code_path": "src/core/storage.rs (arena), src/core/documents/index.rs, postings.rs"
@@ -1218,7 +471,7 @@
   "unit": "MiB",
   "advantage_factor": 0.6825734013313883,
   "advantage_ci": null,
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "compact postings and file-backed text (ledger 2B/2C) and removing preallocated arena slack",
   "code_path": "src/core/storage.rs (arena preallocation), src/core/documents/postings.rs"
@@ -1237,30 +490,12 @@
   "advantage_factor": 0.32013886173731054,
   "advantage_ci": [
    0.2717740336205765,
-   0.37332737945314176
+   0.36761497157655043
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "the store is read into memory at open (open_s in the raw file); lazy or memory-mapped loading of the arena and postings is the lever",
   "code_path": "src/core/storage.rs and src/core/engine/mod.rs (open: arena and document map load)"
- },
- {
-  "status": "LOSS",
-  "dataset": "beir:scifact (5,183 documents, 809 queries)",
-  "hardware_class": "modal-x86_64-8vcpu-32g",
-  "suite": "heavy",
-  "metric": "install_mib",
-  "label": "Install size",
-  "comparator": "Whoosh",
-  "hms": 2.3764114379882812,
-  "comparator_value": 1.9728384017944336,
-  "unit": "MiB",
-  "advantage_factor": 0.8301754360619107,
-  "advantage_ci": null,
-  "level": 0.9961538461538462,
-  "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
-  "hypothesis": "strip symbols, split optional features out of the default binary",
-  "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
  },
  {
   "status": "TIE",
@@ -1275,10 +510,10 @@
   "unit": "nDCG",
   "advantage_factor": 1.0007426180830101,
   "advantage_ci": [
-   0.8969990949315977,
-   1.1158108977856072
+   0.8992113393218454,
+   1.114207640520607
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -1296,10 +531,10 @@
   "unit": "recall",
   "advantage_factor": 0.9938118811881188,
   "advantage_ci": [
-   0.9401930368838332,
-   1.0484512419607754
+   0.9412867765923053,
+   1.0459256571337854
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "none: a rounding-level difference in analyzer details (stemmer, stop words), not a lever",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"
@@ -1312,15 +547,15 @@
   "metric": "p99_latency",
   "label": "p99 latency",
   "comparator": "tantivy",
-  "hms": 526.3005,
-  "comparator_value": 520.043,
+  "hms": 518.2855,
+  "comparator_value": 508.30050000000006,
   "unit": "us",
-  "advantage_factor": 0.9881104046072537,
+  "advantage_factor": 0.9807345565330308,
   "advantage_ci": [
-   0.42682559610735804,
-   1.1803550956818247
+   0.8697244708176279,
+   1.1946990407321396
   ],
-  "level": 0.9961538461538462,
+  "level": 0.995,
   "file": "benchmarks/results/competitive/heavy-text-beir-scifact-modal-x86_64-8vcpu-32g.json",
   "hypothesis": "tail queries are the long ones; MaxScore-style early termination for long queries (the ledger's impact-index work, category 1C) is the candidate",
   "code_path": "src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs"

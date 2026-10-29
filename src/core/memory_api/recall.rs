@@ -110,6 +110,10 @@ impl Memory {
     /// ranks them. `options` selects history, an `as_of` or `known_at` time, a subject or
     /// entities, and per-result explanations.
     pub fn recall(&self, query: &str, options: &RecallOptions) -> Result<Vec<Recalled>> {
+        self.with_revision(|| self.recall_once(query, options))
+    }
+
+    fn recall_once(&self, query: &str, options: &RecallOptions) -> Result<Vec<Recalled>> {
         let k = options.k.unwrap_or(self.config.default_k);
         check!((1..=1000).contains(&k), "k must be 1..=1000");
         let history = options.history.unwrap_or(self.config.default_history);
@@ -139,6 +143,10 @@ impl Memory {
     /// the position in a current-only recall. A fact outside the candidates is still
     /// explained, with `retrieved: false`.
     pub fn explain(&self, query: &str, id: &str, options: &RecallOptions) -> Result<Explanation> {
+        self.with_revision(|| self.explain_once(query, id, options))
+    }
+
+    fn explain_once(&self, query: &str, id: &str, options: &RecallOptions) -> Result<Explanation> {
         self.ensure_fresh();
         let (version, metadata, text) = self
             .core
@@ -150,6 +158,7 @@ impl Memory {
             .unwrap_or_else(|| 100.max(k))
             .clamp(1, 1000);
         let run = self.run(query, options, HistoryMode::All, limit, true)?;
+        let now = options.as_of.unwrap_or_else(|| self.clock.now_millis());
         let index = self.index.read();
         if let Some(run) = &run {
             if let Some(position) = run.ranked.iter().position(|r| r.hit.document_id == id) {
@@ -165,7 +174,6 @@ impl Memory {
             }
         }
         let stamp = Stamp::from_parts(&version, &metadata);
-        let now = options.as_of.unwrap_or_else(|| self.clock.now_millis());
         let status = evaluate(stamp.as_ref(), index.edges(id), now, options.known_at)
             .unwrap_or(FactStatus::Current);
         Ok(Explanation {
@@ -198,29 +206,32 @@ impl Memory {
 
     /// One stored fact, or none.
     pub fn get(&self, id: &str) -> Result<Option<FactRecord>> {
-        self.ensure_fresh();
-        let index = self.index.read();
-        Ok(self.record(&index, id, self.clock.now_millis()))
+        let now = self.clock.now_millis();
+        self.with_snapshot(|index| Ok(self.record(index, id, now)))
     }
 
     /// Every version of the fact `id` belongs to: it, what it superseded and what superseded
     /// it, in effect order, each with its status now.
     pub fn history(&self, id: &str) -> Result<Vec<FactRecord>> {
-        self.ensure_fresh();
-        let index = self.index.read();
         let now = self.clock.now_millis();
-        if !self.core.has_document(id) {
-            return Err(MemoryError::NotFound(format!("unknown fact {id:?}")).into());
-        }
-        let mut records: Vec<FactRecord> = index
-            .component(id)
-            .iter()
-            .filter_map(|member| self.record(&index, member, now))
-            .collect();
-        records.sort_by(|a, b| {
-            (a.effective_from, a.ingest_time, &a.id).cmp(&(b.effective_from, b.ingest_time, &b.id))
-        });
-        Ok(records)
+        self.with_snapshot(|index| {
+            if !self.core.has_document(id) {
+                return Err(MemoryError::NotFound(format!("unknown fact {id:?}")).into());
+            }
+            let mut records: Vec<FactRecord> = index
+                .component(id)
+                .iter()
+                .filter_map(|member| self.record(index, member, now))
+                .collect();
+            records.sort_by(|a, b| {
+                (a.effective_from, a.ingest_time, &a.id).cmp(&(
+                    b.effective_from,
+                    b.ingest_time,
+                    &b.id,
+                ))
+            });
+            Ok(records)
+        })
     }
 
     fn record(&self, index: &Index, id: &str, now: Millis) -> Option<FactRecord> {
@@ -255,7 +266,7 @@ impl Memory {
     /// show a fact next to an unindexed successor and report both as current. After a miss the
     /// index is brought to the store's revision and the search repeats; it takes no writer lock,
     /// so an observer callback running under one may still recall. After `SNAPSHOT_ATTEMPTS`
-    /// the last attempt is used as is.
+    /// an explicit retryable error is returned.
     fn run(
         &self,
         query: &str,
@@ -267,8 +278,14 @@ impl Memory {
         let mut attempt = 1;
         loop {
             let (run, consistent) = self.run_once(query, options, history, k, force_wide)?;
-            if consistent || attempt == SNAPSHOT_ATTEMPTS {
+            if consistent {
                 return Ok(run);
+            }
+            if attempt == SNAPSHOT_ATTEMPTS {
+                return Err(MemoryError::Concurrent(
+                    "memory changed during recall; retry the operation".into(),
+                )
+                .into());
             }
             attempt += 1;
             self.ensure_fresh();
@@ -334,9 +351,23 @@ impl Memory {
         // unchanged revision across the search means the capture saw exactly `revision`.
         let consistent =
             indexed && index.revision == Some(revision) && self.core.revision() == revision;
-        let mut seen: HashSet<String> = HashSet::with_capacity(hits.len());
-        let mut ranked = Vec::with_capacity(hits.len());
-        for hit in hits {
+        let evaluated: Vec<_> = hits
+            .into_iter()
+            .filter_map(|hit| {
+                let stamp = Stamp::from_parts(&hit.version, &hit.metadata);
+                let status = evaluate(
+                    stamp.as_ref(),
+                    index.edges(&hit.document_id),
+                    now,
+                    options.known_at,
+                )?;
+                Some((hit, stamp, status))
+            })
+            .collect();
+        drop(index);
+        let mut seen: HashSet<String> = HashSet::with_capacity(evaluated.len());
+        let mut ranked = Vec::with_capacity(evaluated.len());
+        for (hit, stamp, status) in evaluated {
             // Without reordering the result is the first `k` kept hits in search order.
             if !reorder && !force_wide && ranked.len() >= k as usize {
                 break;
@@ -344,11 +375,6 @@ impl Memory {
             if !seen.insert(hit.document_id.clone()) {
                 continue;
             }
-            let stamp = Stamp::from_parts(&hit.version, &hit.metadata);
-            let edges = index.edges(&hit.document_id);
-            let Some(status) = evaluate(stamp.as_ref(), edges, now, options.known_at) else {
-                continue;
-            };
             let keep = match history {
                 HistoryMode::All => true,
                 HistoryMode::Current => status == FactStatus::Current,
@@ -400,7 +426,10 @@ impl Memory {
             semantic_weight: options.semantic_weight.unwrap_or(1.0),
             fusion: options.fusion.clone().unwrap_or_else(|| "blend".into()),
         };
-        Ok((Some(run), consistent))
+        Ok((
+            Some(run),
+            consistent && self.core.memory_revision_matches(revision),
+        ))
     }
 
     /// Ids a subject or entity filter limits recall to; none when unrestricted.

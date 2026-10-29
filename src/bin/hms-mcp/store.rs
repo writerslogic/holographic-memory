@@ -9,7 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use holographic_memory::core::HmsConfig;
 use holographic_memory::{chunk_document, DocumentInput, DocumentRecord, HmsCore, SearchOptions};
-use parking_lot::Mutex;
+use parking_lot::{Condvar, Mutex};
 use serde_json::{json, Map, Value};
 
 use crate::memory::{
@@ -57,7 +57,69 @@ struct Store {
 pub struct HmsBackend {
     options: StoreOptions,
     limits: Limits,
-    stores: Mutex<HashMap<String, Arc<Store>>>,
+    stores: Mutex<HashMap<String, Arc<StoreSlot>>>,
+    access: std::sync::atomic::AtomicU64,
+}
+
+enum StoreStatus {
+    Opening,
+    Ready(Arc<Store>),
+    Closing,
+    Closed,
+    Failed(Fail),
+}
+
+struct StoreSlot {
+    status: Mutex<StoreStatus>,
+    ready: Condvar,
+    access: std::sync::atomic::AtomicU64,
+}
+
+impl StoreSlot {
+    fn wait(&self) -> Res<Option<Arc<Store>>> {
+        let mut status = self.status.lock();
+        loop {
+            match &*status {
+                StoreStatus::Opening | StoreStatus::Closing => self.ready.wait(&mut status),
+                StoreStatus::Ready(store) => return Ok(Some(store.clone())),
+                StoreStatus::Closed => return Ok(None),
+                StoreStatus::Failed(error) => return Err(error.clone()),
+            }
+        }
+    }
+}
+
+struct StoreInitialization<'a> {
+    backend: &'a HmsBackend,
+    key: &'a str,
+    slot: Arc<StoreSlot>,
+    complete: bool,
+}
+
+impl StoreInitialization<'_> {
+    fn finish(mut self, result: Res<Arc<Store>>) -> Res<Arc<Store>> {
+        *self.slot.status.lock() = match &result {
+            Ok(store) => StoreStatus::Ready(store.clone()),
+            Err(error) => StoreStatus::Failed(error.clone()),
+        };
+        self.slot.ready.notify_all();
+        if result.is_err() {
+            self.backend.remove_slot(self.key, &self.slot);
+        }
+        self.complete = true;
+        result
+    }
+}
+
+impl Drop for StoreInitialization<'_> {
+    fn drop(&mut self) {
+        if !self.complete {
+            *self.slot.status.lock() =
+                StoreStatus::Failed(Fail::internal("store initialization interrupted"));
+            self.slot.ready.notify_all();
+            self.backend.remove_slot(self.key, &self.slot);
+        }
+    }
 }
 
 fn now_ms() -> i64 {
@@ -80,45 +142,122 @@ impl HmsBackend {
             options,
             limits,
             stores: Mutex::new(HashMap::new()),
+            access: std::sync::atomic::AtomicU64::new(0),
+        }
+    }
+
+    fn remove_slot(&self, key: &str, slot: &Arc<StoreSlot>) {
+        let mut stores = self.stores.lock();
+        if stores
+            .get(key)
+            .is_some_and(|current| Arc::ptr_eq(current, slot))
+        {
+            stores.remove(key);
         }
     }
 
     fn store(&self, namespace: &str) -> Res<Arc<Store>> {
-        let mut stores = self.stores.lock();
-        if let Some(store) = stores.get(namespace) {
-            return Ok(Arc::clone(store));
-        }
-        if stores.len() >= self.options.max_stores {
-            return Err(Fail::new(
-                "too_many_stores",
-                format!("{} namespaces are already open", stores.len()),
-            ));
-        }
-        let dir = match &self.options.root {
-            StoreRoot::Single(dir) => dir.clone(),
-            StoreRoot::Namespaced(root) => root.join("stores").join(namespace),
+        self.store_with(namespace, |dir| self.open(dir))
+    }
+
+    fn store_with(
+        &self,
+        namespace: &str,
+        mut open: impl FnMut(&Path) -> Res<HmsCore>,
+    ) -> Res<Arc<Store>> {
+        use std::sync::atomic::Ordering;
+        let key = match &self.options.root {
+            StoreRoot::Single(_) => "",
+            StoreRoot::Namespaced(_) => namespace,
         };
-        let core = self.open(&dir)?;
-        let store = Arc::new(Store {
-            core,
-            gate: Mutex::new(()),
-            dir,
-        });
-        stores.insert(namespace.to_string(), Arc::clone(&store));
-        Ok(store)
+        loop {
+            let (slot, initialize, closing) = {
+                let mut stores = self.stores.lock();
+                let access = self.access.fetch_add(1, Ordering::Relaxed);
+                if let Some(slot) = stores.get(key) {
+                    slot.access.store(access, Ordering::Relaxed);
+                    (slot.clone(), false, None)
+                } else {
+                    let occupied = stores
+                        .values()
+                        .filter(|s| {
+                            !matches!(*s.status.lock(), StoreStatus::Closing | StoreStatus::Closed)
+                        })
+                        .count();
+                    let closing = if occupied >= self.options.max_stores {
+                        let idle = stores.iter().filter(|(_, slot)| Arc::strong_count(slot) == 1)
+                            .filter(|(_, slot)| matches!(&*slot.status.lock(), StoreStatus::Ready(store) if Arc::strong_count(store) == 1))
+                            .min_by_key(|(_, slot)| slot.access.load(Ordering::Relaxed))
+                            .map(|(key, slot)| (key.clone(), slot.clone()));
+                        let Some((old_key, old_slot)) = idle else {
+                            return Err(Fail::new(
+                                "too_many_stores",
+                                "all open namespaces are active; retry after an operation finishes",
+                            ));
+                        };
+                        let StoreStatus::Ready(store) =
+                            std::mem::replace(&mut *old_slot.status.lock(), StoreStatus::Closing)
+                        else {
+                            unreachable!()
+                        };
+                        Some((old_key, old_slot, store))
+                    } else {
+                        None
+                    };
+                    if self.options.max_stores == 0 {
+                        return Err(Fail::new("too_many_stores", "max_stores must be positive"));
+                    }
+                    let slot = Arc::new(StoreSlot {
+                        status: Mutex::new(StoreStatus::Opening),
+                        ready: Condvar::new(),
+                        access: std::sync::atomic::AtomicU64::new(access),
+                    });
+                    stores.insert(key.to_string(), slot.clone());
+                    (slot, true, closing)
+                }
+            };
+            if !initialize {
+                if let Some(store) = slot.wait()? {
+                    return Ok(store);
+                }
+                continue;
+            }
+            let reservation = StoreInitialization {
+                backend: self,
+                key,
+                slot,
+                complete: false,
+            };
+            if let Some((old_key, old_slot, store)) = closing {
+                drop(store);
+                self.remove_slot(&old_key, &old_slot);
+                *old_slot.status.lock() = StoreStatus::Closed;
+                old_slot.ready.notify_all();
+            }
+            let dir = match &self.options.root {
+                StoreRoot::Single(dir) => dir.clone(),
+                StoreRoot::Namespaced(root) => root.join("stores").join(namespace),
+            };
+            return reservation.finish(open(&dir).map(|core| {
+                Arc::new(Store {
+                    core,
+                    gate: Mutex::new(()),
+                    dir,
+                })
+            }));
+        }
     }
 
     fn open(&self, dir: &Path) -> Res<HmsCore> {
         let mut config = HmsConfig::default();
         #[cfg(feature = "local-models")]
-        if let Some(dim) = self.options.embedding_dim {
-            config.embedding_space = Some(holographic_memory::EmbeddingSpace {
-                model: "qwen3-embedding".into(),
-                revision: "local".into(),
-                dimensions: dim,
-                normalization: "l2".into(),
-                metric: "cosine".into(),
-            });
+        if let Some(embedder) = self
+            .options
+            .stages
+            .as_ref()
+            .and_then(|s| s.embedder.as_ref())
+        {
+            config.embedding_space = Some(embedder.space());
         }
         if let Some(env) = &self.options.encrypt {
             config.security.encryption_enabled = true;
@@ -281,7 +420,16 @@ fn dir_size(dir: &Path) -> u64 {
 impl HmsBackend {
     /// Flush every open store; called once at shutdown after in-flight work has finished.
     pub fn flush_all(&self) {
-        for (namespace, store) in self.stores.lock().iter() {
+        let stores: Vec<_> = self
+            .stores
+            .lock()
+            .iter()
+            .filter_map(|(namespace, slot)| match &*slot.status.lock() {
+                StoreStatus::Ready(store) => Some((namespace.clone(), store.clone())),
+                _ => None,
+            })
+            .collect();
+        for (namespace, store) in stores {
             if let Err(e) = store.core.flush() {
                 crate::log::error(&format!("flush of namespace {namespace} failed: {e:#}"));
             }
@@ -713,11 +861,80 @@ mod tests {
     fn locked_store_and_store_cap_are_structured_errors() {
         let dir = tempfile::tempdir().unwrap();
         let first = backend(dir.path());
-        first.preopen("one").unwrap();
+        let one = first.store("one").unwrap();
         let second = backend(dir.path());
         assert_eq!(second.preopen("one").unwrap_err().code, "store_locked");
-        first.preopen("two").unwrap();
+        let two = first.store("two").unwrap();
         assert_eq!(first.preopen("three").unwrap_err().code, "too_many_stores");
+        drop(two);
+        first.preopen("three").unwrap();
+        assert!(Arc::ptr_eq(&one, &first.store("one").unwrap()));
+        drop(one);
+        first.preopen("two").unwrap();
+    }
+
+    #[test]
+    fn opening_a_namespace_does_not_block_an_existing_store() {
+        let dir = tempfile::tempdir().unwrap();
+        let b = backend(dir.path());
+        b.preopen("ready").unwrap();
+        let (started, started_rx) = std::sync::mpsc::channel();
+        let (release, release_rx) = std::sync::mpsc::channel();
+        let (finished, finished_rx) = std::sync::mpsc::channel();
+        std::thread::scope(|scope| {
+            let backend = &b;
+            let opening = scope.spawn(move || {
+                backend
+                    .store_with("slow", |path| {
+                        started.send(()).unwrap();
+                        release_rx.recv().unwrap();
+                        backend.open(path)
+                    })
+                    .map(|_| ())
+            });
+            started_rx.recv().unwrap();
+            scope.spawn(|| {
+                finished.send(b.preopen("ready")).unwrap();
+            });
+            let progress = finished_rx.recv_timeout(std::time::Duration::from_secs(3));
+            release.send(()).unwrap();
+            opening.join().unwrap().unwrap();
+            progress
+                .expect("ready namespace blocked behind unrelated initialization")
+                .unwrap();
+        });
+    }
+
+    #[test]
+    fn concurrent_namespace_open_has_one_initializer_and_failure_is_retryable() {
+        let dir = tempfile::tempdir().unwrap();
+        let b = backend(dir.path());
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let barrier = std::sync::Barrier::new(3);
+        std::thread::scope(|scope| {
+            let open = || {
+                barrier.wait();
+                b.store_with("same", |path| {
+                    calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    b.open(path)
+                })
+                .unwrap()
+            };
+            let a = scope.spawn(open);
+            let c = scope.spawn(open);
+            barrier.wait();
+            assert!(Arc::ptr_eq(&a.join().unwrap(), &c.join().unwrap()));
+        });
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert!(b
+            .store_with("failed", |_| Err(Fail::internal("injected failure")))
+            .is_err());
+        b.preopen("failed").unwrap();
+        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            b.store_with("panic", |_| panic!("injected unwind"))
+        }));
+        assert!(panic.is_err());
+        b.preopen("panic").unwrap();
     }
 
     #[test]

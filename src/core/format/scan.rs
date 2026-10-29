@@ -283,10 +283,13 @@ pub fn classify_payload(payload: &[u8]) -> PayloadKind<'_> {
 }
 
 /// Mutation variants the journal may carry (`docs/file-format/MUTATIONS.md`).
-pub const MUTATION_VARIANTS: [&str; 14] = [
+pub const MUTATION_VARIANTS: [&str; 17] = [
     "Vector",
     "Atom",
     "Composite",
+    "DeleteAtom",
+    "DeleteComposite",
+    "RefreshMeaningIndices",
     "StoredTriple",
     "Document",
     "EncodeDocument",
@@ -613,9 +616,14 @@ fn check_mutation(
             }
         }
         "EncodeDocument" => check_encode_document(body, dimensions)?,
-        "Delete" | "DeleteDocument" => {
+        "Delete" | "DeleteDocument" | "DeleteAtom" | "DeleteComposite" => {
             if !valid_id(body.get("id")) {
                 return Err("id is not 1..=65535 bytes without NUL".into());
+            }
+        }
+        "RefreshMeaningIndices" => {
+            if !body.as_object().is_some_and(|body| body.is_empty()) {
+                return Err("meaning index refresh body must be empty".into());
             }
         }
         "Derived" => {
@@ -669,8 +677,27 @@ pub fn check_transaction(
     dimensions: Option<u64>,
     replay: &mut Replay,
 ) -> Result<usize, String> {
+    check_transaction_with_schema(json, dimensions, super::STORE_SCHEMA_VERSION, replay)
+}
+
+/// Checks the mutation vocabulary permitted by the store schema before replaying it.
+pub fn check_transaction_with_schema(
+    json: &[u8],
+    dimensions: Option<u64>,
+    schema: u32,
+    replay: &mut Replay,
+) -> Result<usize, String> {
     let value: Value = serde_json::from_slice(json).map_err(|e| format!("not JSON: {e}"))?;
     let mutations = value.as_array().ok_or("transaction is not an array")?;
+    if schema < super::MEANING_MAINTENANCE_SCHEMA_VERSION
+        && mutations.iter().any(|mutation| {
+            ["DeleteAtom", "DeleteComposite", "RefreshMeaningIndices"]
+                .iter()
+                .any(|variant| mutation.get(variant).is_some())
+        })
+    {
+        return Err("scoped meaning maintenance requires store schema 5".into());
+    }
     if mutations.is_empty() || mutations.len() > MAX_TRANSACTION_OPS {
         return Err(format!(
             "transaction has {} operations, expected 1..=4096",
@@ -1000,6 +1027,34 @@ mod tests {
         assert_eq!(replay.documents.len(), 1);
         assert!(replay.documents["a"].stamped);
         assert_eq!(replay.vector_total(), 2);
+    }
+
+    #[test]
+    fn scoped_meaning_mutations_preserve_raw_vectors_and_require_schema_five() {
+        let json = br#"[
+            {"Vector":{"id":"alias","vector":{"dim":8,"indices":[1]}}},
+            {"DeleteAtom":{"id":"alias"}},
+            {"DeleteComposite":{"id":"alias"}},
+            {"RefreshMeaningIndices":{}}
+        ]"#;
+        let mut replay = Replay::default();
+        assert_eq!(
+            check_transaction_with_schema(json, Some(8), 5, &mut replay),
+            Ok(4)
+        );
+        assert_eq!(replay.vector_total(), 1);
+        for schema in 2..5 {
+            let mut rejected = Replay::default();
+            assert!(check_transaction_with_schema(json, Some(8), schema, &mut rejected).is_err());
+            assert_eq!(rejected.mutations, 0);
+        }
+        for invalid in [
+            br#"[{"DeleteAtom":{"id":""}}]"#.as_slice(),
+            br#"[{"DeleteComposite":{"id":"a\u0000b"}}]"#,
+            br#"[{"RefreshMeaningIndices":{"unexpected":true}}]"#,
+        ] {
+            assert!(check_transaction(invalid, Some(8), &mut Replay::default()).is_err());
+        }
     }
 
     #[test]

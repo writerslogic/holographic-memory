@@ -4,7 +4,7 @@
 
 use std::fmt::Write as _;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, ErrorData,
@@ -37,7 +37,15 @@ pub struct Inner {
     pub limits: Limits,
     pub resources: bool,
     pub prompts: bool,
-    pub gate: Semaphore,
+    pub gate: Arc<Semaphore>,
+    pending: Arc<Semaphore>,
+    queue_timeout: Duration,
+}
+
+pub struct WorkLimits {
+    pub concurrent: usize,
+    pub pending: usize,
+    pub queue_timeout: Duration,
 }
 
 #[derive(Clone)]
@@ -52,7 +60,7 @@ impl HmsMcp {
         limits: Limits,
         resources: bool,
         prompts: bool,
-        max_concurrent: usize,
+        work: WorkLimits,
     ) -> Self {
         Self {
             inner: Arc::new(Inner {
@@ -61,7 +69,9 @@ impl HmsMcp {
                 limits,
                 resources,
                 prompts,
-                gate: Semaphore::new(max_concurrent),
+                gate: Arc::new(Semaphore::new(work.concurrent)),
+                pending: Arc::new(Semaphore::new(work.pending)),
+                queue_timeout: work.queue_timeout,
             }),
         }
     }
@@ -71,15 +81,36 @@ impl HmsMcp {
         &self,
         work: impl FnOnce(&Inner) -> T + Send + 'static,
     ) -> Result<T, ErrorData> {
-        let permit = self
-            .inner
-            .gate
-            .acquire()
-            .await
-            .map_err(|_| ErrorData::internal_error("server is shutting down", None))?;
+        let busy = || {
+            ErrorData::internal_error(
+                "server busy; retry the operation",
+                Some(json!({"code":"server_busy", "retryable":true})),
+            )
+        };
+        let permit = match self.inner.gate.clone().try_acquire_owned() {
+            Ok(permit) => permit,
+            Err(_) => {
+                let _pending = self
+                    .inner
+                    .pending
+                    .clone()
+                    .try_acquire_owned()
+                    .map_err(|_| busy())?;
+                tokio::time::timeout(
+                    self.inner.queue_timeout,
+                    self.inner.gate.clone().acquire_owned(),
+                )
+                .await
+                .map_err(|_| busy())?
+                .map_err(|_| busy())?
+            }
+        };
         let inner = Arc::clone(&self.inner);
-        let out = tokio::task::spawn_blocking(move || work(&inner)).await;
-        drop(permit);
+        let out = tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            work(&inner)
+        })
+        .await;
         out.map_err(|e| {
             crate::log::error(&format!("worker failed: {e}"));
             ErrorData::internal_error("internal error; see the server log", None)
@@ -507,5 +538,112 @@ impl ServerHandler for HmsMcp {
             "messages": [{"role": "user", "content": {"type": "text", "text": text}}]
         }))?
         .into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::memory::test_limits;
+    use crate::store::{StoreOptions, StoreRoot};
+
+    fn handler(dir: &std::path::Path, work: WorkLimits) -> HmsMcp {
+        let limits = test_limits();
+        HmsMcp::new(
+            Arc::new(HmsBackend::new(
+                StoreOptions {
+                    root: StoreRoot::Namespaced(dir.to_path_buf()),
+                    dim: 256,
+                    max_stores: 1,
+                    encrypt: None,
+                    #[cfg(feature = "local-models")]
+                    stages: None,
+                    #[cfg(feature = "local-models")]
+                    embedding_dim: None,
+                },
+                limits.clone(),
+            )),
+            Exposure::new(&[], false, false, "default".into()).unwrap(),
+            limits,
+            false,
+            false,
+            work,
+        )
+    }
+
+    #[tokio::test]
+    async fn queue_is_bounded_times_out_and_releases_cancelled_waiters() {
+        use std::future::{poll_fn, Future};
+        use std::task::Poll;
+
+        let dir = tempfile::tempdir().unwrap();
+        let handler = handler(
+            dir.path(),
+            WorkLimits {
+                concurrent: 1,
+                pending: 1,
+                queue_timeout: Duration::from_millis(20),
+            },
+        );
+        let executing = handler.inner.gate.clone().acquire_owned().await.unwrap();
+        let mut pending = Box::pin(handler.run(|_| ()));
+        poll_fn(|cx| {
+            assert!(pending.as_mut().poll(cx).is_pending());
+            Poll::Ready(())
+        })
+        .await;
+        assert_eq!(handler.inner.pending.available_permits(), 0);
+        let overloaded = handler
+            .run(|_| panic!("overloaded work ran"))
+            .await
+            .unwrap_err();
+        assert_eq!(overloaded.data.unwrap()["code"], "server_busy");
+        drop(pending);
+        assert_eq!(handler.inner.pending.available_permits(), 1);
+        let expired = handler
+            .run(|_| panic!("expired work ran"))
+            .await
+            .unwrap_err();
+        assert_eq!(expired.data.unwrap()["code"], "server_busy");
+        assert_eq!(handler.inner.pending.available_permits(), 1);
+        drop(executing);
+        assert_eq!(handler.run(|_| 42).await.unwrap(), 42);
+    }
+
+    #[tokio::test]
+    async fn cancelled_request_keeps_work_slot_until_worker_finishes() {
+        let dir = tempfile::tempdir().unwrap();
+        let handler = handler(
+            dir.path(),
+            WorkLimits {
+                concurrent: 1,
+                pending: 1,
+                queue_timeout: Duration::from_secs(5),
+            },
+        );
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let (release_tx, release_rx) = std::sync::mpsc::channel();
+        let worker_handler = handler.clone();
+        let request = tokio::spawn(async move {
+            worker_handler
+                .run(move |_| {
+                    started_tx.send(()).unwrap();
+                    release_rx.recv().unwrap();
+                })
+                .await
+        });
+        started_rx.await.unwrap();
+        request.abort();
+        assert!(request.await.unwrap_err().is_cancelled());
+        let slot_retained = handler.inner.gate.available_permits() == 0;
+        release_tx.send(()).unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(5), handler.run(|_| ()))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(
+            slot_retained,
+            "cancelled request released a running worker's slot"
+        );
     }
 }

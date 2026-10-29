@@ -93,17 +93,19 @@ public sealed class Store : IDisposable
     public unsafe uint[] Ingest(IReadOnlyList<Document> documents)
     {
         ArgumentNullException.ThrowIfNull(documents);
-        if (documents.Count == 0) return Array.Empty<uint>();
+        var count = documents.Count;
+        var size = NativeArrayBytes(count, (nuint)sizeof(DocumentNative), nameof(documents));
+        if (count == 0) return Array.Empty<uint>();
         using var arena = new Arena();
-        var native = (DocumentNative*)arena.Alloc((nuint)(sizeof(DocumentNative) * documents.Count));
-        for (int i = 0; i < documents.Count; i++)
+        var native = (DocumentNative*)arena.Alloc(size);
+        for (int i = 0; i < count; i++)
         {
             native[i] = arena.Document(documents[i]);
         }
-        var counts = new uint[documents.Count];
+        var counts = new uint[count];
         fixed (uint* countsPtr = counts)
         {
-            Check(Native.StoreIngest(_handle, native, (nuint)documents.Count, countsPtr));
+            Check(Native.StoreIngest(_handle, native, (nuint)count, countsPtr));
         }
         return counts;
     }
@@ -261,6 +263,30 @@ public sealed class Store : IDisposable
         throw new HmsException(status, message);
     }
 
+    internal const int MaxNativeArrayLength = 1 << 24;
+    internal const int MaxNativeBufferBytes = 1 << 30;
+
+    internal static nuint NativeArrayBytes(int count, nuint elementSize, string parameter)
+    {
+        if (count < 0 || count > MaxNativeArrayLength)
+        {
+            throw new ArgumentOutOfRangeException(parameter, $"array length must be 0..{MaxNativeArrayLength}");
+        }
+        return checked((nuint)count * elementSize);
+    }
+
+    internal static nuint NativeMatrixBytes(int rows, int columns, nuint elementSize, string parameter)
+    {
+        NativeArrayBytes(rows, 1, parameter);
+        NativeArrayBytes(columns, 1, parameter);
+        var count = checked((nuint)rows * (nuint)columns);
+        if (count > MaxNativeArrayLength)
+        {
+            throw new ArgumentOutOfRangeException(parameter, $"matrix must contain at most {MaxNativeArrayLength} values");
+        }
+        return checked(count * elementSize);
+    }
+
     /// <summary>Native memory for the arguments of one call, freed together.</summary>
     private sealed unsafe class Arena : IDisposable
     {
@@ -269,7 +295,9 @@ public sealed class Store : IDisposable
         public void* Alloc(nuint size)
         {
             var p = NativeMemory.AllocZeroed(size == 0 ? 1 : size);
-            _blocks.Add((IntPtr)p);
+            if (p == null) throw new OutOfMemoryException();
+            try { _blocks.Add((IntPtr)p); }
+            catch { NativeMemory.Free(p); throw; }
             return p;
         }
 
@@ -278,6 +306,7 @@ public sealed class Store : IDisposable
             int n;
             try { n = StrictUtf8.GetByteCount(s); }
             catch (EncoderFallbackException e) { throw new ArgumentException("string is not valid Unicode", e); }
+            if (n > MaxNativeBufferBytes) throw new ArgumentOutOfRangeException(nameof(s), "UTF-8 string exceeds the native buffer limit");
             var p = (byte*)Alloc((nuint)n);
             StrictUtf8.GetBytes(s, new Span<byte>(p, n));
             return new HmsStr { Ptr = p, Len = (nuint)n };
@@ -285,6 +314,7 @@ public sealed class Store : IDisposable
 
         public DocumentNative Document(Document d)
         {
+            ArgumentNullException.ThrowIfNull(d);
             var n = new DocumentNative
             {
                 Id = Str(d.Id),
@@ -297,18 +327,22 @@ public sealed class Store : IDisposable
             if (d.SourceUri is not null) n.SourceUri = Str(d.SourceUri);
             if (d.Version is not null) n.Version = Str(d.Version);
             if (d.MetadataJson is not null) n.MetadataJson = Str(d.MetadataJson);
-            if (d.Embeddings is { Count: > 0 } rows)
+            if (d.Embeddings is { } rows)
             {
+                var count = rows.Count;
+                NativeArrayBytes(count, (nuint)sizeof(double), nameof(d.Embeddings));
+                if (count == 0) return n;
                 var dim = rows[0].Length;
                 if (dim == 0) throw new ArgumentException($"document {d.Id} has empty embeddings");
-                var flat = (double*)Alloc((nuint)(rows.Count * dim * sizeof(double)));
-                for (int r = 0; r < rows.Count; r++)
+                var flat = (double*)Alloc(NativeMatrixBytes(count, dim, (nuint)sizeof(double), nameof(d.Embeddings)));
+                for (int r = 0; r < count; r++)
                 {
-                    if (rows[r].Length != dim) throw new ArgumentException($"document {d.Id} has ragged embeddings");
-                    rows[r].CopyTo(new Span<double>(flat + (long)r * dim, dim));
+                    var row = rows[r];
+                    if (row.Length != dim) throw new ArgumentException($"document {d.Id} has ragged embeddings");
+                    row.CopyTo(new Span<double>(flat + checked((long)r * dim), dim));
                 }
                 n.Embeddings = flat;
-                n.EmbeddingRows = (nuint)rows.Count;
+                n.EmbeddingRows = (nuint)count;
                 n.EmbeddingDim = (nuint)dim;
             }
             return n;
@@ -320,16 +354,17 @@ public sealed class Store : IDisposable
             n.CandidateLimit = o.CandidateLimit;
             if (o.FilterJson is not null) n.FilterJson = Str(o.FilterJson);
             if (o.SourceUri is not null) n.SourceUri = Str(o.SourceUri);
-            if (o.DocumentIds is { Count: > 0 } ids)
+            if (o.DocumentIds is { } ids)
             {
-                var arr = (HmsStr*)Alloc((nuint)(ids.Count * sizeof(HmsStr)));
-                for (int i = 0; i < ids.Count; i++) arr[i] = Str(ids[i]);
+                var count = ids.Count;
+                var arr = (HmsStr*)Alloc(NativeArrayBytes(count, (nuint)sizeof(HmsStr), nameof(o.DocumentIds)));
+                for (int i = 0; i < count; i++) arr[i] = Str(ids[i]);
                 n.DocumentIds = arr;
-                n.DocumentIdCount = (nuint)ids.Count;
+                n.DocumentIdCount = (nuint)count;
             }
             if (o.Embedding is { Length: > 0 } e)
             {
-                var p = (double*)Alloc((nuint)(e.Length * sizeof(double)));
+                var p = (double*)Alloc(NativeArrayBytes(e.Length, (nuint)sizeof(double), nameof(o.Embedding)));
                 e.CopyTo(new Span<double>(p, e.Length));
                 n.Embedding = p;
                 n.EmbeddingLen = (nuint)e.Length;

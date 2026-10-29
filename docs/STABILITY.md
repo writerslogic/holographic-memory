@@ -48,7 +48,12 @@ and say so in the changelog.
    journal frames before them ([file-format/CHECKPOINT.md](file-format/CHECKPOINT.md)); a
    release that predates checkpoints refuses schema 4 rather than opening it without its
    checkpointed documents. Schema 2 and 3 stores open, replay their frames and never get a
-   checkpoint.
+   checkpoint. The current development writer creates new stores with schema 5, which additionally permits namespace-scoped
+   durable meaning maintenance. Schemas 2, 3 and 4 remain readable and writable in their
+   original format; governance that needs scoped mutations returns an upgrade error. Run
+   `hms-format upgrade <source> <destination>` explicitly to enable schema 5 in a new copy.
+   Schema-only upgrades retain the existing arena and checkpoints unchanged; old readers
+   refuse schema 5 rather than misreading scoped deletions.
 4. **Breaking the format** happens only in a major release, with the old format still readable
    or an `hms-format upgrade` step, and a golden store for each side.
 5. **Caches** (`documents.text`, `indices.json`, NSG/IVF files, `shard_meta.json` aside) may

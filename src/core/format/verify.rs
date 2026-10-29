@@ -17,7 +17,9 @@ use super::{
     Report, Severity, TenantReport, CURRENT, SALT_LEN, STORAGE_FORMAT_CURRENT,
     STORAGE_FORMAT_OLDEST, STORE_SCHEMA_OLDEST, STORE_SCHEMA_VERSION,
 };
-use crate::core::storage::{FormatManifest, FORMAT_MAGIC, LEGACY_SEGMENT_SIZE, SEGMENT_SIZE};
+use crate::core::storage::{
+    list_segments, FormatManifest, FORMAT_MAGIC, LEGACY_SEGMENT_SIZE, SEGMENT_SIZE,
+};
 
 /// Directory of the arena inside a store.
 const ARENA_DIRECTORY: &str = "vectors_data.bin";
@@ -305,23 +307,6 @@ struct ArenaState {
     replay: Option<Replay>,
 }
 
-pub(super) fn list_segments(dir: &Path) -> Result<Vec<usize>> {
-    let mut ids = Vec::new();
-    for entry in std::fs::read_dir(dir)? {
-        let name = entry?.file_name();
-        if let Some(id) = name
-            .to_string_lossy()
-            .strip_prefix("seg_")
-            .and_then(|v| v.strip_suffix(".bin"))
-            .and_then(|v| v.parse::<usize>().ok())
-        {
-            ids.push(id);
-        }
-    }
-    ids.sort_unstable();
-    Ok(ids)
-}
-
 /// The directory holding the live segments of the arena at `arena` (the one `CURRENT` names).
 pub fn resolve_generation(arena: &Path) -> Result<PathBuf> {
     crate::core::durable_file::arena_generation(arena)
@@ -599,7 +584,12 @@ fn check_arena(
                     let checked = scan::transaction_json(payload)
                         .expect("a transaction payload")
                         .and_then(|json| {
-                            scan::check_transaction(&json, schema.dimensions, &mut replay)
+                            scan::check_transaction_with_schema(
+                                &json,
+                                schema.dimensions,
+                                schema.raw["version"].as_u64().unwrap_or(0) as u32,
+                                &mut replay,
+                            )
                         });
                     match checked {
                         Ok(_) => {}

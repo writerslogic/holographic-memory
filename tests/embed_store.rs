@@ -141,6 +141,106 @@ fn a_store_rejects_a_different_model_pack() {
 }
 
 #[test]
+fn effective_options_and_same_metadata_different_weights_cannot_relabel_a_store() {
+    let dir = tempfile::tempdir().unwrap();
+    let (pack, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let store = dir.path().join("store");
+    let path = Some(store.display().to_string());
+    let original = config(&pack, &sha);
+    let core = HmsCore::new(1024, path.clone(), Some(original.clone())).unwrap();
+    core.memorize_document(input("fact", "the cat sat on the mat"))
+        .unwrap();
+    drop(core);
+    let base = original.local_embed.clone().unwrap();
+    for options in [
+        EmbedOptions {
+            pooling: Some(Pooling::Cls),
+            ..base.clone()
+        },
+        EmbedOptions {
+            normalize: Some(false),
+            ..base.clone()
+        },
+        EmbedOptions {
+            max_length: Some(8),
+            ..base.clone()
+        },
+        EmbedOptions {
+            query_prefix: Some("cat ".into()),
+            ..base.clone()
+        },
+        EmbedOptions {
+            passage_prefix: Some("cat ".into()),
+            ..base
+        },
+    ] {
+        let mut changed = original.clone();
+        changed.local_embed = Some(options);
+        assert!(HmsCore::new(1024, path.clone(), Some(changed))
+            .err()
+            .expect("must reject changed embedding function")
+            .to_string()
+            .contains("incompatible store schema"));
+    }
+    let bytes = holographic_memory::core::embed::testing::tiny_pack_bytes_with_group(
+        Quantization::Int8,
+        Pooling::Mean,
+        32,
+    );
+    let changed_pack = dir.path().join("other-int8.hmsemb");
+    std::fs::write(&changed_pack, &bytes).unwrap();
+    let changed_sha = holographic_memory::core::embed::sha256_hex(&bytes);
+    assert!(HmsCore::new(
+        1024,
+        path.clone(),
+        Some(config(&changed_pack, &changed_sha))
+    )
+    .is_err());
+    let reopened = HmsCore::new(1024, path, Some(original)).unwrap();
+    assert_eq!(reopened.document_count(), 1);
+}
+
+#[test]
+fn unnormalized_model_outputs_keep_truthful_identity_and_cosine_search() {
+    let dir = tempfile::tempdir().unwrap();
+    let (pack, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let store = dir.path().join("store");
+    let mut cfg = config(&pack, &sha);
+    cfg.local_embed.as_mut().unwrap().normalize = Some(false);
+    let path = Some(store.display().to_string());
+    let core = HmsCore::new(1024, path.clone(), Some(cfg.clone())).unwrap();
+    core.memorize_document(input("cat", "the cat sat on the mat"))
+        .unwrap();
+    core.memorize_document(input("dog", "the dog ran in the park"))
+        .unwrap();
+    let query = SearchOptions {
+        k: Some(1),
+        lexical_weight: Some(0.0),
+        ..Default::default()
+    };
+    assert_eq!(
+        core.search_documents("the cat sat on the mat", &query)
+            .unwrap()[0]
+            .document_id,
+        "cat"
+    );
+    drop(core);
+    let schema: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(store.join("store.json")).unwrap()).unwrap();
+    assert_eq!(schema["embedding_space"]["normalization"], "none");
+    let reopened = HmsCore::new(1024, path.clone(), Some(cfg)).unwrap();
+    assert_eq!(
+        reopened
+            .search_documents("the dog ran in the park", &query)
+            .unwrap()[0]
+            .document_id,
+        "dog"
+    );
+    drop(reopened);
+    assert!(HmsCore::new(1024, path, Some(config(&pack, &sha))).is_err());
+}
+
+#[test]
 fn encoder_without_its_embedder_fails_at_open_not_at_query() {
     let dir = tempfile::tempdir().unwrap();
     let cfg = HmsConfig {

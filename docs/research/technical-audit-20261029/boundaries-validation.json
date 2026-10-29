@@ -1,0 +1,189 @@
+{
+  "format_version": 1,
+  "recorded_at_utc": "2026-10-29T19:54:40Z",
+  "scope": "Audit remediation: native allocation boundaries, snapshot lifecycle, importer identity/resume, framework filter fidelity, and typed Memory OpenAPI",
+  "source_revision": "f54a464e",
+  "worktree": "/Volumes/A/hms-audit-fixes/boundaries",
+  "branch": "fix/audit-boundaries",
+  "environment": {
+    "os": "macOS 27.0 arm64",
+    "rustc": "1.96.0 (ac68faa20 2026-05-25)",
+    "node": "26.8.1",
+    "dotnet_sdk": "8.0.130",
+    "uv": "0.12.10",
+    "python": "3.14.7",
+    "pytest": "9.2.0",
+    "httpx": "0.28.1",
+    "numpy": "2.5.4",
+    "pyarrow": "26.0.0",
+    "typescript_integrations": "5.9.3",
+    "typescript_wasm": "7.0.2",
+    "tsup": "8.5.1",
+    "wasm_bindgen_cli": "0.2.129",
+    "jsonschema": "4.26.0",
+    "CARGO_TARGET_DIR": "/Volumes/A/hms-audit-fixes/boundaries/target"
+  },
+  "lock_sha256": {
+    "Cargo.lock": "38d66c9da99819973ac0e46a270964d02be3b85b690be0fc5414d38861281936",
+    "scripts/check_memory_openapi.py.lock": "4ee9d45225708c21513c2a157acae6576c96f35d47b9ff5499a56b8bfbbf1adf"
+  },
+  "own_commits_in_order": [
+    "56f21e8d", "40026469", "465214d9", "6e4eceee", "1a7d5451", "f87be174",
+    "e1c1cc96", "2d3cfe56", "cd08c6bf", "83fea509", "1ab430b7", "f54a464e"
+  ],
+  "integration_prerequisites": [
+    {"upstream_commit": "8f8ff1ee", "local_cherry_pick": "957cfd79", "purpose": "Core WebAssembly target portability"},
+    {"upstream_commit": "ac184197", "local_cherry_pick": "a4b9a65d", "purpose": "Coherent core memory revisions"},
+    {"upstream_commit": "df830388", "local_cherry_pick": "b737fe50", "purpose": "Server import ownership, conditional deletion, document_ids, and restore recovery"},
+    {"upstream_commit": "d6075a16", "local_cherry_pick": "16eaae2e", "purpose": "Committed service outcomes and server clippy correction"}
+  ],
+  "checks": [
+    {
+      "id": "dotnet_native",
+      "result": "passed",
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "commands": [
+        "dotnet restore bindings/dotnet/tests/HolographicMemory.Tests --source /Users/davidcondrey/.nuget/packages --ignore-failed-sources",
+        "dotnet build --no-restore bindings/dotnet/tests/HolographicMemory.Tests",
+        "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target cargo build --offline --manifest-path bindings/c/Cargo.toml",
+        "HMS_LIBRARY_PATH=/Volumes/A/hms-audit-fixes/boundaries/target/debug dotnet test --no-restore --no-build bindings/dotnet/tests/HolographicMemory.Tests"
+      ],
+      "coverage": [
+        "Real native ingest/search and concurrent use",
+        "Checked allocation sizing at 2^24-1, 2^24, and 2^24+1 elements",
+        "Caller-supplied oversized document, filter, and embedding lists rejected before element access",
+        "Matrix product and native unsigned multiplication overflow rejected"
+      ],
+      "limits": "Oversized caller collections are synthetic Count-only lists; no unsafe overwrite or multi-gigabyte allocation was executed."
+    },
+    {
+      "id": "uniffi_snapshot",
+      "result": "passed",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "commands": [
+        "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target cargo test --offline --manifest-path bindings/uniffi/Cargo.toml --test store",
+        "cargo fmt --manifest-path bindings/uniffi/Cargo.toml -- --check"
+      ],
+      "coverage": ["Relative and absolute snapshot descendants", "Parent traversal and symlink aliases", "External snapshot restore and post-restore writes", "Snapshot concurrent with ingest/search"]
+    },
+    {
+      "id": "wasm_scalar_and_simd_build",
+      "result": "passed",
+      "commands": [
+        "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target RUSTFLAGS='--cfg getrandom_backend=\"wasm_js\"' cargo build --offline --release --target wasm32-unknown-unknown --manifest-path bindings/wasm/Cargo.toml",
+        "/Users/davidcondrey/Library/Caches/.wasm-pack/wasm-bindgen-cargo-install-0.2.129/wasm-bindgen --target nodejs --out-dir bindings/wasm/npm/dist/wasm/node/scalar --out-name hms_wasm target/wasm32-unknown-unknown/release/hms_wasm.wasm",
+        "mv bindings/wasm/npm/dist/wasm/node/scalar/hms_wasm.js bindings/wasm/npm/dist/wasm/node/scalar/hms_wasm.cjs",
+        "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target RUSTFLAGS='--cfg getrandom_backend=\"wasm_js\" -C target-feature=+simd128' cargo build --offline --release --target wasm32-unknown-unknown --manifest-path bindings/wasm/Cargo.toml",
+        "/Users/davidcondrey/Library/Caches/.wasm-pack/wasm-bindgen-cargo-install-0.2.129/wasm-bindgen --target nodejs --out-dir bindings/wasm/npm/dist/wasm/node/simd --out-name hms_wasm target/wasm32-unknown-unknown/release/hms_wasm.wasm",
+        "mv bindings/wasm/npm/dist/wasm/node/simd/hms_wasm.js bindings/wasm/npm/dist/wasm/node/simd/hms_wasm.cjs"
+      ],
+      "limits": "176 existing native-only dead/unused warnings remain in the WASM build; these checks are not warning-clean or performance benchmarks."
+    },
+    {
+      "id": "wasm_lifecycle",
+      "result": "passed",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "commands": [
+        "node /Volumes/A/holographic-memory/node_modules/typescript/bin/tsc -p bindings/wasm/npm/tsconfig.json --typeRoots /Volumes/A/holographic-memory/node_modules/@types",
+        "node --test bindings/wasm/npm/test/node/node.test.mjs"
+      ],
+      "coverage": ["Real scalar and SIMD WASM operations", "Ordered saves", "Shared close promise and rejection of new mutations", "Recovery after save/close failure", "Encryption transitions and failed-transition fail-closed persistence", "File adapter snapshot reopen"],
+      "limits": "Executed under Node on macOS. Browser IndexedDB, Windows file replacement, and real power-loss fault injection remain unverified."
+    },
+    {
+      "id": "js_framework_native",
+      "result": "passed",
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0,
+      "commands": [
+        "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target CARGO_NET_OFFLINE=true /Volumes/A/holographic-memory/node_modules/.bin/napi build --platform --no-js --features node-api,security",
+        "cd integrations/js/packages/core && /Volumes/A/holographic-memory/integrations/js/node_modules/.bin/tsup",
+        "cd integrations/js/packages/core && node --test test/*.test.mjs"
+      ],
+      "coverage": ["Real native addon and generated declarations", "Rare residual matches beyond the initial metadata page", "999/1000/1001 eligible-ID admission", "999/1000/1001 document-passage reads", "Collection isolation and native capability failure", "Record chunk and version integrity"]
+    },
+    {
+      "id": "python_integrated",
+      "result": "passed",
+      "source_revision": "1ab430b7",
+      "passed": 135,
+      "subtests_passed": 46,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 26.24,
+      "commands": [
+        "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target cargo build --offline --features server --bin hms-server",
+        "HMS_SERVER_BIN=/Volumes/A/hms-audit-fixes/boundaries/target/debug/hms-server PYTHONPATH=bindings/python/holographic-sdk:integrations/python/src uv run --no-project --offline --with pytest --with pytest-asyncio --with httpx --with numpy --with pyarrow --with orjson python -m pytest --asyncio-mode=auto -o asyncio_default_fixture_loop_scope=function bindings/python/holographic-sdk/tests/test_client.py bindings/python/holographic-sdk/tests/test_transport.py bindings/python/holographic-sdk/tests/test_memory.py bindings/python/holographic-sdk/tests/test_live_server.py bindings/python/holographic-sdk/tests/test_evidence.py bindings/python/holographic-sdk/tests/test_importer_metadata_validation.py bindings/python/holographic-sdk/tests/importers/test_core.py bindings/python/holographic-sdk/tests/importers/test_identity.py integrations/python/tests/test_core_capabilities.py integrations/python/tests/test_core.py integrations/python/tests/test_paged.py -q"
+      ],
+      "coverage": ["SDK sync/async and optional fast codec", "Live HTTP memory APIs and evidence", "Actual importer ownership, legacy adoption, split replacement and interrupted cleanup", "Full metadata paging, collection scope, vector-filter grouping and deterministic merge", "Lossless PagedLog whitespace", "Old-server capability refusal and adversarial grouped responses"],
+      "limits": "Predates the final importer checkpoint-counter fix, separately validated below. Counts overlap focused checks and must not be added together."
+    },
+    {
+      "id": "python_old_server_and_response_boundaries",
+      "result": "passed",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0,
+      "reproduce_command": "PYTHONPATH=bindings/python/holographic-sdk:integrations/python/src uv run --no-project --offline --with pytest --with pytest-asyncio --with httpx --with numpy --with pyarrow --with orjson python -m pytest --asyncio-mode=auto -o asyncio_default_fixture_loop_scope=function integrations/python/tests/test_core_capabilities.py -q",
+      "coverage": ["Sync and async fail closed when OpenAPI omits QueryIn.document_ids", "Positive and negative capability cache", "Direct equality compatibility without discovery", "Unexpected requested-group ID, collection, logical identity and malformed responses rejected"],
+      "limits": "Uses HTTPX MockTransport for intentionally old or adversarial servers; included in the integrated Python result."
+    },
+    {
+      "id": "importer_final_checkpoint",
+      "result": "passed",
+      "source_revision": "f54a464e",
+      "passed": 41,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 19.03,
+      "command": "HMS_SERVER_BIN=/Volumes/A/hms-audit-fixes/boundaries/target/debug/hms-server PYTHONPATH=bindings/python/holographic-sdk uv run --no-project --offline --with pytest --with httpx --with numpy --with pyarrow --with orjson python -m pytest bindings/python/holographic-sdk/tests/importers/test_core.py bindings/python/holographic-sdk/tests/importers/test_identity.py -q",
+      "coverage": ["999/1000/1001 split parts", "Typed source-ID and namespace collisions", "Legacy destination ownership and explicit migration", "Content-aware resume for cursor and noncursor sources", "Crash after prefix change, second crash, and final resume with exact checkpoint position"]
+    },
+    {
+      "id": "memory_schema_actual_wire",
+      "result": "passed",
+      "actual_request_response_pairs": 12,
+      "invalid_shapes_rejected": 8,
+      "command": "uv run --offline --locked --script scripts/check_memory_openapi.py --server-binary target/debug/hms-server",
+      "coverage": ["All eight native memory operations", "Single and batch remember", "Nullable missing get", "Optional maintenance bodies and dryRun defaults", "Native payload and envelope shape constraints"],
+      "limits": "Schema rejection checks validate the generated contract; they are not a claim of exhaustive runtime validation fuzzing."
+    },
+    {
+      "id": "openapi_fixture_and_security",
+      "result": "passed",
+      "passed": 1,
+      "filtered_out": 12,
+      "commands": [
+        "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target cargo test --offline --features server --test server_api openapi_matches_the_committed_file_and_documented_security_is_enforced",
+        "target/debug/hms-server openapi > openapi-final-check.json",
+        "cmp docs/server/openapi.json openapi-final-check.json"
+      ],
+      "coverage": ["Committed OpenAPI fixture equality", "Documented server authentication policy", "Combined import_identity, legacy adoption, document_ids, conditional delete and typed memory schemas"],
+      "limits": "The focused security test preceded the final wire fixture refresh; the exact generated-fixture comparison was repeated against the final integrated server binary."
+    },
+    {
+      "id": "server_clippy",
+      "result": "passed",
+      "command": "CARGO_TARGET_DIR=/Volumes/A/hms-audit-fixes/boundaries/target cargo clippy --offline --features server --bin hms-server -- -D warnings"
+    }
+  ],
+  "execution_constraints": [
+    "Local/free execution only; no paid API calls, cloud benchmark jobs, or model downloads.",
+    "Cargo artifacts used the private worktree target. Node dependencies were reused from the existing checkout; Python tests used the offline uv cache.",
+    "No generated binaries, build trees, raw large logs, or standalone scratch Cargo.lock files are committed.",
+    "These are focused boundary checks; the coordinator owns full integrated feature-matrix, MSRV, lint, security, and final release gates."
+  ],
+  "unverified": [
+    "Browser IndexedDB and Windows filesystem durability execution",
+    "Real power-loss injection and allocator exhaustion",
+    "All optional third-party framework package and platform combinations",
+    "Performance comparisons or scalability beyond tested workloads"
+  ]
+}

@@ -12,8 +12,8 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::storage::{
-    is_log_end, FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE, LEGACY_SEGMENT_SIZE,
-    MAX_RAW_FRAME_SIZE, SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
+    is_log_end, list_segments, FormatManifest, FORMAT_MAGIC, FORMAT_MANIFEST, HEADER_SIZE,
+    LEGACY_SEGMENT_SIZE, MAX_RAW_FRAME_SIZE, SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
 };
 use super::store_lock::{StoreLock, LOCK_FILE};
 use super::{HmsConfig, HmsCore};
@@ -87,20 +87,21 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
     }
 
     let arena_path = super::durable_file::arena_generation(&arena_path)?;
-    let mut segment_count = 0usize;
+    let ids = list_segments(&arena_path)?;
+    ensure!(!ids.is_empty(), "store contains no arena segments");
+    ensure!(
+        ids.iter().enumerate().all(|(expected, &id)| expected == id),
+        "arena segments are not contiguous from 0: {ids:?}"
+    );
+    let segment_count = ids.len();
     let mut frame_count = 0usize;
     let mut logical_bytes = 0u64;
     let mut allocated_bytes = 0u64;
-    loop {
-        let segment_path = arena_path.join(format!("seg_{segment_count}.bin"));
-        if !segment_path.exists() {
-            break;
-        }
+    for id in ids {
+        let segment_path = arena_path.join(format!("seg_{id}.bin"));
         let file = File::open(&segment_path)?;
         let metadata = file.metadata()?;
-        let final_segment = !arena_path
-            .join(format!("seg_{}.bin", segment_count + 1))
-            .exists();
+        let final_segment = id + 1 == segment_count;
         let valid_size = if manifest.version >= 4 && final_segment {
             (SEGMENT_SIZE as u64..=manifest.segment_size as u64).contains(&metadata.len())
                 && metadata.len() % SEGMENT_SIZE as u64 == 0
@@ -122,23 +123,6 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
         let (frames, bytes) = inspect_segment(&mmap, &segment_path, verify_checksums)?;
         frame_count += frames;
         logical_bytes += bytes as u64;
-        segment_count += 1;
-    }
-    if segment_count == 0 {
-        bail!("store contains no arena segments");
-    }
-    for entry in std::fs::read_dir(&arena_path)? {
-        let name = entry?.file_name();
-        let name = name.to_string_lossy();
-        if let Some(id) = name
-            .strip_prefix("seg_")
-            .and_then(|value| value.strip_suffix(".bin"))
-            .and_then(|value| value.parse::<usize>().ok())
-        {
-            if id >= segment_count {
-                bail!("arena segments are not contiguous (unexpected seg_{id}.bin)");
-            }
-        }
     }
 
     Ok(StoreInspection {

@@ -5,6 +5,16 @@ use super::*;
 use crate::core;
 use napi_derive::napi;
 
+fn governance_report(report: core::cognition::governor::GovernanceReport) -> GovernanceReportJs {
+    GovernanceReportJs {
+        composites_merged: report.composites_merged as u32,
+        composites_forgotten: report.composites_forgotten as u32,
+        atoms_forgotten: report.atoms_forgotten as u32,
+        idf_refreshed: report.idf_refreshed,
+        atoms_refined: report.refinement.atoms_refined as u32,
+    }
+}
+
 #[napi]
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
 pub struct HolographicMemorySystem {
@@ -122,16 +132,16 @@ impl HolographicMemorySystem {
             Ok(core
                 .list_documents(from.as_deref(), limit)
                 .into_iter()
-                .map(|record| ListedDocument {
-                    id: record.id,
-                    version: record.version,
-                    source_uri: record.source_uri,
-                    metadata: record.metadata,
-                    chunk_count: record.chunk_count as u32,
-                })
+                .map(ListedDocument::from)
                 .collect())
         })
         .await
+    }
+
+    #[napi]
+    pub async fn get_document_info(&self, id: String) -> Result<Option<ListedDocument>> {
+        let core = self.core.clone();
+        run_async(move || Ok(core.get_document(&id).map(ListedDocument::from))).await
     }
 
     #[napi]
@@ -513,8 +523,7 @@ impl HolographicMemorySystem {
     pub async fn synthesize_concepts(&self) -> Result<Vec<ConceptCandidate>> {
         let core = self.core.clone();
         run_async(move || {
-            let results = core.synthesize_concepts();
-            Ok(results)
+            core.synthesize_concepts_with_limits(crate::core::query_limits::QueryLimits::default())
         })
         .await
     }
@@ -669,7 +678,11 @@ impl HolographicMemorySystem {
         let core = self.core.clone();
         run_async(move || {
             let rel_refs: Vec<&str> = relations.iter().map(|s| s.as_str()).collect();
-            let results = core.multi_hop(&start_entity, &rel_refs);
+            let results = core.multi_hop_with_limits(
+                &start_entity,
+                &rel_refs,
+                crate::core::query_limits::QueryLimits::default(),
+            )?;
             Ok(results
                 .into_iter()
                 .map(|r| MultiHopResultJs {
@@ -768,15 +781,17 @@ impl HolographicMemorySystem {
 
     #[napi]
     // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
-    pub fn govern_memory(&self) -> GovernanceReportJs {
-        let report = self.core.govern_memory();
-        GovernanceReportJs {
-            composites_merged: report.composites_merged as u32,
-            composites_forgotten: report.composites_forgotten as u32,
-            atoms_forgotten: report.atoms_forgotten as u32,
-            idf_refreshed: report.idf_refreshed,
-            atoms_refined: report.refinement.atoms_refined as u32,
-        }
+    pub fn govern_memory(&self) -> Result<GovernanceReportJs> {
+        self.core
+            .govern_memory()
+            .map(governance_report)
+            .map_err(napi_err)
+    }
+
+    #[napi]
+    pub async fn govern_memory_async(&self) -> Result<GovernanceReportJs> {
+        let core = self.core.clone();
+        run_async(move || core.govern_memory().map(governance_report)).await
     }
 
     // === Agency API ===

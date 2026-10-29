@@ -1,0 +1,20 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.37s
+     Running tests/memory_api_server.rs (target/debug/deps/memory_api_server-e36a91591112c8ed)
+
+running 4 tests
+test invalid_memory_config_stops_the_server_at_startup ... ok
+test memory_state_and_configuration_survive_restart ... ok
+test memory_round_trip_over_http_with_history_errors_and_isolation ... ok
+test frozen_native_lifecycle_has_the_same_http_contract ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+     Running tests/native_memory_workflow.rs (target/debug/deps/native_memory_workflow-2398e50ebf7efc2e)
+
+running 1 test
+test frozen_native_lifecycle_preserves_sources_and_forgetting_across_restarts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+

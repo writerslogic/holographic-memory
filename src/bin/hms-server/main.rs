@@ -11,6 +11,8 @@ mod auth;
 mod config;
 mod documents;
 mod error;
+#[cfg(test)]
+mod import_tests;
 mod limits;
 mod log;
 mod memory;
@@ -18,6 +20,7 @@ mod metrics;
 mod middleware;
 mod ops;
 mod request;
+mod restore;
 mod routes;
 mod serve;
 mod tenants;

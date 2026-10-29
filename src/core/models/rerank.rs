@@ -29,7 +29,7 @@ const GPU_BATCH: usize = 1;
 
 impl Reranker {
     pub fn load(source: &ModelSource, device: &Device) -> Result<Self> {
-        let l = load(source, device, super::dtype_for(device, false))?;
+        let l = load(source, device, super::dtype_for(device, false), false)?;
         let mut tokenizer = l.tokenizer;
         tokenizer.with_padding(None);
         // Only invalid truncation parameters are rejected; disabling it cannot fail.

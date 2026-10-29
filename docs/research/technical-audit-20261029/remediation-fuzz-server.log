@@ -1,0 +1,61 @@
+     Locking 379 packages to latest compatible versions
+      Adding generic-array v0.14.7 (available: v0.14.9)
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling libc v0.2.191
+    Checking smallvec v1.16.4
+    Checking errno v0.3.14
+    Checking mio v1.2.4
+    Checking socket2 v0.6.5
+   Compiling syn v3.0.9
+    Checking indexmap v2.14.2
+    Checking rustls-pki-types v1.15.1
+    Checking futures-channel v0.3.34
+    Checking parking_lot_core v0.9.12
+   Compiling rustix v1.1.6
+    Checking futures-task v0.3.34
+    Checking signal-hook-registry v1.4.8
+    Checking crypto-common v0.2.2
+   Compiling jobserver v0.1.35
+    Checking parking_lot v0.12.5
+    Checking futures-util v0.3.34
+    Checking subtle v2.6.1
+    Checking filetime v0.2.29
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+   Compiling cc v1.10.0
+    Checking tar v0.4.46
+    Checking arbitrary v1.5.0
+    Checking digest v0.11.3
+    Checking sha2 v0.11.1
+    Checking tempfile v3.27.0
+   Compiling ring v0.17.14
+   Compiling libfuzzer-sys v0.4.13
+   Compiling serde_derive_internals v0.30.0
+   Compiling serde_derive v1.0.229
+   Compiling tokio-macros v2.7.2
+   Compiling ref-cast-impl v1.0.27
+   Compiling clap_derive v4.6.7
+   Compiling thiserror-impl v2.0.21
+   Compiling schemars_derive v1.2.3
+    Checking ref-cast v1.0.27
+    Checking tokio v1.54.1
+    Checking thiserror v2.0.21
+    Checking clap v4.6.7
+   Compiling rustls v0.23.46
+    Checking serde v1.0.229
+    Checking rustls-webpki v0.103.16
+    Checking num-complex v0.4.6
+    Checking serde_urlencoded v0.7.1
+    Checking bincode v2.0.1
+    Checking rust-stemmers v1.2.0
+    Checking schemars v1.2.3
+    Checking tokio-util v0.7.20
+    Checking tower v0.5.3
+    Checking simba v0.10.2
+    Checking h2 v0.4.20
+    Checking tokio-rustls v0.26.6
+    Checking hyper v1.12.0
+    Checking nalgebra v0.35.0
+    Checking hyper-util v0.1.21
+    Checking axum v0.8.9
+    Checking holographic-memory-fuzz v0.0.0 (/Volumes/A/holographic-memory/fuzz)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 19.48s

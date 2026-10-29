@@ -162,7 +162,6 @@ impl Positions {
     }
 
     /// The reference analysis [`Self::from_ranks`] matches byte for byte.
-    #[cfg(test)]
     pub(super) fn from_text(
         text: &str,
         stem: bool,

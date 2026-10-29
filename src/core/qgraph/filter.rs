@@ -27,6 +27,25 @@ use rayon::prelude::*;
 
 use super::kernels::{dot_i8_query, dot_i8_query_x4, prefetch_bytes};
 
+/// Largest row whose squared u8 Euclidean distance fits the returned `u32`.
+pub const MAX_DIMENSIONS: usize = (u32::MAX / (255 * 255)) as usize;
+/// Dense label tables are bounded independently of the number of input rows.
+pub const MAX_LABELS: usize = 1 << 20;
+
+fn allocation<T: Clone>(length: usize, value: T) -> Result<Vec<T>, FilterError> {
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(length)
+        .map_err(|_| FilterError::Invalid("filtered index allocation exceeds capacity".into()))?;
+    values.resize(length, value);
+    Ok(values)
+}
+
+fn product(left: usize, right: usize) -> Result<usize, FilterError> {
+    left.checked_mul(right)
+        .ok_or_else(|| FilterError::Invalid("filtered index shape exceeds capacity".into()))
+}
+
 /// Errors of [`FilteredIndex`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FilterError {
@@ -254,7 +273,8 @@ fn mix(mut z: u64) -> u64 {
 impl FilteredIndex {
     /// Builds the index over `n = data.len() / dim` rows of `data` (row-major u8) and their
     /// labels as CSR (`label_indptr` with `n + 1` entries into `label_ids`). `dim` must be a
-    /// positive multiple of 16, label ids below `labels` (0 infers it from the data).
+    /// in `1..=MAX_DIMENSIONS`, label ids below `labels` (0 infers it from the data),
+    /// with at most `MAX_LABELS` labels. Rows are padded internally for the kernels.
     pub fn build(
         data: &[u8],
         dim: usize,
@@ -263,8 +283,10 @@ impl FilteredIndex {
         labels: usize,
         params: &FilterBuildParams,
     ) -> Result<Self, FilterError> {
-        if dim == 0 {
-            return Err(FilterError::Invalid("dim must be positive".into()));
+        if !(1..=MAX_DIMENSIONS).contains(&dim) {
+            return Err(FilterError::Invalid(format!(
+                "dim must be in 1..={MAX_DIMENSIONS}"
+            )));
         }
         if !data.len().is_multiple_of(dim) {
             return Err(FilterError::Invalid(
@@ -278,7 +300,7 @@ impl FilteredIndex {
         if label_indptr.len() != n + 1
             || label_indptr[0] != 0
             || label_indptr.windows(2).any(|w| w[0] > w[1])
-            || label_indptr[n] as usize != label_ids.len()
+            || label_indptr[n] != label_ids.len() as u64
         {
             return Err(FilterError::Invalid(
                 "label_indptr is not a monotone CSR index over label_ids with n + 1 entries".into(),
@@ -290,22 +312,25 @@ impl FilteredIndex {
             .max()
             .map_or(0, |m| m as usize + 1);
         let labels = if labels == 0 { max_label } else { labels };
+        if labels > MAX_LABELS {
+            return Err(FilterError::Invalid(format!("labels exceed {MAX_LABELS}")));
+        }
         if max_label > labels {
             return Err(FilterError::Invalid(format!(
                 "label id {} is out of range for {labels} labels",
                 max_label - 1
             )));
         }
-        if params.cluster_size == 0 || params.max_lists == 0 {
+        if params.cluster_size == 0 || params.max_lists == 0 || params.train_per_list == 0 {
             return Err(FilterError::Invalid(
-                "cluster_size and max_lists must be positive".into(),
+                "cluster_size, max_lists and train_per_list must be positive".into(),
             ));
         }
 
         // Rows are zero-padded (in the shifted domain) to a multiple of 16 for the kernels.
         let stride = dim.next_multiple_of(16);
-        let mut rows = vec![0i8; n * stride];
-        let mut norms = vec![0i32; n];
+        let mut rows = allocation(product(n, stride)?, 0i8)?;
+        let mut norms = allocation(n, 0i32)?;
         rows.par_chunks_mut(stride)
             .zip(data.par_chunks(dim))
             .zip(norms.par_iter_mut())
@@ -319,7 +344,7 @@ impl FilteredIndex {
             });
 
         // Transpose the point -> labels CSR with a counting sort: ids come out ascending.
-        let mut counts = vec![0u64; labels + 1];
+        let mut counts = allocation(labels + 1, 0u64)?;
         for &l in label_ids {
             counts[l as usize + 1] += 1;
         }
@@ -328,7 +353,7 @@ impl FilteredIndex {
         }
         let label_offsets = counts.clone();
         let mut fill = counts;
-        let mut postings = vec![0u32; label_ids.len()];
+        let mut postings = allocation(label_ids.len(), 0u32)?;
         for p in 0..n {
             let (a, b) = (label_indptr[p] as usize, label_indptr[p + 1] as usize);
             for &l in &label_ids[a..b] {
@@ -338,7 +363,7 @@ impl FilteredIndex {
             }
         }
         // A point listing a label twice would appear twice; collapse adjacent repeats.
-        let mut dedup_offsets = vec![0u64; labels + 1];
+        let mut dedup_offsets = allocation(labels + 1, 0u64)?;
         let mut write = 0usize;
         for l in 0..labels {
             let (a, b) = (label_offsets[l] as usize, label_offsets[l + 1] as usize);
@@ -357,7 +382,7 @@ impl FilteredIndex {
         let label_offsets = dedup_offsets;
 
         let words = n.div_ceil(64);
-        let mut bitset_slot = vec![u32::MAX; labels];
+        let mut bitset_slot = allocation(labels, u32::MAX)?;
         let dense: Vec<usize> = (0..labels)
             .filter(|&l| {
                 let len = (label_offsets[l + 1] - label_offsets[l]) as usize;
@@ -367,7 +392,7 @@ impl FilteredIndex {
         for (slot, &l) in dense.iter().enumerate() {
             bitset_slot[l] = slot as u32;
         }
-        let mut bitsets = vec![0u64; dense.len() * words];
+        let mut bitsets = allocation(product(dense.len(), words)?, 0u64)?;
         bitsets
             .par_chunks_mut(words.max(1))
             .zip(dense.par_iter())
@@ -378,7 +403,7 @@ impl FilteredIndex {
                 }
             });
 
-        let mut ivf_slot = vec![u32::MAX; labels];
+        let mut ivf_slot = allocation(labels, u32::MAX)?;
         let mut big: Vec<usize> = (0..labels)
             .filter(|&l| (label_offsets[l + 1] - label_offsets[l]) as usize > params.ivf_min)
             .collect();
@@ -390,7 +415,7 @@ impl FilteredIndex {
                 let (a, b) = (label_offsets[l] as usize, label_offsets[l + 1] as usize);
                 train_label(&rows, &norms, stride, &postings[a..b], params, l as u64)
             })
-            .collect();
+            .collect::<Result<_, _>>()?;
         for (slot, &l) in big.iter().enumerate() {
             ivf_slot[l] = slot as u32;
         }
@@ -588,6 +613,7 @@ impl FilteredIndex {
         order.dedup();
         let rarest = order[0];
         let others = &order[1..];
+        let k = k.min(self.live).min(self.label_len(rarest));
 
         q.resize(self.stride, 0);
         q[self.dim..].fill(0);
@@ -598,7 +624,9 @@ impl FilteredIndex {
         let qnorm: i64 = q.iter().map(|&v| i64::from(v) * i64::from(v)).sum();
         top.k = k;
         top.items.clear();
-        top.items.reserve(k + 1);
+        top.items.try_reserve(k + 1).map_err(|_| {
+            FilterError::Invalid("filtered result allocation exceeds capacity".into())
+        })?;
 
         let n_rare = self.label_len(rarest);
         let ivf = self.ivf_slot[rarest as usize];
@@ -627,11 +655,12 @@ impl FilteredIndex {
             }
         };
         self.scored.fetch_add(scored as u64, Ordering::Relaxed);
-        out.extend(
-            top.items
-                .iter()
-                .map(|&(key, id)| (u32::try_from(key + qnorm).unwrap_or(u32::MAX), id)),
-        );
+        out.extend(top.items.iter().map(|&(key, id)| {
+            (
+                u32::try_from(key + qnorm).expect("validated filtered distance exceeds u32"),
+                id,
+            )
+        }));
         Ok(())
     }
 
@@ -862,18 +891,20 @@ impl FilteredIndex {
         }
         let nq = queries.len() / self.dim;
         if label_indptr.len() != nq + 1
+            || label_indptr[0] != 0
             || label_indptr.windows(2).any(|w| w[0] > w[1])
-            || label_indptr[nq] as usize > label_ids.len()
+            || label_indptr[nq] != label_ids.len() as u64
         {
             return Err(FilterError::Invalid(
                 "query label CSR does not match the queries".into(),
             ));
         }
-        if out.len() != nq * k {
+        let expected = product(nq, k)?;
+        if out.len() != expected {
             return Err(FilterError::Invalid(format!(
                 "out has {} slots, need {}",
                 out.len(),
-                nq * k
+                expected
             )));
         }
         if k == 0 {
@@ -906,13 +937,15 @@ fn train_label(
     members: &[u32],
     params: &FilterBuildParams,
     salt: u64,
-) -> LabelIvf {
+) -> Result<LabelIvf, FilterError> {
     let lists = members
         .len()
         .div_ceil(params.cluster_size)
         .clamp(1, params.max_lists);
     let row = |id: u32| &rows[id as usize * dim..(id as usize + 1) * dim];
-    let train_n = (lists * params.train_per_list).min(members.len());
+    let train_n = lists
+        .saturating_mul(params.train_per_list)
+        .min(members.len());
     // Deterministic sample without replacement: a stride walk from a seeded start.
     let mut sample: Vec<u32> = Vec::with_capacity(train_n);
     let start = (mix(params.seed ^ salt) % members.len() as u64) as usize;
@@ -920,10 +953,11 @@ fn train_label(
     for i in 0..train_n {
         sample.push(members[(start + (i as f64 * stride) as usize) % members.len()]);
     }
-    let mut centroids: Vec<i8> = Vec::with_capacity(lists * dim);
+    let elements = product(lists, dim)?;
+    let mut centroids = allocation(elements, 0i8)?;
     for c in 0..lists {
         let pick = sample[(c as f64 * train_n as f64 / lists as f64) as usize];
-        centroids.extend_from_slice(row(pick));
+        centroids[c * dim..(c + 1) * dim].copy_from_slice(row(pick));
     }
     let mut cnorms = centroid_norms(&centroids, dim);
     let assign = |x: &[i8], centroids: &[i8], cnorms: &[i32]| -> u32 {
@@ -942,8 +976,8 @@ fn train_label(
             .iter()
             .map(|&id| assign(row(id), &centroids, &cnorms))
             .collect();
-        let mut sums = vec![0i64; lists * dim];
-        let mut counts = vec![0u32; lists];
+        let mut sums = allocation(elements, 0i64)?;
+        let mut counts = allocation(lists, 0u32)?;
         for (&id, &c) in sample.iter().zip(&labels) {
             counts[c as usize] += 1;
             let s = &mut sums[c as usize * dim..(c as usize + 1) * dim];
@@ -994,22 +1028,22 @@ fn train_label(
         fill[c as usize] += 1;
     }
     let (copy_rows, copy_norms) = if members.len() >= params.copy_min {
-        let mut r = Vec::with_capacity(grouped.len() * dim);
-        for &id in &grouped {
-            r.extend_from_slice(row(id));
+        let mut r = allocation(product(grouped.len(), dim)?, 0i8)?;
+        for (target, &id) in r.chunks_exact_mut(dim).zip(&grouped) {
+            target.copy_from_slice(row(id));
         }
         (r, grouped.iter().map(|&id| norms[id as usize]).collect())
     } else {
         (Vec::new(), Vec::new())
     };
-    LabelIvf {
+    Ok(LabelIvf {
         centroids,
         centroid_norms: cnorms,
         offsets,
         members: grouped,
         rows: copy_rows,
         norms: copy_norms,
-    }
+    })
 }
 
 fn centroid_norms(centroids: &[i8], dim: usize) -> Vec<i32> {
@@ -1022,6 +1056,86 @@ fn centroid_norms(centroids: &[i8], dim: usize) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn audit_regression_filtered_index_rejects_unrepresentable_shapes() {
+        let params = FilterBuildParams::default();
+        assert!(FilteredIndex::build(&[], 16, &[0], &[], usize::MAX, &params).is_err());
+        let maximum = (u32::MAX / (255 * 255)) as usize;
+        for dim in [maximum - 1, maximum, maximum + 1] {
+            let data = vec![0; dim];
+            let built = FilteredIndex::build(&data, dim, &[0, 1], &[0], 1, &params);
+            if dim > maximum {
+                assert!(built.is_err());
+            } else {
+                let mut out = Vec::new();
+                built
+                    .unwrap()
+                    .search(
+                        &vec![255; dim],
+                        &[0],
+                        1,
+                        &FilterSearchParams::exact(),
+                        &mut out,
+                    )
+                    .unwrap();
+                assert_eq!(out, vec![((65025 * dim) as u32, 0)]);
+            }
+        }
+        assert!(FilteredIndex::build(
+            &[0; 16],
+            16,
+            &[0, 1],
+            &[0],
+            1,
+            &FilterBuildParams {
+                ivf_min: 0,
+                train_per_list: 0,
+                ..params
+            },
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn audit_regression_filtered_search_bounds_result_capacity_and_batch_products() {
+        let index = FilteredIndex::build(
+            &[0; 16],
+            16,
+            &[0, 1],
+            &[0],
+            1,
+            &FilterBuildParams::default(),
+        )
+        .unwrap();
+        for k in [0, 1, 2, usize::MAX] {
+            let mut out = Vec::new();
+            index
+                .search(&[0; 16], &[0], k, &FilterSearchParams::exact(), &mut out)
+                .unwrap();
+            assert_eq!(out.len(), usize::from(k != 0));
+        }
+        assert!(index
+            .search_batch(
+                &[0; 32],
+                &[0, 1, 2],
+                &[0, 0],
+                usize::MAX,
+                &FilterSearchParams::exact(),
+                &mut []
+            )
+            .is_err());
+        assert!(index
+            .search_batch(
+                &[0; 16],
+                &[1, 1],
+                &[0],
+                0,
+                &FilterSearchParams::exact(),
+                &mut []
+            )
+            .is_err());
+    }
 
     struct Fixture {
         data: Vec<u8>,

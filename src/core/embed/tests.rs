@@ -96,6 +96,45 @@ fn output_is_bit_identical_across_threads_and_batching() {
 }
 
 #[test]
+fn audit_effective_options_bind_store_and_index_identity() {
+    use std::sync::Arc;
+    let dir = tempfile::tempdir().unwrap();
+    let (path, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
+    let plain = Arc::new(Embedder::from_pack(&path, Some(&sha), &opts(1, 1)).unwrap());
+    let mut index = SemanticIndex::new(plain.clone());
+    index.add(&["cat"], &["the cat sat"]).unwrap();
+    assert!(index.top_k(&vec![0.0; plain.dimensions()], 0).is_empty());
+    let saved = dir.path().join("semantic.index");
+    index.save(&saved).unwrap();
+    for changed in [
+        EmbedOptions {
+            pooling: Some(Pooling::Cls),
+            ..opts(1, 1)
+        },
+        EmbedOptions {
+            normalize: Some(false),
+            ..opts(1, 1)
+        },
+        EmbedOptions {
+            query_prefix: Some("cat ".into()),
+            ..opts(1, 1)
+        },
+        EmbedOptions {
+            passage_prefix: Some("cat ".into()),
+            ..opts(1, 1)
+        },
+        EmbedOptions {
+            max_length: Some(8),
+            ..opts(1, 1)
+        },
+    ] {
+        let changed = Arc::new(Embedder::from_pack(&path, Some(&sha), &changed).unwrap());
+        assert_ne!(plain.space(), changed.space());
+        assert!(SemanticIndex::load(&saved, changed).is_err());
+    }
+}
+
+#[test]
 fn token_budget_splits_batches_without_changing_results() {
     let dir = tempfile::tempdir().unwrap();
     let (path, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);

@@ -1,0 +1,5 @@
+
+> holographic-memory@0.6.4 test:package
+> node scripts/test-package.cjs
+
+Packed CommonJS, ESM, native binding, and document APIs passed

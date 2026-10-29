@@ -1,0 +1,136 @@
+{
+  "format_version": 1,
+  "fixture_sha256": "339f1d9643da4f320a1fb84661e1158e126e3821d0e4eaa8e58d4d264a9a17b3",
+  "fixture_cases": 19,
+  "fresh_opens": 3,
+  "scope": "Frozen synthetic offline native lifecycle; no model answer-quality claim",
+  "completed": {
+    "rust_native": {
+      "passed": 1,
+      "cases": 19,
+      "log": "remediation-lifecycle-rerun.log"
+    },
+    "real_http": {
+      "passed": 4,
+      "lifecycle_cases": 19,
+      "log": "remediation-lifecycle-rerun.log"
+    },
+    "memory_api_integration": {
+      "passed": 29,
+      "log": "remediation-lifecycle.log"
+    },
+    "focused_rust": {
+      "library": 763,
+      "mcp": 19,
+      "http": 51,
+      "existing_development_ignores": 12,
+      "log": "remediation-focused.log"
+    },
+    "memory_policy_regressions": {
+      "passed": 8,
+      "log": "remediation-policies.log"
+    },
+    "openapi_independent": {
+      "actual_pairs": 12,
+      "invalid_shapes": 8,
+      "log": "remediation-schema.log"
+    },
+    "docs_generator": {
+      "passed": 18,
+      "log": "remediation-doc-tests.log"
+    },
+    "strict_docs": {
+      "passed": true,
+      "rustdoc_embedding": "separate CI check",
+      "log": "remediation-doc-build.log"
+    },
+    "msrv": {
+      "version": "1.89",
+      "command": "cargo +1.89 check --locked --offline --no-default-features",
+      "log": "remediation-msrv.log"
+    },
+    "governance_final": {
+      "passed": 6,
+      "log": "remediation-final-governance.log"
+    },
+    "mcp_final": {
+      "passed": 28,
+      "log": "remediation-mcp-final.log"
+    },
+    "node_final": {
+      "passed": 9,
+      "skipped": 0,
+      "includes": [
+        "19-case shared lifecycle through3processes",
+        "async governance and sync compatibility across compaction/restart"
+      ],
+      "log": "remediation-node-tests.log"
+    },
+    "node_package": {
+      "passed": true,
+      "coverage": [
+        "packed CommonJS",
+        "ESM",
+        "native binding",
+        "document API"
+      ],
+      "log": "remediation-node-package.log"
+    },
+    "committed_failure_replay": {
+      "passed": 1,
+      "log": "remediation-idempotency-final.log"
+    },
+    "provenance_after_atomic_compatibility_fix": {
+      "passed": 22,
+      "log": "remediation-issuance-final.log"
+    },
+    "python_static_review": {
+      "passed": 51,
+      "source_commit": "457df8cb",
+      "scope": "4 owned files; explicit side effects and fail-closed capability branch"
+    },
+    "server_namespace_regressions": {
+      "server_tests": 15,
+      "abuse_tests": 3,
+      "failed": 0,
+      "log": "remediation-server-layout-final.log"
+    },
+    "fuzz_driver_compile": {
+      "passed": true,
+      "log": "remediation-fuzz-server.log"
+    },
+    "mcp_clippy": {
+      "passed": true,
+      "log": "remediation-mcp-clippy-final.log"
+    },
+    "configured_stdio_cap": {
+      "passed": 2,
+      "source_commit": "88113ad7",
+      "evidence_commit": "ea7b6898",
+      "scope": "configured cap replaces SDK default16MiB; LF/CRLF boundaries, oversize discard, cancellation and recovery"
+    },
+    "latest_all_target_all_feature_clippy": {
+      "rust": "1.99.0",
+      "passed": true,
+      "log": "remediation-latest-clippy.log"
+    },
+    "committed_cleanup_cache_invalidation": {
+      "passed": 1,
+      "cases": [
+        "document deletion plus failed purge",
+        "memory forgetting plus failed purge"
+      ],
+      "log": "remediation-cache-final.log"
+    }
+  },
+  "pending_integration": [
+    "complete final PR checks for current head"
+  ],
+  "limits": [
+    "Completed local runs pin their own preceding source; authoritative final PR checks must verify the integrated head.",
+    "No paid API/cloud benchmark or evaluation was run. Local audit/implementation runs downloaded no model weights; existing free CI packaging workflows have their own published-artifact inputs.",
+    "Historical audit score is retained, not a post-fix measurement.",
+    "Timing is descriptive execution evidence; no performance superiority claim."
+  ],
+  "pr": "https://github.com/writerslogic/holographic-memory/pull/334"
+}

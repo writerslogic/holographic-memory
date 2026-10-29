@@ -1,0 +1,24 @@
+{
+  "compile": [
+    "rustc",
+    "--edition=2021",
+    "--test",
+    "/Volumes/A/holographic-memory/docs/research/technical-audit-20261029/reproductions.rs",
+    "-L",
+    "dependency=/Volumes/C/rust-target/debug/deps",
+    "-o",
+    "/Volumes/A/holographic-memory/target/audit-contract-diagnostics",
+    "--extern",
+    "holographic_memory=/Volumes/C/rust-target/debug/deps/libholographic_memory.rlib",
+    "--extern",
+    "coset=/Volumes/C/rust-target/debug/deps/libcoset-1aee11807de9b7bc.rlib",
+    "--extern",
+    "ed25519_dalek=/Volumes/C/rust-target/debug/deps/libed25519_dalek-a611d29c0692ee3a.rlib"
+  ],
+  "run": [
+    "/Volumes/A/holographic-memory/target/audit-contract-diagnostics",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "dependency_selection": "Cached artifacts selected from dep-info; COSE fixture crosses crate boundary only with bytes and the core manager native verifying key, avoiding cached feature-variant type identities."
+}

@@ -389,6 +389,52 @@ fn snapshot_refuses_bad_destinations_and_restore_detects_tampering() {
 }
 
 #[test]
+fn snapshots_reject_absolute_descendants_of_relative_stores() {
+    let dir = tempfile::tempdir_in(".").unwrap();
+    let store = open(dir.path());
+    populate(&store);
+    let source = dir.path().join("store").canonicalize().unwrap();
+    for destination in [source.join("inside"), source.join("../store/inside")] {
+        assert!(matches!(
+            store.snapshot_blocking(destination.display().to_string()),
+            Err(HmsError::InvalidInput { .. })
+        ));
+    }
+    assert!(!source.join("inside").exists());
+    assert!(!std::fs::read_dir(source).unwrap().any(|entry| entry
+        .unwrap()
+        .file_name()
+        .to_string_lossy()
+        .contains("partial")));
+}
+
+#[cfg(unix)]
+#[test]
+fn snapshots_reject_symlink_aliases_of_the_store() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = open(dir.path());
+    populate(&store);
+    let alias = dir.path().join("alias");
+    std::os::unix::fs::symlink(dir.path().join("store"), &alias).unwrap();
+    assert!(matches!(
+        store.snapshot_blocking(alias.join("inside").display().to_string()),
+        Err(HmsError::InvalidInput { .. })
+    ));
+    assert!(!alias.join("inside").exists());
+    let snapshot = dir.path().join("outside/snapshot");
+    store
+        .snapshot_blocking(snapshot.display().to_string())
+        .unwrap();
+    let restored = HmsStore::restore_blocking(
+        snapshot.display().to_string(),
+        dir.path().join("restored").display().to_string(),
+        Some(small()),
+    )
+    .unwrap();
+    assert_eq!(restored.stats().unwrap().document_count, 40);
+}
+
+#[test]
 fn snapshot_while_searching_and_ingesting_stays_consistent() {
     let dir = tempfile::tempdir().unwrap();
     let store = open(dir.path());

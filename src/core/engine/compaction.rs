@@ -197,19 +197,31 @@ impl HmsCore {
         // then finds identical metadata and writes nothing.
         let checkpoint = self.arena.checkpoint();
         _transaction.release();
-        self.persist_indices_detached(checkpoint)?;
-        self.persist_indices(&self.shards.read())?;
+        crate::core::error::after_commit(
+            "compaction index persistence",
+            self.persist_indices_detached(checkpoint),
+        )?;
+        crate::core::error::after_commit(
+            "compaction index persistence",
+            self.persist_indices(&self.shards.read()),
+        )?;
         if let Some(audit) = &self.audit {
-            audit.record(
-                crate::core::audit::AuditOp::Compact,
-                "",
-                self.sign_fn().as_deref(),
+            crate::core::error::after_commit(
+                "compaction audit append",
+                audit.record(
+                    crate::core::audit::AuditOp::Compact,
+                    "",
+                    self.sign_fn().as_deref(),
+                ),
             )?;
         }
         if scrub {
             // Still under the compaction lock: a concurrent compaction must not capture
             // documents whose text offsets the canonical rebuild is replacing.
-            self.canonicalize_derived_state(!canonical_first)?;
+            crate::core::error::after_commit(
+                "compaction derived-state reconciliation",
+                self.canonicalize_derived_state(!canonical_first),
+            )?;
         }
         Ok(())
     }
@@ -247,10 +259,29 @@ impl HmsCore {
         // The shard map's iteration order depends on its insertion and removal history; id
         // order makes the compacted journal a function of the live vectors alone.
         vectors.sort_unstable_by(|a, b| a.0.cmp(&b.0));
-        let mut mutations: Vec<Mutation> = vectors
-            .into_iter()
-            .map(|(id, vector)| Mutation::Vector { id, vector })
+        let atoms = self
+            .atom_memory
+            .as_ref()
+            .map(|memory| memory.inner().all_vectors());
+        let atom_ids: HashSet<_> = atoms
+            .iter()
+            .flatten()
+            .map(|(_, id, _)| id.as_str())
             .collect();
+        let mut mutations = Vec::new();
+        for (id, vector) in vectors {
+            let absent_atom =
+                (atoms.is_some() && !atom_ids.contains(id.as_str())).then(|| id.clone());
+            mutations.push(Mutation::Vector { id, vector });
+            if let Some(id) = absent_atom {
+                anyhow::ensure!(
+                    self.schema >= crate::core::format::MEANING_MAINTENANCE_SCHEMA_VERSION,
+                    "preserving scoped meaning state requires schema 5; use hms-format upgrade"
+                );
+                mutations.push(Mutation::DeleteAtom { id });
+            }
+        }
+        drop(atom_ids);
         let (documents, text, document_checkpoint) = {
             let store = self.documents.read();
             let checkpoint = if shard_vectors == 0 {
@@ -272,11 +303,9 @@ impl HmsCore {
                 .into_iter()
                 .map(Mutation::RelationType),
         );
-        if let Some(atoms) = &self.atom_memory {
+        if let Some(atoms) = atoms {
             mutations.extend(
                 atoms
-                    .inner()
-                    .all_vectors()
                     .into_iter()
                     .map(|(_, id, vector)| Mutation::Atom { id, vector }),
             );
@@ -377,6 +406,36 @@ mod tests {
             "embeddings": [[1.0, 0.0]],
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn published_compaction_failure_reports_a_committed_outcome_and_reopens() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = Some(dir.path().display().to_string());
+        let core = HmsCore::new(256, path.clone(), Some(config()))?;
+        core.memorize_document(document("kept", "v1"))?;
+        let before = core.revision();
+        let error = core
+            .compact_impl(
+                || {},
+                || {
+                    std::fs::create_dir(dir.path().join("indices.json")).unwrap();
+                },
+                false,
+            )
+            .unwrap_err();
+        assert!(error.is::<crate::CommittedMutationError>(), "{error:#}");
+        assert!(core.revision() != before);
+        assert!(core.has_document("kept"));
+        std::fs::remove_dir(dir.path().join("indices.json"))?;
+        drop(core);
+        let core = HmsCore::new(256, path, Some(config()))?;
+        assert_eq!(
+            core.get_document("kept").unwrap().text.as_deref(),
+            Some("needle durable source")
+        );
+        core.compact()?;
+        Ok(())
     }
 
     fn seed(core: &HmsCore) -> Result<()> {

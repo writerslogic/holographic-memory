@@ -10,6 +10,7 @@ is the verdict-bearing metrics of one section).
 """
 
 import statistics
+from enum import Enum
 
 from .common import bootstrap_ci, pass_summary
 
@@ -20,8 +21,22 @@ LOWER = "lower"
 NO_VERDICT = {"install_distributions", "index_bytes_mib"}
 
 
-def cell(value, ci=None, n=1, source="", unit="", note=""):
-    return {"value": value, "ci": ci if ci is not None else [value, value], "n": n, "source": source, "unit": unit, "note": note}
+class Validity(str, Enum):
+    VALID = "valid"
+    UNVERIFIED = "unverified"
+    INVALID = "invalid"
+
+
+class Uncertainty(str, Enum):
+    SAMPLED = "sampled"
+    UNREPLICATED = "unreplicated"
+    DETERMINISTIC = "deterministic"
+
+
+def cell(value, ci=None, n=1, source="", unit="", note="", uncertainty=None):
+    uncertainty = Uncertainty(uncertainty or ("sampled" if ci is not None and n > 1 else "unreplicated"))
+    return {"value": value, "ci": ci if ci is not None else [value, value], "n": n, "source": source,
+            "unit": unit, "note": note, "uncertainty": uncertainty, "validity": Validity.VALID}
 
 
 def _operation_cell(results, system, *args, **kwargs):
@@ -32,6 +47,9 @@ def _operation_cell(results, system, *args, **kwargs):
 
 
 def comparison_note(metric, mine, theirs):
+    for c in (mine, theirs):
+        if c.get("validity", "valid") != "valid":
+            return c.get("validity_reason", "unverified measurement") + "; no verdict"
     if metric not in ("replace_ms_per_op", "delete_ms_per_op"):
         return ""
     if mine["value"] is None or theirs["value"] is None:
@@ -81,7 +99,7 @@ def _install_cells(put, system, entry, src):
         # A comparator that ships with the interpreter installs nothing: 0 is not a result HMS can lose to.
         info = bool(inst.get("ships_with_interpreter"))
         note = "ships with the Python interpreter: not an install cost, no verdict drawn against it" if info else ""
-        put("install_mib", system, cell(inst["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", note or inst.get("note", "")) | {"informational": info})
+        put("install_mib", system, cell(inst["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", note or inst.get("note", ""), uncertainty="deterministic") | {"informational": info})
         put("install_distributions", system, cell(inst.get("distributions", 0), None, 1, f"{src}.install", "count",
                                                   note or "Python distributions (wheels) the install pulls in") | {"informational": info})
         return
@@ -190,10 +208,10 @@ def text_metrics(path, results, level=0.95):
                                            q["queries"], qsrc, "recall"))
         qps, p50, p99 = [], [], []
         for r in rounds:
-            for p in _passes(r):
-                qps.append(p["queries"] / (p["total_ns"] / 1e9))
-                p50.append(p["p50_ns"] / 1e3)
-                p99.append(p["p99_ns"] / 1e3)
+            passes = _passes(r)
+            qps.append(_med([p["queries"] / (p["total_ns"] / 1e9) for p in passes]))
+            p50.append(_med([p["p50_ns"] / 1e3 for p in passes]))
+            p99.append(_med([p["p99_ns"] / 1e3 for p in passes]))
         put("qps", system, cell(_med(qps), ci(qps), len(qps), src + ".serve_rounds[*].passes", "QPS", results.get("timing_boundary", {}).get(system, "")))
         put("p50_latency", system, cell(_med(p50), ci(p50), len(p50), src + ".serve_rounds[*].passes", "us"))
         put("p99_latency", system, cell(_med(p99), ci(p99), len(p99), src + ".serve_rounds[*].passes", "us"))
@@ -203,7 +221,7 @@ def text_metrics(path, results, level=0.95):
         put("build_peak_rss_mib", system, cell(_med(pk), ci(pk), len(pk), src + ".build_runs", "MiB"))
         sv = [r["peak_rss_bytes"] / 2**20 for r in rounds]
         put("serving_rss_mib", system, cell(_med(sv), ci(sv), len(sv), src + ".serve_rounds[*].peak_rss_bytes", "MiB", "peak RSS of the serving process"))
-        put("disk_mib", system, cell(entry["build_runs"][0]["disk_bytes"] / 2**20, None, 1, src + ".build_runs[0].disk_bytes", "MiB", "allocated bytes (du)"))
+        put("disk_mib", system, cell(entry["build_runs"][0]["disk_bytes"] / 2**20, None, 1, src + ".build_runs[0].disk_bytes", "MiB", "allocated bytes (du)", uncertainty="deterministic"))
         cs = [r["cold_start_s"] for r in rounds]
         put("cold_start_s", system, cell(_med(cs), ci(cs), len(cs), src + ".serve_rounds[*].cold_start_s", "s"))
         ops = entry.get("ops", {})

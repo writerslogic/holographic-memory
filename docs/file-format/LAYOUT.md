@@ -14,7 +14,7 @@ A store is one directory. The engine creates it on first open.
     seg_0.bin seg_1.bin ...  journal segments
     CURRENT                  only after a compaction: names the live generation directory
     gen-<pid>-<nanos>/       the live generation after a compaction: seg_*.bin, format.json,
-                             and in schema 4 stores documents.ckpt (CHECKPOINT.md)
+                             and in schemas 4–5 documents.ckpt (CHECKPOINT.md)
   documents.text             cache (CACHES.md)
   indices.json               cache (CACHES.md); older stores also have indices.json.crc32, ignored
   nsg_index.bin ivf_index.bin  or nsg_index_<i>.bin ivf_index_<i>.bin    caches
@@ -23,8 +23,12 @@ A store is one directory. The engine creates it on first open.
   audit.bin  hms_signing.key  hms_provenance.key  provenance_log.jsonl* kel.json  (ANCILLARY.md)
 ```
 
-Server data directory: `<data-dir>/tenants/<hex(utf8 tenant name)>/` is one store per tenant;
-nothing else in `<data-dir>` is read as store data. `hms-format verify <data-dir>` checks each.
+Server data directory: `<data-dir>/tenants/<hex(utf8 tenant name)>/` is one store per tenant.
+`hms-format verify <data-dir>` checks each store.
+Server ownership files live separately at `<data-dir>/tenant-locks/<hex>.owner`. Their lifetime
+advisory locks survive a live-store rename; they are control metadata, not store data. The
+`tenants/` namespace contains only tenant directories.
+Other server control metadata in `<data-dir>` is not read as store data.
 
 A snapshot is a copy of the whole directory taken while no engine holds the lock;
 `hms-admin migrate` makes a verified copy (lock file left out). There is no other snapshot
@@ -37,7 +41,7 @@ sidecar first). Keys, in this order:
 
 | Key | Type | Meaning |
 |---|---|---|
-| `version` | integer | 2 |
+| `version` | integer | 5 for new stores; 2, 3 and 4 remain supported |
 | `dimensions` | integer | hypervector dimension, 1..=1000000, fixed for the store |
 | `text_encoder` | string | see [ENCODERS.md](ENCODERS.md) |
 | `vector_encoder` | string | `signed-projection-v2` |
@@ -47,7 +51,7 @@ sidecar first). Keys, in this order:
 | `embedding_space` | object or null | `{model, revision, dimensions, normalization, metric}` |
 
 On open the engine builds the same object from its configuration and requires equality. A
-different value is refused ("incompatible store schema"); a `version` above 4 is refused as
+different value is refused ("incompatible store schema"); a `version` above 5 is refused as
 newer than supported; a store with `vectors_data.bin` but no `store.json` is refused as legacy.
 The sidecar `store.json.crc32` is the CRC32 of the file bytes as 8 lowercase hex digits and a
 newline; absent on stores written before sidecars, and then unverified.
@@ -63,6 +67,9 @@ newline; absent on stores written before sidecars, and then unverified.
 `store.json`. With a `CURRENT` pointer the engine reads `vectors_data.bin/format.json`, falling
 back to the generation's copy.
 
+Journal segments must be numbered contiguously from `seg_0.bin`. Opening rejects gaps and
+active segments larger than `segment_size` without resizing or recovering those files.
+
 ## CURRENT
 
 ASCII name, no newline, matching `gen-[A-Za-z0-9-]+`. The directory must exist and not be a
@@ -71,9 +78,9 @@ symlink. Without `CURRENT` the live segments are in `vectors_data.bin/` itself.
 ## Open sequence and what open writes
 
 1. create the directory; take the lock; validate or create `store.json`
-2. open the arena: create or validate `format.json`, find the live generation, recover the
-   active segment (JOURNAL.md), write the end marker at the recovered end, extend the active
-   file to its allocation size
+2. open the arena: find the live generation and check segment numbering, create or validate
+   `format.json`, check the active segment's size, recover the active segment (JOURNAL.md),
+   write the end marker at the recovered end, extend the active file to its allocation size
 3. zero and unlink a `documents.text.canonical` left by an interrupted purge; then, with a
    checkpoint in the live generation and no frames after it, map it and leave
    `documents.text` alone until the store is built from it; with frames after it, truncate and

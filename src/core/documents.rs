@@ -29,6 +29,7 @@ mod positions;
 mod postings;
 mod search;
 mod text;
+#[cfg(not(target_arch = "wasm32"))]
 mod vector_index;
 pub(crate) use dense::{build_dense_index, capture_dense_index, publish_dense_index};
 pub(crate) use image::{
@@ -50,12 +51,14 @@ pub(crate) use search::{
     CapturedSearch, PreparedSearch,
 };
 pub(crate) use text::TextSegment;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use vector_index::{
     build_vector_snapshot, capture_vector_rows, search_vector_snapshot, vector_index_status,
     VectorIndexSlot,
 };
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 pub(crate) use vector_index::{rank_vector_snapshot, read_vector_hits};
+#[cfg(not(target_arch = "wasm32"))]
 pub use vector_index::{
     GraphUnavailable, VectorIndex, VectorIndexKind, VectorIndexMode, VectorIndexStatus,
     VectorQueryOptions, DEFAULT_EF, DEFAULT_GRAPH_MIN_ROWS, MAX_EF, MAX_K, REBUILD_AFTER_MUTATIONS,
@@ -268,7 +271,11 @@ impl Bm25 {
     /// whose length normalization is `norm`.
     #[inline]
     pub(crate) fn weight(self, idf: f64, tf: f64, norm: f64) -> f64 {
-        idf * tf * self.k1_plus_one / (tf + norm)
+        if tf == 0.0 {
+            0.0
+        } else {
+            idf * tf * self.k1_plus_one / (tf + norm)
+        }
     }
 }
 
@@ -604,10 +611,6 @@ pub(crate) fn chunk_spans_with(
     ensure!(
         options.encode == EncodeMode::Lexical && options.positions,
         "whole-document ingest requires lexical encoding and positions"
-    );
-    ensure!(
-        input.embeddings.is_none(),
-        "whole-document lexical ingest does not accept embeddings"
     );
     validate_document_source(input)?;
     ensure!(

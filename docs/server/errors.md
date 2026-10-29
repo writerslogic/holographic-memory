@@ -73,6 +73,16 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 ### internal
 500. An unexpected failure; see the server log for the request id.
 
+### mutation_committed
+500. The journal mutation is durable, but publication, audit, provenance, or cleanup failed.
+Inspect the resulting state and reopen or reconcile it before retrying. A failure with this
+code does not mean that nothing was written. Use stable IDs and the idempotency key when
+retrying a logical operation.
+Unlike transient server errors, this response remains in the idempotency cache. The same
+key replays it while retained by the configured TTL/capacity, without repeating the durable
+mutation; reconcile the state before starting
+a deliberate new attempt.
+
 ### not_implemented
 501. Reserved for operations a build does not provide.
 
@@ -81,6 +91,11 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 
 ### server_busy
 503. All `--max-concurrent-work` slots are taken and the wait queue (`--max-queue`) is full or the wait exceeded `--queue-timeout-ms`. Safe to retry; nothing was applied.
+
+### concurrent_mutation
+503. Concurrent writes exhausted the memory API's bounded snapshot or planning retries.
+Retry after `Retry-After`. Multi-batch forgetting can have a committed prefix; the same
+scope can be retried to finish it. Reads return a coherent revision or this error.
 
 ### tenant_limit
 503. `--max-tenants` stores are open and none is idle enough to close.

@@ -2,11 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { mkdir, open, readdir, readFile, rename, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { checkKey } from "./storage.js";
 import type { StorageAdapter } from "./types.js";
 
 const SUFFIX = ".hms";
+
+async function syncDirectory(path: string): Promise<void> {
+  if (process.platform === "win32") return;
+  const handle = await open(path, "r");
+  try {
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+}
 
 /**
  * File storage for Node, Deno and Bun: one `<key>.hms` file per key. A save writes a
@@ -35,7 +45,7 @@ export class FileStorage implements StorageAdapter {
   }
 
   async set(key: string, value: Uint8Array): Promise<void> {
-    await mkdir(this.#directory, { recursive: true });
+    const created = await mkdir(this.#directory, { recursive: true });
     const target = this.#path(key);
     const temporary = `${target}.${crypto.randomUUID()}.tmp`;
     try {
@@ -47,6 +57,16 @@ export class FileStorage implements StorageAdapter {
         await handle.close();
       }
       await rename(temporary, target);
+      await syncDirectory(this.#directory);
+      if (created) {
+        const stop = dirname(resolve(created));
+        let parent = dirname(resolve(this.#directory));
+        for (;;) {
+          await syncDirectory(parent);
+          if (parent === stop) break;
+          parent = dirname(parent);
+        }
+      }
     } catch (error) {
       await rm(temporary, { force: true });
       throw error;
@@ -55,6 +75,11 @@ export class FileStorage implements StorageAdapter {
 
   async delete(key: string): Promise<void> {
     await rm(this.#path(key), { force: true });
+    try {
+      await syncDirectory(this.#directory);
+    } catch (error) {
+      if ((error as { code?: string }).code !== "ENOENT") throw error;
+    }
   }
 
   async keys(): Promise<string[]> {

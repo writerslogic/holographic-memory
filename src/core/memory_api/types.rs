@@ -11,12 +11,15 @@ use serde_json::Value;
 pub type Millis = i64;
 
 /// One fact to remember.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "server", schemars(extend("required" = ["text"])))]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 pub struct RememberInput {
     /// Caller-chosen id. Absent: a deterministic id derived from the content, so retrying the
     /// same call stores the same fact once. Ids may not start with `hms:`.
     pub id: Option<String>,
+    #[cfg_attr(feature = "server", schemars(length(min = 1)))]
     pub text: String,
     /// When the thing the fact describes happened (for example a conversation's date). It is
     /// not the ingest time, which the store records itself.
@@ -40,6 +43,7 @@ pub struct RememberInput {
 }
 
 /// What `remember` did with one fact.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Remembered {
@@ -54,6 +58,7 @@ pub struct Remembered {
 }
 
 /// A fact's standing at the time recall evaluates it.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum FactStatus {
@@ -67,6 +72,7 @@ pub enum FactStatus {
 }
 
 /// Which facts recall returns.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum HistoryMode {
@@ -79,10 +85,12 @@ pub enum HistoryMode {
     Historical,
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 pub struct RecallOptions {
     /// Results to return; the configured default (10) when absent. At most 1000.
+    #[cfg_attr(feature = "server", schemars(range(min = 1, max = 1000)))]
     pub k: Option<u32>,
     /// Evaluate validity and supersession at this time. Absent: the clock's now.
     pub as_of: Option<Millis>,
@@ -111,6 +119,7 @@ pub struct RecallOptions {
 }
 
 /// One fact returned by recall.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Recalled {
@@ -133,6 +142,7 @@ pub struct Recalled {
     pub explanation: Option<Explanation>,
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ChainRelation {
@@ -142,6 +152,7 @@ pub enum ChainRelation {
     Successor,
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChainLink {
@@ -153,6 +164,7 @@ pub struct ChainLink {
 }
 
 /// Why a fact matched and how it was adjusted.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Explanation {
@@ -185,6 +197,7 @@ pub struct Explanation {
 }
 
 /// A stored fact with its history links, as `get` and `history` return it.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FactRecord {
@@ -205,6 +218,7 @@ pub struct FactRecord {
 }
 
 /// What `forget` removes.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum ForgetScope {
@@ -222,6 +236,7 @@ pub enum ForgetScope {
     Matching { filter: Value },
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 pub struct ForgetOptions {
@@ -236,6 +251,7 @@ pub struct ForgetOptions {
     pub purge: bool,
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ForgetReport {
@@ -246,6 +262,7 @@ pub struct ForgetReport {
 }
 
 /// What a consolidation run did or would do.
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConsolidationReport {
@@ -256,6 +273,7 @@ pub struct ConsolidationReport {
     pub dry_run: bool,
 }
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default, deny_unknown_fields)]
 pub struct ConsolidateOptions {

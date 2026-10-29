@@ -3,8 +3,7 @@
 
 # Document checkpoint (`documents.ckpt`)
 
-Schema 4 stores (`store.json` `version` 4, the default for stores created by 0.7.0) may hold a
-document checkpoint in a journal generation: `vectors_data.bin/gen-*/documents.ckpt`. It is the
+Schemas 4 and 5 (`store.json` `version`) may hold a document checkpoint in a journal generation: `vectors_data.bin/gen-*/documents.ckpt`. It is the
 store's data, not a cache. The generation is the checkpoint followed by the frames in its
 segments, and the store's state is the checkpoint's documents with those frames applied in
 order. The frames that came before the checkpoint are not kept: the term data is stored once.

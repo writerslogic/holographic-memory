@@ -1,10 +1,13 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+#[cfg(not(target_arch = "wasm32"))]
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::Path;
 
+#[cfg(not(target_arch = "wasm32"))]
 use super::config::HmsConfig;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -16,7 +19,34 @@ pub struct EmbeddingSpace {
     pub metric: String,
 }
 
+#[cfg(any(feature = "local-embed", feature = "local-models"))]
+impl EmbeddingSpace {
+    pub(crate) fn effective(
+        model: String,
+        dimensions: usize,
+        normalization: &str,
+        descriptor: &impl Serialize,
+    ) -> Result<Self> {
+        use sha2::{Digest, Sha256};
+        let digest = Sha256::digest(serde_json::to_vec(descriptor)?);
+        Ok(Self {
+            model,
+            revision: format!(
+                "hms-embedding-v1:{}",
+                digest
+                    .iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<String>()
+            ),
+            dimensions,
+            normalization: normalization.into(),
+            metric: "cosine".into(),
+        })
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg(not(target_arch = "wasm32"))]
 struct StoreSchema {
     version: u32,
     dimensions: usize,
@@ -30,6 +60,7 @@ struct StoreSchema {
 
 /// Checks the store's `store.json` against `config` (writing it for a new store) and returns
 /// its schema version, which fixes the journal format the store is written in.
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig) -> Result<u32> {
     let mut expected = StoreSchema {
         version: super::format::STORE_SCHEMA_VERSION,

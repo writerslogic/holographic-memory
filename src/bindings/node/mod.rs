@@ -23,7 +23,11 @@ pub use config::HmsConfigJs;
 pub use types::*;
 
 fn napi_err(e: anyhow::Error) -> napi::Error {
-    napi::Error::from_reason(e.to_string())
+    if e.is::<crate::CommittedMutationError>() {
+        napi::Error::from_reason(format!("[mutation_committed] {e}"))
+    } else {
+        napi::Error::from_reason(e.to_string())
+    }
 }
 
 /// Memory API errors carry their class in a `[code]` prefix; `memory.js` turns it into
@@ -34,6 +38,8 @@ fn memory_err(e: anyhow::Error) -> napi::Error {
         Some(MemoryError::Invalid(_)) => "invalid_request",
         Some(MemoryError::NotFound(_)) => "not_found",
         Some(MemoryError::Conflict(_)) => "conflict",
+        Some(MemoryError::Concurrent(_)) => "concurrent_mutation",
+        None if e.is::<crate::CommittedMutationError>() => "mutation_committed",
         None => "internal",
     };
     napi::Error::from_reason(format!("[{code}] {e}"))

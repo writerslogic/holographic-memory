@@ -1,0 +1,44 @@
+{
+  "audit_date": "2026-10-29",
+  "repository": "/Volumes/A/holographic-memory",
+  "head": "a736d982558c79e961c5b4f816fe554af76b6222",
+  "branch": "main",
+  "preexisting_modified_tracked_files": [
+    "docs/SERVER.md",
+    "docs/file-format/LAYOUT.md",
+    "docs/server/configuration.md",
+    "src/bin/hms-mcp/server.rs",
+    "src/bin/hms-server/documents.rs",
+    "src/bin/hms-server/memory.rs",
+    "src/bin/hms-server/tenants.rs",
+    "src/bin/hms-server/tests.rs",
+    "src/core/admin.rs",
+    "src/core/format/upgrade.rs",
+    "src/core/format/verify.rs",
+    "src/core/memory_api/write.rs",
+    "src/core/storage.rs",
+    "src/core/storage/recovery_tests.rs"
+  ],
+  "working_tree_diff_sha256": "ac8e4b6317da79bb8cff377747b28f77dcc9cac43ec69f05eb21299bd1c199a5",
+  "source_file_sha256": {
+    "docs/SERVER.md": "1c80147828adff6c313fd21d13b6a206b7f488177c48618fa7c2c694f555578e",
+    "docs/file-format/LAYOUT.md": "5b01841e077da49b8ffc9ce1f34a4609e32ca504f21bfce0e4867e2352cf6cc9",
+    "docs/server/configuration.md": "e48378ac76ac406f4deffc29aeb291861368b3611e430fccafcf91c44632df4a",
+    "src/bin/hms-mcp/server.rs": "aa30e29ec599bcb52a7296904a21bae39e57d7d9f962059055107f6df9d20764",
+    "src/bin/hms-server/documents.rs": "c50b62e370dee1d873b9a288784eec18c7b5d42a28e0316cc7b197570b961344",
+    "src/bin/hms-server/memory.rs": "915386d26dc1778c960ca36fdcb23f90e68a251086f91fb66441ec75a9e9d2e2",
+    "src/bin/hms-server/tenants.rs": "21ec2195b6a43c34f235acbc7306b709acdda157a9db879af190d3b904cd06c6",
+    "src/bin/hms-server/tests.rs": "601346dc56ff7de9fe23a6d0629a41390b0660ca85f71eb35ad2f2bfbb94e12f",
+    "src/core/admin.rs": "ce628f870604808c1cf2f3416f91f045c6ed09b63ef143dc8209043398a4711c",
+    "src/core/format/upgrade.rs": "564455930fb92e98b2854fefd7ee5b5d0c76b58b0ae7990d1c4c079888791209",
+    "src/core/format/verify.rs": "94d7897977f114c91a5153c094dd9517ab5b423a4ab5c85215d8a193e19398d5",
+    "src/core/memory_api/write.rs": "c2f82a95838d3a51f1039502c03caa8fcff6bfa40643b9194092a272761c5425",
+    "src/core/storage.rs": "d224d7791454d0390c58e758be61b19d935a1f16afa8c7eb7275c253676378be",
+    "src/core/storage/recovery_tests.rs": "4ea3f1a5727ba76fa8162fb506e8acf5651554fa9f94910e9dc4336854c2d982"
+  },
+  "constraints": [
+    "Analysis only; no production edits",
+    "No paid-service calls, jobs, or downloads",
+    "Audit artifacts only under docs/research/technical-audit-20261029"
+  ]
+}

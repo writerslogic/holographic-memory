@@ -10,6 +10,41 @@ function run(source, directory) {
   assert.equal(result.status, 0, result.stderr || result.stdout)
 }
 
+test('governance preserves independently owned triples through async maintenance and restart', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hms-node-governance-'))
+  try {
+    run(`
+      const assert = require('node:assert/strict');
+      const { HolographicMemorySystem } = require('./index.js');
+      (async () => {
+        const hms = new HolographicMemorySystem(4096, process.argv[1], { meaningEnabled: true });
+        await hms.memorizeTriplet('owner-a', 'mira', 'works_at', 'acme');
+        await hms.memorizeTriplet('owner-b', 'mira', 'works_at', 'acme');
+        const report = await hms.governMemoryAsync();
+        assert.equal(report.compositesMerged, 0);
+        assert.equal(report.idfRefreshed, true);
+        assert.equal(hms.vectorCount, 2);
+        assert.ok((await hms.multiHopQuery('mira', ['works_at'])).some(hit => hit.entityId === 'acme'));
+        await hms.compact();
+        await hms.flush();
+      })().catch(error => { console.error(error); process.exit(1); });
+    `, directory)
+    run(`
+      const assert = require('node:assert/strict');
+      const { HolographicMemorySystem } = require('./index.js');
+      (async () => {
+        const hms = new HolographicMemorySystem(4096, process.argv[1], { meaningEnabled: true });
+        assert.equal(hms.vectorCount, 2);
+        assert.equal(hms.governMemory().compositesMerged, 0);
+        assert.ok((await hms.multiHopQuery('mira', ['works_at'])).some(hit => hit.entityId === 'acme'));
+        await hms.flush();
+      })().catch(error => { console.error(error); process.exit(1); });
+    `, directory)
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
 test('published APIs preserve structured knowledge and document state across processes', () => {
   const directory = mkdtempSync(join(tmpdir(), 'hms-node-'))
   try {

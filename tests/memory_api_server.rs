@@ -51,6 +51,33 @@ fn ids(response: &Value) -> Vec<&str> {
 }
 
 #[test]
+fn frozen_native_lifecycle_has_the_same_http_contract() {
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/native_memory_lifecycle_v1.json")).unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    for (phase, steps) in fixture["phases"].as_array().unwrap().iter().enumerate() {
+        let server = start(dir.path(), &[]);
+        for (step, case) in steps.as_array().unwrap().iter().enumerate() {
+            let (status, out) =
+                server.post(case["op"].as_str().unwrap(), "lifecycle", &case["request"]);
+            if let Some(code) = case["error"].as_str() {
+                assert_eq!(status, 409);
+                assert_eq!(out["code"], code);
+            } else {
+                assert_eq!(status, 200, "phase {phase} step {step}: {out}");
+                for (pointer, expected) in case["expect"].as_object().unwrap() {
+                    assert_eq!(
+                        out.pointer(pointer),
+                        Some(expected),
+                        "phase {phase} step {step}: {pointer}: {out}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn memory_round_trip_over_http_with_history_errors_and_isolation() {
     let dir = tempfile::tempdir().unwrap();
     let server = start(&dir.path().join("data"), &[]);

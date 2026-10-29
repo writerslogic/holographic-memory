@@ -12,7 +12,7 @@ can change in any release.
 |---|---|---|---|---|
 | `security` | AES-256-GCM encrypted stores, Argon2 passphrase keys, Ed25519-signed audit logs | stable | no | [Security](../SECURITY.md), [Encryption format](../file-format/ENCRYPTION.md) |
 | `provenance` | COSE_Sign1 signed statements and DID identities; implies `security` | experimental | no | [Privacy](../PRIVACY.md) |
-| `provenance-scitt` | Submits signed statements to a SCITT transparency service; implies `provenance` | experimental | yes (`ureq`), only when you call it | [FAQ](faq.md) |
+| `provenance-scitt` | Experimental statement submission returning unverified receipt bytes; no VDS inclusion/trust verification; implies `provenance` | experimental | yes (`ureq`), only when you call it | [FAQ](faq.md) |
 | `server` | `hms-server`, a self-hosted HTTP service for the Python SDK and multi-process access | stable | listens only on the address you give it | [Server](../SERVER.md) |
 | `mcp` | `hms-mcp`, a Model Context Protocol server over stdio or HTTP | stable | listens only when run over HTTP | [MCP](../integrations/mcp/README.md) |
 | `local-embed` | Pure-Rust text embeddings from a pinned, sha256-checked model pack on disk | stable | no | [Embeddings](../embeddings/README.md) |

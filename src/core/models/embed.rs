@@ -16,6 +16,7 @@ pub struct Embedder {
     dim: usize,
     batch: usize,
     query_task: EmbeddingQueryTask,
+    spaces: [crate::core::EmbeddingSpace; 2],
 }
 
 /// Query instruction; document embeddings are identical for both tasks.
@@ -35,7 +36,7 @@ const GPU_BATCH: usize = 4;
 
 impl Embedder {
     pub fn load(source: &ModelSource, device: &Device) -> Result<Self> {
-        let l = load(source, device, super::dtype_for(device, false))?;
+        let l = load(source, device, super::dtype_for(device, false), true)?;
         let mut tokenizer = l.tokenizer;
         tokenizer
             .with_truncation(Some(tokenizers::TruncationParams {
@@ -45,7 +46,27 @@ impl Embedder {
             .map_err(|e| anyhow::anyhow!("tokenizer truncation: {e}"))?;
         tokenizer.with_padding(None);
         let dim = l.config.hidden_size;
+        let space = |instruction: String| {
+            crate::core::EmbeddingSpace::effective(
+                l.model_name.clone(),
+                dim,
+                "l2",
+                &(
+                    "qwen3-last-token-v1",
+                    &source.revision,
+                    &l.identity,
+                    MAX_TOKENS,
+                    instruction,
+                    format!("{:?}", super::dtype_for(device, false)),
+                ),
+            )
+        };
+        let spaces = [
+            space(prompts::embed_query(""))?,
+            space(prompts::conversation_embed_query(""))?,
+        ];
         Ok(Self {
+            spaces,
             model: Qwen3::new(&l.config, l.vb, false)?,
             tokenizer,
             device: device.clone(),
@@ -65,6 +86,14 @@ impl Embedder {
 
     pub fn dimensions(&self) -> usize {
         self.dim
+    }
+
+    pub fn space(&self) -> crate::core::EmbeddingSpace {
+        self.spaces[match self.query_task {
+            EmbeddingQueryTask::UserMessages => 0,
+            EmbeddingQueryTask::Conversation => 1,
+        }]
+        .clone()
     }
 
     /// Sets the most sequences per forward pass (at least 1).
@@ -105,5 +134,65 @@ impl Embedder {
             }
         }
         Ok(out)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+
+    fn tiny(seed: u64) -> Embedder {
+        let space =
+            crate::core::EmbeddingSpace::effective("tiny-qwen".into(), 32, "l2", &seed).unwrap();
+        let conversation = crate::core::EmbeddingSpace::effective(
+            "tiny-qwen".into(),
+            32,
+            "l2",
+            &(seed, "conversation"),
+        )
+        .unwrap();
+        Embedder {
+            model: super::super::qwen3::testing::tiny(seed, true),
+            tokenizer: tokenizers::Tokenizer::new(
+                tokenizers::models::wordlevel::WordLevel::default(),
+            ),
+            device: Device::Cpu,
+            dim: 32,
+            batch: 1,
+            query_task: EmbeddingQueryTask::UserMessages,
+            spaces: [space, conversation],
+        }
+    }
+
+    #[test]
+    fn effective_model_installation_rejects_same_dimension_different_identity() {
+        let dir = tempfile::tempdir().unwrap();
+        let original = tiny(1);
+        let config = crate::core::HmsConfig {
+            embedding_space: Some(original.space()),
+            ..Default::default()
+        };
+        let core = crate::HmsCore::new(1024, Some(dir.path().display().to_string()), Some(config))
+            .unwrap();
+        let original = Arc::new(crate::core::models::ModelStages {
+            embedder: Some(original),
+            ..Default::default()
+        });
+        core.set_model_stages(Some(original.clone())).unwrap();
+        let incompatible = Arc::new(crate::core::models::ModelStages {
+            embedder: Some(tiny(2)),
+            ..Default::default()
+        });
+        assert!(core.set_model_stages(Some(incompatible)).is_err());
+        assert!(Arc::ptr_eq(&core.model_stages().unwrap(), &original));
+        let mut task_changed = tiny(1);
+        task_changed.set_query_task(EmbeddingQueryTask::Conversation);
+        assert!(core
+            .set_model_stages(Some(Arc::new(crate::core::models::ModelStages {
+                embedder: Some(task_changed),
+                ..Default::default()
+            })))
+            .is_err());
     }
 }

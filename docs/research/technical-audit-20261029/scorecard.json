@@ -1,0 +1,336 @@
+{
+  "metrics": [
+    {
+      "id": "F1",
+      "name": "Completeness",
+      "score": 7,
+      "evidence": "Capability inventory; core workflows, bindings and operations exist",
+      "deficiency": "Lifecycle/composition support is uneven; some public research and receipt workflows are partial",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "F2",
+      "name": "Correctness",
+      "score": 5,
+      "evidence": "D03\u2013D10; independent-oracle and boundary tests",
+      "deficiency": "Multiple reproducible or source-traced identity, ordering and concurrency failures",
+      "target": 8,
+      "confidence": 5,
+      "current_quality": true
+    },
+    {
+      "id": "F3",
+      "name": "Depth",
+      "score": 8,
+      "evidence": "BM25/WAND, dense exact/ANN, updates, temporal memory, provenance",
+      "deficiency": "Sophistication is established; common workflow composition needs improvement",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "F4",
+      "name": "Workflow coverage",
+      "score": 6,
+      "evidence": "Remember/recall/forget, migration, recovery and service flows",
+      "deficiency": "Native held-out QA U; restore, resumable migration and multi-wrapper semantics incomplete",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "F5",
+      "name": "Consistency",
+      "score": 5,
+      "evidence": "D06\u2013D08; distinct MCP, core and binding contracts",
+      "deficiency": "Similarity meaning, model identity and capability defaults vary by path",
+      "target": 8,
+      "confidence": 5,
+      "current_quality": true
+    },
+    {
+      "id": "F6",
+      "name": "Interoperability",
+      "score": 7,
+      "evidence": "Broad SDKs, official MCP SDK, independent W3C artifacts",
+      "deficiency": "Uneven APIs/releases, framework filtering and OAuth flow gaps",
+      "target": 8,
+      "confidence": 3,
+      "current_quality": true
+    },
+    {
+      "id": "E1",
+      "name": "Architecture",
+      "score": 6,
+      "evidence": "Explicit writer/read publication separation and shared owners",
+      "deficiency": "Large HmsCore coupling; multiple model, memory and index lifecycle implementations",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "E2",
+      "name": "Code quality",
+      "score": 7,
+      "evidence": "Idiomatic modules, checked ingest boundaries, property tests",
+      "deficiency": "Local unchecked native/numeric boundaries, panics and duplicated contracts",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "E3",
+      "name": "Extensibility",
+      "score": 7,
+      "evidence": "Traits, feature flags and backend boundaries",
+      "deficiency": "Extension hooks can bypass semantic atomicity; several public research APIs lack isolation",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "E4",
+      "name": "Dependencies",
+      "score": 7,
+      "evidence": "Cargo.lock, cargo-deny, pinned release actions and model packs",
+      "deficiency": "Unmaintained serialization dependency; advisory exceptions need ongoing review; D16",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "E5",
+      "name": "State/data integrity",
+      "score": 5,
+      "evidence": "Journal/checkpoint guarantees contrasted with D02\u2013D06/D11",
+      "deficiency": "High-level policy, issuance and optional-state transitions escape the durable invariant",
+      "target": 8,
+      "confidence": 5,
+      "current_quality": true
+    },
+    {
+      "id": "E6",
+      "name": "Maintainability",
+      "score": 6,
+      "evidence": "Extensive module/test/docs organization",
+      "deficiency": "Surface breadth and duplicated identities/lifecycles raise change and diagnosis cost",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "S1",
+      "name": "Standards conformance",
+      "score": 6,
+      "evidence": "Section V; independent VC subset checks",
+      "deficiency": "COSE required header handling fails; complete conformance/crypto lifecycle U",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "S2",
+      "name": "Interface/API design",
+      "score": 7,
+      "evidence": "Typed Rust/TS/serde APIs, central route/scope table, problem details",
+      "deficiency": "Generic memory OpenAPI objects, boundary panics and ambiguous commit/error outcomes",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "S3",
+      "name": "Protocol interoperability",
+      "score": 7,
+      "evidence": "MCP SDK and W3C independent verification",
+      "deficiency": "Full MCP transport suite U; static bearer discovery and SCITT receipts partial",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "S4",
+      "name": "Discoverability",
+      "score": 7,
+      "evidence": "Guides, generated declarations/schemas, index/security status, explain",
+      "deficiency": "Capability availability and source-versus-release support scattered",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "S5",
+      "name": "Compatibility",
+      "score": 6,
+      "evidence": "Versioned formats/schema, feature/MSRV/platform CI configuration",
+      "deficiency": "Incomplete effective embedding identity; exact released artifact/runtime parity U",
+      "target": 8,
+      "confidence": 3,
+      "current_quality": true
+    },
+    {
+      "id": "S6",
+      "name": "Integration fidelity",
+      "score": 5,
+      "evidence": "Source offsets/provenance and importer mapping inspection",
+      "deficiency": "D03 collisions, model changes, truncation and capped residual filters alter semantics",
+      "target": 8,
+      "confidence": 5,
+      "current_quality": true
+    },
+    {
+      "id": "R1",
+      "name": "Reliability",
+      "score": 7,
+      "evidence": "Recovery/property tests and bounded core/server design",
+      "deficiency": "Optional downloads, WASM close and some publication failures remain fragile",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "R2",
+      "name": "Recovery",
+      "score": 5,
+      "evidence": "Generation publication, cache discard, interruption tests",
+      "deficiency": "Restore crash window, post-commit effects and optional governance recovery gaps",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "R3",
+      "name": "Security",
+      "score": 5,
+      "evidence": "Strong scoped HTTP auth, AEAD, strict signature checks",
+      "deficiency": ".NET unsafe allocation and COSE semantic boundary defects; resource caps incomplete",
+      "target": 8,
+      "confidence": 5,
+      "current_quality": true
+    },
+    {
+      "id": "R4",
+      "name": "Data safety",
+      "score": 5,
+      "evidence": "Atomic core batches, ownership, encryption and source schema",
+      "deficiency": "Import identity loss, cross-wrapper overwrite, status-slot reuse and restore risks",
+      "target": 8,
+      "confidence": 5,
+      "current_quality": true
+    },
+    {
+      "id": "R5",
+      "name": "Performance",
+      "score": 7,
+      "evidence": "Specific matched-recall ANN/text results, honest losses",
+      "deficiency": "Build/RSS/cold-start losses, filtered scan paths; invalid historical measurements excluded from advantage claims",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "R6",
+      "name": "Scalability",
+      "score": 5,
+      "evidence": "Parallel core, admission limits, mmap/delta/checkpoint mechanisms",
+      "deficiency": "Filtered scans, unbounded analytic frontiers and MCP pending work; operating ceiling U",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "M1",
+      "name": "Developer experience",
+      "score": 7,
+      "evidence": "Examples, CLI tools, multi-runtime packages, diagnostics",
+      "deficiency": "Broad setup matrix; source/release mismatch and narrower Python-native API require care",
+      "target": 8,
+      "confidence": 3,
+      "current_quality": true
+    },
+    {
+      "id": "M2",
+      "name": "Documentation",
+      "score": 6,
+      "evidence": "Extensive candid docs, format and threat-model specifications",
+      "deficiency": "Stale plaintext-cache warning and invalid benchmark rows still published",
+      "target": 8,
+      "confidence": 5,
+      "current_quality": true
+    },
+    {
+      "id": "M3",
+      "name": "Validation",
+      "score": 7,
+      "evidence": "CI/fuzz/golden/property/oracle/interop infrastructure; Section VIII",
+      "deficiency": "Risk-boundary tests miss observed defects; native held-out QA and several runtime paths U",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "M4",
+      "name": "Observability",
+      "score": 6,
+      "evidence": "HTTP health/metrics/logs, storage/index diagnostics, recall explanations",
+      "deficiency": "No common cross-surface trace of policy\u2192retrieval\u2192generation/sidecar outcomes or resource budgets",
+      "target": 8,
+      "confidence": 4,
+      "current_quality": true
+    },
+    {
+      "id": "M5",
+      "name": "Differentiation",
+      "score": 7,
+      "evidence": "Local hybrid/VSA/provenance combination and scoped measured wins",
+      "deficiency": "No broad frontier superiority; native end-to-end memory advantage unproven",
+      "target": 8,
+      "confidence": 3,
+      "current_quality": true
+    },
+    {
+      "id": "M6",
+      "name": "Innovation potential",
+      "score": 8,
+      "evidence": "Query-trained routing, temporal evidence and inspectable provenance",
+      "deficiency": "Utility and safety of new combinations require falsifiable task experiments",
+      "target": 9,
+      "confidence": 3,
+      "current_quality": false
+    }
+  ],
+  "domains": {
+    "F": {
+      "score": 6.333333333333333,
+      "confidence": 4.166666666666667,
+      "weight": 0.25
+    },
+    "E": {
+      "score": 6.333333333333333,
+      "confidence": 4.166666666666667,
+      "weight": 0.2
+    },
+    "S": {
+      "score": 6.333333333333333,
+      "confidence": 4.0,
+      "weight": 0.2
+    },
+    "R": {
+      "score": 5.666666666666667,
+      "confidence": 4.333333333333333,
+      "weight": 0.25
+    },
+    "M": {
+      "score": 6.6,
+      "confidence": 3.8,
+      "weight": 0.1
+    }
+  },
+  "weighted_current_quality": 6.193333333333333,
+  "weighted_confidence": 4.138333333333334,
+  "evidenced_current_metrics": 29,
+  "applicable_current_metrics": 29,
+  "innovation_excluded": true
+}

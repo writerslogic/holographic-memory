@@ -12,6 +12,36 @@ function run(source, directory) {
   assert.equal(result.status, 0, result.stderr || result.stdout)
 }
 
+test('frozen native lifecycle matches the Rust and HTTP contract after each restart', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hms-node-lifecycle-'))
+  try {
+    for (let phase = 0; phase < 3; phase++) {
+      run(`
+        const assert = require('node:assert/strict');
+        const { HolographicMemorySystem } = require('./index.js');
+        const fixture = require('./tests/fixtures/native_memory_lifecycle_v1.json');
+        (async () => {
+          const hms = new HolographicMemorySystem(4096, process.argv[1]);
+          for (const [index, step] of fixture.phases[${phase}].entries()) {
+            if (step.error) {
+              await assert.rejects(hms.memoryCall(step.op, step.request), error => error.message.includes('[' + step.error + ']'));
+              continue;
+            }
+            const result = await hms.memoryCall(step.op, step.request);
+            for (const [pointer, expected] of Object.entries(step.expect)) {
+              const actual = pointer.slice(1).split('/').reduce((value, key) => value?.[key.replace(/~1/g, '/').replace(/~0/g, '~')], result);
+              assert.deepEqual(actual, expected, 'phase ${phase} step ' + index + ': ' + pointer);
+            }
+          }
+          await hms.flush();
+        })().catch(error => { console.error(error); process.exit(1); });
+      `, directory)
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
 test('memory API keeps history, answers as-of queries, explains, forgets and survives a restart', () => {
   const directory = mkdtempSync(join(tmpdir(), 'hms-node-memory-'))
   try {

@@ -40,8 +40,18 @@ pub const CODES: &[(&str, u16, &str)] = &[
     ("rate_limited", 429, "Rate limit exceeded"),
     ("quota_exceeded", 429, "Tenant quota exceeded"),
     ("internal", 500, "Internal server error"),
+    (
+        "mutation_committed",
+        500,
+        "Mutation committed; reconciliation required",
+    ),
     ("not_ready", 503, "Server not ready"),
     ("server_busy", 503, "Server busy"),
+    (
+        "concurrent_mutation",
+        503,
+        "Concurrent mutation; retry required",
+    ),
     ("tenant_limit", 503, "Too many open tenants"),
     (
         "tenant_busy",
@@ -88,6 +98,23 @@ impl ApiError {
     pub fn retry_after(mut self, seconds: u64) -> Self {
         self.retry_after = Some(seconds.max(1));
         self
+    }
+
+    pub fn from_core(error: anyhow::Error) -> Self {
+        if error.is::<holographic_memory::CommittedMutationError>() {
+            Self::committed(error)
+        } else {
+            Self::internal(error)
+        }
+    }
+
+    pub fn committed(error: anyhow::Error) -> Self {
+        crate::log_event!(Error, "committed_effect_failed", "detail" => format!("{error:#}"));
+        Self::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "mutation_committed",
+            "data mutation is durable; reopen or reconcile before retrying",
+        )
     }
 
     /// Detail goes to the log only; the client sees a fixed message.

@@ -1,6 +1,6 @@
 # @holographic-memory/core (JS/TS)
 
-Shared memory API used by the JS adapters. It runs the native engine in process (the `holographic-memory` npm package) and adds a small, stable surface: `remember`, `recall`, `get`, `list`, `forget`. It mirrors the Python core (`holographic_integrations.core`). When the native package ships its own remember/recall/forget/explain, only `HmsStore` changes.
+Shared record API used by the JS adapters. It runs the native engine in process (the `holographic-memory` npm package) and adds `remember`, `recall`, `get`, `list` and `forget` with explicit collection metadata. It mirrors the Python framework core (`holographic_integrations.core`); the native temporal memory API carries its own fact and policy contracts.
 
 ```ts
 import { HmsStore } from '@holographic-memory/core'
@@ -30,22 +30,22 @@ ESM and CJS are both published. `holographic-memory` is a peer dependency (`>=0.
 | `collection` | none | Namespaces ids and restricts every query inside one store |
 | `titleWeight`, `chunkWords`, `overlapWords` | engine defaults | Passed to document ingestion |
 | `bm25K1`, `bm25B`, `lexicalWeight`, `semanticWeight`, `fusion` | engine defaults | Passed to every search |
-| `overfetch` | 5 | Candidates per requested result when the filter has client-side terms |
+| `overfetch` | 5 | Retained for configuration compatibility; residual filtering now selects metadata first |
 | `maxFetch` | 1000 | Ceiling on passages per query (engine limit 1000) |
 | `hmsConfig` | none | Native config of a created store, e.g. `{ encryptionEnabled: true, encryptionPassphraseEnv: 'HMS_PASSPHRASE' }` |
 
-Methods: `remember(records): Promise<string[]>` (same id replaces), `recall(query, {k=4, filter, vector, minSemanticScore}): Promise<Hit[]>`, `get(ids): Promise<(StoredRecord|undefined)[]>`, `list(filter?, limit?): Promise<{records, truncated}>`, `forget(ids): Promise<number>`, `forgetWhere(filter?): Promise<number>`, `maintain()`, `flush()`, `close()`. Errors are `HmsError` with `code` in `invalid_argument | limit_exceeded | backend | closed`.
+Methods: `remember(records): Promise<string[]>` (same id replaces), `recall(query, {k=4, filter, vector, minSemanticScore}): Promise<Hit[]>`, `get(ids): Promise<(StoredRecord|undefined)[]>`, `list(filter?, limit?): Promise<{records, truncated}>`, `forget(ids): Promise<number>`, `forgetWhere(filter?): Promise<number>`, `maintain()`, `flush()`, `close()`. Errors are `HmsError` with `code` in `invalid_argument | limit_exceeded | filter_limit | concurrent_mutation | backend | closed`.
 
 A `Hit` is `{id, text, metadata, score, lexicalScore, semanticScore?, span}`: the whole stored record plus the byte `span` of the best passage. `score` is the engine's fused rank score (or the reranker's), not a cosine; `semanticScore` is the cosine.
 
 ## Filters
 
-`filter` is a MongoDB-style object (`{a: 1}`, `{a: {$gt: 1}}`, `$and`, `$or`, `$not`, `$in`, `$nin`, `$ne`, `$exists`, `$contains`, dotted keys) or the exported `Filter` AST. Top-level scalar equalities are pushed to the engine and evaluated before ranking. Everything else (comparisons, `in`, `or`, `not`, arrays/objects, dotted keys) is evaluated in JS on `overfetch * k` candidates, capped at `maxFetch`. Such filters can return fewer than `k` results even when more matches exist deeper in the ranking. `$ne` and `$nin` match records lacking the key; booleans never equal numbers.
+`filter` is a MongoDB-style object (`{a: 1}`, `{a: {$gt: 1}}`, `$and`, `$or`, `$not`, `$in`, `$nin`, `$ne`, `$exists`, `$contains`, dotted keys) or the exported `Filter` AST. Top-level scalar equalities are pushed to the engine. Residual filters scan paginated metadata before ranking and pass matching document ids into the native query. Because fused scores depend on one candidate population, more than 1000 eligible records raises `filter_limit`; narrow the filter. `$ne` and `$nin` match records lacking the key; booleans never equal numbers.
 
 ## Behavior and limits
 
-- Records are chunked by the engine; a record may be several passages. `recall` returns one hit per record (best passage), so it asks for twice as many passages as results. `get` and `list` reassemble the stored text from passages by byte offset. Trailing whitespace of a document is not preserved by the engine's chunker.
-- `get` and `list` enumerate through a probe embedding with `documentIds`/filters, which requires an embedder (default hashing, so always satisfied). `list` returns at most `maxFetch` passages' records and reports `truncated`; page with `forgetWhere` for deletes.
+- Records are chunked by the engine; `recall` returns the best passage per record and widens its passage request when needed. If its configured passage budget prevents proving a complete result, it raises `limit_exceeded`. `get` and `list` check chunk count/version and reassemble text by byte offset; reads above 1000 passages fail explicitly. Trailing whitespace is not preserved by the engine's chunker.
+- `list` and `forgetWhere` scan native metadata pages in id order, preserving collection scope and evaluating the complete filter. `list` returns at most `maxFetch` records and reports whether more matched; `forgetWhere` continues through every page. These operations require the current native `listDocuments` and `getDocumentInfo` methods.
 - A store created without an embedder uses the hashing embedder: lexical, not semantic. Pass a real embedder for semantic recall. Its `space` is recorded in the store; reopening with another embedder fails.
 - Ids: 1..256 bytes, no `hms:` prefix; metadata keys may not start with `_hms_`. A collection adds `collection/` to the stored id and `_hms_collection` to metadata.
 - Writes are serialized inside one `HmsStore`; two processes must not open one path.

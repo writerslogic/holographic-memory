@@ -250,6 +250,13 @@ mod tests {
             Mutation::Delete {
                 id: "vector".into(),
             },
+            Mutation::DeleteAtom {
+                id: "absent-atom".into(),
+            },
+            Mutation::DeleteComposite {
+                id: "absent-composite".into(),
+            },
+            Mutation::RefreshMeaningIndices {},
             Mutation::Vector {
                 id: "v".into(),
                 vector: EntangledHVec::new_deterministic(64, 3),

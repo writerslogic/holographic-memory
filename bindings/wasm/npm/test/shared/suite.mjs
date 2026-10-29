@@ -162,6 +162,100 @@ export function defineSuite({ test, api, FileStorage, scratch }) {
     await again.close();
   });
 
+  test("a failed close retains unsaved data for retry", async () => {
+    let fail = true;
+    let bytes;
+    const storage = {
+      async get() { return bytes ?? null; },
+      async set(_key, value) {
+        if (fail) throw new Error("storage unavailable");
+        bytes = value.slice();
+      },
+      async delete() {},
+    };
+    const store = await filled(api, { storage, autosave: false });
+    await assert.rejects(store.close(), /storage unavailable/);
+    assert.equal(await store.hasDocument("rust"), true);
+    await store.memorizeDocument({ id: "after-error", text: "retry keeps every acknowledged write" });
+    fail = false;
+    await store.close();
+    const copy = await api.openStore({ storage, autosave: false });
+    assert.equal((await copy.stats()).documents, 6);
+    assert.equal(await copy.hasDocument("after-error"), true);
+    await copy.close();
+  });
+
+  test("concurrent close waits for persistence and blocks new mutations", async () => {
+    let release;
+    let began;
+    let bytes;
+    const started = new Promise((resolve) => { began = resolve; });
+    const pending = new Promise((resolve) => { release = resolve; });
+    const storage = {
+      async get() { return null; },
+      async set(_key, value) {
+        began();
+        await pending;
+        bytes = value.slice();
+      },
+      async delete() {},
+    };
+    const store = await filled(api, { storage, autosave: false });
+    const first = store.close();
+    const second = store.close();
+    assert.equal(first, second);
+    await started;
+    await assert.rejects(store.memorizeDocument({ id: "late", text: "must reject" }), /closing or closed/);
+    await assert.rejects(store.deleteDocument("rust"), /closing or closed/);
+    await assert.rejects(store.setEncryption(null), /closing or closed/);
+    release();
+    await Promise.all([first, second]);
+    await store.close();
+    const copy = await api.openStore({ snapshot: bytes });
+    assert.equal((await copy.stats()).documents, 5);
+    await copy.close();
+  });
+
+  test("close includes an in-flight encryption change", async () => {
+    let bytes;
+    const storage = {
+      async get() { return null; },
+      async set(_key, value) { bytes = value.slice(); },
+      async delete() {},
+    };
+    const store = await filled(api, { storage, autosave: false });
+    const encryption = { passphrase: "close waits for this key", iterations: 1000 };
+    const change = store.setEncryption(encryption);
+    await Promise.all([change, store.close()]);
+    assert.deepEqual([...bytes.slice(0, 4)], [0x48, 0x4d, 0x53, 0x45]);
+    const copy = await api.openStore({ snapshot: bytes, encryption });
+    assert.equal((await copy.stats()).documents, 5);
+    await copy.close();
+  });
+
+  test("a failed encryption change cannot close or export in the previous plaintext mode", async () => {
+    let bytes;
+    const storage = {
+      async get() { return null; },
+      async set(_key, value) { bytes = value.slice(); },
+      async delete() {},
+    };
+    const store = await filled(api, { storage, autosave: false });
+    const change = store.setEncryption({ passphrase: "pw", kdf: "unknown" });
+    const outcomes = await Promise.allSettled([change, store.close()]);
+    assert.deepEqual(outcomes.map((outcome) => outcome.status), ["rejected", "rejected"]);
+    assert.equal(bytes, undefined);
+    assert.equal(await store.hasDocument("rust"), true);
+    await assert.rejects(store.save(), /unknown kdf/);
+    await assert.rejects(store.exportSnapshot(), /unknown kdf/);
+    const encryption = { passphrase: "retry encryption", iterations: 1000 };
+    await store.setEncryption(encryption);
+    await store.close();
+    const copy = await api.openStore({ snapshot: bytes, encryption });
+    assert.equal((await copy.stats()).documents, 5);
+    await copy.close();
+  });
+
   for (const kdf of ["pbkdf2", "argon2id"]) {
     test(`encrypted persistence with ${kdf}`, async () => {
       const dir = await scratch();

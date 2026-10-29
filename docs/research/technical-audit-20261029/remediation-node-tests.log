@@ -1,0 +1,21 @@
+
+> holographic-memory@0.6.4 test
+> node --test tests/node/*.test.cjs
+
+✔ governance preserves independently owned triples through async maintenance and restart (343.293125ms)
+✔ published APIs preserve structured knowledge and document state across processes (449.96075ms)
+✔ document queue bounds work and recovers after a rejected operation (2.577416ms)
+✔ native document batches and exact index survive invalid updates and restart (226.954ms)
+✔ a requested security capability is active or construction fails (690.061875ms)
+✔ listDocuments pages through stored documents in id order without their text (155.614208ms)
+✔ frozen native lifecycle matches the Rust and HTTP contract after each restart (448.094917ms)
+✔ memory API keeps history, answers as-of queries, explains, forgets and survives a restart (271.544625ms)
+✔ native methods reject unwrapped and prototype-spoofed receivers (1.679417ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1766.177333

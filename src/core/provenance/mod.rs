@@ -73,12 +73,17 @@ impl ProvenanceManager {
         let signing_key = super::security::SigningManager::new(key_path)?.into_signing_key();
         let issuer_did = did::did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
         let log_path = storage_path.map(|p| p.join("provenance_log.jsonl"));
-        let (records, chain_head) = Self::load_log(log_path.as_deref())?;
-        let clock_init = records
-            .values()
-            .map(|r| r.sequence)
-            .max()
-            .map_or(0, |max| max + 1);
+        let (records, chain_head, mut clock_init) = Self::load_log(log_path.as_deref())?;
+        let revocation_bitstring = Self::load_revocation_bitstring(log_path.as_deref())?;
+        if let Some((byte, bits)) = revocation_bitstring
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, b)| **b != 0)
+        {
+            let bit = 7 - bits.leading_zeros() as u64;
+            clock_init = clock_init.max(byte as u64 * 8 + bit + 1);
+        }
         let mut kel = match storage_path {
             Some(p) => match keri::KeyEventLog::with_path(&p.join("kel.json")) {
                 Ok(kel) => kel,
@@ -106,9 +111,7 @@ impl ProvenanceManager {
             chain_head: Mutex::new(chain_head),
             logical_clock: std::sync::atomic::AtomicU64::new(clock_init),
             log_path: log_path.clone(),
-            revocation_bitstring: RwLock::new(Self::load_revocation_bitstring(
-                log_path.as_deref(),
-            )?),
+            revocation_bitstring: RwLock::new(revocation_bitstring),
             kel: RwLock::new(kel),
             #[cfg(feature = "provenance-scitt")]
             scitt_endpoint: None,
@@ -155,9 +158,24 @@ impl ProvenanceManager {
         Ok(self)
     }
 
-    fn next_sequence(&self) -> u64 {
-        self.logical_clock
-            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+    fn reserve_sequences(&self, count: usize) -> Result<u64> {
+        use std::sync::atomic::Ordering::SeqCst;
+
+        let count = u64::try_from(count)?;
+        let mut next = self.logical_clock.load(SeqCst);
+        loop {
+            let end = next
+                .checked_add(count)
+                .filter(|end| *end <= status_list::MAX_BYTES as u64 * 8)
+                .ok_or_else(|| anyhow::anyhow!("credential status sequence space is exhausted"))?;
+            match self
+                .logical_clock
+                .compare_exchange_weak(next, end, SeqCst, SeqCst)
+            {
+                Ok(_) => return Ok(next),
+                Err(current) => next = current,
+            }
+        }
     }
 
     #[cfg(feature = "provenance-scitt")]
@@ -173,6 +191,11 @@ impl ProvenanceManager {
     /// Appends `record` to the log, when there is one, then makes it the live record for
     /// `fact_id`. A failed append leaves both the log head and the live records unchanged.
     pub fn store_record(&self, fact_id: &str, record: ProvenanceRecord) -> Result<()> {
+        let next = record
+            .sequence
+            .checked_add(1)
+            .filter(|end| *end <= status_list::MAX_BYTES as u64 * 8)
+            .ok_or_else(|| anyhow::anyhow!("credential status sequence space is exhausted"))?;
         let _head = match self.log_path {
             Some(ref path) => {
                 Some(
@@ -187,6 +210,8 @@ impl ProvenanceManager {
             }
             None => None,
         };
+        self.logical_clock
+            .fetch_max(next, std::sync::atomic::Ordering::SeqCst);
         self.records.write().insert(fact_id.to_string(), record);
         Ok(())
     }
@@ -380,15 +405,19 @@ impl ProvenanceManager {
     ) -> Result<(
         crate::core::hash::FastMap<String, ProvenanceRecord>,
         [u8; 32],
+        u64,
     )> {
+        let mut next_sequence = 0;
         let mut map = crate::core::hash::FastMap::default();
         let mut head = [0u8; 32];
         let Some(path) = path else {
-            return Ok((map, head));
+            return Ok((map, head, next_sequence));
         };
         let file = match std::fs::File::open(path) {
             Ok(file) => file,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok((map, head)),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Ok((map, head, next_sequence))
+            }
             Err(e) => return Err(anyhow::anyhow!("failed to open provenance log: {e}")),
         };
         for line in std::io::BufReader::new(file).lines() {
@@ -400,6 +429,12 @@ impl ProvenanceManager {
             };
             head = Sha256::digest(line.as_bytes()).into();
             if let Ok(entry) = serde_json::from_str::<LogEntry>(&line) {
+                let after = entry
+                    .record
+                    .sequence
+                    .checked_add(1)
+                    .ok_or_else(|| anyhow::anyhow!("provenance sequence is exhausted"))?;
+                next_sequence = next_sequence.max(after);
                 map.insert(entry.fact_id, entry.record);
             } else if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&line) {
                 if obj.get("action").and_then(|a| a.as_str()) == Some("delete") {
@@ -409,7 +444,7 @@ impl ProvenanceManager {
                 }
             }
         }
-        Ok((map, head))
+        Ok((map, head, next_sequence))
     }
 
     /// A missing status list means nothing is revoked. An unreadable one is an error rather
@@ -507,7 +542,7 @@ impl ProvenanceManager {
         record.source_uri = Some(source_uri.unwrap_or("").to_string());
         record.source_hash = Some(content_hash);
         record.issuer_did = Some(self.issuer_did.clone());
-        record.sequence = self.next_sequence();
+        record.sequence = self.reserve_sequences(1)?;
 
         let cose_envelope = cose::sign_fact_claim(
             &self.signing_key,
@@ -561,7 +596,7 @@ impl ProvenanceManager {
         record.source_uri = params.source_uri.map(String::from);
         record.source_hash = Some(content_hash);
         record.issuer_did = Some(self.issuer_did.clone());
-        record.sequence = self.next_sequence();
+        record.sequence = self.reserve_sequences(1)?;
 
         let cose_envelope = cose::sign_fact_claim(
             &self.signing_key,
@@ -611,9 +646,7 @@ impl ProvenanceManager {
 
         // One contiguous block of sequence numbers, then the per-record credential signatures
         // (most of a batch's cost) in parallel on the rayon pool, collected in item order.
-        let first_sequence = self
-            .logical_clock
-            .fetch_add(items.len() as u64, std::sync::atomic::Ordering::SeqCst);
+        let first_sequence = self.reserve_sequences(items.len())?;
         let records = items
             .par_iter()
             .enumerate()
@@ -1772,6 +1805,39 @@ mod tests {
             .verify_store_manifest(&manifest, Some(b"wrong"), &mgr.self_trust())
             .unwrap();
         assert!(!bad_verification.valid);
+    }
+
+    #[test]
+    fn audit_deleted_issuances_never_reuse_a_status_slot_after_reopen() {
+        let dir = tempdir().unwrap();
+        let key = dir.path().join("test.key");
+        let last = {
+            let mgr = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+            let records = mgr
+                .create_batch_provenance(&[("a", b"a", None), ("b", b"b", None)])
+                .unwrap();
+            for (id, record) in ["a", "b"].iter().zip(&records) {
+                mgr.revoke_credential(record.sequence).unwrap();
+                mgr.record_deletion(id, None).unwrap();
+            }
+            records[1].sequence
+        };
+        let mgr = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+        let record = mgr.create_fact_provenance("c", b"c", None).unwrap();
+        assert!(record.sequence > last);
+        assert!(!mgr.is_revoked(record.sequence));
+        assert!(verify_record(&record, &mgr.self_trust()).unwrap().valid);
+    }
+
+    #[test]
+    fn audit_sequence_reservation_fails_without_wrapping() {
+        let (_, mgr) = manager();
+        mgr.logical_clock
+            .store(u64::MAX, std::sync::atomic::Ordering::SeqCst);
+        assert!(mgr.create_fact_provenance("a", b"a", None).is_err());
+        assert!(mgr
+            .create_batch_provenance(&[("b", b"b", None), ("c", b"c", None)])
+            .is_err());
     }
 
     #[test]

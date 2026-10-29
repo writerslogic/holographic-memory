@@ -2093,7 +2093,6 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
         params: Default::default(),
     };
     let load_secs = t.elapsed().as_secs_f64();
-    let dims = stages.embedder.as_ref().map_or(0, Embedder::dimensions);
     // Sessions in file order: consecutive user turns sharing the `<session>_<n>` prefix.
     let mut sessions: Vec<(String, Vec<String>)> = Vec::new();
     for line in fs::read_to_string(data.join("turn.jsonl"))?.lines() {
@@ -2121,13 +2120,13 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
         .collect::<Result<_>>()?;
     let store = TempStore::new("lme-device")?;
     let config = HmsConfig {
-        embedding_space: Some(EmbeddingSpace {
-            model: "Qwen/Qwen3-Embedding-0.6B".into(),
-            revision: source("Qwen/Qwen3-Embedding-0.6B").revision,
-            dimensions: dims,
-            normalization: "l2".into(),
-            metric: "cosine".into(),
-        }),
+        embedding_space: Some(
+            stages
+                .embedder
+                .as_ref()
+                .context("missing local embedder")?
+                .space(),
+        ),
         ..HmsConfig::default()
     };
     let core = HmsCore::new(16384, Some(store.0.display().to_string()), Some(config))?;

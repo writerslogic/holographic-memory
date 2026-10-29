@@ -92,6 +92,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w "$IMAGE" sh -c '
             if ! command -v bash >/dev/null; then apk add --no-cache bash >/dev/null; fi
             bash scripts/ci/smoke-wheel.sh python /w/dist'
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
           tool: cargo-cyclonedx
@@ -102,7 +103,8 @@ jobs:
           NAME: ${{ matrix.name }}
         run: |
           set -euo pipefail
-          cargo cyclonedx --format json --spec-version 1.5 --target "$TRIPLE" --features python \
+          features=$(uv run --no-project --python 3.13 python -c 'import tomllib; print(",".join(tomllib.load(open("pyproject.toml", "rb"))["tool"]["maturin"]["features"]))')
+          cargo cyclonedx --format json --spec-version 1.5 --target "$TRIPLE" --features "$features" \
             --override-filename "holographic-memory-py-${NAME}.cdx"
           mv "holographic-memory-py-${NAME}.cdx.json" dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -135,13 +137,15 @@ jobs:
           python3 -m venv /tmp/sdist-venv
           /tmp/sdist-venv/bin/pip install --quiet dist/*.tar.gz
           /tmp/sdist-venv/bin/python -I scripts/ci/smoke_python.py
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
           tool: cargo-cyclonedx
       - name: CycloneDX SBOM
         run: |
           set -euo pipefail
-          cargo cyclonedx --format json --spec-version 1.5 --features python --override-filename holographic-memory-py-sdist.cdx
+          features=$(uv run --no-project --python 3.13 python -c 'import tomllib; print(",".join(tomllib.load(open("pyproject.toml", "rb"))["tool"]["maturin"]["features"]))')
+          cargo cyclonedx --format json --spec-version 1.5 --features "$features" --override-filename holographic-memory-py-sdist.cdx
           mv holographic-memory-py-sdist.cdx.json dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

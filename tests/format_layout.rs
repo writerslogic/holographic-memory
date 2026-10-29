@@ -379,7 +379,13 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
     // Store schema.
     let (_k, store) = make()?;
     let schema = store.join("store.json");
-    let text = std::fs::read_to_string(&schema)?.replace("\"version\": 2", "\"version\": 5");
+    let text = std::fs::read_to_string(&schema)?.replace(
+        "\"version\": 2",
+        &format!(
+            "\"version\": {}",
+            holographic_memory::core::format::STORE_SCHEMA_VERSION + 1
+        ),
+    );
     std::fs::write(&schema, &text)?;
     std::fs::write(
         store.join("store.json.crc32"),

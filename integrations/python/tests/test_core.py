@@ -82,7 +82,7 @@ def test_list_truncation_at_limit(server_factory, delta):
         b.remember(recs(10 + delta))
         page = b.list()
         assert len(page.records) == min(10, 10 + delta)
-        assert page.truncated == (10 + delta >= 10)
+        assert page.truncated == (10 + delta > 10)
         with pytest.raises(ValueError):
             b.recall("alpha", k=11)
 
@@ -94,6 +94,43 @@ def test_forget_where_pages_past_the_cap(server_factory):
         b.remember(recs(25, kind="x") + [Record("keep", "keep me", {"kind": "y"})])
         assert b.forget_where({"kind": "x"}) == 25
         assert [r.id for r in b.list().records] == ["keep"]
+
+
+@pytest.mark.parametrize("delta", [-1, 0, 1])
+def test_residual_filters_find_matches_past_the_query_cap(server_factory, delta):
+    srv = server_factory(64, max_top_k=10)
+    config = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    with HmsBackend(config) as backend:
+        backend.remember(recs(1000 + delta))
+        filter = {"n": {"$gte": 995}}
+        expected = {f"d{i}" for i in range(995, 1000 + delta)}
+        assert {record.id for record in backend.list(filter).records} == expected
+        assert {hit.id for hit in backend.recall("alpha", k=10, filter=filter)} == expected
+        assert backend.forget_where(filter) == len(expected)
+        assert backend.list(filter).records == []
+
+
+def test_residual_vector_rank_merges_multiple_metadata_pages(server_factory):
+    srv = server_factory(64, max_top_k=10)
+    config = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    with HmsBackend(config) as backend:
+        v = [1.0] + [0.0] * 63
+        backend.remember([Record(f"id-{i:04}", "same", {"n": i}, vector=v) for i in range(1001)])
+        hits = backend.recall(vector=v, k=10, filter={"n": {"$gte": 0}})
+        assert [hit.id for hit in hits] == [f"id-{i:04}" for i in range(10)]
+
+
+async def test_async_residual_filters_page_and_delete_completely(server_factory):
+    srv = server_factory(64, max_top_k=10)
+    config = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    async with AsyncHmsBackend(config) as backend:
+        await backend.remember(recs(31))
+        filter = {"n": {"$gte": 25}}
+        expected = {f"d{i}" for i in range(25, 31)}
+        assert {record.id for record in (await backend.list(filter)).records} == expected
+        assert {hit.id for hit in await backend.recall("alpha", k=10, filter=filter)} == expected
+        assert await backend.forget_where(filter) == len(expected)
+        assert (await backend.list(filter)).records == []
 
 
 def test_masked_vectors_still_rank(server):

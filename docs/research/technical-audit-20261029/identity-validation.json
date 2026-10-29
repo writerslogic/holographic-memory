@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "spdx_license_identifier": "Apache-2.0",
+  "copyright": "2024-2026 WritersLogic Contributors",
+  "date": "2026-10-29",
+  "scope": "Provenance, effective embedding identity, local model packs, benchmark evidence, release SBOM configuration, and bounded MCP HTTP/session lifecycle",
+  "base_revision": "de4a2fd6b6010396d99d159b7156715184afd8e0",
+  "implementation_commits_before_http": [
+    "43719a6c",
+    "f9348def",
+    "c3b90276",
+    "72b6e35c"
+  ],
+  "http_revision": "54823c85",
+  "environment": {
+    "platform": "aarch64-apple-darwin",
+    "rustc": "1.96.0 (ac68faa20 2026-05-25)",
+    "cargo": "1.96.0 (30a34c682 2026-05-25)",
+    "uv": "0.12.10 (3c979abda 2026-09-04 aarch64-apple-darwin)",
+    "python": "3.13.9, managed by uv",
+    "rust_target_directory": "/Volumes/A/hms-audit-fixes/identity/target",
+    "paid_api_calls": 0,
+    "cloud_jobs": 0,
+    "model_downloads": 0,
+    "live_benchmark_runs": 0
+  },
+  "verification": [
+    {
+      "stage": "Before HTTP changes; final provenance source",
+      "reproduction_command": "cargo test --locked --lib --features mcp,local-models,provenance-scitt,local-embed-download,conversation-memory core::provenance::",
+      "passed": 129,
+      "failed": 0,
+      "seconds": 5.72,
+      "coverage": "Durable issuance across deletion/reopen, status exhaustion, strict COSE algorithms/critical headers, SCITT signing and bounded local transport"
+    },
+    {
+      "stage": "Before HTTP changes; final identity source",
+      "reproduction_command": "cargo test --locked --lib --features mcp,local-models,provenance-scitt,local-embed-download,conversation-memory core::embed::",
+      "passed": 20,
+      "failed": 0,
+      "seconds": 2.47,
+      "coverage": "Pure-Rust pack identities, cache publication, concurrent single-flight fetch, semantic-index format and zero-k"
+    },
+    {
+      "stage": "Before HTTP changes; final identity source",
+      "reproduction_command": "cargo test --locked --lib --features mcp,local-models,provenance-scitt,local-embed-download,conversation-memory core::models::",
+      "passed": 30,
+      "failed": 0,
+      "seconds": 0.42,
+      "coverage": "Local-model contracts and effective identity mismatch with small local fixtures; no downloaded production model"
+    },
+    {
+      "stage": "Before HTTP changes; final identity source",
+      "reproduction_command": "cargo test --locked --features mcp,local-models,provenance-scitt,local-embed-download,conversation-memory --bin hms-mcp --test embed_store",
+      "passed_by_target": { "hms-mcp": 18, "embed_store": 6 },
+      "failed": 0,
+      "seconds_by_target": { "hms-mcp": 0.44, "embed_store": 0.90 },
+      "coverage": "Namespace opening/eviction and persistent effective identity, different pack bytes, option changes, truthful unnormalized model outputs, reopen/search"
+    },
+    {
+      "stage": "Before HTTP changes; final benchmark source",
+      "command": "uv run --no-project --offline --python 3.13 --with pytest --with numpy==2.5.4 python -m pytest -q benchmarks/competitive/tests",
+      "passed": 43,
+      "skipped": 20,
+      "failed": 0,
+      "seconds": 31.11,
+      "coverage": "Typed validity and uncertainty, process-round resampling, historical invalid RSS, unknown revision exclusion, regenerated table reproducibility",
+      "skip_reason": "Optional benchmark executables, datasets or external services were unavailable; no paid calls or benchmark runs were substituted"
+    },
+    {
+      "stage": "Before HTTP changes",
+      "command": "cargo clippy --locked --features mcp,local-models,provenance-scitt,local-embed-download,conversation-memory --lib --bins --tests -- -D warnings",
+      "status": "passed",
+      "seconds_including_compile": 51.05
+    },
+    {
+      "stage": "Before HTTP changes",
+      "command": "cargo check --locked",
+      "status": "passed",
+      "seconds_including_compile": 28.42
+    },
+    {
+      "stage": "Intermediate HTTP implementation before the final two HTTP regressions and cleanup tightening",
+      "command": "cargo test --locked --features mcp --bin hms-mcp",
+      "passed": 25,
+      "failed": 0,
+      "seconds": 0.57,
+      "coverage": "Real TCP connection/header/body/response/stream limits plus SDK session cancellation, quota, expiry and concurrent response association",
+      "limitation": "This passing run is not a verification of the final source revision"
+    },
+    {
+      "stage": "Expanded HTTP suite before correcting the DELETE status assertion",
+      "command": "cargo test --locked --features mcp --bin hms-mcp",
+      "passed": 26,
+      "failed": 1,
+      "seconds": 0.62,
+      "failure": "The new real-HTTP lifecycle test expected HTTP 200 for DELETE; rmcp 3.7 correctly returns 202 Accepted. The assertion was corrected after inspecting the SDK implementation; the final rerun remains pending."
+    },
+    {
+      "stage": "Final HTTP source",
+      "command": "cargo test --locked --features mcp --bin hms-mcp",
+      "status": "pending",
+      "expected_cases_in_this_branch": 27,
+      "local_disposition": "Coordinator requested SIGINT while compilation was I/O waiting alongside other local builds. Final tests had not executed; authoritative integrated PR CI must pass before merge.",
+      "coverage": "Real TCP connection/header/body/response/stream limits, shutdown during incomplete request body, actual legacy HTTP session cap and DELETE renewal, SDK cancellation/expiry/quota and concurrent response association"
+    },
+    {
+      "stage": "Final HTTP source",
+      "command": "cargo clippy --locked --features mcp,local-models,provenance-scitt,local-embed-download,conversation-memory --bin hms-mcp -- -D warnings",
+      "status": "pending",
+      "local_disposition": "Queued after the interrupted test build and not started; final integrated Clippy is required."
+    },
+    {
+      "stage": "Final HTTP source",
+      "command": "rustfmt --edition 2021 --config skip_children=true --check src/bin/hms-mcp/http.rs src/bin/hms-mcp/session.rs src/bin/hms-mcp/config.rs src/bin/hms-mcp.rs",
+      "status": "passed"
+    }
+  ],
+  "release_sbom_check": {
+    "status": "Static configuration verified",
+    "mechanism": "Both wheel and sdist SBOM jobs derive Maturin features from pyproject.toml instead of assuming python alone",
+    "expected_features": [ "python", "local-embed-download" ],
+    "limitation": "cargo-cyclonedx was unavailable locally; artifact generation and inspection remain a release-CI check"
+  },
+  "stdio_configured_cap": {
+    "revision": "88113ad7",
+    "sdk_version": "rmcp 3.7.0",
+    "existing_sdk_reader_bound_bytes": 16777216,
+    "finding": "AsyncRwTransport::new already has a 16 MiB incoming-line bound; the default JsonRpcMessageCodec max_length of usize::MAX does not make that stdin reader unbounded.",
+    "change": "Use SDK AsyncRwTransport::new_server(...).with_max_line_length(cli.max_request_bytes) so the same configured budget bounds HTTP request bodies and complete stdin lines, including LF or CRLF.",
+    "mechanism": "SDK read_line checks length before appending bytes or parsing JSON and discards oversized lines through their terminator with cancellation-safe state. No custom parser or new stdout logging was added.",
+    "focused_test_command": "cargo test --locked --features mcp --bin hms-mcp stdio_server::tests::",
+    "status": "passed",
+    "passed": 2,
+    "failed": 0,
+    "seconds": 0.05,
+    "seconds_including_compile": 36.30,
+    "coverage": "Configured limit-1, limit and limit+1 with LF and CRLF; following valid frame recovery; cancelled receive during discard; 2 MiB invalid UTF-8 input streamed through a bounded duplex buffer. This is behavioral framing coverage, not an allocation/RSS measurement."
+  },
+  "limits_and_follow_up": [
+    "The coordinator owns the final integrated all-feature, compatibility and documentation gates; these scoped results do not assert a final repository-wide test count.",
+    "SCITT submission returns explicitly unverified receipt bytes. No RFC 9942 VDS inclusion, consistency, transparency-service identity or trust-policy verification is claimed.",
+    "Old nominal managed-model stores and version-1 standalone semantic indexes require an old compatible reader or reembedding into a new store; metadata relabeling is rejected.",
+    "Historical benchmark raw values remain preserved. Invalid RSS and unknown source revisions cannot support performance wins; live reruns remain necessary to establish current performance.",
+    "HTTP bounds are finite transport/admission/replay budgets rather than an RSS benchmark or exactly-once mutation guarantee. Interrupted mutation responses require state/version reconciliation.",
+    "The rmcp 3.7 session manager maps capacity errors to HTTP 500. Global HTTP request overload returns 503; legacy clients must renew expired or retired sessions.",
+    "Production model quality, full-size inference memory/throughput, live registries, remote transparency services and release publication were not exercised."
+  ]
+}

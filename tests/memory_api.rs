@@ -15,6 +15,24 @@ use serde_json::json;
 
 const DIM: u32 = 4096;
 
+fn retry_contention<T>(mut call: impl FnMut() -> anyhow::Result<T>) -> T {
+    for _ in 0..200 {
+        match call() {
+            Ok(value) => return value,
+            Err(error)
+                if matches!(
+                    error.downcast_ref::<MemoryError>(),
+                    Some(MemoryError::Concurrent(_))
+                ) =>
+            {
+                std::thread::yield_now();
+            }
+            Err(error) => panic!("unexpected memory failure: {error:#}"),
+        }
+    }
+    panic!("finite concurrent writers did not make progress");
+}
+
 fn open(path: &std::path::Path) -> Arc<HmsCore> {
     Arc::new(HmsCore::new(DIM, Some(path.display().to_string()), None).unwrap())
 }
@@ -1228,15 +1246,15 @@ fn concurrent_writers_and_readers_stay_consistent_with_foreign_writes() {
             let memory = memory.clone();
             scope.spawn(move || {
                 for version in 0..VERSIONS {
-                    memory
-                        .remember(RememberInput {
+                    retry_contention(|| {
+                        memory.remember(RememberInput {
                             id: Some(format!("w{writer}-v{version}")),
                             text: format!("worker {writer} reports version {version}"),
                             subject: Some(format!("worker/{writer}")),
                             valid_from: Some(version as i64),
                             ..RememberInput::default()
                         })
-                        .unwrap();
+                    });
                 }
             });
         }
@@ -1258,15 +1276,15 @@ fn concurrent_writers_and_readers_stay_consistent_with_foreign_writes() {
             let memory = memory.clone();
             scope.spawn(move || {
                 for _ in 0..40 {
-                    let got = memory
-                        .recall(
+                    let got = retry_contention(|| {
+                        memory.recall(
                             "worker reports version",
                             &RecallOptions {
                                 k: Some(20),
                                 ..Default::default()
                             },
                         )
-                        .unwrap();
+                    });
                     // Current-only recall never shows two versions of one worker.
                     let mut seen = BTreeSet::new();
                     for r in &got {
@@ -1493,6 +1511,7 @@ fn json_dispatch_carries_every_operation_and_classifies_errors() {
         Some(MemoryError::Invalid(_)) => "invalid",
         Some(MemoryError::NotFound(_)) => "not-found",
         Some(MemoryError::Conflict(_)) => "conflict",
+        Some(MemoryError::Concurrent(_)) => "concurrent",
         None => "internal",
     };
     assert_eq!(class(call("nope", json!({}))), "invalid");

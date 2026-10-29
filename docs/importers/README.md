@@ -18,7 +18,28 @@ hms-import chroma --path ./chroma-db --hms-url http://127.0.0.1:8080 --tenant ac
 3. Builds the document index (`/api/v1/index/maintain`) unless `--no-maintain-index`.
 4. Runs the fidelity check on a sample of queries and writes the report.
 
-Re-running is idempotent: HMS replaces a document with the same id. A crash at any point loses nothing; rerun the same command and it resumes after the last acknowledged batch. A completed checkpoint is not resumed, so a later run re-syncs the source from the start.
+Re-running the same source is idempotent. Each mapped part carries a source ownership identity;
+the server atomically rejects a different owner or an unowned destination with the same id.
+The importer requires a server whose OpenAPI contract exposes `import_identity` and
+`import_adopt_legacy`; older servers fail before the first write. A completed checkpoint is
+not resumed, so a later run re-syncs the source from the start.
+
+`--id-mapping v1` remains the default and preserves existing destination ids. Ambiguous
+namespace/part spellings fail as identity conflicts instead of overwriting data. For a new
+destination, use `--id-mapping v2`: bounded `h2:<sha256>` ids encode the typed source,
+namespace, original id and part identity. Original identities remain in metadata. Switching
+an existing import to v2 is an explicit layout migration, described below.
+
+Old imports without ownership stamps require `--adopt-legacy`. Adoption requires an exact
+match of original source, namespace, source id and part metadata; sharing an id is insufficient.
+Adopt the existing layout before changing its id mapping or splitting options.
+
+Changed part counts or mapped ids are rejected by default. `--split-policy replace` writes
+the complete new layout in one atomic batch, then deletes obsolete parts conditionally on
+their ownership identity. A record may have at most 1000 parts and a replacement must fit the
+server's batch/body budgets. Checkpoints advance only after cleanup completes. If cleanup is
+interrupted, rerun with the same options to finish; already absent parts are harmless.
+`stale_parts_deleted_this_run` counts deletions in that process, including in partial error reports.
 
 ## Vectors: carry, project or re-encode
 
@@ -38,7 +59,7 @@ Vectors with NaN, infinity or all zeros are unusable; they are counted (`vectors
 
 | Source datum | HMS |
 |---|---|
-| id | `id`. Original kept in `metadata.hms_source_id`. Ids the server cannot hold (over 256 bytes, control characters, `hms:` prefix) become `h:<sha256>` deterministically and are counted (`ids_rewritten`). |
+| id | v1 preserves `id` (or its namespace prefix); original kept in `metadata.hms_source_id`. Invalid v1 ids become `h:<sha256>` deterministically (`ids_rewritten`). v2 uses typed `h2:<sha256>` identities. Every mode checks ownership before replacement. |
 | text | `text`. A text over 4000 words or 60 KiB is split at whitespace into parts `id#part-N` (`hms_parent_id`, `hms_part`, `hms_parts` in metadata); with carried vectors every part gets the record's vector. The server trims whitespace around each stored text, so whitespace at part boundaries is not retained. |
 | metadata | Stored flat under the same keys (filterable with `/query` `filter`). Non-JSON values are converted reversibly (bytes as `base64:...`, non-finite floats as strings) and counted under `metadata_coercions`. Keys starting `hms_` are reserved; a colliding source key moves into `hms_orig_meta`. |
 | namespace | `--namespace-mode metadata` (default): `metadata.hms_namespace` and the id becomes `<namespace>::<id>` (`--id-prefix-namespace`). `tenant`: one HMS tenant per namespace (`--tenant-prefix`; names are sanitized and hashed when needed; the server allows 64 tenants by default). |
@@ -55,7 +76,13 @@ The recall check samples `--verify-sample` records (default 50). Ground truth is
 
 ## Checkpoints and resuming
 
-`--checkpoint` (default: derived from source, target and mapping under `$HMS_IMPORT_STATE_DIR` or `~/.cache/hms-import`). Seekable sources continue from a cursor; the others re-read the committed prefix while a chained hash of record ids confirms the order did not change. If it did, the import restarts from the first record (safe, writes replace by id) and the report says so (`resume_prefix_mismatch`).
+`--checkpoint` defaults to a source/target/mapping-derived path under `$HMS_IMPORT_STATE_DIR`
+or `~/.cache/hms-import`. Checkpoint format 2 hashes each committed record's identity, text,
+vector, metadata and timestamps. Resume re-reads and verifies the committed prefix, including
+for sources with cursors: a cursor alone cannot prove the source stayed unchanged. A mismatch
+restarts from record zero and sets `resume_prefix_mismatch`. Prefix verification is streaming
+and costs O(committed records) source reads. Format 1 checkpoints require an explicit
+`--restart`; the destination's ownership checks still apply.
 
 ## Credentials
 
@@ -63,7 +90,9 @@ Only from the environment or arguments (`HMS_API_KEY`, `HMS_ZERO_TRUST_KEY`, and
 
 ## Limits
 
-- HMS has no list or count endpoint: the report's counts come from the source and the server's acknowledgements, and the sampled check reads documents back. Documents deleted from the source, or parts of a re-split text, are not removed from HMS by a re-run.
+- The importer scans the server's paginated metadata into a temporary disk-backed ownership
+  inventory; it does not retain all document text. General deletions from a source are not
+  propagated. Obsolete split parts require the explicit replacement policy above.
 - The server embeds text only in builds with `local-models`; otherwise text-only sources need `--embedder`.
 - `--zero-trust-key` masks vectors with the SDK's `VectorMask` (obfuscation, not encryption).
 

@@ -21,7 +21,7 @@ pub struct ProvenanceRecord {
     pub cose_envelope: Option<Vec<u8>>,
     /// Verifiable Credential JSON wrapping this fact.
     pub vc_json: Option<String>,
-    /// SCITT transparency receipt (CBOR-encoded).
+    /// Unverified transparency-service response bytes. Presence does not prove inclusion or trust.
     pub scitt_receipt: Option<Vec<u8>>,
     /// Merkle proof path for batch-signed records: (is_left, sibling_hash).
     #[serde(default, skip_serializing_if = "Option::is_none")]

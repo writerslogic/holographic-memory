@@ -97,7 +97,13 @@ fn memory_error(error: anyhow::Error) -> ApiError {
         Some(MemoryError::Invalid(message)) => ApiError::bad(message.clone()),
         Some(MemoryError::NotFound(message)) => ApiError::not_found(message.clone()),
         Some(MemoryError::Conflict(message)) => ApiError::conflict(message.clone()),
-        None => ApiError::internal(error),
+        Some(MemoryError::Concurrent(message)) => ApiError::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "concurrent_mutation",
+            message.clone(),
+        )
+        .retry_after(1),
+        None => ApiError::from_core(error),
     }
 }
 
@@ -120,15 +126,18 @@ async fn run(op: &'static str, scope: Scope, state: Arc<AppState>, req: Request)
         };
         validate_memory_request(op, &request, state)?;
         let core = state.core(tenant)?;
+        let _mutation = (scope == Scope::Write).then(|| core.quota_lease());
         if op == "remember" {
             enforce_quota(state, &core, || {
                 new_facts(&request, |id| core.has_document(id))
             })?;
         }
-        let response = core.memory().call(op, request).map_err(memory_error)?;
-        if scope == Scope::Write {
+        let before = core.revision();
+        let response = core.memory().call(op, request);
+        if scope == Scope::Write && (response.is_ok() || core.revision() != before) {
             core.bump();
         }
+        let response = response.map_err(memory_error)?;
         Ok((StatusCode::OK, response))
     })
     .await

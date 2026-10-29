@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::atom_memory::AtomMemory;
+use crate::core::query_limits::{QueryBudget, QueryLimitExceeded, QueryLimits};
 use crate::core::rules::RuleStore;
 use crate::core::triple_store::TripleStore;
 
@@ -37,21 +37,114 @@ pub fn multi_hop_query(
     rule_store: &RuleStore,
     max_depth: usize,
 ) -> Vec<MultiHopResult> {
-    if relations.is_empty() || relations.len() > max_depth {
+    if relations.len() > max_depth {
         return Vec::new();
     }
+    multi_hop_query_with_limits(
+        start_entity,
+        relations,
+        ctx,
+        rule_store,
+        max_depth,
+        QueryLimits::default(),
+    )
+    .expect("multi-hop query budget exhausted; use multi_hop_with_limits")
+}
 
+pub fn multi_hop_query_with_limits(
+    start_entity: &str,
+    relations: &[&str],
+    ctx: &MeaningContext<'_>,
+    rule_store: &RuleStore,
+    max_depth: usize,
+    limits: QueryLimits,
+) -> Result<Vec<MultiHopResult>, QueryLimitExceeded> {
+    if relations.is_empty() || relations.len() > max_depth {
+        return if relations.is_empty() {
+            Ok(Vec::new())
+        } else {
+            Err(QueryLimitExceeded {
+                resource: "hop depth",
+                limit: max_depth,
+            })
+        };
+    }
+    let mut budget = QueryBudget::new(limits);
     if relations.len() == 1 {
-        return single_hop(start_entity, relations[0], ctx);
+        preflight_algebraic(ctx, &mut budget)?;
+        return bound_algebraic(single_hop(start_entity, relations[0], ctx), &mut budget);
     }
 
     if relations.len() == 2 {
         if let Some(rule) = rule_store.find_rule(relations[0], relations[1]) {
-            return rule_rewrite(start_entity, &rule.output_relation, &rule.name, ctx);
+            preflight_algebraic(ctx, &mut budget)?;
+            return bound_algebraic(
+                rule_rewrite(start_entity, &rule.output_relation, &rule.name, ctx),
+                &mut budget,
+            );
         }
     }
 
-    chained_lookup(start_entity, relations, ctx.atom_memory, ctx.triple_store)
+    chained_lookup(start_entity, relations, ctx.triple_store, &mut budget)
+}
+
+impl super::HmsCore {
+    /// Runs the same multi-hop query with explicit work, frontier and byte limits. Budget
+    /// exhaustion is an error; distinct paths to an endpoint remain distinct results.
+    pub fn multi_hop_with_limits(
+        &self,
+        start: &str,
+        relations: &[&str],
+        limits: QueryLimits,
+    ) -> anyhow::Result<Vec<MultiHopResult>> {
+        let _transaction = self.mutation_gate.read();
+        let (Some(ctx), Some(rules)) = (self.meaning_ctx(), &self.rule_store) else {
+            return Ok(Vec::new());
+        };
+        Ok(multi_hop_query_with_limits(
+            start,
+            relations,
+            &ctx,
+            rules,
+            self.config.meaning.max_hop_depth,
+            limits,
+        )?)
+    }
+}
+
+fn preflight_algebraic(
+    ctx: &MeaningContext<'_>,
+    budget: &mut QueryBudget,
+) -> Result<(), QueryLimitExceeded> {
+    let atoms = ctx.atom_memory.inner().vectors_read();
+    let composites = ctx.composite_memory.inner().vectors_read();
+    budget.frontier(composites.len())?;
+    budget.work(
+        composites
+            .len()
+            .saturating_mul(atoms.len().saturating_add(1))
+            .saturating_mul(ctx.max_iter.saturating_add(1)),
+    )?;
+    for (id, vector) in atoms.iter().chain(composites.iter()) {
+        budget.reserve(
+            id.len()
+                .saturating_mul(2)
+                .saturating_add(vector.indices().len().saturating_mul(64))
+                .saturating_add(128),
+        )?;
+    }
+    Ok(())
+}
+
+fn bound_algebraic(
+    results: Vec<MultiHopResult>,
+    budget: &mut QueryBudget,
+) -> Result<Vec<MultiHopResult>, QueryLimitExceeded> {
+    budget.frontier(results.len())?;
+    for result in &results {
+        budget.reserve(path_bytes(&result.entity_id, &result.hops))?;
+    }
+    Ok(results)
 }
 
 fn single_hop(start_entity: &str, relation: &str, ctx: &MeaningContext<'_>) -> Vec<MultiHopResult> {
@@ -82,7 +175,9 @@ fn algebraic_hop(
     let Some(s_vec) = ctx.atom_memory.get(start_entity) else {
         return Vec::new();
     };
-    let (_, r_vec) = ctx.atom_memory.get_or_insert(relation);
+    let Some(r_vec) = ctx.atom_memory.get(relation) else {
+        return Vec::new();
+    };
     fuzzy_structural_query(ctx, &[("subject", &s_vec), ("relation", &r_vec)], "object")
         .into_iter()
         .map(|r| MultiHopResult {
@@ -101,59 +196,72 @@ fn algebraic_hop(
 
 /// Evidence-weighted confidence for a single hop.
 /// When an entity has N matches for a relation, each match gets confidence
-/// 1/N — a unique match is high confidence, one of many is low.
+/// 1/sqrt(N) — a unique match is high confidence, one of many is low.
 /// Base decay of 0.9 per hop is applied on top.
 const HOP_DECAY: f64 = 0.9;
 
 fn chained_lookup(
     start_entity: &str,
     relations: &[&str],
-    _atom_memory: &AtomMemory,
     triple_store: &TripleStore,
-) -> Vec<MultiHopResult> {
-    let mut current_entities = vec![start_entity.to_string()];
-    let mut all_hops: Vec<Vec<HopDetail>> = vec![Vec::new()];
+    budget: &mut QueryBudget,
+) -> Result<Vec<MultiHopResult>, QueryLimitExceeded> {
+    let bytes = path_bytes(start_entity, &[]);
+    budget.frontier(1)?;
+    budget.reserve(bytes)?;
+    let mut current = vec![(start_entity.to_owned(), Vec::<HopDetail>::new(), bytes)];
 
     for &relation in relations {
-        let mut next_entities = Vec::new();
-        let mut next_hops = Vec::new();
-
-        for (i, entity) in current_entities.iter().enumerate() {
-            let triples = triple_store.query(Some(entity), Some(relation), None);
-            let fan_out = triples.len();
+        let mut next = Vec::new();
+        for (entity, hops, _) in &current {
+            let mut fan_out = 0usize;
+            triple_store.visit_bounded(Some(entity), Some(relation), None, budget, |_, _| {
+                fan_out += 1;
+                Ok(())
+            })?;
             if fan_out == 0 {
                 continue;
             }
-            // Evidence-weighted: unique match = high confidence, many matches = lower each
             let evidence_weight = 1.0 / (fan_out as f64).sqrt();
             let hop_confidence = HOP_DECAY * evidence_weight.min(1.0);
-
-            for t in triples {
-                let hop = HopDetail {
-                    from_entity: entity.clone(),
-                    relation: relation.to_string(),
-                    to_entity: t.object_id.clone(),
-                    confidence: hop_confidence,
-                };
-                let mut hops = all_hops.get(i).cloned().unwrap_or_default();
-                hops.push(hop);
-                next_hops.push(hops);
-                next_entities.push(t.object_id);
-            }
+            triple_store.visit_bounded(
+                Some(entity),
+                Some(relation),
+                None,
+                budget,
+                |t, budget| {
+                    budget.work(hops.len().saturating_add(1))?;
+                    budget.frontier(next.len().saturating_add(1))?;
+                    let bytes = path_bytes(&t.object_id, hops).saturating_add(hop_bytes(
+                        entity,
+                        relation,
+                        &t.object_id,
+                    ));
+                    budget.reserve(bytes)?;
+                    let mut path = hops.clone();
+                    path.push(HopDetail {
+                        from_entity: entity.clone(),
+                        relation: relation.to_owned(),
+                        to_entity: t.object_id.clone(),
+                        confidence: hop_confidence,
+                    });
+                    next.push((t.object_id.clone(), path, bytes));
+                    Ok(())
+                },
+            )?;
         }
-
-        if next_entities.is_empty() {
-            return Vec::new();
+        if next.is_empty() {
+            return Ok(Vec::new());
         }
-
-        current_entities = next_entities;
-        all_hops = next_hops;
+        for (_, _, bytes) in &current {
+            budget.release(*bytes);
+        }
+        current = next;
     }
 
-    let mut results: Vec<MultiHopResult> = current_entities
+    let mut results: Vec<MultiHopResult> = current
         .into_iter()
-        .zip(all_hops)
-        .map(|(entity, hops)| {
+        .map(|(entity, hops, _)| {
             let chain_confidence = hops.iter().map(|h| h.confidence).product();
             MultiHopResult {
                 entity_id: entity,
@@ -169,7 +277,28 @@ fn chained_lookup(
             .partial_cmp(&a.confidence)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
-    results
+    Ok(results)
+}
+
+fn hop_bytes(from: &str, relation: &str, to: &str) -> usize {
+    2 * std::mem::size_of::<HopDetail>()
+        + from
+            .len()
+            .saturating_add(relation.len())
+            .saturating_add(to.len())
+            .saturating_mul(2)
+}
+
+fn path_bytes(entity: &str, hops: &[HopDetail]) -> usize {
+    hops.iter().fold(
+        entity
+            .len()
+            .saturating_mul(2)
+            .saturating_add(2 * std::mem::size_of::<MultiHopResult>()),
+        |bytes, hop| {
+            bytes.saturating_add(hop_bytes(&hop.from_entity, &hop.relation, &hop.to_entity))
+        },
+    )
 }
 
 #[cfg(test)]
@@ -177,6 +306,123 @@ mod tests {
     use super::*;
     use crate::core::engine::structural::tests::Fixture;
     use crate::core::rules::CompositionRule;
+
+    #[test]
+    fn bounded_chains_preserve_distinct_paths_at_work_and_frontier_boundaries() {
+        let fixture = Fixture::new();
+        for (from, to, id) in [
+            ("a", "b", "ab"),
+            ("a", "c", "ac"),
+            ("b", "d", "bd"),
+            ("c", "d", "cd"),
+        ] {
+            fixture.triples.add(from, "r", to, id);
+        }
+        let rules = RuleStore::new();
+        for work in [13, 14, 15] {
+            let result = multi_hop_query_with_limits(
+                "a",
+                &["r", "r"],
+                &fixture.context(),
+                &rules,
+                10,
+                QueryLimits {
+                    max_work: work,
+                    ..Default::default()
+                },
+            );
+            if work == 13 {
+                assert_eq!(result.unwrap_err().resource, "work");
+            } else {
+                let paths = result.unwrap();
+                assert_eq!(paths.len(), 2);
+                assert!(paths
+                    .iter()
+                    .all(|path| path.entity_id == "d" && path.hops.len() == 2));
+                assert_ne!(paths[0].hops[0].to_entity, paths[1].hops[0].to_entity);
+            }
+        }
+        for frontier in [1, 2, 3] {
+            let result = multi_hop_query_with_limits(
+                "a",
+                &["r", "r"],
+                &fixture.context(),
+                &rules,
+                10,
+                QueryLimits {
+                    max_frontier: frontier,
+                    ..Default::default()
+                },
+            );
+            if frontier == 1 {
+                assert_eq!(result.unwrap_err().resource, "frontier");
+            } else {
+                assert_eq!(result.unwrap().len(), 2);
+            }
+        }
+        let error = multi_hop_query_with_limits(
+            "a",
+            &["r", "r"],
+            &fixture.context(),
+            &rules,
+            10,
+            QueryLimits {
+                max_bytes: 1,
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert_eq!(error.resource, "bytes");
+        fixture.triples.add("a", "unrelated", "z", "az");
+        let error = multi_hop_query_with_limits(
+            "a",
+            &["r", "r"],
+            &fixture.context(),
+            &rules,
+            10,
+            QueryLimits {
+                max_work: 14,
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert_eq!(error.resource, "work");
+    }
+
+    #[test]
+    fn cyclic_branching_queries_fail_explicitly_before_frontier_growth() {
+        let fixture = Fixture::new();
+        for from in ["a", "b", "c"] {
+            for to in ["a", "b", "c"] {
+                fixture.triples.add(from, "r", to, &format!("{from}{to}"));
+            }
+        }
+        let error = multi_hop_query_with_limits(
+            "a",
+            &["r"; 10],
+            &fixture.context(),
+            &RuleStore::new(),
+            10,
+            QueryLimits {
+                max_frontier: 8,
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert_eq!(error.resource, "frontier");
+    }
+
+    #[test]
+    fn querying_an_unknown_relation_does_not_create_an_atom() {
+        let fixture = Fixture::new();
+        fixture.atoms.get_or_insert("a");
+        let count = fixture.atoms.count();
+        assert!(
+            multi_hop_query("a", &["unknown"], &fixture.context(), &RuleStore::new(), 10)
+                .is_empty()
+        );
+        assert_eq!(fixture.atoms.count(), count);
+    }
 
     #[test]
     fn chained_lookup_follows_each_hop() {

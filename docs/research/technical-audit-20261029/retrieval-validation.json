@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "recordedDate": "2026-10-29",
+  "auditBaseline": "de4a2fd6",
+  "fixBranch": "fix/audit-retrieval",
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "cargoTargetDir": "/Volumes/A/hms-audit-fixes/retrieval/target",
+    "dependencyPolicy": "Native gates use --offline --locked; wasm check uses --offline. No new dependencies.",
+    "paidApiOrCloudCreditsUsed": 0
+  },
+  "priorFixCommits": [
+    "8f8ff1ee",
+    "05f78fe5",
+    "ba6a00d3",
+    "e5fd3296",
+    "4b836f16",
+    "79946212"
+  ],
+  "prerequisite": {
+    "upstreamCommit": "ac184197",
+    "localCherryPick": "bd9c4bb4",
+    "purpose": "revision-checked durable mutation publication"
+  },
+  "evidenceType": "Targeted regression/oracle tests and source verification; not performance benchmarking.",
+  "checks": [
+    {
+      "id": "WASM",
+      "before": "Native-only qgraph/storage/format imports prevented the shared wasm32 document modules from compiling (7 errors supplied by the boundary reviewer).",
+      "after": {
+        "command": "RUSTFLAGS='--cfg getrandom_backend=\"wasm_js\"' cargo check --offline --target wasm32-unknown-unknown --manifest-path bindings/wasm/Cargo.toml",
+        "exitCode": 0
+      },
+      "limits": "This agent checked compilation; the boundary agent owns actual scalar/SIMD binding lifecycle tests."
+    },
+    {
+      "id": "D07",
+      "before": {
+        "status": "runtime regression reproduced",
+        "test": "audit_regression_exact_snapshot_retains_all_canonical_rounding_winners",
+        "failure": "With more than eight f32 ties, bounded candidate oversampling omitted the canonical f64 top result."
+      },
+      "after": {
+        "command": "cargo test --offline --locked --lib core::documents::vector_index::",
+        "passed": 4,
+        "failed": 0
+      },
+      "acceptance": "Exact candidate IDs/order use canonical arithmetic; no fixed oversampling correctness claim."
+    },
+    {
+      "id": "D08",
+      "before": {
+        "status": "two runtime regressions reproduced",
+        "tests": [
+          "audit_regression_sparse_scores_and_ties_survive_route_thresholds",
+          "audit_regression_variable_density_reranks_before_truncation"
+        ],
+        "failure": "Route changes changed sparse tie winners; NSG truncated variable-density candidates before canonical ranking."
+      },
+      "after": [
+        {
+          "command": "cargo test --offline --locked --lib core::engine::router::",
+          "passed": 2,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib core::engine::shard::",
+          "passed": 2,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib core::index::inverted::",
+          "passed": 3,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib core::nsg::",
+          "passed": 9,
+          "failed": 0
+        }
+      ],
+      "acceptance": "Shipped similarity scores are Jaccard, ties use IDs, NSG reranks its whole candidate beam. ANN candidate recall remains approximate."
+    },
+    {
+      "id": "D10",
+      "before": {
+        "status": "two runtime regressions reproduced",
+        "failure": "Unrepresentable dimensions/label counts and usize::MAX result capacity panicked on integer overflow."
+      },
+      "after": {
+        "command": "cargo test --offline --locked --lib core::qgraph::filter::",
+        "passed": 12,
+        "failed": 0
+      },
+      "acceptance": "Dimensions 1..=66051, at most 1048576 labels, checked shape products and bounded capacity. Tests include boundary values and usize::MAX."
+    },
+    {
+      "id": "D12",
+      "before": {
+        "status": "runtime regressions reproduced",
+        "failures": [
+          "Filtered hybrid capture retained the broad owner set and missed index reuse.",
+          "Mixed position capabilities rejected a recoverable phrase query.",
+          "Whole-document lexical ingestion rejected its single embedding.",
+          "BM25 k1=0 with absent terms produced an empty answer rather than the independent oracle."
+        ]
+      },
+      "after": [
+        {
+          "command": "cargo test --offline --locked --lib core::documents::search::",
+          "passed": 12,
+          "failed": 0,
+          "ignored": 1
+        },
+        {
+          "command": "cargo test --offline --locked --lib core::documents::dense::",
+          "passed": 8,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib core::documents::lexical::",
+          "passed": 23,
+          "failed": 0
+        }
+      ],
+      "acceptance": "43 passed, one pre-existing microbenchmark ignored. Filtered exact index reuse, candidate-limited lexical owner capture, phrase text fallback and replay compose correctly."
+    },
+    {
+      "id": "D13",
+      "before": {
+        "status": "source verified; no fabricated before-run failure",
+        "failure": "Multi-hop frontiers could grow exponentially; concept neighborhoods retained quadratic hot-dimension candidates. Unknown relation lookup inserted an atom."
+      },
+      "after": [
+        {
+          "command": "cargo test --offline --locked --lib core::engine::multi_hop::",
+          "passed": 7,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib core::engine::concepts::",
+          "passed": 2,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib test_concept_",
+          "passed": 2,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib test_custom_concept_config",
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "command": "cargo test --offline --locked --lib core::triple_store::",
+          "passed": 1,
+          "failed": 0
+        }
+      ],
+      "acceptance": "Checked APIs report work/frontier/byte exhaustion, preserve distinct paths, charge deleted/nonmatching scanned triples, and retain one concept candidate frontier at a time. Legacy Vec-returning APIs use documented bounded/panic contracts."
+    },
+    {
+      "id": "MeaningIndexRebuild",
+      "before": {
+        "status": "two runtime regressions reproduced",
+        "failure": "Rebuild included tombstoned coordinates; delete/reuse of an ID could return a live row for deleted coordinates."
+      },
+      "after": {
+        "command": "cargo test --offline --locked --lib core::indexed_memory::",
+        "passed": 8,
+        "failed": 0
+      },
+      "acceptance": "Rebuilt postings/IDF match a fresh live-only index and no longer return the reused ID on stale coordinates."
+    },
+    {
+      "id": "D11",
+      "before": {
+        "status": "runtime durability regression reproduced; owner-consolidation defect source verified",
+        "failure": "A governed-away atom sharing a raw vector ID reappeared on reopen; direct governance changed memory outside the journal and revision gate."
+      },
+      "after": {
+        "runtimeUnitSuite": {
+          "command": "cargo test --offline --locked --lib core::engine::governance::",
+          "passed": 6,
+          "failed": 0,
+          "sourceQualification": "Passes precede the final eligibility-aware budget calculation and expansion of the owner stress fixture from 2 to 512 triples; those final deltas require the coordinator gate."
+        },
+        "standaloneGovernor": {
+          "command": "cargo test --offline --locked --lib core::cognition::governor::",
+          "passed": 6,
+          "failed": 0
+        },
+        "finalSourceChecks": "pending coordinator validation; local build stopped to remove competing filesystem I/O"
+      },
+      "acceptance": [
+        "Snapshot and shadow planning outside the mutation gate; one revision-checked journal transaction.",
+        "Scoped deletion preserves raw/atom/composite ID namespaces.",
+        "Distinct live triple owners survive identical-vector consolidation.",
+        "Refinement recomposes owned composites and persists through reopen/compaction.",
+        "Concurrent writer invalidates the plan without publication; retry succeeds.",
+        "4095/4096 operation transactions succeed and 4097 is rejected atomically.",
+        "Work/frontier/bytes and 32 MiB serialized payload bounds fail explicitly before commit; dimension-scaled shadow/index scratch is accounted.",
+        "Synchronous checked Node method retained; additive async companion uses the existing blocking worker helper."
+      ]
+    },
+    {
+      "id": "Schema5",
+      "after": {
+        "pureFormatSuite": {
+          "command": "cargo test --offline --locked --lib core::format::",
+          "passed": 15,
+          "failed": 0
+        },
+        "binaryCodecSuite": {
+          "command": "cargo test --offline --locked --lib core::engine::journal::",
+          "passed": 2,
+          "failed": 0
+        },
+        "completeTransactionCodec": {
+          "command": "cargo test --offline --locked --lib complete_transaction_bytes_match_legacy_for_all_mutations",
+          "passed": 1,
+          "failed": 0
+        },
+        "goldenGeneration": {
+          "command": "HMS_GOLDEN_WRITE=1 HMS_GOLDEN_ONLY=v5-governance cargo test --offline --locked --test format_golden generate_goldens -- --ignored --nocapture",
+          "passed": 1,
+          "failed": 0
+        },
+        "goldenUpgradeLayoutIntegration": "pending coordinator full gate; current canonical frame regeneration, manifest and version fixture tests individually passed before interruption",
+        "appendOnlyGoldenGate": {
+          "command": "scripts/format-gate.sh de4a2fd6",
+          "exitCode": 0,
+          "output": "golden stores unchanged"
+        },
+        "partialGoldenIntegration": {
+          "command": "cargo test --offline --locked --test format_golden --test format_upgrade_regressions --test format_layout",
+          "completedIndividualTests": [
+            "every_current_version_has_a_golden",
+            "golden_files_match_their_manifest",
+            "canonical_corpus_regenerates_the_current_goldens"
+          ],
+          "status": "Interrupted by SIGINT at coordinator request during format_golden; no full suite, upgrade or layout pass claimed."
+        }
+      },
+      "acceptance": [
+        "New stores use schema5; ordinary schema2/3/4 opens and writes retain their format.",
+        "Old-schema durable governance fails with explicit upgrade guidance.",
+        "hms-format upgrade has schema2/3/4-to-5 migrations and writes a new destination; source persisted data/schema/arena bytes remain unchanged (lock bookkeeping excluded).",
+        "Current arena/checkpoint bytes survive a schema-only upgrade unchanged.",
+        "Scoped mutation vocabulary is schema-gated in engine replay and offline verifier.",
+        "New v5-governance golden only; all existing golden files remain unchanged."
+      ]
+    }
+  ],
+  "limitations": [
+    "These checks demonstrate the named correctness and durability contracts; they do not establish throughput, RSS ceilings, p95/p99 latency, crash-at-every-write coverage or frontier superiority.",
+    "QueryLimits work units and conservative retained-byte accounting are not a CPU deadline or a process RSS measurement.",
+    "Encoder equal-key selection portability is an unverified cross-toolchain hypothesis (audit confidence 3); permanent old encoder outputs were preserved and no unvalidated new encoder was introduced.",
+    "Default-feature format tests skip fixtures requiring security/experimental features; full integrated all-feature/default, release-format and regenerated Node surface checks belong to the coordinator."
+  ],
+  "finalChecksPending": [
+    "cargo test --offline --locked --lib core::engine::governance:: (final eligibility-aware accounting and 512-owner stress fixture)",
+    "cargo test --offline --locked --test format_golden --test format_upgrade_regressions --test format_layout",
+    "cargo clippy --offline --locked --lib -- -D warnings (earlier retrieval-only state passed; final governance state pending)",
+    "cargo check --offline --locked --features node-api --lib",
+    "Coordinator full default/all-feature, Node generated declarations and actual sync/async restart regression, format drift/upgrade/layout gates. Append-only golden gate already passes."
+  ],
+  "localLogs": {
+    "runtime": "/Volumes/A/hms-audit-fixes/retrieval-governance-final-gate.log",
+    "formatAndCodecs": "/Volumes/A/hms-audit-fixes/retrieval-governance-format-validation.log",
+    "goldenGeneration": "/Volumes/A/hms-audit-fixes/retrieval-governance-golden-generation.log",
+    "status": "Completed counts and exact contracts are retained in this versioned artifact; external logs are supplemental."
+  },
+  "implementationCommit": "81fe33f586393023cfff1fd58ec9c07458f4ae66",
+  "implementationCommits": [
+    "8f8ff1ee908b0d277133a5fdd32f572903a0ae5d",
+    "05f78fe5d11dcd0766d55b67e45aa58adafaf95c",
+    "ba6a00d3462f9ea283267438632ea4d0c26dc3db",
+    "e5fd32969912bbe2ff8ba71c085f1b497238eb55",
+    "4b836f1642e2ff797fca185ebf8c0d73fea8e30f",
+    "7994621270ce855b1dd6c1f2222536ff1bdfbf45",
+    "81fe33f586393023cfff1fd58ec9c07458f4ae66"
+  ],
+  "evidenceCommitPolicy": "Implementation commits are listed in dependency order; this metadata-only commit resolves the containing implementation hash and adds no source changes."
+}

@@ -7,6 +7,7 @@ mod document_api;
 mod document_batch;
 #[cfg(feature = "local-embed")]
 mod embed_api;
+mod governance;
 mod image;
 pub(crate) mod journal;
 pub(crate) mod knowledge;
@@ -42,7 +43,7 @@ use super::agency::questions::{Question, QuestionGenerator};
 use super::agency::self_modify::{ProposalKind, SelfModifier};
 use super::atom_memory::AtomMemory;
 use super::audit::{AuditLog, AuditOp};
-use super::cognition::governor::{GovernanceReport, GovernorConfig, MemoryGovernor};
+use super::cognition::governor::GovernanceReport;
 use super::cognition::r#loop::{CognitionConfig as CognitionLoopConfig, CognitionLoop, Insight};
 use super::composite_memory::CompositeMemory;
 use super::config::HmsConfig;
@@ -759,12 +760,15 @@ impl HmsCore {
         let existed = self.shards.read().get_vector(id).is_some();
         self.commit(&[Mutation::Delete { id: id.to_owned() }])?;
         if let Some(ref audit) = self.audit {
-            audit.record(AuditOp::Delete, id, self.sign_fn().as_deref())?;
+            super::error::after_commit(
+                "audit append",
+                audit.record(AuditOp::Delete, id, self.sign_fn().as_deref()),
+            )?;
         }
         #[cfg(feature = "provenance")]
         if let Some(ref mgr) = self.provenance {
             if self.config.provenance.auto_sign {
-                mgr.record_deletion(id, reason)?;
+                super::error::after_commit("deletion provenance", mgr.record_deletion(id, reason))?;
             }
         }
         Ok(existed)
@@ -814,7 +818,10 @@ impl HmsCore {
         #[cfg(feature = "provenance")]
         if let Some(ref mgr) = self.provenance {
             if self.config.provenance.auto_sign {
-                mgr.create_fact_provenance(id, text.as_bytes(), source_uri)?;
+                super::error::after_commit(
+                    "fact provenance",
+                    mgr.create_fact_provenance(id, text.as_bytes(), source_uri),
+                )?;
             }
         }
         Ok(())
@@ -833,7 +840,10 @@ impl HmsCore {
             vector,
         }])?;
         if let Some(ref audit) = self.audit {
-            audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref())?;
+            super::error::after_commit(
+                "audit append",
+                audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref()),
+            )?;
         }
         Ok(())
     }
@@ -1081,6 +1091,8 @@ impl HmsCore {
         structural::fuzzy_structural_query(&ctx, known, target_role)
     }
 
+    /// Uses default QueryLimits; panics if a work, frontier or byte limit is exhausted.
+    /// Use [`Self::multi_hop_with_limits`] to handle budget errors.
     pub fn multi_hop(&self, start: &str, relations: &[&str]) -> Vec<multi_hop::MultiHopResult> {
         let _transaction = self.mutation_gate.read();
         let (ctx, rules) = match (self.meaning_ctx(), &self.rule_store) {
@@ -1223,24 +1235,8 @@ impl HmsCore {
         CognitionLoop::run_once(atom_mem, tri_store, &cfg)
     }
 
-    pub fn govern_memory(&self) -> GovernanceReport {
-        let (atom_mem, comp_mem, tri_store) = match (
-            &self.atom_memory,
-            &self.composite_memory,
-            &self.triple_store,
-        ) {
-            (Some(a), Some(c), Some(t)) => (a, c, t),
-            _ => return GovernanceReport::default(),
-        };
-        let cc = &self.config.cognition;
-        let gov_config = GovernorConfig {
-            duplicate_threshold: cc.governor_duplicate_threshold,
-            max_scan_size: cc.governor_max_scan_size,
-            forget_unreferenced_atoms: cc.governor_forget_unreferenced,
-            refine_atoms: cc.refine_atoms,
-            ..Default::default()
-        };
-        MemoryGovernor::govern(atom_mem, comp_mem, tri_store, &gov_config)
+    pub fn govern_memory(&self) -> Result<GovernanceReport> {
+        self.govern_memory_with_limits(super::query_limits::QueryLimits::default())
     }
 
     pub fn cognition_enabled(&self) -> bool {

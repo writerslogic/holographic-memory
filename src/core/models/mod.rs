@@ -129,9 +129,11 @@ struct Loaded {
     config: candle_transformers::models::qwen3::Config,
     tokenizer: tokenizers::Tokenizer,
     vb: VarBuilder<'static>,
+    identity: Vec<(String, String)>,
+    model_name: String,
 }
 
-fn load(source: &ModelSource, device: &Device, dtype: DType) -> Result<Loaded> {
+fn load(source: &ModelSource, device: &Device, dtype: DType, fingerprint: bool) -> Result<Loaded> {
     check_revision(source)?;
     let dir = &source.dir;
     let config = serde_json::from_slice(
@@ -141,11 +143,21 @@ fn load(source: &ModelSource, device: &Device, dtype: DType) -> Result<Loaded> {
     let tokenizer = tokenizers::Tokenizer::from_file(dir.join("tokenizer.json"))
         .map_err(|e| anyhow::anyhow!("loading tokenizer.json: {e}"))?;
     let mut files: Vec<PathBuf> = std::fs::read_dir(dir)?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().is_some_and(|x| x == "safetensors"))
-        .collect();
+        .map(|entry| entry.map(|entry| entry.path()))
+        .collect::<std::io::Result<_>>()?;
+    files.retain(|path| path.extension().is_some_and(|x| x == "safetensors"));
     files.sort();
     ensure!(!files.is_empty(), "{} has no safetensors", dir.display());
+    let identity = if fingerprint {
+        source_identity(source, &files)?
+    } else {
+        Vec::new()
+    };
+    let model_name = PINNED
+        .iter()
+        .find(|(_, revision)| *revision == source.revision)
+        .map_or("local-qwen3", |(model, _)| *model)
+        .to_string();
     // SAFETY: the weights are memory-mapped read-only; the caller owns the model directory and
     // must not modify the files while the model is loaded.
     let vb = unsafe { VarBuilder::from_mmaped_safetensors(&files, dtype, device)? };
@@ -159,7 +171,43 @@ fn load(source: &ModelSource, device: &Device, dtype: DType) -> Result<Loaded> {
         config,
         tokenizer,
         vb,
+        identity,
+        model_name,
     })
+}
+
+fn source_identity(source: &ModelSource, weights: &[PathBuf]) -> Result<Vec<(String, String)>> {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let mut files = vec![
+        source.dir.join("config.json"),
+        source.dir.join("tokenizer.json"),
+    ];
+    files.extend_from_slice(weights);
+    files.sort();
+    files
+        .into_iter()
+        .map(|path| {
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .context("invalid model filename")?
+                .to_string();
+            let mut reader =
+                std::fs::File::open(&path).with_context(|| format!("hash model file {name}"))?;
+            let mut hash = Sha256::new();
+            let mut buffer = vec![0; 1 << 20];
+            loop {
+                let n = reader.read(&mut buffer)?;
+                if n == 0 {
+                    break;
+                }
+                hash.update(&buffer[..n]);
+            }
+            let digest = hash.finalize().iter().map(|b| format!("{b:02x}")).collect();
+            Ok((name, digest))
+        })
+        .collect()
 }
 
 fn token_id(tokenizer: &tokenizers::Tokenizer, token: &str) -> Result<u32> {
@@ -288,6 +336,30 @@ fn last_hidden(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn model_file_identity_covers_bytes_and_not_directory_names() {
+        let a = tempfile::tempdir().unwrap();
+        let b = tempfile::tempdir().unwrap();
+        for root in [a.path(), b.path()] {
+            for name in ["config.json", "tokenizer.json", "model.safetensors"] {
+                std::fs::write(root.join(name), name).unwrap();
+            }
+        }
+        let identity = |root: &Path| {
+            source_identity(
+                &ModelSource::new(root, "same"),
+                &[root.join("model.safetensors")],
+            )
+            .unwrap()
+        };
+        assert_eq!(identity(a.path()), identity(b.path()));
+        for name in ["config.json", "tokenizer.json", "model.safetensors"] {
+            std::fs::write(b.path().join(name), "altered").unwrap();
+            assert_ne!(identity(a.path()), identity(b.path()));
+            std::fs::write(b.path().join(name), name).unwrap();
+        }
+    }
 
     #[test]
     fn revision_is_read_and_checked() {

@@ -59,9 +59,11 @@ pub struct Cli {
     /// Permit binding a non-loopback address (requires `HMS_MCP_TOKEN`).
     #[arg(long, env = "HMS_MCP_ALLOW_REMOTE")]
     pub allow_remote: bool,
-    /// Largest HTTP request body.
+    /// Largest HTTP request body or stdin JSON-RPC line (line ending included).
     #[arg(long, env = "HMS_MCP_MAX_REQUEST_BYTES", default_value_t = 1 << 20)]
     pub max_request_bytes: usize,
+    #[command(flatten)]
+    pub http: crate::http_server::HttpLimits,
 
     /// Root directory for stores. Default: the platform data directory, `hms-mcp` inside it.
     #[arg(long, env = "HMS_MCP_DATA_DIR")]
@@ -138,9 +140,15 @@ pub struct Cli {
     /// Most memories one `forget` call may remove.
     #[arg(long, env = "HMS_MCP_MAX_FORGET", default_value_t = 1000)]
     pub max_forget: usize,
-    /// Tool calls running at once; further calls wait.
+    /// Tool calls running at once.
     #[arg(long, env = "HMS_MCP_MAX_CONCURRENT", default_value_t = 4)]
     pub max_concurrent: usize,
+    /// Calls allowed to wait for a worker; further calls fail immediately.
+    #[arg(long, env = "HMS_MCP_MAX_PENDING", default_value_t = 32)]
+    pub max_pending: usize,
+    /// Longest wait for a worker, in milliseconds.
+    #[arg(long, env = "HMS_MCP_QUEUE_TIMEOUT_MS", default_value_t = 5000)]
+    pub queue_timeout_ms: u64,
     /// Log level on stderr: error, warn, info or debug. Logs never contain memory text.
     #[arg(long, env = "HMS_MCP_LOG", default_value = "warn")]
     pub log: String,
@@ -171,6 +179,7 @@ pub fn valid_namespace(name: &str) -> bool {
 
 impl Cli {
     pub fn validate(&self) -> Result<()> {
+        self.http.validate()?;
         if !valid_namespace(&self.namespace) {
             bail!("--namespace must be 1 to 64 characters of [a-z0-9_-]");
         }
@@ -188,12 +197,16 @@ impl Cli {
             ("--max-page", self.max_page, 10_000),
             ("--max-stores", self.max_stores, 1024),
             ("--max-concurrent", self.max_concurrent, 256),
+            ("--max-pending", self.max_pending, 4096),
             ("--max-tags", self.max_tags, 1024),
             ("--max-forget", self.max_forget, 100_000),
         ] {
             if !(1..=max).contains(&value) {
                 bail!("{flag} must be 1..={max}");
             }
+        }
+        if !(1..=60_000).contains(&self.queue_timeout_ms) {
+            bail!("--queue-timeout-ms must be 1..=60000");
         }
         if self.max_metadata_bytes == 0 || self.max_export_bytes < 1024 {
             bail!("--max-metadata-bytes must be positive and --max-export-bytes at least 1024");
