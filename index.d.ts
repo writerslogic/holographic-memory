@@ -106,6 +106,7 @@ export declare class HolographicMemorySystem {
   get cognitionEnabled(): boolean
   runCognitionOnce(): number
   governMemory(): GovernanceReportJs
+  governMemoryAsync(): Promise<GovernanceReportJs>
   addGoal(name: string, description: string, relevance: number, urgency: number, cost: number): number | null
   deactivateGoal(name: string): boolean
   activeGoals(): Array<GoalJs>
