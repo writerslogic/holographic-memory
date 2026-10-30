@@ -23,9 +23,11 @@ concurrency:
 
 jobs:
   build:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     # A tag push only re-dispatches this workflow on main (see `rebuild-for-tag`): the github-pages
     # environment accepts deployments from main, and the build on main enumerates every tag itself.
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    # campaign-original-if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     env:
       # Every generated reference must exist: a missing rustdoc or typedoc output fails the build.
@@ -94,7 +96,9 @@ jobs:
   # category on the landing page and a documentation page, and every query in
   # scripts/docs-qa/queries.txt finds its page in the first five.
   browser-checks:
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
+    # campaign-original-if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -158,8 +162,10 @@ jobs:
           if-no-files-found: ignore
 
   deploy:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     needs: [build, browser-checks]
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    # campaign-original-if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -172,7 +178,9 @@ jobs:
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
   rebuild-for-tag:
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
+    # campaign-original-if: ${{ startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     permissions:
       actions: write

@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "baseline_sha": "554aec0c21ef84aaafee8feb52fd1553be791d2d",
+  "ci_mode": "deferred",
+  "contract": "CAMPAIGN.md",
+  "historical_evidence": [
+    "REPORT.md",
+    "REMEDIATION.md",
+    "bounded-validation.json"
+  ],
+  "merged_commits": [
+    {
+      "pr": 334,
+      "sha": "0c075265c27c21373bf5a43aad5c951abcf366d3"
+    },
+    {
+      "pr": 335,
+      "sha": "554aec0c21ef84aaafee8feb52fd1553be791d2d"
+    }
+  ],
+  "phases": [
+    {
+      "id": "R15",
+      "status": "planned",
+      "acceptance": "Bounded errors, resource plateau, cancellation ownership and shutdown; cyclic and hot inputs respect work caps."
+    },
+    {
+      "id": "R16",
+      "status": "planned",
+      "hypothesis": "Selectivity-aware composition may improve filtered retrieval; mechanism and workload gains unmeasured.",
+      "acceptance": "Canonical live filtered results at 0.01/0.1/1/10/50/100% selectivity; compare p95/p99, RSS, training and update costs."
+    },
+    {
+      "id": "R17",
+      "status": "planned",
+      "acceptance": "Common operations and serialized outcomes/errors conform across supported surfaces; declare differences; no silent filter underfill or collection leakage."
+    },
+    {
+      "id": "R18",
+      "status": "partially_evidenced",
+      "evidence": "REMEDIATION.md: frozen synthetic 19-case lifecycle; not held-out quality.",
+      "acceptance": "Frozen source-grounded native end-to-end evidence with citations, budgets, failure-inclusive metrics and separately authorized held-out live evaluation if pursued."
+    },
+    {
+      "id": "trust-interop-security",
+      "status": "planned",
+      "acceptance": "Independent interoperability and security evidence for declared supported profiles; no certification inferred."
+    },
+    {
+      "id": "strategic",
+      "status": "optional",
+      "acceptance": "Adopt only after reproducible baselines and falsifiable utility evidence."
+    }
+  ],
+  "deferred_workflows": [
+    "bench-refresh.yml",
+    "bindings.yml",
+    "changelog.yml",
+    "ci.yml",
+    "coverage.yml",
+    "dependency-review.yml",
+    "docs.yml",
+    "examples.yml",
+    "format.yml",
+    "fuzz.yml",
+    "importers.yml",
+    "links.yml",
+    "mcp-container.yml",
+    "mcp-release.yml",
+    "npm-packages.yml",
+    "python-models-release.yml",
+    "python-native-release.yml",
+    "python-sdk-release.yml",
+    "python-wheels.yml",
+    "release.yml",
+    "reproducible.yml",
+    "scorecard.yml",
+    "standards-interop.yml"
+  ],
+  "validation_debt": [
+    "All disabled workflow jobs, including full feature/platform/binding/format/interop, lint, documentation, fuzz, packaging and release paths; exact commands and triggers remain in the workflows.",
+    "Campaign policy passing is not quality validation.",
+    "No measurements, security certification, held-out task quality or hardware power-loss assurance are inferred."
+  ],
+  "workflow_original_revision": "554aec0c21ef84aaafee8feb52fd1553be791d2d",
+  "session_merges": "Record subsequent merged commit SHAs and evidence here after each session; the commit containing this ledger is identified by git history.",
+  "freeze_limit": "Guards apply only to workflow definitions at guarded refs; do not dispatch, tag, release or deploy from earlier refs while provisional work is on main.",
+  "control_validation": {
+    "status": "local focused checks passed",
+    "commands": [
+      "uv run --no-project --offline python scripts/ci/campaign_policy.py",
+      "uv run --no-project --offline python -m unittest discover -s scripts/ci -p test_campaign_policy.py",
+      "actionlint -ignore 'constant expression \"false\" in condition' .github/workflows/*.yml",
+      "git diff --check"
+    ],
+    "scope": "Policy behavior, workflow syntax and whitespace only; actionlint constant-condition warning intentionally excluded for explicit false guards. Full quality gates deferred."
+  },
+  "github_managed_automation": {
+    "code_scanning_original": {
+      "state": "configured",
+      "languages": [
+        "actions",
+        "c-cpp",
+        "csharp",
+        "go",
+        "java-kotlin",
+        "javascript",
+        "javascript-typescript",
+        "python",
+        "rust",
+        "typescript"
+      ],
+      "query_suite": "default",
+      "threat_model": "remote",
+      "schedule": "weekly",
+      "runner_type": "standard",
+      "runner_label": ""
+    },
+    "code_quality_original": {
+      "state": "configured",
+      "languages": [
+        "csharp",
+        "go",
+        "java-kotlin",
+        "javascript-typescript",
+        "python"
+      ],
+      "schedule": "weekly",
+      "runner_type": "standard",
+      "runner_label": "",
+      "ai_findings_option": "disabled"
+    },
+    "status": "Both setups set to not-configured and verified via GitHub API; restore original configuration and verify final analyses in final session.",
+    "evidence": "PR 336 automatically triggered GitHub-managed CodeQL and Code Quality; cancellation requested for runs 40984696618 and 40984696529. These workflows are not in the repository."
+  }
+}

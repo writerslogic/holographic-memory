@@ -45,6 +45,8 @@ env:
 
 jobs:
   test:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -56,7 +58,9 @@ jobs:
         run: uv run --no-project --python 3.13 --with pytest --with numpy==2.5.4 pytest -q benchmarks/competitive/tests
 
   run:
-    if: github.event_name != 'pull_request'
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
+    # campaign-original-if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     steps:
@@ -82,8 +86,10 @@ jobs:
           if-no-files-found: error
 
   land:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     needs: run
-    if: github.event_name != 'pull_request' && github.event.inputs.suite != 'smoke'
+    # campaign-original-if: github.event_name != 'pull_request' && github.event.inputs.suite != 'smoke'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

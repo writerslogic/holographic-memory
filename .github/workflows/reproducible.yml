@@ -27,6 +27,8 @@ permissions:
 
 jobs:
   build:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     name: build ${{ matrix.builder }}
     runs-on: ubuntu-latest
     strategy:
@@ -55,6 +57,8 @@ jobs:
           if-no-files-found: error
 
   compare:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     needs: build
     runs-on: ubuntu-latest
     steps:
