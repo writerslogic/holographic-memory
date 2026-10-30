@@ -73,6 +73,22 @@ impl Index {
         self.superseded_by.get(id).map_or(&[], Vec::as_slice)
     }
 
+    pub(super) fn capture_edges(
+        &self,
+        budget: &mut crate::core::query_limits::QueryBudget,
+    ) -> anyhow::Result<HashMap<String, Vec<Edge>>> {
+        let mut captured = HashMap::new();
+        for (id, edges) in &self.superseded_by {
+            budget.work(1 + edges.len())?;
+            budget.reserve(256 + id.len() + edges.len() * std::mem::size_of::<Edge>())?;
+            for edge in edges {
+                budget.reserve(edge.by.len())?;
+            }
+            captured.insert(id.clone(), edges.clone());
+        }
+        Ok(captured)
+    }
+
     /// Candidates of a subject group, ordered by effect, ingest, id.
     pub(crate) fn members(&self, subject: &str) -> Vec<Member> {
         let mut members = self.by_subject.get(subject).cloned().unwrap_or_default();
@@ -308,6 +324,35 @@ impl Index {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn temporal_edge_capture_enforces_work_and_byte_boundaries() {
+        use crate::core::query_limits::{QueryBudget, QueryLimitExceeded, QueryLimits};
+        let mut index = Index::default();
+        index.insert("new", &stamp(2, &["old"]), &|_| None);
+        let bytes = 256 + 6 + std::mem::size_of::<Edge>();
+        for limit in [bytes - 1, bytes, bytes + 1] {
+            let mut budget = QueryBudget::new(QueryLimits {
+                max_bytes: limit,
+                ..Default::default()
+            });
+            let result = index.capture_edges(&mut budget);
+            assert_eq!(result.is_ok(), limit >= bytes);
+            if let Err(error) = result {
+                assert_eq!(
+                    error.downcast_ref::<QueryLimitExceeded>().unwrap().resource,
+                    "bytes"
+                );
+            }
+        }
+        for limit in [1, 2, 3] {
+            let mut budget = QueryBudget::new(QueryLimits {
+                max_work: limit,
+                ..Default::default()
+            });
+            assert_eq!(index.capture_edges(&mut budget).is_ok(), limit >= 2);
+        }
+    }
 
     fn stamp(ingest: Millis, supersedes: &[&str]) -> Stamp {
         Stamp {

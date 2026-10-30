@@ -50,24 +50,48 @@ impl HmsCore {
     /// Visits every document under one consistent snapshot and returns that snapshot's
     /// revision.
     pub(crate) fn scan_documents(&self, mut visit: impl FnMut(DocumentView<'_>)) -> u64 {
+        self.try_scan_documents(None, |document| {
+            visit(document);
+            Ok(())
+        })
+        .expect("infallible document visitor")
+    }
+
+    pub(crate) fn try_scan_documents(
+        &self,
+        ids: Option<&std::collections::BTreeSet<String>>,
+        mut visit: impl FnMut(DocumentView<'_>) -> Result<()>,
+    ) -> Result<u64> {
         let _transaction = self.mutation_gate.read();
         let revision = self.revision();
         let store = self.documents();
-        for document in store.shared_values() {
-            let text = || {
-                document
-                    .chunks
-                    .first()
-                    .and_then(|chunk| store.chunk_text(chunk))
+        let mut visit_document =
+            |document: std::sync::Arc<crate::core::documents::StoredDocument>| {
+                let text = || {
+                    document
+                        .chunks
+                        .first()
+                        .and_then(|chunk| store.chunk_text(chunk))
+                };
+                visit(DocumentView {
+                    id: &document.id,
+                    version: &document.version,
+                    metadata: &document.metadata,
+                    text: &text,
+                })
             };
-            visit(DocumentView {
-                id: &document.id,
-                version: &document.version,
-                metadata: &document.metadata,
-                text: &text,
-            });
+        if let Some(ids) = ids {
+            for id in ids {
+                if let Some(document) = store.get(id) {
+                    visit_document(std::sync::Arc::clone(document))?;
+                }
+            }
+        } else {
+            for document in store.shared_values() {
+                visit_document(document)?;
+            }
         }
-        revision
+        Ok(revision)
     }
 
     /// Metadata and text of one document.
@@ -124,5 +148,29 @@ impl HmsCore {
         }
         let payload = super::document_batch::serialize_transaction(self, &mutations)?;
         self.commit_serialized_if_revision(&mutations, &payload, revision)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fallible_scoped_scan_stops_at_the_first_error() -> Result<()> {
+        let core = HmsCore::new(256, None, None)?;
+        for id in ["a", "b", "c"] {
+            core.memorize_document(serde_json::from_value(
+                serde_json::json!({"id": id, "text": "evidence"}),
+            )?)?;
+        }
+        let scope = std::collections::BTreeSet::from(["b".into(), "c".into()]);
+        let mut visited = Vec::new();
+        let result = core.try_scan_documents(Some(&scope), |document| {
+            visited.push(document.id.to_owned());
+            anyhow::bail!("budget exhausted")
+        });
+        assert!(result.is_err());
+        assert_eq!(visited, ["b"]);
+        Ok(())
     }
 }

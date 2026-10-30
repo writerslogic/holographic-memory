@@ -7,8 +7,8 @@
 //! result. When nothing in the store has a validity window or a supersession link and no
 //! recency policy is set, recall asks document search for exactly `k` results with the
 //! options the caller gave, so its ranking and scores are document search's own. Otherwise it
-//! ranks the candidate limit's worth of candidates and filters them, which is why a store
-//! with much history may need a larger `candidate_limit`.
+//! resolves temporal eligibility before candidate selection, then applies recency policies
+//! within the caller's candidate budget.
 
 use anyhow::Result;
 use std::collections::{BTreeSet, HashSet};
@@ -302,6 +302,7 @@ impl Memory {
         force_wide: bool,
     ) -> Result<(Option<Run>, bool)> {
         let revision = self.core.revision();
+        let now = options.as_of.unwrap_or_else(|| self.clock.now_millis());
         let (indexed, constrained, restrict) = {
             let index = self.index.read();
             (
@@ -311,7 +312,7 @@ impl Memory {
             )
         };
         let indexed = indexed == Some(revision);
-        let restrict = match restrict {
+        let mut restrict = match restrict {
             Some(ids) if ids.is_empty() => return Ok((None, indexed)),
             other => other,
         };
@@ -319,10 +320,51 @@ impl Memory {
         if history == HistoryMode::Historical && !needs_status && !force_wide {
             return Ok((None, indexed));
         }
-        let filter = history != HistoryMode::All && needs_status;
+        if needs_status && (history != HistoryMode::All || options.known_at.is_some()) {
+            use crate::core::query_limits::{QueryBudget, QueryLimits};
+            let mut budget = QueryBudget::new(QueryLimits::default());
+            let edges = self.index.read().capture_edges(&mut budget)?;
+            if let Some(ids) = &restrict {
+                budget.work(ids.len())?;
+                for id in ids {
+                    budget.reserve(id.len().saturating_add(256))?;
+                }
+            }
+            let scope = restrict
+                .take()
+                .map(|ids| ids.into_iter().collect::<BTreeSet<_>>());
+            let mut eligible = Vec::new();
+            let scanned = self.core.try_scan_documents(scope.as_ref(), |document| {
+                budget.work(1)?;
+                let stamp = Stamp::from_parts(document.version, document.metadata);
+                let status = evaluate(
+                    stamp.as_ref(),
+                    edges.get(document.id).map_or(&[], Vec::as_slice),
+                    now,
+                    options.known_at,
+                );
+                let keep = status.is_some_and(|status| match history {
+                    HistoryMode::All => true,
+                    HistoryMode::Current => status == FactStatus::Current,
+                    HistoryMode::Historical => status != FactStatus::Current,
+                });
+                if keep {
+                    budget.reserve(document.id.len().saturating_mul(4).saturating_add(256))?;
+                    eligible.push(document.id.to_owned());
+                }
+                Ok(())
+            })?;
+            if scanned != revision {
+                return Ok((None, false));
+            }
+            if eligible.is_empty() {
+                return Ok((None, indexed && self.core.revision() == revision));
+            }
+            restrict = Some(eligible);
+        }
         let reorder =
             !self.recency.is_identity() || (needs_status && self.config.historical_weight != 1.0);
-        let wide = filter || reorder || force_wide;
+        let wide = reorder || force_wide;
         let fetch = if wide {
             k.max(options.candidate_limit.unwrap_or_else(|| 100.max(k)))
                 .min(1000)
@@ -345,7 +387,6 @@ impl Memory {
             .core
             .search_documents(query, &search)
             .map_err(|error| MemoryError::Invalid(format!("{error}")))?;
-        let now = options.as_of.unwrap_or_else(|| self.clock.now_millis());
         let index = self.index.read();
         // Commits bump the revision inside the gate that excludes the search's capture, so an
         // unchanged revision across the search means the capture saw exactly `revision`.

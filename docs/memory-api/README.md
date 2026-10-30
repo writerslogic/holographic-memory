@@ -242,12 +242,16 @@ Each is covered by `tests/memory_api.rs`, `tests/memory_api_server.rs` and the b
 
 See [Measured cost](#measured-cost) for numbers. The default path adds one metadata parse and
 one map lookup per result to document search. When the store has validity windows or
-supersession links, recall ranks `candidate_limit` candidates (100 by default, at most 1000
-examined) instead of `k` and filters them; raise `candidate_limit` when most top candidates
-are history. A subject or entity filter limits search to the matching ids and so takes the
-filtered-search path.
+supersession links, recall resolves eligibility before retrieval. A subject or entity scope
+limits that source scan; without a scope it visits all documents. The scan and captured
+reverse links use the default `QueryLimits` work and byte budgets and return an explicit
+error on exhaustion. Eligible IDs enter the existing filtered-search path, so stale history
+does not consume `candidate_limit`. Recency adjustment remains bounded by that candidate
+budget. Metadata-only preselection adds source-scan work; its performance is not yet measured.
 
 ## Measured cost
+
+These historical measurements precede temporal preselection and do not validate its cost.
 
 `benchmarks/results/memory_api_overhead.json` (`memory-api-bench`, release build, Apple
 silicon, synthetic 24-word texts, 400 queries x 5 interleaved passes, lexical search, one
@@ -270,9 +274,9 @@ the same store in the same process.
   facts (+9 % and +6 % mean); the 10,000 row is noisier (+25 us) and the runs are not
   isolated benchmarks, so treat the overhead as "a few percent, tens of microseconds at
   most", not as zero.
-- When recall must filter (the `history` store), it ranks 100 candidates instead of `k`: about
-  2.5x to 3x document search at 10,000 and 100,000 facts. That cost is the price of correct
-  filtering; the raw `history` row shows document search is not slower there.
+- The former post-filter path ranked 100 candidates instead of `k`: about 2.5x to 3x
+  document search at 10,000 and 100,000 facts. It could still underfill when history
+  exhausted those candidates; the current implementation selects temporal eligibility first.
 - Explanations cost about 2x to 6x a recall because they re-tokenize and read chain
   documents; they are off by default.
 
@@ -326,8 +330,8 @@ sent through `remember` and `recall`.
 - A supersession policy relates facts of one subject, so a subject should name one
   single-valued slot (`alice/city`), not a topic. Facts with no subject are linked only
   explicitly.
-- A store with many superseded or expired facts relative to current ones needs a larger
-  `candidate_limit` to fill `k` current results; at most 1000 candidates are examined.
+- Temporal eligibility precedes candidate selection; arbitrary recency reordering still
+  applies only within the candidate budget. Exhausted eligibility budgets fail explicitly.
 - The index is derived: the first memory call after open, and the first after any write made
   behind the `Memory`'s back (raw document writes, compaction), scans the documents once.
 
