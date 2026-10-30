@@ -311,5 +311,10 @@
   "final_workflow_changes": {
     ".github/workflows/ci.yml": "bbea12866340fcb478bf1ec78013da14f9bec9ab4fdbae8c09dba07acf8609c6"
   },
-  "final_workflow_note": "After the passing source revision, add Windows to aggregate gate dependencies. Production source/build inputs unchanged; final workflow/evidence revision receives normal CI."
+  "final_workflow_note": "After the passing source revision, add Windows to aggregate gate dependencies. Production source/build inputs unchanged; final workflow/evidence revision receives normal CI.",
+  "final_test_changes": {
+    "bindings/java/pom.xml": "e325fc36da50ac927ccf628b0838dea0e11886fdba756df45eea63608ac53d8a",
+    "bindings/java/src/test/java/com/writerslogic/holographicmemory/StoreTest.java": "271b07daba170b8535515ca4bbb61af079b42acf0053507024541d25eb6e1b9e"
+  },
+  "final_test_note": "After an ARM Java stall on unchanged production code, bound and repeat the existing concurrency gate with per-test names and failure stacks. Production source tree unchanged; latest PR head must pass normal CI."
 }

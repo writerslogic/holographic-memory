@@ -69,6 +69,7 @@
         <version>3.5.2</version>
         <configuration>
           <argLine>--enable-native-access=ALL-UNNAMED</argLine>
+          <forkedProcessTimeoutInSeconds>120</forkedProcessTimeoutInSeconds>
           <systemPropertyVariables>
             <hms.library.path>${hms.native.dir}</hms.library.path>
           </systemPropertyVariables>

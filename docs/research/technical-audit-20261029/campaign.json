@@ -832,7 +832,7 @@
         "url": "https://github.com/writerslogic/holographic-memory/pull/342",
         "source_commit": "768e1bf93bf2c67fa07aec61df22f99955a2439d",
         "source_tree": "e80979db6477117092f3e684fa0f5bfb54c94c3c",
-        "status": "Source verified; merge only after final PR-head normal gate. The final commit changes evidence and strengthens the CI aggregate dependency, not production code.",
+        "status": "Production source verified at the recorded source revision; final head requires normal CI including bounded repeated Java tests. An intervening ARM Java stall was canceled and investigated; final-validation/java-diagnostics.json records the uncertainty and diagnostics.",
         "artifact": "final-validation/source-manifest.json",
         "final_merge_record": "https://github.com/writerslogic/holographic-memory/pull/342 (mergeCommit) and Git history; a commit cannot embed its own future merge SHA.",
         "acceptance": "Verify remote main includes the merged PR and the recorded source tree; return to clean main and remove only fix/campaign-final-validation and task-owned temporary artifacts."
@@ -855,7 +855,8 @@
         "historical_score_unchanged": 6.2,
         "M6_separate": 8,
         "qualification": "Ordinal engineering judgment using original weights and explicit evidence/confidence; not a measured capability score or certification."
-      }
+      },
+      "java_gate_investigation": "final-validation/java-diagnostics.json"
     }
   ],
   "deferred_workflows": [

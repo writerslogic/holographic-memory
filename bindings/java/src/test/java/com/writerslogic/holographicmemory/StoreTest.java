@@ -20,12 +20,40 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
 import org.junit.jupiter.api.io.TempDir;
 
+@Timeout(value = 30, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class StoreTest {
+    @RegisterExtension
+    static final TestWatcher diagnostics = new TestWatcher() {
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            System.err.println("Failed: " + context.getDisplayName());
+            Thread.getAllStackTraces().forEach((thread, stack) -> {
+                System.err.println(thread + " " + thread.getState());
+                for (StackTraceElement frame : stack) {
+                    System.err.println("  " + frame);
+                }
+            });
+        }
+    };
+
     @TempDir
     Path tmp;
+
+    @BeforeEach
+    void reportStart(TestInfo test) {
+        System.out.println("Starting: " + test.getTestMethod().orElseThrow().getName()
+                + " / " + test.getDisplayName());
+    }
 
     private Document fox() {
         return Document.of("fox", "The quick brown fox jumps over the lazy dog near the river bank.")
@@ -220,8 +248,8 @@ class StoreTest {
         }
     }
 
-    @Test
-    void concurrentUseAndCloseWhileBusy() throws Exception {
+    @RepeatedTest(20)
+    void concurrentReadersAndWriters() throws Exception {
         Store store = Store.open(tmp.resolve("mt"), 2048);
         seed(store);
         ExecutorService pool = Executors.newFixedThreadPool(8);
