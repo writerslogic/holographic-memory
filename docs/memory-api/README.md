@@ -325,6 +325,26 @@ sent through `remember` and `recall`.
 
 ## Limits
 
+The `capabilities` operation negotiates `contractVersion: 1` and returns the
+`temporal-memory-v1` profile, supported operations and explicit feature flags. Unknown
+versions fail with `invalid_request`. Rust exposes `Memory::capabilities`; Node and the
+Python SDK expose `memory.capabilities()`. HTTP uses
+`POST /api/v1/memory/capabilities` with the same tenant and read authorization as recall.
+The generated OpenAPI request/reply definitions come from the native contract types.
+
+| Surface | Memory semantics | Isolation and deliberate differences |
+|---|---|---|
+| Rust `Memory`, Node `Memory` | Shared temporal eligibility, exact metadata filters, source quotes, history and explicit forgetting | Embedded store selected by the caller; Node dates convert to Unix milliseconds. Native embedding requires the relevant optional build features. |
+| HTTP temporal Memory, Python `client.memory` | Same `Memory::call` operations and request types | HTTP authorization, tenant selection, body/query limits and bounded admission apply; HTTP query limit is stricter than the embedded limit. |
+| MCP | Document-memory profile with pagination and version-conditional writes | Server-selected namespace; temporal `asOf`, `knownAt` and supersession operations are unsupported and are identified as such in initialization instructions. |
+| JS framework stores | Collection-filtered document retrieval, native cursor pagination | Collection ownership is checked before mutations and writes sharing a native object are serialized. Colliding legacy IDs fail explicitly. Direct native writes and separate handles are outside this serialization; collection metadata is not a tenant authorization boundary. |
+| Python importers | Document import with source/destination ownership checks | Committed and uncertain mutation errors stop automatic retries. `ImporterError.code` and `.committed` distinguish committed effects from uncertainty; reconcile before retrying. Read retries remain bounded. |
+
+Shared malformed-input fixtures exercise Rust, HTTP and Node, including empty stores and
+empty subject/entity scopes. Query validation happens before those scopes can return early.
+Document pagination remains a separate API; temporal Memory does not advertise it.
+Source capabilities above do not establish what an older released binary or package supports.
+
 - Facts are single-chunk: text up to 64 KiB and 4096 words, metadata up to 64 KiB. Split long
   text into several facts.
 - A supersession policy relates facts of one subject, so a subject should name one

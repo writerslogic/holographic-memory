@@ -48,6 +48,7 @@ def check(binary):
                 return spec["paths"]["/api/v1/memory/" + name]["post"]
 
             cases = [
+                ("capabilities", {"contractVersion": 1}),
                 ("remember", {"id": "a", "text": "alpha memory"}),
                 ("remember", {"facts": [{"id": "b", "text": "beta memory", "subject": "topic",
                                           "entities": ["e"], "metadata": {"role": "test"}}]}),

@@ -132,6 +132,16 @@ pub(crate) fn prepare_search(
     options: &SearchOptions,
     embedding_dimensions: Option<usize>,
 ) -> Result<PreparedSearch> {
+    let mut prepared = validate_search(text, options, embedding_dimensions)?;
+    prepared.query_terms = [query_words(text, false), query_words(text, true)];
+    Ok(prepared)
+}
+
+pub(crate) fn validate_search(
+    text: &str,
+    options: &SearchOptions,
+    embedding_dimensions: Option<usize>,
+) -> Result<PreparedSearch> {
     ensure!(text.len() <= MAX_DOCUMENT_BYTES, "query exceeds 8 MiB");
     let k = options.k.unwrap_or(10) as usize;
     let limit = options.candidate_limit.unwrap_or(100.max(k as u32)) as usize;
@@ -197,7 +207,7 @@ pub(crate) fn prepare_search(
             document_ids,
             ..Default::default()
         },
-        query_terms: [query_words(text, false), query_words(text, true)],
+        query_terms: Default::default(),
         embedding,
         k,
         limit,

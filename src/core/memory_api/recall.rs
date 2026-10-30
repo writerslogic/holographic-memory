@@ -69,6 +69,22 @@ struct Run {
     fusion: String,
 }
 
+impl RecallOptions {
+    fn search_options(&self, k: u32) -> SearchOptions {
+        SearchOptions {
+            k: Some(k),
+            candidate_limit: self.candidate_limit,
+            filter: self.filter.clone(),
+            embedding: self.embedding.clone(),
+            lexical_weight: self.lexical_weight,
+            semantic_weight: self.semantic_weight,
+            min_semantic_score: self.min_semantic_score,
+            fusion: self.fusion.clone(),
+            ..Default::default()
+        }
+    }
+}
+
 fn sorted_ids(edges: &[Edge]) -> Vec<String> {
     let mut edges: Vec<&Edge> = edges.iter().collect();
     edges.sort_by(|a, b| (a.effective, a.ingest, &a.by).cmp(&(b.effective, b.ingest, &b.by)));
@@ -115,7 +131,9 @@ impl Memory {
 
     fn recall_once(&self, query: &str, options: &RecallOptions) -> Result<Vec<Recalled>> {
         let k = options.k.unwrap_or(self.config.default_k);
-        check!((1..=1000).contains(&k), "k must be 1..=1000");
+        self.core
+            .validate_document_search(query, &options.search_options(k))
+            .map_err(|error| MemoryError::Invalid(error.to_string()))?;
         let history = options.history.unwrap_or(self.config.default_history);
         self.ensure_fresh();
         let Some(mut run) = self.run(query, options, history, k, false)? else {
@@ -147,6 +165,12 @@ impl Memory {
     }
 
     fn explain_once(&self, query: &str, id: &str, options: &RecallOptions) -> Result<Explanation> {
+        self.core
+            .validate_document_search(
+                query,
+                &options.search_options(options.k.unwrap_or(self.config.default_k)),
+            )
+            .map_err(|error| MemoryError::Invalid(error.to_string()))?;
         self.ensure_fresh();
         let (version, metadata, text) = self
             .core
@@ -372,16 +396,8 @@ impl Memory {
             k
         };
         let search = SearchOptions {
-            k: Some(fetch),
-            candidate_limit: options.candidate_limit,
-            filter: options.filter.clone(),
             document_ids: restrict,
-            embedding: options.embedding.clone(),
-            lexical_weight: options.lexical_weight,
-            semantic_weight: options.semantic_weight,
-            min_semantic_score: options.min_semantic_score,
-            fusion: options.fusion.clone(),
-            ..SearchOptions::default()
+            ..options.search_options(fetch)
         };
         let hits = self
             .core

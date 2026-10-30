@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Shared Rust, HTTP and Node temporal Memory negotiation and malformed-input cases on an empty store",
+  "cases": [
+    {
+      "op": "capabilities",
+      "request": {
+        "contractVersion": 1
+      },
+      "expect": {
+        "/capabilities/contractVersion": 1,
+        "/capabilities/profile": "temporal-memory-v1",
+        "/capabilities/temporalQueries": true,
+        "/capabilities/documentPagination": false,
+        "/capabilities/committedErrorCode": "mutation_committed"
+      }
+    },
+    {
+      "op": "capabilities",
+      "request": {
+        "contractVersion": 2
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "capabilities",
+      "request": {
+        "tenant": "elsewhere"
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "filter": "not-an-object"
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "subject": "unknown",
+        "k": 0
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "k": 1,
+        "candidateLimit": 0
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "candidateLimit": 4097
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "lexicalWeight": 0,
+        "semanticWeight": 0
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "fusion": "guess"
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "embedding": []
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "entities": [],
+        "filter": []
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "explain",
+      "request": {
+        "query": "absent",
+        "id": "unknown",
+        "k": 0
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "as_of": 42
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "capabilities",
+      "request": {
+        "contractVersion": 0
+      },
+      "error": "invalid_request"
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "candidateLimit": 4095
+      },
+      "expect": {
+        "/results": []
+      }
+    },
+    {
+      "op": "recall",
+      "request": {
+        "query": "absent",
+        "candidateLimit": 4096
+      },
+      "expect": {
+        "/results": []
+      }
+    }
+  ]
+}

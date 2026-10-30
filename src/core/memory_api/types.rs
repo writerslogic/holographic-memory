@@ -10,6 +10,28 @@ use serde_json::Value;
 /// Unix time in milliseconds.
 pub type Millis = i64;
 
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default, deny_unknown_fields)]
+pub struct CapabilitiesRequest {
+    #[cfg_attr(feature = "server", schemars(range(min = 1, max = 1)))]
+    pub contract_version: Option<u32>,
+}
+
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryCapabilities {
+    pub contract_version: u32,
+    pub profile: String,
+    pub operations: Vec<String>,
+    pub temporal_queries: bool,
+    pub exact_metadata_filters: bool,
+    pub subject_entity_filters: bool,
+    pub document_pagination: bool,
+    pub committed_error_code: String,
+}
+
 /// One fact to remember.
 #[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "server", schemars(extend("required" = ["text"])))]

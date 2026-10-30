@@ -11,6 +11,11 @@ from typing import Any, Dict, List, Optional, Sequence
 class ImporterError(Exception):
     """Fatal import failure with a message that is safe to print."""
 
+    def __init__(self, message: str = "", *, code: Optional[str] = None, committed: Optional[bool] = None):
+        super().__init__(message)
+        self.code = code
+        self.committed = committed
+
 
 class MissingDependency(ImporterError):
     """An optional client library for a source is not installed."""
