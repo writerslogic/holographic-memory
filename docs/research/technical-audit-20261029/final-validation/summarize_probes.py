@@ -8,9 +8,22 @@ import json
 import math
 from pathlib import Path
 import statistics
+import tarfile
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
+
+
+def read_log(name):
+    archive = HERE / "logs.tar.gz"
+    if archive.exists():
+        with tarfile.open(archive, "r:gz") as logs:
+            stream = logs.extractfile(name)
+            if stream is None:
+                raise ValueError(f"Not a regular log entry: {name}")
+            with stream:
+                return stream.read().decode()
+    return (HERE / name).read_text()
 
 
 def percentile(values, fraction):
@@ -77,7 +90,7 @@ def temporal():
         rounds = []
         for number in [1, 2, 3]:
             records = []
-            for line in (HERE / f"temporal-{variant}-{number}.log").read_text().splitlines():
+            for line in read_log(f"temporal-{variant}-{number}.log").splitlines():
                 if '{"checks":' in line:
                     data = json.loads(line[line.index('{"checks":'):])
                     data["failed_steps"] = len({error.split(": /", 1)[0] for error in data["failures"]})

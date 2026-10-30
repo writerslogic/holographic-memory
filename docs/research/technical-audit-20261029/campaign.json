@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_sha": "554aec0c21ef84aaafee8feb52fd1553be791d2d",
-  "ci_mode": "restoration_in_progress",
+  "ci_mode": "normal",
   "contract": "CAMPAIGN.md",
   "historical_evidence": [
     "REPORT.md",
@@ -41,12 +41,13 @@
   "phases": [
     {
       "id": "R15",
-      "status": "planned",
-      "acceptance": "Bounded errors, resource plateau, cancellation ownership and shutdown; cyclic and hot inputs respect work caps."
+      "status": "baseline_resource_contracts_revalidated",
+      "acceptance": "Bounded errors, resource plateau, cancellation ownership and shutdown; cyclic and hot inputs respect work caps.",
+      "scope": "No separate R15 rewrite was selected in this sequence. Prior PR334/335 resource/cancellation fixes were revalidated; final scoped eligibility and pre-capture build admission fixes are recorded under final-validation. No broad capacity/plateau gain inferred."
     },
     {
       "id": "R16",
-      "status": "merged_provisional",
+      "status": "validated",
       "hypothesis": "Selectivity-aware composition may improve filtered retrieval; mechanism and workload gains unmeasured.",
       "acceptance": "Canonical live filtered results at 0.01/0.1/1/10/50/100% selectivity; compare p95/p99, RSS, training and update costs.",
       "primary_target": "Remove eligible-chunk-per-term scans for selective lexical terms and preserve the trained exact tree across bounded mutation bursts.",
@@ -168,7 +169,7 @@
         "As before, synchronous core calls do not offer cooperative mid-query cancellation; canceled server work retains capacity until it actually finishes."
       ],
       "final_validation": {
-        "status": "pending; no Rust compilation, runtime regressions or performance comparison executed this phase",
+        "status": "Implementation and repaired integrated source passed local and PR342 source-revision gates at768e1bf9. Final evidence/workflow commit must pass normal exact-head gates before merge; source/artifact hashes and retained results in final-validation/.",
         "commands": [
           "cargo test --offline --locked --lib core::documents::search::",
           "cargo test --offline --locked --lib core::documents::dense::",
@@ -228,7 +229,7 @@
     },
     {
       "id": "R17",
-      "status": "merged_provisional",
+      "status": "validated",
       "acceptance": "Common operations and serialized outcomes/errors conform across supported surfaces; declare differences; no silent filter underfill or collection leakage.",
       "baseline_revision": "c54972220193abfce8a7470d695910219f03b567",
       "diagnosis": [
@@ -320,7 +321,7 @@
           "cargo run --offline --locked --features server --bin hms-server -- openapi > docs/server/openapi.json",
           "uv run --offline scripts/check_memory_openapi.py --server-binary .campaign-target/debug/hms-server"
         ],
-        "status": "Native, generated-artifact, JS integration, schema, package and interop checks deferred; compiler/test success not inferred from merge.",
+        "status": "Implementation and repaired integrated source passed local and PR342 source-revision gates at768e1bf9. Final evidence/workflow commit must pass normal exact-head gates before merge; source/artifact hashes and retained results in final-validation/.",
         "quality_gate": "Include retained pagination boundaries, collection/tenant isolation, committed outcomes and cancellation in the consolidated final gate."
       },
       "merge": {
@@ -333,7 +334,7 @@
     },
     {
       "id": "R18",
-      "status": "merged_provisional",
+      "status": "validated",
       "evidence": "REMEDIATION.md: frozen synthetic 19-case lifecycle; not held-out quality.",
       "acceptance": {
         "native_target": "Zero expected support/order/source errors across all 72 frozen steps and restarts at unchanged supported-query k=candidateLimit=1; explicit empty results on unsupported/no-longer-owned evidence.",
@@ -402,7 +403,7 @@
         "fallible_scoped_scan_stops_at_the_first_error"
       ],
       "final_validation": {
-        "status": "pending; no Rust compilation or runtime native evidence execution in implementation phase",
+        "status": "Implementation and repaired integrated source passed local and PR342 source-revision gates at768e1bf9. Final evidence/workflow commit must pass normal exact-head gates before merge; source/artifact hashes and retained results in final-validation/.",
         "commands": [
           "cargo test --offline --locked --test native_memory_workflow -- --nocapture",
           "cargo test --offline --locked --test memory_api",
@@ -444,8 +445,12 @@
     },
     {
       "id": "trust-interop-security",
-      "status": "planned",
-      "acceptance": "Independent interoperability and security evidence for declared supported profiles; no certification inferred."
+      "status": "covered_by_selected_profiles",
+      "acceptance": "Independent interoperability and security evidence for declared supported profiles; no certification inferred.",
+      "implementation_phases": [
+        "remote-trust-profiles",
+        "security-durability-lifecycle"
+      ]
     },
     {
       "id": "strategic",
@@ -461,7 +466,7 @@
     },
     {
       "id": "remote-trust-profiles",
-      "status": "merged_provisional",
+      "status": "validated",
       "primary_target": "Complete an explicitly scoped remote MCP OAuth resource server and an issuer/trust checked SCITT inclusion receipt profile.",
       "baseline": "MCP static bearer has no discovery/scopes or per-request authority; SCITT submission returns explicitly unverified bytes.",
       "selected": "RFC9728 protected resource discovery plus fresh RFC7662 introspection by a pinned external HTTPS authority; rmcp stateless routing plus fixed namespace and per-tool write authorization. Detached RFC9942 RFC9162_SHA256 Ed25519 receipt plus independent issuer/service anchors and pinned current root.",
@@ -528,7 +533,7 @@
           "cargo clippy --offline --locked --all-targets --all-features -- -D warnings"
         ],
         "additional": "Retained MCP TypeScript interop, TLS/redirect/slow authority gates; exact input/public-key/root/time/source hashes for external receipt review.",
-        "status": "pending; no Rust runtime evidence inferred from provisional merge."
+        "status": "Implementation and repaired integrated source passed local and PR342 source-revision gates at768e1bf9. Final evidence/workflow commit must pass normal exact-head gates before merge; source/artifact hashes and retained results in final-validation/."
       },
       "merge": {
         "pr": 340,
@@ -540,7 +545,7 @@
     },
     {
       "id": "security-durability-lifecycle",
-      "status": "merged_provisional",
+      "status": "validated",
       "primary_target": "Prevent persistent signing identity/salt replacement races and fork-cloned AES-GCM nonce generator state; bound and validate secret-file reads before use.",
       "baseline_evidence": [
         "security.rs SigningManager::new uses exists/read or truncate/create without sync; shared custom key paths can bypass per-store ownership separation.",
@@ -619,7 +624,7 @@
           "cargo test --offline --locked --features security --test allocation_bounds --test format_golden --test format_crash",
           "cargo test --offline --locked --features provenance,server --test committed_sidecars"
         ],
-        "status": "pending; retain rotation, restore, binding persistence and all-feature/platform gates"
+        "status": "Implementation and repaired integrated source passed local and PR342 source-revision gates at768e1bf9. Final evidence/workflow commit must pass normal exact-head gates before merge; source/artifact hashes and retained results in final-validation/."
       },
       "merge": {
         "pr": 341,
@@ -642,7 +647,7 @@
     },
     {
       "id": "final-validation",
-      "status": "final_integration_in_progress",
+      "status": "source_validated",
       "start_sha": "8bae60a6d446bd71d48243a15796cd8510050d1f",
       "plan": "docs/research/technical-audit-20261029/final-validation/plan.json",
       "audits": [
@@ -730,10 +735,10 @@
         "python": "53passed,46subtests with live server and orjson;0skipped",
         "focused_integrations": "109passed,1ignored across server/allocation/sidecars/crash/golden/memory/HTTP/nativefixtures",
         "openapi": "13actualrequest/replypairs and8invalidshapes passed",
-        "generated": "16exporttests passed",
+        "generated": "16export tests and byte comparison against committed TS/JSON schemas passed.",
         "typescript": "All100framework tests pass after clean locked dependency install;27core,23LangChain,18LlamaIndex,16Mastra,11OpenAI Agents,5Vercel.",
         "trust": "39MCPtests and independent Python-signed SCITT interoperability test pass; production HTTPS-only/self-signedTLS rejection/redirect/timeout/cancellation covered",
-        "node": "10passed,3optionalembedding tests skipped; types and packed CJS/ESM pass. Later dense admission source change requires final rebuild/gate.",
+        "node": "Rebuilt native addon:10public API tests pass, types pass, packed CJS/ESM/native pass; separately built optional local embedding addon3tests pass with synthetic offline weights,0skipped.",
         "clippy_all": "All-target/all-feature pass on1.96; final remote stable gate pending.",
         "clippy_default": "All-target default pass on1.96.",
         "format": "cargo fmt check passed.",
@@ -747,7 +752,12 @@
           "log": "tests-default-final.log"
         },
         "all_features": "1302passed,1obsolete maintenance expectation failed,15ignored; document-dense-repaired.log3passed after correction. All other92test executables completed including doc tests.",
-        "msrv": "Rust1.89 no-default-features check passed."
+        "msrv": "Rust1.89 no-default-features check passed.",
+        "rustdoc": "All-feature documentation with warnings denied passed.",
+        "w3c": "Digital Bazaar verified credential proofs and status list, accepted live index7, rejected revoked index8 and tampering.",
+        "clippy_latest": "Rust1.99 all-target/all-feature Clippy passed with warnings denied.",
+        "frameworks": "100native-backed framework tests pass after final native rebuild.",
+        "scitt_fixture": "Independent Python generator reproduces committed wire vectors byte-for-byte."
       },
       "ci_restoration": {
         "workflows": 23,
@@ -758,11 +768,12 @@
           "scripts/ci/test_campaign_policy.py"
         ],
         "benchmark_policy": "bench-refresh retains harness validation; remote scheduled performance/auto-publication removed; local commands documented",
-        "status": "Workflow guards and policy removed locally; managed analyses configured with successful setup runs. Final PR-head gate required; release freeze retained until success and merge.",
+        "status": "Normal workflow conditions and GitHub-managed analyses restored; source gate passed. Final evidence/workflow commit receives normal CI again under existing PR triggers. No benchmark execution, package publication or tag creation on remote runners.",
         "intentional_changes": [
           "Local-only benchmark execution; harness validation retained",
           "Native-backed framework gate with committed dependency lock",
-          "Run full official MCP SDK end-to-end tests alongside launcher tests in MCP package gate"
+          "Run full official MCP SDK end-to-end tests alongside launcher tests in MCP package gate",
+          "Include test-windows in the aggregate check needs; the original aggregate could succeed while Windows was still pending."
         ]
       },
       "performance_initial": {
@@ -815,6 +826,35 @@
         "memory": "Hot peak requested bytes44,703\u219244,767 (+64B); rare worst43,709\u2192327,689 (+283,980B), below12MiB guard. Process peak RSS median97.7\u219298.0MiB; lifecycle live requested bytes2,246,047\u21922,446,271 (+200,224B) includes retained lexical scratch. All raw per-round distributions retained.",
         "temporal": "All72frozen evidence steps pass in combined across3rounds; baseline fails24distinct steps/72 (72assertion pointers), including12/36evaluation steps. Both satisfy12expected abstentions; quoted-source checks6\u219230perround. k=candidateLimit1 unchanged. Learned-answer quality remains unmeasured.",
         "limits": "One host with other workloads, three rounds, synthetic16D10k corpus, no high-dimensional or capacity extrapolation; no need for100k expansion. Original failures retained. No paid/model API calls or model downloads."
+      },
+      "integration": {
+        "pr": 342,
+        "url": "https://github.com/writerslogic/holographic-memory/pull/342",
+        "source_commit": "768e1bf93bf2c67fa07aec61df22f99955a2439d",
+        "source_tree": "e80979db6477117092f3e684fa0f5bfb54c94c3c",
+        "status": "Source verified; merge only after final PR-head normal gate. The final commit changes evidence and strengthens the CI aggregate dependency, not production code.",
+        "artifact": "final-validation/source-manifest.json",
+        "final_merge_record": "https://github.com/writerslogic/holographic-memory/pull/342 (mergeCommit) and Git history; a commit cannot embed its own future merge SHA.",
+        "acceptance": "Verify remote main includes the merged PR and the recorded source tree; return to clean main and remove only fix/campaign-final-validation and task-owned temporary artifacts."
+      },
+      "source_gate": {
+        "source_commit": "768e1bf93bf2c67fa07aec61df22f99955a2439d",
+        "artifact": "final-validation/source-pr-gate.json",
+        "counts": {
+          "SKIPPED": 18,
+          "SUCCESS": 157
+        },
+        "open_code_scanning_alerts": 0,
+        "source_tree": "e80979db6477117092f3e684fa0f5bfb54c94c3c",
+        "scope": "All applicable default/all-feature,feature/platform/native/package/fuzz/docs/interop/managed-analysis gates passed.18skips are publication/tag-only paths plus the unchanged DCO owner exemption; commits are signed and DCO-trailed."
+      },
+      "assessment": {
+        "artifact": "final-validation/assessment.json",
+        "weighted_quality": 7.5183333333333335,
+        "rounded": 7.5,
+        "historical_score_unchanged": 6.2,
+        "M6_separate": 8,
+        "qualification": "Ordinal engineering judgment using original weights and explicit evidence/confidence; not a measured capability score or certification."
       }
     }
   ],
@@ -844,12 +884,13 @@
     "standards-interop.yml"
   ],
   "validation_debt": [
-    "All disabled workflow jobs, including full feature/platform/binding/format/interop, lint, documentation, fuzz, packaging and release paths; exact commands and triggers remain in the workflows.",
-    "Campaign policy passing is not quality validation.",
-    "No measurements, security certification, held-out task quality or hardware power-loss assurance are inferred."
+    "Final PR-head gate is enforced before merge; successful source-gate evidence is retained and not substituted for a failed later gate.",
+    "Learned native-answer quality, independent cryptographic/finite-precision DP review, hardware power-loss and hostile-host/Windows ACL assurance remain outside verified claims.",
+    "High-dimensional capacity and production latency distributions remain unmeasured; local10k mixed workload results include the hot-query tradeoff.",
+    "Optional durable outbox/source-deletion synchronization and strategic adaptive routing/calibration were not selected or represented as implemented."
   ],
   "workflow_original_revision": "554aec0c21ef84aaafee8feb52fd1553be791d2d",
-  "session_merges": "Record subsequent merged commit SHAs and evidence here after each session; the commit containing this ledger is identified by git history.",
+  "session_merges": "Implementation merge SHAs are recorded above. Final integration is PR342; its GitHub mergeCommit and Git history identify the final merge without self-referential source contents.",
   "freeze_limit": "Guards apply only to workflow definitions at guarded refs; do not dispatch, tag, release or deploy from earlier refs while provisional work is on main.",
   "control_validation": {
     "status": "local focused checks passed",
@@ -896,7 +937,7 @@
       "runner_label": "",
       "ai_findings_option": "disabled"
     },
-    "status": "Both configured; setup analyses succeeded on provisional main. Final PR-head analyses remain required.",
+    "status": "Both configured with weekly schedules; CodeQL and Code Quality passed on the integrated source PR revision. Final PR-head analyses remain mandatory before merge.",
     "evidence": "PR 336 automatically triggered GitHub-managed CodeQL and Code Quality; cancellation requested for runs 40984696618 and 40984696529. These workflows are not in the repository.",
     "r16_verification": {
       "code_scanning": "GET /repos/writerslogic/holographic-memory/code-scanning/default-setup: not-configured",
@@ -945,46 +986,6 @@
       }
     }
   },
-  "next_prompt_queue": [
-    {
-      "order": 3,
-      "phase": "R18",
-      "objective": "Native temporal and source-grounded utility; freeze dev/eval partitions; implement actual memory-path improvement; merge provisionally."
-    },
-    {
-      "order": 4,
-      "phase": "R17",
-      "model": "gpt-6.1-terra",
-      "objective": "Shared contracts and real supported adapters; preserve deliberate differences; merge provisionally."
-    },
-    {
-      "order": 5,
-      "phase": "trust-interop-security",
-      "objective": "Complete selected SCITT verification and remote MCP authorization profiles; authoritative specs, rejection vectors, bounded resources; merge provisionally."
-    },
-    {
-      "order": 6,
-      "phase": "security-durability",
-      "objective": "Concrete lifecycle/recovery fixes, fault vectors and review artifacts; merge provisionally."
-    },
-    {
-      "order": 7,
-      "phase": "operational-recovery",
-      "optional": true,
-      "objective": "Durable sidecar reconciliation and explicitly authorized safe synchronization; evidence-gated capability extension."
-    },
-    {
-      "order": 8,
-      "phase": "strategic",
-      "optional": true,
-      "objective": "Evidence-supported integrated routing or calibrated structural reasoning; evidence-gated."
-    },
-    {
-      "order": 9,
-      "phase": "final-validation",
-      "objective": "Combined audit, repair, final gates, local bounded benchmarks, restore CI, verify remote main; no packages/tags."
-    }
-  ],
   "final_session_limits": {
     "benchmark_groups": 4,
     "normal_max_rows": 10000,
@@ -995,5 +996,53 @@
     "remote_benchmarks": false,
     "cargo_target_dir": "Set explicit repository-owned directory; no concurrent builds",
     "archives": "Task-owned git archive permitted only for essential isolated baseline; no worktrees or stashes"
-  }
+  },
+  "requested_sequence": [
+    {
+      "order": 3,
+      "phase": "R18",
+      "objective": "Native temporal and source-grounded utility; freeze dev/eval partitions; implement actual memory-path improvement; merge provisionally.",
+      "status": "implemented_and_validated"
+    },
+    {
+      "order": 4,
+      "phase": "R17",
+      "model": "gpt-6.1-terra",
+      "objective": "Shared contracts and real supported adapters; preserve deliberate differences; merge provisionally.",
+      "status": "implemented_and_validated"
+    },
+    {
+      "order": 5,
+      "phase": "trust-interop-security",
+      "objective": "Complete selected SCITT verification and remote MCP authorization profiles; authoritative specs, rejection vectors, bounded resources; merge provisionally.",
+      "status": "implemented_and_validated"
+    },
+    {
+      "order": 6,
+      "phase": "security-durability",
+      "objective": "Concrete lifecycle/recovery fixes, fault vectors and review artifacts; merge provisionally.",
+      "status": "implemented_and_validated"
+    },
+    {
+      "order": 7,
+      "phase": "operational-recovery",
+      "optional": true,
+      "objective": "Durable sidecar reconciliation and explicitly authorized safe synchronization; evidence-gated capability extension.",
+      "status": "optional_not_selected"
+    },
+    {
+      "order": 8,
+      "phase": "strategic",
+      "optional": true,
+      "objective": "Evidence-supported integrated routing or calibrated structural reasoning; evidence-gated.",
+      "status": "optional_not_selected"
+    },
+    {
+      "order": 9,
+      "phase": "final-validation",
+      "objective": "Combined audit, repair, final gates, local bounded benchmarks, restore CI, verify remote main; no packages/tags.",
+      "status": "final_gate_and_merge_required"
+    }
+  ],
+  "next_prompt_queue": []
 }

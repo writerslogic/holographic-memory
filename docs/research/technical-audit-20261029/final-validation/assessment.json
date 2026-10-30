@@ -1,5 +1,5 @@
 {
-  "status": "assessment subject to final exact-code nonbenchmark CI gate",
+  "status": "assessed from passing source gate; final evidence/workflow gate remains required before merge",
   "historical_score_preserved": 6.2,
   "method": "Original domain weights and equal metric weight within each domain; confidence ordinal1\u20135, not a statistical interval. Scores are evidence-based engineering judgments, not test-count or benchmark-derived numerical facts.",
   "domain_weights": {

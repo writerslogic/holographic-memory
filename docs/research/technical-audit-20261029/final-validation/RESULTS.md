@@ -3,7 +3,7 @@
 
 # Campaign integration evidence
 
-Final integration is in progress. This record separates completed local comparisons from the remaining exact-revision integration gate. The historical 6.2 assessment in REPORT.md is unchanged.
+The implemented source at `768e1bf93bf2c67fa07aec61df22f99955a2439d` passed the local checks and every applicable PR gate. [PR #342](https://github.com/writerslogic/holographic-memory/pull/342) is the authoritative final integration and merge record; its final evidence/workflow commit must also pass normal CI before merging. Production source is identified by tree `e80979db6477117092f3e684fa0f5bfb54c94c3c` and [file hashes](source-manifest.json). The historical 6.2 assessment in REPORT.md is unchanged.
 
 ## Retrieval comparison
 
@@ -33,7 +33,9 @@ The remaining updated hot p99 exceeds the investigation threshold by 1.5 percent
 
 The complementary mechanisms are distinct: eligibility alone cuts rare-query work but still rebuilds 32 times; delta alone removes rebuilding but leaves rare-term capture near baseline. Together they deliver both effects. Startup, training, mutation, maintenance, query phases, allocation peaks and retained lifecycle memory are included in the raw results. The combined lifecycle retains 200,224 additional requested bytes, including lexical scratch. High-dimensional capacity, arbitrary selectivities and production latency distributions remain unmeasured.
 
-Reproduce the summaries without execution using `uv run --no-project --offline python docs/research/technical-audit-20261029/final-validation/summarize_probes.py`. The probe sources, build manifests and initial source patch preserve the baseline/ablation method. The production hot-path source matches the repaired probe; subsequent changes to its regression assert owner eligibility directly instead of requiring a redundant changed-ID copy.
+Reproduce the summaries without execution using `uv run --no-project --offline python docs/research/technical-audit-20261029/final-validation/summarize_probes.py`. The probe sources, build manifests and gzip-compressed initial source patch preserve the baseline/ablation method. The production hot-path source matches the repaired probe; subsequent changes to its regression assert owner eligibility directly instead of requiring a redundant changed-ID copy.
+
+For a separately authorized fresh comparison, create a new sibling directory under this audit directory, copy only `retrieval_probe.py` and `retrieval_probe.rs` into it, then run the copied script with `build` followed by `run` using `uv run --no-project --offline python`. Keeping the same directory depth preserves repository resolution. This writes a new three-round ledger and enforces its 600-second ceiling; the script refuses to overwrite an existing execution ledger. Do not delete the retained original observations to rerun.
 
 ## Native evidence
 
@@ -51,4 +53,10 @@ Security tests cover immutable key/salt publication, concurrent creators, malfor
 
 ## Integration status
 
-Normal workflow conditions have been restored from `554aec0c21ef84aaafee8feb52fd1553be791d2d`; temporary campaign policy files are removed. Intentional additions enforce native framework and official MCP SDK checks. Performance execution remains local; CI checks the benchmark harness and correctness floors. Managed CodeQL/Code Quality restoration and the final exact-revision platform, package, fuzz and generated-artifact gates are recorded in the campaign ledger as they complete. Publication remains frozen until that gate and merge succeed.
+Normal workflow conditions have been restored from `554aec0c21ef84aaafee8feb52fd1553be791d2d`; temporary campaign policy files are removed. Intentional additions enforce native framework and official MCP SDK checks and include Windows in the aggregate gate. Performance execution remains local; CI checks the benchmark harness and correctness floors. CodeQL and Code Quality are configured with weekly schedules and passed on the integrated source. GitHub normalized the old language selection to its detected supported set, including Rust; the rejected legacy aliases and resulting settings are retained in the ledger.
+
+[The source-revision rollup](source-pr-gate.json) contains 157 successful entries and 18 deliberate skips; the completed CLI snapshot reported 153 successful checks. Skips are publication/tag-only paths and the existing DCO owner exemption. The commits are signed and DCO-trailed. Windows ran 772 tests successfully; its 583-second torn-append recovery test explains the longer job. The final evidence/workflow commit repeats normal CI under the repository's existing PR triggers; successful prior results never authorize accepting a failed later gate. No packages or tags were published.
+
+[Validation commands and outcomes](validation-results.json) include default/all-feature tests, Rust1.89 compatibility, Rust1.99 strict lint, rustdoc, schemas, bindings, packages, official SDKs, independent W3C/SCITT artifacts and the synthetic offline embedding addon. [The metric reassessment](assessment.json) is 7.5/10 using the original domain weights and explicit ordinal confidence; M6 remains separate at 8. These are engineering judgments about evidenced scope, not measured model quality or certification. Optional outbox/synchronization and strategic routing/calibration were not selected or represented as implemented.
+
+The 107 raw logs, including failed initial checks and all temporal outcomes, are preserved byte-for-byte in [logs.tar.gz](logs.tar.gz), with sizes and SHA-256 hashes in [log-index.json](log-index.json). Log names in the ledger and command manifest identify archive entries. The summary script reads that archive directly; its output is byte-identical to the summary made from the original files.

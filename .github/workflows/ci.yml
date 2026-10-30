@@ -318,7 +318,7 @@ jobs:
   check:
     name: check
     if: always()
-    needs: [lint, features, docs-rs, test, bench-build, deny, msrv, retrieval-quality, python-sdk, node, workflows]
+    needs: [lint, features, docs-rs, test, test-windows, bench-build, deny, msrv, retrieval-quality, python-sdk, node, workflows]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded

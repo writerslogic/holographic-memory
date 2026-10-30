@@ -3,7 +3,7 @@
 
 # Security lifecycle and recovery evidence
 
-This phase targets immutable identity publication, nonce generation, safe scrub ownership and concrete numeric bounds. It does not certify cryptography, finite-precision DP, hostile-host isolation or hardware durability. Runtime execution remains deferred.
+This phase targets immutable identity publication, nonce generation, safe scrub ownership and concrete numeric bounds. It does not certify cryptography, finite-precision DP, hostile-host isolation or hardware durability. The authored local runtime checks have passed in final validation; [the final evidence record](final-validation/RESULTS.md) and campaign ledger distinguish those results from external assurance limits and the platform gate.
 
 ## Failure-state model
 
