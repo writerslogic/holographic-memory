@@ -66,6 +66,17 @@ assert stored.unbind(key).phases() == value.phases()
 
 `resonator_factorize` searches codebooks for factors of a bound phase vector.
 
+Phase vectors in bundles and factor codebooks must match the composite's dimension and
+resolution. Invalid shapes and resource limits raise `ValueError`. Empty factor codebooks
+are rejected; an empty list of factors returns `[]`. Zero dimensions and zero iterations
+retain the Rust API's behavior.
+
+The Python boundary admits at most 65,536 dimensions, 65,536 input vectors, and 4,194,304
+total phase elements per operation. Resonators additionally allow at most 64 factors,
+1,000 iterations, and 100,000,000 estimated component visits, computed as
+`(3 * entries + factors**2) * max(dimensions, 1) * (iterations + 1)` before cloning codebooks
+or allocating the resonator index.
+
 ## Choosing the right Python package
 
 This native binding runs vector search and phase-vector operations in your Python process. It does
