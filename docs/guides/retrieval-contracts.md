@@ -16,6 +16,27 @@ fusion. The tree checks document filters before scoring a row. Small filtered se
 direct scan. Both paths retain the filtered corpus's BM25 statistics and canonical scores.
 This changes the execution plan, not the search or filtering contract.
 
+Filtered lexical queries and trained hybrid queries use filtered postings when their work
+is smaller than scanning every eligible chunk for every term. The captured eligibility is
+also used by dense traversal. Posting acceleration is capped at 524,288 store slots; the
+dense eligibility set is separately capped at that many matching documents. Beyond these
+limits the existing scan or predicate path applies. BM25 normalization belongs to the
+captured filter and generation, including legacy zero-frequency terms.
+
+The trained exact tree remains usable after mutations through a bounded changed-document
+delta. Changed base documents are excluded before top-k selection, and current changed
+chunks participate in canonical scoring and fusion. The delta holds at most 128 document
+IDs, 1,024 live chunks and 64 KiB of ID bytes. Exceeding a bound drops the acceleration;
+queries retain their exact fallback and maintenance can rebuild. Replacing the same ID
+updates its delta entry. Explicit training publishes only at its captured generation and
+resets the delta. The `trained` status still means the base itself is current.
+
+Dense training shares the existing vector-build admission gate and reports a retryable
+maintenance error when occupied. Queries add no background workers or queues. Server
+admission retains its bounded queue and busy response; cancellation of a waiting request
+releases its queue entry, while a running blocking query owns its permit until completion.
+These bounds describe additional search state, not a process RSS guarantee.
+
 Phrase queries use persisted positions where available. For a candidate chunk without
 positions, the engine reconstructs them from retained text using that chunk's analyzer.
 An unrelated chunk without positions does not disable phrase search. A candidate whose

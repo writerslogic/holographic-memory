@@ -428,12 +428,15 @@ impl HmsCore {
         let Some(snapshot) = snapshot else {
             return Ok(());
         };
+        let _building = self.vector_index.try_build().ok_or_else(|| {
+            anyhow!("document index maintenance already in progress; retry maintenance")
+        })?;
         let Some(trained) = documents::build_dense_index(snapshot)? else {
             return Ok(());
         };
         let published = {
             let _transaction = self.mutation_gate.read();
-            documents::publish_dense_index(&mut self.documents_mut(), &trained)
+            documents::publish_dense_index(&mut self.documents.write(), &trained)
         };
         ensure!(
             published,

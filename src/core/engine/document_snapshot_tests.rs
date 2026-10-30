@@ -191,6 +191,88 @@ fn stale_document_training_cannot_publish_after_a_durable_replacement() -> Resul
     Ok(())
 }
 
+#[test]
+fn filtered_hybrid_delta_survives_compaction_and_reopen() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let path = directory.path().display().to_string();
+    let config = super::fixture_config(2);
+    let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+    core.memorize_documents(
+        (0..256)
+            .map(|id| input(&format!("d{id:03}"), "old", "needle common", "before"))
+            .collect::<Result<Vec<_>>>()?,
+    )?;
+    core.train_dense_index()?;
+    core.memorize_document(input(
+        "d000",
+        "new",
+        "needle replacement longer text",
+        "after",
+    )?)?;
+    core.delete_document("d001")?;
+    core.memorize_document(input("d999", "new", "needle fresh", "before")?)?;
+    let options = SearchOptions {
+        filter: Some(json!({"group": "before"})),
+        embedding: Some(vec![1.0, 0.0]),
+        candidate_limit: Some(11),
+        k: Some(7),
+        fusion: Some("rrf".into()),
+        ..Default::default()
+    };
+    let expected = core.search_documents("needle fresh", &options)?;
+    assert!(!expected.is_empty());
+    assert!(expected
+        .iter()
+        .all(|hit| hit.document_id != "d000" && hit.document_id != "d001"));
+    assert!(expected.iter().any(|hit| hit.document_id == "d999"));
+    for hit in &expected {
+        assert_eq!(
+            hit.text.as_ref().unwrap().len(),
+            (hit.end_byte - hit.start_byte) as usize
+        );
+    }
+    let expected = serde_json::to_value(expected)?;
+    core.compact()?;
+    assert_eq!(
+        serde_json::to_value(core.search_documents("needle fresh", &options)?)?,
+        expected
+    );
+    drop(core);
+    let reopened = HmsCore::new(1024, Some(path), Some(config))?;
+    assert_eq!(
+        serde_json::to_value(reopened.search_documents("needle fresh", &options)?)?,
+        expected
+    );
+    reopened.train_dense_index()?;
+    assert_eq!(
+        serde_json::to_value(reopened.search_documents("needle fresh", &options)?)?,
+        expected
+    );
+    Ok(())
+}
+
+#[test]
+fn dense_training_reports_busy_and_releases_build_capacity() -> Result<()> {
+    let core = HmsCore::new(1024, None, Some(super::fixture_config(2)))?;
+    core.memorize_documents(
+        (0..128)
+            .map(|id| input(&id.to_string(), "old", "needle", "before"))
+            .collect::<Result<Vec<_>>>()?,
+    )?;
+    let held = core.vector_index.try_build().unwrap();
+    assert!(core
+        .train_dense_index()
+        .unwrap_err()
+        .to_string()
+        .contains("maintenance already in progress"));
+    assert!(!core.document_index_trained());
+    drop(held);
+    core.train_dense_index()?;
+    assert!(core.document_index_trained());
+    assert!(core.vector_index.try_build().is_some());
+    Ok(())
+}
+
 /// A canonical rebuild whose rename fails leaves the store on its old text segment: the retry
 /// stages over the staging file, not over the segment the store still reads.
 #[test]
