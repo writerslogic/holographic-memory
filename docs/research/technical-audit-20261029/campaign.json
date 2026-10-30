@@ -16,6 +16,10 @@
     {
       "pr": 335,
       "sha": "554aec0c21ef84aaafee8feb52fd1553be791d2d"
+    },
+    {
+      "pr": 337,
+      "sha": "9ead0a9c6361a3e2def1e65af129d61ab68f2525"
     }
   ],
   "phases": [
@@ -26,7 +30,7 @@
     },
     {
       "id": "R16",
-      "status": "implemented_validation_deferred",
+      "status": "merged_provisional",
       "hypothesis": "Selectivity-aware composition may improve filtered retrieval; mechanism and workload gains unmeasured.",
       "acceptance": "Canonical live filtered results at 0.01/0.1/1/10/50/100% selectivity; compare p95/p99, RSS, training and update costs.",
       "primary_target": "Remove eligible-chunk-per-term scans for selective lexical terms and preserve the trained exact tree across bounded mutation bursts.",
@@ -197,6 +201,13 @@
         "diagnostic_probes": 0,
         "paid_credits": 0,
         "scope": "Syntax formatting, whitespace and deferral policy only; under60-second noncompiling subset."
+      },
+      "merge": {
+        "pr": 337,
+        "sha": "9ead0a9c6361a3e2def1e65af129d61ab68f2525",
+        "implementation_sha": "f8b74d3b0affc117e7adfabc54fc6babae4e1193",
+        "remote_inclusion_verified": true,
+        "branch_removed": true
       }
     },
     {
@@ -206,9 +217,46 @@
     },
     {
       "id": "R18",
-      "status": "partially_evidenced",
+      "status": "implementing",
       "evidence": "REMEDIATION.md: frozen synthetic 19-case lifecycle; not held-out quality.",
-      "acceptance": "Frozen source-grounded native end-to-end evidence with citations, budgets, failure-inclusive metrics and separately authorized held-out live evaluation if pursued."
+      "acceptance": "Frozen source-grounded native end-to-end evidence with citations, budgets, failure-inclusive metrics and separately authorized held-out live evaluation if pursued.",
+      "frozen_evidence": {
+        "path": "tests/fixtures/native_memory_evidence_v1.json",
+        "sha256": "7e77135742a6514f8f6b9b67a2f23788b4470d7d2f61f1c0d2836eae081ed9be",
+        "partition": "3 development and 3 separate evaluation stories, frozen before production edits",
+        "qualification": "Realistic authored temporal/source scenarios; synthetic retrieval/support evidence, not representative learned-reader QA or empirical population estimates."
+      },
+      "primary_target": "Prevent stale, not-yet-valid or not-yet-known facts from exhausting candidateLimit before eligible current evidence is ranked; retain candidateLimit=k=1 in the frozen corpus.",
+      "diagnosis": {
+        "source": "src/core/memory_api/recall.rs:run_once",
+        "verified": "Temporal status filtering follows document search truncation. A stronger obsolete match can consume the entire fixed candidate budget and leave a valid weaker match absent.",
+        "existing_evidence": "The 19-case lifecycle uses candidateLimit32 over a handful of facts; historical LongMemEval reference-ranking/model artifacts do not establish native-engine QA."
+      },
+      "alternatives": [
+        {
+          "mechanism": "Increase candidates or prompts/context",
+          "decision": "Rejected: budget workaround, does not ensure temporal eligibility and violates equal-budget comparison."
+        },
+        {
+          "mechanism": "Persist current-status metadata",
+          "decision": "Rejected: arbitrary asOf/knownAt and late ingestion require query-time resolution; a current bit becomes stale."
+        },
+        {
+          "mechanism": "Bounded revision-coherent temporal preselection plus existing document planner",
+          "decision": "Selected: preserve status evaluator and ranking, scope source scan by existing entity/subject postings and use sorted ID membership to avoid quadratic whitelist checks."
+        },
+        {
+          "mechanism": "Cache complete temporal stamps in another index",
+          "decision": "Deferred: adds duplicated state and memory for all unstamped/identity-only facts; first use existing source stamps and reverse edges with explicit resource bounds."
+        }
+      ],
+      "guardrails": [
+        "No models/downloads/paid calls or numerical answer-quality claims.",
+        "Keep exact source text and source URI; evaluation labels never indexed.",
+        "Compare equal reader/context/model/candidate budgets, report failures and unsupported queries as abstentions, not successful answers.",
+        "Bound eligibility work/allocation through existing QueryBudget and return an error rather than truncated eligibility.",
+        "No index lock held while reading core sources; revision mismatch retries existing bounded protocol."
+      ]
     },
     {
       "id": "trust-interop-security",
