@@ -24,6 +24,10 @@
     {
       "pr": 338,
       "sha": "c54972220193abfce8a7470d695910219f03b567"
+    },
+    {
+      "pr": 339,
+      "sha": "af4fbff31c711b11c89a3eefbf2dba63365770ab"
     }
   ],
   "phases": [
@@ -216,7 +220,7 @@
     },
     {
       "id": "R17",
-      "status": "implemented_validation_deferred",
+      "status": "merged_provisional",
       "acceptance": "Common operations and serialized outcomes/errors conform across supported surfaces; declare differences; no silent filter underfill or collection leakage.",
       "baseline_revision": "c54972220193abfce8a7470d695910219f03b567",
       "diagnosis": [
@@ -310,6 +314,13 @@
         ],
         "status": "Native, generated-artifact, JS integration, schema, package and interop checks deferred; compiler/test success not inferred from merge.",
         "quality_gate": "Include retained pagination boundaries, collection/tenant isolation, committed outcomes and cancellation in the consolidated final gate."
+      },
+      "merge": {
+        "pr": 339,
+        "sha": "af4fbff31c711b11c89a3eefbf2dba63365770ab",
+        "implementation_sha": "2518f7943e4059e10a5f4356e7205fe0052cbe1f",
+        "remote_inclusion_verified": true,
+        "branch_removed": true
       }
     },
     {
@@ -432,6 +443,78 @@
       "id": "strategic",
       "status": "optional",
       "acceptance": "Adopt only after reproducible baselines and falsifiable utility evidence."
+    },
+    {
+      "id": "remote-trust-profiles",
+      "status": "implemented_validation_deferred",
+      "primary_target": "Complete an explicitly scoped remote MCP OAuth resource server and an issuer/trust checked SCITT inclusion receipt profile.",
+      "baseline": "MCP static bearer has no discovery/scopes or per-request authority; SCITT submission returns explicitly unverified bytes.",
+      "selected": "RFC9728 protected resource discovery plus fresh RFC7662 introspection by a pinned external HTTPS authority; rmcp stateless routing plus fixed namespace and per-tool write authorization. Detached RFC9942 RFC9162_SHA256 Ed25519 receipt plus independent issuer/service anchors and pinned current root.",
+      "alternatives": [
+        {
+          "mechanism": "Local JWT/JWKS verification",
+          "decision": "Rejected for this profile: creates key cache/rotation/revocation lag and another signature policy; existing ureq supports bounded authenticated introspection."
+        },
+        {
+          "mechanism": "Build authorization server into HMS",
+          "decision": "Rejected: token issuance, consent, PKCE and client registration remain external authority responsibilities."
+        },
+        {
+          "mechanism": "Receipt signature alone",
+          "decision": "Rejected: does not bind the supplied statement or establish issuer/checkpoint trust."
+        }
+      ],
+      "guardrails": [
+        "No token cache, no retries, no client-selected outbound URLs; timeout/response/concurrency bounded; no raw tokens/errors logged.",
+        "No namespace overrides or legacy session replay in OAuth mode; stdio/static bearer behavior retained.",
+        "Verified type requires both signatures, inclusion and trusted current root; no append-only consistency, freshness acquisition or certification claim.",
+        "All Rust execution deferred to final session."
+      ],
+      "contract_artifact": "docs/research/technical-audit-20261029/remote-trust-profiles.md",
+      "implementation": {
+        "oauth": "src/bin/hms-mcp/oauth.rs; RFC9728 resource discovery; pinned external RFC7662 authority; exact audience/issuer/namespace, read/write scopes, fresh revocation/expiry, stateless rmcp routing, no credential forwarding.",
+        "scitt": "src/core/provenance/scitt/receipt.rs; detached RFC9942 VDS1 Ed25519, strict statement media/issuer/subject, separate issuer/service trust, bounded single inclusion proof, pinned root plus externally provisioned validity interval, distinct VerifiedReceipt.",
+        "resource_bounds": "OAuth: 8 workers retained through blocking completion, 5s client timeout, 8KiB token,16KiB response, request hard cap16MiB, no retries/cache/redirects/proxy. SCITT: receipt4096B,proof2304B,path64 nodes,COSE depth32/proof8,statement1MiB.",
+        "compatibility": "Stdio/static bearer unchanged except explicit hard request cap. OAuth deliberately forbids namespace overrides and legacy sessions. SCITT transport stays unverified; new verifier is a narrow supported profile."
+      },
+      "regressions": [
+        "Introspection expiry/nbf/iat, issuer/audience/subject/namespace/scope/sender-proof and token boundaries",
+        "Real HTTP discovery/challenge, read-only write refusal, no session ID, stolen session rejection, revoke-before-next-request, foreign namespace, oversized response",
+        "Cancellation retains auth permits until blocking workers finish; saturation rejects immediately",
+        "Separate recursive RFC9162 oracle over every leaf for sizes2..17; missing/extra paths and63/64/65 nodes; hash31/32/33 bytes",
+        "Wrong trust/current root/validity interval, altered statement/signature, unknown critical header, receipt oversize/truncation"
+      ],
+      "local_validation": {
+        "executed": [
+          "rustfmt on touched Rust files",
+          "git diff --check",
+          "campaign_policy.py"
+        ],
+        "runtime_tests": "not run; deferred",
+        "probes": 0,
+        "paid_calls": 0
+      },
+      "costs": {
+        "measured": false,
+        "expected": "OAuth adds one external authority round-trip per request and a bounded JSON body parse. SCITT O(statement bytes + log tree size) hashing with <=64 proof nodes; no throughput/quality gain claimed.",
+        "tradeoff": "Immediate next-request revocation and no local key cache cost remote authority availability/latency; callers get explicit503 on failures. No distributed exactly-once mutation guarantee."
+      },
+      "remaining_limits": [
+        "External authority must implement consent/PKCE/client registration/discovery and issue trusted hms_namespace.",
+        "Bearer replay remains possible while token is active; sender-constrained tokens are rejected.",
+        "Checkpoint/key provisioning and clock trust require an external authority; no append-only consistency, non-equivocation or independent certification is inferred.",
+        "Cross-implementation signed receipt artifact and deployed TLS authority evidence remain pending."
+      ],
+      "final_validation": {
+        "commands": [
+          "cargo test --offline --locked --features mcp --bin hms-mcp",
+          "cargo test --offline --locked --features provenance-scitt --lib core::provenance::scitt::",
+          "cargo test --offline --locked --features provenance --lib core::provenance::cose::",
+          "cargo clippy --offline --locked --all-targets --all-features -- -D warnings"
+        ],
+        "additional": "Retained MCP TypeScript interop, TLS/redirect/slow authority gates; exact input/public-key/root/time/source hashes for external receipt review.",
+        "status": "pending; no Rust runtime evidence inferred from provisional merge."
+      }
     }
   ],
   "deferred_workflows": [

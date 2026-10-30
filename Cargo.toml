@@ -183,7 +183,7 @@ private-search = ["zeroize", "rand/chacha"]
 server = ["dep:parking_lot", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/io-util", "tokio/fs", "tokio/signal", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:libc", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
 # MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.
-mcp = ["dep:parking_lot", "dep:rmcp", "dep:tokio-util", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/signal", "cli", "axum", "subtle", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:futures-util", "tokio/io-util"]
+mcp = ["dep:parking_lot", "dep:rmcp", "dep:tokio-util", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/signal", "cli", "axum", "subtle", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:futures-util", "tokio/io-util", "dep:ureq"]
 
 [[bin]]
 name = "hms-embed"

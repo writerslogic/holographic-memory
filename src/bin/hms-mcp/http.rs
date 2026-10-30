@@ -225,6 +225,7 @@ fn app<S: rmcp::ServerHandler + Clone + Send + 'static>(
     sessions: Arc<session::BoundedSessions>,
     cancel: CancellationToken,
     token: Option<Arc<String>>,
+    oauth: Option<Arc<crate::oauth::Authority>>,
 ) -> Router {
     let mut hosts: Vec<String> = ["localhost", "127.0.0.1", "::1"].map(String::from).into();
     hosts.extend(cli.allow_hosts.iter().cloned());
@@ -232,12 +233,35 @@ fn app<S: rmcp::ServerHandler + Clone + Send + 'static>(
         .with_allowed_hosts(hosts)
         .with_allowed_origins(cli.allow_origins.clone())
         .enforce_origin_validation()
+        .with_legacy_session_mode(oauth.is_none())
         .with_max_request_body_bytes(cli.max_request_bytes)
         .with_cancellation_token(cancel.clone());
     let service = StreamableHttpService::new(move || Ok(handler.clone()), sessions, transport);
     let mut mcp = Router::new().nest_service(&cli.path, service);
     if let Some(token) = token {
         mcp = mcp.layer(middleware::from_fn_with_state(token, crate::bearer));
+    }
+    if let Some(authority) = oauth {
+        mcp = mcp.layer(middleware::from_fn_with_state(
+            authority.clone(),
+            crate::oauth::authorize,
+        ));
+        let path = authority.metadata_path.clone();
+        mcp = mcp.route(
+            &path,
+            get(move || {
+                let metadata = authority.metadata();
+                async move {
+                    (
+                        [
+                            ("cache-control", "no-store"),
+                            ("access-control-allow-origin", "*"),
+                        ],
+                        axum::Json(metadata),
+                    )
+                }
+            }),
+        );
     }
     mcp.route("/health", get(|| async { "ok" }))
         .layer(middleware::from_fn_with_state(
@@ -252,12 +276,13 @@ fn app<S: rmcp::ServerHandler + Clone + Send + 'static>(
 
 pub async fn serve(cli: &config::Cli, handler: server::HmsMcp) -> Result<()> {
     let token = config::http_token()?.map(Arc::new);
-    if token.is_none() {
+    let oauth = crate::oauth::Authority::from_cli(cli)?;
+    if token.is_none() && oauth.is_none() {
         log::warn("HTTP transport without HMS_MCP_TOKEN: any local process can use the store");
     }
     let cancel = CancellationToken::new();
     let sessions = session::BoundedSessions::new(cli.http.session_limits());
-    let app = app(cli, handler, sessions.clone(), cancel.clone(), token);
+    let app = app(cli, handler, sessions.clone(), cancel.clone(), token, oauth);
     let listener = TcpListener::bind(cli.bind)
         .await
         .with_context(|| format!("cannot bind {}", cli.bind))?;
@@ -620,7 +645,7 @@ mod tests {
         cli.http.max_http_sessions = 1;
         let sessions = session::BoundedSessions::new(cli.http.session_limits());
         let cancel = CancellationToken::new();
-        let app = app(&cli, Ping, sessions.clone(), cancel.clone(), None);
+        let app = app(&cli, Ping, sessions.clone(), cancel.clone(), None, None);
         let (address, shutdown, task) = start(app, cli.http, cancel).await;
         let initialize = r#"{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}"#;
         let first = mcp_request(address, "POST", None, initialize).await;
@@ -639,5 +664,105 @@ mod tests {
         assert!(renewed.starts_with("HTTP/1.1 200"), "{renewed}");
         stop(shutdown, task).await;
         sessions.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn oauth_discovery_scopes_revocation_and_session_isolation_use_real_http() {
+        use serde_json::json;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let claims = Arc::new(std::sync::Mutex::new(json!({
+            "active":true,"iss":"https://issuer.example","aud":"https://memory.example/mcp",
+            "sub":"alice","exp":now+600,"token_type":"Bearer","scope":"hms:read","hms_namespace":"team"
+        })));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let authority_app = Router::new().route(
+            "/introspect",
+            axum::routing::post({
+                let claims = claims.clone();
+                let calls = calls.clone();
+                move |headers: axum::http::HeaderMap, body: String| {
+                    let claims = claims.clone();
+                    let calls = calls.clone();
+                    async move {
+                        assert_eq!(headers["authorization"], "Bearer resource-credential");
+                        assert!(body.contains("token=access-token"));
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        axum::Json(claims.lock().unwrap().clone())
+                    }
+                }
+            }),
+        );
+        let (as_address, as_stop, as_task) =
+            start(authority_app, limits(), CancellationToken::new()).await;
+        let authority =
+            crate::oauth::Authority::for_test(format!("http://{as_address}/introspect"));
+        let cli = config::Cli::parse_from(["hms-mcp"]);
+        let sessions = session::BoundedSessions::new(cli.http.session_limits());
+        let cancel = CancellationToken::new();
+        let application = app(
+            &cli,
+            Ping,
+            sessions.clone(),
+            cancel.clone(),
+            None,
+            Some(authority),
+        );
+        let (address, shutdown, task) = start(application, cli.http, cancel).await;
+        let discovery =
+            String::from_utf8(request(address, "/.well-known/oauth-protected-resource/mcp").await)
+                .unwrap();
+        assert!(discovery.starts_with("HTTP/1.1 200"));
+        assert!(discovery.contains("https://memory.example/mcp"));
+        assert!(discovery.contains("https://issuer.example"));
+        let missing = String::from_utf8(request(address, "/mcp").await).unwrap();
+        assert!(missing.starts_with("HTTP/1.1 401"));
+        assert!(missing.contains(
+            "resource_metadata=\"https://memory.example/.well-known/oauth-protected-resource/mcp\""
+        ));
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+
+        async fn send(address: std::net::SocketAddr, body: &str, extra: &str) -> String {
+            let request = format!("POST /mcp HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nAuthorization: Bearer access-token\r\nAccept: application/json, text/event-stream\r\nContent-Type: application/json\r\nMcp-Protocol-Version: 2025-06-18\r\n{extra}Content-Length: {}\r\n\r\n{body}",body.len());
+            let mut stream = TcpStream::connect(address).await.unwrap();
+            stream.write_all(request.as_bytes()).await.unwrap();
+            let mut response = Vec::new();
+            tokio::time::timeout(Duration::from_secs(2), stream.read_to_end(&mut response))
+                .await
+                .unwrap()
+                .unwrap();
+            String::from_utf8(response).unwrap()
+        }
+        let initialize = r#"{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}"#;
+        let success = send(address, initialize, "").await;
+        assert!(success.starts_with("HTTP/1.1 200"), "{success}");
+        assert!(!success.to_ascii_lowercase().contains("mcp-session-id:"));
+        let mutation = r#"{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"remember","arguments":{}}}"#;
+        let denied = send(address, mutation, "").await;
+        assert!(denied.starts_with("HTTP/1.1 403"), "{denied}");
+        assert!(denied.contains("insufficient_scope"));
+        assert!(send(address, initialize, "Mcp-Session-Id: stolen\r\n")
+            .await
+            .starts_with("HTTP/1.1 400"));
+        claims.lock().unwrap()["active"] = json!(false);
+        assert!(send(address, initialize, "")
+            .await
+            .starts_with("HTTP/1.1 401"));
+        claims.lock().unwrap()["active"] = json!(true);
+        claims.lock().unwrap()["hms_namespace"] = json!("another-team");
+        assert!(send(address, initialize, "")
+            .await
+            .starts_with("HTTP/1.1 401"));
+        assert_eq!(calls.load(Ordering::SeqCst), 5);
+        claims.lock().unwrap()["padding"] = json!("x".repeat(16 * 1024));
+        assert!(send(address, initialize, "")
+            .await
+            .starts_with("HTTP/1.1 503"));
+        stop(shutdown, task).await;
+        sessions.shutdown().await;
+        stop(as_stop, as_task).await;
     }
 }

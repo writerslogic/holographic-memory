@@ -13,6 +13,8 @@ mod http_server;
 mod log;
 #[path = "hms-mcp/memory.rs"]
 mod memory;
+#[path = "hms-mcp/oauth.rs"]
+mod oauth;
 #[path = "hms-mcp/server.rs"]
 mod server;
 #[path = "hms-mcp/session.rs"]
