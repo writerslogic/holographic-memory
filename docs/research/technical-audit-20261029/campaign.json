@@ -94,5 +94,43 @@
       "git diff --check"
     ],
     "scope": "Policy behavior, workflow syntax and whitespace only; actionlint constant-condition warning intentionally excluded for explicit false guards. Full quality gates deferred."
+  },
+  "github_managed_automation": {
+    "code_scanning_original": {
+      "state": "configured",
+      "languages": [
+        "actions",
+        "c-cpp",
+        "csharp",
+        "go",
+        "java-kotlin",
+        "javascript",
+        "javascript-typescript",
+        "python",
+        "rust",
+        "typescript"
+      ],
+      "query_suite": "default",
+      "threat_model": "remote",
+      "schedule": "weekly",
+      "runner_type": "standard",
+      "runner_label": ""
+    },
+    "code_quality_original": {
+      "state": "configured",
+      "languages": [
+        "csharp",
+        "go",
+        "java-kotlin",
+        "javascript-typescript",
+        "python"
+      ],
+      "schedule": "weekly",
+      "runner_type": "standard",
+      "runner_label": "",
+      "ai_findings_option": "disabled"
+    },
+    "status": "Both setups set to not-configured and verified via GitHub API; restore original configuration and verify final analyses in final session.",
+    "evidence": "PR 336 automatically triggered GitHub-managed CodeQL and Code Quality; cancellation requested for runs 40984696618 and 40984696529. These workflows are not in the repository."
   }
 }
