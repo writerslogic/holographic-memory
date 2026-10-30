@@ -50,6 +50,7 @@ A `Hit` is `{id, text, metadata, score, lexicalScore, semanticScore?, span}`: th
 - A store created without an embedder uses the hashing embedder: lexical, not semantic. Pass a real embedder for semantic recall. Its `space` is recorded in the store; reopening with another embedder fails. Conflicting `hmsConfig` identity fields and unsupported normalization/metrics are rejected before opening persistent storage. Mislabeled existing stores require verification and reembedding from source, never blind relabeling.
 - Ids: 1..256 bytes, no `hms:` prefix; metadata keys may not start with `_hms_`. A collection adds `collection/` to the stored id and `_hms_collection` to metadata.
 - Writes are serialized inside one `HmsStore`; two processes must not open one path.
+- `OrderedLog`, shared by the LangChain and OpenAI Agents histories, serializes operations across wrappers using the same native handle, collection and log name. Clear deletes from the tail, including within each batch, so interruption preserves a readable prefix; retry clear before appending. Retrying clear also removes orphan entries left by older versions, using metadata even when historical source bytes are unavailable. `has(id)` checks existence and collection ownership without reconstructing text.
 - Encryption: `hmsConfig.encryptionEnabled` uses the native engine's at-rest encryption (needs the `security` build, present in the published package).
 
 ## Tested against

@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict'
+import { historyRecovery } from '../../../test/history-contract.mjs'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -83,6 +84,14 @@ test('large and multi-chunk messages round trip exactly', async () => {
   const [m1, m2] = await h.getMessages()
   assert.equal(m1.content, big)
   assert.deepEqual(m2.content, [{ type: 'text', text: 'block reply' }])
+})
+
+historyRecovery({
+  name: 'LangChain', store,
+  create: (store) => new HmsChatMessageHistory({ store, sessionId: 'recovery' }),
+  append: (history, texts) => history.addMessages(texts.map((text) => new HumanMessage(text))),
+  read: async (history) => (await history.getMessages()).map((message) => message.content),
+  clear: (history) => history.clear(),
 })
 
 test('search finds the relevant message of this session only', async () => {

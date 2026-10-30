@@ -434,6 +434,13 @@ export class HmsStore {
     return sids.map((s) => found.get(s))
   }
 
+  /** Check collection ownership and existence without loading source text. */
+  async has(id: string): Promise<boolean> {
+    this.assertOpen()
+    const info = await this.native(() => this.memory.getDocumentInfo(this.sid(id)))
+    return !!info && (info.metadata as Metadata)?.[COLLECTION_KEY] === this.collection
+  }
+
   /** Up to `limit` matching records in id order (default and ceiling: `maxFetch`). */
   async list(filter?: FilterLike, limit?: number): Promise<Page> {
     this.assertOpen()
