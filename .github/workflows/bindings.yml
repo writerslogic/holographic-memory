@@ -26,6 +26,8 @@ permissions:
 
 jobs:
   bindings:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:

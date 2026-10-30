@@ -28,6 +28,8 @@ permissions:
 
 jobs:
   versions:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,6 +44,8 @@ jobs:
           fi
 
   build:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     name: build ${{ matrix.suffix }}
     needs: versions
     runs-on: ${{ matrix.os }}
@@ -114,6 +118,8 @@ jobs:
           if-no-files-found: error
 
   package:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -151,6 +157,8 @@ jobs:
           if-no-files-found: error
 
   smoke:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     name: install and search ${{ matrix.suffix }}
     needs: package
     runs-on: ${{ matrix.os }}

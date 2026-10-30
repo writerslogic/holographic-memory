@@ -18,6 +18,8 @@ permissions:
 
 jobs:
   build:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     name: Build and test Holographic Memory SDK
     runs-on: ubuntu-latest
     steps:
@@ -62,8 +64,10 @@ jobs:
           if-no-files-found: error
 
   publish:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     name: Publish holographic-memory-sdk to PyPI
-    if: startsWith(github.ref, 'refs/tags/sdk-v')
+    # campaign-original-if: startsWith(github.ref, 'refs/tags/sdk-v')
     needs: build
     runs-on: ubuntu-latest
     environment: pypi

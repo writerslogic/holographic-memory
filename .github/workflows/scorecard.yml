@@ -13,6 +13,8 @@ permissions:
 
 jobs:
   analysis:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:

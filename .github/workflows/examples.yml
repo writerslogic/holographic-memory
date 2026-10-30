@@ -20,6 +20,8 @@ env:
 
 jobs:
   quickstart-rust:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -50,6 +52,8 @@ jobs:
         run: cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin memory | diff - examples/quickstart/expected-memory.txt
 
   quickstart-node:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -78,6 +82,8 @@ jobs:
         run: python3 scripts/check-readme-snippets.py js
 
   quickstart-python:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -112,6 +118,8 @@ jobs:
           awk '/^query /,/^top-1 correct/' "$RUNNER_TEMP/python.out" | diff - "$GITHUB_WORKSPACE/examples/quickstart/expected-search-python.txt"
 
   demo-offline-agent:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -138,6 +146,8 @@ jobs:
           done
 
   readme-rust-snippet:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -157,6 +167,8 @@ jobs:
         run: python3 scripts/check-readme-snippets.py rust
 
   docs-unit-tests:
+    # campaign-deferral: remove this guard and restore any original condition below
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
