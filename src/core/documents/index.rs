@@ -400,6 +400,13 @@ impl DocumentStore {
         self.dense_index.is_none() && (MIN_ROWS..=MAX_ROWS).contains(&self.embedded_count)
     }
 
+    pub(crate) fn discard_stale_dense_index(&mut self) {
+        if !self.dense_index_trained() {
+            self.dense_index = None;
+            self.dense_changes.clear();
+        }
+    }
+
     fn advance_generation(&mut self) {
         self.generation = self
             .generation

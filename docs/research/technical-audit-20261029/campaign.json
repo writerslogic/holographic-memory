@@ -28,6 +28,10 @@
     {
       "pr": 339,
       "sha": "af4fbff31c711b11c89a3eefbf2dba63365770ab"
+    },
+    {
+      "pr": 340,
+      "sha": "6c46b4bbba6a416686953b5dab4afd976684309a"
     }
   ],
   "phases": [
@@ -446,7 +450,7 @@
     },
     {
       "id": "remote-trust-profiles",
-      "status": "implemented_validation_deferred",
+      "status": "merged_provisional",
       "primary_target": "Complete an explicitly scoped remote MCP OAuth resource server and an issuer/trust checked SCITT inclusion receipt profile.",
       "baseline": "MCP static bearer has no discovery/scopes or per-request authority; SCITT submission returns explicitly unverified bytes.",
       "selected": "RFC9728 protected resource discovery plus fresh RFC7662 introspection by a pinned external HTTPS authority; rmcp stateless routing plus fixed namespace and per-tool write authorization. Detached RFC9942 RFC9162_SHA256 Ed25519 receipt plus independent issuer/service anchors and pinned current root.",
@@ -514,6 +518,97 @@
         ],
         "additional": "Retained MCP TypeScript interop, TLS/redirect/slow authority gates; exact input/public-key/root/time/source hashes for external receipt review.",
         "status": "pending; no Rust runtime evidence inferred from provisional merge."
+      },
+      "merge": {
+        "pr": 340,
+        "sha": "6c46b4bbba6a416686953b5dab4afd976684309a",
+        "implementation_sha": "ffb54becb7eeeee9322303e22a23289e22676353",
+        "remote_inclusion_verified": true,
+        "branch_removed": true
+      }
+    },
+    {
+      "id": "security-durability-lifecycle",
+      "status": "implemented_validation_deferred",
+      "primary_target": "Prevent persistent signing identity/salt replacement races and fork-cloned AES-GCM nonce generator state; bound and validate secret-file reads before use.",
+      "baseline_evidence": [
+        "security.rs SigningManager::new uses exists/read or truncate/create without sync; shared custom key paths can bypass per-store ownership separation.",
+        "EncryptionManager::new atomic_write salt can replace a concurrent creator; raw helper is public although normal core open holds store lock.",
+        "rand0.10 ThreadRng explicitly does not automatically reseed after fork; encrypt_with_aad currently uses its output as GCM nonce."
+      ],
+      "alternatives": [
+        {
+          "mechanism": "Global process mutex or new key lock file",
+          "decision": "Rejected: process mutex does not cover separate processes; lock-file lifecycle duplicates ownership and still needs safe publication."
+        },
+        {
+          "mechanism": "Synced temporary file with no-clobber publication plus bounded secure reopen",
+          "decision": "Selected: reuse durable_file and tempfile; winners are immutable, losers read the same complete identity."
+        },
+        {
+          "mechanism": "Persistent nonce counter/format change",
+          "decision": "Deferred: requires crash-atomic allocation and cross-cache domains; use fallible stateless OS RNG now while retaining existing encrypted format and explicit random-nonce limits."
+        }
+      ],
+      "guardrails": [
+        "No format/golden changes or silent key/salt replacement; errors before use on invalid/unsafe input.",
+        "No key bytes in errors/logs; zeroize temporary secret buffers; no locks held across I/O.",
+        "No physical-erasure, finite-precision DP, hardware power-loss or certification claims.",
+        "Only source review and tiny noncompiling checks now; fault/concurrency/fork tests authored for final session."
+      ],
+      "artifact": "docs/research/technical-audit-20261029/security-assurance.md",
+      "implementation": [
+        "Synced no-clobber key/salt publication; concurrent initializers reopen winner; bounded regular-file reads; private Unix key modes; sync pending publication before returning an existing identity.",
+        "Fallible OS randomness for signing seed, salt and each GCM nonce; key derivation buffers zeroized on error as well as success.",
+        "No-follow/nonblocking regular-file opens; Unix scrub refuses hardlinks; retained stale dense tree cleared at scrubbing even below128 live embedded rows.",
+        "Shared DP scale validation rejects inverse-CDF infinity before work/store creation; per-bundle OS-seeded standard generator avoids fork-cloned noise; no finite-precision DP proof claimed."
+      ],
+      "additional_evidence": [
+        "R16 retention made a usable stale dense base no longer recommended for maintenance; encrypted canonicalization has no text segment to rebuild, so scrubbing needed explicit stale-base release.",
+        "A finite m/epsilon can still overflow when multiplied by the inverse-CDF logarithm; old is_finite(scale) guard did not prevent infinite noisy scores."
+      ],
+      "tests_authored": [
+        "Eight concurrent signing initializers and immutable winner",
+        "Two concurrent salts with reopened cross-decryption and wrong AAD refusal",
+        "Signing31/32/33 and oversized file; salt15/16/17; directory/symlink/FIFO/Unix modes",
+        "Publication subprocess interruptions before/after link and directory sync",
+        "Oversized sparse key file allocation relative to small malformed input",
+        "Unix hardlink scrub refusal preserves external file",
+        "Encrypted/plain scrub drops deleted dense Arc at live127/128 rows and reopens without deletion resurrection",
+        "Extreme DP scale rejected at low-level and before creating a core store"
+      ],
+      "local_validation": {
+        "executed": [
+          "touched-file rustfmt",
+          "git diff --check",
+          "campaign_policy.py"
+        ],
+        "compilation_and_tests": "deferred",
+        "probes": 0,
+        "paid_calls": 0
+      },
+      "gains": {
+        "measured": false,
+        "analytical": "Secret reads are O(fixed identity size), not advertised file size; creator races cannot replace an existing identity. No per-process PRNG state supplies GCM nonces.",
+        "costs": "One OS entropy call per encryption, fresh seed per DP bundle, creation/read directory syncs, optional scrub rebuild. All timing/RSS unmeasured."
+      },
+      "limits": [
+        "Random nonce collision probability and total key invocation budget remain; no durable cross-copy counter.",
+        "DP finite precision/composition not independently established; masking/private-search status unchanged.",
+        "Parent directories/Windows ACLs require service-account control; not a hostile-host openat sandbox.",
+        "Windows directory durability and hardware power-loss behavior need platform/fixture evidence; process interruption is not power loss.",
+        "Independent crypto review requires exact source/build/golden/configuration/AAD and key-usage artifacts described in security-assurance.md."
+      ],
+      "final_validation": {
+        "commands": [
+          "cargo test --offline --locked --features security --lib core::security::tests::",
+          "cargo test --offline --locked --lib core::durable_file::tests::",
+          "cargo test --offline --locked --features security --lib core::engine::compaction::tests::",
+          "cargo test --offline --locked --lib core::entangled::tests::",
+          "cargo test --offline --locked --features security --test allocation_bounds --test format_golden --test format_crash",
+          "cargo test --offline --locked --features provenance,server --test committed_sidecars"
+        ],
+        "status": "pending; retain rotation, restore, binding persistence and all-feature/platform gates"
       }
     }
   ],

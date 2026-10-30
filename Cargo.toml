@@ -83,7 +83,7 @@ tower-service = { version = "0.3", optional = true }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"], optional = true }
 tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"], optional = true }
 tar = { version = "0.4", default-features = false, optional = true }
-libc = { version = "0.2", optional = true }
+libc = "0.2"
 http-body-util = { version = "0.1", optional = true }
 bytes = { version = "1", optional = true }
 futures-util = { version = "0.3", default-features = false, optional = true }
@@ -180,7 +180,7 @@ local-embed-download = ["local-embed", "ureq"]
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
 # HTTP service for the holographic-memory-sdk Python client (`hms-server` binary).
-server = ["dep:parking_lot", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/io-util", "tokio/fs", "tokio/signal", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:libc", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
+server = ["dep:parking_lot", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/io-util", "tokio/fs", "tokio/signal", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
 # MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.
 mcp = ["dep:parking_lot", "dep:rmcp", "dep:tokio-util", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/signal", "cli", "axum", "subtle", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:futures-util", "tokio/io-util", "dep:ureq"]

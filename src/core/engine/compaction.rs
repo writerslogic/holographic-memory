@@ -90,7 +90,12 @@ impl HmsCore {
             let graph_min_rows = if snapshot.has_graph() { 0 } else { usize::MAX };
             self.rebuild_vector_index_waiting(graph_min_rows)?;
         }
-        if self.documents.read().dense_index_recommended() {
+        let rebuild_dense = {
+            let mut documents = self.documents.write();
+            documents.discard_stale_dense_index();
+            documents.dense_index_recommended()
+        };
+        if rebuild_dense {
             self.train_dense_index()?;
         }
         Ok(())
@@ -406,6 +411,34 @@ mod tests {
             "embeddings": [[1.0, 0.0]],
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn scrubbing_releases_deleted_dense_owners_even_below_training_threshold() -> Result<()> {
+        for count in [128, 129] {
+            for config in configurations() {
+                let directory = tempfile::tempdir()?;
+                let path = directory.path().display().to_string();
+                let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+                core.memorize_documents(
+                    (0..count)
+                        .map(|i| document(&format!("row-{i:03}"), "1"))
+                        .collect(),
+                )?;
+                core.train_document_index()?;
+                let owner = Arc::clone(core.documents.read().get("row-000").unwrap());
+                core.delete_document("row-000")?;
+                assert!(Arc::strong_count(&owner) > 1);
+                core.compact_scrubbing()?;
+                assert_eq!(Arc::strong_count(&owner), 1);
+                assert_eq!(core.documents.read().dense_index_trained(), count > 128);
+                drop(core);
+                let reopened = HmsCore::new(1024, Some(path), Some(config))?;
+                assert!(!reopened.has_document("row-000"));
+                assert_eq!(reopened.document_count(), count - 1);
+            }
+        }
+        Ok(())
     }
 
     #[test]

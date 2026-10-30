@@ -161,7 +161,7 @@ impl HmsCore {
         let (config, text_embedder) = embed_api::prepare(config)?;
         config.validate()?;
         anyhow::ensure!(
-            ((dim / 256).max(1) as f64 / config.privacy.epsilon).is_finite(),
+            EntangledHVec::dp_scale(dim, config.privacy.epsilon).is_some(),
             "privacy epsilon is too small for the configured dimensions"
         );
         #[cfg(feature = "security")]
