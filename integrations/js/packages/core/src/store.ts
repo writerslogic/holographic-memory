@@ -5,10 +5,12 @@ import type { DocumentInput, DocumentResult, HmsConfigJs, HolographicMemorySyste
 import { HashingEmbedder, type Embedder, type Reranker } from './embedders.js'
 import { HmsError } from './errors.js'
 import { matches, parseFilter, splitFilter, type FilterLike, type Metadata } from './filters.js'
+import { captureSource, restoreSource } from './source.js'
 
 export const RESERVED_PREFIX = '_hms_'
 const COLLECTION_KEY = '_hms_collection'
 const VECTOR_KEY = '_hms_vector'
+const SOURCE_KEY = '_hms_source'
 const MAX_ID_BYTES = 256
 const NATIVE_MAX = 1000
 const writeQueues = new WeakMap<HolographicMemorySystem, Promise<unknown>>()
@@ -218,7 +220,7 @@ export class HmsStore {
   }
 
   private clean(metadata: unknown): Metadata {
-    const { [COLLECTION_KEY]: _c, [VECTOR_KEY]: _v, ...rest } = (metadata ?? {}) as Metadata
+    const { [COLLECTION_KEY]: _c, [VECTOR_KEY]: _v, [SOURCE_KEY]: _s, ...rest } = (metadata ?? {}) as Metadata
     return rest
   }
 
@@ -252,6 +254,7 @@ export class HmsStore {
         if (key.startsWith(RESERVED_PREFIX)) throw new HmsError(`metadata key ${JSON.stringify(key)} uses the reserved prefix ${RESERVED_PREFIX}`, 'invalid_argument')
       }
       if (typeof r.text !== 'string') throw new HmsError('record text must be a string', 'invalid_argument')
+      if (!r.text.replace(/[\s\u0085]/gu, '').length) throw new HmsError('record text must be nonblank', 'invalid_argument')
       if (r.vector && r.vector.length !== this.embedder.space.dimensions) {
         throw new HmsError(`vector length ${r.vector.length} != embedding dimensions ${this.embedder.space.dimensions}`, 'invalid_argument')
       }
@@ -268,17 +271,23 @@ export class HmsStore {
     })
     return this.serialized(() =>
       this.native(async () => {
-        const chunked = await Promise.all(prepared.map(async (p) => ({ ...p, chunks: await this.memory.chunkDocument(p.input) })))
+        const chunked = await Promise.all(prepared.map(async (p) => {
+          const chunks = await this.memory.chunkDocument(p.input)
+          return { ...p, chunks, source: captureSource(p.record.text, chunks) }
+        }))
         for (const c of chunked) await this.assertOwned(c.input.id)
         const need = chunked.flatMap((c) => (c.record.vector ? [] : c.chunks.map((ch) => ch.text)))
         const vectors = need.length ? await this.embedder.encodeDocuments(need) : []
         if (vectors.length !== need.length) throw new HmsError('embedder returned the wrong number of vectors', 'backend')
         let next = 0
-        for (const c of chunked) {
+        const inputs = chunked.map((c) => {
           const embeddings = c.chunks.map(() => Array.from(c.record.vector ?? (vectors[next++] as ArrayLike<number>)))
-          const metadata = this.opts.keepVectors && embeddings[0] ? { ...c.input.metadata, [VECTOR_KEY]: embeddings[0] } : c.input.metadata
-          await this.memory.memorizeDocument({ ...c.input, metadata, embeddings })
-        }
+          const metadata = { ...c.input.metadata, [SOURCE_KEY]: c.source,
+            ...(this.opts.keepVectors && embeddings[0] ? { [VECTOR_KEY]: embeddings[0] } : {}) }
+          if (bytes(JSON.stringify(metadata)) > 64 * 1024) throw new HmsError('metadata and source whitespace exceed 64 KiB', 'limit_exceeded')
+          return { ...c.input, metadata, embeddings }
+        })
+        for (const input of inputs) await this.memory.memorizeDocument(input)
         return records.map((r) => r.id)
       }),
     )
@@ -367,6 +376,9 @@ export class HmsStore {
     return best.flatMap((r) => {
       const rec = full.get(r.documentId)
       if (!rec) return []
+      if (typeof r.text !== 'string' || Buffer.from(rec.text, 'utf8').subarray(r.startByte, r.endByte).toString('utf8') !== r.text) {
+        throw new HmsError('source changed between ranking and citation assembly; retry the operation', 'concurrent_mutation')
+      }
       const hit: Hit = {
         ...rec,
         score: r.score,
@@ -378,7 +390,7 @@ export class HmsStore {
     })
   }
 
-  /** Reassemble stored records from their passages using byte offsets. */
+  /** Restore the complete source, validating passage coverage and the source digest. */
   private async assemble(sids: string[]): Promise<Map<string, StoredRecord>> {
     const out = new Map<string, StoredRecord>()
     let cursor = 0
@@ -403,12 +415,9 @@ export class HmsStore {
         if (mine.length !== info.chunkCount || mine.some((row) => row.version !== info.version)) {
           throw new HmsError('record changed while reading its passages; retry the operation', 'concurrent_mutation')
         }
-        const parts = mine.filter((r) => r.text != null).sort((a, b) => a.startByte - b.startByte)
-        const total = Math.max(...parts.map((p) => p.endByte))
-        const buf = Buffer.alloc(total)
-        for (const p of parts) buf.write(p.text as string, p.startByte, 'utf8')
         const raw = (mine[0]?.metadata ?? {}) as Metadata
-        const rec: StoredRecord = { id: this.userId(sid), text: buf.toString('utf8'), metadata: this.clean(raw) }
+        const text = restoreSource(raw[SOURCE_KEY], mine)
+        const rec: StoredRecord = { id: this.userId(sid), text, metadata: this.clean(raw) }
         if (Array.isArray(raw[VECTOR_KEY])) rec.vector = raw[VECTOR_KEY] as number[]
         out.set(sid, rec)
       }
