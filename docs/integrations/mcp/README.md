@@ -1,8 +1,8 @@
 # hms-mcp: Holographic Memory as an MCP server
 
-`hms-mcp` exposes a Holographic Memory store to any Model Context Protocol client: Claude Code and Desktop, Cursor, VS Code, Codex, Gemini CLI and the rest (see `docs/integrations/editors/`). It runs on your machine, makes no network calls, and keeps memories in the same document store as `hms-server`.
+`hms-mcp` exposes a Holographic Memory store to Model Context Protocol clients (see `docs/integrations/editors/`). It runs on your machine and keeps memories in the same document store as `hms-server`. Optional remote OAuth mode makes token-introspection requests to the configured authorization server.
 
-Transports: stdio (one client per process) and streamable HTTP (one server, many clients). Protocol: the `initialize` handshake revisions 2025-03-26, 2025-06-18 and 2025-11-25, and the stateless 2026-07-28 form, all served by the official Rust SDK (`rmcp` 3.6).
+Transports: stdio (one client per process) and streamable HTTP (one server, many clients). Protocol: the `initialize` handshake revisions 2025-03-26, 2025-06-18 and 2025-11-25, and the stateless 2026-07-28 form, all served by the official Rust SDK (`rmcp` 3.7). OAuth mode uses stateless routing for every revision.
 
 ## Install and run
 
@@ -125,7 +125,7 @@ does not roll back a committed write; retry with the same ID and content for an 
 HMS_MCP_TOKEN="$(openssl rand -hex 24)" hms-mcp --transport http --bind 127.0.0.1:8765
 ```
 
-- Loopback by default. A non-loopback `--bind` is refused unless `--allow-remote` is given and `HMS_MCP_TOKEN` is set. There is no TLS; put a TLS proxy in front if it leaves the machine.
+- Loopback by default. A non-loopback `--bind` requires `--allow-remote` and static bearer or OAuth authorization. Terminate TLS at a trusted proxy; the listener itself uses HTTP.
 - `HMS_MCP_TOKEN` (at least 16 characters, environment only) requires `Authorization: Bearer <token>` on the MCP endpoint, compared in constant time. `/health` answers `ok` without auth.
 - `Host` must be a loopback name (extend with `--allow-host`) and a request carrying an `Origin` header must match `--allow-origin`; both reject DNS rebinding and cross-site calls with 403. Requests without `Origin` (non-browser clients) pass.
 - Request bodies are capped (`--max-request-bytes`, 1 MiB). HTTP/1.1 connections, request admission, response streams and legacy protocol sessions have separate limits below. Requests above HTTP admission capacity return 503 immediately; excess TCP connections close before parsing.
@@ -163,6 +163,26 @@ reconcile the stored value/version before retrying an unacknowledged mutation. T
 memory/transport bounds, not a durable replay or exactly-once delivery guarantee.
 
 ## Security and logging
+
+Remote OAuth mode is a resource-server profile using an external authorization server. Configure its RFC 8414 discovery, OAuth authorization/code/PKCE/client registration policies and RFC 7662 endpoint there. Set these values through the deployment's secret/configuration mechanism:
+
+```text
+HMS_MCP_TRANSPORT=http
+HMS_MCP_OAUTH_ISSUER=https://identity.example/tenant
+HMS_MCP_OAUTH_RESOURCE=https://memory.example/mcp
+HMS_MCP_OAUTH_INTROSPECTION=https://identity.example/introspect
+HMS_MCP_OAUTH_INTROSPECTION_TOKEN=<resource-server credential>
+HMS_MCP_NAMESPACE=team
+HMS_MCP_ALLOW_HOSTS=memory.example
+```
+
+Do not also set `HMS_MCP_TOKEN`. The public resource path must equal `--path`; OAuth mode requires the global namespace strategy and forbids `--namespace-arg`. The TLS proxy must restrict access to the internal listener and preserve the configured public host. Add allowed browser origins explicitly when needed.
+
+Clients discover the external issuer through `/.well-known/oauth-protected-resource/mcp` and the `WWW-Authenticate` challenge. Each request requires a bearer token whose fresh introspection response has `active:true`, exact `iss`, resource in `aud`, nonempty `sub`, future integer `exp`, `token_type:Bearer`, and exact `hms_namespace:team`. Optional `nbf` and `iat` cannot be in the future. Every operation requires `hms:read`; `remember` and `forget` additionally require `hms:write`. The namespace claim is a deployment extension that the authority must issue from its own authorization policy, never from an unchecked client value.
+
+This profile uses bearer tokens. It rejects sender-constrained `cnf` tokens because it does not verify their proofs. A stolen, still-active bearer token remains usable until expiry/revocation; there is no one-use or exactly-once mutation claim. Requests carrying session IDs are refused, and tokens are never used as session identifiers. Unacknowledged writes still require reconciliation before retrying.
+
+Introspection uses only the administrator-pinned HTTPS issuer origin, with TLS verification, no redirects, proxy, token cache or automatic retries. Eight workers maximum retain admission until their blocking calls finish, even after client cancellation; the HTTP client deadline is five seconds. Token input is at most 8 KiB, responses 16 KiB, and request bodies at most the configured limit (hard maximum 16 MiB). Identity-service failure/overflow returns 503, invalid identity returns 401, and insufficient scope returns 403. The administrator controls the authority's DNS/network trust; clients cannot select outbound URLs. The full requirement and rejection map is in [remote-trust-profiles](../../research/technical-audit-20261029/remote-trust-profiles.md). Runtime validation is deferred under the campaign policy.
 
 stdout carries only protocol (stdio) or the one listening line (http). Logs go to stderr at `--log` level (`warn` default) and contain operation names, durations and error codes, never memory text, queries, ids or the token or passphrase. An internal failure returns a fixed message to the client and the cause to stderr.
 

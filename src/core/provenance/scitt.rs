@@ -1,6 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+pub mod receipt;
+
 use anyhow::{anyhow, Result};
 use coset::{CoseSign1Builder, HeaderBuilder, TaggedCborSerializable};
 use ed25519_dalek::{Signer, SigningKey};
@@ -21,7 +23,8 @@ pub struct SignedStatement {
 }
 
 /// Unverified bytes returned by the experimental transparency-service transport. The service
-/// response is not evidence of inclusion or trust: no RFC 9942 VDS receipt profile is verified.
+/// response is not evidence of inclusion or trust; use [`receipt::verify_receipt`] with
+/// independently provisioned issuer, service and checkpoint policy for that assertion.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UnverifiedReceipt {
     pub entry_id: String,

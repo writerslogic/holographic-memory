@@ -18,6 +18,10 @@ pub const ALL_TOOLS: [&str; 8] = [
     "remember", "recall", "search", "get", "forget", "list", "stats", "export",
 ];
 const WRITE_TOOLS: [&str; 2] = ["remember", "forget"];
+
+pub fn requires_write(name: &str) -> bool {
+    WRITE_TOOLS.contains(&name)
+}
 const LIST_PREVIEW_CHARS: usize = 240;
 
 /// Which tools are exposed and how namespaces are chosen.

@@ -56,7 +56,7 @@ pub struct Cli {
         value_delimiter = ','
     )]
     pub allow_origins: Vec<String>,
-    /// Permit binding a non-loopback address (requires `HMS_MCP_TOKEN`).
+    /// Permit binding a non-loopback address (requires static bearer or OAuth authorization).
     #[arg(long, env = "HMS_MCP_ALLOW_REMOTE")]
     pub allow_remote: bool,
     /// Largest HTTP request body or stdin JSON-RPC line (line ending included).
@@ -64,6 +64,8 @@ pub struct Cli {
     pub max_request_bytes: usize,
     #[command(flatten)]
     pub http: crate::http_server::HttpLimits,
+    #[command(flatten)]
+    pub oauth: crate::oauth::Options,
 
     /// Root directory for stores. Default: the platform data directory, `hms-mcp` inside it.
     #[arg(long, env = "HMS_MCP_DATA_DIR")]
@@ -211,8 +213,8 @@ impl Cli {
         if self.max_metadata_bytes == 0 || self.max_export_bytes < 1024 {
             bail!("--max-metadata-bytes must be positive and --max-export-bytes at least 1024");
         }
-        if self.max_request_bytes < 1024 {
-            bail!("--max-request-bytes must be at least 1024");
+        if !(1024..=16 << 20).contains(&self.max_request_bytes) {
+            bail!("--max-request-bytes must be 1024..=16777216");
         }
         if self.encrypt {
             if !cfg!(feature = "security") {
@@ -229,12 +231,15 @@ impl Cli {
         if self.transport == Transport::Http {
             let loopback = self.bind.ip().is_loopback();
             let token = http_token()?.is_some();
-            if !(loopback || (self.allow_remote && token)) {
+            self.oauth.validate(self, token)?;
+            if !(loopback || (self.allow_remote && (token || self.oauth.enabled()))) {
                 bail!(
-                    "binding {} needs --allow-remote and HMS_MCP_TOKEN set",
+                    "binding {} needs --allow-remote and static bearer or OAuth authorization",
                     self.bind
                 );
             }
+        } else if self.oauth.enabled() {
+            bail!("OAuth is only supported on the HTTP transport");
         }
         Ok(())
     }

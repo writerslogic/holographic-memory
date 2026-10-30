@@ -34,7 +34,7 @@ pub fn sign_payload(signing_key: &SigningKey, payload: &[u8]) -> Result<Vec<u8>>
 pub(crate) fn decode_sign1(bytes: &[u8]) -> Result<CoseSign1> {
     anyhow::ensure!(bytes.len() <= 16 << 20, "COSE envelope exceeds size limit");
     let mut cursor = std::io::Cursor::new(bytes);
-    let value: ciborium::Value = ciborium::from_reader(&mut cursor)?;
+    let value: ciborium::Value = ciborium::de::from_reader_with_recursion_limit(&mut cursor, 32)?;
     anyhow::ensure!(
         cursor.position() == bytes.len() as u64,
         "trailing bytes after COSE envelope"
@@ -54,7 +54,7 @@ pub(crate) fn decode_sign1(bytes: &[u8]) -> Result<CoseSign1> {
         ciborium::Value::Map(Vec::new())
     } else {
         let mut cursor = std::io::Cursor::new(raw);
-        let headers = ciborium::from_reader(&mut cursor)?;
+        let headers = ciborium::de::from_reader_with_recursion_limit(&mut cursor, 32)?;
         anyhow::ensure!(
             cursor.position() == raw.len() as u64,
             "trailing protected header bytes"
