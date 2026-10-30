@@ -1,0 +1,71 @@
+{
+  "failed_revision": "8933b40b206065fd6fc608aef6568dc51fb99ee4",
+  "failed_run": "https://github.com/writerslogic/holographic-memory/actions/runs/41016707483/job/123934568733",
+  "observation": "Java StoreTest started at 06:56:45 UTC and did not finish before cancellation at 07:20:59 on 2026-10-30. Earlier identical production code passed this ARM job in 14 seconds. The canceled run does not count as validation.",
+  "diagnosis": "Unresolved from original logs: method names and thread stacks were absent. Native/Java lock and ownership paths inspected; no demonstrated root cause. No production change is attributed to this observation.",
+  "diagnostics": "Each Java test reports its name, fails after 30 seconds on a separate test thread with all Java thread stacks, and the Surefire fork is killed after 120 seconds. The original eight-reader/writer workload repeats 20 times per gate; no retry-on-failure.",
+  "local": [
+    {
+      "command": "CARGO_TARGET_DIR=/Volumes/A/holographic-memory/target CARGO_BUILD_JOBS=4 CARGO_PROFILE_RELEASE_LTO=false cargo build --offline --manifest-path bindings/c/Cargo.toml --release",
+      "result": "pass",
+      "log": "target/campaign-c-build.log"
+    },
+    {
+      "command": "JDK25 javac --release 22 with JUnit console standalone1.11.4; java --enable-native-access=ALL-UNNAMED -Dhms.library.path=/Volumes/A/holographic-memory/target/release -jar target/campaign-junit.jar execute --class-path target/campaign-java/classes --select-class com.writerslogic.holographicmemory.StoreTest --details verbose --disable-ansi-colors",
+      "result": "original11tests pass; bounded strengthened30tests pass with RAYON_NUM_THREADS=2 and -XX:ActiveProcessorCount=2",
+      "logs": [
+        "target/campaign-java-run.log",
+        "target/campaign-java-diagnostic-suite.log"
+      ]
+    },
+    {
+      "command": "RAYON_NUM_THREADS=2 java --enable-native-access=ALL-UNNAMED -XX:ActiveProcessorCount=2 -Dhms.library.path=/Volumes/A/holographic-memory/target/release -cp target/campaign-junit.jar:target/campaign-java/classes com.writerslogic.holographicmemory.RepeatConcurrency",
+      "result": "100iterations of original8threads x25queries +24writes completed; 30-second watchdog not reached",
+      "log": "target/campaign-java-concurrency.log"
+    }
+  ],
+  "environment": {
+    "os": "Darwin arm64",
+    "jdk": "Temurin25.0.5+8",
+    "jdk_archive_sha256": "36dc14d797aaff6d89aab302cd053fdba6207dfdcf772052fa7b023a94b0e857",
+    "junit_sha256": "b016ef6b1c3454d6d7c2c88ce081dabf289699686af6622d6e4e2e1b54b4a2fc",
+    "native_sha256": "54f6a31bbc45e18864b2a05ac6bc54c03f3a0782f75f15f6890b8f8edf15b137"
+  },
+  "archive": "java-diagnostics.tar.gz",
+  "archive_sha256": "e127a04ca8eacbf1357837a22645dceb6599ab56eedaddd14e839f480d31b02c",
+  "files": {
+    "target/campaign-arm-job.log": {
+      "sha256": "9d38d39c6c7acd71e7b984871e65de0f3efa9f4bd3e343fce1f58bc54510c535",
+      "bytes": 144975
+    },
+    "target/campaign-c-build.log": {
+      "sha256": "a538333fd5788b0c3769019bd73479fbdb56099332c70688830e583c7b914c26",
+      "bytes": 3041
+    },
+    "target/campaign-java-run.log": {
+      "sha256": "22e2f4eaa4cedc7d160849790a5d4fa31a4da550d50104ae73fa69f4d41d0641",
+      "bytes": 6768
+    },
+    "target/campaign-java-concurrency.log": {
+      "sha256": "269bc70f41dd95765001f68ca3eb8880d8dc070a29c775faa9af5da0daae572b",
+      "bytes": 1290
+    },
+    "target/campaign-java-diagnostic-suite.log": {
+      "sha256": "381d53394b2a7b6675eae6ef7eaca7133b1c3901b923c565db0f5acf1f1d39bc",
+      "bytes": 22694
+    },
+    "target/campaign-java/RepeatConcurrency.java": {
+      "sha256": "0a2fdc5288c5462ffc41679cabf890cac6fa21487ce6e4ff3a2486415bced6fd",
+      "bytes": 1077
+    },
+    "bindings/c/Cargo.lock": {
+      "sha256": "f628df65c862dfc8168adfa514ce4c534f22de6f80f9e9bcc56627a2b13559dc",
+      "bytes": 26316
+    },
+    "target/campaign-jdk-metadata.json": {
+      "sha256": "d0349e2496b64fadf4831093060ab8dbccf5302e0c5bf67f0c1a2515f301952d",
+      "bytes": 2718
+    }
+  },
+  "acceptance": "Latest PR head must pass all normal gates, including the strengthened Java gate on Linux ARM. A repeat failure requires its stacks to be diagnosed before merge; a pass does not establish the cause of the prior stall."
+}

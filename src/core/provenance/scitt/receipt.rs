@@ -40,7 +40,7 @@ impl VerifiedReceipt {
     }
 }
 
-fn value_at<'a>(headers: &'a [(coset::Label, Value)], label: i64) -> Result<&'a Value> {
+fn value_at(headers: &[(coset::Label, Value)], label: i64) -> Result<&Value> {
     let mut values = headers
         .iter()
         .filter(|(k, _)| *k == coset::Label::Int(label));
@@ -83,7 +83,7 @@ pub fn verify_receipt(
         "checkpoint is not current"
     );
     ensure!(
-        receipt.receipt_bytes.len() <= 4096,
+        receipt.receipt_bytes.len() <= 8192,
         "receipt exceeds size limit"
     );
     ensure!(
@@ -93,7 +93,7 @@ pub fn verify_receipt(
     );
     ensure!(
         !policy.subject.is_empty()
-            && policy.subject.len() <= 1024
+            && policy.subject.len() <= 4096
             && !policy.service_issuer.is_empty()
             && policy.service_issuer.len() <= 1024,
         "invalid identity"
@@ -304,7 +304,9 @@ mod tests {
         }
     }
 
-    fn fixture() -> (
+    fn fixture(
+        subject: &str,
+    ) -> (
         SignedStatement,
         UnverifiedReceipt,
         SigningKey,
@@ -316,7 +318,7 @@ mod tests {
         let statement = super::super::create_signed_statement(
             &issuer,
             &super::super::FactClaim {
-                fact_id: "fact".into(),
+                fact_id: subject.into(),
                 content_hash: vec![1; 32],
                 timestamp_ms: 1,
                 source_uri: None,
@@ -343,7 +345,7 @@ mod tests {
                 15,
                 Value::Map(vec![
                     (Value::Integer(1.into()), Value::Text("service".into())),
-                    (Value::Integer(2.into()), Value::Text("fact".into())),
+                    (Value::Integer(2.into()), Value::Text(subject.into())),
                 ]),
             )
             .build();
@@ -370,8 +372,36 @@ mod tests {
     }
 
     #[test]
+    fn generated_subject_boundaries_are_supported_by_receipt_verification() {
+        for length in [1023, 1024, 1025, 4095, 4096] {
+            let subject = "s".repeat(length);
+            let (statement, receipt, issuer, service, root) = fixture(&subject);
+            let ik = issuer.verifying_key();
+            let sk = service.verifying_key();
+            let it = TrustStore::trusting_key(&ik);
+            let st = TrustStore::trusting_key(&sk);
+            let policy = ReceiptPolicy {
+                issuer_key: &ik,
+                issuer_trust: &it,
+                service_key: &sk,
+                service_trust: &st,
+                service_issuer: "service",
+                subject: &subject,
+                current_root: root,
+                checkpoint_not_before_ms: 1,
+                checkpoint_valid_until_ms: 3,
+                now_ms: 2,
+            };
+            assert!(
+                verify_receipt(&statement, &receipt, &policy).is_ok(),
+                "length {length}"
+            );
+        }
+    }
+
+    #[test]
     fn pinned_receipt_requires_both_trust_and_current_checkpoint() {
-        let (statement, mut receipt, issuer, service, root) = fixture();
+        let (statement, mut receipt, issuer, service, root) = fixture("fact");
         let ik = issuer.verifying_key();
         let sk = service.verifying_key();
         let it = TrustStore::trusting_key(&ik);
@@ -443,7 +473,7 @@ mod tests {
         receipt.receipt_bytes[last] ^= 1;
         assert!(verify_receipt(&statement, &receipt, &policy).is_err());
         receipt.receipt_bytes = original;
-        receipt.receipt_bytes.resize(4097, 0);
+        receipt.receipt_bytes.resize(8193, 0);
         assert!(verify_receipt(&statement, &receipt, &policy).is_err());
         receipt.receipt_bytes.truncate(12);
         assert!(verify_receipt(&statement, &receipt, &policy).is_err());

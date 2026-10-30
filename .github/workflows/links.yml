@@ -15,8 +15,6 @@ permissions:
 
 jobs:
   external-links:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

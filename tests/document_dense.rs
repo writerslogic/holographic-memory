@@ -73,7 +73,7 @@ fn trained_document_backend_preserves_hybrid_fields_and_filtered_results() -> Re
 }
 
 #[test]
-fn mutation_and_restart_rebuild_the_document_cache_without_stale_results() -> Result<()> {
+fn mutation_deltas_and_restart_preserve_results_before_and_after_explicit_rebuild() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
     let core = HmsCore::new(1024, Some(path.clone()), Some(config(8)))?;
@@ -89,6 +89,9 @@ fn mutation_and_restart_rebuild_the_document_cache_without_stale_results() -> Re
     assert_eq!(core.document_embedding_count(), 254);
     let expected = queries(&core)?;
     core.maintain_indices()?;
+    assert!(!core.document_index_trained());
+    assert_eq!(queries(&core)?, expected);
+    core.train_document_index()?;
     assert!(core.document_index_trained());
     assert_eq!(queries(&core)?, expected);
     core.compact()?;

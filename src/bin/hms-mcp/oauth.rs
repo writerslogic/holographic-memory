@@ -107,6 +107,17 @@ pub struct Authority {
 }
 
 impl Authority {
+    fn agent() -> ureq::Agent {
+        ureq::Agent::new_with_config(
+            ureq::Agent::config_builder()
+                .https_only(true)
+                .proxy(None)
+                .max_redirects(0)
+                .timeout_global(Some(Duration::from_secs(5)))
+                .build(),
+        )
+    }
+
     #[cfg(test)]
     pub(super) fn for_test(endpoint: String) -> Arc<Self> {
         Arc::new(Self {
@@ -153,14 +164,7 @@ impl Authority {
             endpoint: cli.oauth.oauth_introspection.clone().unwrap(),
             credential,
             namespace: cli.namespace.clone(),
-            agent: ureq::Agent::new_with_config(
-                ureq::Agent::config_builder()
-                    .https_only(true)
-                    .proxy(None)
-                    .max_redirects(0)
-                    .timeout_global(Some(Duration::from_secs(5)))
-                    .build(),
-            ),
+            agent: Self::agent(),
             slots: Arc::new(Semaphore::new(8)),
             max_body: cli.max_request_bytes,
             metadata_path,
@@ -296,7 +300,7 @@ impl Introspection {
                 .sub
                 .as_ref()
                 .is_some_and(|s| !s.is_empty() && s.len() <= 1024)
-            || !self.exp.is_some_and(|t| t > now)
+            || self.exp.is_none_or(|t| t <= now)
             || self.nbf.is_some_and(|t| t > now)
             || self.iat.is_some_and(|t| t > now)
             || !self
@@ -314,7 +318,7 @@ impl Introspection {
         if scope.len() > 2048
             || !scope
                 .bytes()
-                .all(|b| b == b' ' || (b >= 0x21 && b <= 0x7e && b != b'"' && b != b'\\'))
+                .all(|b| b == b' ' || ((0x21..=0x7e).contains(&b) && b != b'"' && b != b'\\'))
         {
             return Decision::Invalid;
         }
@@ -406,6 +410,110 @@ pub async fn authorize(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn production_introspection_client_rejects_plaintext_endpoints() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut authority = Authority::for_test(format!(
+            "http://{}/introspect",
+            listener.local_addr().unwrap()
+        ));
+        Arc::get_mut(&mut authority).unwrap().agent = Authority::agent();
+        assert!(authority.check("access-token".into()).await.is_err());
+        assert!(
+            tokio::time::timeout(Duration::from_millis(100), listener.accept())
+                .await
+                .is_err()
+        );
+    }
+
+    #[cfg(feature = "server")]
+    #[tokio::test]
+    async fn production_introspection_client_rejects_untrusted_tls_peers() {
+        let signed = rcgen::generate_simple_self_signed(vec!["127.0.0.1".into()]).unwrap();
+        let config = rustls::ServerConfig::builder_with_provider(Arc::new(
+            rustls::crypto::ring::default_provider(),
+        ))
+        .with_safe_default_protocol_versions()
+        .unwrap()
+        .with_no_client_auth()
+        .with_single_cert(
+            vec![signed.cert.der().clone()],
+            rustls::pki_types::PrivatePkcs8KeyDer::from(signed.signing_key.serialize_der()).into(),
+        )
+        .unwrap();
+        let acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(config));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut authority = Authority::for_test(format!(
+            "https://{}/introspect",
+            listener.local_addr().unwrap()
+        ));
+        Arc::get_mut(&mut authority).unwrap().agent = Authority::agent();
+        let peer = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            assert!(acceptor.accept(stream).await.is_err());
+        });
+        assert!(authority.check("access-token".into()).await.is_err());
+        tokio::time::timeout(Duration::from_secs(2), peer)
+            .await
+            .unwrap()
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn introspection_does_not_follow_redirects_or_retry_failures() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let redirected = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let authority = Authority::for_test(format!(
+            "http://{}/introspect",
+            listener.local_addr().unwrap()
+        ));
+        let destination = redirected.local_addr().unwrap();
+        let peer = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0; 8192];
+            assert!(stream.read(&mut request).await.unwrap() > 0);
+            stream.write_all(format!("HTTP/1.1 307 Temporary Redirect\r\nLocation: http://{destination}/stolen\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").as_bytes()).await.unwrap();
+            drop(stream);
+            assert!(
+                tokio::time::timeout(Duration::from_millis(100), listener.accept())
+                    .await
+                    .is_err()
+            );
+        });
+        assert!(authority.check("access-token".into()).await.is_err());
+        peer.await.unwrap();
+        assert!(
+            tokio::time::timeout(Duration::from_millis(100), redirected.accept())
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn timed_out_introspection_releases_its_worker_permit() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let authority = Authority::for_test(format!(
+            "http://{}/introspect",
+            listener.local_addr().unwrap()
+        ));
+        let checking = tokio::spawn({
+            let authority = authority.clone();
+            async move { authority.check("access-token".into()).await }
+        });
+        let (stream, _) = tokio::time::timeout(Duration::from_secs(2), listener.accept())
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(tokio::time::timeout(Duration::from_secs(2), checking)
+            .await
+            .unwrap()
+            .unwrap()
+            .is_err());
+        assert_eq!(authority.slots.available_permits(), 8);
+        drop(stream);
+    }
 
     #[tokio::test]
     async fn cancelled_introspection_retains_admission_until_blocking_workers_exit() {

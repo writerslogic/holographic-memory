@@ -1,0 +1,49 @@
+{
+  "checkpoint_not_before_ms": 1000,
+  "checkpoint_valid_until_ms": 3000,
+  "current_root": "i66/lG+V/TrarzbG99/rWpHb9Gw85eRInX9RGQ799PM=",
+  "implementations": {
+    "base58": "2.1.1",
+    "cbor2": "5.9.0",
+    "cryptography": "47.0.0"
+  },
+  "issuer_public": "Zr5+Myx6RTMyvZ0Kf32wVfXF7xoGraZtmLOftoEMRzo=",
+  "now_ms": 2000,
+  "profile": "HMS RFC9942 VDS1 detached Ed25519; independently encoded and signed in Python",
+  "service_issuer": "https://transparency.fixture.invalid",
+  "service_public": "C1E62bSSQBXKCQLtB5BE06xdvsIwbwaUjBDajrbjny0=",
+  "statement": "0oRYh6QBJwNwYXBwbGljYXRpb24vY2JvcgRYIGa+fjMsekUzMr2dCn99sFX1xe8aBq2mbZizn7aBDEc6D6IBeDhkaWQ6a2V5Ono2TWttTkw2eGtzZEVKRU5HazlaMXFxR3NZNW5qS1FkalUxVWhuVUVVdld5UVVWWAJwaW5kZXBlbmRlbnQtZmFjdKBYjqVnZmFjdF9pZHBpbmRlcGVuZGVudC1mYWN0aHN0b3JlX2lk9mpzb3VyY2VfdXJpeB5maXh0dXJlOnRyYW5zY3JpcHQvaW5kZXBlbmRlbnRsY29udGVudF9oYXNoWCCcfJM43D5dADA/SUL+3OrGrLodjs+TFJky05VAe17/32x0aW1lc3RhbXBfbXMZA+hYQAropmKes33HVMHUshbtKE0tad2stTMmP4J30Tl5zUmmPGTs+LRrOHuRvH3hameXhO853OnnqVB6o5g/xe8DQQ4=",
+  "subject": "independent-fact",
+  "vectors": [
+    {
+      "name": "valid",
+      "receipt": "0oRYZaQBJwRYIAtROtm0kkAVygkC7QeQRNOsXb7CMG8GlIwQ2o62458tD6IBeCRodHRwczovL3RyYW5zcGFyZW5jeS5maXh0dXJlLmludmFsaWQCcGluZGVwZW5kZW50LWZhY3QZAYsBoRkBjKEggVgmgwIAgVggM95YxHz27ASs9GqPtwR0Ire5isdqyT/r0R/sf46B0p72WECCRRr+a9OmEiI8FtTbnkWPGKcOKebC0Nppq9M2PmKhycXXigs/5bfvIT9eqIyWETldNVsjm3QvXjeOWt/mLQ8D",
+      "valid": true
+    },
+    {
+      "name": "wrong-signature",
+      "receipt": "0oRYZaQBJwRYIAtROtm0kkAVygkC7QeQRNOsXb7CMG8GlIwQ2o62458tD6IBeCRodHRwczovL3RyYW5zcGFyZW5jeS5maXh0dXJlLmludmFsaWQCcGluZGVwZW5kZW50LWZhY3QZAYsBoRkBjKEggVgmgwIAgVggM95YxHz27ASs9GqPtwR0Ire5isdqyT/r0R/sf46B0p72WECCRRr+a9OmEiI8FtTbnkWPGKcOKebC0Nppq9M2PmKhycXXigs/5bfvIT9eqIyWETldNVsjm3QvXjeOWt/mLQ8C",
+      "valid": false
+    },
+    {
+      "name": "wrong-identity",
+      "receipt": "0oRYXqQBJwRYIAtROtm0kkAVygkC7QeQRNOsXb7CMG8GlIwQ2o62458tD6IBeB1odHRwczovL3dyb25nLmZpeHR1cmUuaW52YWxpZAJwaW5kZXBlbmRlbnQtZmFjdBkBiwGhGQGMoSCBWCaDAgCBWCAz3ljEfPbsBKz0ao+3BHQit7mKx2rJP+vRH+x/joHSnvZYQPKR7wWNoD3hzTrYqY4IGYizC0Av8mSuvFkjmwXRAsaoEzSTBbeN7Y3pZYuSSig5OBJPBp/9LkiBEjnI8yUV7Q8=",
+      "valid": false
+    },
+    {
+      "name": "wrong-proof",
+      "receipt": "0oRYZaQBJwRYIAtROtm0kkAVygkC7QeQRNOsXb7CMG8GlIwQ2o62458tD6IBeCRodHRwczovL3RyYW5zcGFyZW5jeS5maXh0dXJlLmludmFsaWQCcGluZGVwZW5kZW50LWZhY3QZAYsBoRkBjKEggVgmgwIAgVggAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2WECCRRr+a9OmEiI8FtTbnkWPGKcOKebC0Nppq9M2PmKhycXXigs/5bfvIT9eqIyWETldNVsjm3QvXjeOWt/mLQ8D",
+      "valid": false
+    },
+    {
+      "name": "attached-payload",
+      "receipt": "0oRYZaQBJwRYIAtROtm0kkAVygkC7QeQRNOsXb7CMG8GlIwQ2o62458tD6IBeCRodHRwczovL3RyYW5zcGFyZW5jeS5maXh0dXJlLmludmFsaWQCcGluZGVwZW5kZW50LWZhY3QZAYsBoRkBjKEggVgmgwIAgVggM95YxHz27ASs9GqPtwR0Ire5isdqyT/r0R/sf46B0p5YIIuuv5Rvlf062q82xvff61qR2/RsPOXkSJ1/URkO/fTzWECCRRr+a9OmEiI8FtTbnkWPGKcOKebC0Nppq9M2PmKhycXXigs/5bfvIT9eqIyWETldNVsjm3QvXjeOWt/mLQ8D",
+      "valid": false
+    },
+    {
+      "name": "truncated",
+      "receipt": "0oRYZaQBJwRYIAtR",
+      "valid": false
+    }
+  ]
+}

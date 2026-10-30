@@ -132,6 +132,10 @@ struct Admission {
 }
 
 async fn admit(State(state): State<Admission>, request: Request, next: Next) -> Response {
+    let http1 = matches!(
+        request.version(),
+        axum::http::Version::HTTP_10 | axum::http::Version::HTTP_11
+    );
     let Ok(permit) = state.slots.clone().try_acquire_owned() else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -152,7 +156,14 @@ async fn admit(State(state): State<Admission>, request: Request, next: Next) -> 
         ) => response,
     };
     match response {
-        Ok(response) => {
+        Ok(mut response) => {
+            if http1 && response.status() == StatusCode::PAYLOAD_TOO_LARGE {
+                // A size rejection can leave unread request bytes; clients must not reuse it.
+                response.headers_mut().insert(
+                    axum::http::header::CONNECTION,
+                    axum::http::HeaderValue::from_static("close"),
+                );
+            }
             let (parts, body) = response.into_parts();
             Response::from_parts(
                 parts,
@@ -637,6 +648,46 @@ mod tests {
             .unwrap()
             .unwrap();
         String::from_utf8(response).unwrap()
+    }
+
+    #[tokio::test]
+    async fn oversized_request_advertises_connection_close_before_eof() {
+        let mut cli = config::Cli::parse_from(["hms-mcp"]);
+        cli.max_request_bytes = 1024;
+        let sessions = session::BoundedSessions::new(cli.http.session_limits());
+        let cancel = CancellationToken::new();
+        let app = app(&cli, Ping, sessions.clone(), cancel.clone(), None, None);
+        let (address, shutdown, task) = start(app, cli.http, cancel).await;
+        let initialize = r#"{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}"#;
+        for size in [1023, 1024] {
+            let body = format!("{initialize}{}", " ".repeat(size - initialize.len()));
+            let response = mcp_request(address, "POST", None, &body).await;
+            assert!(response.starts_with("HTTP/1.1 200"), "{response}");
+        }
+        let body = format!("{initialize}{}", " ".repeat(1025 - initialize.len()));
+        let mut connection = TcpStream::connect(address).await.unwrap();
+        connection.write_all(format!("POST /mcp HTTP/1.1\r\nHost: localhost\r\nAccept: application/json, text/event-stream\r\nContent-Type: application/json\r\nContent-Length: 1025\r\n\r\n{body}").as_bytes()).await.unwrap();
+        let mut response = Vec::new();
+        tokio::time::timeout(
+            Duration::from_secs(2),
+            connection.read_to_end(&mut response),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        let response = String::from_utf8(response).unwrap();
+        assert!(response.starts_with("HTTP/1.1 413"), "{response}");
+        assert!(
+            response
+                .lines()
+                .any(|line| line.eq_ignore_ascii_case("connection: close")),
+            "{response}"
+        );
+        assert!(request(address, "/health")
+            .await
+            .starts_with(b"HTTP/1.1 200"));
+        stop(shutdown, task).await;
+        sessions.shutdown().await;
     }
 
     #[tokio::test]

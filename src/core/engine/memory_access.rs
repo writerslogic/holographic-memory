@@ -80,7 +80,8 @@ impl HmsCore {
     ) -> Result<u64> {
         let _transaction = self.mutation_gate.read();
         let revision = self.revision();
-        let store = self.documents();
+        self.hydrate_documents()?;
+        let store = self.documents.read();
         let mut visit_document =
             |document: std::sync::Arc<crate::core::documents::StoredDocument>| {
                 let text = || {
@@ -173,7 +174,8 @@ mod tests {
 
     #[test]
     fn fallible_scoped_scan_stops_at_the_first_error() -> Result<()> {
-        let core = HmsCore::new(256, None, None)?;
+        let directory = tempfile::tempdir()?;
+        let core = HmsCore::new(256, Some(directory.path().display().to_string()), None)?;
         for id in ["a", "b", "c"] {
             core.memorize_document(serde_json::from_value(
                 serde_json::json!({"id": id, "text": "evidence"}),

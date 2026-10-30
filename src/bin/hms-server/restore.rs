@@ -27,7 +27,22 @@ pub struct Restore {
     intent: Intent,
 }
 
-pub fn lock_tenant(root: &Path, name: &str) -> Result<File> {
+pub struct TenantLock(File);
+
+impl Drop for TenantLock {
+    fn drop(&mut self) {
+        // Closing alone can leave a concurrent fork's descriptor holding the lock.
+        if let Err(error) = self.0.unlock() {
+            crate::log::emit(
+                crate::config::LogLevel::Warn,
+                "tenant_lock_release_failed",
+                &[("error", error.to_string().into())],
+            );
+        }
+    }
+}
+
+pub fn lock_tenant(root: &Path, name: &str) -> Result<TenantLock> {
     let locks = root.join("tenant-locks");
     std::fs::create_dir_all(&locks)?;
     ensure!(directory(&locks)?, "missing tenant ownership directory");
@@ -41,7 +56,7 @@ pub fn lock_tenant(root: &Path, name: &str) -> Result<File> {
     let file = options.open(locks.join(format!("{name}.owner")))?;
     file.try_lock()
         .context("tenant is owned by another server")?;
-    Ok(file)
+    Ok(TenantLock(file))
 }
 
 fn directory(path: &Path) -> Result<bool> {
@@ -276,8 +291,10 @@ mod tests {
         let first = lock_tenant(root.path(), "tenant")?;
         std::fs::rename(root.path().join("live"), root.path().join("backup"))?;
         assert!(lock_tenant(root.path(), "tenant").is_err());
+        let inherited = first.0.try_clone()?;
         drop(first);
         lock_tenant(root.path(), "tenant")?;
+        drop(inherited);
         Ok(())
     }
 }

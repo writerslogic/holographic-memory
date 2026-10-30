@@ -81,7 +81,7 @@ pub struct CompactionStatus {
 pub struct Tenant {
     pub name: String,
     pub dir: PathBuf,
-    _ownership: std::fs::File,
+    _ownership: crate::restore::TenantLock,
     core: Arc<RwLock<Option<Open>>>,
     last_used_ms: AtomicU64,
     /// Bumped by every committed change made through this server; feeds ETags and compaction.

@@ -31,8 +31,6 @@ permissions:
 
 jobs:
   lint:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: lint (fmt, clippy)
     runs-on: ubuntu-latest
     steps:
@@ -61,8 +59,6 @@ jobs:
         run: bash scripts/check-generated.sh
 
   features:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: clippy (${{ matrix.features }})
     runs-on: ubuntu-latest
     strategy:
@@ -85,8 +81,6 @@ jobs:
         run: cargo clippy --locked --all-targets --features ${{ matrix.features }} -- -D warnings
 
   docs-rs:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: docs (rustdoc, warnings denied)
     runs-on: ubuntu-latest
     steps:
@@ -106,8 +100,6 @@ jobs:
           RUSTDOCFLAGS: -D warnings
 
   test:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: test (${{ matrix.set }})
     runs-on: ubuntu-latest
     env:
@@ -143,8 +135,6 @@ jobs:
         run: cargo test --locked --doc ${{ matrix.flags }}
 
   test-windows:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: test (windows-latest)
     runs-on: windows-latest
     env:
@@ -170,8 +160,6 @@ jobs:
         run: cargo nextest run --locked --no-fail-fast
 
   bench-build:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: benchmarks compile
     runs-on: ubuntu-latest
     env:
@@ -192,8 +180,6 @@ jobs:
       - run: cargo bench --locked --no-run --no-default-features
 
   deny:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -204,8 +190,6 @@ jobs:
           command: check advisories bans licenses sources
 
   msrv:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: msrv (1.89)
     runs-on: ubuntu-latest
     steps:
@@ -222,8 +206,6 @@ jobs:
       - run: cargo check --locked --no-default-features
 
   retrieval-quality:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -242,8 +224,6 @@ jobs:
         run: cargo run --locked --release --bin hms-eval -- --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
 
   python-sdk:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: python sdk (live server)
     runs-on: ubuntu-latest
     steps:
@@ -270,8 +250,6 @@ jobs:
           uv run --no-project --with 'httpx>=0.27' --with 'sniffio>=1.3' --with orjson --with pytest pytest -q -rs tests/test_client.py tests/test_transport.py tests/test_live_server.py
 
   node:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: node (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     env:
@@ -305,6 +283,12 @@ jobs:
         run: npm run test:types
       - name: Test packed distribution
         run: npm run test:package
+      - name: Test framework adapters against the native binding
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm ci --ignore-scripts --prefix integrations/js
+          npm run build --prefix integrations/js
+          npm test --prefix integrations/js
       - name: Test optional local embedding addon with synthetic offline weights
         if: matrix.os == 'ubuntu-latest'
         shell: bash
@@ -313,8 +297,6 @@ jobs:
           HMS_EMBED_ADDON="$PWD/target/node-embed/holographic-memory.node" node --test tests/node/embedding-limits.test.cjs
 
   workflows:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: workflow lint and pins
     runs-on: ubuntu-latest
     permissions:
@@ -334,11 +316,9 @@ jobs:
         run: uvx 'zizmor==1.31.1' --min-severity medium --format plain .github/workflows
 
   check:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: check
-    # campaign-original-if: always()
-    needs: [lint, features, docs-rs, test, bench-build, deny, msrv, retrieval-quality, python-sdk, node, workflows]
+    if: always()
+    needs: [lint, features, docs-rs, test, test-windows, bench-build, deny, msrv, retrieval-quality, python-sdk, node, workflows]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded

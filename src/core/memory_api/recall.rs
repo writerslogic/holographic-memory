@@ -327,12 +327,14 @@ impl Memory {
     ) -> Result<(Option<Run>, bool)> {
         let revision = self.core.revision();
         let now = options.as_of.unwrap_or_else(|| self.clock.now_millis());
+        use crate::core::query_limits::{QueryBudget, QueryLimits};
+        let mut budget = QueryBudget::new(QueryLimits::default());
         let (indexed, constrained, restrict) = {
             let index = self.index.read();
             (
                 index.revision,
                 index.constrained(),
-                self.restriction(&index, options),
+                Self::restriction(&index, options, &mut budget)?,
             )
         };
         let indexed = indexed == Some(revision);
@@ -345,15 +347,7 @@ impl Memory {
             return Ok((None, indexed));
         }
         if needs_status && (history != HistoryMode::All || options.known_at.is_some()) {
-            use crate::core::query_limits::{QueryBudget, QueryLimits};
-            let mut budget = QueryBudget::new(QueryLimits::default());
             let edges = self.index.read().capture_edges(&mut budget)?;
-            if let Some(ids) = &restrict {
-                budget.work(ids.len())?;
-                for id in ids {
-                    budget.reserve(id.len().saturating_add(256))?;
-                }
-            }
             let scope = restrict
                 .take()
                 .map(|ids| ids.into_iter().collect::<BTreeSet<_>>());
@@ -490,22 +484,55 @@ impl Memory {
     }
 
     /// Ids a subject or entity filter limits recall to; none when unrestricted.
-    fn restriction(&self, index: &Index, options: &RecallOptions) -> Option<Vec<String>> {
-        let mut allowed: Option<BTreeSet<String>> = None;
+    fn restriction(
+        index: &Index,
+        options: &RecallOptions,
+        budget: &mut crate::core::query_limits::QueryBudget,
+    ) -> Result<Option<Vec<String>>> {
+        let mut allowed: Option<BTreeSet<&str>> = None;
         if let Some(subject) = &options.subject {
-            allowed = Some(index.subject_ids(subject.trim()).into_iter().collect());
+            let mut ids = BTreeSet::new();
+            for id in index.subject_id_refs(subject.trim()) {
+                budget.work(1)?;
+                if !ids.contains(id) {
+                    budget.reserve(64)?;
+                    ids.insert(id);
+                }
+            }
+            allowed = Some(ids);
         }
         if let Some(entities) = &options.entities {
             let mut union = BTreeSet::new();
             for entity in entities {
-                union.extend(index.entity_ids(entity.trim()).iter().cloned());
+                budget.work(1)?;
+                for id in index.entity_ids(entity.trim()) {
+                    budget.work(1)?;
+                    if !union.contains(id.as_str()) {
+                        budget.reserve(64)?;
+                        union.insert(id.as_str());
+                    }
+                }
             }
             allowed = Some(match allowed {
-                Some(existing) => existing.intersection(&union).cloned().collect(),
+                Some(mut existing) => {
+                    budget.work(existing.len())?;
+                    existing.retain(|id| union.contains(id));
+                    existing
+                }
                 None => union,
             });
         }
-        allowed.map(|ids| ids.into_iter().collect())
+        allowed
+            .map(|ids| {
+                let mut owned = Vec::new();
+                for id in ids {
+                    budget.work(1)?;
+                    budget.reserve(id.len().saturating_add(256))?;
+                    owned.push(id.to_owned());
+                }
+                Ok(owned)
+            })
+            .transpose()
     }
 
     fn recalled(
@@ -617,4 +644,67 @@ fn index_predecessors(index: &Index, id: &str, stamped: &[String]) -> Vec<String
     let mut ids: BTreeSet<String> = stamped.iter().cloned().collect();
     ids.extend(index.direct_predecessors(id).iter().cloned());
     ids.into_iter().collect()
+}
+
+#[cfg(test)]
+mod scope_budget_tests {
+    use super::*;
+    use crate::core::query_limits::{QueryBudget, QueryLimitExceeded, QueryLimits};
+
+    #[test]
+    fn scoped_postings_are_bounded_before_capture_and_intersection() {
+        let mut index = Index::default();
+        for id in ["a", "b", "c"] {
+            index.insert(
+                id,
+                &Stamp {
+                    subject: Some("subject".into()),
+                    entities: vec!["entity".into()],
+                    ..Stamp::default()
+                },
+                &|_| None,
+            );
+        }
+        let options = RecallOptions {
+            subject: Some("subject".into()),
+            ..RecallOptions::default()
+        };
+        for work in [5, 6, 7] {
+            let mut budget = QueryBudget::new(QueryLimits {
+                max_work: work,
+                ..QueryLimits::default()
+            });
+            let result = Memory::restriction(&index, &options, &mut budget);
+            assert_eq!(result.is_ok(), work >= 6);
+        }
+        let bytes = 3 * (64 + 256 + 1);
+        for limit in [bytes - 1, bytes, bytes + 1] {
+            let mut budget = QueryBudget::new(QueryLimits {
+                max_bytes: limit,
+                ..QueryLimits::default()
+            });
+            let result = Memory::restriction(&index, &options, &mut budget);
+            assert_eq!(result.is_ok(), limit >= bytes);
+        }
+        let options = RecallOptions {
+            entities: Some(vec!["entity".into()]),
+            ..options
+        };
+        let mut budget = QueryBudget::new(QueryLimits {
+            max_bytes: 63,
+            ..QueryLimits::default()
+        });
+        let error = Memory::restriction(&index, &options, &mut budget).unwrap_err();
+        assert_eq!(
+            error.downcast_ref::<QueryLimitExceeded>().unwrap().resource,
+            "bytes"
+        );
+        let mut budget = QueryBudget::new(QueryLimits::default());
+        assert_eq!(
+            Memory::restriction(&index, &options, &mut budget)
+                .unwrap()
+                .unwrap(),
+            vec!["a", "b", "c"]
+        );
+    }
 }

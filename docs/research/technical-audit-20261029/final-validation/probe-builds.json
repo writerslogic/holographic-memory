@@ -1,0 +1,92 @@
+[
+  {
+    "name": "baseline",
+    "revision": "a736af02171da7c8b757dcd83a46422c614c07d7",
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--lib",
+      "--test",
+      "campaign_temporal_probe",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "binary_sha256": {
+      "retrieval": "6a5430750a3802aa99e8f4c201d056d61709adc6c186274315dcb9c60aadc876",
+      "temporal": "13b52e81370adabd63c936744d6d573be0b8e71af13d7bc9cd6577b27e36ca0b"
+    },
+    "source_sha256": "1c9f77d9b260b11f32bc527fcc10ae17828316ddde88c4433a7ca294453c6599",
+    "environment": {
+      "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "3",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "3",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0"
+    },
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: aarch64-apple-darwin\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+    "search_sha256": "8b32cb17ef91dc3f502bdbef3a3336366d2e04e0e44d47364c0065ebc8bf87b2"
+  },
+  {
+    "name": "combined",
+    "revision": "8bae60a6d446bd71d48243a15796cd8510050d1f",
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--lib",
+      "--test",
+      "campaign_temporal_probe",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "binary_sha256": {
+      "temporal": "6be52ab891388513943ad372e14dc98f10ffca197242c47556ff69486a9a0e67",
+      "retrieval": "08f135462496f6d3dca840556299ec46a519e0d790b4a0e68c1aaafb074db02b"
+    },
+    "source_sha256": "111e7f9e26b2b02e15fea1c81293376bc214a0dadf9cc637c0cfd7f6f5812086",
+    "environment": {
+      "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "3",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "3",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0"
+    },
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: aarch64-apple-darwin\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+    "search_sha256": "b563e0e893326577db8195cb1c49067976bb43ba1701c060b7fb489dd431d3de"
+  },
+  {
+    "name": "delta",
+    "revision": "8bae60a6d446bd71d48243a15796cd8510050d1f",
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--lib",
+      "--test",
+      "campaign_temporal_probe",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "binary_sha256": {
+      "temporal": "b9cd4aa92ecd3b0a9f952600c45c3dea51c0ea6834587751b9a5d9d43237d7c8",
+      "retrieval": "2a3186f70ff976d086ba8e87a22efb046deda5e88f44ffa7be8b6d0fa0bfe3c8"
+    },
+    "source_sha256": "bd0b9b2662127f6e295271200384d46bf2628d4931117b3fbf722bd0c7889229",
+    "environment": {
+      "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "3",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "3",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0"
+    },
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: aarch64-apple-darwin\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+    "search_sha256": "203d437c4dae11cab9d5e0b938f8122580ec6340880c4e0e956b93fc8ad02d78"
+  }
+]

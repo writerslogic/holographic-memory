@@ -110,10 +110,15 @@ impl Index {
     }
 
     pub(crate) fn subject_ids(&self, subject: &str) -> Vec<String> {
+        self.subject_id_refs(subject).map(str::to_owned).collect()
+    }
+
+    pub(crate) fn subject_id_refs(&self, subject: &str) -> impl Iterator<Item = &str> {
         self.by_subject
             .get(subject)
-            .map(|members| members.iter().map(|m| m.id.clone()).collect())
-            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .map(|member| member.id.as_str())
     }
 
     fn add_edge(&mut self, old: &str, by: &str, effective: Millis, ingest: Millis) {

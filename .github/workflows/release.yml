@@ -34,25 +34,19 @@ permissions:
 
 jobs:
   python:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
-    # campaign-original-if: ${{ !inputs.publish_crate_only }}
+    if: ${{ !inputs.publish_crate_only }}
     uses: ./.github/workflows/python-wheels.yml
     permissions:
       contents: read
 
   npm:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
-    # campaign-original-if: ${{ !inputs.publish_crate_only }}
+    if: ${{ !inputs.publish_crate_only }}
     uses: ./.github/workflows/npm-packages.yml
     permissions:
       contents: read
 
   fuzz:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
-    # campaign-original-if: ${{ !inputs.publish_crate_only }}
+    if: ${{ !inputs.publish_crate_only }}
     uses: ./.github/workflows/fuzz.yml
     with:
       seconds: "120"
@@ -60,9 +54,7 @@ jobs:
       contents: read
 
   crate:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
-    # campaign-original-if: ${{ !inputs.publish_crate_only }}
+    if: ${{ !inputs.publish_crate_only }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -103,8 +95,6 @@ jobs:
           if-no-files-found: error
 
   collect:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: collect artefacts and SBOMs
     needs: [python, npm, crate, fuzz]
     runs-on: ubuntu-latest
@@ -133,10 +123,8 @@ jobs:
           if-no-files-found: error
 
   attest:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: attest provenance
-    # campaign-original-if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request'
     needs: collect
     runs-on: ubuntu-latest
     permissions:
@@ -169,10 +157,8 @@ jobs:
           if-no-files-found: error
 
   attest-sbom:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: attest SBOM (${{ matrix.artefact }})
-    # campaign-original-if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request'
     needs: collect
     runs-on: ubuntu-latest
     permissions:
@@ -194,10 +180,8 @@ jobs:
           sbom-path: release/${{ matrix.artefact }}.cdx.json
 
   github-release:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: draft GitHub release
-    # campaign-original-if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [attest, attest-sbom]
     runs-on: ubuntu-latest
     environment: release
@@ -220,10 +204,8 @@ jobs:
           gh release create "$TAG" --draft --verify-tag --title "$TAG" --generate-notes release/*
 
   publish-crate:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: publish to crates.io
-    # campaign-original-if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [attest, attest-sbom]
     runs-on: ubuntu-latest
     environment: crates-io
@@ -246,10 +228,8 @@ jobs:
         run: cargo publish --locked --no-default-features
 
   publish-crate-recovery:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: publish crate only to crates.io
-    # campaign-original-if: github.event_name == 'workflow_dispatch' && inputs.publish_crate_only
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_crate_only
     runs-on: ubuntu-latest
     environment: crates-io
     permissions:
@@ -315,10 +295,8 @@ jobs:
         run: cargo publish --locked --no-default-features
 
   publish-npm:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: publish to npm
-    # campaign-original-if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [attest, attest-sbom]
     runs-on: ubuntu-latest
     environment: npm
@@ -348,10 +326,8 @@ jobs:
           npm publish "$root" --provenance --access public
 
   correct-npm-deprecation:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: correct the 0.3.0 npm deprecation
-    # campaign-original-if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [publish-npm]
     runs-on: ubuntu-latest
     environment: npm
@@ -372,10 +348,8 @@ jobs:
           npm deprecate 'holographic-memory@0.3.0' "0.3.0 is unmaintained; upgrade to ${VERSION#v}."
 
   verify-published:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: install the published packages and search
-    # campaign-original-if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [publish-npm, correct-npm-deprecation]
     runs-on: ubuntu-latest
     steps:

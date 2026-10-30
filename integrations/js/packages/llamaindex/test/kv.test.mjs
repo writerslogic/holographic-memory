@@ -83,12 +83,14 @@ test('KVIndexStore on HmsKVStore round trips an index struct', async () => {
   assert.equal((await indexStore.getIndexStructs()).length, 0)
 })
 
-test('getAll refuses a partial answer at maxFetch: 9 entries ok, 10 and 11 throw limit_exceeded', async () => {
-  for (const [n, ok] of [[9, true], [10, false], [11, false]]) {
+test('getAll uses pagination to prove completeness at maxFetch and rejects larger collections', async () => {
+  for (const [n, ok] of [[9, true], [10, true], [11, false]]) {
     const kv = new HmsKVStore(store({ maxFetch: 10 }))
     for (let i = 0; i < n; i++) await kv.put(`k${i}`, { i })
-    if (ok) assert.equal(Object.keys(await kv.getAll()).length, n)
+    for (let i = 0; i < 11; i++) await kv.put(`other${i}`, { i }, 'other')
+    if (ok) assert.deepEqual(await kv.getAll(), Object.fromEntries(Array.from({ length: n }, (_, i) => [`k${i}`, { i }])))
     else await assert.rejects(kv.getAll(), (e) => e instanceof HmsError && e.code === 'limit_exceeded')
+    await assert.rejects(kv.getAll('other'), (e) => e instanceof HmsError && e.code === 'limit_exceeded')
     // exact operations stay unbounded
     assert.deepEqual(await kv.get(`k${n - 1}`), { i: n - 1 })
   }

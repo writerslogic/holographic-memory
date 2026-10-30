@@ -112,7 +112,10 @@ fn frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources() {
 fn shared_memory_negotiation_and_validation_contract() {
     let fixture: Value =
         serde_json::from_str(include_str!("fixtures/memory_contract_cases_v1.json")).unwrap();
-    let memory = Memory::new(Arc::new(HmsCore::new(1024, None, None).unwrap()));
+    let directory = tempfile::tempdir().unwrap();
+    let memory = Memory::new(Arc::new(
+        HmsCore::new(1024, Some(directory.path().display().to_string()), None).unwrap(),
+    ));
     for case in fixture["cases"].as_array().unwrap() {
         let result = memory.call(case["op"].as_str().unwrap(), case["request"].clone());
         if case["error"] == "invalid_request" {

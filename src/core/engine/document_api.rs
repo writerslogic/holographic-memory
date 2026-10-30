@@ -421,16 +421,17 @@ impl HmsCore {
         let Some(space) = &self.config.embedding_space else {
             return Ok(());
         };
+        let _building = self.vector_index.try_build().ok_or_else(|| {
+            anyhow!("document index maintenance already in progress; retry maintenance")
+        })?;
+        self.hydrate_documents()?;
         let snapshot = {
             let _transaction = self.mutation_gate.read();
-            documents::capture_dense_index(&self.documents(), space.dimensions)?
+            documents::capture_dense_index(&self.documents.read(), space.dimensions)?
         };
         let Some(snapshot) = snapshot else {
             return Ok(());
         };
-        let _building = self.vector_index.try_build().ok_or_else(|| {
-            anyhow!("document index maintenance already in progress; retry maintenance")
-        })?;
         let Some(trained) = documents::build_dense_index(snapshot)? else {
             return Ok(());
         };

@@ -199,7 +199,11 @@ fn filtered_hybrid_delta_survives_compaction_and_reopen() -> Result<()> {
     let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
     core.memorize_documents(
         (0..256)
-            .map(|id| input(&format!("d{id:03}"), "old", "needle common", "before"))
+            .map(|id| {
+                let mut document = input(&format!("d{id:03}"), "old", "needle common", "before")?;
+                document.embeddings = Some(vec![vec![0.0, 1.0]]);
+                Ok(document)
+            })
             .collect::<Result<Vec<_>>>()?,
     )?;
     core.train_dense_index()?;
@@ -253,15 +257,29 @@ fn filtered_hybrid_delta_survives_compaction_and_reopen() -> Result<()> {
 
 #[test]
 fn dense_training_reports_busy_and_releases_build_capacity() -> Result<()> {
-    let core = HmsCore::new(1024, None, Some(super::fixture_config(2)))?;
+    let directory = tempfile::tempdir()?;
+    let core = Arc::new(HmsCore::new(
+        1024,
+        Some(directory.path().display().to_string()),
+        Some(super::fixture_config(2)),
+    )?);
     core.memorize_documents(
         (0..128)
             .map(|id| input(&id.to_string(), "old", "needle", "before"))
             .collect::<Result<Vec<_>>>()?,
     )?;
     let held = core.vector_index.try_build().unwrap();
-    assert!(core
-        .train_dense_index()
+    let documents = core.documents.write();
+    let (sender, receiver) = mpsc::channel();
+    let contender = std::thread::spawn({
+        let core = Arc::clone(&core);
+        move || sender.send(core.train_dense_index()).unwrap()
+    });
+    let immediate = receiver.recv_timeout(Duration::from_secs(2));
+    drop(documents);
+    contender.join().unwrap();
+    assert!(immediate
+        .expect("busy maintenance must reject before capturing or locking documents")
         .unwrap_err()
         .to_string()
         .contains("maintenance already in progress"));

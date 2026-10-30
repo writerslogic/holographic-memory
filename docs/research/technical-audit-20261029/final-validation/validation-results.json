@@ -1,0 +1,148 @@
+{
+  "source_commit": "768e1bf93bf2c67fa07aec61df22f99955a2439d",
+  "source_manifest": "source-manifest.json",
+  "environment": {
+    "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "1",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0"
+  },
+  "local": [
+    {
+      "command": "cargo fmt -- --check",
+      "log": "format-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "cargo clippy --offline --locked --all-targets --all-features -- -D warnings",
+      "log": "clippy-all-final.log",
+      "result": "pass on1.96 before final HTTP repair; subsequent1.99 all-feature check covers final code"
+    },
+    {
+      "command": "cargo clippy --offline --locked --all-targets -- -D warnings",
+      "log": "clippy-default-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --all-targets --all-features -- -D warnings",
+      "log": "clippy-199-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "cargo test --offline --locked --all-features --no-fail-fast",
+      "log": "tests-all-repaired.log",
+      "result": "all targets completed;1302passed,1obsolete maintenance assertion failed,15ignored; repaired target below. Counts are aggregate test-result log lines, not a claim of distinct test identities."
+    },
+    {
+      "command": "cargo test --offline --locked --all-features --test document_dense",
+      "log": "document-dense-repaired.log",
+      "result": "3passed; actual delta reuse and explicit rebuild, compaction/reopen all compared"
+    },
+    {
+      "command": "cargo test --offline --locked --no-fail-fast",
+      "log": "tests-default-final.log",
+      "result": "774passed,0failed,13ignored across aggregate result lines"
+    },
+    {
+      "command": "cargo +1.89 check --offline --locked --no-default-features",
+      "log": "msrv-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "RUSTDOCFLAGS='-D warnings' cargo doc --offline --locked --no-deps --all-features",
+      "log": "rustdoc-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "bash scripts/check-generated.sh",
+      "log": "generated-final.log",
+      "result": "16export tests and committed generated schema/TypeScript byte comparisons pass"
+    },
+    {
+      "command": "bash scripts/check-w3c-interop.sh",
+      "log": "w3c-final.log",
+      "result": "independent Digital Bazaar proof/status/tampering checks pass"
+    },
+    {
+      "command": "uv run --offline scripts/check_memory_openapi.py --server-binary target/debug/hms-server",
+      "log": "openapi-runtime.log",
+      "result": "13actual request/reply pairs and8invalid shapes pass"
+    },
+    {
+      "command": "uv run --offline scripts/generate_scitt_fixture.py | cmp - tests/fixtures/scitt_receipt_python_v1.json",
+      "log": "scitt-fixture-reproduction.log",
+      "result": "exact independent fixture reproduction passes; Rust consumption in all-feature SCITT interop test"
+    },
+    {
+      "command": "HMS_MCP_BIN=$PWD/target/debug/hms-mcp HMS_MCP_SECURITY=1 npm test --prefix integrations/mcp/tests",
+      "log": "mcp-sdk-interop-final.log",
+      "result": "18passed,0skipped; final rebuilt all-feature binary"
+    },
+    {
+      "command": "CARGO_PROFILE_RELEASE_LTO=false npm run build",
+      "log": "node-native-final.log",
+      "result": "pass; actual native addon"
+    },
+    {
+      "command": "npm test",
+      "log": "node-tests-final.log",
+      "result": "10passed,3optional local-embed skips resolved by separate enabled build below"
+    },
+    {
+      "command": "npm run test:types",
+      "log": "node-types-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "npm run test:package",
+      "log": "node-package-final.log",
+      "result": "packed CommonJS,ESM,native,document APIs pass"
+    },
+    {
+      "command": "npm test --prefix integrations/js",
+      "log": "framework-tests-final.log",
+      "result": "100passed,0skipped against final rebuilt addon"
+    },
+    {
+      "command": "CARGO_PROFILE_RELEASE_LTO=false node scripts/build-node.cjs --release --features node-api,security,local-embed --no-js --output-dir target/node-embed",
+      "log": "node-embed-build-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "HMS_EMBED_ADDON=$PWD/target/node-embed/holographic-memory.node node --test tests/node/embedding-limits.test.cjs",
+      "log": "node-embedding-final.log",
+      "result": "3passed,0skipped; committed synthetic offline weights"
+    },
+    {
+      "command": "cd bindings/python/holographic-sdk && PYTHONPATH=. HMS_SERVER_BIN=/Volumes/A/holographic-memory/target/debug/hms-server uv run --no-project --offline --with 'httpx>=0.27' --with sniffio --with orjson --with pytest pytest -q -rs tests",
+      "log": "python-sdk-live.log",
+      "result": "53passed,46subtests,0skipped"
+    },
+    {
+      "command": "actionlint .github/workflows/*.yml",
+      "log": "actionlint-final.log",
+      "result": "pass"
+    },
+    {
+      "command": "uvx --offline 'zizmor==1.31.1' --min-severity medium --format plain .github/workflows",
+      "log": "zizmor-gate-final.log",
+      "result": "pass under existing severity policy;8preexisting low/informational findings and103baseline suppressions retained"
+    },
+    {
+      "command": "bash scripts/format-gate.sh 554aec0c21ef84aaafee8feb52fd1553be791d2d",
+      "log": "golden-append-only.log",
+      "result": "pass; no existing goldens changed"
+    }
+  ],
+  "remote": "PR342 final-head nonbenchmark feature/platform/format/schema/binding/package/fuzz/managed-analysis gates required. Earlier valid focused checks retained rather than repeated.",
+  "limits": [
+    "No paid/model API calls, remote performance comparison or downloaded model weights",
+    "Local benchmark total29.362seconds of600; source/binary hashes and failed initial trial retained",
+    "Existing legitimate development ignores are not reported as passing; optional Node embedding actually enabled and tested separately"
+  ],
+  "remote_source_gate": "source-pr-gate.json: all applicable source-revision gates pass; final evidence/workflow commit must pass normal exact-head CI before merge",
+  "windows": "772tests run,772passed,14legitimate skips; the slowest test was torn_append_at_every_byte (583s), not a hung job.",
+  "logs_archive": "logs.tar.gz; referenced log names are archive entries, hash-indexed in log-index.json"
+}

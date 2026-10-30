@@ -265,15 +265,31 @@ describe("stdio", () => {
     }
   });
 
-  it("handles concurrent calls", async () => {
+  it("handles concurrent calls and reports uncommitted overload", async () => {
     const c = await stdioClient(["--data-dir", freshDir()]);
     try {
       const writes = Array.from({ length: 60 }, (_, i) =>
         call(c, "remember", { id: `c/${String(i).padStart(3, "0")}`, text: `concurrent memory number ${i} about topic${i % 5}` }),
       );
       const reads = Array.from({ length: 30 }, () => call(c, "recall", { query: "concurrent topic3" }));
-      const results = await Promise.all([...writes, ...reads]);
-      assert.ok(results.every((r) => r.isError !== true));
+      const results = await Promise.allSettled([...writes, ...reads]);
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          assert.notEqual(result.value.isError, true);
+        } else {
+          assert.equal(result.reason.code, -32603);
+          assert.deepEqual(result.reason.data, { code: "server_busy", retryable: true });
+        }
+      }
+      const committed = results.slice(0, writes.length).filter((r) => r.status === "fulfilled").length;
+      assert.equal((await ok(c, "stats", {})).memories, committed);
+      for (let i = 0; i < writes.length; i++) {
+        if (results[i].status === "rejected") {
+          const id = `c/${String(i).padStart(3, "0")}`;
+          await err(c, "get", { id }, "not_found");
+          await ok(c, "remember", { id, text: `concurrent memory number ${i} about topic${i % 5}` });
+        }
+      }
       assert.equal((await ok(c, "stats", {})).memories, 60);
       const same = await Promise.all(
         Array.from({ length: 20 }, (_, i) => call(c, "remember", { id: "contended", text: `writer ${i}` })),
@@ -469,7 +485,10 @@ function rawRequest(url, { method = "POST", headers = {}, body } = {}) {
       res.on("data", (d) => (data += d));
       res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
     });
-    req.on("error", reject);
+    req.on("error", (error) => reject(new Error(
+      `${method} ${u.pathname} (${Buffer.byteLength(body ?? "")} body bytes): ${error.message}`,
+      { cause: error },
+    )));
     if (body) req.write(body);
     req.end();
   });
@@ -554,7 +573,7 @@ describe("streamable http", () => {
     }
   });
 
-  it("refuses to bind a non-loopback address without a token", async () => {
+  it("refuses to bind a non-loopback address without authorization", async () => {
     const child = spawn(BIN, ["--transport", "http", "--bind", "0.0.0.0:0", "--allow-remote", "--data-dir", freshDir()], {
       env: cleanEnv(),
       stdio: ["ignore", "pipe", "pipe"],
@@ -563,7 +582,7 @@ describe("streamable http", () => {
     child.stderr.on("data", (d) => (stderr += d));
     const code = await new Promise((r) => child.on("exit", r));
     assert.notEqual(code, 0);
-    assert.match(stderr, /HMS_MCP_TOKEN/);
+    assert.match(stderr, /needs --allow-remote and static bearer or OAuth authorization/);
   });
 
   it("negotiates protocol versions: initialize handshake and the stateless 2026-07-28 form", async () => {

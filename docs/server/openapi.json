@@ -15,6 +15,33 @@
         ],
         "type": "object"
       },
+      "CapabilitiesReply": {
+        "properties": {
+          "capabilities": {
+            "$ref": "#/components/schemas/MemoryCapabilities"
+          }
+        },
+        "required": [
+          "capabilities"
+        ],
+        "type": "object"
+      },
+      "CapabilitiesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "contractVersion": {
+            "default": null,
+            "format": "uint32",
+            "maximum": 1,
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
       "ChainLink": {
         "properties": {
           "effectiveFrom": {
@@ -271,7 +298,7 @@
           },
           "candidateLimit": {
             "default": null,
-            "description": "Candidates ranked before the validity filter; the default is document search's.\nRaise it when most top candidates are history.",
+            "description": "Eligible candidates ranked before optional recency adjustment; defaults to document search's.",
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -982,6 +1009,50 @@
         ],
         "type": "object"
       },
+      "MemoryCapabilities": {
+        "properties": {
+          "committedErrorCode": {
+            "type": "string"
+          },
+          "contractVersion": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "documentPagination": {
+            "type": "boolean"
+          },
+          "exactMetadataFilters": {
+            "type": "boolean"
+          },
+          "operations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "profile": {
+            "type": "string"
+          },
+          "subjectEntityFilters": {
+            "type": "boolean"
+          },
+          "temporalQueries": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "contractVersion",
+          "profile",
+          "operations",
+          "temporalQueries",
+          "exactMetadataFilters",
+          "subjectEntityFilters",
+          "documentPagination",
+          "committedErrorCode"
+        ],
+        "type": "object"
+      },
       "Problem": {
         "description": "RFC 9457 problem details, plus the deprecated `error` object kept for v1 SDK clients.",
         "properties": {
@@ -1132,7 +1203,7 @@
           },
           "candidateLimit": {
             "default": null,
-            "description": "Candidates ranked before the validity filter; the default is document search's.\nRaise it when most top candidates are history.",
+            "description": "Eligible candidates ranked before optional recency adjustment; defaults to document search's.",
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -2527,6 +2598,75 @@
           }
         ],
         "summary": "Apply the configured forgetting policy. See docs/memory-api.",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/capabilities": {
+      "post": {
+        "operationId": "memoryCapabilities",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Replays the recorded response for a retried request (1..=128 visible ASCII characters).",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapabilitiesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesReply"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Discover and negotiate the temporal Memory contract; document pagination is a separate API.",
         "tags": [
           "memory"
         ]

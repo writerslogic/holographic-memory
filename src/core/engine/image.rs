@@ -18,7 +18,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use crate::core::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::core::sync::{Mutex, RwLock, RwLockReadGuard};
 use anyhow::{bail, ensure, Context, Result};
 
 use super::HmsCore;
@@ -69,13 +69,6 @@ impl HmsCore {
         self.hydrate_documents()
             .expect("rebuilding the document store from its checkpoint");
         self.documents.read()
-    }
-
-    /// [`Self::documents`] for writing.
-    pub(super) fn documents_mut(&self) -> RwLockWriteGuard<'_, DocumentStore> {
-        self.hydrate_documents()
-            .expect("rebuilding the document store from its checkpoint");
-        self.documents.write()
     }
 
     /// Runs `capture` on the store while it is served from a checkpoint, between transactions
