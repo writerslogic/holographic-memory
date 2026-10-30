@@ -1366,6 +1366,7 @@ fn eligible_chunks<'a>(
         .collect()
 }
 
+#[cfg(test)]
 fn matches_document(document: &StoredDocument, options: &SearchOptions) -> bool {
     options
         .document_ids

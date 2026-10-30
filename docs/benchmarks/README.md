@@ -137,18 +137,13 @@ existing bytes and do not claim a fresh performance measurement.
 * Above 200k vectors the slow exact-scan systems answer a prefix of the query file
   (`protocol.query_caps`); recall and QPS are over that prefix.
 
-## Self-updating table
+## Updating the table
 
-`.github/workflows/bench-refresh.yml`: the `test` job runs the generator tests on every PR that
-touches the harness, results or docs. The `run` job re-runs the `light` suite weekly, on demand and
-on release tags on a GitHub-hosted runner (hardware class `github-hosted-ubuntu-24.04-x86_64`),
-uploads the raw results as an artefact, and the `land` job regenerates `COMPARISON.md`, the README
-block (between `<!-- BENCH:START -->` and `<!-- BENCH:END -->`) and `comparison.cells.json`, then
-lands them through a `bot/bench-refresh-<run>` branch created with GraphQL `createCommitOnBranch`
-(GitHub signs the commit), opens a PR and squash-merges it, deleting the branch. Merging past the
-review requirement needs the repository secret `BENCH_BOT_TOKEN` (a token allowed to bypass it);
-without it the PR is opened with the default token and left for a maintainer, and PRs opened with the
-default token do not trigger CI. All actions are pinned by SHA.
+`.github/workflows/bench-refresh.yml` validates the generator on relevant pull requests,
+main-branch changes and manual dispatch. Performance comparisons run locally; scheduled remote
+benchmark execution and automatic result publication are disabled. Use the local commands above,
+retain the raw results with their hardware class, then run
+`./benchmarks/competitive/hms-bench table` and submit the generated table and source results for review.
 
 ## Heavy suite
 

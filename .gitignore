@@ -11,6 +11,7 @@
 package-lock.json
 !interop/w3c/package-lock.json
 !integrations/mcp/tests/package-lock.json
+!integrations/js/package-lock.json
 interop/w3c/node_modules/
 *.node
 !index.js

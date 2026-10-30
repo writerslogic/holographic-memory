@@ -1,0 +1,270 @@
+{
+  "status": "assessment subject to final exact-code nonbenchmark CI gate",
+  "historical_score_preserved": 6.2,
+  "method": "Original domain weights and equal metric weight within each domain; confidence ordinal1\u20135, not a statistical interval. Scores are evidence-based engineering judgments, not test-count or benchmark-derived numerical facts.",
+  "domain_weights": {
+    "F": 0.25,
+    "E": 0.2,
+    "S": 0.2,
+    "R": 0.25,
+    "M": 0.1
+  },
+  "domain_scores": {
+    "F": 7.833333333333333,
+    "E": 7.166666666666667,
+    "S": 7.666666666666667,
+    "R": 7.333333333333333,
+    "M": 7.6
+  },
+  "weighted_assessment": 7.5183333333333335,
+  "metrics": [
+    {
+      "id": "F1",
+      "metric": "Completeness",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Supported temporal memory, adapter capability discovery, pinned-authority OAuth and verified SCITT profile now have usable production paths; optional durable outbox remains absent."
+    },
+    {
+      "id": "F2",
+      "metric": "Correctness",
+      "historical": 5,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Canonical oracles, mutation/reopen, malformed input and trust rejection checks pass in repaired slices; this is not proof of all code."
+    },
+    {
+      "id": "F3",
+      "metric": "Depth",
+      "historical": 8,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Existing exact/BM25/temporal mechanisms remain; eligibility plus bounded deltas improves their composition without another retrieval pipeline."
+    },
+    {
+      "id": "F4",
+      "metric": "Workflow coverage",
+      "historical": 6,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Frozen temporal/source workflows improve at equal candidate budget and survive deletion/restart; learned native QA and source-deletion synchronization remain unmeasured/absent."
+    },
+    {
+      "id": "F5",
+      "metric": "Consistency",
+      "historical": 5,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Shared schemas/fixtures and explicit capabilities preserve source/collection/default semantics; deliberate MCP document versus temporal Memory differences remain declared."
+    },
+    {
+      "id": "F6",
+      "metric": "Interoperability",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Official MCP SDK, native-backed framework adapters and independently signed receipt vectors exercise actual paths; no general conformance certification."
+    },
+    {
+      "id": "E1",
+      "metric": "Architecture",
+      "historical": 6,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Eligibility/postings share ranking and live ownership; bounded deltas reuse the exact base. HmsCore coupling and separate vector-only delta discovery remain."
+    },
+    {
+      "id": "E2",
+      "metric": "Code quality",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Fallible admission/allocation, bounded scope capture, fixed wire bounds and structured lifecycle errors; all-target lint and boundary regressions cover changed surfaces."
+    },
+    {
+      "id": "E3",
+      "metric": "Extensibility",
+      "historical": 7,
+      "assessed": 7,
+      "confidence": 3,
+      "evidence_and_limit": "Existing feature/trait boundaries preserved; no broad new evidence for optional research extension isolation."
+    },
+    {
+      "id": "E4",
+      "metric": "Dependencies",
+      "historical": 7,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Established crypto and SDK primitives reused; framework lock and normal dependency gates restored. Historical advisory/serialization concerns are not erased by this phase."
+    },
+    {
+      "id": "E5",
+      "metric": "State/data integrity",
+      "historical": 5,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Coherent generations, conditional publication, immutable key/salt winners and recoverable restore tested. Missing auxiliary sidecar effects still require explicit external reconciliation."
+    },
+    {
+      "id": "E6",
+      "metric": "Maintainability",
+      "historical": 6,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Authoritative contracts and fixture reuse reduce drift; final tests found and repaired stale expectations. Broad runtime surface still has maintenance cost."
+    },
+    {
+      "id": "S1",
+      "metric": "Standards conformance",
+      "historical": 6,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Precisely scoped RFC9728/RFC7662 and RFC9942/RFC9162 workflows plus malformed vectors; no general VC/CAWG/C2PA or crypto certification."
+    },
+    {
+      "id": "S2",
+      "metric": "Interface/API design",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Typed shared validation, current generated OpenAPI, capabilities, scoped pagination and explicit busy/committed outcomes."
+    },
+    {
+      "id": "S3",
+      "metric": "Protocol interoperability",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Official SDK18cases and40MCP unit tests include real HTTP, TLS rejection, discovery, expiry/revocation, scopes and independent receipt encodings."
+    },
+    {
+      "id": "S4",
+      "metric": "Discoverability",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Runtime capability discovery, supported profile documentation and source-versus-release differences are explicit."
+    },
+    {
+      "id": "S5",
+      "metric": "Compatibility",
+      "historical": 6,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "No campaign golden rewrite or implicit store upgrade; existing fingerprint/schema contracts retained. Source/package/platform gates required, independent legacy encoder portability still unproven."
+    },
+    {
+      "id": "S6",
+      "metric": "Integration fidelity",
+      "historical": 5,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Exact quote/span and owner isolation fixtures, complete paginated adapter results, explicit unsupported filters and committed-outcome handling."
+    },
+    {
+      "id": "R1",
+      "metric": "Reliability",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Bounded worker admission/cancellation, actual HTTP overload/413 recovery, identity creator races and interruption checks pass in repaired integration."
+    },
+    {
+      "id": "R2",
+      "metric": "Recovery",
+      "historical": 5,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Restore intent/ownership and key publication transitions survive process interruption; hardware power loss and durable sidecar completion remain outside verified guarantees."
+    },
+    {
+      "id": "R3",
+      "metric": "Security",
+      "historical": 5,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Pinned trust and audiences/scopes, fresh authority validation, safe identity files and OS nonce entropy close concrete weaknesses; crypto/finite-precision DP review remains external."
+    },
+    {
+      "id": "R4",
+      "metric": "Data safety",
+      "historical": 5,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Source ownership, typed committed results, stale-row exclusion, explicit erasure limits and dense-owner release preserve deletion/identity safety."
+    },
+    {
+      "id": "R5",
+      "metric": "Performance",
+      "historical": 7,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Local three-round10k comparison meets rare capture/update targets; hot updated tail +11.5% and startup/memory costs retained. No broad frontier or model-quality claim."
+    },
+    {
+      "id": "R6",
+      "metric": "Scalability",
+      "historical": 5,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Bounded deltas, build admission before capture, scope allocation limits and HTTP queues remove concrete amplification; full high-dimensional capacity ceiling unmeasured."
+    },
+    {
+      "id": "M1",
+      "metric": "Developer experience",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Working native/HTTP/Node/framework paths, shared capabilities and actionable errors; optional feature/released-package differences remain."
+    },
+    {
+      "id": "M2",
+      "metric": "Documentation",
+      "historical": 6,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Accurate current contracts, traceable measurements/failed trials and concrete external verification inputs; historical report preserved."
+    },
+    {
+      "id": "M3",
+      "metric": "Validation",
+      "historical": 7,
+      "assessed": 8,
+      "confidence": 4,
+      "evidence_and_limit": "Independent wire fixture, frozen disjoint temporal partitions, full ordered oracles, actual SDK/native integration and restored platform gates; representative learned QA and hardware power loss remain open."
+    },
+    {
+      "id": "M4",
+      "metric": "Observability",
+      "historical": 6,
+      "assessed": 7,
+      "confidence": 4,
+      "evidence_and_limit": "Typed outcomes, explicit resource refusals, capability information and reproducible phase/cost records; no universal cross-surface trace or durable outbox."
+    },
+    {
+      "id": "M5",
+      "metric": "Differentiation",
+      "historical": 7,
+      "assessed": 7,
+      "confidence": 3,
+      "evidence_and_limit": "Useful local exact hybrid/temporal/provenance composition demonstrated on bounded workloads; broad native QA advantage not established."
+    },
+    {
+      "id": "M6",
+      "metric": "Innovation potential",
+      "historical": 8,
+      "assessed": 8,
+      "confidence": 3,
+      "evidence_and_limit": "Credible adaptive routing/structural opportunities unchanged; optional strategic phase was not selected or promoted without held-out/calibration evidence."
+    }
+  ],
+  "M6_excluded_from_quality": true,
+  "artifacts": [
+    "measurements.json",
+    "RESULTS.md",
+    "../campaign.json",
+    "../security-assurance.md",
+    "../remote-trust-profiles.md"
+  ]
+}

@@ -21,8 +21,6 @@ permissions:
 
 jobs:
   importers:
-    # campaign-deferral: remove this guard and restore any original condition below
-    if: ${{ false }}
     name: hms-import against a real hms-server
     runs-on: ubuntu-latest
     steps:

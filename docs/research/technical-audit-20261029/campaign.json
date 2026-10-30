@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_sha": "554aec0c21ef84aaafee8feb52fd1553be791d2d",
-  "ci_mode": "deferred",
+  "ci_mode": "restoration_in_progress",
   "contract": "CAMPAIGN.md",
   "historical_evidence": [
     "REPORT.md",
@@ -32,6 +32,10 @@
     {
       "pr": 340,
       "sha": "6c46b4bbba6a416686953b5dab4afd976684309a"
+    },
+    {
+      "pr": 341,
+      "sha": "8bae60a6d446bd71d48243a15796cd8510050d1f"
     }
   ],
   "phases": [
@@ -200,7 +204,7 @@
             "peak and steady RSS, initial train time, update latency and maintenance time including overflow"
           ],
           "targets": ">=20% lower p95 capture time in rare-term group; zero tree rebuilds within the bounded burst; no ordered-result differences; investigate >10% end-to-end p99 regression on the hot-term group or >12MiB extra per active query/thread. Targets are hypotheses, not results.",
-          "performance_results": null
+          "performance_results": "final-validation/measurements.json; final-validation phase performance_final records target/guard outcomes and limits. Historical analytical predictions are retained as premeasurement evidence."
         }
       },
       "local_validation": {
@@ -445,8 +449,15 @@
     },
     {
       "id": "strategic",
-      "status": "optional",
-      "acceptance": "Adopt only after reproducible baselines and falsifiable utility evidence."
+      "status": "optional_not_selected",
+      "acceptance": "Adopt only after reproducible baselines and falsifiable utility evidence.",
+      "implemented": false,
+      "evidence": [
+        "Existing query-trained routing evidence does not establish unseen/filter/update gains.",
+        "Structural confidence remains overlap/evidence-weight heuristics without a frozen calibrated held-out population.",
+        "R16/R18 improvements require final local validation before causal gains can support another planner or representation."
+      ],
+      "decision": "No new strategic mechanism or promotion selected; no fabricated calibration or performance claim. Retain legitimate experimental status and validate implemented mechanisms first."
     },
     {
       "id": "remote-trust-profiles",
@@ -478,7 +489,7 @@
       "implementation": {
         "oauth": "src/bin/hms-mcp/oauth.rs; RFC9728 resource discovery; pinned external RFC7662 authority; exact audience/issuer/namespace, read/write scopes, fresh revocation/expiry, stateless rmcp routing, no credential forwarding.",
         "scitt": "src/core/provenance/scitt/receipt.rs; detached RFC9942 VDS1 Ed25519, strict statement media/issuer/subject, separate issuer/service trust, bounded single inclusion proof, pinned root plus externally provisioned validity interval, distinct VerifiedReceipt.",
-        "resource_bounds": "OAuth: 8 workers retained through blocking completion, 5s client timeout, 8KiB token,16KiB response, request hard cap16MiB, no retries/cache/redirects/proxy. SCITT: receipt4096B,proof2304B,path64 nodes,COSE depth32/proof8,statement1MiB.",
+        "resource_bounds": "OAuth: 8 workers retained through blocking completion, 5s client timeout, 8KiB token,16KiB response, request hard cap16MiB, no retries/cache/redirects/proxy. SCITT: receipt8192B,proof2304B,path64 nodes,COSE depth32/proof8,statement1MiB.",
         "compatibility": "Stdio/static bearer unchanged except explicit hard request cap. OAuth deliberately forbids namespace overrides and legacy sessions. SCITT transport stays unverified; new verifier is a narrow supported profile."
       },
       "regressions": [
@@ -529,7 +540,7 @@
     },
     {
       "id": "security-durability-lifecycle",
-      "status": "implemented_validation_deferred",
+      "status": "merged_provisional",
       "primary_target": "Prevent persistent signing identity/salt replacement races and fork-cloned AES-GCM nonce generator state; bound and validate secret-file reads before use.",
       "baseline_evidence": [
         "security.rs SigningManager::new uses exists/read or truncate/create without sync; shared custom key paths can bypass per-store ownership separation.",
@@ -609,6 +620,201 @@
           "cargo test --offline --locked --features provenance,server --test committed_sidecars"
         ],
         "status": "pending; retain rotation, restore, binding persistence and all-feature/platform gates"
+      },
+      "merge": {
+        "pr": 341,
+        "sha": "8bae60a6d446bd71d48243a15796cd8510050d1f",
+        "implementation_sha": "a1d1b0da7ff3aa466e94f286428c80e2f6c4cede",
+        "remote_inclusion_verified": true,
+        "branch_removed": true
+      }
+    },
+    {
+      "id": "operational-recovery",
+      "status": "optional_not_selected",
+      "implemented": false,
+      "evidence": [
+        "Core commit frame contains mutations only; audit/provenance occur afterward in engine/mod.rs, and compaction retains current state rather than missing-effect intents.",
+        "Audit105-byte records have no stable effect identity; provenance issuance reserves status slots and SCITT submission has no demonstrated remote deduplication contract.",
+        "Importer checkpoints verify an observed committed prefix, not authoritative source completeness. EOF/errors cannot safely authorize source-deletion synchronization."
+      ],
+      "decision": "Do not add an unrelated sidecar journal or infer deletion authority. The optional extension would require an explicit versioned transaction/outbox profile, idempotent effect sinks and authenticated immutable source manifests; these are additional product contracts not supplied by the repaired baseline. Preserve explicit committed outcomes and no source-deletion sync. No implementation/completion claim for this optional goal."
+    },
+    {
+      "id": "final-validation",
+      "status": "final_integration_in_progress",
+      "start_sha": "8bae60a6d446bd71d48243a15796cd8510050d1f",
+      "plan": "docs/research/technical-audit-20261029/final-validation/plan.json",
+      "audits": [
+        "final_retrieval_audit: R16/R18 changed data flow, source only",
+        "final_trust_audit: remote trust/security changed data flow, source only"
+      ],
+      "limits": "Coordinator alone executes expensive checks; no paid/remote benchmarks/model downloads, no worktrees/stashes. Full final code gate required; performance local <=4groups,3rounds,600s.",
+      "repairs": [
+        {
+          "issue": "mcp dep:ureq disabled the implicit ureq feature used by other features",
+          "fix": "Preserve existing implicit feature ownership; mcp references ureq",
+          "evidence": "focused-initial.log then focused-initial-2.log"
+        },
+        {
+          "issue": "Temporal scope allocated owned IDs before query budget enforcement",
+          "fix": "Charge borrowed set nodes and work before insertion; charge owned IDs before copying; boundary tests",
+          "evidence": "scope_budget_tests passed in focused-repaired.log"
+        },
+        {
+          "issue": "SCITT verifier rejected valid generated subject lengths above1024",
+          "fix": "Match generated4096-byte limit; bound receipts8192; boundary vectors",
+          "evidence": "receipt subject tests passed in focused-repaired.log"
+        },
+        {
+          "issue": "Closing tenant owner fd could retain a lock inherited by a concurrent fork",
+          "fix": "Explicit unlock in RAII owner as in existing core/index locks; clone-descriptor regression",
+          "evidence": "parallel failure focused-surfaces.log; isolated pass tenant-lock-isolated.log; repaired parallel server53tests passed"
+        },
+        {
+          "issue": "New tests used None store path, which means current directory, and RRF fixture expected a one-list winner to beat two-list hits",
+          "fix": "Own temporary stores; make inserted fact lead both rankings while preserving fresh-hit, stale exclusion, span, compaction/reopen assertions",
+          "evidence": "focused-engine-repaired.log69passed"
+        },
+        {
+          "issue": "Python capabilities method omitted from sync/async stubs",
+          "fix": "Declare both existing runtime signatures",
+          "evidence": "python-sdk-unit.log failed; python-memory-repaired.log10passed; python-sdk-live.log53passed"
+        },
+        {
+          "issue": "R16 removed only caller of documents_mut; source matching wrapper now oracle-only",
+          "fix": "Remove obsolete accessor, cfg(test) oracle helper; propagate dense hydration errors through fallible training API",
+          "evidence": "source caller/history inspection; focused engine checks"
+        },
+        {
+          "issue": "Dense maintenance admission followed owner snapshot capture",
+          "fix": "Acquire existing build permit before hydration/capture; reject overload before document lock or allocation",
+          "evidence": "dense-admission.log passes a contender while document lock is deliberately held"
+        },
+        {
+          "issue": "Framework getAll regression still assumed exact maxFetch must be truncated after pagination had proved completeness",
+          "fix": "Retain bound10; verify9/10 exact maps and11 rejection, plus separate over-limit collection isolation; document metadata pagination semantics",
+          "evidence": "js-integrations-repaired.log:100tests passed, including9/10/11pagination limits and collection isolation."
+        },
+        {
+          "issue": "Installed framework dependency tree omitted optional MCP client and platform SQLite binary; no committed dependency lock or CI framework gate",
+          "fix": "Resolve a fresh lock from existing manifests, install complete dependencies, add native-backed framework gate on Linux",
+          "evidence": "js-lock-resolve.log; js-clean-install.log; js-integrations-repaired.log100passed."
+        },
+        {
+          "issue": "MCP SDK burst tests assumed unlimited pending calls despite bounded admission. Remote-bind error assertion predated OAuth.",
+          "fix": "Verify server_busy typed admission failures and absent rejected writes before retry; retain all60writes, concurrent reads and compare-and-set assertions. Accept current explicit remote authorization requirement.",
+          "evidence": "mcp-sdk-interop-repaired.log; final rerun pending."
+        },
+        {
+          "issue": "HTTP oversized body response left a socket closing without advertising Connection: close; Node pooled the connection for the next health request and received ECONNRESET.",
+          "fix": "Advertise close for HTTP/1 payload-too-large responses; preserve HTTP/2 semantics. Add actual transport1023/1024/1025byte boundary, advertised close/EOF and health recovery regression.",
+          "evidence": "mcp-http-diagnostic.log identifies GET /health after413; actual SDK assertions retained."
+        },
+        {
+          "issue": "Delta capture regression asserted a changed-ID copy even when owner membership supplies liveness.",
+          "fix": "Assert old owner excluded and current owner included when shared eligibility is present, or changed ID present on scan path; retain owner-count and post-replacement exact-result oracle.",
+          "evidence": "tests-all-final.log; focused rerun pending."
+        },
+        {
+          "issue": "document_dense integration test still expected automatic maintenance to rebuild after every mutation.",
+          "fix": "Assert bounded-delta maintenance leaves the base unrefreshed, preserves all ordered hybrid/filtered results, and explicit training refreshes it; retain compaction/reopen comparison.",
+          "evidence": "tests-all-repaired.log; focused rerun pending."
+        }
+      ],
+      "validation_progress": {
+        "retrieval": "14passed,1ignored",
+        "library_security_provenance_memory": "793passed,3fixturefailures,12ignored; affected engine tests repaired69passed",
+        "mcp": "40unit tests passed including real HTTP body-boundary/close/health regression.",
+        "server_after_fix": "53passed",
+        "python": "53passed,46subtests with live server and orjson;0skipped",
+        "focused_integrations": "109passed,1ignored across server/allocation/sidecars/crash/golden/memory/HTTP/nativefixtures",
+        "openapi": "13actualrequest/replypairs and8invalidshapes passed",
+        "generated": "16exporttests passed",
+        "typescript": "All100framework tests pass after clean locked dependency install;27core,23LangChain,18LlamaIndex,16Mastra,11OpenAI Agents,5Vercel.",
+        "trust": "39MCPtests and independent Python-signed SCITT interoperability test pass; production HTTPS-only/self-signedTLS rejection/redirect/timeout/cancellation covered",
+        "node": "10passed,3optionalembedding tests skipped; types and packed CJS/ESM pass. Later dense admission source change requires final rebuild/gate.",
+        "clippy_all": "All-target/all-feature pass on1.96; final remote stable gate pending.",
+        "clippy_default": "All-target default pass on1.96.",
+        "format": "cargo fmt check passed.",
+        "mcp_sdk": "18official SDK end-to-end tests passed with security enabled on rebuilt all-feature binary; actual413close repair and explicit uncommitted-overload retry verified.",
+        "library_all_features": "956passed,13ignored after owner-liveness assertion repair; subsequent integration suite still running.",
+        "default_features": {
+          "passed": 774,
+          "failed": 0,
+          "ignored": 13,
+          "executables": 63,
+          "log": "tests-default-final.log"
+        },
+        "all_features": "1302passed,1obsolete maintenance expectation failed,15ignored; document-dense-repaired.log3passed after correction. All other92test executables completed including doc tests.",
+        "msrv": "Rust1.89 no-default-features check passed."
+      },
+      "ci_restoration": {
+        "workflows": 23,
+        "original_conditions": "Restored and byte-compared each workflow to554aec0 before intentional benchmark policy change",
+        "removed": [
+          ".github/workflows/campaign-policy.yml",
+          "scripts/ci/campaign_policy.py",
+          "scripts/ci/test_campaign_policy.py"
+        ],
+        "benchmark_policy": "bench-refresh retains harness validation; remote scheduled performance/auto-publication removed; local commands documented",
+        "status": "Workflow guards and policy removed locally; managed analyses configured with successful setup runs. Final PR-head gate required; release freeze retained until success and merge.",
+        "intentional_changes": [
+          "Local-only benchmark execution; harness validation retained",
+          "Native-backed framework gate with committed dependency lock",
+          "Run full official MCP SDK end-to-end tests alongside launcher tests in MCP package gate"
+        ]
+      },
+      "performance_initial": {
+        "artifact": "final-validation/probe-execution.json",
+        "runtime_seconds": 21.35765937808901,
+        "oracle_checks": 1536,
+        "dense_rebuilds": "baseline/eligibility32 per32-mutation burst; delta/combined0 in all3rounds",
+        "rare_capture_p95_median_us": {
+          "baseline": 2665.3,
+          "combined": 1335.0
+        },
+        "hot_updated_p99_median_us": {
+          "baseline": 2120.8,
+          "combined": 3814.1
+        },
+        "status": "Exactness and primary work targets pass, hot tail guard triggers mechanism repair; timings noisy (identical clean eligibility/combined code also varies strongly). Raw initial results retained, no general speed claim."
+      },
+      "performance_repair": {
+        "root_cause": "Every filtered scan built an additional owner HashSet even when hot terms used direct scoring; changed-ID BTreeSet membership was checked even when current-owner eligibility already excluded replaced rows.",
+        "selected": "Construct owner eligibility only for postings-planned queries; reuse it as the liveness test. For direct scan and unfiltered queries use bounded hashed changed-ID membership, avoid copying it when owner eligibility suffices.",
+        "analytical_effect": "Hot capture avoids E pointer hash inserts and about74KiB peak requested allocation atE5000; owner-qualified traversal removes redundant changed-ID lookups; other traversals replace ordered-ID comparisons with hashed membership. Delta IDs/chunks/bytes bounds and canonical ordering remain unchanged.",
+        "alternatives": "Generation-cached eligibility considered but rejected for this repair: adds retained state, cache admission and invalidation on churn; predicate path already available and cheaper for scan-planned hot queries.",
+        "revalidation": "Only changed retrieval/updates and interacting reopen slice, same4variants/3rounds, no temporal re-run; prior21.36s counts toward600s total; no automatic retries. Initial combined source reconstructed and hash-verified in probe-initial-source.patch.gz."
+      },
+      "performance_final": {
+        "artifact": "final-validation/measurements.json",
+        "execution_seconds_cumulative": 29.36180050240364,
+        "oracle_checks_per_comparison": 1536,
+        "ordered_result_differences": 0,
+        "rare_capture_p95_change_percent": {
+          "initial": -47.831749005906445,
+          "updated": -47.4540070284864
+        },
+        "hot_total_p99_change_percent": {
+          "initial": 1.8267584608504972,
+          "updated": 11.500476697056317
+        },
+        "mutation_and_maintenance_median_ms": {
+          "baseline": 153.728,
+          "combined": 0.402
+        },
+        "maintenance_rebuilds_per_burst": {
+          "baseline": 32,
+          "eligibility": 32,
+          "delta": 0,
+          "combined": 0
+        },
+        "guard_investigation": "Initial hot regression led to removal of unnecessary owner-set construction and duplicate liveness checks. Repaired updated hot median-round p99 remains +11.5% (2.029\u21922.262ms), p50 +11.0%; no claim that a <=10% population-tail bound is established. With32samples/round p99 is the maximum. Delta-only hot path has same scan/liveness logic and smaller timings; compilation/layout and host noise are material, so no further parameter tuning is justified.",
+        "tradeoff": "Preserve combined mechanism: equal rare/hot128-query mix median aggregate237.66\u2192177.12ms (-25.5%), and153.73ms update/maintenance burst\u21920.402ms. Hot-only workloads can pay bounded delta membership/scoring until rebuild. Initial training median4.90\u21925.18ms; 1000-row reopen16.60\u219216.55ms. These are synthetic local observations, not broad speed promises.",
+        "memory": "Hot peak requested bytes44,703\u219244,767 (+64B); rare worst43,709\u2192327,689 (+283,980B), below12MiB guard. Process peak RSS median97.7\u219298.0MiB; lifecycle live requested bytes2,246,047\u21922,446,271 (+200,224B) includes retained lexical scratch. All raw per-round distributions retained.",
+        "temporal": "All72frozen evidence steps pass in combined across3rounds; baseline fails24distinct steps/72 (72assertion pointers), including12/36evaluation steps. Both satisfy12expected abstentions; quoted-source checks6\u219230perround. k=candidateLimit1 unchanged. Learned-answer quality remains unmeasured.",
+        "limits": "One host with other workloads, three rounds, synthetic16D10k corpus, no high-dimensional or capacity extrapolation; no need for100k expansion. Original failures retained. No paid/model API calls or model downloads."
       }
     }
   ],
@@ -690,12 +896,53 @@
       "runner_label": "",
       "ai_findings_option": "disabled"
     },
-    "status": "Both setups set to not-configured and verified via GitHub API; restore original configuration and verify final analyses in final session.",
+    "status": "Both configured; setup analyses succeeded on provisional main. Final PR-head analyses remain required.",
     "evidence": "PR 336 automatically triggered GitHub-managed CodeQL and Code Quality; cancellation requested for runs 40984696618 and 40984696529. These workflows are not in the repository.",
     "r16_verification": {
       "code_scanning": "GET /repos/writerslogic/holographic-memory/code-scanning/default-setup: not-configured",
       "code_quality": "GET /repos/writerslogic/holographic-memory/code-quality/setup: not-configured",
       "documentation": "https://docs.github.com/en/rest/code-quality/code-quality?apiVersion=2026-03-10"
+    },
+    "final_restoration": {
+      "scanning": {
+        "state": "configured",
+        "languages": [
+          "actions",
+          "c-cpp",
+          "csharp",
+          "go",
+          "javascript",
+          "javascript-typescript",
+          "python",
+          "rust",
+          "typescript"
+        ],
+        "query_suite": "default",
+        "threat_model": "remote",
+        "updated_at": "2026-10-30T06:09:55Z",
+        "schedule": "weekly",
+        "runner_type": "standard",
+        "runner_label": ""
+      },
+      "quality": {
+        "state": "configured",
+        "languages": [
+          "csharp",
+          "go",
+          "javascript-typescript",
+          "python"
+        ],
+        "updated_at": "2026-10-30T06:04:52Z",
+        "schedule": "weekly",
+        "runner_type": "standard",
+        "runner_label": "",
+        "ai_findings_option": "disabled"
+      },
+      "note": "GitHub rejects the prior GET aliases javascript/typescript and rust in PATCH languages (422). Re-enabled scanning without a language override; successful setup auto-detects the supported set. Quality explicit original list re-enabled successfully but GitHub retained only detected analyzable languages. No protections or scanners disabled to bypass a gate.",
+      "setup_runs": {
+        "codeql": 41011812902,
+        "quality": 41011782835
+      }
     }
   },
   "next_prompt_queue": [

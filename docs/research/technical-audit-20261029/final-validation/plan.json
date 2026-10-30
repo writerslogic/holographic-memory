@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "status": "declared_before_execution",
+  "revision": "8bae60a6d446bd71d48243a15796cd8510050d1f",
+  "scope": "Changes since campaign baseline554aec0 and interacting flows; historical evidence reused, not re-audit of unchanged repository. Optional operational/strategic extensions explicitly unselected.",
+  "environment": {
+    "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "1",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "source_toolchain": "active stable; MSRV1.89 from Cargo.toml; exact versions captured with logs",
+    "concurrency": "one Cargo operation at a time; source-only agents do not build",
+    "logs": "docs/research/technical-audit-20261029/final-validation/"
+  },
+  "order": [
+    {
+      "stage": "repair-focused",
+      "commands": [
+        "cargo test --offline --locked --features security,provenance-scitt,server,mcp --lib core::documents::search::",
+        "cargo test --offline --locked --features security,provenance-scitt,server,mcp --bin hms-server --bin hms-mcp --test memory_api --test native_memory_workflow --test memory_api_server --test allocation_bounds --test committed_sidecars --test format_golden --test format_crash"
+      ],
+      "acceptance": "Fix all failures; run affected slices only during iteration. Include source-audit scope-allocation and SCITT identity bound findings."
+    },
+    {
+      "stage": "generated-and-adapters",
+      "commands": [
+        "cargo test --offline --locked --lib --features node-api,server export",
+        "cargo run --offline --locked --features server --bin hms-server -- openapi > docs/server/openapi.json",
+        "bash scripts/check-generated.sh",
+        "uv run --offline scripts/check_memory_openapi.py --server-binary target/debug/hms-server",
+        "npm run build",
+        "npm test",
+        "npm run test:types",
+        "npm run test:package",
+        "cd integrations/js && npm run build && npm test",
+        "cd bindings/python/holographic-sdk && uv run --offline pytest -q tests",
+        "bash scripts/check-w3c-interop.sh"
+      ],
+      "acceptance": "Actual generated schemas/bindings, native Node lifecycle and collection race tests, Python service/adapters, independent W3C artifacts; no publish."
+    },
+    {
+      "stage": "consolidated-final",
+      "commands": [
+        "cargo fmt -- --check",
+        "cargo clippy --locked --offline --all-targets --all-features -- -D warnings",
+        "cargo clippy --locked --offline --all-targets -- -D warnings",
+        "cargo test --locked --offline --all-features",
+        "cargo test --locked --offline",
+        "cargo +1.89 check --locked --offline --no-default-features",
+        "cargo doc --locked --offline --no-deps --all-features",
+        "bash scripts/format-gate.sh 554aec0c21ef84aaafee8feb52fd1553be791d2d"
+      ],
+      "remote_matrix": "Restore and require original feature/platform/native/package/fuzz/docs/interop CI gates on final PR head. Coordinator triggers only normal nonbenchmark CI. Scheduled remote bench-refresh execution is removed in favor of its local command plus harness validation. No packages/tags/deploy until validated release-freeze conditions permit."
+    },
+    {
+      "stage": "integration",
+      "commands": [
+        "Restore workflow original conditions from554aec0 plus intended changes; remove campaign deferral policy workflow/script",
+        "Restore GitHub-managed CodeQL/CodeQuality recorded settings and verify final analyses",
+        "Signed+DCO final commit; PR all applicable exact-head nonbenchmark gates; squash merge main; verify remote inclusion and clean tree; delete only campaign branch"
+      ],
+      "acceptance": "Final implemented source, generated artifacts and platform gates pass; remaining external assurance limits explicit. Never infer passing from skipped jobs."
+    }
+  ],
+  "benchmarks": {
+    "local_only": true,
+    "rounds": 3,
+    "max_groups": 4,
+    "max_execution_seconds": 600,
+    "rows_limit": 10000,
+    "capacity_exception": "100k only if a precise unresolved capacity question remains within600s; no automatic retry/matrix/model/network",
+    "baseline_retrieval": "a736af02 (recorded R16 baseline; task-owned git archive only if essential)",
+    "groups": [
+      {
+        "id": "filtered-rare-hot",
+        "rows": 10000,
+        "dimensions": 16,
+        "eligibility": "50% deterministic metadata",
+        "comparison": [
+          "baseline",
+          "eligibility/postings only",
+          "bounded delta only",
+          "combined"
+        ],
+        "target": "rare-term p95 capture>=20% lower; exact ordered score/span oracle; investigate hot p99>10% or per-query additional memory>12MiB"
+      },
+      {
+        "id": "bounded-update",
+        "rows": 10000,
+        "changes": "32-document replace/delete/insert burst plus repeated same-ID replacement",
+        "comparison": [
+          "baseline",
+          "eligibility/postings only",
+          "bounded delta only",
+          "combined"
+        ],
+        "target": "zero automatic dense rebuilds within bounded burst; include train/update/maintenance and exact liveness oracle"
+      },
+      {
+        "id": "native-temporal",
+        "rows_max": 10000,
+        "comparison": [
+          "postfilter baseline",
+          "temporal preselection"
+        ],
+        "target": "72 frozen evidence steps exact support/source/abstention at unchangedk=candidateLimit1; include eligibility scan overhead; no learned QA claim"
+      },
+      {
+        "id": "resource-lifecycle",
+        "rows_max": 1000,
+        "comparison": [
+          "recorded R15 baseline evidence",
+          "current limits"
+        ],
+        "target": "bounded admission/cancellation ownership/RSS and cold reopen/build costs; errors explicit"
+      }
+    ],
+    "report": [
+      "Independent round distributions,p50/p95/p99",
+      "correctness/errors/spans",
+      "RSS/allocations/operation counts",
+      "startup/train/update/maintenance,all measured stages",
+      "uncertainty and unmeasured gains; no hardware/model/general utility extrapolation"
+    ],
+    "execution_detail": {
+      "harness": "retrieval_probe.py + retrieval_probe.rs; injected only into task-owned git archive, no production ablation flags",
+      "variants": "actual a736 baseline, current combined, current with bounded delta dropped after writes, current with eligibility-set/postings planning disabled in archive only",
+      "runtime_limit": "600seconds cumulative subprocess wall time including oracle checks and temporal cases; timer kills an over-budget child; no automatic retries",
+      "allocation": "Same counting System allocator for all variants; requested bytes and calls, parent wait4 RSS; instrumentation included in reported latency",
+      "build_profile": "test opt-level3/debug0, no optional features; one Cargo build at a time; binary/source hashes and rustc version retained",
+      "queries": "32rare+32hot at clean and32-mutation states per variant/round; every result compared as full ordered JSON against exhaustive oracle; mutations followed by normal dense maintenance recommendation",
+      "resource_group": "1000-row actual HmsCore create/ingest/train/query/flush/close/reopen per process; separate previously authored resource/cancellation regressions remain correctness gates",
+      "temporal": "All six frozen scenarios report every failure; diagnostic archive copy only removes per-scenario panic to collect known baseline failures, normal tests unchanged; compare JSON failures/source quotes/abstention over3rounds"
+    }
+  },
+  "external_limits": [
+    "Hardware device power-loss/Windows ACL evidence when unavailable locally",
+    "Independent cryptographic/finite-precision DP review and authenticated checkpoint provenance",
+    "Learned-model/native-answer quality with representative inference remains unmeasured"
+  ]
+}

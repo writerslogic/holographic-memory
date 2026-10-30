@@ -1,0 +1,1684 @@
+{
+  "dimensions": 16,
+  "elapsed_seconds": 0.625524708,
+  "engine_lifecycle": {
+    "create_ns": 38522875,
+    "first_query_ns": 318750,
+    "flush_close_ns": 11545375,
+    "ingest_ns": 22807917,
+    "live_requested_bytes": 2246044,
+    "reopen_ns": 17470583,
+    "reopened_query_ns": 152667,
+    "rows": 1000,
+    "train_ns": 303625
+  },
+  "ingest_ns": 139047958,
+  "initial_train_ns": 5218167,
+  "maintenance_rebuilds": 0,
+  "memory_note": "Counting system allocator requested bytes; atomic instrumentation included identically in all variants. RSS measured by parent; not allocator usable size.",
+  "mutations": [
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 40042
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 13334
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 40625
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 14709
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 8791
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 8500
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 17625
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 10166
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 10167
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 7709
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 15041
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 6500
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 7708
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 7459
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 13792
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 6166
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 7208
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 7125
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 13709
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 5542
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 6834
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 6792
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 13500
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 5625
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 6791
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 7958
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 23084
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 17250
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 11333
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 9042
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 19458
+    },
+    {
+      "maintenance_ns": 0,
+      "rebuilt": false,
+      "update_ns": 8125
+    }
+  ],
+  "queries": [
+    {
+      "oracle_checks": 64,
+      "ordered_results_crc32": 61290663,
+      "phase": "initial",
+      "samples": [
+        {
+          "allocations": 168,
+          "capture_ns": 2722625,
+          "captured_chunks": 8,
+          "execute_ns": 314750,
+          "hot": false,
+          "peak_requested_bytes": 43721,
+          "prepare_ns": 15833,
+          "query": 0,
+          "total_ns": 3053208
+        },
+        {
+          "allocations": 168,
+          "capture_ns": 2177541,
+          "captured_chunks": 8,
+          "execute_ns": 189375,
+          "hot": false,
+          "peak_requested_bytes": 43733,
+          "prepare_ns": 5292,
+          "query": 1,
+          "total_ns": 2372208
+        },
+        {
+          "allocations": 168,
+          "capture_ns": 2075875,
+          "captured_chunks": 8,
+          "execute_ns": 210250,
+          "hot": false,
+          "peak_requested_bytes": 43733,
+          "prepare_ns": 5917,
+          "query": 2,
+          "total_ns": 2292042
+        },
+        {
+          "allocations": 168,
+          "capture_ns": 2321208,
+          "captured_chunks": 8,
+          "execute_ns": 263292,
+          "hot": false,
+          "peak_requested_bytes": 43733,
+          "prepare_ns": 4208,
+          "query": 3,
+          "total_ns": 2588708
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2187625,
+          "captured_chunks": 8,
+          "execute_ns": 214333,
+          "hot": false,
+          "peak_requested_bytes": 43737,
+          "prepare_ns": 7375,
+          "query": 4,
+          "total_ns": 2409333
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1938500,
+          "captured_chunks": 8,
+          "execute_ns": 162916,
+          "hot": false,
+          "peak_requested_bytes": 43745,
+          "prepare_ns": 3709,
+          "query": 5,
+          "total_ns": 2105125
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1924583,
+          "captured_chunks": 8,
+          "execute_ns": 141709,
+          "hot": false,
+          "peak_requested_bytes": 43753,
+          "prepare_ns": 3667,
+          "query": 6,
+          "total_ns": 2069959
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1998250,
+          "captured_chunks": 8,
+          "execute_ns": 134458,
+          "hot": false,
+          "peak_requested_bytes": 43761,
+          "prepare_ns": 3042,
+          "query": 7,
+          "total_ns": 2135750
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2740583,
+          "captured_chunks": 8,
+          "execute_ns": 254209,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3333,
+          "query": 8,
+          "total_ns": 2998125
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2287334,
+          "captured_chunks": 8,
+          "execute_ns": 283250,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 4875,
+          "query": 9,
+          "total_ns": 2575459
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1925625,
+          "captured_chunks": 8,
+          "execute_ns": 173750,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 4500,
+          "query": 10,
+          "total_ns": 2103875
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1875583,
+          "captured_chunks": 8,
+          "execute_ns": 137167,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3542,
+          "query": 11,
+          "total_ns": 2016292
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1920209,
+          "captured_chunks": 8,
+          "execute_ns": 211333,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3333,
+          "query": 12,
+          "total_ns": 2134875
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1922042,
+          "captured_chunks": 8,
+          "execute_ns": 180667,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3125,
+          "query": 13,
+          "total_ns": 2105834
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1869667,
+          "captured_chunks": 8,
+          "execute_ns": 159541,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3167,
+          "query": 14,
+          "total_ns": 2032375
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1857750,
+          "captured_chunks": 8,
+          "execute_ns": 142625,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3000,
+          "query": 15,
+          "total_ns": 2003375
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1895500,
+          "captured_chunks": 8,
+          "execute_ns": 135959,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3083,
+          "query": 16,
+          "total_ns": 2034542
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1932833,
+          "captured_chunks": 8,
+          "execute_ns": 167833,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 2792,
+          "query": 17,
+          "total_ns": 2103458
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2093125,
+          "captured_chunks": 8,
+          "execute_ns": 193917,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3250,
+          "query": 18,
+          "total_ns": 2290292
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2060667,
+          "captured_chunks": 8,
+          "execute_ns": 241375,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3041,
+          "query": 19,
+          "total_ns": 2305083
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2036667,
+          "captured_chunks": 8,
+          "execute_ns": 208958,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 4833,
+          "query": 20,
+          "total_ns": 2250458
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2001083,
+          "captured_chunks": 8,
+          "execute_ns": 177792,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3375,
+          "query": 21,
+          "total_ns": 2182250
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 1979083,
+          "captured_chunks": 8,
+          "execute_ns": 241584,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3500,
+          "query": 22,
+          "total_ns": 2224167
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2458542,
+          "captured_chunks": 8,
+          "execute_ns": 304792,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 9333,
+          "query": 23,
+          "total_ns": 2772667
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2103708,
+          "captured_chunks": 8,
+          "execute_ns": 183542,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 4417,
+          "query": 24,
+          "total_ns": 2291667
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2032334,
+          "captured_chunks": 8,
+          "execute_ns": 250458,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3333,
+          "query": 25,
+          "total_ns": 2286125
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2029042,
+          "captured_chunks": 8,
+          "execute_ns": 210875,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 7250,
+          "query": 26,
+          "total_ns": 2247167
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2229833,
+          "captured_chunks": 8,
+          "execute_ns": 225625,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 3875,
+          "query": 27,
+          "total_ns": 2459333
+        },
+        {
+          "allocations": 165,
+          "capture_ns": 2248834,
+          "captured_chunks": 8,
+          "execute_ns": 246750,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 9000,
+          "query": 28,
+          "total_ns": 2504584
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2197125,
+          "captured_chunks": 8,
+          "execute_ns": 230625,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 6708,
+          "query": 29,
+          "total_ns": 2434458
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 3011417,
+          "captured_chunks": 8,
+          "execute_ns": 360666,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 14000,
+          "query": 30,
+          "total_ns": 3386083
+        },
+        {
+          "allocations": 166,
+          "capture_ns": 2092000,
+          "captured_chunks": 8,
+          "execute_ns": 207209,
+          "hot": false,
+          "peak_requested_bytes": 43765,
+          "prepare_ns": 5000,
+          "query": 31,
+          "total_ns": 2304209
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1577667,
+          "captured_chunks": 32,
+          "execute_ns": 192958,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 5541,
+          "query": 0,
+          "total_ns": 1776166
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1416417,
+          "captured_chunks": 32,
+          "execute_ns": 145666,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 2708,
+          "query": 1,
+          "total_ns": 1564791
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1382625,
+          "captured_chunks": 32,
+          "execute_ns": 136292,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1667,
+          "query": 2,
+          "total_ns": 1520584
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1363250,
+          "captured_chunks": 32,
+          "execute_ns": 130708,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1500,
+          "query": 3,
+          "total_ns": 1495458
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1459416,
+          "captured_chunks": 32,
+          "execute_ns": 198084,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 2042,
+          "query": 4,
+          "total_ns": 1659542
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1521167,
+          "captured_chunks": 32,
+          "execute_ns": 161125,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 3416,
+          "query": 5,
+          "total_ns": 1685708
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1511833,
+          "captured_chunks": 32,
+          "execute_ns": 148459,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1917,
+          "query": 6,
+          "total_ns": 1662209
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1382000,
+          "captured_chunks": 32,
+          "execute_ns": 134458,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1500,
+          "query": 7,
+          "total_ns": 1517958
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1372125,
+          "captured_chunks": 32,
+          "execute_ns": 134500,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1416,
+          "query": 8,
+          "total_ns": 1508041
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1549750,
+          "captured_chunks": 32,
+          "execute_ns": 165458,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1584,
+          "query": 9,
+          "total_ns": 1716792
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1405000,
+          "captured_chunks": 32,
+          "execute_ns": 135625,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1541,
+          "query": 10,
+          "total_ns": 1542166
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1374625,
+          "captured_chunks": 32,
+          "execute_ns": 131625,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1416,
+          "query": 11,
+          "total_ns": 1507666
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1675417,
+          "captured_chunks": 32,
+          "execute_ns": 189375,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1583,
+          "query": 12,
+          "total_ns": 1866375
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1430666,
+          "captured_chunks": 32,
+          "execute_ns": 140292,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1584,
+          "query": 13,
+          "total_ns": 1572542
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1410584,
+          "captured_chunks": 32,
+          "execute_ns": 152958,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1458,
+          "query": 14,
+          "total_ns": 1565000
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1437333,
+          "captured_chunks": 32,
+          "execute_ns": 209917,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1542,
+          "query": 15,
+          "total_ns": 1648792
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1390000,
+          "captured_chunks": 32,
+          "execute_ns": 128667,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 2583,
+          "query": 16,
+          "total_ns": 1521250
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1445583,
+          "captured_chunks": 32,
+          "execute_ns": 148125,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1834,
+          "query": 17,
+          "total_ns": 1595542
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1444208,
+          "captured_chunks": 32,
+          "execute_ns": 140375,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 2417,
+          "query": 18,
+          "total_ns": 1587000
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1432167,
+          "captured_chunks": 32,
+          "execute_ns": 152792,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1458,
+          "query": 19,
+          "total_ns": 1586417
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1521625,
+          "captured_chunks": 32,
+          "execute_ns": 198625,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1542,
+          "query": 20,
+          "total_ns": 1721792
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1389125,
+          "captured_chunks": 32,
+          "execute_ns": 154666,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1500,
+          "query": 21,
+          "total_ns": 1545291
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1362084,
+          "captured_chunks": 32,
+          "execute_ns": 116958,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1416,
+          "query": 22,
+          "total_ns": 1480458
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1385875,
+          "captured_chunks": 32,
+          "execute_ns": 127167,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1417,
+          "query": 23,
+          "total_ns": 1514459
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1721958,
+          "captured_chunks": 32,
+          "execute_ns": 212042,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1625,
+          "query": 24,
+          "total_ns": 1935625
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1534667,
+          "captured_chunks": 32,
+          "execute_ns": 166875,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 3291,
+          "query": 25,
+          "total_ns": 1704833
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1540292,
+          "captured_chunks": 32,
+          "execute_ns": 205500,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 2000,
+          "query": 26,
+          "total_ns": 1747792
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1718375,
+          "captured_chunks": 32,
+          "execute_ns": 182250,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 2666,
+          "query": 27,
+          "total_ns": 1903291
+        },
+        {
+          "allocations": 151,
+          "capture_ns": 1431750,
+          "captured_chunks": 32,
+          "execute_ns": 158459,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1833,
+          "query": 28,
+          "total_ns": 1592042
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1412834,
+          "captured_chunks": 32,
+          "execute_ns": 140166,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1666,
+          "query": 29,
+          "total_ns": 1554666
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1433167,
+          "captured_chunks": 32,
+          "execute_ns": 167375,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1833,
+          "query": 30,
+          "total_ns": 1602375
+        },
+        {
+          "allocations": 152,
+          "capture_ns": 1380167,
+          "captured_chunks": 32,
+          "execute_ns": 126958,
+          "hot": true,
+          "peak_requested_bytes": 44759,
+          "prepare_ns": 1500,
+          "query": 31,
+          "total_ns": 1508625
+        }
+      ]
+    },
+    {
+      "oracle_checks": 64,
+      "ordered_results_crc32": 3206756914,
+      "phase": "updated",
+      "samples": [
+        {
+          "allocations": 200,
+          "capture_ns": 1894292,
+          "captured_chunks": 8,
+          "execute_ns": 223208,
+          "hot": false,
+          "peak_requested_bytes": 43657,
+          "prepare_ns": 5417,
+          "query": 0,
+          "total_ns": 2122917
+        },
+        {
+          "allocations": 199,
+          "capture_ns": 1927125,
+          "captured_chunks": 9,
+          "execute_ns": 579750,
+          "hot": false,
+          "peak_requested_bytes": 43669,
+          "prepare_ns": 4208,
+          "query": 1,
+          "total_ns": 2511083
+        },
+        {
+          "allocations": 199,
+          "capture_ns": 2014375,
+          "captured_chunks": 9,
+          "execute_ns": 280125,
+          "hot": false,
+          "peak_requested_bytes": 43669,
+          "prepare_ns": 4375,
+          "query": 2,
+          "total_ns": 2298875
+        },
+        {
+          "allocations": 199,
+          "capture_ns": 1780041,
+          "captured_chunks": 9,
+          "execute_ns": 216625,
+          "hot": false,
+          "peak_requested_bytes": 43669,
+          "prepare_ns": 3917,
+          "query": 3,
+          "total_ns": 2000583
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1869292,
+          "captured_chunks": 9,
+          "execute_ns": 310375,
+          "hot": false,
+          "peak_requested_bytes": 43673,
+          "prepare_ns": 3542,
+          "query": 4,
+          "total_ns": 2183209
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1870708,
+          "captured_chunks": 9,
+          "execute_ns": 397417,
+          "hot": false,
+          "peak_requested_bytes": 43681,
+          "prepare_ns": 4209,
+          "query": 5,
+          "total_ns": 2272334
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1937041,
+          "captured_chunks": 9,
+          "execute_ns": 228750,
+          "hot": false,
+          "peak_requested_bytes": 43689,
+          "prepare_ns": 3959,
+          "query": 6,
+          "total_ns": 2169750
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1958333,
+          "captured_chunks": 9,
+          "execute_ns": 251583,
+          "hot": false,
+          "peak_requested_bytes": 43697,
+          "prepare_ns": 3667,
+          "query": 7,
+          "total_ns": 2213583
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1959750,
+          "captured_chunks": 9,
+          "execute_ns": 235042,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3250,
+          "query": 8,
+          "total_ns": 2198042
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1896667,
+          "captured_chunks": 9,
+          "execute_ns": 208958,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 2875,
+          "query": 9,
+          "total_ns": 2108500
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1998000,
+          "captured_chunks": 9,
+          "execute_ns": 298250,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3209,
+          "query": 10,
+          "total_ns": 2299459
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1909584,
+          "captured_chunks": 9,
+          "execute_ns": 223250,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3666,
+          "query": 11,
+          "total_ns": 2136500
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1864709,
+          "captured_chunks": 9,
+          "execute_ns": 213708,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 2791,
+          "query": 12,
+          "total_ns": 2081208
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1870458,
+          "captured_chunks": 9,
+          "execute_ns": 187458,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 2959,
+          "query": 13,
+          "total_ns": 2060875
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1945250,
+          "captured_chunks": 9,
+          "execute_ns": 328708,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3125,
+          "query": 14,
+          "total_ns": 2277083
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 2174625,
+          "captured_chunks": 9,
+          "execute_ns": 327291,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3000,
+          "query": 15,
+          "total_ns": 2504916
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1922833,
+          "captured_chunks": 9,
+          "execute_ns": 225709,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3000,
+          "query": 16,
+          "total_ns": 2151542
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1863833,
+          "captured_chunks": 9,
+          "execute_ns": 225959,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3042,
+          "query": 17,
+          "total_ns": 2092834
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1965625,
+          "captured_chunks": 9,
+          "execute_ns": 318041,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3167,
+          "query": 18,
+          "total_ns": 2286833
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1881292,
+          "captured_chunks": 9,
+          "execute_ns": 250666,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 2875,
+          "query": 19,
+          "total_ns": 2134833
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 2010875,
+          "captured_chunks": 9,
+          "execute_ns": 420333,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3167,
+          "query": 20,
+          "total_ns": 2434375
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1995500,
+          "captured_chunks": 9,
+          "execute_ns": 254000,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 4042,
+          "query": 21,
+          "total_ns": 2253542
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1910250,
+          "captured_chunks": 9,
+          "execute_ns": 212917,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3208,
+          "query": 22,
+          "total_ns": 2126375
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1881959,
+          "captured_chunks": 9,
+          "execute_ns": 190541,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3916,
+          "query": 23,
+          "total_ns": 2076416
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 2204750,
+          "captured_chunks": 9,
+          "execute_ns": 374000,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 4167,
+          "query": 24,
+          "total_ns": 2582917
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 2392000,
+          "captured_chunks": 9,
+          "execute_ns": 369708,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3959,
+          "query": 25,
+          "total_ns": 2765667
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1992958,
+          "captured_chunks": 9,
+          "execute_ns": 270584,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 2875,
+          "query": 26,
+          "total_ns": 2266417
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1959917,
+          "captured_chunks": 9,
+          "execute_ns": 237083,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3083,
+          "query": 27,
+          "total_ns": 2200083
+        },
+        {
+          "allocations": 196,
+          "capture_ns": 1963459,
+          "captured_chunks": 9,
+          "execute_ns": 242208,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3166,
+          "query": 28,
+          "total_ns": 2208833
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 2039583,
+          "captured_chunks": 9,
+          "execute_ns": 292375,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3083,
+          "query": 29,
+          "total_ns": 2335041
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 2223416,
+          "captured_chunks": 9,
+          "execute_ns": 282500,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 6000,
+          "query": 30,
+          "total_ns": 2511916
+        },
+        {
+          "allocations": 197,
+          "capture_ns": 1922542,
+          "captured_chunks": 9,
+          "execute_ns": 233041,
+          "hot": false,
+          "peak_requested_bytes": 43701,
+          "prepare_ns": 3500,
+          "query": 31,
+          "total_ns": 2159083
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1511541,
+          "captured_chunks": 32,
+          "execute_ns": 233625,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 4750,
+          "query": 0,
+          "total_ns": 1749916
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1465084,
+          "captured_chunks": 32,
+          "execute_ns": 212291,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2000,
+          "query": 1,
+          "total_ns": 1679375
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1592208,
+          "captured_chunks": 32,
+          "execute_ns": 361292,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2208,
+          "query": 2,
+          "total_ns": 1955708
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1625167,
+          "captured_chunks": 32,
+          "execute_ns": 241042,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2875,
+          "query": 3,
+          "total_ns": 1869084
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1471917,
+          "captured_chunks": 32,
+          "execute_ns": 244667,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1875,
+          "query": 4,
+          "total_ns": 1718459
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1434041,
+          "captured_chunks": 32,
+          "execute_ns": 210042,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1792,
+          "query": 5,
+          "total_ns": 1645875
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1420209,
+          "captured_chunks": 32,
+          "execute_ns": 190750,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1500,
+          "query": 6,
+          "total_ns": 1612459
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1419875,
+          "captured_chunks": 32,
+          "execute_ns": 191708,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1542,
+          "query": 7,
+          "total_ns": 1613125
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1451000,
+          "captured_chunks": 32,
+          "execute_ns": 209083,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2083,
+          "query": 8,
+          "total_ns": 1662166
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1518792,
+          "captured_chunks": 32,
+          "execute_ns": 246875,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2291,
+          "query": 9,
+          "total_ns": 1767958
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1532584,
+          "captured_chunks": 32,
+          "execute_ns": 335583,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1541,
+          "query": 10,
+          "total_ns": 1869708
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1482708,
+          "captured_chunks": 32,
+          "execute_ns": 224417,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1667,
+          "query": 11,
+          "total_ns": 1708792
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1459125,
+          "captured_chunks": 32,
+          "execute_ns": 226500,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2125,
+          "query": 12,
+          "total_ns": 1687750
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1428333,
+          "captured_chunks": 32,
+          "execute_ns": 186167,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1458,
+          "query": 13,
+          "total_ns": 1615958
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1418667,
+          "captured_chunks": 32,
+          "execute_ns": 193500,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1667,
+          "query": 14,
+          "total_ns": 1613834
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1432291,
+          "captured_chunks": 32,
+          "execute_ns": 200542,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2084,
+          "query": 15,
+          "total_ns": 1634917
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1481625,
+          "captured_chunks": 32,
+          "execute_ns": 239458,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2417,
+          "query": 16,
+          "total_ns": 1723500
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1669416,
+          "captured_chunks": 32,
+          "execute_ns": 364375,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2334,
+          "query": 17,
+          "total_ns": 2036125
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1521125,
+          "captured_chunks": 32,
+          "execute_ns": 239084,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2125,
+          "query": 18,
+          "total_ns": 1762334
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1467625,
+          "captured_chunks": 32,
+          "execute_ns": 226167,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1708,
+          "query": 19,
+          "total_ns": 1695500
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1445500,
+          "captured_chunks": 32,
+          "execute_ns": 206792,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1542,
+          "query": 20,
+          "total_ns": 1653834
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1433750,
+          "captured_chunks": 32,
+          "execute_ns": 189083,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1458,
+          "query": 21,
+          "total_ns": 1624291
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1415125,
+          "captured_chunks": 32,
+          "execute_ns": 196000,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1459,
+          "query": 22,
+          "total_ns": 1612584
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1577833,
+          "captured_chunks": 32,
+          "execute_ns": 337250,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1917,
+          "query": 23,
+          "total_ns": 1917000
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1546000,
+          "captured_chunks": 32,
+          "execute_ns": 237458,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 2083,
+          "query": 24,
+          "total_ns": 1785541
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1449791,
+          "captured_chunks": 32,
+          "execute_ns": 227875,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1709,
+          "query": 25,
+          "total_ns": 1679375
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1408458,
+          "captured_chunks": 32,
+          "execute_ns": 189709,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1542,
+          "query": 26,
+          "total_ns": 1599709
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1413125,
+          "captured_chunks": 32,
+          "execute_ns": 175541,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1750,
+          "query": 27,
+          "total_ns": 1590416
+        },
+        {
+          "allocations": 181,
+          "capture_ns": 1413125,
+          "captured_chunks": 32,
+          "execute_ns": 189292,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1375,
+          "query": 28,
+          "total_ns": 1603792
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1423750,
+          "captured_chunks": 32,
+          "execute_ns": 182208,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1417,
+          "query": 29,
+          "total_ns": 1607375
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1457500,
+          "captured_chunks": 32,
+          "execute_ns": 304166,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1375,
+          "query": 30,
+          "total_ns": 1763041
+        },
+        {
+          "allocations": 182,
+          "capture_ns": 1743375,
+          "captured_chunks": 32,
+          "execute_ns": 334875,
+          "hot": true,
+          "peak_requested_bytes": 44695,
+          "prepare_ns": 1917,
+          "query": 31,
+          "total_ns": 2080167
+        }
+      ]
+    }
+  ],
+  "rows": 10000,
+  "store_census": {
+    "accounting": "Requested capacities, excluding allocator rounding, tree node overhead, and engine state outside DocumentStore. The *.unused entries are subsets of *.capacity; *.payload entries are lower bounds. Shared dictionaries and positions are counted once. Census scratch is excluded.",
+    "bytes": {
+      "chunks.capacity": 1600000,
+      "chunks.strings": 598918,
+      "chunks.vector_indices.capacity": 0,
+      "documents.arc_records": 1440000,
+      "documents.map.payload": 380000,
+      "documents.strings": 278919,
+      "forward.frequencies": 200000,
+      "forward.term_offsets": 200000,
+      "forward.term_records": 560000,
+      "forward.term_text": 308918,
+      "postings.blocks.capacity": 588784,
+      "postings.blocks.length": 577808,
+      "postings.blocks.unused": 10976,
+      "postings.data.capacity": 96400,
+      "postings.data.length": 20031,
+      "postings.data.unused": 76369,
+      "postings.dictionary.ids.capacity": 33640,
+      "postings.dictionary.offsets.capacity": 33644,
+      "postings.dictionary.overlay.payload": 44923,
+      "postings.dictionary.text.capacity": 66161,
+      "postings.free.capacity": 16,
+      "postings.frontiers": 0,
+      "postings.lists.capacity": 1179648,
+      "slots.free.payload": 0,
+      "slots.map.payload": 620000,
+      "slots.owners.capacity": 262144,
+      "slots.position_sources.capacity": 0,
+      "slots.word_counts.capacity": 65536
+    },
+    "counts": {
+      "chunks": 10000,
+      "chunks.with_embedding": 10000,
+      "documents": 10000,
+      "documents.with_metadata": 10000,
+      "forward.packed_tables": 10000,
+      "forward.terms": 50000,
+      "postings.block_size": 56,
+      "postings.blocks": 10318,
+      "postings.list_size": 72,
+      "postings.lists": 10006,
+      "postings.postings": 50000,
+      "unmeasured.dense_index": 1,
+      "unmeasured.embedded_documents": 10000,
+      "unmeasured.metadata_entries": 2,
+      "unmeasured.multichunk_documents": 0,
+      "unmeasured.source_entries": 10000
+    },
+    "posting_list_histogram": [
+      {
+        "block_capacity": 1,
+        "block_length": 1,
+        "lists": 10001,
+        "posting_count": 1
+      },
+      {
+        "block_capacity": 1,
+        "block_length": 1,
+        "lists": 1,
+        "posting_count": 16
+      },
+      {
+        "block_capacity": 128,
+        "block_length": 79,
+        "lists": 1,
+        "posting_count": 9983
+      },
+      {
+        "block_capacity": 128,
+        "block_length": 79,
+        "lists": 3,
+        "posting_count": 10000
+      }
+    ]
+  },
+  "variant": "delta"
+}

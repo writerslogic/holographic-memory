@@ -1,0 +1,469 @@
+{
+  "budget_seconds": 600,
+  "execution_seconds": 21.35765937808901,
+  "rounds": [
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/baseline-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-baseline-1.log",
+      "seconds": 1.185065499972552,
+      "exit_code": 0,
+      "peak_rss_platform_units": 102563840,
+      "user_seconds": 0.679172,
+      "system_seconds": 0.11174999999999999,
+      "loadavg_before": [
+        2.763671875,
+        3.34033203125,
+        4.6513671875
+      ],
+      "loadavg_after": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-eligibility-1.log",
+      "seconds": 0.9545991671038792,
+      "exit_code": 0,
+      "peak_rss_platform_units": 103776256,
+      "user_seconds": 0.790805,
+      "system_seconds": 0.11935,
+      "loadavg_before": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ],
+      "loadavg_after": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/delta-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-delta-1.log",
+      "seconds": 0.6953431669389829,
+      "exit_code": 0,
+      "peak_rss_platform_units": 102809600,
+      "user_seconds": 0.542706,
+      "system_seconds": 0.099174,
+      "loadavg_before": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ],
+      "loadavg_after": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-combined-1.log",
+      "seconds": 1.154747624997981,
+      "exit_code": 0,
+      "peak_rss_platform_units": 103464960,
+      "user_seconds": 0.49634999999999996,
+      "system_seconds": 0.09178,
+      "loadavg_before": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ],
+      "loadavg_after": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/baseline-temporal",
+        "--exact",
+        "frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "temporal-baseline-1.log",
+      "seconds": 2.365991709055379,
+      "exit_code": 0,
+      "peak_rss_platform_units": 76677120,
+      "user_seconds": 0.08352899999999999,
+      "system_seconds": 0.34432599999999997,
+      "loadavg_before": [
+        5.1845703125,
+        3.83251953125,
+        4.8173828125
+      ],
+      "loadavg_after": [
+        5.08935546875,
+        3.8349609375,
+        4.8125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-temporal",
+        "--exact",
+        "frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "temporal-combined-1.log",
+      "seconds": 1.2053544169757515,
+      "exit_code": 0,
+      "peak_rss_platform_units": 75612160,
+      "user_seconds": 0.08015,
+      "system_seconds": 0.32264899999999996,
+      "loadavg_before": [
+        5.08935546875,
+        3.8349609375,
+        4.8125
+      ],
+      "loadavg_after": [
+        5.08935546875,
+        3.8349609375,
+        4.8125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-eligibility-2.log",
+      "seconds": 0.801118207979016,
+      "exit_code": 0,
+      "peak_rss_platform_units": 103399424,
+      "user_seconds": 0.6570699999999999,
+      "system_seconds": 0.106191,
+      "loadavg_before": [
+        5.08935546875,
+        3.8349609375,
+        4.8125
+      ],
+      "loadavg_after": [
+        5.08935546875,
+        3.8349609375,
+        4.8125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/delta-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-delta-2.log",
+      "seconds": 1.0488351250533015,
+      "exit_code": 0,
+      "peak_rss_platform_units": 102809600,
+      "user_seconds": 0.528783,
+      "system_seconds": 0.08409799999999999,
+      "loadavg_before": [
+        5.08935546875,
+        3.8349609375,
+        4.8125
+      ],
+      "loadavg_after": [
+        5.08935546875,
+        3.8349609375,
+        4.8125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-combined-2.log",
+      "seconds": 0.6868584170006216,
+      "exit_code": 0,
+      "peak_rss_platform_units": 103645184,
+      "user_seconds": 0.49523199999999995,
+      "system_seconds": 0.098824,
+      "loadavg_before": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ],
+      "loadavg_after": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/baseline-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-baseline-2.log",
+      "seconds": 0.9794618749292567,
+      "exit_code": 0,
+      "peak_rss_platform_units": 102825984,
+      "user_seconds": 0.7506929999999999,
+      "system_seconds": 0.094418,
+      "loadavg_before": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ],
+      "loadavg_after": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/baseline-temporal",
+        "--exact",
+        "frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "temporal-baseline-2.log",
+      "seconds": 1.2319708750583231,
+      "exit_code": 0,
+      "peak_rss_platform_units": 75595776,
+      "user_seconds": 0.078829,
+      "system_seconds": 0.320322,
+      "loadavg_before": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ],
+      "loadavg_after": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-temporal",
+        "--exact",
+        "frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "temporal-combined-2.log",
+      "seconds": 1.2138368340674788,
+      "exit_code": 0,
+      "peak_rss_platform_units": 76251136,
+      "user_seconds": 0.080064,
+      "system_seconds": 0.329329,
+      "loadavg_before": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ],
+      "loadavg_after": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/delta-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-delta-3.log",
+      "seconds": 0.9611850410001352,
+      "exit_code": 0,
+      "peak_rss_platform_units": 102760448,
+      "user_seconds": 0.531114,
+      "system_seconds": 0.088374,
+      "loadavg_before": [
+        5.2421875,
+        3.88720703125,
+        4.8251953125
+      ],
+      "loadavg_after": [
+        5.142578125,
+        3.888671875,
+        4.8203125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-combined-3.log",
+      "seconds": 1.1770078749395907,
+      "exit_code": 0,
+      "peak_rss_platform_units": 103366656,
+      "user_seconds": 0.48522,
+      "system_seconds": 0.094659,
+      "loadavg_before": [
+        5.142578125,
+        3.888671875,
+        4.8203125
+      ],
+      "loadavg_after": [
+        5.142578125,
+        3.888671875,
+        4.8203125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/baseline-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-baseline-3.log",
+      "seconds": 1.3621286250418052,
+      "exit_code": 0,
+      "peak_rss_platform_units": 102678528,
+      "user_seconds": 0.7199209999999999,
+      "system_seconds": 0.10668,
+      "loadavg_before": [
+        5.142578125,
+        3.888671875,
+        4.8203125
+      ],
+      "loadavg_after": [
+        5.142578125,
+        3.888671875,
+        4.8203125
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-retrieval",
+        "--exact",
+        "core::documents::search::campaign_probe::campaign_retrieval_probe",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "probe-eligibility-3.log",
+      "seconds": 1.242113042040728,
+      "exit_code": 0,
+      "peak_rss_platform_units": 103907328,
+      "user_seconds": 0.753398,
+      "system_seconds": 0.091363,
+      "loadavg_before": [
+        5.142578125,
+        3.888671875,
+        4.8203125
+      ],
+      "loadavg_after": [
+        4.890625,
+        3.85693359375,
+        4.8037109375
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/baseline-temporal",
+        "--exact",
+        "frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "temporal-baseline-3.log",
+      "seconds": 1.7860627089394256,
+      "exit_code": 0,
+      "peak_rss_platform_units": 76644352,
+      "user_seconds": 0.078205,
+      "system_seconds": 0.318334,
+      "loadavg_before": [
+        4.890625,
+        3.85693359375,
+        4.8037109375
+      ],
+      "loadavg_after": [
+        4.890625,
+        3.85693359375,
+        4.8037109375
+      ]
+    },
+    {
+      "command": [
+        "/Volumes/A/holographic-memory/target/campaign-final-probes/binaries/combined-temporal",
+        "--exact",
+        "frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "temporal-combined-3.log",
+      "seconds": 1.3059791669948027,
+      "exit_code": 0,
+      "peak_rss_platform_units": 75661312,
+      "user_seconds": 0.07829499999999999,
+      "system_seconds": 0.315658,
+      "loadavg_before": [
+        4.890625,
+        3.85693359375,
+        4.8037109375
+      ],
+      "loadavg_after": [
+        4.890625,
+        3.85693359375,
+        4.8037109375
+      ]
+    }
+  ],
+  "completed": true
+}

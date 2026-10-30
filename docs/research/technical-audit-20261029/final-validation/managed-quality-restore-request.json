@@ -1,0 +1,12 @@
+{
+  "state": "configured",
+  "languages": [
+    "csharp",
+    "go",
+    "java-kotlin",
+    "javascript-typescript",
+    "python"
+  ],
+  "runner_type": "standard",
+  "ai_findings_option": "disabled"
+}

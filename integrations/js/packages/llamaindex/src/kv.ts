@@ -13,7 +13,7 @@ const DEFAULT_COLLECTION = 'data'
  * key-value data.
  *
  * Limits: `get`, `put` and `delete` are exact and unbounded. `getAll` has to enumerate a
- * collection and the engine returns at most `maxFetch` passages (default 1000) per query, so it
+ * collection through metadata pages, retaining at most `maxFetch` records (default 1000), so it
  * throws `limit_exceeded` instead of silently returning a partial map when a collection is larger.
  * `KVDocumentStore.docs()` and `getAllDocumentHashes()` use `getAll`.
  */
@@ -43,7 +43,7 @@ export class HmsKVStore extends BaseKVStore {
   async getAll(collection: string = DEFAULT_COLLECTION): Promise<Record<string, StoredValue>> {
     const page = await this.store.list({ kv_collection: collection })
     if (page.truncated) {
-      throw new HmsError(`collection "${collection}" has more entries than one engine query returns (maxFetch); raise maxFetch or split the collection`, 'limit_exceeded')
+      throw new HmsError(`collection "${collection}" exceeds maxFetch; raise maxFetch or split the collection`, 'limit_exceeded')
     }
     const out: Record<string, StoredValue> = {}
     for (const r of page.records) out[String(r.metadata.kv_key)] = JSON.parse(r.text) as StoredValue

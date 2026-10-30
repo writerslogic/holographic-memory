@@ -1,12 +1,32 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-import { embed, embedMany, rerank, tool, type EmbeddingModel, type LanguageModelMiddleware, type RerankingModel } from 'ai'
+import { embed, embedMany, rerank, tool, type EmbeddingModel, type LanguageModelMiddleware, type RerankingModel, type Tool } from 'ai'
 import { z } from 'zod'
 import type { Embedder, FilterLike, Hit, HmsStore, Metadata, Reranker } from '@holographic-memory/core'
 
 type Params = Parameters<NonNullable<LanguageModelMiddleware['transformParams']>>[0]['params']
 
 const metadataSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+const rememberSchema = z.object({
+  text: z.string().min(1).describe('The information to remember, written as a self-contained statement'),
+  id: z.string().min(1).optional().describe('Stable id; reusing an id replaces that memory'),
+  metadata: metadataSchema.optional().describe('Flat key-value tags usable as recall filters'),
+})
+const forgetSchema = z.object({ ids: z.array(z.string().min(1)).min(1).max(100) })
+
+function recallSchema(defaultK: number) {
+  return z.object({
+    query: z.string().min(1).describe('What to look for'),
+    k: z.number().int().min(1).max(50).optional().describe(`Number of memories to return (default ${defaultK})`),
+    filter: metadataSchema.optional().describe('Only memories whose metadata equals these values'),
+  })
+}
+
+export type MemoryTools = Record<string,
+  | Tool<z.infer<typeof rememberSchema>, { id: string; stored: boolean }>
+  | Tool<z.infer<ReturnType<typeof recallSchema>>, { memories: ReturnType<typeof publicHit>[] }>
+  | Tool<z.infer<typeof forgetSchema>, { deleted: number }>
+>
 
 export interface MemoryToolsOptions {
   /** Metadata merged into every remembered record and ANDed into every recall/forget filter, e.g. `{ userId }`. */
@@ -33,16 +53,12 @@ function publicHit(h: Hit) {
  * Memory tools for `generateText`, `streamText` and `ToolLoopAgent`: spread the result into `tools`.
  * Inputs are validated by zod; `execute` returns plain JSON.
  */
-export function memoryTools(store: HmsStore, options: MemoryToolsOptions = {}) {
+export function memoryTools(store: HmsStore, options: MemoryToolsOptions = {}): MemoryTools {
   const names = { remember: 'remember', recall: 'recall', forget: 'forget', ...options.names }
   const defaultK = options.k ?? 4
   const remember = tool({
     description: 'Save a piece of information to long-term memory so it can be recalled in later conversations.',
-    inputSchema: z.object({
-      text: z.string().min(1).describe('The information to remember, written as a self-contained statement'),
-      id: z.string().min(1).optional().describe('Stable id; reusing an id replaces that memory'),
-      metadata: metadataSchema.optional().describe('Flat key-value tags usable as recall filters'),
-    }),
+    inputSchema: rememberSchema,
     execute: async ({ text, id, metadata }) => {
       const rid = id ?? `mem-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
       await store.remember([{ id: rid, text, metadata: { ...metadata, ...options.scope } }])
@@ -51,18 +67,14 @@ export function memoryTools(store: HmsStore, options: MemoryToolsOptions = {}) {
   })
   const recall = tool({
     description: 'Search long-term memory for information relevant to a query. Returns the best matching memories.',
-    inputSchema: z.object({
-      query: z.string().min(1).describe('What to look for'),
-      k: z.number().int().min(1).max(50).optional().describe(`Number of memories to return (default ${defaultK})`),
-      filter: metadataSchema.optional().describe('Only memories whose metadata equals these values'),
-    }),
+    inputSchema: recallSchema(defaultK),
     execute: async ({ query, k, filter }) => ({
       memories: (await store.recall(query, { k: k ?? defaultK, filter: scoped(options.scope, filter) })).map(publicHit),
     }),
   })
   const forget = tool({
     description: 'Delete memories by id.',
-    inputSchema: z.object({ ids: z.array(z.string().min(1)).min(1).max(100) }),
+    inputSchema: forgetSchema,
     execute: async ({ ids }) => {
       if (options.scope) {
         const owned = (await store.get(ids)).filter((r): r is NonNullable<typeof r> => r !== undefined)
@@ -76,7 +88,7 @@ export function memoryTools(store: HmsStore, options: MemoryToolsOptions = {}) {
     [names.remember]: remember,
     [names.recall]: recall,
     ...(options.readOnly ? {} : { [names.forget]: forget }),
-  } as Record<string, typeof remember | typeof recall | typeof forget>
+  }
 }
 
 export interface MemoryMiddlewareOptions {
