@@ -1,7 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict'
-import { mkdtempSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -10,6 +11,47 @@ import { HashingEmbedder, HmsError, HmsStore, parseFilter, splitFilter } from '.
 const store = (opts = {}) => new HmsStore({ path: mkdtempSync(join(tmpdir(), 'hms-js-')), dimensions: 1024, ...opts })
 const recs = (n, meta = {}) =>
   Array.from({ length: n }, (_, i) => ({ id: `d${i}`, text: `alpha beta gamma number${i} topic${i % 3}`, metadata: { n: i, parity: i % 2, ...meta } }))
+
+for (const [field, value] of Object.entries({
+  embeddingModel: 'different-model', embeddingRevision: 'different-revision', embeddingDimensions: 128,
+  embeddingNormalization: 'none', embeddingMetric: 'dot',
+})) {
+  test(`conflicting ${field} is rejected before creating storage`, () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'hms-identity-')), 'store')
+    assert.throws(() => new HmsStore({ path, hmsConfig: { [field]: value } }), (error) => error.code === 'invalid_argument')
+    assert.equal(existsSync(path), false)
+  })
+}
+
+for (const [field, value] of Object.entries({ model: '', revision: '', dimensions: 65537, normalization: 'none', metric: 'dot' })) {
+  test(`invalid embedder ${field} is rejected before creating storage`, () => {
+    const embedder = new HashingEmbedder()
+    embedder.space[field] = value
+    const path = join(mkdtempSync(join(tmpdir(), 'hms-identity-')), 'store')
+    assert.throws(() => new HmsStore({ path, embedder }), (error) => error.code === 'invalid_argument')
+    assert.equal(existsSync(path), false)
+  })
+}
+
+test('persistent identity follows the embedder and cannot be relabeled on reopen', async () => {
+  const path = mkdtempSync(join(tmpdir(), 'hms-identity-'))
+  execFileSync(process.execPath, ['--input-type=module', '-e', `
+    import { HmsStore } from ${JSON.stringify(new URL('../dist/index.js', import.meta.url).href)}
+    const store = new HmsStore({ path: ${JSON.stringify(path)}, dimensions: 1024,
+      hmsConfig: { embeddingModel: 'hms-hashing', embeddingRevision: 'uni-bi-v1', embeddingDimensions: 384 } })
+    await store.remember([{ id: 'one', text: 'original alpha' }])
+    await store.close()
+  `])
+  const schema = readFileSync(join(path, 'store.json'))
+  const other = new HashingEmbedder(384, false)
+  assert.throws(() => new HmsStore({ path, dimensions: 1024, embedder: other,
+    hmsConfig: { embeddingRevision: 'uni-bi-v1' } }), (error) => error.code === 'invalid_argument')
+  assert.deepEqual(readFileSync(join(path, 'store.json')), schema)
+  const reopened = store({ path })
+  assert.deepEqual(reopened.memory.securityStatus().embeddingSpace, reopened.embedder.space)
+  assert.equal((await reopened.recall('original alpha', { k: 1 }))[0].id, 'one')
+  await reopened.close()
+})
 
 test('older native bindings fail before a partial framework workflow', () => {
   const embedder = new HashingEmbedder(384)

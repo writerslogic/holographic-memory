@@ -97,6 +97,27 @@ function sameSpace(a: Embedder['space'], b: Record<string, unknown> | undefined)
   return !!b && (['model', 'revision', 'dimensions', 'normalization', 'metric'] as const).every((k) => a[k] === b[k])
 }
 
+function validateSpace(space: Embedder['space'], config?: HmsConfigJs): void {
+  if (!space || typeof space.model !== 'string' || !space.model || typeof space.revision !== 'string' || !space.revision ||
+      !Number.isInteger(space.dimensions) || space.dimensions < 1 || space.dimensions > 65536 ||
+      space.normalization !== 'l2' || space.metric !== 'cosine') {
+    throw new HmsError('embedder space requires model, revision, dimensions 1..=65536, l2 normalization and cosine metric', 'invalid_argument')
+  }
+  const reserved = {
+    embeddingModel: space.model,
+    embeddingRevision: space.revision,
+    embeddingDimensions: space.dimensions,
+    embeddingNormalization: space.normalization,
+    embeddingMetric: space.metric,
+  }
+  for (const [key, value] of Object.entries(reserved)) {
+    const supplied = (config as Record<string, unknown> | undefined)?.[key]
+    if (supplied !== undefined && supplied !== value) {
+      throw new HmsError(`${key} must match the embedder space`, 'invalid_argument')
+    }
+  }
+}
+
 function loadNative(): typeof import('holographic-memory') {
   try {
     return createRequire(import.meta.url)('holographic-memory')
@@ -141,20 +162,24 @@ export class HmsStore {
         const dims = Number(space?.dimensions)
         this.embedder = new HashingEmbedder(dims)
       }
+      validateSpace(this.embedder.space, opts.hmsConfig)
       if (!sameSpace(this.embedder.space, space)) {
         throw new HmsError('The embedder does not match the memory store embedding space; pass the matching embedder', 'invalid_argument')
       }
     } else {
       this.embedder = opts.embedder ?? new HashingEmbedder(384)
+      validateSpace(this.embedder.space, opts.hmsConfig)
       const { HolographicMemorySystem: Native } = loadNative()
       requireMetadata(Native.prototype)
       const s = this.embedder.space
       this.memory = new Native(opts.dimensions ?? 4096, opts.path ?? null, {
+        ...opts.hmsConfig,
         embeddingModel: s.model,
         embeddingRevision: s.revision,
         embeddingDimensions: s.dimensions,
-        ...opts.hmsConfig,
       })
+      const actual = (this.memory.securityStatus() as { embeddingSpace?: Record<string, unknown> }).embeddingSpace
+      if (!sameSpace(s, actual)) throw new HmsError('native store embedding space does not match the embedder', 'backend')
     }
     this.probe = [1, ...new Array<number>(this.embedder.space.dimensions - 1).fill(0)]
   }
