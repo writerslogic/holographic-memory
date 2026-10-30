@@ -1,0 +1,378 @@
+{
+  "date": "2026-10-30",
+  "source_commit": "2e4c91d475adeef28200c66c12955f059db338bd",
+  "host": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "node": "v26.8.1",
+  "fresh_rust": {
+    "counts": {
+      "passed": 1110,
+      "failed": 0,
+      "ignored": 13
+    },
+    "targets": [
+      {
+        "passed": 960,
+        "failed": 0,
+        "ignored": 13
+      },
+      {
+        "passed": 40,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 54,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 30,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      },
+      {
+        "passed": 13,
+        "failed": 0,
+        "ignored": 0
+      }
+    ],
+    "exit_code": 0,
+    "log": "focused-rust.log"
+  },
+  "fresh_reproductions": [
+    {
+      "id": "D01",
+      "finding": "provenance verifier false positives",
+      "observations": [
+        "intact=Ok(true)",
+        "empty_with_signed_head=Ok(true)",
+        "missing_with_signed_head=Ok(true)",
+        "head_missing=Ok(true)",
+        "head_unreadable_directory=Ok(true)"
+      ],
+      "confidence": 5
+    },
+    {
+      "id": "D02,D04",
+      "finding": "framework text corruption and embedding identity override",
+      "observations": [
+        {
+          "actual": {
+            "model": "hms-hashing",
+            "revision": "uni-bi-v1",
+            "dimensions": 384,
+            "normalization": "l2",
+            "metric": "cosine"
+          },
+          "recorded": {
+            "dimensions": 384,
+            "metric": "cosine",
+            "model": "different-model",
+            "normalization": "l2",
+            "revision": "different-revision"
+          }
+        },
+        {
+          "acceptedWrite": true,
+          "recalled": [
+            "one"
+          ]
+        },
+        {
+          "name": "boundary_whitespace",
+          "input": "  alpha  ",
+          "output": "\u0000\u0000alpha",
+          "equal": false
+        },
+        {
+          "name": "nonoverlap_chunks",
+          "input": "alpha beta",
+          "output": "alpha\u0000beta",
+          "equal": false
+        }
+      ],
+      "confidence": 5
+    },
+    {
+      "id": "D03",
+      "finding": "interrupted clear retains and resurrects entries",
+      "observations": [
+        "injected interruption after first committed delete",
+        "{\"afterInterruptedClear\":0,\"retained\":[\"session#0000000001\",\"session#0000000002\"]}",
+        "{\"afterRetriedClear\":[\"session#0000000001\",\"session#0000000002\"]}",
+        "{\"afterAppend\":[\"new first\",\"second\",\"third\"]}"
+      ],
+      "confidence": 5,
+      "method": "Fresh wrapper over real store, injected exception after first actual committed delete; not an executed process crash."
+    },
+    {
+      "id": "D05",
+      "finding": "Python bundle/resonator validation panics",
+      "observations": [
+        "bind_dimension_control ValueError phase vectors differ in dimension or resolution",
+        "bundle_dimension_mismatch PanicException assertion `left == right` failed: phase-vector dimension mismatch in bundle",
+        "bundle_resolution_mismatch PanicException assertion `left == right` failed: phase-vector resolution mismatch in bundle",
+        "resonator_empty_codebook PanicException factor codebooks must not be empty"
+      ],
+      "confidence": 5
+    }
+  ],
+  "version_check": {
+    "version": "0.6.4",
+    "problems": 0,
+    "exit_code": 0
+  },
+  "retained_evidence": {
+    "rust_all_features": {
+      "passed": 1308,
+      "failed": 0,
+      "ignored": 15
+    },
+    "ci": {
+      "run_id": 41097465940,
+      "source_commit": "25726ffc62b47dcc281430c87e29cc217bb956d3",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/writerslogic/holographic-memory/actions/runs/41097465940",
+      "source_difference_to_audit": "Only four audit-evidence files changed; no production, test, build or workflow change."
+    }
+  },
+  "prior_source_hash_checks": [
+    {
+      "path": "index.d.ts",
+      "sha256": "dfb9220f3919bc700fdc89d7a36937d96de9a00973314bba22378d272820eb26",
+      "matches_retained_source": true
+    },
+    {
+      "path": "integrations/js/packages/core/src/errors.ts",
+      "sha256": "166611df2c4d46fc881f1e51fbac3a72b9e5d6bb08cea59fe458f41da75e4a6d",
+      "matches_retained_source": true
+    },
+    {
+      "path": "integrations/js/packages/core/src/store.ts",
+      "sha256": "5c3c38f6176d0e6565661865e10c5ccc09d02490f6c2afe7569ad2c382d3ac25",
+      "matches_retained_source": true
+    },
+    {
+      "path": "integrations/js/packages/core/test/store.test.mjs",
+      "sha256": "4851d238c18561bbcd15f7296ccb26296ee18f2b45b0cfd6ad194955df884f2e",
+      "matches_retained_source": true
+    },
+    {
+      "path": "memory.d.ts",
+      "sha256": "4fbd70686b678b5ef38503b3b88e15904ccc91e099772d1b50061514c0e28b86",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/bin/hms-server/error.rs",
+      "sha256": "3212c6c942336e03dc5cac1209db93711f7a98106494071f2536288c34436b45",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/bindings/node/api.rs",
+      "sha256": "ccc002254d522cf52f19b044e0d5d04ac5b7f427754bfddc631e805c7c0c5903",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/bindings/node/mod.rs",
+      "sha256": "b1835ca2ada0c4dc0b673d1591621f23f280d6216e228ae7be98a9b5bfe8b85b",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/core/documents.rs",
+      "sha256": "bc96b7730c88cbf0a5488c12fe54e2653f3a4ef3892c630ff6524c1ecc852a84",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/core/documents/index.rs",
+      "sha256": "6a0fdbf1e0cc1c19ac66e6d0fc15a7e76e88f40cc40914fa9f1ca43adb0bcc58",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/core/engine/memory_access.rs",
+      "sha256": "b89ced6bbcd46c10fb291d79e87b60f97c10f452d59f63049578d4504bab9d68",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/core/memory_api/index.rs",
+      "sha256": "1cb04db0a0c88c112f153c91b2eb51eb68ae958ba2bae7f9b7c53dba14bd5e16",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/core/memory_api/recall.rs",
+      "sha256": "b16ebee1e5185525718fd909fee6fb04afa9de65d00b1cded92804ac4326b7c2",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/core/qgraph/update/delta_rows.rs",
+      "sha256": "a8b57f2372c9a80ee42dde48eabc9ae1ff408d6805181c3dca102eddc99b1f00",
+      "matches_retained_source": true
+    },
+    {
+      "path": "src/core/query_limits.rs",
+      "sha256": "677a05479c00aa98362663ba8b7d87f3dbcfd8b2103d66ef22954016ad837c38",
+      "matches_retained_source": true
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "20b6228a7ed5bfab550b4ce37c0ef1271e4fd122c92d24e19217850ab891b908",
+      "matches_retained_source": true
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "ffef156ffc38c7044d6ebd98e6dd7c36805689074dce6dd0dd29bc36d4f1f425",
+      "matches_retained_source": true
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "cfd9e8a17147727274328f356bf4404d6e81ec010561befeb8401817dd69b590",
+      "matches_retained_source": true
+    }
+  ],
+  "native_artifacts": [
+    {
+      "path": "target/review-gap-checks/build/debug/deps/libholographic_memory.rlib",
+      "bytes": 76251592,
+      "sha256": "c4a5fe9848687b38a7b165b0a14d47d9313b5ff8b328fa7aabfa5eae8352eb13"
+    },
+    {
+      "path": "target/review-gap-checks/build/debug/deps/libholographic_memory.dylib",
+      "bytes": 30143488,
+      "sha256": "11e81c983a5b43740cc3d463c375f38650cae1a74efbebfa5b9e96a95d25ad27"
+    },
+    {
+      "path": "holographic-memory.node",
+      "bytes": 13999152,
+      "sha256": "7ab8d217cfc727c9b0a132310316f2b751ca446e97889f9c5e92cc6d374fe742"
+    }
+  ],
+  "audit_artifacts": [
+    {
+      "path": "docs/research/technical-audit-20261030/REPORT.md",
+      "bytes": 59823,
+      "sha256": "dc5c792506d6b09b32efa1ff87a9d2b9b3a8e9b1f30e3c694a8e9fe30dc033c6"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/commands.json",
+      "bytes": 3237,
+      "sha256": "b77dff9c8a29848ea2a495807e5ebd3b7ce0017e4ea47371be9428e60c1fc2fc"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/focused-rust.log",
+      "bytes": 113662,
+      "sha256": "4ac307e9094b6e1bd91c42fab58c1bdc19cfd55012337cefef36e497afacc0d5"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/interface_reproduction.mjs",
+      "bytes": 1511,
+      "sha256": "77f6b6c925f88d1d9505937a743c210c5edb44e83316fddbe740358c832f469e"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/js-build.log",
+      "bytes": 539,
+      "sha256": "d075b89409fa8d5f97515a76a4ccc782cb0131213963ca0c07a2249f9a95d3e4"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/js-reproduction.log",
+      "bytes": 468,
+      "sha256": "0bd1b78a645f0214580c9fc2fd4d6b385617e6b6961995d019f9152e4dc2526a"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/ordered-log-build.log",
+      "bytes": 57,
+      "sha256": "640a64d0770ee10c95350bff6420b04c767affe9495b0500e3d4328661e82a34"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/ordered-log-reproduction.log",
+      "bytes": 247,
+      "sha256": "abe6c801a1d1c41f88fe79ea565c8d3a2eae7912301af86769cf23f94b5b2e20"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/ordered_log_reproduction.mjs",
+      "bytes": 1352,
+      "sha256": "7353adef2f413b0cab9ddf81c98428f4af3aadaa29c185ae1681f38b35e2229c"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/provenance-reproduction.log",
+      "bytes": 139,
+      "sha256": "77e2ef1ece51d13e5c5d0bad03a78ec18d82484cc6050716f9ac9fef6c4d178b"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/provenance_reproduction.rs",
+      "bytes": 1141,
+      "sha256": "f16b2c7059528d81fa0785fa5a40bc1dc4ff09da1ef2d0637dcd32afd5720ac2"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/python-reproduction.log",
+      "bytes": 970,
+      "sha256": "cc80f7d773cddd72e5ea0eaea55eabfa0e9e409e853d0594bfc9ed67ebd9a2ae"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/python_reproduction.py",
+      "bytes": 857,
+      "sha256": "6d80ee0552b47593b3db7e46ca1985dfd4b53a7c385622a05a25a6c9ea68db84"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/render_scorecard.py",
+      "bytes": 2850,
+      "sha256": "93c75ef83cd38f2df6ced19c99a4a696f2a149e089f214ae4c431a3a5d3015f0"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/scorecard.json",
+      "bytes": 10919,
+      "sha256": "f0eb32e5d0e610295bcb47300fdb7e08b99c8a4af4c1562cf0a2c0b981694480"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/scorecard.png",
+      "bytes": 174685,
+      "sha256": "0815c6303db1302dcc63856f9896f1d620f0ee588cc6634d80f77a23c5cd4f60"
+    },
+    {
+      "path": "docs/research/technical-audit-20261030/scorecard.svg",
+      "bytes": 126541,
+      "sha256": "3229103dab9f712f2ed56850179960f641d45ccf87d2e62151b5b957eac4809e"
+    }
+  ],
+  "verification_limits": [
+    "No new live benchmark, held-out learned QA, model download, hardware power-loss experiment or independent cryptographic review.",
+    "No fresh full cross-platform/packaging/independent W3C/MCP client campaign. Recorded prior gates reused with explicit source identity.",
+    "Python first automatic .dylib loader setup returned no spec; explicit ExtensionFileLoader used for successful diagnostic.",
+    "JS native .node binary was reused; current TypeScript rebuilt.",
+    "Normative conclusions apply to named profiles only."
+  ],
+  "final_artifact_review": {
+    "source_unchanged": true,
+    "sections": 9,
+    "metrics": 30,
+    "local_links_valid": true,
+    "heatmap_visually_inspected": true,
+    "weighted_score_recomputed": 6.966666666666668
+  }
+}

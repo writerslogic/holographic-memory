@@ -1,0 +1,20 @@
+
+> @holographic-memory/core@0.1.0 build
+> tsup
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /Volumes/A/holographic-memory/integrations/js/packages/core/tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+CJS Build start
+ESM dist/index.js 24.03 KB
+ESM ⚡️ Build success in 465ms
+CJS dist/index.cjs 25.69 KB
+CJS ⚡️ Build success in 465ms
+DTS Build start
+DTS ⚡️ Build success in 9526ms
+DTS dist/index.d.ts  8.11 KB
+DTS dist/index.d.cts 8.11 KB

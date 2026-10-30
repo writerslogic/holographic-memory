@@ -1,0 +1,22 @@
+
+thread '<unnamed>' (29368729) panicked at src/core/phase_hvec.rs:235:13:
+assertion `left == right` failed: phase-vector dimension mismatch in bundle
+  left: 5
+ right: 4
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (29368729) panicked at src/core/phase_hvec.rs:236:13:
+assertion `left == right` failed: phase-vector resolution mismatch in bundle
+  left: 32
+ right: 16
+
+thread '<unnamed>' (29368729) panicked at src/core/phase_resonator.rs:498:13:
+factor codebooks must not be empty
+bind_dimension_control ValueError phase vectors differ in dimension or resolution
+bundle_dimension_mismatch PanicException assertion `left == right` failed: phase-vector dimension mismatch in bundle
+  left: 5
+ right: 4
+bundle_resolution_mismatch PanicException assertion `left == right` failed: phase-vector resolution mismatch in bundle
+  left: 32
+ right: 16
+resonator_empty_codebook PanicException factor codebooks must not be empty

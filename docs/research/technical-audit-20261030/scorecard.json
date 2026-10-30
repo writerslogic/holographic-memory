@@ -1,0 +1,318 @@
+{
+  "source_commit": "2e4c91d475adeef28200c66c12955f059db338bd",
+  "date": "2026-10-30",
+  "method": "Default domain weights; equal applicable evidenced metric weights within domains; M6 excluded and M1-M5 share 10%. U never imputed.",
+  "domains": {
+    "F": {
+      "weight": 0.25,
+      "score": 7.333333333333333,
+      "confidence": 4,
+      "metrics": 6
+    },
+    "E": {
+      "weight": 0.2,
+      "score": 6.833333333333333,
+      "confidence": 3.8333333333333335,
+      "metrics": 6
+    },
+    "S": {
+      "weight": 0.2,
+      "score": 7,
+      "confidence": 4,
+      "metrics": 6
+    },
+    "R": {
+      "weight": 0.25,
+      "score": 6.666666666666667,
+      "confidence": 3.8333333333333335,
+      "metrics": 6
+    },
+    "M": {
+      "weight": 0.1,
+      "score": 7,
+      "confidence": 3.8,
+      "metrics": 5
+    }
+  },
+  "weighted_quality": 6.966666666666668,
+  "weighted_confidence": 3.905,
+  "metric_coverage": {
+    "current_evidenced": 29,
+    "current_total": 29,
+    "unverified_whole_metrics": 0,
+    "not_applicable_whole_metrics": 0,
+    "note": "Not code, platform, test, standard or workload coverage. Unverified subclaims are explicit in REPORT.md."
+  },
+  "metrics": [
+    {
+      "id": "F1",
+      "name": "Completeness",
+      "score": 8,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Native document, vector, temporal and service workflows exist (E01–E05, E08).",
+      "deficiency": "Source synchronization is absent; adapters expose different subsets."
+    },
+    {
+      "id": "F2",
+      "name": "Correctness",
+      "score": 7,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "Canonical ranking tests and 1,110 fresh Rust passes; five new counterexamples (E10–E14).",
+      "deficiency": "Verification, text, history, identity and Python boundary contracts still fail."
+    },
+    {
+      "id": "F3",
+      "name": "Depth",
+      "score": 8,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "BM25/Boolean/phrase, dense/ANN, temporal facts, provenance, local models (E02–E08).",
+      "deficiency": "Research reasoning and learned task utility are not established."
+    },
+    {
+      "id": "F4",
+      "name": "Workflow coverage",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Native lifecycle and temporal source fixtures, HTTP/MCP workflows (E04, E14–E15).",
+      "deficiency": "Learned native QA U; imports do not synchronize later source deletion."
+    },
+    {
+      "id": "F5",
+      "name": "Consistency",
+      "score": 6,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Shared Rust contracts and typed errors; divergent JS/Python paths (E09–E13).",
+      "deficiency": "Same operation has different identity, text and failure semantics across adapters."
+    },
+    {
+      "id": "F6",
+      "name": "Interoperability",
+      "score": 8,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "Official MCP clients, independent W3C/receipt fixtures and many bindings (E08, E15).",
+      "deficiency": "Bounded profiles, differing runtime capabilities; complete certification U."
+    },
+    {
+      "id": "E1",
+      "name": "Architecture",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Writer lease, immutable captures and publication gate (E03).",
+      "deficiency": "HmsCore breadth, separate index lifecycles and sidecar commit boundaries."
+    },
+    {
+      "id": "E2",
+      "name": "Code quality",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Rust types, checked bounds and lint gates; source inspection (E02–E09, E17).",
+      "deficiency": "Duplicated OrderedLog, unchecked optional research allocation and wrapper validation holes."
+    },
+    {
+      "id": "E3",
+      "name": "Extensibility",
+      "score": 7,
+      "target": 8,
+      "confidence": 3,
+      "evidence": "Feature gates and policy traits; explicit experimental modules (E01, E04).",
+      "deficiency": "Adapters independently reproduce storage semantics; broad public internal modules."
+    },
+    {
+      "id": "E4",
+      "name": "Dependencies",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Lockfiles, optional heavy dependencies, deny policy and pinned CI (E01, E17).",
+      "deficiency": "Unmaintained bincode/paste exceptions and conditional model dependency exposure."
+    },
+    {
+      "id": "E5",
+      "name": "State/data integrity",
+      "score": 6,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Journal/restore strong; actual history and identity counterexamples (E03, E11, E13).",
+      "deficiency": "Auxiliary evidence is not recoverably coupled; adapter state invariants fail."
+    },
+    {
+      "id": "E6",
+      "name": "Maintainability",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Regression fixtures, version gates, clear ownership in core (E14–E17).",
+      "deficiency": "Multiple runtimes, duplicate logic and stale documentation increase change cost."
+    },
+    {
+      "id": "S1",
+      "name": "Standards conformance",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Scoped COSE/VC/SCITT/OAuth implementation with independent evidence (E06, E08, E15).",
+      "deficiency": "GCM lifetime policy absent; status allocation SHOULD deviation; full profiles U."
+    },
+    {
+      "id": "S2",
+      "name": "Interface/API design",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Generated schemas, capabilities, pagination, committed/resource errors (E08).",
+      "deficiency": "Boolean integrity and best-effort Vec results lose outcome information."
+    },
+    {
+      "id": "S3",
+      "name": "Protocol interoperability",
+      "score": 8,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "Official SDK and actual HTTP/TLS tests; independent receipt encodings (E08, E14–E15).",
+      "deficiency": "Full MCP 2026 malformed-header suite and deployment authority behavior U."
+    },
+    {
+      "id": "S4",
+      "name": "Discoverability",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Capability discovery, CLI/docs and examples (E01, E08).",
+      "deficiency": "Standards and schema documentation conflict with current implementation."
+    },
+    {
+      "id": "S5",
+      "name": "Compatibility",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Golden formats, MSRV/platform gates and explicit upgrades (E03, E15, E17).",
+      "deficiency": "Published package/source drift; model features have a higher compiler floor."
+    },
+    {
+      "id": "S6",
+      "name": "Integration fidelity",
+      "score": 6,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "Native source/quote checks pass; JS byte corruption and relabeling reproduced (E04, E11).",
+      "deficiency": "Full record text and embedding-function semantics are not preserved everywhere."
+    },
+    {
+      "id": "R1",
+      "name": "Reliability",
+      "score": 8,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "Fresh service/core suites and recorded Windows repair gate (E14, E17).",
+      "deficiency": "Optional cognition shutdown and malformed Python inputs are weaker boundaries."
+    },
+    {
+      "id": "R2",
+      "name": "Recovery",
+      "score": 6,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Restore intent and journal crash tests; interrupted history clear reproduced (E03, E13).",
+      "deficiency": "Sidecar reconciliation absent; failed-I/O ambiguity needs fault injection."
+    },
+    {
+      "id": "R3",
+      "name": "Security",
+      "score": 6,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "AEAD, scoped auth, safe identity publication; integrity verifier fails open (E06–E10).",
+      "deficiency": "False provenance assurance; independent crypto/DP review and key-use ceiling absent."
+    },
+    {
+      "id": "R4",
+      "name": "Data safety",
+      "score": 7,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "Core deletion/ownership/compaction tests strong; real adapter failures (E03, E11, E13).",
+      "deficiency": "History can reappear; returned text can change; erasure excludes snapshots/readers."
+    },
+    {
+      "id": "R5",
+      "name": "Performance",
+      "score": 7,
+      "target": 8,
+      "confidence": 3,
+      "evidence": "Recorded Pareto points and bounded retrieval ablations (E15–E16).",
+      "deficiency": "No current broad frontier result; hot-query regression and historical ingest/RSS losses."
+    },
+    {
+      "id": "R6",
+      "name": "Scalability",
+      "score": 6,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Bounded requests/deltas; explicit dense caps and stale O(N) discovery (E02, E05, E08).",
+      "deficiency": "High-dimensional capacity U; retained per-thread scratch and unbounded cognition."
+    },
+    {
+      "id": "M1",
+      "name": "Developer experience",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Working package/native paths and diagnostics (E01, E09, E14).",
+      "deficiency": "Uneven runtime features and published/source mismatch require careful selection."
+    },
+    {
+      "id": "M2",
+      "name": "Documentation",
+      "score": 6,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Extensive evidence and honest benchmark caveats (E01, E15–E16).",
+      "deficiency": "Current standards/schema/adapter descriptions have material drift."
+    },
+    {
+      "id": "M3",
+      "name": "Validation",
+      "score": 8,
+      "target": 9,
+      "confidence": 4,
+      "evidence": "Fresh 1,110 passes, golden/property/crash tests, independent interop (E14–E17).",
+      "deficiency": "Missing adversarial adapter lifecycle/identity/text tests allowed five defects."
+    },
+    {
+      "id": "M4",
+      "name": "Observability",
+      "score": 7,
+      "target": 8,
+      "confidence": 4,
+      "evidence": "Prometheus metrics, structured HTTP logs, explain/status APIs (E04, E08).",
+      "deficiency": "Evidence completeness, planner refusal and retained scratch lack unified diagnostics."
+    },
+    {
+      "id": "M5",
+      "name": "Competitive differentiation",
+      "score": 7,
+      "target": 9,
+      "confidence": 3,
+      "evidence": "Integrated local search/temporal/security surface and selected measured wins (E15–E16).",
+      "deficiency": "No general Pareto leadership or held-out native learned-QA advantage."
+    },
+    {
+      "id": "M6",
+      "name": "Innovation potential",
+      "score": 8,
+      "target": 9,
+      "confidence": 3,
+      "evidence": "Existing query-aware routing, temporal ownership and VSA mechanisms (E02–E07).",
+      "deficiency": "Forward-looking utility and research novelty remain experimentally unverified."
+    }
+  ]
+}

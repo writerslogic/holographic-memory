@@ -1,0 +1,123 @@
+{
+  "cwd": "/Volumes/A/holographic-memory",
+  "focused_rust": {
+    "argv": [
+      "cargo",
+      "+1.99.0",
+      "test",
+      "--offline",
+      "--locked",
+      "--all-features",
+      "--lib",
+      "--bin",
+      "hms-server",
+      "--bin",
+      "hms-mcp",
+      "--test",
+      "memory_api",
+      "--test",
+      "native_memory_workflow",
+      "--test",
+      "committed_sidecars",
+      "--test",
+      "scitt_receipt_interop",
+      "--test",
+      "server_abuse",
+      "--test",
+      "server_ops",
+      "--test",
+      "memory_api_server"
+    ],
+    "env": {
+      "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target/review-gap-checks/build",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "1",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0"
+    },
+    "output": "focused-rust.log",
+    "exit_code": 0
+  },
+  "provenance_compile": [
+    "rustc",
+    "+1.99.0",
+    "--edition=2021",
+    "docs/research/technical-audit-20261030/provenance_reproduction.rs",
+    "-L",
+    "dependency=target/review-gap-checks/build/debug/deps",
+    "--extern",
+    "holographic_memory=target/review-gap-checks/build/debug/deps/libholographic_memory.rlib",
+    "-o",
+    "target/audit-provenance-20261030"
+  ],
+  "provenance_run": [
+    "target/audit-provenance-20261030"
+  ],
+  "framework_build": [
+    "npm",
+    "run",
+    "build",
+    "--workspace",
+    "@holographic-memory/core",
+    "--prefix",
+    "integrations/js"
+  ],
+  "framework_probes": [
+    "node",
+    "docs/research/technical-audit-20261030/interface_reproduction.mjs"
+  ],
+  "python_probe": [
+    "uv",
+    "run",
+    "--no-project",
+    "--offline",
+    "python",
+    "docs/research/technical-audit-20261030/python_reproduction.py",
+    "/Volumes/A/holographic-memory/target/review-gap-checks/build/debug/deps/libholographic_memory.dylib"
+  ],
+  "ordered_log_compile": [
+    "integrations/js/node_modules/.bin/esbuild",
+    "integrations/js/packages/openai-agents/src/log.ts",
+    "--platform=node",
+    "--format=esm",
+    "--outfile=target/audit-ordered-log.mjs"
+  ],
+  "ordered_log_probe": [
+    "node",
+    "docs/research/technical-audit-20261030/ordered_log_reproduction.mjs"
+  ],
+  "versions": [
+    "uv",
+    "run",
+    "--no-project",
+    "--offline",
+    "python",
+    "scripts/ci/check-versions.py"
+  ],
+  "notes": [
+    "Diagnostic probes report the defective behavior; they do not assert repaired behavior.",
+    "No production edits, paid services, live benchmarks, model downloads, commits or pushes.",
+    "Build paths are local cache locations; recreate the Cargo targets with the recorded command before compiling probes on a new host.",
+    "Existing Node native binary reused; TypeScript rebuilt.",
+    "Test-created scratch stores are fresh local temporary directories and removed by probes."
+  ],
+  "heatmap": {
+    "argv": [
+      "uv",
+      "run",
+      "--no-project",
+      "--offline",
+      "--with",
+      "matplotlib",
+      "python",
+      "docs/research/technical-audit-20261030/render_scorecard.py"
+    ],
+    "matplotlib_version": "3.11.2",
+    "exit_code": 0,
+    "outputs": [
+      "scorecard.svg",
+      "scorecard.png"
+    ]
+  }
+}
