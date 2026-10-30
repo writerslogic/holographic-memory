@@ -481,3 +481,128 @@ fn same_generation_publication_is_idempotent_and_mutation_rejects_both_old_build
     assert!(!publish_dense_index(&mut store, &second));
     assert!(!store.dense_index_trained());
 }
+
+#[test]
+fn bounded_delta_keeps_base_and_matches_live_oracle_across_mutations() {
+    let mut store = store(384, 4);
+    let trained = train(&store, 4);
+    assert!(publish_dense_index(&mut store, &trained));
+    for revision in 0..6 {
+        let mut replacement = document(7, &vec![vec![1.0, 0.0, 0.0, 0.0]; 1 + revision % 2]);
+        replacement.version = revision.to_string();
+        replacement.metadata = json!({"group": revision % 2});
+        store.insert(replacement.id.clone(), replacement);
+        store.remove("d0003");
+        let fresh = document(999, &[vec![1.0, 0.0, 0.0, 0.0]]);
+        store.insert(fresh.id.clone(), fresh);
+        assert!(Arc::ptr_eq(
+            store.dense_index.as_ref().unwrap(),
+            &trained.index
+        ));
+        assert!(!store.dense_index_recommended());
+        for filter in [None, Some(json!({"group": 0})), Some(json!({"group": 1}))] {
+            for fusion in ["blend", "rrf"] {
+                for query in ["common", "rare7 rare999 missing"] {
+                    let options = documents::SearchOptions {
+                        filter: filter.clone(),
+                        fusion: Some(fusion.into()),
+                        embedding: Some(vec![1.0, 0.0, 0.0, 0.0]),
+                        min_semantic_score: Some(-1.0),
+                        k: Some(5),
+                        candidate_limit: Some(7),
+                        ..Default::default()
+                    };
+                    let expected =
+                        documents::search_impl(&store, query, &options, Some(4), false).unwrap();
+                    assert_eq!(
+                        result(&store, query, &options, 4),
+                        serde_json::to_value(expected).unwrap()
+                    );
+                }
+            }
+        }
+    }
+    assert_eq!(store.dense_changes.len(), 3);
+    assert!(!publish_dense_index(&mut store, &trained));
+    let current = train(&store, 4);
+    assert!(publish_dense_index(&mut store, &current));
+    assert!(store.dense_changes.is_empty());
+    assert!(store.dense_index_trained());
+}
+
+#[test]
+fn delta_document_and_chunk_limits_drop_acceleration_without_losing_results() {
+    for count in [
+        MAX_DELTA_DOCUMENTS - 1,
+        MAX_DELTA_DOCUMENTS,
+        MAX_DELTA_DOCUMENTS + 1,
+    ] {
+        let mut store = store(384, 2);
+        let trained = train(&store, 2);
+        assert!(publish_dense_index(&mut store, &trained));
+        for id in 0..count {
+            store.remove(&format!("d{id:04}"));
+        }
+        assert_eq!(store.dense_index.is_some(), count <= MAX_DELTA_DOCUMENTS);
+        assert!(store.dense_changes.len() <= MAX_DELTA_DOCUMENTS);
+        let options = documents::SearchOptions {
+            embedding: Some(vec![1.0, 0.0]),
+            min_semantic_score: Some(-1.0),
+            ..Default::default()
+        };
+        assert_eq!(
+            result(&store, "common", &options, 2),
+            serde_json::to_value(
+                documents::search_impl(&store, "common", &options, Some(2), false).unwrap()
+            )
+            .unwrap()
+        );
+    }
+    for count in [MAX_DELTA_CHUNKS - 1, MAX_DELTA_CHUNKS, MAX_DELTA_CHUNKS + 1] {
+        let mut store = store(128, 2);
+        let trained = train(&store, 2);
+        assert!(publish_dense_index(&mut store, &trained));
+        let replacement = document(7, &vec![vec![1.0, 0.0]; count]);
+        store.insert(replacement.id.clone(), replacement);
+        assert_eq!(store.dense_index.is_some(), count <= MAX_DELTA_CHUNKS);
+        assert!(store.dense_changes.values().sum::<usize>() <= MAX_DELTA_CHUNKS);
+        let options = documents::SearchOptions {
+            embedding: Some(vec![1.0, 0.0]),
+            k: Some(3),
+            candidate_limit: Some(3),
+            ..Default::default()
+        };
+        assert_eq!(
+            result(&store, "rare7", &options, 2),
+            serde_json::to_value(
+                documents::search_impl(&store, "rare7", &options, Some(2), false).unwrap()
+            )
+            .unwrap()
+        );
+    }
+}
+
+#[test]
+fn delta_identifier_bytes_are_bounded_even_for_long_ids() {
+    for bytes in [
+        MAX_DELTA_ID_BYTES - 1,
+        MAX_DELTA_ID_BYTES,
+        MAX_DELTA_ID_BYTES + 1,
+    ] {
+        let mut store = store(128, 2);
+        let trained = train(&store, 2);
+        assert!(publish_dense_index(&mut store, &trained));
+        for i in 0..32 {
+            let len = if i == 31 { bytes - 31 * 2048 } else { 2048 };
+            let input = serde_json::from_value(json!({
+                "id": format!("{i:02}{}", "x".repeat(len - 2)),
+                "text": "common", "embeddings": [[1.0, 0.0]],
+            }))
+            .unwrap();
+            let fresh = documents::prepare(input, 256, Some(2), TextEncoder::default()).unwrap();
+            store.insert(fresh.id.clone(), fresh);
+        }
+        assert_eq!(store.dense_index.is_some(), bytes <= MAX_DELTA_ID_BYTES);
+        assert!(store.dense_changes.keys().map(String::len).sum::<usize>() <= MAX_DELTA_ID_BYTES);
+    }
+}

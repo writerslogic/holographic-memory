@@ -8,7 +8,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::core::hash::FastMap;
+use crate::core::hash::{FastMap, FastSet};
 use anyhow::{ensure, Result};
 use serde_json::Value;
 
@@ -106,6 +106,8 @@ struct CapturedQuery {
     words: usize,
     use_postings: bool,
     dense: Option<Arc<DenseIndex>>,
+    eligible: Option<FastSet<usize>>,
+    changed: BTreeSet<String>,
     dfs: Option<[BTreeMap<String, usize>; 2]>,
     /// The store's text segment, read for result text after the store lock is released (under
     /// the mutation gate for a live search, see [`read_ranked`]).
@@ -218,18 +220,21 @@ pub(crate) fn capture_search(
 }
 
 fn capture_query(store: &DocumentStore, prepared: PreparedSearch) -> CapturedQuery {
-    if prepared.semantic_weight > 0.0 && store.dense_index_trained() {
+    if prepared.semantic_weight > 0.0 {
         if let Some(index) = store.dense_index.as_ref().filter(|index| {
             prepared
                 .embedding
                 .as_ref()
                 .is_some_and(|query| query.len() == index.dimensions)
         }) {
-            return capture_indexed_query(store, prepared, Arc::clone(index));
+            return capture_planned_query(store, prepared, Some(Arc::clone(index)));
         }
     }
     if prepared.lexical_only {
         return capture_ranked_lexical(store, prepared);
+    }
+    if prepared.embedding.is_none() || prepared.semantic_weight == 0.0 {
+        return capture_planned_query(store, prepared, None);
     }
     capture_postings(store, prepared)
 }
@@ -329,6 +334,8 @@ fn capture_postings(store: &DocumentStore, prepared: PreparedSearch) -> Captured
         words,
         use_postings,
         dense: None,
+        eligible: None,
+        changed: BTreeSet::new(),
         dfs: None,
         text: store.text_segment(),
         lexical_scores: None,
@@ -366,6 +373,8 @@ fn capture_ranked_lexical(store: &DocumentStore, prepared: PreparedSearch) -> Ca
         words: store.word_count,
         use_postings: true,
         dense: None,
+        eligible: None,
+        changed: BTreeSet::new(),
         dfs: None,
         text: store.text_segment(),
         lexical_scores: Some(scores),
@@ -474,6 +483,8 @@ fn capture_image(image: &ServingImage, prepared: PreparedSearch) -> anyhow::Resu
         words: image.word_count(),
         use_postings: true,
         dense: None,
+        eligible: None,
+        changed: BTreeSet::new(),
         dfs: None,
         text: None,
         lexical_scores: Some(scores),
@@ -532,6 +543,8 @@ fn capture_overlaid(
         words: source.word_count(),
         use_postings: true,
         dense: None,
+        eligible: None,
+        changed: BTreeSet::new(),
         dfs: None,
         text: store.text_segment(),
         lexical_scores: Some(scores),
@@ -615,7 +628,7 @@ impl LexicalScratch {
             for word in terms {
                 if let Some(list) = store.postings(form, word) {
                     let df = list.len() as f64;
-                    postings += list.len();
+                    postings = postings.saturating_add(list.len());
                     lists.push((Bm25::idf(n, df), list));
                 }
             }
@@ -743,11 +756,75 @@ impl LexicalScratch {
     }
 }
 
-fn capture_indexed_query(
+struct FilteredPostings<'a> {
+    list: &'a PostingList,
+    slots: &'a [bool],
+    count: usize,
+}
+
+impl PostingSet for FilteredPostings<'_> {
+    fn len(&self) -> usize {
+        self.count
+    }
+
+    fn for_each(&self, mut f: impl FnMut(usize, u32)) {
+        self.list.for_each(|slot, frequency| {
+            if self.slots[slot] {
+                f(slot, frequency);
+            }
+        });
+    }
+}
+
+struct FilteredLexical<'a> {
+    store: &'a DocumentStore,
+    slots: &'a [bool],
+    dfs: &'a [BTreeMap<String, usize>; 2],
+    count: usize,
+    words: usize,
+    identity: super::index::StoreIdentity,
+}
+
+impl LexicalSource for FilteredLexical<'_> {
+    type List<'a>
+        = FilteredPostings<'a>
+    where
+        Self: 'a;
+
+    fn slot_count(&self) -> usize {
+        self.slots.len()
+    }
+    fn chunk_count(&self) -> usize {
+        self.count
+    }
+    fn word_count(&self) -> usize {
+        self.words
+    }
+    fn state(&self) -> (super::index::StoreIdentity, u64) {
+        (self.identity, self.store.generation)
+    }
+    fn slot_word_count(&self, slot: usize) -> u32 {
+        self.store.slot_word_count(slot)
+    }
+    fn slot_order(&self, slot: usize) -> (&str, usize) {
+        self.store.slot_order(slot)
+    }
+
+    fn postings(&self, form: usize, term: &str) -> Option<Self::List<'_>> {
+        Some(FilteredPostings {
+            list: self.store.postings[form].get(term)?,
+            slots: self.slots,
+            count: self.dfs[form][term],
+        })
+    }
+}
+
+fn capture_planned_query(
     store: &DocumentStore,
     prepared: PreparedSearch,
-    dense: Arc<DenseIndex>,
+    dense: Option<Arc<DenseIndex>>,
 ) -> CapturedQuery {
+    let mut eligible = None;
     let (count, words, dfs, ranked) = if prepared.unfiltered {
         let dfs = std::array::from_fn(|form| {
             prepared.query_terms[form]
@@ -772,18 +849,46 @@ fn capture_indexed_query(
         (store.chunk_count, store.word_count, dfs, ranked)
     } else {
         let candidates = store.candidate_ids(&prepared.filters);
-        let documents: Vec<_> = match candidates {
+        let mut documents: Vec<_> = match candidates {
             Some(ids) => ids.into_iter().map(|id| &store.documents[id]).collect(),
             None => store.documents.values().collect(),
         };
-        let documents: Vec<_> = documents
-            .into_iter()
-            .filter(|document| matches_document(document, &prepared.filters))
-            .collect();
+        documents.retain(|document| matches_document(document, &prepared.filters));
         let count: usize = documents.iter().map(|document| document.chunks.len()).sum();
         if count < super::dense::MIN_ROWS {
             return capture_postings(store, prepared);
         }
+        if dense.is_some() && documents.len() <= DENSE_SLOT_LIMIT {
+            // The tree pins its document allocations, so replacement IDs cannot alias these owners.
+            eligible = Some(
+                documents
+                    .iter()
+                    .map(|document| Arc::as_ptr(document) as usize)
+                    .collect(),
+            );
+        }
+        let posting_work = prepared
+            .query_terms
+            .iter()
+            .enumerate()
+            .flat_map(|(form, terms)| {
+                terms
+                    .iter()
+                    .map(move |word| store.postings[form].get(word).map_or(0, PostingList::len))
+            })
+            .fold(0usize, usize::saturating_add);
+        let scan_work = count.saturating_mul(prepared.query_terms.iter().map(BTreeSet::len).sum());
+        let slots = (store.slot_count <= DENSE_SLOT_LIMIT
+            && posting_work.saturating_add(store.slot_count) < scan_work)
+            .then(|| {
+                let mut slots = vec![false; store.slot_count];
+                for document in &documents {
+                    for &slot in &store.slots[&document.id] {
+                        slots[slot] = true;
+                    }
+                }
+                slots
+            });
         let words = documents
             .iter()
             .flat_map(|document| &document.chunks)
@@ -793,19 +898,41 @@ fn capture_indexed_query(
             prepared.query_terms[form]
                 .iter()
                 .map(|word| {
-                    let df = documents
-                        .iter()
-                        .flat_map(|document| &document.chunks)
-                        .filter(|chunk| {
-                            chunk.stemmed == (form == 1) && chunk.terms.contains_key(word)
-                        })
-                        .count();
+                    let df = if let Some(slots) = &slots {
+                        let mut count = 0;
+                        if let Some(list) = store.postings[form].get(word) {
+                            list.for_each(|slot, _| count += usize::from(slots[slot]));
+                        }
+                        count
+                    } else {
+                        documents
+                            .iter()
+                            .flat_map(|document| &document.chunks)
+                            .filter(|chunk| {
+                                chunk.stemmed == (form == 1) && chunk.terms.contains_key(word)
+                            })
+                            .count()
+                    };
                     (word.clone(), df)
                 })
                 .collect()
         });
         let mut ranked = Vec::new();
-        if prepared.lexical_weight > 0.0 {
+        if let Some(slots) = slots.as_ref().filter(|_| prepared.lexical_weight > 0.0) {
+            let source = FilteredLexical {
+                store,
+                slots,
+                dfs: &dfs,
+                count,
+                words,
+                identity: super::index::StoreIdentity::default(),
+            };
+            ranked = LEXICAL_SCRATCH
+                .with(|scratch| scratch.borrow_mut().rank(&source, &prepared))
+                .into_iter()
+                .map(|(score, slot)| (score, slot as usize))
+                .collect();
+        } else if prepared.lexical_weight > 0.0 {
             let idfs: [Vec<_>; 2] = std::array::from_fn(|form| {
                 dfs[form]
                     .iter()
@@ -842,7 +969,7 @@ fn capture_indexed_query(
         }
         (count, words, dfs, ranked)
     };
-    let chunks = ranked
+    let mut chunks: Vec<_> = ranked
         .into_iter()
         .map(|(_, slot)| {
             let (document, index) = store.owned_chunk(slot);
@@ -854,6 +981,34 @@ fn capture_indexed_query(
             }
         })
         .collect();
+    let mut captured_slots: FastSet<_> = chunks
+        .iter()
+        .map(|chunk| store.slots[&chunk.document.id][chunk.index])
+        .collect();
+    for id in store.dense_changes.keys().filter(|_| dense.is_some()) {
+        let Some(document) = store
+            .documents
+            .get(id)
+            .filter(|document| matches_document(document, &prepared.filters))
+        else {
+            continue;
+        };
+        for (index, (&slot, chunk)) in store.slots[id].iter().zip(&document.chunks).enumerate() {
+            if chunk.embedding.is_some() && captured_slots.insert(slot) {
+                chunks.push(CapturedChunk {
+                    document: Arc::clone(document),
+                    index,
+                    word_count: store.slot_word_count(slot),
+                    semantic_cache: None,
+                });
+            }
+        }
+    }
+    let changed = if dense.is_some() {
+        store.dense_changes.keys().cloned().collect()
+    } else {
+        BTreeSet::new()
+    };
     CapturedQuery {
         prepared,
         chunks,
@@ -861,7 +1016,9 @@ fn capture_indexed_query(
         count,
         words,
         use_postings: false,
-        dense: Some(dense),
+        dense,
+        eligible,
+        changed,
         dfs: Some(dfs),
         text: store.text_segment(),
         lexical_scores: None,
@@ -934,14 +1091,22 @@ fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
             .embedding
             .as_ref()
             .expect("indexed search lost its query embedding");
-        let (hits, _) = if captured.prepared.unfiltered {
+        let (hits, _) = if captured.prepared.unfiltered && captured.changed.is_empty() {
             index.search(query, captured.prepared.limit, captured.prepared.minimum)
         } else {
             index.search_where(
                 query,
                 captured.prepared.limit,
                 captured.prepared.minimum,
-                |document| matches_document(document, &captured.prepared.filters),
+                |document| {
+                    !captured.changed.contains(&document.id)
+                        && captured.eligible.as_ref().map_or_else(
+                            || matches_document(document, &captured.prepared.filters),
+                            |eligible| {
+                                eligible.contains(&(document as *const StoredDocument as usize))
+                            },
+                        )
+                },
             )
         };
         let mut chunks = captured.chunks.clone();
@@ -1172,6 +1337,98 @@ mod tests {
     use crate::core::sync::RwLock;
     use serde_json::json;
     use std::sync::Barrier;
+
+    #[test]
+    fn planned_filtered_lexical_and_hybrid_match_oracle_under_term_skew() {
+        let mut store = store(512);
+        let mut long = document(7, 1);
+        long.chunks[0].word_count = 300;
+        store.insert(long.id.clone(), long);
+        for trained in [false, true] {
+            if trained {
+                let index = super::super::build_dense_index(
+                    super::super::capture_dense_index(&store, 3)
+                        .unwrap()
+                        .unwrap(),
+                )
+                .unwrap()
+                .unwrap();
+                assert!(super::super::publish_dense_index(&mut store, &index));
+            }
+            for group in [1, 0, 1] {
+                for query in [
+                    "rare7 rare9 ghost absent",
+                    "common",
+                    "common rare7 rare9 ghost absent",
+                ] {
+                    for embedding in [None, Some(vec![1.0, 0.0, 0.0])] {
+                        for k1 in [0.0, 1.2] {
+                            let options = SearchOptions {
+                                k: Some(3),
+                                candidate_limit: Some(5),
+                                filter: Some(json!({"group": group})),
+                                embedding: embedding.clone(),
+                                bm25_k1: Some(k1),
+                                min_semantic_score: Some(-1.0),
+                                ..Default::default()
+                            };
+                            let captured = capture_search(
+                                &store,
+                                vec![prepare_search(query, &options, Some(3)).unwrap()],
+                            );
+                            if trained || embedding.is_none() {
+                                assert!(captured.queries[0].chunks.len() <= 5);
+                                assert_eq!(captured.queries[0].count, 512);
+                            }
+                            let expected =
+                                super::super::search_impl(&store, query, &options, Some(3), false)
+                                    .unwrap();
+                            assert_eq!(
+                                serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                                serde_json::to_value(expected).unwrap()
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn delta_capture_bounds_owners_and_survives_later_replacement() {
+        let mut store = store(512);
+        let index = super::super::build_dense_index(
+            super::super::capture_dense_index(&store, 3)
+                .unwrap()
+                .unwrap(),
+        )
+        .unwrap()
+        .unwrap();
+        assert!(super::super::publish_dense_index(&mut store, &index));
+        store.insert("d007".into(), document(7, 2));
+        let options = SearchOptions {
+            k: Some(3),
+            candidate_limit: Some(5),
+            filter: Some(json!({"group": 1})),
+            embedding: Some(vec![1.0, 0.0, 0.0]),
+            min_semantic_score: Some(-1.0),
+            ..Default::default()
+        };
+        let captured = capture_search(
+            &store,
+            vec![prepare_search("common rare7", &options, Some(3)).unwrap()],
+        );
+        assert!(captured.queries[0].dense.is_some());
+        assert!(captured.queries[0].chunks.len() <= 5 + store.documents["d007"].chunks.len());
+        assert!(captured.queries[0].changed.contains("d007"));
+        let expected =
+            super::super::search_impl(&store, "common rare7", &options, Some(3), false).unwrap();
+        store.insert("d007".into(), document(7, 3));
+        assert_eq!(
+            serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+            serde_json::to_value(expected).unwrap()
+        );
+    }
 
     #[test]
     fn audit_regression_filtered_hybrid_capture_bounds_owners_and_reuses_exact_index() {

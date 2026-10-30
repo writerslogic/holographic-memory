@@ -26,9 +26,178 @@
     },
     {
       "id": "R16",
-      "status": "planned",
+      "status": "implemented_validation_deferred",
       "hypothesis": "Selectivity-aware composition may improve filtered retrieval; mechanism and workload gains unmeasured.",
-      "acceptance": "Canonical live filtered results at 0.01/0.1/1/10/50/100% selectivity; compare p95/p99, RSS, training and update costs."
+      "acceptance": "Canonical live filtered results at 0.01/0.1/1/10/50/100% selectivity; compare p95/p99, RSS, training and update costs.",
+      "primary_target": "Remove eligible-chunk-per-term scans for selective lexical terms and preserve the trained exact tree across bounded mutation bursts.",
+      "guardrails": [
+        "Exact canonical f64 scores/order, filtered-corpus BM25, source spans and live generation semantics unchanged.",
+        "No compilation or performance execution this session; gains remain unmeasured.",
+        "Bound mutation tracking by distinct documents, live changed chunks and identifier bytes; overflow drops acceleration and retains exact fallback.",
+        "Reuse existing admission and cancellation ownership; no detached query or rebuild workers."
+      ],
+      "baseline_evidence": [
+        {
+          "source": "src/core/documents/search.rs:capture_indexed_query",
+          "finding": "Filtered DF scans E chunks for every term, then lexical scoring repeats E*T lookups; tree traversal repeats document predicates per row."
+        },
+        {
+          "source": "src/core/documents/index.rs:invalidate_dense_index,install_new",
+          "finding": "Every replacement/delete/insert discards the dense tree even for one changed document."
+        },
+        {
+          "source": "src/core/documents/vector_index.rs:rank_vector_snapshot",
+          "finding": "Separate vector-only stale path walks all documents for deltas; not the hybrid tree path."
+        },
+        {
+          "source": "benchmarks/results/filter_search_20261024.json",
+          "finding": "Existing uint8 labeled-vector experiment has ID/work equality and one-thread measurements; does not measure f64 document hybrid flow."
+        },
+        {
+          "source": "benchmarks/results/ann_updatable_x86_v1.json",
+          "finding": "Existing standalone ANN update evidence; not evidence of document hybrid improvement."
+        },
+        {
+          "source": "docs/research/technical-audit-20261029/retrieval-validation.json",
+          "finding": "Prior oracle coverage validates existing exact filtered tree reuse; no baseline hybrid performance claim."
+        }
+      ],
+      "alternatives": [
+        {
+          "mechanism": "Shared captured eligibility plus postings-driven filtered ranking",
+          "decision": "Select when posting work is cheaper than eligible term scans; retain direct scan for skew/hot terms."
+        },
+        {
+          "mechanism": "Bounded changed-ID delta plus immutable exact base",
+          "decision": "Select complementary to eligibility; exclude changed base documents before top-k and rank current changed chunks with the same oracle arithmetic."
+        },
+        {
+          "mechanism": "Filter-aware graph traversal / per-label IVF",
+          "decision": "Reject for exact document membership: qgraph filter uses u8 Euclidean labels and approximate broad traversal; canonical reranking cannot recover missed candidates."
+        },
+        {
+          "mechanism": "Cross-request eligibility/statistics cache",
+          "decision": "Defer: cache invalidation, arbitrary JSON predicates and retained owner lifetime add complexity; this implementation shares eligibility within the captured generation."
+        },
+        {
+          "mechanism": "Rebuild the tree on every mutation",
+          "decision": "Reject: repeats tree construction and snapshot capture; bounded delta removes this trigger for bursts."
+        }
+      ],
+      "implementation": {
+        "baseline_revision": "a736af02",
+        "mechanisms": [
+          "Filtered LexicalSource reuses the existing ranker with one membership table, filtered DF and a filter-specific norm identity; use postings only when posting visits plus slot initialization beat E*T scans. Hot terms, tiny sets and oversized slot tables retain scans.",
+          "One captured live document identity set also filters the exact tree; base allocations remain pinned, preventing identity reuse.",
+          "The immutable exact base survives <=128 distinct changed IDs, <=1024 live changed chunks and <=65536 ID bytes. Exclude changed base owners before top-k, score the current delta, then canonical fusion. Overflow discards only acceleration; publication resets tracking only at the captured generation.",
+          "Dense construction shares vector-index build admission and reports busy before constructing another tree. Existing HTTP queue and running-work cancellation ownership remain in force."
+        ],
+        "compatibility": "No format, dependency, schema or public query option changes; trained status continues to mean current base. Existing golden files untouched."
+      },
+      "flow": [
+        "prepare validates query shape/weights/candidate limit; metadata candidate_ids chooses the smallest posting then matches full predicates.",
+        "capture runs under mutation gate/store read lock; filtered statistics, eligibility, changed IDs and current delta owners belong to one generation. Only candidateLimit lexical owners plus <=1024 delta chunk owners are captured.",
+        "ranking releases those locks; exact base traversal excludes changes before selection; canonical scores and existing blend/RRF ordering operate on the candidate union.",
+        "read_ranked and the existing guarded fallback protect text from concurrent scrubbing. Retained captures are snapshots; no new background tasks.",
+        "revision-conditional training publication clears the delta; compaction rebuilds document state, and reopen reconstructs live indexes from existing schema-5 records."
+      ],
+      "existing_measurements": [
+        {
+          "source": "benchmarks/results/filter_search_20261024.json",
+          "exact_single_geomean_ratio": 1.5263991678716635,
+          "ivf_single_synthetic_recall": 0.72109375,
+          "qualification": "Historical uint8 Euclidean label experiment, not a document-hybrid baseline or measurement of this change."
+        },
+        {
+          "source": "benchmarks/results/ann_updatable_x86_v1.json",
+          "qualification": "Standalone ANN live-update measurements demonstrate a separate base/delta system already exists; its graph/format semantics do not replace document BM25 and f64 exact selection."
+        }
+      ],
+      "expected_effects": [
+        {
+          "metric": "Filtered term/statistics work",
+          "before": "O(E*T) DF plus O(E*T) scoring",
+          "after": "O(N) slot initialization + O(E) membership/word totals + two passes over P query postings, with O(candidateLimit*T) final candidate scores; scan selected if initialization+P >= E*T",
+          "status": "analytical, unmeasured",
+          "example": "N=100000 slots,E=50000 chunks,T=8 form-specific query terms,P=200: replace roughly 800000 term-map probes by 100000 flag initialization,50000 membership inserts,400 posting visits plus bounded candidate scoring; embedding work remains separate."
+        },
+        {
+          "metric": "Mutation burst tree construction",
+          "before": "Every mutation drops the tree; maintenance rebuilds or queries scan all eligible chunks",
+          "after": "No rebuild across a within-cap burst; tree plus <=1024 changed chunk dot products per query. Repeated replacement of the same IDs retains only their current counts.",
+          "status": "analytical, unmeasured"
+        },
+        {
+          "metric": "Filtered lexical retained owners",
+          "before": "One owner per eligible chunk without dense execution",
+          "after": "At most candidateLimit owners for planned broad lexical queries",
+          "status": "source bound, not RSS measurement"
+        },
+        {
+          "metric": "Training concurrency",
+          "before": "Concurrent dense calls could construct duplicate trees",
+          "after": "Shared build gate admits one constructor; occupied gate returns a retryable maintenance error",
+          "status": "source bound, regression execution deferred"
+        }
+      ],
+      "possible_regressions": [
+        "The membership set adds hashing/storage and per-filter norm invalidation; broad hot terms use the scan path, and posting planning includes slot initialization cost.",
+        "Update reuse adds changed-ID lookups during traversal and up to1024 candidate owners; the cap can return queries to the existing full exact scan until maintenance. It also conservatively counts nonembedded changed chunks.",
+        "An old base pins its old document allocations until eviction/rebuild or captured queries finish. Live queries never rank changed base rows. Existing running-worker permit ownership bounds admission, not process RSS.",
+        "Vector-only snapshot delta discovery remains a separate all-document walk; no gain claimed for that path.",
+        "As before, synchronous core calls do not offer cooperative mid-query cancellation; canceled server work retains capacity until it actually finishes."
+      ],
+      "final_validation": {
+        "status": "pending; no Rust compilation, runtime regressions or performance comparison executed this phase",
+        "commands": [
+          "cargo test --offline --locked --lib core::documents::search::",
+          "cargo test --offline --locked --lib core::documents::dense::",
+          "cargo test --offline --locked --lib core::documents::index::",
+          "cargo test --offline --locked --lib core::engine::document_snapshot_tests::",
+          "cargo test --offline --locked --features server --bin hms-server cancellation_retains_work_capacity_and_shutdown_waits_for_actual_io",
+          "cargo test --offline --locked --features server --bin hms-server",
+          "cargo clippy --offline --locked --all-targets --all-features -- -D warnings"
+        ],
+        "regressions": [
+          "planned_filtered_lexical_and_hybrid_match_oracle_under_term_skew",
+          "delta_capture_bounds_owners_and_survives_later_replacement",
+          "bounded_delta_keeps_base_and_matches_live_oracle_across_mutations",
+          "delta_document_and_chunk_limits_drop_acceleration_without_losing_results",
+          "delta_identifier_bytes_are_bounded_even_for_long_ids",
+          "filtered_hybrid_delta_survives_compaction_and_reopen",
+          "dense_training_reports_busy_and_releases_build_capacity"
+        ],
+        "measurement_protocol": {
+          "baseline": "a736af02 (isolated git archive only if essential, final session only)",
+          "variants": [
+            "baseline",
+            "eligibility/postings only",
+            "bounded delta only",
+            "combined"
+          ],
+          "workloads": "Propose at most two of the final campaign four preselected workload groups: 10000 one-chunk documents, deterministic 16-dimensional normalized embeddings, mixed stemmed/raw tokens, 50% exact metadata eligibility; eight rare form-specific terms versus hot common terms/ties. Include a 32-document replace/delete/insert burst and repeated replacement of the same ID; measure idle and burst stages separately. No Cartesian matrix.",
+          "limits": "Local only, three independent rounds, <=10 minutes total campaign benchmarking; 100k only for an unresolved capacity question. No paid calls, downloads or remote runs.",
+          "measure": [
+            "Exact ordered result JSON equality versus exhaustive oracle, including scores/spans/metadata",
+            "prepare/capture/rank/read phase p50/p95/p99 and end-to-end error counts",
+            "posting visits, exact dense dot counts, eligibility candidates, pinned owners and rebuilt tree count",
+            "peak and steady RSS, initial train time, update latency and maintenance time including overflow"
+          ],
+          "targets": ">=20% lower p95 capture time in rare-term group; zero tree rebuilds within the bounded burst; no ordered-result differences; investigate >10% end-to-end p99 regression on the hot-term group or >12MiB extra per active query/thread. Targets are hypotheses, not results.",
+          "performance_results": null
+        }
+      },
+      "local_validation": {
+        "commands": [
+          "rustfmt --check --edition 2021 --config skip_children=true src/core/documents/search.rs src/core/documents/index.rs src/core/documents/dense.rs src/core/documents/dense_tests.rs src/core/engine/document_api.rs src/core/engine/document_snapshot_tests.rs",
+          "git diff --check",
+          "uv run --no-project --offline python scripts/ci/campaign_policy.py"
+        ],
+        "outcome": "Passed: touched-file rustfmt syntax/format, git diff --check, campaign policy. No compilation, runtime correctness or performance validation claimed.",
+        "diagnostic_probes": 0,
+        "paid_credits": 0,
+        "scope": "Syntax formatting, whitespace and deferral policy only; under60-second noncompiling subset."
+      }
     },
     {
       "id": "R17",
@@ -131,6 +300,62 @@
       "ai_findings_option": "disabled"
     },
     "status": "Both setups set to not-configured and verified via GitHub API; restore original configuration and verify final analyses in final session.",
-    "evidence": "PR 336 automatically triggered GitHub-managed CodeQL and Code Quality; cancellation requested for runs 40984696618 and 40984696529. These workflows are not in the repository."
+    "evidence": "PR 336 automatically triggered GitHub-managed CodeQL and Code Quality; cancellation requested for runs 40984696618 and 40984696529. These workflows are not in the repository.",
+    "r16_verification": {
+      "code_scanning": "GET /repos/writerslogic/holographic-memory/code-scanning/default-setup: not-configured",
+      "code_quality": "GET /repos/writerslogic/holographic-memory/code-quality/setup: not-configured",
+      "documentation": "https://docs.github.com/en/rest/code-quality/code-quality?apiVersion=2026-03-10"
+    }
+  },
+  "next_prompt_queue": [
+    {
+      "order": 3,
+      "phase": "R18",
+      "objective": "Native temporal and source-grounded utility; freeze dev/eval partitions; implement actual memory-path improvement; merge provisionally."
+    },
+    {
+      "order": 4,
+      "phase": "R17",
+      "model": "gpt-6.1-terra",
+      "objective": "Shared contracts and real supported adapters; preserve deliberate differences; merge provisionally."
+    },
+    {
+      "order": 5,
+      "phase": "trust-interop-security",
+      "objective": "Complete selected SCITT verification and remote MCP authorization profiles; authoritative specs, rejection vectors, bounded resources; merge provisionally."
+    },
+    {
+      "order": 6,
+      "phase": "security-durability",
+      "objective": "Concrete lifecycle/recovery fixes, fault vectors and review artifacts; merge provisionally."
+    },
+    {
+      "order": 7,
+      "phase": "operational-recovery",
+      "optional": true,
+      "objective": "Durable sidecar reconciliation and explicitly authorized safe synchronization; evidence-gated capability extension."
+    },
+    {
+      "order": 8,
+      "phase": "strategic",
+      "optional": true,
+      "objective": "Evidence-supported integrated routing or calibrated structural reasoning; evidence-gated."
+    },
+    {
+      "order": 9,
+      "phase": "final-validation",
+      "objective": "Combined audit, repair, final gates, local bounded benchmarks, restore CI, verify remote main; no packages/tags."
+    }
+  ],
+  "final_session_limits": {
+    "benchmark_groups": 4,
+    "normal_max_rows": 10000,
+    "rounds": 3,
+    "total_benchmark_minutes": 10,
+    "expansion": "100k only for a specific unresolved capacity question within budget",
+    "paid_calls": false,
+    "remote_benchmarks": false,
+    "cargo_target_dir": "Set explicit repository-owned directory; no concurrent builds",
+    "archives": "Task-owned git archive permitted only for essential isolated baseline; no worktrees or stashes"
   }
 }

@@ -16,6 +16,9 @@ use super::{DocumentStore, Embedding, StoredDocument};
 
 pub(super) const MIN_ROWS: usize = 128;
 pub(super) const MAX_ROWS: usize = 250_000;
+pub(super) const MAX_DELTA_DOCUMENTS: usize = 128;
+pub(super) const MAX_DELTA_CHUNKS: usize = 1024;
+pub(super) const MAX_DELTA_ID_BYTES: usize = 64 * 1024;
 const MAX_DIMENSIONS: usize = 4096;
 const MAX_INPUT_VALUES: usize = 64 * 1024 * 1024;
 const MAX_BOUND_BYTES: usize = 64 * 1024 * 1024;
@@ -251,6 +254,7 @@ pub(crate) fn publish_dense_index(store: &mut DocumentStore, trained: &TrainedDe
     }
     if !store.dense_index_trained() {
         store.dense_index = Some(Arc::clone(&trained.index));
+        store.dense_changes.clear();
     }
     true
 }

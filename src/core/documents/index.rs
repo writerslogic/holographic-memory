@@ -36,6 +36,7 @@ pub(crate) struct DocumentStore {
     pub(super) multichunk_documents: BTreeSet<String>,
     pub(super) generation: u64,
     pub(super) dense_index: Option<Arc<DenseIndex>>,
+    pub(super) dense_changes: BTreeMap<String, usize>,
     pub(super) embedded_documents: BTreeSet<String>,
     embedded_count: usize,
     owners: Vec<Option<(Arc<StoredDocument>, usize)>>,
@@ -396,15 +397,42 @@ impl DocumentStore {
     }
 
     pub(crate) fn dense_index_recommended(&self) -> bool {
-        !self.dense_index_trained() && (MIN_ROWS..=MAX_ROWS).contains(&self.embedded_count)
+        self.dense_index.is_none() && (MIN_ROWS..=MAX_ROWS).contains(&self.embedded_count)
     }
 
-    fn invalidate_dense_index(&mut self) {
+    fn advance_generation(&mut self) {
         self.generation = self
             .generation
             .checked_add(1)
             .expect("document generation overflow");
-        self.dense_index = None;
+    }
+
+    fn track_dense_change(&mut self, id: &str, chunks: usize) {
+        use super::dense::{MAX_DELTA_CHUNKS, MAX_DELTA_DOCUMENTS, MAX_DELTA_ID_BYTES};
+        if self.dense_index.is_none() {
+            return;
+        }
+        let documents =
+            self.dense_changes.len() + usize::from(!self.dense_changes.contains_key(id));
+        let rows = self.dense_changes.values().sum::<usize>()
+            - self.dense_changes.get(id).copied().unwrap_or(0);
+        let bytes = self.dense_changes.keys().map(String::len).sum::<usize>()
+            + if self.dense_changes.contains_key(id) {
+                0
+            } else {
+                id.len()
+            };
+        if documents > MAX_DELTA_DOCUMENTS
+            || chunks > MAX_DELTA_CHUNKS.saturating_sub(rows)
+            || bytes > MAX_DELTA_ID_BYTES
+        {
+            self.dense_index = None;
+            self.dense_changes.clear();
+        } else if let Some(count) = self.dense_changes.get_mut(id) {
+            *count = chunks;
+        } else {
+            self.dense_changes.insert(id.to_owned(), chunks);
+        }
     }
 
     #[cfg(test)]
@@ -797,8 +825,8 @@ impl DocumentStore {
             .generation
             .checked_add(group.len() as u64)
             .expect("document generation overflow");
-        self.dense_index = None;
         for document in group {
+            self.track_dense_change(&document.id, document.chunks.len());
             self.documents.insert(document.id.clone(), document);
         }
     }
@@ -915,7 +943,8 @@ impl DocumentStore {
                 "duplicate embedded document"
             );
         }
-        self.invalidate_dense_index();
+        self.advance_generation();
+        self.track_dense_change(&id, document.chunks.len());
         self.scrub_replaced(&previous, &document);
         self.documents.insert(id, document);
     }
@@ -1049,7 +1078,8 @@ impl DocumentStore {
         }
         let document = self.documents.remove(id)?;
         self.multichunk_documents.remove(id);
-        self.invalidate_dense_index();
+        self.advance_generation();
+        self.track_dense_change(id, 0);
         if document
             .chunks
             .iter()
