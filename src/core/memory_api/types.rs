@@ -111,8 +111,7 @@ pub struct RecallOptions {
     pub min_semantic_score: Option<f64>,
     /// `"blend"` (default) or `"rrf"`, as in document search.
     pub fusion: Option<String>,
-    /// Candidates ranked before the validity filter; the default is document search's.
-    /// Raise it when most top candidates are history.
+    /// Eligible candidates ranked before optional recency adjustment; defaults to document search's.
     pub candidate_limit: Option<u32>,
     /// Attach an [`Explanation`] to every result. Costs nothing when false.
     pub explain: bool,

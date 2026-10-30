@@ -68,6 +68,38 @@ fn recall(memory: &Memory, query: &str, options: RecallOptions) -> Vec<Recalled>
 }
 
 #[test]
+fn knowledge_eligibility_preserves_unstamped_documents_before_selection() {
+    let dir = tempfile::tempdir().unwrap();
+    let core = open(dir.path());
+    core.memorize_document(
+        serde_json::from_value(json!({
+            "id": "plain", "text": "station timetable available", "sourceUri": "fixture:plain"
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let clock = Arc::new(ManualClock::new(2000));
+    let memory = Memory::new(core).with_clock(clock);
+    memory
+        .remember(fact("future", "station timetable priority priority"))
+        .unwrap();
+    let hits = memory
+        .recall(
+            "station timetable priority",
+            &RecallOptions {
+                known_at: Some(1000),
+                history: Some(HistoryMode::All),
+                k: Some(1),
+                candidate_limit: Some(1),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(ids(&hits), ["plain"]);
+    assert_eq!(hits[0].text.as_deref(), Some("station timetable available"));
+}
+
+#[test]
 fn supersession_keeps_history_and_defaults_to_current_only() {
     let dir = tempfile::tempdir().unwrap();
     let clock = Arc::new(ManualClock::new(1_000));

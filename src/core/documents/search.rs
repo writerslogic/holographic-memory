@@ -16,8 +16,8 @@ use super::dense::DenseIndex;
 use super::image::ServingImage;
 use super::overlay::Overlaid;
 use super::{
-    matches_document, normalize_embedding, query_words, terms, top_ranked, Bm25, DocumentResult,
-    DocumentStore, SearchOptions, StoredChunk, StoredDocument, MAX_DOCUMENT_BYTES,
+    matches_document_metadata, normalize_embedding, query_words, terms, top_ranked, Bm25,
+    DocumentResult, DocumentStore, SearchOptions, StoredChunk, StoredDocument, MAX_DOCUMENT_BYTES,
 };
 
 pub(crate) struct PreparedSearch {
@@ -34,6 +34,16 @@ pub(crate) struct PreparedSearch {
     lexical_only: bool,
     unfiltered: bool,
     bm25: Bm25,
+}
+
+impl PreparedSearch {
+    fn matches(&self, document: &StoredDocument) -> bool {
+        self.filters
+            .document_ids
+            .as_ref()
+            .is_none_or(|ids| ids.binary_search(&document.id).is_ok())
+            && matches_document_metadata(document, &self.filters)
+    }
 }
 
 pub(crate) struct CapturedSearch {
@@ -174,11 +184,17 @@ pub(crate) fn prepare_search(
             .is_none_or(|filter| filter.is_empty());
     let lexical_only = unfiltered && (embedding.is_none() || semantic_weight == 0.0);
     let bm25 = Bm25::from_options(options)?;
+    let document_ids = options.document_ids.as_ref().map(|ids| {
+        let mut ids = ids.clone();
+        ids.sort_unstable();
+        ids.dedup();
+        ids
+    });
     Ok(PreparedSearch {
         filters: SearchOptions {
             filter: options.filter.clone(),
             source_uri: options.source_uri.clone(),
-            document_ids: options.document_ids.clone(),
+            document_ids,
             ..Default::default()
         },
         query_terms: [query_words(text, false), query_words(text, true)],
@@ -255,7 +271,7 @@ fn capture_postings(store: &DocumentStore, prepared: PreparedSearch) -> Captured
         let mut words = 0;
         for document in documents
             .into_iter()
-            .filter(|document| matches_document(document, &prepared.filters))
+            .filter(|document| prepared.matches(document))
         {
             for (index, (&slot, chunk)) in store.slots[&document.id]
                 .iter()
@@ -853,7 +869,7 @@ fn capture_planned_query(
             Some(ids) => ids.into_iter().map(|id| &store.documents[id]).collect(),
             None => store.documents.values().collect(),
         };
-        documents.retain(|document| matches_document(document, &prepared.filters));
+        documents.retain(|document| prepared.matches(document));
         let count: usize = documents.iter().map(|document| document.chunks.len()).sum();
         if count < super::dense::MIN_ROWS {
             return capture_postings(store, prepared);
@@ -989,7 +1005,7 @@ fn capture_planned_query(
         let Some(document) = store
             .documents
             .get(id)
-            .filter(|document| matches_document(document, &prepared.filters))
+            .filter(|document| prepared.matches(document))
         else {
             continue;
         };
@@ -1101,7 +1117,7 @@ fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
                 |document| {
                     !captured.changed.contains(&document.id)
                         && captured.eligible.as_ref().map_or_else(
-                            || matches_document(document, &captured.prepared.filters),
+                            || captured.prepared.matches(document),
                             |eligible| {
                                 eligible.contains(&(document as *const StoredDocument as usize))
                             },

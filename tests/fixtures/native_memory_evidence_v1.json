@@ -1,0 +1,1408 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Frozen synthetic native retrieval and source support evidence; not learned QA or factual answer scoring",
+  "partitions": {
+    "development": [
+      {
+        "id": "dev_harbor",
+        "coverage": [
+          "identity-scopes",
+          "contradiction",
+          "stale-ranking",
+          "valid-time",
+          "knowledge-time",
+          "unsupported",
+          "citation",
+          "forget-reopen"
+        ],
+        "transcript": [
+          {
+            "id": "dev_harbor-t1",
+            "text": "Mara at North said the harbor office is Paris; anchor.",
+            "time": 100
+          },
+          {
+            "id": "dev_harbor-t2",
+            "text": "Mara at North said the harbor office is Berlin; canal.",
+            "time": 200
+          },
+          {
+            "id": "dev_harbor-t3",
+            "text": "Mara at South said the harbor office is Paris.",
+            "time": 100
+          }
+        ],
+        "phases": [
+          [
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "dev_harbor-old",
+                "text": "Mara at North said the harbor office is Paris; anchor.",
+                "subject": "mara/north/harbor-office",
+                "entities": [
+                  "Mara/North"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/dev_harbor-t1"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "dev_harbor-other",
+                "text": "Mara at South said the harbor office is Paris.",
+                "subject": "mara/south/harbor-office",
+                "entities": [
+                  "Mara/South"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/dev_harbor-t3"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 2000,
+              "op": "remember",
+              "request": {
+                "id": "dev_harbor-new",
+                "text": "Mara at North said the harbor office is Berlin; canal.",
+                "subject": "mara/north/harbor-office",
+                "entities": [
+                  "Mara/North"
+                ],
+                "validFrom": 200,
+                "eventTime": 200,
+                "sourceUri": "fixture:transcript/dev_harbor-t2",
+                "supersedes": [
+                  "dev_harbor-old"
+                ]
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 2000
+              }
+            }
+          ],
+          [
+            {
+              "op": "recall",
+              "request": {
+                "query": "harbor office anchor",
+                "subject": "mara/north/harbor-office",
+                "entities": [
+                  "Mara/North"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_harbor-new",
+                "/results/0/text": "Mara at North said the harbor office is Berlin; canal.",
+                "/results/0/sourceUri": "fixture:transcript/dev_harbor-t2"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "harbor office canal",
+                "subject": "mara/north/harbor-office",
+                "asOf": 250,
+                "knownAt": 1500,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_harbor-old",
+                "/results/0/text": "Mara at North said the harbor office is Paris; anchor.",
+                "/results/0/sourceUri": "fixture:transcript/dev_harbor-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "harbor office",
+                "subject": "mara/south/harbor-office",
+                "entities": [
+                  "Mara/South"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_harbor-other",
+                "/results/0/text": "Mara at South said the harbor office is Paris.",
+                "/results/0/sourceUri": "fixture:transcript/dev_harbor-t3"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "harbor office canal",
+                "subject": "mara/north/harbor-office",
+                "asOf": 150,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_harbor-old",
+                "/results/0/text": "Mara at North said the harbor office is Paris; anchor.",
+                "/results/0/sourceUri": "fixture:transcript/dev_harbor-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "quuxnonmatchingzebra",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "forget",
+              "request": {
+                "scope": {
+                  "kind": "ids",
+                  "ids": [
+                    "dev_harbor-other"
+                  ]
+                },
+                "dryRun": false,
+                "purge": true
+              },
+              "expect": {
+                "/forgotten": [
+                  "dev_harbor-other"
+                ],
+                "/purged": true
+              }
+            }
+          ],
+          [
+            {
+              "op": "get",
+              "request": {
+                "id": "dev_harbor-other"
+              },
+              "expect": {
+                "/fact": null
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "harbor office",
+                "subject": "mara/south/harbor-office",
+                "entities": [
+                  "Mara/South"
+                ],
+                "history": "all",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "harbor office anchor",
+                "subject": "mara/north/harbor-office",
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_harbor-new",
+                "/results/0/text": "Mara at North said the harbor office is Berlin; canal.",
+                "/results/0/sourceUri": "fixture:transcript/dev_harbor-t2"
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "id": "dev_orchard",
+        "coverage": [
+          "identity-scopes",
+          "contradiction",
+          "stale-ranking",
+          "valid-time",
+          "knowledge-time",
+          "unsupported",
+          "citation",
+          "forget-reopen"
+        ],
+        "transcript": [
+          {
+            "id": "dev_orchard-t1",
+            "text": "Ivo at Hill said the orchard gate is east; lantern.",
+            "time": 100
+          },
+          {
+            "id": "dev_orchard-t2",
+            "text": "Ivo at Hill said the orchard gate is west; ladder.",
+            "time": 200
+          },
+          {
+            "id": "dev_orchard-t3",
+            "text": "Ivo at Vale said the orchard gate is east.",
+            "time": 100
+          }
+        ],
+        "phases": [
+          [
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "dev_orchard-old",
+                "text": "Ivo at Hill said the orchard gate is east; lantern.",
+                "subject": "ivo/hill/orchard-gate",
+                "entities": [
+                  "Ivo/Hill"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/dev_orchard-t1"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "dev_orchard-other",
+                "text": "Ivo at Vale said the orchard gate is east.",
+                "subject": "ivo/vale/orchard-gate",
+                "entities": [
+                  "Ivo/Vale"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/dev_orchard-t3"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 2000,
+              "op": "remember",
+              "request": {
+                "id": "dev_orchard-new",
+                "text": "Ivo at Hill said the orchard gate is west; ladder.",
+                "subject": "ivo/hill/orchard-gate",
+                "entities": [
+                  "Ivo/Hill"
+                ],
+                "validFrom": 200,
+                "eventTime": 200,
+                "sourceUri": "fixture:transcript/dev_orchard-t2",
+                "supersedes": [
+                  "dev_orchard-old"
+                ]
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 2000
+              }
+            }
+          ],
+          [
+            {
+              "op": "recall",
+              "request": {
+                "query": "orchard gate lantern",
+                "subject": "ivo/hill/orchard-gate",
+                "entities": [
+                  "Ivo/Hill"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_orchard-new",
+                "/results/0/text": "Ivo at Hill said the orchard gate is west; ladder.",
+                "/results/0/sourceUri": "fixture:transcript/dev_orchard-t2"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "orchard gate ladder",
+                "subject": "ivo/hill/orchard-gate",
+                "asOf": 250,
+                "knownAt": 1500,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_orchard-old",
+                "/results/0/text": "Ivo at Hill said the orchard gate is east; lantern.",
+                "/results/0/sourceUri": "fixture:transcript/dev_orchard-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "orchard gate",
+                "subject": "ivo/vale/orchard-gate",
+                "entities": [
+                  "Ivo/Vale"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_orchard-other",
+                "/results/0/text": "Ivo at Vale said the orchard gate is east.",
+                "/results/0/sourceUri": "fixture:transcript/dev_orchard-t3"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "orchard gate ladder",
+                "subject": "ivo/hill/orchard-gate",
+                "asOf": 150,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_orchard-old",
+                "/results/0/text": "Ivo at Hill said the orchard gate is east; lantern.",
+                "/results/0/sourceUri": "fixture:transcript/dev_orchard-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "quuxnonmatchingzebra",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "forget",
+              "request": {
+                "scope": {
+                  "kind": "ids",
+                  "ids": [
+                    "dev_orchard-other"
+                  ]
+                },
+                "dryRun": false,
+                "purge": true
+              },
+              "expect": {
+                "/forgotten": [
+                  "dev_orchard-other"
+                ],
+                "/purged": true
+              }
+            }
+          ],
+          [
+            {
+              "op": "get",
+              "request": {
+                "id": "dev_orchard-other"
+              },
+              "expect": {
+                "/fact": null
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "orchard gate",
+                "subject": "ivo/vale/orchard-gate",
+                "entities": [
+                  "Ivo/Vale"
+                ],
+                "history": "all",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "orchard gate lantern",
+                "subject": "ivo/hill/orchard-gate",
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_orchard-new",
+                "/results/0/text": "Ivo at Hill said the orchard gate is west; ladder.",
+                "/results/0/sourceUri": "fixture:transcript/dev_orchard-t2"
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "id": "dev_clinic",
+        "coverage": [
+          "identity-scopes",
+          "contradiction",
+          "stale-ranking",
+          "valid-time",
+          "knowledge-time",
+          "unsupported",
+          "citation",
+          "forget-reopen"
+        ],
+        "transcript": [
+          {
+            "id": "dev_clinic-t1",
+            "text": "Nell at River said the clinic rota is Monday; badge.",
+            "time": 100
+          },
+          {
+            "id": "dev_clinic-t2",
+            "text": "Nell at River said the clinic rota is Friday; stethoscope.",
+            "time": 200
+          },
+          {
+            "id": "dev_clinic-t3",
+            "text": "Nell at Market said the clinic rota is Monday.",
+            "time": 100
+          }
+        ],
+        "phases": [
+          [
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "dev_clinic-old",
+                "text": "Nell at River said the clinic rota is Monday; badge.",
+                "subject": "nell/river/clinic-rota",
+                "entities": [
+                  "Nell/River"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/dev_clinic-t1"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "dev_clinic-other",
+                "text": "Nell at Market said the clinic rota is Monday.",
+                "subject": "nell/market/clinic-rota",
+                "entities": [
+                  "Nell/Market"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/dev_clinic-t3"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 2000,
+              "op": "remember",
+              "request": {
+                "id": "dev_clinic-new",
+                "text": "Nell at River said the clinic rota is Friday; stethoscope.",
+                "subject": "nell/river/clinic-rota",
+                "entities": [
+                  "Nell/River"
+                ],
+                "validFrom": 200,
+                "eventTime": 200,
+                "sourceUri": "fixture:transcript/dev_clinic-t2",
+                "supersedes": [
+                  "dev_clinic-old"
+                ]
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 2000
+              }
+            }
+          ],
+          [
+            {
+              "op": "recall",
+              "request": {
+                "query": "clinic rota badge",
+                "subject": "nell/river/clinic-rota",
+                "entities": [
+                  "Nell/River"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_clinic-new",
+                "/results/0/text": "Nell at River said the clinic rota is Friday; stethoscope.",
+                "/results/0/sourceUri": "fixture:transcript/dev_clinic-t2"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "clinic rota stethoscope",
+                "subject": "nell/river/clinic-rota",
+                "asOf": 250,
+                "knownAt": 1500,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_clinic-old",
+                "/results/0/text": "Nell at River said the clinic rota is Monday; badge.",
+                "/results/0/sourceUri": "fixture:transcript/dev_clinic-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "clinic rota",
+                "subject": "nell/market/clinic-rota",
+                "entities": [
+                  "Nell/Market"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_clinic-other",
+                "/results/0/text": "Nell at Market said the clinic rota is Monday.",
+                "/results/0/sourceUri": "fixture:transcript/dev_clinic-t3"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "clinic rota stethoscope",
+                "subject": "nell/river/clinic-rota",
+                "asOf": 150,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_clinic-old",
+                "/results/0/text": "Nell at River said the clinic rota is Monday; badge.",
+                "/results/0/sourceUri": "fixture:transcript/dev_clinic-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "quuxnonmatchingzebra",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "forget",
+              "request": {
+                "scope": {
+                  "kind": "ids",
+                  "ids": [
+                    "dev_clinic-other"
+                  ]
+                },
+                "dryRun": false,
+                "purge": true
+              },
+              "expect": {
+                "/forgotten": [
+                  "dev_clinic-other"
+                ],
+                "/purged": true
+              }
+            }
+          ],
+          [
+            {
+              "op": "get",
+              "request": {
+                "id": "dev_clinic-other"
+              },
+              "expect": {
+                "/fact": null
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "clinic rota",
+                "subject": "nell/market/clinic-rota",
+                "entities": [
+                  "Nell/Market"
+                ],
+                "history": "all",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "clinic rota badge",
+                "subject": "nell/river/clinic-rota",
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "dev_clinic-new",
+                "/results/0/text": "Nell at River said the clinic rota is Friday; stethoscope.",
+                "/results/0/sourceUri": "fixture:transcript/dev_clinic-t2"
+              }
+            }
+          ]
+        ]
+      }
+    ],
+    "evaluation": [
+      {
+        "id": "eval_archive",
+        "coverage": [
+          "identity-scopes",
+          "contradiction",
+          "stale-ranking",
+          "valid-time",
+          "knowledge-time",
+          "unsupported",
+          "citation",
+          "forget-reopen"
+        ],
+        "transcript": [
+          {
+            "id": "eval_archive-t1",
+            "text": "Tari at Cedar said the archive desk is room seven; folio.",
+            "time": 100
+          },
+          {
+            "id": "eval_archive-t2",
+            "text": "Tari at Cedar said the archive desk is room nine; cabinet.",
+            "time": 200
+          },
+          {
+            "id": "eval_archive-t3",
+            "text": "Tari at Ash said the archive desk is room seven.",
+            "time": 100
+          }
+        ],
+        "phases": [
+          [
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "eval_archive-old",
+                "text": "Tari at Cedar said the archive desk is room seven; folio.",
+                "subject": "tari/cedar/archive-desk",
+                "entities": [
+                  "Tari/Cedar"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/eval_archive-t1"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "eval_archive-other",
+                "text": "Tari at Ash said the archive desk is room seven.",
+                "subject": "tari/ash/archive-desk",
+                "entities": [
+                  "Tari/Ash"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/eval_archive-t3"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 2000,
+              "op": "remember",
+              "request": {
+                "id": "eval_archive-new",
+                "text": "Tari at Cedar said the archive desk is room nine; cabinet.",
+                "subject": "tari/cedar/archive-desk",
+                "entities": [
+                  "Tari/Cedar"
+                ],
+                "validFrom": 200,
+                "eventTime": 200,
+                "sourceUri": "fixture:transcript/eval_archive-t2",
+                "supersedes": [
+                  "eval_archive-old"
+                ]
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 2000
+              }
+            }
+          ],
+          [
+            {
+              "op": "recall",
+              "request": {
+                "query": "archive desk folio",
+                "subject": "tari/cedar/archive-desk",
+                "entities": [
+                  "Tari/Cedar"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_archive-new",
+                "/results/0/text": "Tari at Cedar said the archive desk is room nine; cabinet.",
+                "/results/0/sourceUri": "fixture:transcript/eval_archive-t2"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "archive desk cabinet",
+                "subject": "tari/cedar/archive-desk",
+                "asOf": 250,
+                "knownAt": 1500,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_archive-old",
+                "/results/0/text": "Tari at Cedar said the archive desk is room seven; folio.",
+                "/results/0/sourceUri": "fixture:transcript/eval_archive-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "archive desk",
+                "subject": "tari/ash/archive-desk",
+                "entities": [
+                  "Tari/Ash"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_archive-other",
+                "/results/0/text": "Tari at Ash said the archive desk is room seven.",
+                "/results/0/sourceUri": "fixture:transcript/eval_archive-t3"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "archive desk cabinet",
+                "subject": "tari/cedar/archive-desk",
+                "asOf": 150,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_archive-old",
+                "/results/0/text": "Tari at Cedar said the archive desk is room seven; folio.",
+                "/results/0/sourceUri": "fixture:transcript/eval_archive-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "quuxnonmatchingzebra",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "forget",
+              "request": {
+                "scope": {
+                  "kind": "ids",
+                  "ids": [
+                    "eval_archive-other"
+                  ]
+                },
+                "dryRun": false,
+                "purge": true
+              },
+              "expect": {
+                "/forgotten": [
+                  "eval_archive-other"
+                ],
+                "/purged": true
+              }
+            }
+          ],
+          [
+            {
+              "op": "get",
+              "request": {
+                "id": "eval_archive-other"
+              },
+              "expect": {
+                "/fact": null
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "archive desk",
+                "subject": "tari/ash/archive-desk",
+                "entities": [
+                  "Tari/Ash"
+                ],
+                "history": "all",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "archive desk folio",
+                "subject": "tari/cedar/archive-desk",
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_archive-new",
+                "/results/0/text": "Tari at Cedar said the archive desk is room nine; cabinet.",
+                "/results/0/sourceUri": "fixture:transcript/eval_archive-t2"
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "id": "eval_ferry",
+        "coverage": [
+          "identity-scopes",
+          "contradiction",
+          "stale-ranking",
+          "valid-time",
+          "knowledge-time",
+          "unsupported",
+          "citation",
+          "forget-reopen"
+        ],
+        "transcript": [
+          {
+            "id": "eval_ferry-t1",
+            "text": "Oren at Bay said the ferry berth is pier two; tidechart.",
+            "time": 100
+          },
+          {
+            "id": "eval_ferry-t2",
+            "text": "Oren at Bay said the ferry berth is pier four; bollard.",
+            "time": 200
+          },
+          {
+            "id": "eval_ferry-t3",
+            "text": "Oren at Island said the ferry berth is pier two.",
+            "time": 100
+          }
+        ],
+        "phases": [
+          [
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "eval_ferry-old",
+                "text": "Oren at Bay said the ferry berth is pier two; tidechart.",
+                "subject": "oren/bay/ferry-berth",
+                "entities": [
+                  "Oren/Bay"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/eval_ferry-t1"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "eval_ferry-other",
+                "text": "Oren at Island said the ferry berth is pier two.",
+                "subject": "oren/island/ferry-berth",
+                "entities": [
+                  "Oren/Island"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/eval_ferry-t3"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 2000,
+              "op": "remember",
+              "request": {
+                "id": "eval_ferry-new",
+                "text": "Oren at Bay said the ferry berth is pier four; bollard.",
+                "subject": "oren/bay/ferry-berth",
+                "entities": [
+                  "Oren/Bay"
+                ],
+                "validFrom": 200,
+                "eventTime": 200,
+                "sourceUri": "fixture:transcript/eval_ferry-t2",
+                "supersedes": [
+                  "eval_ferry-old"
+                ]
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 2000
+              }
+            }
+          ],
+          [
+            {
+              "op": "recall",
+              "request": {
+                "query": "ferry berth tidechart",
+                "subject": "oren/bay/ferry-berth",
+                "entities": [
+                  "Oren/Bay"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_ferry-new",
+                "/results/0/text": "Oren at Bay said the ferry berth is pier four; bollard.",
+                "/results/0/sourceUri": "fixture:transcript/eval_ferry-t2"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "ferry berth bollard",
+                "subject": "oren/bay/ferry-berth",
+                "asOf": 250,
+                "knownAt": 1500,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_ferry-old",
+                "/results/0/text": "Oren at Bay said the ferry berth is pier two; tidechart.",
+                "/results/0/sourceUri": "fixture:transcript/eval_ferry-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "ferry berth",
+                "subject": "oren/island/ferry-berth",
+                "entities": [
+                  "Oren/Island"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_ferry-other",
+                "/results/0/text": "Oren at Island said the ferry berth is pier two.",
+                "/results/0/sourceUri": "fixture:transcript/eval_ferry-t3"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "ferry berth bollard",
+                "subject": "oren/bay/ferry-berth",
+                "asOf": 150,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_ferry-old",
+                "/results/0/text": "Oren at Bay said the ferry berth is pier two; tidechart.",
+                "/results/0/sourceUri": "fixture:transcript/eval_ferry-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "quuxnonmatchingzebra",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "forget",
+              "request": {
+                "scope": {
+                  "kind": "ids",
+                  "ids": [
+                    "eval_ferry-other"
+                  ]
+                },
+                "dryRun": false,
+                "purge": true
+              },
+              "expect": {
+                "/forgotten": [
+                  "eval_ferry-other"
+                ],
+                "/purged": true
+              }
+            }
+          ],
+          [
+            {
+              "op": "get",
+              "request": {
+                "id": "eval_ferry-other"
+              },
+              "expect": {
+                "/fact": null
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "ferry berth",
+                "subject": "oren/island/ferry-berth",
+                "entities": [
+                  "Oren/Island"
+                ],
+                "history": "all",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "ferry berth tidechart",
+                "subject": "oren/bay/ferry-berth",
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_ferry-new",
+                "/results/0/text": "Oren at Bay said the ferry berth is pier four; bollard.",
+                "/results/0/sourceUri": "fixture:transcript/eval_ferry-t2"
+              }
+            }
+          ]
+        ]
+      },
+      {
+        "id": "eval_theater",
+        "coverage": [
+          "identity-scopes",
+          "contradiction",
+          "stale-ranking",
+          "valid-time",
+          "knowledge-time",
+          "unsupported",
+          "citation",
+          "forget-reopen"
+        ],
+        "transcript": [
+          {
+            "id": "eval_theater-t1",
+            "text": "Luz at Grand said the theater rehearsal is Tuesday; curtain.",
+            "time": 100
+          },
+          {
+            "id": "eval_theater-t2",
+            "text": "Luz at Grand said the theater rehearsal is Thursday; stage.",
+            "time": 200
+          },
+          {
+            "id": "eval_theater-t3",
+            "text": "Luz at Little said the theater rehearsal is Tuesday.",
+            "time": 100
+          }
+        ],
+        "phases": [
+          [
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "eval_theater-old",
+                "text": "Luz at Grand said the theater rehearsal is Tuesday; curtain.",
+                "subject": "luz/grand/theater-rehearsal",
+                "entities": [
+                  "Luz/Grand"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/eval_theater-t1"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 1000,
+              "op": "remember",
+              "request": {
+                "id": "eval_theater-other",
+                "text": "Luz at Little said the theater rehearsal is Tuesday.",
+                "subject": "luz/little/theater-rehearsal",
+                "entities": [
+                  "Luz/Little"
+                ],
+                "validFrom": 100,
+                "eventTime": 100,
+                "sourceUri": "fixture:transcript/eval_theater-t3"
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 1000
+              }
+            },
+            {
+              "clock": 2000,
+              "op": "remember",
+              "request": {
+                "id": "eval_theater-new",
+                "text": "Luz at Grand said the theater rehearsal is Thursday; stage.",
+                "subject": "luz/grand/theater-rehearsal",
+                "entities": [
+                  "Luz/Grand"
+                ],
+                "validFrom": 200,
+                "eventTime": 200,
+                "sourceUri": "fixture:transcript/eval_theater-t2",
+                "supersedes": [
+                  "eval_theater-old"
+                ]
+              },
+              "expect": {
+                "/remembered/0/created": true,
+                "/remembered/0/ingestTime": 2000
+              }
+            }
+          ],
+          [
+            {
+              "op": "recall",
+              "request": {
+                "query": "theater rehearsal curtain",
+                "subject": "luz/grand/theater-rehearsal",
+                "entities": [
+                  "Luz/Grand"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_theater-new",
+                "/results/0/text": "Luz at Grand said the theater rehearsal is Thursday; stage.",
+                "/results/0/sourceUri": "fixture:transcript/eval_theater-t2"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "theater rehearsal stage",
+                "subject": "luz/grand/theater-rehearsal",
+                "asOf": 250,
+                "knownAt": 1500,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_theater-old",
+                "/results/0/text": "Luz at Grand said the theater rehearsal is Tuesday; curtain.",
+                "/results/0/sourceUri": "fixture:transcript/eval_theater-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "theater rehearsal",
+                "subject": "luz/little/theater-rehearsal",
+                "entities": [
+                  "Luz/Little"
+                ],
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_theater-other",
+                "/results/0/text": "Luz at Little said the theater rehearsal is Tuesday.",
+                "/results/0/sourceUri": "fixture:transcript/eval_theater-t3"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "theater rehearsal stage",
+                "subject": "luz/grand/theater-rehearsal",
+                "asOf": 150,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_theater-old",
+                "/results/0/text": "Luz at Grand said the theater rehearsal is Tuesday; curtain.",
+                "/results/0/sourceUri": "fixture:transcript/eval_theater-t1"
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "quuxnonmatchingzebra",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "forget",
+              "request": {
+                "scope": {
+                  "kind": "ids",
+                  "ids": [
+                    "eval_theater-other"
+                  ]
+                },
+                "dryRun": false,
+                "purge": true
+              },
+              "expect": {
+                "/forgotten": [
+                  "eval_theater-other"
+                ],
+                "/purged": true
+              }
+            }
+          ],
+          [
+            {
+              "op": "get",
+              "request": {
+                "id": "eval_theater-other"
+              },
+              "expect": {
+                "/fact": null
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "theater rehearsal",
+                "subject": "luz/little/theater-rehearsal",
+                "entities": [
+                  "Luz/Little"
+                ],
+                "history": "all",
+                "asOf": 250
+              },
+              "expect": {
+                "/results": []
+              }
+            },
+            {
+              "op": "recall",
+              "request": {
+                "query": "theater rehearsal curtain",
+                "subject": "luz/grand/theater-rehearsal",
+                "asOf": 250,
+                "candidateLimit": 1,
+                "k": 1
+              },
+              "expect": {
+                "/results/0/id": "eval_theater-new",
+                "/results/0/text": "Luz at Grand said the theater rehearsal is Thursday; stage.",
+                "/results/0/sourceUri": "fixture:transcript/eval_theater-t2"
+              }
+            }
+          ]
+        ]
+      }
+    ]
+  }
+}

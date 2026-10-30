@@ -16,6 +16,10 @@
     {
       "pr": 335,
       "sha": "554aec0c21ef84aaafee8feb52fd1553be791d2d"
+    },
+    {
+      "pr": 337,
+      "sha": "9ead0a9c6361a3e2def1e65af129d61ab68f2525"
     }
   ],
   "phases": [
@@ -26,7 +30,7 @@
     },
     {
       "id": "R16",
-      "status": "implemented_validation_deferred",
+      "status": "merged_provisional",
       "hypothesis": "Selectivity-aware composition may improve filtered retrieval; mechanism and workload gains unmeasured.",
       "acceptance": "Canonical live filtered results at 0.01/0.1/1/10/50/100% selectivity; compare p95/p99, RSS, training and update costs.",
       "primary_target": "Remove eligible-chunk-per-term scans for selective lexical terms and preserve the trained exact tree across bounded mutation bursts.",
@@ -197,6 +201,13 @@
         "diagnostic_probes": 0,
         "paid_credits": 0,
         "scope": "Syntax formatting, whitespace and deferral policy only; under60-second noncompiling subset."
+      },
+      "merge": {
+        "pr": 337,
+        "sha": "9ead0a9c6361a3e2def1e65af129d61ab68f2525",
+        "implementation_sha": "f8b74d3b0affc117e7adfabc54fc6babae4e1193",
+        "remote_inclusion_verified": true,
+        "branch_removed": true
       }
     },
     {
@@ -206,9 +217,107 @@
     },
     {
       "id": "R18",
-      "status": "partially_evidenced",
+      "status": "implemented_validation_deferred",
       "evidence": "REMEDIATION.md: frozen synthetic 19-case lifecycle; not held-out quality.",
-      "acceptance": "Frozen source-grounded native end-to-end evidence with citations, budgets, failure-inclusive metrics and separately authorized held-out live evaluation if pursued."
+      "acceptance": {
+        "native_target": "Zero expected support/order/source errors across all 72 frozen steps and restarts at unchanged supported-query k=candidateLimit=1; explicit empty results on unsupported/no-longer-owned evidence.",
+        "abstention": "Only an explicitly expected empty retrieval counts as an expected abstention; neither emptiness nor a citation proves a generated answer correct.",
+        "quality": "Learned-reader factual correctness, support sufficiency and realistic population utility remain unmeasured. No numerical QA claims.",
+        "equal_budgets": "Native-only baseline and implementation; no reader calls, same text, query, k/candidateLimit, metadata scope and source/context bytes. Expected JSON stays outside requests."
+      },
+      "frozen_evidence": {
+        "path": "tests/fixtures/native_memory_evidence_v1.json",
+        "sha256": "7e77135742a6514f8f6b9b67a2f23788b4470d7d2f61f1c0d2836eae081ed9be",
+        "partition": "3 development and 3 separate evaluation stories, frozen before production edits",
+        "qualification": "Realistic authored temporal/source scenarios; synthetic retrieval/support evidence, not representative learned-reader QA or empirical population estimates."
+      },
+      "primary_target": "Prevent stale, not-yet-valid or not-yet-known facts from exhausting candidateLimit before eligible current evidence is ranked; retain candidateLimit=k=1 in the frozen corpus.",
+      "diagnosis": {
+        "source": "src/core/memory_api/recall.rs:run_once",
+        "verified": "Temporal status filtering follows document search truncation. A stronger obsolete match can consume the entire fixed candidate budget and leave a valid weaker match absent.",
+        "existing_evidence": "The 19-case lifecycle uses candidateLimit32 over a handful of facts; historical LongMemEval reference-ranking/model artifacts do not establish native-engine QA."
+      },
+      "alternatives": [
+        {
+          "mechanism": "Increase candidates or prompts/context",
+          "decision": "Rejected: budget workaround, does not ensure temporal eligibility and violates equal-budget comparison."
+        },
+        {
+          "mechanism": "Persist current-status metadata",
+          "decision": "Rejected: arbitrary asOf/knownAt and late ingestion require query-time resolution; a current bit becomes stale."
+        },
+        {
+          "mechanism": "Bounded revision-coherent temporal preselection plus existing document planner",
+          "decision": "Selected: preserve status evaluator and ranking, scope source scan by existing entity/subject postings and use sorted ID membership to avoid quadratic whitelist checks."
+        },
+        {
+          "mechanism": "Cache complete temporal stamps in another index",
+          "decision": "Deferred: adds duplicated state and memory for all unstamped/identity-only facts; first use existing source stamps and reverse edges with explicit resource bounds."
+        }
+      ],
+      "guardrails": [
+        "No models/downloads/paid calls or numerical answer-quality claims.",
+        "Keep exact source text and source URI; evaluation labels never indexed.",
+        "Compare equal reader/context/model/candidate budgets, report failures and unsupported queries as abstentions, not successful answers.",
+        "Bound eligibility work/allocation through existing QueryBudget and return an error rather than truncated eligibility.",
+        "No index lock held while reading core sources; revision mismatch retries existing bounded protocol."
+      ],
+      "implementation": {
+        "freeze_commit": "309e8a04",
+        "flow": [
+          "Transcript quotes become ordinary Memory facts; subjects/entities and event/valid/ingest times are explicit caller annotations, not expected answers or learned extraction.",
+          "Recall snapshots reverse supersession edges, scans source stamps under the core snapshot, and applies the existing evaluate function before candidate selection. Subject/entity postings restrict scan IDs.",
+          "Selected IDs enter existing document ranking with sorted binary-search membership; temporal eligibility therefore also defines filtered BM25 statistics.",
+          "Revision checks retain the existing bounded retry path. Metadata/text citations still come from selected source records; deletion and reopen use unchanged journal/index reconstruction.",
+          "ConversationMemory lossless context retains explicit unverified sufficiency; no new prompt, reader or context expansion is introduced."
+        ],
+        "resources": "Default QueryBudget (10M work, 64MiB accounted working bytes) for captured reverse edges, scoped IDs and eligible IDs. Fallible scoped scan stops on first error. No source text copies during eligibility; no index lock held while acquiring core snapshot. Recency reranking remains candidate-bounded.",
+        "costs": "Temporal queries add O(scoped documents + reverse edges) source/status work; unrestricted queries may scan all documents. Selected-ID membership becomes O(log eligible IDs), replacing per-row linear membership. No measured latency/RSS gain claimed."
+      },
+      "comparisons": {
+        "primary": "baseline post-filter vs temporal preselection at k=candidateLimit=1",
+        "complement": "preselection plus existing metadata eligibility/postings plan and binary-search ID membership",
+        "not_selected": "Larger candidate/context budgets; cached reference rankings; new temporal stamp cache; changed prompts"
+      },
+      "regressions": [
+        "frozen_native_temporal_partitions_preserve_fixed_budgets_and_sources (both partitions, 72 steps, source quotes, restart, failures accumulated)",
+        "knowledge_eligibility_preserves_unstamped_documents_before_selection",
+        "temporal_edge_capture_enforces_work_and_byte_boundaries",
+        "fallible_scoped_scan_stops_at_the_first_error"
+      ],
+      "final_validation": {
+        "status": "pending; no Rust compilation or runtime native evidence execution in implementation phase",
+        "commands": [
+          "cargo test --offline --locked --test native_memory_workflow -- --nocapture",
+          "cargo test --offline --locked --test memory_api",
+          "cargo test --offline --locked --lib core::memory_api::",
+          "cargo test --offline --locked --lib core::engine::memory_access::",
+          "cargo test --offline --locked --lib core::documents::search::",
+          "cargo test --offline --locked --features server --test memory_api_server",
+          "cargo clippy --offline --locked --all-targets --all-features -- -D warnings"
+        ],
+        "artifacts": "Capture native_memory_workflow JSON records for every scenario including failures and expected abstentions. If representative local inference is unavailable, leave learnedAnswerQuality null.",
+        "measurements": "Within final campaign 4-group/3-round/10-minute local cap, compare source visits, eligible count, final evidence IDs, p95/p99 and RSS on a scoped stale-history workload at unchanged candidateLimit. Include preselection cost, not retrieval time alone."
+      },
+      "local_validation": {
+        "fixture_checks": {
+          "scenarios": 6,
+          "steps": 72,
+          "source_quotes": "exactly equal transcript inputs",
+          "supported_query_budget": "k=candidateLimit=1",
+          "sha256": "7e77135742a6514f8f6b9b67a2f23788b4470d7d2f61f1c0d2836eae081ed9be"
+        },
+        "rust": "Formatting only; compilation and tests deferred",
+        "paid_calls": 0,
+        "diagnostic_probes": 0
+      },
+      "remaining_limits": [
+        "The corpus is small and authored, not externally representative or learned-model QA.",
+        "Identity scope is explicit caller-provided subject/entity identity; the implementation does not resolve ambiguous names automatically.",
+        "Source extraction and cited-answer generation are not inferred from native retrieval success.",
+        "Temporal preselection can increase latency/RSS; final measurements must include it and compare equal candidate budgets.",
+        "The existing recency policy still reorders only the selected candidate pool."
+      ]
     },
     {
       "id": "trust-interop-security",

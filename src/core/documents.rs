@@ -1368,13 +1368,17 @@ fn eligible_chunks<'a>(
 
 fn matches_document(document: &StoredDocument, options: &SearchOptions) -> bool {
     options
+        .document_ids
+        .as_ref()
+        .is_none_or(|ids| ids.contains(&document.id))
+        && matches_document_metadata(document, options)
+}
+
+fn matches_document_metadata(document: &StoredDocument, options: &SearchOptions) -> bool {
+    options
         .source_uri
         .as_ref()
         .is_none_or(|uri| document.source_uri.as_ref() == Some(uri))
-        && options
-            .document_ids
-            .as_ref()
-            .is_none_or(|ids| ids.contains(&document.id))
         && options
             .filter
             .as_ref()
