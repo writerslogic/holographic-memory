@@ -101,7 +101,7 @@ def test_work_limit_accounts_for_codebook_scans_and_iterations(entries):
         with pytest.raises(ValueError, match="resonator work"):
             hm.resonator_factorize(a, [[a] * entries], max_iter=999)
     else:
-        assert hm.resonator_factorize(a, [[a] * entries], max_iter=999) == [(0, pytest.approx(1.0))]
+        assert hm.resonator_factorize(a, [[a] * entries], max_iter=999) == [(entries - 1, pytest.approx(1.0))]
 
 
 @pytest.mark.parametrize("resolution", [1, 2, 3, 65535, 65536, 65537])
