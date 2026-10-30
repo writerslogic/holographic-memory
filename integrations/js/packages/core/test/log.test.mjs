@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -43,7 +43,6 @@ test('every individual clear deletion leaves a retryable prefix across the batch
     await retry.append([{ text: 'new first' }])
     assert.deepEqual((await retry.tail()).map((e) => e.text), ['new first'])
     await store.close()
-    rmSync(path, { recursive: true, force: true })
   }
 })
 

@@ -146,6 +146,18 @@ class OpenApiTests(unittest.TestCase):
 
 
 class Pyo3StubTests(unittest.TestCase):
+    def test_borrowed_phase_arguments_keep_the_python_types(self):
+        classes = {"PyPhaseHVec": "PhaseHVec"}
+        for rust in ("PyRef<'_, PyPhaseHVec>", "PyRef<'py, Self>"):
+            with self.subTest(rust=rust):
+                self.assertEqual(docs_pyo3_stub.py_type(rust, classes, "PhaseHVec"), "PhaseHVec")
+        self.assertEqual(
+            docs_pyo3_stub.py_type("Vec<Vec<PyRef<'_, PyPhaseHVec>>>", classes, ""),
+            "list[list[PhaseHVec]]",
+        )
+        with self.assertRaises(docs_pyo3_stub.StubError):
+            docs_pyo3_stub.py_type("PyRef<'_, Unknown>", classes, "")
+
     def test_current_and_historical_layouts_generate_the_same_api(self):
         source = (ROOT / "src" / "bindings" / "python" / "mod.rs").read_text()
         expected = docs_pyo3_stub.generate(ROOT / "src" / "bindings" / "python" / "mod.rs")
