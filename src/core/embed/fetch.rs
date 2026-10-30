@@ -19,10 +19,13 @@ use super::registry::ModelSpec;
 pub const ENV_MIRROR: &str = "HMS_EMBED_MIRROR";
 
 fn download_file(url: &str, dest: &Path, want_sha: &str, max: u64) -> Result<()> {
+    let read_limit = max
+        .checked_add(1)
+        .context("pinned download size overflow")?;
     let mut resp = ureq::get(url)
         .call()
         .with_context(|| format!("download {url}"))?;
-    let mut reader = resp.body_mut().with_config().limit(max + 1).reader();
+    let mut reader = resp.body_mut().with_config().limit(read_limit).reader();
     let mut file =
         std::fs::File::create(dest).with_context(|| format!("create {}", dest.display()))?;
     let mut hash = Sha256::new();
@@ -157,6 +160,103 @@ pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_http_fetch_verifies_bytes_and_single_flights_retry_after_corruption() {
+        use std::net::TcpListener;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::time::{Duration, Instant};
+        let cache = tempfile::tempdir().unwrap();
+        let bytes = super::super::testing::tiny_pack_bytes(
+            super::super::Quantization::Int8,
+            super::super::Pooling::Mean,
+        );
+        let sha = pack::sha256_hex(&bytes);
+        let source = &super::super::MODELS[0];
+        let spec = ModelSpec {
+            id: "http-fixture",
+            repo: "test",
+            revision: "test",
+            license: "Apache-2.0",
+            pooling: source.pooling,
+            query_prefix: "",
+            passage_prefix: "",
+            max_length: 32,
+            quantization: source.quantization,
+            int8_group: 16,
+            files: &[],
+            pack_sha256: Box::leak(sha.clone().into_boxed_str()),
+            pack_bytes: bytes.len() as u64,
+        };
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let url = format!("http://{}/fixture.hmsemb", listener.local_addr().unwrap());
+        let requests = AtomicUsize::new(0);
+        let barrier = std::sync::Barrier::new(8);
+        let fetch = || {
+            build_pack(&spec, cache.path(), |work| {
+                let path = work.join("download.hmsemb");
+                download_file(&url, &path, &sha, bytes.len() as u64)?;
+                Ok(std::fs::read(path)?)
+            })
+        };
+        std::thread::scope(|scope| {
+            let server = scope.spawn(|| {
+                let deadline = Instant::now() + Duration::from_secs(10);
+                while requests.load(Ordering::SeqCst) < 2 && Instant::now() < deadline {
+                    let (mut stream, _) = match listener.accept() {
+                        Ok(connection) => connection,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            std::thread::sleep(Duration::from_millis(1));
+                            continue;
+                        }
+                        Err(error) => panic!("fixture accept: {error}"),
+                    };
+                    stream.set_nonblocking(false).unwrap();
+                    stream
+                        .set_read_timeout(Some(Duration::from_secs(2)))
+                        .unwrap();
+                    stream
+                        .set_write_timeout(Some(Duration::from_secs(2)))
+                        .unwrap();
+                    let mut request = Vec::new();
+                    while !request.ends_with(b"\r\n\r\n") {
+                        let mut byte = [0u8; 1];
+                        stream.read_exact(&mut byte).unwrap();
+                        request.push(byte[0]);
+                        assert!(request.len() <= 1024);
+                    }
+                    assert!(request.starts_with(b"GET /fixture.hmsemb HTTP/1.1\r\n"));
+                    let first = requests.fetch_add(1, Ordering::SeqCst) == 0;
+                    let body: &[u8] = if first { b"corrupt" } else { &bytes };
+                    write!(
+                        stream,
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    )
+                    .unwrap();
+                    stream.write_all(body).unwrap();
+                }
+                assert_eq!(requests.load(Ordering::SeqCst), 2);
+            });
+            let error = fetch().unwrap_err();
+            assert!(error.to_string().contains("sha256 mismatch"), "{error:#}");
+            assert_eq!(std::fs::read_dir(cache.path()).unwrap().count(), 0);
+            let callers: Vec<_> = (0..8)
+                .map(|_| {
+                    scope.spawn(|| {
+                        barrier.wait();
+                        fetch().unwrap()
+                    })
+                })
+                .collect();
+            for caller in callers {
+                assert_eq!(pack::sha256_file(&caller.join().unwrap()).unwrap(), sha);
+            }
+            server.join().unwrap();
+        });
+        assert_eq!(std::fs::read_dir(cache.path()).unwrap().count(), 1);
+    }
 
     #[test]
     fn concurrent_fetches_build_once_and_failures_release_the_reservation() {

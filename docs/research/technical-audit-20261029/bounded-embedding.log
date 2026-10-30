@@ -1,0 +1,34 @@
+warning: File system loop found: /Volumes/A/holographic-memory/integrations/js/node_modules/holographic-memory points to an ancestor /Volumes/A/holographic-memory
+   Compiling holographic-memory v0.6.4 (/Volumes/A/holographic-memory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 02s
+     Running unittests src/lib.rs (target/debug/deps/holographic_memory-80f49de327c83d61)
+
+running 26 tests
+test core::embed::kernels::tests::f16_rounds_to_nearest_even ... ok
+test core::embed::kernels::tests::gelu_matches_reference_values ... ok
+test core::embed::kernels::tests::f16_round_trips_every_pattern ... ok
+test core::embed::tests::generate_binding_fixture ... ignored, writes the shared synthetic native-binding fixture; run deliberately
+test core::embed::kernels::tests::linear_result_is_independent_of_batching ... ok
+test core::embed::fetch::tests::a_failed_install_leaves_nothing_in_the_cache ... ok
+test core::embed::tests::hash_mismatch_is_rejected_before_use ... ok
+test core::embed::fetch::tests::concurrent_fetches_build_once_and_failures_release_the_reservation ... ok
+test core::embed::tests::concurrent_call_limit_is_fail_fast_and_releases_after_failure ... ok
+test core::embed::tests::path_models_and_missing_files_report_the_path ... ok
+test core::embed::tests::registry_entries_are_pinned_and_unique ... ok
+test core::embed::tests::from_pack_rejects_corrupt_headers_without_panicking ... ok
+test core::embed::tests::audit_effective_options_bind_store_and_index_identity ... ok
+test core::embed::tests::safetensors_offsets_and_shapes_that_overflow_are_errors ... ok
+test core::embed::tests::offline_mode_fails_with_actionable_error_and_never_downloads ... ok
+test core::embed::tests::registry_model_from_directory_is_checked_against_its_pin ... ok
+test core::embed::fetch::tests::local_http_fetch_verifies_bytes_and_single_flights_retry_after_corruption ... ok
+test core::embed::tests::call_limits_check_boundaries_before_inference_and_preserve_identity ... ok
+test core::embed::tests::token_limits_fail_before_writing_and_release_admission ... ok
+test core::embed::tests::prefixes_truncation_and_huge_inputs ... ok
+test core::embed::tests::truncation_reports_preserve_input_order_and_utf8_boundaries ... ok
+test core::embed::tests::index_save_leaves_files_named_like_its_temp_alone ... ok
+test core::embed::tests::token_budget_splits_batches_without_changing_results ... ok
+test core::embed::tests::round_trip_and_normalization_for_every_quantization ... ok
+test core::embed::tests::int8_group_sets_the_scale_granularity ... ok
+test core::embed::tests::output_is_bit_identical_across_threads_and_batching ... ok
+
+test result: ok. 25 passed; 0 failed; 1 ignored; 0 measured; 640 filtered out; finished in 6.16s

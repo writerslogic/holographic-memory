@@ -214,6 +214,9 @@ Canonical scale: 1 broken/absent, 2 critical, 3 poor, 4 weak, 5 basic, 6 compete
 
 ### Additional bounded concerns
 
+Implementation follow-up: [remediation and verification](REMEDIATION.md#additional-bounded-concerns).
+The facts below remain the historical baseline assessment.
+
 | Area | Verified fact or hypothesis | Consequence and appropriate action |
 |---|---|---|
 | Sidecar effects after core commit | Audit/provenance errors can follow a committed mutation; explicitly documented in [production readiness](https://github.com/writerslogic/holographic-memory/blob/de4a2fd6/docs/production-readiness.md#L117) | A plain error cannot always mean “nothing committed.” Add a durable outbox/reconciliation contract or typed committed-with-pending-effects outcomes and retry-safe effect IDs. |

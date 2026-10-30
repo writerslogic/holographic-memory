@@ -8,8 +8,8 @@
 //!   path, by `HMS_EMBED_PACK` / `HMS_EMBED_MODEL_DIR`, in the cache, or (feature
 //!   `local-embed-download`, never when offline) fetched once from the pinned upstream files.
 //! * Outputs are bit-identical for any thread count and any batch composition.
-//! * Forward passes use a soft token budget, with one full sequence always admitted. Input
-//!   token buffers and output vectors also scale with the number of texts in each call.
+//! * Forward passes use a soft token budget, with one full sequence always admitted. Hard
+//!   per-call input/token/output and concurrent-call limits apply independently.
 //!
 //! ```no_run
 //! use holographic_memory::core::embed::{EmbedOptions, Embedder};
@@ -25,6 +25,7 @@ mod engine;
 mod fetch;
 mod index;
 mod kernels;
+mod limits;
 mod locate;
 mod pack;
 mod registry;
@@ -34,6 +35,7 @@ pub mod testing;
 mod tests;
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicUsize;
 
 use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -41,6 +43,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "local-embed-download")]
 pub use fetch::{download_pack as fetch_pack, ENV_MIRROR};
 pub use index::{Hit, SemanticIndex};
+pub use limits::EmbedLimits;
 pub use locate::{ENV_CACHE, ENV_MODEL_DIR, ENV_OFFLINE, ENV_PACK};
 pub use pack::{
     convert_hf_dir, sha256_file, sha256_hex, Arch, Meta, Pooling, Quantization, Sha256Mismatch,
@@ -53,6 +56,25 @@ pub use registry::{ModelSpec, PinnedFile, DEFAULT_MODEL, MODELS};
 pub enum EmbedKind {
     Query,
     Passage,
+}
+
+/// Preprocessing of one input, in the same order as the returned embeddings.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct EmbeddingInput {
+    pub input_bytes: usize,
+    /// Source bytes retained before tokenization, excluding the model prefix.
+    pub retained_bytes: usize,
+    pub tokens: usize,
+    pub byte_truncated: bool,
+    pub token_truncated: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EmbeddingBatch {
+    pub embeddings: Vec<Vec<f32>>,
+    pub inputs: Vec<EmbeddingInput>,
 }
 
 /// Tunable inference options. Every field has a default; nothing is forced.
@@ -80,6 +102,7 @@ pub struct EmbedOptions {
     /// Soft token budget per forward pass. One sequence may exceed it, up to max_length.
     /// Tokenized inputs and output buffers for the whole call are additional allocations.
     pub max_batch_tokens: usize,
+    pub limits: EmbedLimits,
     /// Worker threads of the embedder's private pool; 0 uses the available parallelism.
     pub threads: usize,
     /// Never touch the network. `None` follows `HMS_EMBED_OFFLINE`.
@@ -103,6 +126,7 @@ impl Default for EmbedOptions {
             passage_prefix: None,
             batch_size: 32,
             max_batch_tokens: 2048,
+            limits: EmbedLimits::default(),
             threads: 0,
             offline: None,
             model_dir: None,
@@ -112,6 +136,15 @@ impl Default for EmbedOptions {
 }
 
 impl EmbedOptions {
+    fn validate(&self) -> Result<()> {
+        ensure!(self.batch_size >= 1, "batch_size must be at least 1");
+        ensure!(
+            self.max_batch_tokens >= 1,
+            "max_batch_tokens must be at least 1"
+        );
+        self.limits.validate()
+    }
+
     /// Options for a registry model or pack path with everything else defaulted.
     pub fn model(model: impl Into<String>) -> Self {
         Self {
@@ -137,6 +170,8 @@ pub struct Embedder {
     passage_prefix: String,
     batch_size: usize,
     max_batch_tokens: usize,
+    limits: EmbedLimits,
+    active_calls: AtomicUsize,
     pool: rayon::ThreadPool,
     source: PathBuf,
     space: crate::core::schema::EmbeddingSpace,
@@ -157,6 +192,7 @@ impl Embedder {
     /// Resolves the pack for `options.model` (path, env, cache, then download unless offline),
     /// verifies its sha256 and loads it.
     pub fn new(options: &EmbedOptions) -> Result<Self> {
+        options.validate()?;
         let located = locate::resolve(options)?;
         let loaded = Self::from_pack(&located.path, located.sha256.as_deref(), options);
         // A damaged cache entry is replaced by a fresh verified download when that is allowed;
@@ -187,11 +223,7 @@ impl Embedder {
         expected_sha256: Option<&str>,
         options: &EmbedOptions,
     ) -> Result<Self> {
-        ensure!(options.batch_size >= 1, "batch_size must be at least 1");
-        ensure!(
-            options.max_batch_tokens >= 1,
-            "max_batch_tokens must be at least 1"
-        );
+        options.validate()?;
         let mut loaded = pack::read(path, expected_sha256)?;
         let encoder = engine::Encoder::from_pack(&mut loaded)?;
         let mut tokenizer = tokenizers::Tokenizer::from_bytes(&loaded.tokenizer)
@@ -254,6 +286,8 @@ impl Embedder {
             max_length,
             batch_size: options.batch_size,
             max_batch_tokens: options.max_batch_tokens,
+            limits: options.limits.clone(),
+            active_calls: AtomicUsize::new(0),
             quantization: loaded.quantization,
             sha256: loaded.sha256,
             pack_bytes: loaded.file_bytes,
@@ -323,17 +357,65 @@ impl Embedder {
     }
 
     /// One vector per text, in input order (L2-normalized unless disabled).
-    /// Text is silently truncated to max_length tokens after a UTF-8 byte prefix cap of
-    /// max(256, 32 * max_length). Use bounded source chunks when complete coverage is needed.
+    /// Text is truncated to max_length tokens after a UTF-8 byte prefix cap of
+    /// max(256, 32 * max_length). [`Self::embed_with_report`] exposes both truncation stages.
     pub fn embed<S: AsRef<str> + Sync>(
         &self,
         texts: &[S],
         kind: EmbedKind,
     ) -> Result<Vec<Vec<f32>>> {
-        let dim = self.dimensions();
-        let mut flat = vec![0f32; texts.len() * dim];
-        self.embed_into(texts, kind, &mut flat)?;
-        Ok(flat.chunks_exact(dim).map(<[f32]>::to_vec).collect())
+        Ok(self.embed_with_report(texts, kind)?.embeddings)
+    }
+
+    pub fn embed_with_report<S: AsRef<str> + Sync>(
+        &self,
+        texts: &[S],
+        kind: EmbedKind,
+    ) -> Result<EmbeddingBatch> {
+        let _lease =
+            limits::CallLease::acquire(&self.active_calls, self.limits.max_concurrent_calls)?;
+        let values = self.validate_inputs(texts, kind)?;
+        let mut flat = Vec::new();
+        flat.try_reserve_exact(values)
+            .context("allocate embedding output")?;
+        flat.resize(values, 0f32);
+        let inputs = self.run_into(texts, kind, &mut flat)?;
+        let mut embeddings = Vec::new();
+        embeddings
+            .try_reserve_exact(texts.len())
+            .context("allocate embedding rows")?;
+        for row in flat.chunks_exact(self.dimensions()) {
+            let mut copy = Vec::new();
+            copy.try_reserve_exact(row.len())
+                .context("allocate embedding row")?;
+            copy.extend_from_slice(row);
+            embeddings.push(copy);
+        }
+        Ok(EmbeddingBatch { embeddings, inputs })
+    }
+
+    pub(crate) fn validate_inputs<S: AsRef<str>>(
+        &self,
+        texts: &[S],
+        kind: EmbedKind,
+    ) -> Result<usize> {
+        let values = self.limits.output_values(texts.len(), self.dimensions())?;
+        let prefix = match kind {
+            EmbedKind::Query => &self.query_prefix,
+            EmbedKind::Passage => &self.passage_prefix,
+        };
+        let mut bytes = 0usize;
+        for text in texts {
+            bytes = bytes
+                .checked_add(text.as_ref().len())
+                .and_then(|n| n.checked_add(prefix.len()))
+                .context("embedding input size overflow")?;
+            ensure!(
+                bytes <= self.limits.max_input_bytes,
+                "embedding input exceeds max_input_bytes"
+            );
+        }
+        Ok(values)
     }
 
     /// Writes `texts.len() * dimensions()` values into a caller-owned buffer.
@@ -343,29 +425,46 @@ impl Embedder {
         kind: EmbedKind,
         out: &mut [f32],
     ) -> Result<()> {
-        let dim = self.dimensions();
+        let _lease =
+            limits::CallLease::acquire(&self.active_calls, self.limits.max_concurrent_calls)?;
+        let values = self.validate_inputs(texts, kind)?;
         ensure!(
-            out.len() == texts.len() * dim,
+            out.len() == values,
             "output buffer must hold {} values",
-            texts.len() * dim
+            values
         );
+        self.run_into(texts, kind, out).map(|_| ())
+    }
+
+    fn run_into<S: AsRef<str> + Sync>(
+        &self,
+        texts: &[S],
+        kind: EmbedKind,
+        out: &mut [f32],
+    ) -> Result<Vec<EmbeddingInput>> {
+        let dim = self.dimensions();
         if texts.is_empty() {
-            return Ok(());
+            return Ok(Vec::new());
         }
         let prefix = match kind {
             EmbedKind::Query => &self.query_prefix,
             EmbedKind::Passage => &self.passage_prefix,
         };
-        let ids: Vec<Vec<u32>> = self.pool.install(|| {
+        let total_tokens = AtomicUsize::new(0);
+        let tokenized: Vec<(Vec<u32>, EmbeddingInput)> = self.pool.install(|| {
             use rayon::prelude::*;
             texts
                 .par_iter()
-                .map(|t| self.tokenize(prefix, t.as_ref()))
+                .map(|t| {
+                    let (ids, info) = self.tokenize(prefix, t.as_ref())?;
+                    limits::reserve(&total_tokens, ids.len(), self.limits.max_tokens, "tokens")?;
+                    Ok((ids, info))
+                })
                 .collect::<Result<_>>()
         })?;
         // Length-sorted batches keep stacked work uniform; results return to input order.
-        let mut order: Vec<usize> = (0..ids.len()).collect();
-        order.sort_by_key(|&i| (ids[i].len(), i));
+        let mut order: Vec<usize> = (0..tokenized.len()).collect();
+        order.sort_by_key(|&i| (tokenized[i].0.len(), i));
         let mut scratch = engine::Scratch::default();
         let mut at = 0;
         while at < order.len() {
@@ -373,12 +472,17 @@ impl Embedder {
             let mut tokens = 0;
             while end < order.len()
                 && end - at < self.batch_size
-                && (end == at || tokens + ids[order[end]].len() <= self.max_batch_tokens)
+                && (end == at
+                    || tokenized[order[end]].0.len()
+                        <= self.max_batch_tokens.saturating_sub(tokens))
             {
-                tokens += ids[order[end]].len();
+                tokens += tokenized[order[end]].0.len();
                 end += 1;
             }
-            let seqs: Vec<&[u32]> = order[at..end].iter().map(|&i| ids[i].as_slice()).collect();
+            let seqs: Vec<&[u32]> = order[at..end]
+                .iter()
+                .map(|&i| tokenized[i].0.as_slice())
+                .collect();
             let pooled = self
                 .pool
                 .install(|| self.encoder.encode(&seqs, self.pooling, &mut scratch));
@@ -397,10 +501,10 @@ impl Embedder {
             }
             at = end;
         }
-        Ok(())
+        Ok(tokenized.into_iter().map(|(_, info)| info).collect())
     }
 
-    fn tokenize(&self, prefix: &str, text: &str) -> Result<Vec<u32>> {
+    fn tokenize(&self, prefix: &str, text: &str) -> Result<(Vec<u32>, EmbeddingInput)> {
         // Truncation happens on tokens, but the tokenizer still scans the whole string, so cap the
         // input first: no model reads more than a few bytes per token it keeps.
         let cap = self.max_length.saturating_mul(32).max(256);
@@ -430,6 +534,13 @@ impl Embedder {
                 self.arch.vocab
             );
         }
-        Ok(ids)
+        let info = EmbeddingInput {
+            input_bytes: text.len(),
+            retained_bytes: end,
+            tokens: ids.len(),
+            byte_truncated: end < text.len(),
+            token_truncated: !enc.get_overflowing().is_empty(),
+        };
+        Ok((ids, info))
     }
 }

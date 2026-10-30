@@ -77,4 +77,4 @@ v3 needs `version="v3"` in `Mem0PlatformSource.records` and a re-check of the mo
 - Platform memories deleted or expired (`show_expired` false) after the run started may or may not appear.
 - mem0 graph-store relations (`enable_graph`) are not exported.
 - mem0's history table (change log) is not imported.
-- Re-running replaces documents by id; memories deleted at the source stay in HMS (the server has no listing endpoint to prune from).
+- Re-running replaces owned documents by id; memories deleted at the source stay in HMS. The importer does not mirror source deletions.

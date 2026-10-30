@@ -18,6 +18,10 @@ Do not use it as a privacy guarantee. Deletion removes logical records; filesyst
 backups, obsolete segments, and storage devices may retain previous bytes. Compaction is not
 secure erasure.
 
+Signed deletion/provenance records attest to the stated engine operation and its issuer;
+they do not prove that every physical copy, snapshot, backup or storage-device remnant is gone.
+Cryptographic signatures and logical absence cannot establish universal physical erasure.
+
 ## Encryption and signing
 
 With `security` compiled and encryption enabled, arena payloads and persisted ANN caches use

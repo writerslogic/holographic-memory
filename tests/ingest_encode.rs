@@ -102,6 +102,7 @@ fn memoized_encoder_matches_reference_bit_for_bit() {
     let texts = corpus();
     for encoder in [
         TextEncoder::MultiscaleWordsV1,
+        TextEncoder::MultiscaleWordsV2,
         TextEncoder::MultiscaleCappedUnionV1,
     ] {
         for dim in [1usize, 255, 256, 257, 1024, 4096, 16384] {

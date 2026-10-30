@@ -93,6 +93,12 @@ class Report:
         self.source_count: Optional[int] = None
         self.server: Dict[str, Any] = {}
         self.verification: Dict[str, Any] = {"performed": False}
+        self.source_consistency: Dict[str, Any] = {
+            "mode": "observed_stream",
+            "snapshot_isolation": "source_managed",
+            "resume_validation": "content_verified_prefix_v2",
+            "deleted_source_records": "retained",
+        }
         self.dry_run = False
         self.resumed_from: Optional[int] = None
         self.complete = False
@@ -111,6 +117,7 @@ class Report:
             "resumed_from_record": self.resumed_from,
             "server": self.server,
             "source_count_reported": self.source_count,
+            "source_consistency": self.source_consistency,
             "counts": dict(self.stats.counts),
             "skipped": {
                 "total": self.stats.skipped_total,

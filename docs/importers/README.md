@@ -22,7 +22,7 @@ Re-running the same source is idempotent. Each mapped part carries a source owne
 the server atomically rejects a different owner or an unowned destination with the same id.
 The importer requires a server whose OpenAPI contract exposes `import_identity` and
 `import_adopt_legacy`; older servers fail before the first write. A completed checkpoint is
-not resumed, so a later run re-syncs the source from the start.
+not resumed, so a later run imports the source from the start.
 
 `--id-mapping v1` remains the default and preserves existing destination ids. Ambiguous
 namespace/part spellings fail as identity conflicts instead of overwriting data. For a new
@@ -83,6 +83,13 @@ for sources with cursors: a cursor alone cannot prove the source stayed unchange
 restarts from record zero and sets `resume_prefix_mismatch`. Prefix verification is streaming
 and costs O(committed records) source reads. Format 1 checkpoints require an explicit
 `--restart`; the destination's ownership checks still apply.
+
+Imports consume an observed source stream. The importer does not create a cross-system
+snapshot or a transaction spanning source pages. For a point-in-time migration, freeze the
+source or supply an immutable export / source-managed snapshot. A matching committed prefix
+does not establish that the uncommitted suffix or a concurrent verification scan was unchanged.
+The report's `source_consistency` records this boundary and the retention of source-deleted
+records. A completed rerun updates encountered records; it does not mirror deletions.
 
 ## Credentials
 

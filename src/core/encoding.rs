@@ -34,6 +34,9 @@
 //!
 //! The memo tables are a per-thread cache with a fixed budget (cleared when exceeded), never
 //! an input to the result: output is independent of thread, cache state and call history.
+//!
+//! `multiscale-words-v2` uses the same construction with a total order at each majority
+//! selection: frequency descending, coordinate ascending. V1 retains its historical behavior.
 
 use super::entangled::{hash_u64, EntangledHVec, DEFAULT_RHO_DENOM};
 use serde::{Deserialize, Serialize};
@@ -51,6 +54,9 @@ pub enum TextEncoder {
     /// documents also get dense chunk embeddings from the same model.
     #[serde(rename = "local-embed-v1")]
     LocalEmbedV1,
+    /// Majority selection resolves equal frequencies by ascending coordinate.
+    #[serde(rename = "multiscale-words-v2")]
+    MultiscaleWordsV2,
 }
 
 impl TextEncoder {
@@ -59,6 +65,7 @@ impl TextEncoder {
             Self::MultiscaleWordsV1 => "multiscale-words-v1",
             Self::MultiscaleCappedUnionV1 => "multiscale-capped-union-v1",
             Self::LocalEmbedV1 => "local-embed-v1",
+            Self::MultiscaleWordsV2 => "multiscale-words-v2",
         }
     }
 
@@ -98,6 +105,25 @@ impl TextEncoder {
         match self {
             Self::MultiscaleWordsV1 | Self::LocalEmbedV1 => EntangledHVec::bundle(vectors),
             Self::MultiscaleCappedUnionV1 => EntangledHVec::bundle_bloom(vectors),
+            Self::MultiscaleWordsV2 => {
+                let dim = vectors.first().map_or(0, |v| v.dim);
+                let mut counts = std::collections::BTreeMap::<u32, usize>::new();
+                for vector in vectors {
+                    for &index in vector.indices() {
+                        *counts.entry(index).or_default() += 1;
+                    }
+                }
+                let threshold = vectors.len().div_ceil(2);
+                let mut selected: Vec<_> = counts
+                    .into_iter()
+                    .filter(|&(_, count)| count >= threshold)
+                    .collect();
+                selected.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+                selected.truncate((dim / DEFAULT_RHO_DENOM).max(1));
+                let mut indices: Vec<_> = selected.into_iter().map(|(index, _)| index).collect();
+                indices.sort_unstable();
+                EntangledHVec::from_indices(indices, dim)
+            }
         }
     }
 
@@ -113,6 +139,7 @@ impl std::str::FromStr for TextEncoder {
     fn from_str(name: &str) -> Result<Self, Self::Err> {
         match name {
             "multiscale-words-v1" => Ok(Self::MultiscaleWordsV1),
+            "multiscale-words-v2" => Ok(Self::MultiscaleWordsV2),
             "multiscale-capped-union-v1" => Ok(Self::MultiscaleCappedUnionV1),
             "local-embed-v1" => Ok(Self::LocalEmbedV1),
             _ => anyhow::bail!("unknown text encoder {name:?}"),
@@ -354,11 +381,17 @@ impl EncodeState {
             return EntangledHVec::from_indices(indices, dim);
         }
         let target_count = (dim / DEFAULT_RHO_DENOM).max(1);
-        // Same call on the same slice as the reference: the comparator does not break ties,
-        // so a different selection algorithm or input order could retain different indices.
+        // V1's comparator intentionally preserves the legacy algorithm-dependent ties.
         if self.selected.len() > target_count {
             self.selected
-                .select_nth_unstable_by(target_count - 1, |a, b| b.1.cmp(&a.1));
+                .select_nth_unstable_by(target_count - 1, |a, b| {
+                    let frequency = b.1.cmp(&a.1);
+                    if encoder == TextEncoder::MultiscaleWordsV2 {
+                        frequency.then_with(|| a.0.cmp(&b.0))
+                    } else {
+                        frequency
+                    }
+                });
             self.selected.truncate(target_count);
         }
         let mut indices: Vec<u32> = self.selected.iter().map(|&(idx, _)| idx).collect();
@@ -652,6 +685,51 @@ mod tests {
     use super::*;
 
     #[test]
+    fn words_v2_majority_uses_frequency_then_coordinate_independent_of_input_order() {
+        for dim in [256, 65_537] {
+            for repeated in [false, true] {
+                let target = (dim / DEFAULT_RHO_DENOM).max(1);
+                let mut even: Vec<_> = (0..target + 2).map(|i| (2 * i) as u32).collect();
+                let mut odd: Vec<_> = (0..target + 2).map(|i| (2 * i + 1) as u32).collect();
+                if repeated {
+                    even.push(dim as u32 - 1);
+                    odd.push(dim as u32 - 1);
+                }
+                let first = EntangledHVec::from_indices(even, dim);
+                let second = EntangledHVec::from_indices(odd, dim);
+                let vectors = vec![first, second];
+                let expected = TextEncoder::MultiscaleWordsV2.bundle(&vectors);
+                let mut correct: Vec<_> = (0..target - usize::from(repeated))
+                    .map(|i| i as u32)
+                    .collect();
+                if repeated {
+                    correct.push(dim as u32 - 1);
+                }
+                assert_eq!(expected.indices(), correct);
+                for reverse in [false, true] {
+                    let mut state = EncodeState {
+                        dim,
+                        ..Default::default()
+                    };
+                    state.flat = vectors
+                        .iter()
+                        .flat_map(|v| v.indices().iter().copied())
+                        .collect();
+                    if reverse {
+                        state.flat.reverse();
+                    }
+                    assert_eq!(
+                        state
+                            .bundle_flat(vectors.len(), TextEncoder::MultiscaleWordsV2)
+                            .indices(),
+                        expected.indices()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn test_empty_input() {
         let v = encode_text_internal("", 16384);
         assert!(v.indices().is_empty());
@@ -752,6 +830,7 @@ mod tests {
         ];
         for encoder in [
             TextEncoder::MultiscaleWordsV1,
+            TextEncoder::MultiscaleWordsV2,
             TextEncoder::MultiscaleCappedUnionV1,
         ] {
             // 65535..=65537 straddle SPARSE_COUNTING_MAX_DIM.

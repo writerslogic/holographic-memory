@@ -12,9 +12,9 @@ impl HmsCore {
         super::mutation::validate_public_id(&id)?;
         if !self.meaning_enabled() {
             let triplet = self
-                .encode_text(&h)
-                .bind(&self.encode_text(&r))
-                .bind(&self.encode_text(&t));
+                .try_encode_text(&h)?
+                .bind(&self.try_encode_text(&r)?)
+                .bind(&self.try_encode_text(&t)?);
             return self.memorize(id, triplet);
         }
         self.commit(&[super::mutation::Mutation::Triplet {
@@ -30,24 +30,36 @@ impl HmsCore {
         if sequence.is_empty() {
             return Ok(());
         }
-        self.memorize(id, self.encode_sequence(sequence))
+        self.memorize(id, self.encode_sequence(sequence)?)
     }
 
     /// Query for tails matching `head XOR relation`.
     pub fn query_triplet(&self, h: String, r: String, k: u32) -> Result<Vec<RetrievalResult>> {
-        let vec_h = self.encode_text(&h);
-        let vec_r = self.encode_text(&r);
+        let vec_h = self.try_encode_text(&h)?;
+        let vec_r = self.try_encode_text(&r)?;
         let query_vec = vec_h.bind(&vec_r);
         Ok(self.query(&query_vec, k))
     }
 
     /// Find analogy: A is to B as C is to ? Returns k closest matches.
     pub fn find_analogy(&self, a: &str, b: &str, c: &str, k: u32) -> Vec<RetrievalResult> {
-        let vec_a = self.encode_text(a);
-        let vec_b = self.encode_text(b);
-        let vec_c = self.encode_text(c);
+        self.try_find_analogy(a, b, c, k).expect(
+            "analogy encoding failed; use try_find_analogy to handle model or resource errors",
+        )
+    }
+
+    pub fn try_find_analogy(
+        &self,
+        a: &str,
+        b: &str,
+        c: &str,
+        k: u32,
+    ) -> Result<Vec<RetrievalResult>> {
+        let vec_a = self.try_encode_text(a)?;
+        let vec_b = self.try_encode_text(b)?;
+        let vec_c = self.try_encode_text(c)?;
         let target = vec_a.bind(&vec_b).bind(&vec_c);
-        self.query(&target, k)
+        Ok(self.query(&target, k))
     }
 
     /// Query for sequences matching a partial sequence prefix.
@@ -55,16 +67,18 @@ impl HmsCore {
         if partial.is_empty() {
             return Ok(vec![]);
         }
-        Ok(self.query(&self.encode_sequence(partial), k))
+        Ok(self.query(&self.encode_sequence(partial)?, k))
     }
 
     /// Bundles `items`, each permuted by its position.
-    fn encode_sequence(&self, items: &[String]) -> EntangledHVec {
-        let vecs: Vec<EntangledHVec> = items
-            .iter()
+    fn encode_sequence(&self, items: &[String]) -> Result<EntangledHVec> {
+        let texts: Vec<_> = items.iter().map(String::as_str).collect();
+        let vecs: Vec<EntangledHVec> = self
+            .try_encode_texts(&texts)?
+            .into_iter()
             .enumerate()
-            .map(|(i, item)| self.encode_text(item).permute(i))
+            .map(|(i, vector)| vector.permute(i))
             .collect();
-        self.bundle(&vecs)
+        Ok(self.bundle(&vecs))
     }
 }

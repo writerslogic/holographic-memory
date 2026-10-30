@@ -5,11 +5,13 @@
 //! Inference runs without the GIL. The companion package `holographic_memory_models`, when
 //! installed, supplies its pinned model pack without a first-use download.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 use crate::core::embed::{EmbedKind, EmbedOptions, Embedder, Pooling, SemanticIndex};
 
@@ -46,7 +48,7 @@ impl PyEmbedder {
     #[pyo3(signature = (
         model="default", *, sha256=None, max_length=None, pooling=None, normalize=None,
         query_prefix=None, passage_prefix=None, batch_size=32, max_batch_tokens=2048,
-        threads=0, offline=None, model_dir=None, cache_dir=None
+        threads=0, offline=None, model_dir=None, cache_dir=None, limits=None
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -64,7 +66,15 @@ impl PyEmbedder {
         offline: Option<bool>,
         model_dir: Option<PathBuf>,
         cache_dir: Option<PathBuf>,
+        limits: Option<HashMap<String, usize>>,
     ) -> PyResult<Self> {
+        let limits = match limits {
+            Some(value) => {
+                serde_json::from_value(serde_json::to_value(value).map_err(|e| err(e.into()))?)
+                    .map_err(|e| err(e.into()))?
+            }
+            None => Default::default(),
+        };
         let options = EmbedOptions {
             model: model.into(),
             sha256,
@@ -78,6 +88,7 @@ impl PyEmbedder {
             passage_prefix,
             batch_size,
             max_batch_tokens,
+            limits,
             threads,
             offline,
             model_dir: model_dir.or_else(|| companion_dir(py)),
@@ -101,6 +112,22 @@ impl PyEmbedder {
         texts: OneOrMany,
     ) -> PyResult<Bound<'py, PyAny>> {
         self.run(py, texts, EmbedKind::Passage)
+    }
+
+    fn embed_query_with_report<'py>(
+        &self,
+        py: Python<'py>,
+        texts: Vec<String>,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        self.run_with_report(py, texts, EmbedKind::Query)
+    }
+
+    fn embed_passages_with_report<'py>(
+        &self,
+        py: Python<'py>,
+        texts: Vec<String>,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        self.run_with_report(py, texts, EmbedKind::Passage)
     }
 
     #[getter]
@@ -155,6 +182,34 @@ impl PyEmbedder {
 }
 
 impl PyEmbedder {
+    fn run_with_report<'py>(
+        &self,
+        py: Python<'py>,
+        texts: Vec<String>,
+        kind: EmbedKind,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let batch = py
+            .detach(|| self.inner.embed_with_report(&texts, kind))
+            .map_err(err)?;
+        let result = PyDict::new(py);
+        result.set_item("embeddings", batch.embeddings)?;
+        let inputs = batch
+            .inputs
+            .into_iter()
+            .map(|input| {
+                let info = PyDict::new(py);
+                info.set_item("input_bytes", input.input_bytes)?;
+                info.set_item("retained_bytes", input.retained_bytes)?;
+                info.set_item("tokens", input.tokens)?;
+                info.set_item("byte_truncated", input.byte_truncated)?;
+                info.set_item("token_truncated", input.token_truncated)?;
+                Ok(info)
+            })
+            .collect::<PyResult<Vec<_>>>()?;
+        result.set_item("inputs", inputs)?;
+        Ok(result)
+    }
+
     fn run<'py>(
         &self,
         py: Python<'py>,

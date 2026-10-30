@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "copyright": "2024-2026 WritersLogic Contributors",
+  "spdx_license_identifier": "Apache-2.0",
+  "scope": "REPORT.md section IV: six additional bounded concerns",
+  "base_revision": "0c075265c27c21373bf5a43aad5c951abcf366d3",
+  "source_commits": ["6cd497cfed4cc4dc5e8b03bd4049ad84fc4c2d94", "107f0e86"],
+  "ci": {
+    "pull_request": "https://github.com/writerslogic/holographic-memory/pull/335",
+    "authoritative_results": "The final PR head's checks and merge record; all non-optional checks must complete successfully before merge",
+    "native_node_features": "node-api,security,local-embed",
+    "native_python_features": "python,local-embed-download",
+    "local_status_scope": "The completed checks below record local evidence; final native/platform results are recorded by PR CI rather than inferred from source inspection"
+  },
+  "environment": {
+    "scope": "Local validation; GitHub CI is recorded separately above",
+    "platform": "aarch64-apple-darwin",
+    "rustc": "1.96.0",
+    "python": "3.13 via uv",
+    "paid_api_calls": 0,
+    "cloud_jobs": 0,
+    "pretrained_model_downloads": 0
+  },
+  "completed": {
+    "embedding": {
+      "command": "CARGO_TARGET_DIR=target cargo test --locked --features local-embed-download --lib core::embed::",
+      "passed": 25,
+      "ignored_fixture_generator": 1,
+      "coverage": "Hard call limits; allocation overflow; prefix bytes; token and UTF-8 truncation; fail-fast concurrency and error release; unchanged successful vectors; actual localhost HTTP download corruption/retry/single-flight"
+    },
+    "encoder": {
+      "command": "CARGO_TARGET_DIR=target cargo test --locked --features local-embed-download --lib core::encoding::",
+      "passed": 8,
+      "coverage": "V2 tie ordering and input-order independence; cached/reference equality at density/counting boundaries; legacy algorithms retained"
+    },
+    "format_and_integrity": {
+      "source_revision": "6cd497cfed4cc4dc5e8b03bd4049ad84fc4c2d94",
+      "command": "CARGO_TARGET_DIR=target cargo test --locked --features local-embed-download,security --test encoder_versions --test ingest_encode --test embed_store --test format_golden --test committed_sidecars",
+      "passed_by_target": {"encoder_versions": 7, "ingest_encode": 2, "embed_store": 6, "format_golden": 6, "committed_sidecars": 1},
+      "ignored_golden_generator": 1,
+      "coverage": "Existing golden stores unchanged, V2 source reencoding and reopen, canonical journal parity, source-preserving ingest, and actual failed audit sync with durable create/delete/reopen"
+    },
+    "checked_encoding": {
+      "command": "CARGO_TARGET_DIR=target cargo test --locked --features local-embed-download,security --test embed_store",
+      "passed": 7,
+      "coverage": "Checked single/batch/triple/sequence/analogy encoding; one admission for eight sparse writes; budget failure does not mutate a prefix; exact stored vectors survive restart; legacy infallible encoding fails loudly"
+    },
+    "all_features_clippy": {
+      "command": "CARGO_TARGET_DIR=target cargo +1.99.0 clippy --locked --all-targets --all-features -- -D warnings",
+      "passed": true,
+      "scope": "Checked encoding and native Node/Python bindings"
+    },
+    "importers": {
+      "command": "PYTHONPATH=bindings/python/holographic-sdk HMS_SERVER_BIN=target/debug/hms-server uv run --no-project --offline --python 3.13 --with pytest --with httpx --with numpy==2.5.4 python -m pytest -q bindings/python/holographic-sdk/tests/importers/test_identity.py bindings/python/holographic-sdk/tests/importers/test_core.py",
+      "passed": 42,
+      "server_binary_source": "Merged baseline; importer changes run directly from this working tree",
+      "coverage": "Content-bound resume, collision/ownership/split cleanup, completed-rerun updates and explicit source-deletion retention"
+    },
+    "documentation": {
+      "command": "uv run --no-project --offline --python 3.13 --with-requirements docs/requirements.txt mkdocs build --strict --site-dir target/bounded-docs",
+      "passed": true,
+      "limitation": "Rustdoc is supplied separately by the CI documentation gate"
+    },
+    "workflow_lint": {
+      "actionlint": "passed",
+      "offline_pins_checked": 207,
+      "pin_problems": 0
+    }
+  },
+  "final_ci_checks": [
+    "Native Node and Python synthetic-fixture report/limit checks",
+    "Integrated exact-head PR feature/platform/format/documentation gates"
+  ],
+  "retained_logs": ["bounded-embedding.log", "bounded-encoder.log", "bounded-integrity.log", "bounded-checked-encoding.log", "bounded-imports.log", "bounded-clippy.log", "bounded-docs.log"],
+  "limits": [
+    "No measured performance or RSS improvement, pretrained task quality, hardware power-loss guarantee or independent cryptographic/finite-precision DP certification is claimed.",
+    "Per-call budgets exclude caller-owned input storage, foreign-runtime object copies, retained results, separately loaded models and host transport/task queues.",
+    "Rust infallible encode_text and find_analogy wrappers now panic on model/resource errors; use their try_ counterparts. Durable writes and Node APIs use checked paths.",
+    "Typed committed outcomes and process-local HTTP replay do not supply a durable sidecar outbox, repair worker or exactly-once external delivery.",
+    "Imports do not create snapshot isolation across source pages or propagate general source deletions.",
+    "V1 remains the default and retains historical unstable-selection ties; V2 is opt-in and requires source reencoding into a new store."
+  ]
+}
