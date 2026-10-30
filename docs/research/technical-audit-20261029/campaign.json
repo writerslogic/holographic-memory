@@ -20,6 +20,10 @@
     {
       "pr": 337,
       "sha": "9ead0a9c6361a3e2def1e65af129d61ab68f2525"
+    },
+    {
+      "pr": 338,
+      "sha": "c54972220193abfce8a7470d695910219f03b567"
     }
   ],
   "phases": [
@@ -212,12 +216,105 @@
     },
     {
       "id": "R17",
-      "status": "planned",
-      "acceptance": "Common operations and serialized outcomes/errors conform across supported surfaces; declare differences; no silent filter underfill or collection leakage."
+      "status": "implemented_validation_deferred",
+      "acceptance": "Common operations and serialized outcomes/errors conform across supported surfaces; declare differences; no silent filter underfill or collection leakage.",
+      "baseline_revision": "c54972220193abfce8a7470d695910219f03b567",
+      "diagnosis": [
+        {
+          "source": "src/core/memory_api/recall.rs:recall_once,explain_once",
+          "failure": "Empty subject/entity/temporal eligibility could return before document query validation, accepting malformed weights/filter/candidate limits depending on stored data."
+        },
+        {
+          "source": "integrations/js/packages/core/src/store.ts:sid,remember,forget",
+          "failure": "Default ID A/x collides with collection A ID x; unconditional writes/deletes lacked destination ownership checks; per-instance serialization did not protect two adapters sharing a native handle."
+        },
+        {
+          "source": "bindings/python/holographic-sdk/holographic_sdk/importers/sink.py:_call",
+          "failure": "Retry loop could repeat committed or uncertain mutations, and pipeline batch bisection is inappropriate after commit."
+        }
+      ],
+      "implementation": [
+        "Reuse native document validation before all temporal recall/explain early returns; one RecallOptions -> SearchOptions conversion feeds validation and execution.",
+        "Authoritative typed capabilities request/reply and operation registry in Memory; HTTP route schemas derive from the same types, Node and Python forward negotiation. MCP initialization identifies its distinct document-memory profile and unsupported temporal operations.",
+        "Collection mutations preflight ownership before embeddings/writes and serialize through a shared WeakMap queue per native object; preserve existing ID mapping and fail explicitly on collisions.",
+        "Importer mutations stop on committed/uncertain outcomes with ImporterError.code and committed state; bounded read retries remain. Accept canonical problem responses and legacy v1 error envelopes."
+      ],
+      "capability_matrix": [
+        {
+          "surface": "Rust temporal Memory",
+          "authority": "src/core/memory_api/{types,json,recall}.rs",
+          "behavior": "Temporal current/all/historical, asOf/knownAt, exact metadata, subject/entity filters, source quotes; no document pagination operation."
+        },
+        {
+          "surface": "HTTP Memory",
+          "authority": "src/bin/hms-server/{routes,memory,request}.rs",
+          "behavior": "Same native JSON dispatch, generated schemas; read/write auth and tenant header, bounded request/admission/idempotency behavior; stricter HTTP query/body limits are deliberate."
+        },
+        {
+          "surface": "Node Memory",
+          "authority": "src/bindings/node/api.rs,memory.js,memory.d.ts",
+          "behavior": "Same Memory::call dispatch; Date->Unix millis; error code prefix includes mutation_committed; native LocalEmbedder requires optional build features."
+        },
+        {
+          "surface": "Python Memory",
+          "authority": "bindings/python/holographic-sdk/holographic_sdk/memory.py",
+          "behavior": "HTTP operations, sync/async capability negotiation and service error codes; datetime conversion is client convenience."
+        },
+        {
+          "surface": "MCP",
+          "authority": "src/bin/hms-mcp/{server,memory,store}.rs",
+          "behavior": "Document-memory tools, namespace ownership, version-conditional writes and pagination; no temporal asOf/knownAt/supersession API. Remote auth profile remains next phase."
+        },
+        {
+          "surface": "JS framework stores",
+          "authority": "integrations/js/packages/core/src/store.ts",
+          "behavior": "Shared collection-filtered document retrieval and paginated native listing; guarded mapped IDs and serialized same-handle writes. Direct native writes/separate handles are outside that guarantee."
+        }
+      ],
+      "deliberate_differences": [
+        "get/history retain legacy acceptance of extra request fields; other temporal requests deny unknown fields.",
+        "MCP namespace/document memory and temporal Memory are separate supported profiles.",
+        "Temporal Memory advertises documentPagination=false; document-list endpoints and framework adapters retain cursor pagination.",
+        "Vercel scope metadata and local JS collections are selection/ownership conveniences, not remote tenant authorization boundaries. Separate native handles/direct writes require caller coordination.",
+        "HTTP idempotency remains bounded and process-local; no durable sidecar recovery is claimed.",
+        "Older published packages/binaries can lack these source capabilities. Generated OpenAPI and native binding artifacts are deferred to the final build."
+      ],
+      "shared_fixtures": {
+        "path": "tests/fixtures/memory_contract_cases_v1.json",
+        "cases": 16,
+        "surfaces": [
+          "tests/native_memory_workflow.rs",
+          "tests/memory_api_server.rs",
+          "tests/node/memory.test.cjs"
+        ],
+        "coverage": "Version negotiation, unsupported capabilities/version, malformed inputs on empty stores/scopes, query/filter/weights/candidate boundaries. Existing lifecycle, pagination, tenant-isolation and committed-sidecar fixtures remain final gates."
+      },
+      "local_validation": {
+        "passed": "14 focused Python tests (0.80s): importer committed/uncertain failures are not retried, problem/legacy envelopes, read retries, sync/async capability negotiation; syntax formatting/Node parse/whitespace also checked.",
+        "command": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=bindings/python/holographic-sdk uv run --no-project --offline --with 'pytest>=9.1.1' --with 'httpx>=0.27.0' --with 'sniffio>=1.3' python -m pytest -q bindings/python/holographic-sdk/tests/importers/test_sink_retries.py bindings/python/holographic-sdk/tests/test_memory.py::test_capability_negotiation_preserves_service_errors",
+        "environment": "SDK venv lacked pytest; used cached offline pure-Python dependencies. No native builds, downloads or paid calls.",
+        "limits": "These transport tests do not validate native implementations or JS collection races; those remain deferred."
+      },
+      "final_validation": {
+        "commands": [
+          "cargo test --offline --locked --test native_memory_workflow --test memory_api",
+          "cargo test --offline --locked --features server --test memory_api_server --bin hms-server",
+          "cargo test --offline --locked --features mcp --bin hms-mcp",
+          "cargo test --offline --locked --lib core::documents::search::",
+          "npm run build",
+          "node --test tests/node/memory.test.cjs",
+          "cd integrations/js && npm run test --workspace @holographic-memory/core",
+          "cd bindings/python/holographic-sdk && uv run --offline pytest -q tests/test_memory.py tests/importers/test_sink_retries.py tests/importers/test_identity.py",
+          "cargo run --offline --locked --features server --bin hms-server -- openapi > docs/server/openapi.json",
+          "uv run --offline scripts/check_memory_openapi.py --server-binary .campaign-target/debug/hms-server"
+        ],
+        "status": "Native, generated-artifact, JS integration, schema, package and interop checks deferred; compiler/test success not inferred from merge.",
+        "quality_gate": "Include retained pagination boundaries, collection/tenant isolation, committed outcomes and cancellation in the consolidated final gate."
+      }
     },
     {
       "id": "R18",
-      "status": "implemented_validation_deferred",
+      "status": "merged_provisional",
       "evidence": "REMEDIATION.md: frozen synthetic 19-case lifecycle; not held-out quality.",
       "acceptance": {
         "native_target": "Zero expected support/order/source errors across all 72 frozen steps and restarts at unchanged supported-query k=candidateLimit=1; explicit empty results on unsupported/no-longer-owned evidence.",
@@ -317,7 +414,14 @@
         "Source extraction and cited-answer generation are not inferred from native retrieval success.",
         "Temporal preselection can increase latency/RSS; final measurements must include it and compare equal candidate budgets.",
         "The existing recency policy still reorders only the selected candidate pool."
-      ]
+      ],
+      "merge": {
+        "pr": 338,
+        "sha": "c54972220193abfce8a7470d695910219f03b567",
+        "implementation_sha": "3e9049432eb3c853e9acb846eec6ac701df6be5d",
+        "remote_inclusion_verified": true,
+        "branch_removed": true
+      }
     },
     {
       "id": "trust-interop-security",

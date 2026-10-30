@@ -3,6 +3,7 @@
 
 //! JSON envelopes carried by `Memory::call`; payload schemas reuse the native API types.
 
+pub use super::CapabilitiesRequest;
 use schemars::JsonSchema;
 
 use super::{
@@ -63,6 +64,11 @@ pub struct RememberReply {
 #[derive(JsonSchema)]
 pub struct RecallReply {
     pub results: Vec<Recalled>,
+}
+
+#[derive(JsonSchema)]
+pub struct CapabilitiesReply {
+    pub capabilities: super::MemoryCapabilities,
 }
 
 #[derive(JsonSchema)]

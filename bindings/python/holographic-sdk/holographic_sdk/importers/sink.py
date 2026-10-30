@@ -31,8 +31,11 @@ class BatchRejected(Exception):
 
 def _error_parts(res: httpx.Response) -> Tuple[str, str]:
     try:
-        err = res.json().get("error", {})
-        return str(err.get("code", "")), str(err.get("message", ""))
+        body = res.json()
+        if not isinstance(body, dict):
+            return "", "invalid error response"
+        err = body if "code" in body else body.get("error", {})
+        return str(err.get("code", "")), str(err.get("detail", err.get("message", "")))
     except (ValueError, AttributeError):
         return "", res.text[:200]
 
@@ -89,7 +92,7 @@ class HmsSink:
 
     # -- request plumbing -----------------------------------------------------------
 
-    def _call(self, fn, *args, **kwargs):
+    def _call(self, fn, *args, retry_safe=True, **kwargs):
         delay = self.backoff
         for attempt in range(self.retries + 1):
             try:
@@ -99,6 +102,13 @@ class HmsSink:
                 if res.status_code == 401:
                     raise ImporterError("the HMS server rejected the API key (401)") from None
                 code, message = _error_parts(res)
+                if code == "mutation_committed":
+                    raise ImporterError("HMS mutation committed; reconciliation required before retrying", code=code, committed=True) from None
+                if res.status_code in _RETRY_STATUS and not retry_safe:
+                    raise ImporterError(
+                        f"HMS mutation outcome is uncertain (HTTP {res.status_code}); reconcile before retrying",
+                        code="mutation_uncertain",
+                    ) from None
                 if res.status_code in _RETRY_STATUS and attempt < self.retries:
                     wait = float(res.headers.get("Retry-After", delay) or delay)
                     time.sleep(min(wait, 30.0))
@@ -110,6 +120,11 @@ class HmsSink:
                     ) from None
                 raise BatchRejected(res.status_code, code, scrub(message)) from None
             except httpx.TransportError as exc:
+                if not retry_safe:
+                    raise ImporterError(
+                        f"HMS mutation outcome is uncertain ({type(exc).__name__}); reconcile before retrying",
+                        code="mutation_uncertain",
+                    ) from None
                 if attempt < self.retries:
                     time.sleep(delay)
                     delay = min(delay * 2, 30.0)
@@ -161,13 +176,13 @@ class HmsSink:
             if key not in self._inventory.loaded:
                 self._inventory.load(key, self.documents(tenant))
             obsolete = self._inventory.prepare(key, group, self.split_policy)
-            self._call(client.add_documents, [d.payload() for d in group])
+            self._call(client.add_documents, [d.payload() for d in group], retry_safe=False)
             for doc in group:
                 self._inventory.record(key, doc.id, doc.metadata)
             self._inventory.db.commit()
             for ident, identity in obsolete:
                 try:
-                    self._call(_delete_owned, client, ident, identity)
+                    self._call(_delete_owned, client, ident, identity, retry_safe=False)
                     self.stale_parts_deleted += 1
                 except BatchRejected as exc:
                     if exc.status != 404:
@@ -215,7 +230,7 @@ class HmsSink:
         out: Dict[str, Any] = {}
         for tenant in tenants:
             try:
-                out[tenant or self.tenant or "default"] = self._call(self.client(tenant).maintain_document_index)
+                out[tenant or self.tenant or "default"] = self._call(self.client(tenant).maintain_document_index, retry_safe=False)
             except (BatchRejected, ImporterError) as exc:
                 out[tenant or self.tenant or "default"] = {"error": scrub(str(exc))}
         return out

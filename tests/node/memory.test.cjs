@@ -110,3 +110,33 @@ test('memory API keeps history, answers as-of queries, explains, forgets and sur
     rmSync(directory, { recursive: true, force: true })
   }
 })
+
+test('shared memory negotiation and malformed-input contract', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'hms-node-contract-'))
+  try {
+    run(`
+      const assert = require('node:assert/strict');
+      const { HolographicMemorySystem } = require('./index.js');
+      const { Memory } = require('./memory.js');
+      const fixture = require('./tests/fixtures/memory_contract_cases_v1.json');
+      (async () => {
+        const hms = new HolographicMemorySystem(1024, process.argv[1]);
+        const memory = new Memory(hms);
+        assert.equal((await memory.capabilities()).profile, 'temporal-memory-v1');
+        for (const step of fixture.cases) {
+          if (step.error) {
+            await assert.rejects(hms.memoryCall(step.op, step.request), error => error.message.includes('[' + step.error + ']'));
+          } else {
+            const result = await hms.memoryCall(step.op, step.request);
+            for (const [pointer, expected] of Object.entries(step.expect)) {
+              const actual = pointer.slice(1).split('/').reduce((value, key) => value?.[key], result);
+              assert.deepEqual(actual, expected);
+            }
+          }
+        }
+      })().catch(error => { console.error(error); process.exit(1); });
+    `, directory)
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})

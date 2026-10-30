@@ -91,6 +91,10 @@ class Memory {
     return results
   }
 
+  async capabilities(contractVersion = 1) {
+    return (await this.#call('capabilities', { contractVersion })).capabilities
+  }
+
   async explain(query, id, options = {}) {
     const { explanation } = await this.#call('explain', wire(options, { query, id }))
     return explanation

@@ -153,6 +153,7 @@ macro_rules! memory_handler {
 
 memory_handler!(remember, "remember", Scope::Write);
 memory_handler!(recall, "recall", Scope::Read);
+memory_handler!(capabilities, "capabilities", Scope::Read);
 memory_handler!(explain, "explain", Scope::Read);
 memory_handler!(forget, "forget", Scope::Write);
 memory_handler!(get, "get", Scope::Read);

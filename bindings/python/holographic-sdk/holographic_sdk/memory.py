@@ -391,6 +391,10 @@ class MemoryClient:
         response = self._client.client.post(f"{self._client.url}{_API}/{op}", json=payload)
         return _raise_for(response)
 
+    def capabilities(self, contract_version: int = 1) -> Dict[str, Any]:
+        """Negotiate the service's temporal Memory contract; unsupported versions fail."""
+        return self._post("capabilities", {"contractVersion": contract_version})["capabilities"]
+
     def remember(
         self,
         text: str,
@@ -583,6 +587,10 @@ class AsyncMemoryClient:
     async def _post(self, op: str, payload: Mapping[str, Any]) -> Any:
         response = await self._client.client.post(f"{self._client.url}{_API}/{op}", json=payload)
         return _raise_for(response)
+
+    async def capabilities(self, contract_version: int = 1) -> Dict[str, Any]:
+        """Negotiate the service's temporal Memory contract; unsupported versions fail."""
+        return (await self._post("capabilities", {"contractVersion": contract_version}))["capabilities"]
 
     def _mask(self, embedding: Optional[Sequence[float]]) -> Optional[List[float]]:
         return self._client.encrypt_vector(list(embedding)) if embedding is not None else None

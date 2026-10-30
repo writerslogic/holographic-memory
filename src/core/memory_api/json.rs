@@ -15,6 +15,7 @@ use super::{Memory, MemoryError};
 
 /// The operations [`Memory::call`] accepts.
 pub const OPERATIONS: &[&str] = &[
+    "capabilities",
     "remember",
     "recall",
     "explain",
@@ -75,6 +76,19 @@ fn to_value<T: serde::Serialize>(value: &T) -> Result<Value> {
 }
 
 impl Memory {
+    pub fn capabilities(&self) -> MemoryCapabilities {
+        MemoryCapabilities {
+            contract_version: 1,
+            profile: "temporal-memory-v1".into(),
+            operations: OPERATIONS.iter().map(|op| (*op).to_owned()).collect(),
+            temporal_queries: true,
+            exact_metadata_filters: true,
+            subject_entity_filters: true,
+            document_pagination: false,
+            committed_error_code: "mutation_committed".into(),
+        }
+    }
+
     /// Runs one operation from its JSON request and returns its JSON response.
     ///
     /// | op | request | response |
@@ -93,6 +107,14 @@ impl Memory {
     pub fn call(&self, op: &str, mut request: Value) -> Result<Value> {
         integral_floats(&mut request);
         match op {
+            "capabilities" => {
+                let request: CapabilitiesRequest = parse(request)?;
+                check!(
+                    request.contract_version.is_none_or(|version| version == 1),
+                    "unsupported memory contractVersion"
+                );
+                Ok(json!({"capabilities": self.capabilities()}))
+            }
             "remember" => {
                 let mut map = object(request)?;
                 let inputs: Vec<RememberInput> = match map.remove("facts") {

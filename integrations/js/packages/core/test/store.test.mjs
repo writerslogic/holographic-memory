@@ -80,6 +80,36 @@ test('collections isolate ids and queries inside one store', async () => {
   assert.ok((await plain.get(['same']))[0])
 })
 
+test('collection id collisions cannot overwrite or delete legacy mapped records', async () => {
+  const plain = store()
+  const a = new HmsStore({ memory: plain.memory, collection: 'A' })
+  await a.remember([{ id: 'x', text: 'owned by A' }])
+  await assert.rejects(plain.remember([{ id: 'A/x', text: 'foreign' }]), /another collection/)
+  await assert.rejects(plain.forget(['A/x']), /another collection/)
+  assert.equal((await a.get(['x']))[0].text, 'owned by A')
+  await plain.remember([{ id: 'A/y', text: 'owned by default' }])
+  await assert.rejects(a.remember([{ id: 'y', text: 'foreign' }]), /another collection/)
+  await assert.rejects(a.forget(['y']), /another collection/)
+  assert.equal((await plain.get(['A/y']))[0].text, 'owned by default')
+  await plain.memory.memorizeDocument({ id: 'legacy', text: 'native document' })
+  await assert.rejects(plain.remember([{ id: 'safe', text: 'safe' }, { id: 'legacy', text: 'foreign' }]), /unscoped native document/)
+  assert.equal((await plain.get(['safe']))[0], undefined)
+  await assert.rejects(plain.forget(['legacy']), /unscoped native document/)
+  assert.ok(await plain.memory.getDocumentInfo('legacy'))
+})
+
+test('colliding writes on stores sharing a native handle are serialized', async () => {
+  const plain = store()
+  const a = new HmsStore({ memory: plain.memory, collection: 'A' })
+  const results = await Promise.allSettled([
+    plain.remember([{ id: 'A/x', text: 'default' }]),
+    a.remember([{ id: 'x', text: 'A' }]),
+  ])
+  assert.equal(results.filter((result) => result.status === 'fulfilled').length, 1)
+  assert.equal(results.filter((result) => result.status === 'rejected').length, 1)
+  assert.equal((await plain.get(['A/x']))[0].text, 'default')
+})
+
 test('reserved metadata, bad ids and bad vectors are rejected', async () => {
   const s = store()
   await assert.rejects(s.remember([{ id: 'a', text: 't', metadata: { _hms_x: 1 } }]), HmsError)

@@ -11,6 +11,7 @@ const COLLECTION_KEY = '_hms_collection'
 const VECTOR_KEY = '_hms_vector'
 const MAX_ID_BYTES = 256
 const NATIVE_MAX = 1000
+const writeQueues = new WeakMap<HolographicMemorySystem, Promise<unknown>>()
 
 export interface HmsRecord {
   id: string
@@ -63,7 +64,7 @@ export interface HmsStoreOptions {
   embedder?: Embedder
   /** Optional reranker applied to the top candidates; needs stored text (always on here). */
   rerank?: Reranker
-  /** Scope records inside one store. Ids are namespaced and every query restricted to it. */
+  /** Scope records inside one store. Direct native writes and separate native handles are not synchronized. */
   collection?: string
   /** Counts the first line of each document this many times in BM25 statistics. */
   titleWeight?: number
@@ -117,7 +118,6 @@ export class HmsStore {
   private readonly opts: HmsStoreOptions
   private readonly maxFetch: number
   private readonly probe: number[]
-  private writes: Promise<unknown> = Promise.resolve()
   private closed = false
 
   constructor(opts: HmsStoreOptions = {}) {
@@ -164,9 +164,16 @@ export class HmsStore {
   }
 
   private serialized<T>(op: () => Promise<T>): Promise<T> {
-    const run = this.writes.then(op)
-    this.writes = run.then(() => undefined, () => undefined)
+    const run = (writeQueues.get(this.memory) ?? Promise.resolve()).then(op)
+    writeQueues.set(this.memory, run.then(() => undefined, () => undefined))
     return run
+  }
+
+  private async assertOwned(sid: string): Promise<void> {
+    const info = await this.memory.getDocumentInfo(sid)
+    if (info && (info.metadata as Metadata)?.[COLLECTION_KEY] !== this.collection) {
+      throw new HmsError('record id belongs to another collection or an unscoped native document', 'invalid_argument')
+    }
   }
 
   private sid(id: string): string {
@@ -237,6 +244,7 @@ export class HmsStore {
     return this.serialized(() =>
       this.native(async () => {
         const chunked = await Promise.all(prepared.map(async (p) => ({ ...p, chunks: await this.memory.chunkDocument(p.input) })))
+        for (const c of chunked) await this.assertOwned(c.input.id)
         const need = chunked.flatMap((c) => (c.record.vector ? [] : c.chunks.map((ch) => ch.text)))
         const vectors = need.length ? await this.embedder.encodeDocuments(need) : []
         if (vectors.length !== need.length) throw new HmsError('embedder returned the wrong number of vectors', 'backend')
@@ -414,6 +422,7 @@ export class HmsStore {
     const sids = ids.map((id) => this.sid(id))
     return this.serialized(() =>
       this.native(async () => {
+        for (const sid of sids) await this.assertOwned(sid)
         let removed = 0
         for (const sid of sids) if (await this.memory.deleteDocument(sid)) removed++
         return removed

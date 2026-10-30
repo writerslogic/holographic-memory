@@ -230,3 +230,31 @@ def test_stub_declares_every_public_name():
     stub_class = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "MemoryClient")
     stub_methods = {n.name for n in stub_class.body if isinstance(n, ast.FunctionDef)}
     assert runtime_methods <= stub_methods
+
+
+def test_capability_negotiation_preserves_service_errors():
+    def handler(request):
+        assert request.url.path == "/api/v1/memory/capabilities"
+        version = json.loads(request.content)["contractVersion"]
+        if version != 1:
+            return httpx.Response(422, json={"error": {"code": "invalid_request", "message": "unsupported contractVersion"}})
+        return httpx.Response(200, json={"capabilities": {"profile": "temporal-memory-v1", "contractVersion": 1}})
+
+    client = HolographicClient("http://fixture.invalid", transport=httpx.MockTransport(handler))
+    try:
+        assert client.memory.capabilities()["profile"] == "temporal-memory-v1"
+        with pytest.raises(memory_module.MemoryError) as error:
+            client.memory.capabilities(2)
+        assert error.value.code == "invalid_request"
+    finally:
+        client.close()
+
+    async def run():
+        client = AsyncHolographicClient("http://fixture.invalid", transport=httpx.MockTransport(handler))
+        try:
+            assert (await client.memory.capabilities())["contractVersion"] == 1
+            with pytest.raises(memory_module.MemoryError):
+                await client.memory.capabilities(2)
+        finally:
+            await client.aclose()
+    asyncio.run(run())

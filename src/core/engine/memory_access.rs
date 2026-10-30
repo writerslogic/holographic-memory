@@ -39,6 +39,22 @@ impl DocumentView<'_> {
 }
 
 impl HmsCore {
+    pub(crate) fn validate_document_search(
+        &self,
+        text: &str,
+        options: &crate::SearchOptions,
+    ) -> Result<()> {
+        crate::core::documents::validate_search(
+            text,
+            options,
+            self.config
+                .embedding_space
+                .as_ref()
+                .map(|space| space.dimensions),
+        )
+        .map(drop)
+    }
+
     /// Advances by one per write transaction this process commits or replays, so equal values
     /// bracket an unchanged store and the difference of two readings counts the transactions
     /// between them. It starts at a random value per open, so one reading does not reveal how

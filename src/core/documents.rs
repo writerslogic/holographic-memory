@@ -48,7 +48,7 @@ pub use memory::{MemoryDocumentStore, MemoryStoreStats};
 pub(crate) use overlay::Base as CheckpointBase;
 pub(crate) use search::{
     capture_search, count_matches, execute_search, prepare_search, rank_search, read_ranked,
-    CapturedSearch, PreparedSearch,
+    validate_search, CapturedSearch, PreparedSearch,
 };
 pub(crate) use text::TextSegment;
 #[cfg(not(target_arch = "wasm32"))]

@@ -78,6 +78,27 @@ fn frozen_native_lifecycle_has_the_same_http_contract() {
 }
 
 #[test]
+fn shared_memory_negotiation_and_validation_http_contract() {
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/memory_contract_cases_v1.json")).unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let server = start(dir.path(), &[]);
+    for case in fixture["cases"].as_array().unwrap() {
+        let (status, result) =
+            server.post(case["op"].as_str().unwrap(), "contract", &case["request"]);
+        if case["error"] == "invalid_request" {
+            assert_eq!(status, 422, "{case}: {result}");
+            assert_eq!(result["code"], "invalid_request");
+        } else {
+            assert_eq!(status, 200, "{case}: {result}");
+            for (pointer, expected) in case["expect"].as_object().unwrap() {
+                assert_eq!(result.pointer(pointer), Some(expected));
+            }
+        }
+    }
+}
+
+#[test]
 fn memory_round_trip_over_http_with_history_errors_and_isolation() {
     let dir = tempfile::tempdir().unwrap();
     let server = start(&dir.path().join("data"), &[]);

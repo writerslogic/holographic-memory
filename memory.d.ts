@@ -75,7 +75,7 @@ export interface RecallOptions {
   semanticWeight?: number
   minSemanticScore?: number
   fusion?: 'blend' | 'rrf'
-  /** Candidates ranked before the validity filter. Raise it when most top candidates are history. */
+  /** Eligible candidates ranked before optional recency adjustment. */
   candidateLimit?: number
   /** Attach an `explanation` to every result. */
   explain?: boolean
@@ -193,6 +193,16 @@ export class Memory {
   /** One atomic transaction: every fact is stored or none is. */
   rememberMany(inputs: Iterable<RememberInput>): Promise<Remembered[]>
   recall(query: string, options?: RecallOptions): Promise<Recalled[]>
+  capabilities(contractVersion?: number): Promise<{
+    contractVersion: number
+    profile: string
+    operations: string[]
+    temporalQueries: boolean
+    exactMetadataFilters: boolean
+    subjectEntityFilters: boolean
+    documentPagination: boolean
+    committedErrorCode: string
+  }>
   explain(query: string, id: string, options?: Omit<RecallOptions, 'k' | 'history' | 'explain'>): Promise<Explanation>
   forget(target: ForgetTarget, options?: ForgetOptions): Promise<ForgetReport>
   get(id: string): Promise<FactRecord | null>

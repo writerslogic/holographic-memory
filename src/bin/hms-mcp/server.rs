@@ -25,7 +25,9 @@ use crate::tools::{self, Exposure};
 const INSTRUCTIONS: &str = "Persistent memory backed by Holographic Memory, stored on this machine. \
 Use `recall` before answering questions that earlier conversations may have settled, and `remember` \
 for durable facts, decisions and preferences (one fact or topic per memory). `search` gives explicit \
-control over filters and ranking; `list`, `get`, `forget`, `stats` and `export` manage the store.";
+control over filters and ranking; `list`, `get`, `forget`, `stats` and `export` manage the store. \
+This is the document-memory profile: it supports version-conditional writes and document pagination. \
+It does not expose the temporal Memory API's asOf, knownAt or supersession operations.";
 
 const RESOURCE_PAGE: usize = 100;
 const MEMORY_URI: &str = "hms://memory/";
