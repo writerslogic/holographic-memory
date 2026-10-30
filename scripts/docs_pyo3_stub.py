@@ -31,6 +31,9 @@ def py_type(rust: str, classes: dict, self_name: str) -> str:
         return PRIMITIVES[rust]
     if rust in classes:
         return classes[rust]
+    m = re.fullmatch(r"PyRef<'(?:_|[A-Za-z]\w*),\s*(.+)>", rust)
+    if m:
+        return py_type(m.group(1), classes, self_name)
     m = re.fullmatch(r"Vec<(.+)>", rust)
     if m:
         return f"list[{py_type(m.group(1), classes, self_name)}]"

@@ -1620,6 +1620,11 @@ impl HmsCore {
     }
 
     #[cfg(feature = "provenance")]
+    pub fn provenance_log_integrity(&self) -> Result<super::provenance::LogIntegrity> {
+        self.provenance_manager()?.log_integrity()
+    }
+
+    #[cfg(feature = "provenance")]
     pub fn create_batch_provenance(
         &self,
         items: &[(&str, &[u8], Option<&str>)],

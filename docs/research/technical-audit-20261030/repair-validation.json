@@ -1,0 +1,93 @@
+{
+  "scope": "D01-D05 verified defects; architectural recommendations and investigations excluded",
+  "working_directory": "/Volumes/A/holographic-memory",
+  "date": "2026-10-30",
+  "base_commit": "411dd07b9c29ce8f27313da8ac082fd27c995a19",
+  "repair_commits": {
+    "D01": "8e8b6eb5",
+    "D02": "b070015c",
+    "D03": "608de3ad",
+    "D04": "b10329c6",
+    "D05": "712ece89"
+  },
+  "validation_followups": [
+    "37b304ee",
+    "7d4cd010"
+  ],
+  "rust_environment": {
+    "CARGO_TARGET_DIR": "target/review-gap-checks/build",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "1",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0"
+  },
+  "local_checks": [
+    {
+      "defect": "D01",
+      "command": "cargo +1.99.0 test --offline --locked --all-features --lib core::provenance::",
+      "exit_code": 0,
+      "results": {
+        "passed": 136,
+        "failed": 0
+      },
+      "log": "audit-d01-tests.log",
+      "sha256": "3dbe7af45d47bf00b529433e38e11701ee186dd90f0da329135d373cebbc6147"
+    },
+    {
+      "defect": "D04",
+      "command": "npm run test --workspace @holographic-memory/core --prefix integrations/js",
+      "exit_code": 0,
+      "results": {
+        "passed": 38,
+        "failed": 0
+      },
+      "log": "audit-d04-tests.log",
+      "sha256": "0b038e1da88b9526bb98df28e8956ed90f0bbf4cda3107deeb09f7e5976094a1"
+    },
+    {
+      "defect": "D02",
+      "command": "npm run test --workspace @holographic-memory/core --prefix integrations/js",
+      "exit_code": 0,
+      "results": {
+        "passed": 50,
+        "failed": 0
+      },
+      "log": "audit-d02-tests.log",
+      "sha256": "84b1999c2c9af66777f089ea65ec8d41315857739f9ab05000bfeadbf526c93f"
+    },
+    {
+      "defect": "D03",
+      "command": "npm run test --workspace @holographic-memory/core --workspace @holographic-memory/langchain --workspace @holographic-memory/openai-agents --prefix integrations/js",
+      "exit_code": 0,
+      "results": {
+        "core": 58,
+        "langchain": 27,
+        "openai_agents": 15,
+        "failed": 0
+      },
+      "log": "audit-d03-tests.log",
+      "sha256": "464974948ae0bb44538314ae7f49c9c5eb8a1952d0769da126e027480cae38e1"
+    },
+    {
+      "defect": "D05 documentation",
+      "command": "uv run --no-project --offline --with-requirements docs/requirements.txt python -m unittest scripts/test_docs_hooks.py scripts/test_docs_site.py",
+      "exit_code": 0,
+      "results": {
+        "passed": 19,
+        "failed": 0
+      },
+      "log": "audit-docs-tests.log",
+      "sha256": "44f5f1973bbfa6d4cd93cd4d3a3f59ad779c29eb56c799d48641dd9b43dd8941"
+    }
+  ],
+  "ci_and_merge_status": "https://github.com/writerslogic/holographic-memory/pull/343",
+  "ci_checks": "https://github.com/writerslogic/holographic-memory/pull/343/checks",
+  "limits": [
+    "Local JavaScript tests reused the existing native addon; CI rebuilds the native binding from the PR source.",
+    "Initial native wheel run had 117 passes and two incorrect last-entry tie expectations in the new work-limit fixture; follow-up 7d4cd010 corrects those assertions without changing native behavior.",
+    "Original audit probes and scores remain historical baseline evidence, not repair validation.",
+    "Physical power-loss durability and the separate architectural investigations were not tested.",
+    "Only local and free public-repository CI resources were used; no paid API or cloud credits."
+  ]
+}

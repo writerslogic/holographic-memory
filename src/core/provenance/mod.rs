@@ -15,7 +15,7 @@ pub mod trust;
 pub mod types;
 pub mod vc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use ed25519_dalek::SigningKey;
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
@@ -52,6 +52,29 @@ struct LogEntryRef<'a> {
     prev_hash: String,
     fact_id: &'a str,
     record: &'a ProvenanceRecord,
+}
+
+/// Only `Verified` authenticates the complete available log against its signed head.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LogIntegrity {
+    Verified,
+    /// No log or anchor exists. This does not authenticate an empty history.
+    Empty,
+    Unanchored,
+    Corrupt,
+    /// An in-memory manager has no persistent history to verify.
+    Volatile,
+}
+
+struct ChainedAppend<'a> {
+    _head: parking_lot::MutexGuard<'a, [u8; 32]>,
+    anchor: Result<()>,
+}
+
+impl ChainedAppend<'_> {
+    fn finish(self) -> Result<()> {
+        super::error::after_commit("provenance signed head", self.anchor)
+    }
 }
 
 pub struct ProvenanceManager {
@@ -189,14 +212,15 @@ impl ProvenanceManager {
     }
 
     /// Appends `record` to the log, when there is one, then makes it the live record for
-    /// `fact_id`. A failed append leaves both the log head and the live records unchanged.
+    /// `fact_id`. A failed append leaves both unchanged; a signed-head failure returns a
+    /// `CommittedMutationError` after publishing the durable record.
     pub fn store_record(&self, fact_id: &str, record: ProvenanceRecord) -> Result<()> {
         let next = record
             .sequence
             .checked_add(1)
             .filter(|end| *end <= status_list::MAX_BYTES as u64 * 8)
             .ok_or_else(|| anyhow::anyhow!("credential status sequence space is exhausted"))?;
-        let _head = match self.log_path {
+        let append = match self.log_path {
             Some(ref path) => {
                 Some(
                     self.append_chained(path, 1, &self.signing_key, |_, prev_hash| {
@@ -213,6 +237,9 @@ impl ProvenanceManager {
         self.logical_clock
             .fetch_max(next, std::sync::atomic::Ordering::SeqCst);
         self.records.write().insert(fact_id.to_string(), record);
+        if let Some(append) = append {
+            append.finish()?;
+        }
         Ok(())
     }
 
@@ -229,7 +256,7 @@ impl ProvenanceManager {
         count: usize,
         head_key: &SigningKey,
         mut line_for: impl FnMut(usize, String) -> serde_json::Result<String>,
-    ) -> Result<parking_lot::MutexGuard<'_, [u8; 32]>> {
+    ) -> Result<ChainedAppend<'_>> {
         let mut head = self.chain_head.lock();
         let mut new_head = *head;
         let mut buf = String::new();
@@ -244,8 +271,11 @@ impl ProvenanceManager {
         // The lines are durable, so the head advances even if re-signing it fails below;
         // `verify_log_integrity` reports a stale signed head until the next append.
         *head = new_head;
-        write_signed_head(head_key, &new_head, path);
-        Ok(head)
+        let anchor = write_signed_head(head_key, &new_head, path);
+        Ok(ChainedAppend {
+            _head: head,
+            anchor,
+        })
     }
 
     pub fn get_record(&self, fact_id: &str) -> Option<ProvenanceRecord> {
@@ -287,7 +317,7 @@ impl ProvenanceManager {
             cose_envelope: Some(cose_envelope),
         };
 
-        let _head = match self.log_path {
+        let append = match self.log_path {
             Some(ref path) => {
                 Some(
                     self.append_chained(path, 1, &self.signing_key, |_, prev_hash| {
@@ -303,6 +333,9 @@ impl ProvenanceManager {
             None => None,
         };
         self.records.write().remove(fact_id);
+        if let Some(append) = append {
+            append.finish()?;
+        }
 
         Ok(record)
     }
@@ -335,66 +368,95 @@ impl ProvenanceManager {
         // The old key signs the rotation line; the new key signs the head after it, since the
         // manager verifies the head with its current key, here and after a reopen with the new
         // key file.
-        if let Some(ref path) = self.log_path {
-            drop(
-                self.append_chained(path, 1, &new_signing_key, |_, prev_hash| {
-                    serde_json::to_string(&serde_json::json!({
-                        "prev_hash": prev_hash,
-                        "action": "key_rotation",
-                        "old_did": old_did,
-                        "new_did": new_did,
-                        "cose_envelope": rotation_envelope,
-                    }))
-                })?,
-            );
-        }
+        let anchor = if let Some(ref path) = self.log_path {
+            self.append_chained(path, 1, &new_signing_key, |_, prev_hash| {
+                serde_json::to_string(&serde_json::json!({
+                    "prev_hash": prev_hash,
+                    "action": "key_rotation",
+                    "old_did": old_did,
+                    "new_did": new_did,
+                    "cose_envelope": rotation_envelope,
+                }))
+            })?
+            .finish()
+        } else {
+            Ok(())
+        };
 
         self.signing_key = new_signing_key;
         self.issuer_did = new_did.clone();
+        anchor?;
         Ok(new_did)
     }
 
     pub fn verify_log_integrity(&self) -> Result<bool> {
+        Ok(self.log_integrity()? == LogIntegrity::Verified)
+    }
+
+    /// Missing evidence never verifies; filesystem failures remain errors. Replay tolerance
+    /// is deliberately separate from verification of the complete signed history.
+    pub fn log_integrity(&self) -> Result<LogIntegrity> {
         let Some(ref path) = self.log_path else {
-            return Ok(true);
+            return Ok(LogIntegrity::Volatile);
         };
-        let Ok(file) = std::fs::File::open(path) else {
-            return Ok(true);
+        let known_head = *self.chain_head.lock();
+        let signed_bytes = match std::fs::read(path.with_extension("head")) {
+            Ok(bytes) => Some(bytes),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => return Err(e).context("failed to read provenance signed head"),
+        };
+        let file = match std::fs::File::open(path) {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Ok(if signed_bytes.is_some() || known_head != [0; 32] {
+                    LogIntegrity::Corrupt
+                } else {
+                    LogIntegrity::Empty
+                });
+            }
+            Err(e) => return Err(e).context("failed to open provenance log"),
         };
         let mut expected_prev = [0u8; 32];
         let mut computed_head = [0u8; 32];
         let mut has_entries = false;
         for line in std::io::BufReader::new(file).lines() {
             let line = line.map_err(|e| anyhow::anyhow!("log read error: {e}"))?;
-            let obj: serde_json::Value =
-                serde_json::from_str(&line).map_err(|e| anyhow::anyhow!("log parse error: {e}"))?;
-            let prev = obj
-                .get("prev_hash")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| anyhow::anyhow!("missing prev_hash"))?;
-            let declared = hex_decode(prev)?;
+            let Ok(obj) = serde_json::from_str::<serde_json::Value>(&line) else {
+                return Ok(LogIntegrity::Corrupt);
+            };
+            let Some(prev) = obj.get("prev_hash").and_then(|v| v.as_str()) else {
+                return Ok(LogIntegrity::Corrupt);
+            };
+            let Ok(declared) = hex_decode(prev) else {
+                return Ok(LogIntegrity::Corrupt);
+            };
             if declared != expected_prev {
-                return Ok(false);
+                return Ok(LogIntegrity::Corrupt);
             }
             computed_head = Sha256::digest(line.as_bytes()).into();
             expected_prev = computed_head;
             has_entries = true;
         }
-        if has_entries {
-            let head_path = path.with_extension("head");
-            if let Ok(signed_bytes) = std::fs::read(&head_path) {
-                let verifying_key = self.signing_key.verifying_key();
-                match cose::verify_and_extract(&verifying_key, &signed_bytes) {
-                    Ok(stored_head) => {
-                        if stored_head.as_slice() != computed_head {
-                            return Ok(false);
-                        }
-                    }
-                    Err(_) => return Ok(false),
-                }
-            }
+        anyhow::ensure!(
+            *self.chain_head.lock() == known_head,
+            "provenance log changed during verification; retry"
+        );
+        if computed_head != known_head {
+            return Ok(LogIntegrity::Corrupt);
         }
-        Ok(true)
+        let Some(signed_bytes) = signed_bytes else {
+            return Ok(if has_entries {
+                LogIntegrity::Unanchored
+            } else {
+                LogIntegrity::Empty
+            });
+        };
+        match cose::verify_and_extract(&self.signing_key.verifying_key(), &signed_bytes) {
+            Ok(stored_head) if stored_head.as_slice() == computed_head => {
+                Ok(LogIntegrity::Verified)
+            }
+            _ => Ok(LogIntegrity::Corrupt),
+        }
     }
 
     /// Replays the log into the live records and the chain head. A missing log is an empty
@@ -678,7 +740,7 @@ impl ProvenanceManager {
             )
             .collect::<Result<Vec<_>>>()?;
         // One append, sync and head signature for the whole batch.
-        let _head = match self.log_path {
+        let append = match self.log_path {
             Some(ref path) => Some(self.append_chained(
                 path,
                 records.len(),
@@ -698,6 +760,9 @@ impl ProvenanceManager {
             live.insert(fact_id.to_string(), record.clone());
         }
         drop(live);
+        if let Some(append) = append {
+            append.finish()?;
+        }
         Ok(records)
     }
 
@@ -1657,16 +1722,10 @@ fn unix_millis() -> u64 {
 }
 
 /// Signs `head` with `signing_key` and atomically replaces the log's `.head` file with it.
-fn write_signed_head(signing_key: &SigningKey, head: &[u8; 32], log_path: &Path) {
+fn write_signed_head(signing_key: &SigningKey, head: &[u8; 32], log_path: &Path) -> Result<()> {
     let head_path = log_path.with_extension("head");
-    match cose::sign_payload(signing_key, head) {
-        Ok(signed) => {
-            if let Err(e) = super::durable_file::atomic_write(&head_path, &signed) {
-                tracing::warn!("signed head write failed: {e}");
-            }
-        }
-        Err(e) => tracing::warn!("signed head signing failed: {e}"),
-    }
+    let signed = cose::sign_payload(signing_key, head).context("signed head signing failed")?;
+    super::durable_file::atomic_write(&head_path, &signed).context("signed head write failed")
 }
 
 /// Appends `bytes` to the file at `path` and syncs them to the drive. A failed write or sync
@@ -1895,6 +1954,121 @@ mod tests {
 
         let mgr2 = ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
         assert!(!mgr2.verify_log_integrity().unwrap());
+    }
+
+    #[test]
+    fn absent_history_is_not_authenticated_history() {
+        let (dir, mgr) = manager();
+        assert_eq!(mgr.log_integrity().unwrap(), LogIntegrity::Empty);
+        assert!(!mgr.verify_log_integrity().unwrap());
+        std::fs::write(dir.path().join("provenance_log.jsonl"), "").unwrap();
+        assert_eq!(mgr.log_integrity().unwrap(), LogIntegrity::Empty);
+        let volatile = ProvenanceManager::from_signing_key(mgr.signing_key.clone());
+        assert_eq!(volatile.log_integrity().unwrap(), LogIntegrity::Volatile);
+        assert!(!volatile.verify_log_integrity().unwrap());
+    }
+
+    #[test]
+    fn missing_truncated_or_reordered_evidence_never_verifies() {
+        for damage in [
+            "empty",
+            "missing",
+            "head",
+            "both",
+            "truncate",
+            "reorder",
+            "signature",
+        ] {
+            let (dir, mgr) = manager();
+            mgr.create_fact_provenance("one", b"one", None).unwrap();
+            mgr.create_fact_provenance("two", b"two", None).unwrap();
+            assert_eq!(mgr.log_integrity().unwrap(), LogIntegrity::Verified);
+            let log = dir.path().join("provenance_log.jsonl");
+            let head = log.with_extension("head");
+            let contents = std::fs::read_to_string(&log).unwrap();
+            let lines: Vec<_> = contents.lines().collect();
+            match damage {
+                "empty" => std::fs::write(&log, "").unwrap(),
+                "missing" => std::fs::remove_file(&log).unwrap(),
+                "head" => std::fs::remove_file(&head).unwrap(),
+                "both" => {
+                    std::fs::remove_file(&log).unwrap();
+                    std::fs::remove_file(&head).unwrap();
+                }
+                "truncate" => std::fs::write(&log, format!("{}\n", lines[0])).unwrap(),
+                "reorder" => std::fs::write(&log, format!("{}\n{}\n", lines[1], lines[0])).unwrap(),
+                "signature" => std::fs::write(&head, b"invalid signature").unwrap(),
+                _ => unreachable!(),
+            }
+            assert!(!mgr.verify_log_integrity().unwrap(), "{damage}");
+            drop(mgr);
+            let reopened =
+                ProvenanceManager::new(&dir.path().join("test.key"), Some(dir.path())).unwrap();
+            assert!(
+                !reopened.verify_log_integrity().unwrap(),
+                "reopened {damage}"
+            );
+        }
+    }
+
+    #[test]
+    fn unreadable_log_or_head_returns_an_error() {
+        for filename in ["provenance_log.jsonl", "provenance_log.head"] {
+            let (dir, mgr) = manager();
+            mgr.create_fact_provenance("one", b"one", None).unwrap();
+            let path = dir.path().join(filename);
+            std::fs::remove_file(&path).unwrap();
+            std::fs::create_dir(&path).unwrap();
+            assert!(mgr.verify_log_integrity().is_err(), "{filename}");
+        }
+    }
+
+    #[test]
+    fn failed_signed_head_reports_committed_state_and_preserves_replay() {
+        for operation in ["create", "delete", "batch", "rotate"] {
+            let (dir, mut mgr) = manager();
+            mgr.create_fact_provenance("one", b"one", None).unwrap();
+            let head = dir.path().join("provenance_log.head");
+            std::fs::remove_file(&head).unwrap();
+            std::fs::create_dir(&head).unwrap();
+            let new_key = dir.path().join("rotated.key");
+            let error = match operation {
+                "create" => mgr.create_fact_provenance("two", b"two", None).unwrap_err(),
+                "delete" => mgr.record_deletion("one", None).unwrap_err(),
+                "batch" => mgr
+                    .create_batch_provenance(&[("two", b"two", None)])
+                    .unwrap_err(),
+                "rotate" => mgr.rotate_key(&new_key).unwrap_err(),
+                _ => unreachable!(),
+            };
+            assert!(
+                error.is::<crate::CommittedMutationError>(),
+                "{operation}: {error:#}"
+            );
+            assert!(mgr.verify_log_integrity().is_err());
+            let before = mgr.record_count();
+            let issuer = mgr.issuer_did().to_string();
+            assert_eq!(mgr.get_record("one").is_some(), operation != "delete");
+            assert_eq!(
+                mgr.get_record("two").is_some(),
+                matches!(operation, "create" | "batch")
+            );
+            drop(mgr);
+            let key = if operation == "rotate" {
+                new_key
+            } else {
+                dir.path().join("test.key")
+            };
+            let reopened = ProvenanceManager::new(&key, Some(dir.path())).unwrap();
+            assert_eq!(reopened.record_count(), before);
+            assert_eq!(reopened.issuer_did(), issuer);
+            std::fs::remove_dir(&head).unwrap();
+            assert_eq!(reopened.log_integrity().unwrap(), LogIntegrity::Unanchored);
+            reopened
+                .create_fact_provenance("next", b"next", None)
+                .unwrap();
+            assert!(reopened.verify_log_integrity().unwrap());
+        }
     }
 
     #[test]

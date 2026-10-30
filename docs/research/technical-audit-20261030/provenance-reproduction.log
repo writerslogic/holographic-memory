@@ -1,0 +1,5 @@
+intact=Ok(true)
+empty_with_signed_head=Ok(true)
+missing_with_signed_head=Ok(true)
+head_missing=Ok(true)
+head_unreadable_directory=Ok(true)

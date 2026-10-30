@@ -1,0 +1,4 @@
+{"actual":{"model":"hms-hashing","revision":"uni-bi-v1","dimensions":384,"normalization":"l2","metric":"cosine"},"recorded":{"dimensions":384,"metric":"cosine","model":"different-model","normalization":"l2","revision":"different-revision"}}
+{"acceptedWrite":true,"recalled":["one"]}
+{"name":"boundary_whitespace","input":"  alpha  ","output":"\u0000\u0000alpha","equal":false}
+{"name":"nonoverlap_chunks","input":"alpha beta","output":"alpha\u0000beta","equal":false}

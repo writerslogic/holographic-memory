@@ -1,0 +1,4 @@
+injected interruption after first committed delete
+{"afterInterruptedClear":0,"retained":["session#0000000001","session#0000000002"]}
+{"afterRetriedClear":["session#0000000001","session#0000000002"]}
+{"afterAppend":["new first","second","third"]}

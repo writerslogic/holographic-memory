@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict'
+import { historyRecovery } from '../../../test/history-contract.mjs'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -91,6 +92,14 @@ test('an item larger than the 64 KiB metadata cap round trips byte-exactly', asy
   const [a, b] = await s.getItems()
   assert.equal(a.content[0].text, big)
   assert.equal(b.content[0].text, 'small')
+})
+
+historyRecovery({
+  name: 'OpenAI Agents', store,
+  create: (store) => new HmsSession({ store, sessionId: 'recovery' }),
+  append: (session, texts) => session.addItems(texts.map((text) => msg('user', text))),
+  read: async (session) => (await session.getItems()).map(itemText),
+  clear: (session) => session.clearSession(),
 })
 
 test('tool call items are stored and searchable by their name and result', async () => {
