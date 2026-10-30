@@ -30,36 +30,13 @@ impl SigningManager {
     /// If `key_path` exists, loads from it. Otherwise generates a new keypair
     /// and saves it to `key_path`.
     pub fn new(key_path: &Path) -> Result<Self> {
-        if key_path.exists() {
-            let mut key_bytes = std::fs::read(key_path)?;
-            if key_bytes.len() != 32 {
-                key_bytes.zeroize();
-                return Err(anyhow!(
-                    "Invalid signing key file: expected 32 bytes, got {}",
-                    key_bytes.len()
-                ));
-            }
-            let mut bytes: [u8; 32] = key_bytes[..32].try_into().expect("length checked above");
-            key_bytes.zeroize();
-            let signing_key = SigningKey::from_bytes(&bytes);
-            bytes.zeroize();
-            let verifying_key = signing_key.verifying_key();
-            Ok(Self {
-                signing_key,
-                verifying_key,
-            })
-        } else {
-            let signing_key = SigningKey::from_bytes(&rand::random());
-            let verifying_key = signing_key.verifying_key();
-            if let Some(parent) = key_path.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            write_private_key(key_path, &signing_key)?;
-            Ok(Self {
-                signing_key,
-                verifying_key,
-            })
-        }
+        let bytes = load_or_create::<32>(key_path, true)?;
+        let signing_key = SigningKey::from_bytes(&bytes);
+        let verifying_key = signing_key.verifying_key();
+        Ok(Self {
+            signing_key,
+            verifying_key,
+        })
     }
 
     /// Sign arbitrary data, returning a 64-byte Ed25519 signature.
@@ -90,25 +67,69 @@ impl SigningManager {
     }
 }
 
-/// Write an Ed25519 private key to disk. On unix the file is created with
-/// owner-only permissions (0600) so it is not world-readable on shared hosts;
-/// the serialized key bytes are zeroized immediately after writing.
 #[cfg(feature = "security")]
-fn write_private_key(key_path: &Path, signing_key: &SigningKey) -> Result<()> {
-    use std::io::Write;
-
-    let mut opts = std::fs::OpenOptions::new();
-    opts.write(true).create(true).truncate(true);
+fn read_fixed<const N: usize>(
+    path: &Path,
+    private: bool,
+) -> Result<Option<zeroize::Zeroizing<[u8; N]>>> {
+    use std::io::Read;
+    let mut file = match super::durable_file::open_regular(path, false) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error.into()),
+    };
+    anyhow::ensure!(
+        file.metadata()?.len() == N as u64,
+        "invalid identity file length: expected {N} bytes"
+    );
     #[cfg(unix)]
     {
-        use std::os::unix::fs::OpenOptionsExt;
-        opts.mode(0o600);
+        use std::os::unix::fs::PermissionsExt;
+        anyhow::ensure!(
+            !private || file.metadata()?.permissions().mode() & 0o077 == 0,
+            "signing key permissions must exclude group and other access"
+        );
     }
-    let mut file = opts.open(key_path)?;
-    let mut bytes = signing_key.to_bytes();
-    let result = file.write_all(&bytes);
-    bytes.zeroize();
-    result.map_err(|e| anyhow!("failed to write signing key: {e}"))
+    #[cfg(not(unix))]
+    let _ = private;
+    let mut bytes = zeroize::Zeroizing::new([0; N]);
+    file.read_exact(&mut *bytes)?;
+    let mut extra = zeroize::Zeroizing::new([0; 1]);
+    anyhow::ensure!(
+        file.read(&mut *extra)? == 0,
+        "identity file changed while reading"
+    );
+    Ok(Some(bytes))
+}
+
+#[cfg(feature = "security")]
+fn load_or_create<const N: usize>(
+    path: &Path,
+    private: bool,
+) -> Result<zeroize::Zeroizing<[u8; N]>> {
+    if let Some(bytes) = read_fixed(path, private)? {
+        super::durable_file::sync_directory(
+            path.parent()
+                .filter(|p| !p.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new(".")),
+        )?;
+        return Ok(bytes);
+    }
+    if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+        super::durable_file::create_identity_parent(parent)?;
+    }
+    let mut proposed = zeroize::Zeroizing::new([0; N]);
+    secure_random(&mut *proposed)?;
+    super::durable_file::atomic_create(path, &*proposed)?;
+    read_fixed(path, private)?.ok_or_else(|| anyhow!("identity disappeared after publication"))
+}
+
+#[cfg(feature = "security")]
+fn secure_random(bytes: &mut [u8]) -> Result<()> {
+    use rand::TryRng;
+    rand::rngs::SysRng
+        .try_fill_bytes(bytes)
+        .map_err(|_| anyhow!("operating system randomness unavailable"))
 }
 
 /// The AES-256-GCM cipher behind one heap allocation: moving the manager moves a pointer, not
@@ -148,28 +169,11 @@ impl EncryptionManager {
         use argon2::Argon2;
 
         let salt_path = storage_path.join("encryption.salt");
-        let salt = if salt_path.exists() {
-            let s = std::fs::read(&salt_path)?;
-            if s.len() != 16 {
-                return Err(anyhow!(
-                    "Invalid salt file: expected 16 bytes, got {}",
-                    s.len()
-                ));
-            }
-            s
-        } else {
-            let mut s = vec![0u8; 16];
-            use rand::Rng;
-            rand::rng().fill_bytes(&mut s);
-            // Durable before any frame is encrypted under it: a salt lost to a crash would
-            // make every frame written with the derived key unreadable.
-            super::durable_file::atomic_write(&salt_path, &s)?;
-            s
-        };
+        let salt = load_or_create::<16>(&salt_path, false)?;
 
-        let mut key = [0u8; 32]; // codeql[rust/hard-coded-cryptographic-value] False positive: buffer is overwritten by Argon2
+        let mut key = zeroize::Zeroizing::new([0u8; 32]);
         Argon2::default()
-            .hash_password_into(passphrase.as_bytes(), &salt, &mut key)
+            .hash_password_into(passphrase.as_bytes(), &*salt, &mut *key)
             .map_err(|e| anyhow!("Argon2 key derivation failed: {}", e))?;
 
         let cipher = Self::build_cipher(&key);
@@ -200,8 +204,7 @@ impl EncryptionManager {
     pub fn encrypt_with_aad(&self, plaintext: &[u8], aad: &[u8]) -> Result<Vec<u8>> {
         use aes_gcm::aead::Payload;
         let mut nonce_bytes = [0u8; 12];
-        use rand::Rng;
-        rand::rng().fill_bytes(&mut nonce_bytes);
+        secure_random(&mut nonce_bytes)?;
         let nonce = Nonce::try_from(nonce_bytes.as_slice())
             .map_err(|_| anyhow!("AES-256-GCM nonce construction failed"))?;
         let ciphertext = self
@@ -418,6 +421,142 @@ mod tests {
             mgr.verifying_key_bytes()
         };
         assert_eq!(vk1, vk2, "Reloaded key should match");
+    }
+
+    #[test]
+    fn concurrent_identity_creation_converges_without_replacement() {
+        let directory = tempdir().unwrap();
+        let path = directory.path().join("nested/key");
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(8));
+        let keys: Vec<_> = std::thread::scope(|scope| {
+            let handles: Vec<_> = (0..8)
+                .map(|_| {
+                    let path = &path;
+                    let barrier = &barrier;
+                    scope.spawn(move || {
+                        barrier.wait();
+                        SigningManager::new(path).unwrap().verifying_key_bytes()
+                    })
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        assert!(keys.iter().all(|key| *key == keys[0]));
+        assert_eq!(
+            SigningManager::new(&path).unwrap().verifying_key_bytes(),
+            keys[0]
+        );
+        let before = std::fs::read(&path).unwrap();
+        assert!(!super::super::durable_file::atomic_create(&path, &[0; 32]).unwrap());
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+    }
+
+    #[test]
+    fn concurrent_salt_creation_produces_interoperable_ciphertexts() {
+        let directory = tempdir().unwrap();
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let encrypted: Vec<_> = std::thread::scope(|scope| {
+            let handles: Vec<_> = (0..2)
+                .map(|_| {
+                    let directory = &directory;
+                    let barrier = &barrier;
+                    scope.spawn(move || {
+                        barrier.wait();
+                        EncryptionManager::new("shared", directory.path())
+                            .unwrap()
+                            .encrypt_with_aad(b"stored", b"domain")
+                            .unwrap()
+                    })
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        let reopened = EncryptionManager::new("shared", directory.path()).unwrap();
+        for ciphertext in &encrypted {
+            assert_eq!(
+                reopened.decrypt_with_aad(ciphertext, b"domain").unwrap(),
+                b"stored"
+            );
+            assert!(reopened
+                .decrypt_with_aad(ciphertext, b"other-domain")
+                .is_err());
+        }
+        assert_ne!(encrypted[0][..12], encrypted[1][..12]);
+    }
+
+    #[test]
+    fn identity_lengths_and_links_fail_without_rewriting_input() {
+        let directory = tempdir().unwrap();
+        let key = directory.path().join("key");
+        for size in [31, 32, 33, 1 << 20] {
+            let file = std::fs::File::create(&key).unwrap();
+            file.set_len(size).unwrap();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                file.set_permissions(std::fs::Permissions::from_mode(0o600))
+                    .unwrap();
+            }
+            assert_eq!(SigningManager::new(&key).is_ok(), size == 32);
+            assert_eq!(std::fs::metadata(&key).unwrap().len(), size);
+        }
+        let salt = directory.path().join("encryption.salt");
+        for size in [15, 16, 17] {
+            let file = std::fs::File::create(&salt).unwrap();
+            file.set_len(size).unwrap();
+            assert_eq!(read_fixed::<16>(&salt, false).is_ok(), size == 16);
+        }
+        std::fs::remove_file(&key).unwrap();
+        std::fs::create_dir(&key).unwrap();
+        assert!(SigningManager::new(&key).is_err());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::{symlink, PermissionsExt};
+            std::fs::remove_dir(&key).unwrap();
+            symlink(&salt, &key).unwrap();
+            assert!(SigningManager::new(&key).is_err());
+            assert!(key.symlink_metadata().unwrap().file_type().is_symlink());
+            std::fs::remove_file(&key).unwrap();
+            std::fs::write(&key, [0; 32]).unwrap();
+            std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o644)).unwrap();
+            assert!(SigningManager::new(&key).is_err());
+        }
+    }
+
+    #[test]
+    fn identity_publication_crash_child() {
+        let Some(path) = std::env::var_os("HMS_IDENTITY_TEST_PATH") else {
+            return;
+        };
+        SigningManager::new(Path::new(&path)).unwrap();
+        panic!("expected publication interruption");
+    }
+
+    #[test]
+    fn identity_reopens_after_each_publication_interruption() {
+        for phase in ["synced", "published", "durable"] {
+            let directory = tempdir().unwrap();
+            let path = directory.path().join("key");
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "core::security::tests::identity_publication_crash_child",
+                ])
+                .env("HMS_IDENTITY_TEST_PATH", &path)
+                .env("HMS_IDENTITY_CRASH_AT", phase)
+                .output()
+                .unwrap();
+            assert_eq!(output.status.code(), Some(84), "{phase}: {output:?}");
+            let published = std::fs::read(&path).ok();
+            assert_eq!(published.is_some(), phase != "synced");
+            let manager = SigningManager::new(&path).unwrap();
+            if let Some(bytes) = published {
+                assert_eq!(std::fs::read(&path).unwrap(), bytes);
+            }
+            let next = SigningManager::new(&path).unwrap();
+            next.verify(b"recovered", &manager.sign(b"recovered"))
+                .unwrap();
+        }
     }
 
     #[test]

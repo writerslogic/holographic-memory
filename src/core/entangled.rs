@@ -469,6 +469,13 @@ impl EntangledHVec {
         Self::bundle_dp_in_space(vectors, epsilon, dim)
     }
 
+    pub(crate) fn dp_scale(dim: usize, epsilon: f64) -> Option<f64> {
+        let scale = (dim / DEFAULT_RHO_DENOM).max(1) as f64 / epsilon;
+        // The inverse-CDF sampler's 53-bit uniform draw has |ln(tail)| < 64.
+        (epsilon.is_finite() && epsilon > 0.0 && scale > 0.0 && scale <= f64::MAX / 64.0)
+            .then_some(scale)
+    }
+
     pub(crate) fn bundle_dp_in_space<V: Borrow<Self>>(
         vectors: &[V],
         epsilon: f64,
@@ -485,6 +492,8 @@ impl EntangledHVec {
         if dim == 0 {
             return Self::from_indices(Vec::new(), 0);
         }
+        let scale =
+            Self::dp_scale(dim, epsilon).expect("epsilon is outside the supported numeric range");
         let contribution_limit = (dim / DEFAULT_RHO_DENOM).max(1);
         let mut counts = vec![0.0; dim];
         for vector in vectors {
@@ -492,14 +501,9 @@ impl EntangledHVec {
                 counts[index as usize] += 1.0;
             }
         }
-        // IMPORTANT: add/remove adjacency has L1 sensitivity contribution_limit.
-        // Every public-domain bin receives noise, including unobserved bins.
-        let scale = contribution_limit as f64 / epsilon;
-        assert!(
-            scale.is_finite() && scale > 0.0,
-            "epsilon is outside the supported numeric range"
-        );
-        let mut rng = rand::rng();
+        use rand::SeedableRng;
+        let mut rng = rand::rngs::StdRng::try_from_rng(&mut rand::rngs::SysRng)
+            .expect("operating system randomness unavailable");
         let mut scores: Vec<(u32, f64)> = counts
             .into_iter()
             .enumerate()
@@ -745,6 +749,13 @@ mod tests {
         assert_eq!(bundled.dim, dim);
         assert!(!bundled.indices.is_empty());
         assert!(bundled.indices.windows(2).all(|w| w[0] < w[1]));
+    }
+
+    #[test]
+    #[should_panic(expected = "epsilon is outside the supported numeric range")]
+    fn dp_rejects_finite_scales_whose_inverse_cdf_can_overflow() {
+        let vectors = [EntangledHVec::from_indices(vec![1], 256)];
+        EntangledHVec::bundle_dp(&vectors, 1e-308);
     }
 
     #[test]

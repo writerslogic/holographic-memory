@@ -37,6 +37,25 @@ encryption, signing, audit, and DP settings. Checksums detect accidental corrupt
 not authentication. An audit log records operation timing and ID hashes; low-entropy IDs may
 still be guessed. Signing does not provide confidentiality.
 
+Signing keys and encryption salts are published from synced temporary files without
+replacing an existing destination. Concurrent initializers reopen the same complete bytes.
+Reads require fixed lengths (32-byte signing seed, 16-byte salt), reject links/nonregular
+files, and do not allocate the file's advertised size. Unix signing keys must deny group
+and other access; existing permissive files require an intentional owner permission repair.
+Parent directories must be controlled by the service account. Windows deployments must
+provision restrictive parent ACLs; Unix mode checks do not establish Windows ACL policy.
+Creation does not imply automatic key rotation or backup recovery. Keep the salt with every
+encrypted backup; restore the appropriate signing key and configuration after rotation.
+
+GCM nonces use fallible OS randomness rather than fork-inherited thread-local generator
+state. This preserves the encrypted format and does not make random collisions impossible.
+For q invocations under one key, the ideal 96-bit birthday collision bound is
+q(q−1)/2^97. [NIST SP 800-38D §8.3](https://csrc.nist.gov/pubs/sp/800/38/d/final)
+limits invocations for its random-IV construction; HMS has no persistent cross-process,
+cross-backup key-usage accountant. Operators must budget all arena/cache/compaction writes
+and copied stores sharing a key. Changing a salt in place cannot rotate an encrypted store;
+re-encryption into a separately keyed store is required. No certification is asserted.
+
 ## Client-side vector masking
 
 `core::mask::VectorMask` (feature `security`) permutes vector coordinates with a secret
@@ -89,6 +108,13 @@ it has not been independently audited as a finite-precision DP mechanism. See th
 input); do not use that helper across datasets whose inferred dimensions can differ. Epsilon
 must be finite and positive. Lower values add more noise, but no epsilon value is universally
 appropriate for a category of sensitive data.
+
+The numeric guard also rejects scales above `f64::MAX / 64`, so the finite uniform
+sampler's inverse CDF cannot overflow into infinite scores. Every bundle seeds a fresh
+standard cryptographic generator from the OS, avoiding repeated noise from inherited
+thread-local state after a fork. OS entropy failure stops the infallible bundle API with
+a panic before any output. These checks do not establish finite-precision DP or compose
+the privacy cost of repeated releases.
 
 Repeated releases consume additional budget. The caller must account for every release and
 choose an adjacency model and privacy budget suitable for its use case. HMS does not provide

@@ -5,6 +5,36 @@ use anyhow::{bail, Result};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+pub(crate) fn open_regular(path: &Path, write: bool) -> std::io::Result<std::fs::File> {
+    let mut options = std::fs::OpenOptions::new();
+    options.read(!write).write(write);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x0020_0000); // FILE_FLAG_OPEN_REPARSE_POINT
+    }
+    let file = options.open(path)?;
+    let metadata = file.metadata()?;
+    let regular = metadata.is_file() && !metadata.file_type().is_symlink();
+    #[cfg(windows)]
+    let regular = {
+        use std::os::windows::fs::MetadataExt;
+        regular && metadata.file_attributes() & 0x400 == 0
+    };
+    if !regular {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "expected a regular file without a link",
+        ));
+    }
+    Ok(file)
+}
+
 pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     #[cfg(unix)]
     std::fs::File::open(path)?.sync_all()?;
@@ -76,7 +106,15 @@ pub(crate) fn scrub_remove_file(path: &Path) -> Result<()> {
         // Never write through a link; the target is not ours to overwrite.
         return Ok(std::fs::remove_file(path)?);
     }
-    let mut file = std::fs::OpenOptions::new().write(true).open(path)?;
+    let mut file = open_regular(path, true)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        anyhow::ensure!(
+            file.metadata()?.nlink() == 1,
+            "refusing to scrub a multiply linked file"
+        );
+    }
     let mut remaining = file.metadata()?.len();
     let zeros = vec![0u8; 1 << 20];
     file.seek(SeekFrom::Start(0))?;
@@ -145,6 +183,57 @@ fn write_file(path: &Path, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "security")]
+pub(crate) fn create_identity_parent(path: &Path) -> Result<()> {
+    let mut missing = Vec::new();
+    for dir in path.ancestors().filter(|p| !p.as_os_str().is_empty()) {
+        if dir.try_exists()? {
+            break;
+        }
+        missing.push(dir);
+    }
+    std::fs::create_dir_all(path)?;
+    for dir in missing.into_iter().rev() {
+        sync_directory(
+            dir.parent()
+                .filter(|p| !p.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new(".")),
+        )?;
+    }
+    Ok(())
+}
+
+#[cfg(feature = "security")]
+pub(crate) fn atomic_create(path: &Path, bytes: &[u8]) -> Result<bool> {
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let mut temp = tempfile::NamedTempFile::new_in(parent)?;
+    temp.write_all(bytes)?;
+    temp.as_file().sync_all()?;
+    sync_mapped_file(temp.as_file())?;
+    identity_crash_point("synced");
+    let created = match temp.persist_noclobber(path) {
+        Ok(_) => true,
+        Err(error) if error.error.kind() == std::io::ErrorKind::AlreadyExists => false,
+        Err(error) => return Err(error.into()),
+    };
+    identity_crash_point("published");
+    sync_directory(parent)?;
+    identity_crash_point("durable");
+    Ok(created)
+}
+
+#[cfg(feature = "security")]
+fn identity_crash_point(phase: &str) {
+    #[cfg(test)]
+    if std::env::var("HMS_IDENTITY_CRASH_AT").ok().as_deref() == Some(phase) {
+        std::process::exit(84);
+    }
+    let _ = phase;
+}
+
 /// Reads a checksummed manifest. A sidecar that does not match the bytes is an error; a
 /// manifest without a sidecar (written before sidecars existed) is returned unverified.
 pub(crate) fn read_manifest(path: &Path) -> Result<(Vec<u8>, bool)> {
@@ -195,4 +284,46 @@ pub(crate) fn arena_generation(base: &Path) -> Result<PathBuf> {
         bail!("arena generation is missing or is a symbolic link");
     }
     Ok(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scrub_rejects_non_files_and_preserves_external_hardlinks() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let directory = root.path().join("directory");
+        std::fs::create_dir(&directory)?;
+        assert!(scrub_remove_file(&directory).is_err());
+        #[cfg(unix)]
+        {
+            let external = root.path().join("external");
+            let candidate = root.path().join("candidate");
+            std::fs::write(&external, b"not owned by compaction")?;
+            std::fs::hard_link(&external, &candidate)?;
+            assert!(scrub_remove_file(&candidate).is_err());
+            assert_eq!(std::fs::read(&external)?, b"not owned by compaction");
+            std::fs::remove_file(&candidate)?;
+            std::os::unix::fs::symlink(&external, &candidate)?;
+            scrub_remove_file(&candidate)?;
+            assert_eq!(std::fs::read(&external)?, b"not owned by compaction");
+            assert!(!candidate.exists());
+        }
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn fifo_open_is_nonblocking_and_rejected() -> Result<()> {
+        use std::os::unix::ffi::OsStrExt;
+        let root = tempfile::tempdir()?;
+        let path = root.path().join("fifo");
+        let name = std::ffi::CString::new(path.as_os_str().as_bytes())?;
+        // SAFETY: name is NUL-terminated and lives through the call.
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+        assert!(open_regular(&path, false).is_err());
+        assert!(scrub_remove_file(&path).is_err());
+        Ok(())
+    }
 }

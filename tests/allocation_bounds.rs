@@ -51,6 +51,43 @@ fn measured<T>(f: impl FnOnce() -> T) -> (T, usize, usize, u128) {
     (result, BYTES.with(Cell::get), CALLS.with(Cell::get), micros)
 }
 
+#[cfg(feature = "security")]
+#[test]
+fn malformed_identity_files_do_not_allocate_their_declared_length() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("key");
+    let mut baseline = None;
+    for size in [31, 33, 128 << 20] {
+        std::fs::File::create(&path).unwrap().set_len(size).unwrap();
+        let mut config = HmsConfig::default();
+        config.security.signing_enabled = true;
+        config.security.key_path = Some(path.display().to_string());
+        let store = directory.path().join(format!("store-{size}"));
+        let (result, bytes, _, _) =
+            measured(|| HmsCore::new(256, Some(store.display().to_string()), Some(config)));
+        assert!(result.is_err());
+        let baseline = *baseline.get_or_insert(bytes);
+        assert!(
+            bytes <= baseline + 8192,
+            "{size}-byte input allocated {bytes} bytes, small malformed input used {baseline}"
+        );
+        assert_eq!(std::fs::metadata(&path).unwrap().len(), size);
+    }
+}
+
+#[test]
+fn extreme_privacy_scale_fails_before_store_creation() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("must-not-create");
+    let mut config = HmsConfig::default();
+    config.privacy.epsilon = 1e-308;
+    let error = HmsCore::new(256, Some(path.display().to_string()), Some(config))
+        .err()
+        .unwrap();
+    assert!(error.to_string().contains("privacy epsilon"));
+    assert!(!path.exists());
+}
+
 #[test]
 fn scanner_reuses_a_single_raw_buffer() {
     let raw = vec![7u8; 1024 * 1024];
