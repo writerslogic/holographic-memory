@@ -52,6 +52,13 @@ listing or similarity search. This adapter does not yet implement the complete
 Haystack DocumentStore protocol or support FilterRetriever. Call `store.close()`
 when finished. Do not treat unsupported operations as empty successful results.
 
+The Semantic Kernel adapter is currently unusable with its declared minimum
+`semantic-kernel==1.39.4`: its obsolete method names leave the framework's abstract
+methods unimplemented. Do not rely on its collection or retrieval methods.
+Restoring it also requires durable collection isolation and full-record retrieval;
+renaming methods alone would expose incomplete behavior. The extra remains
+available while that work is unresolved.
+
 The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
 
 ```bash

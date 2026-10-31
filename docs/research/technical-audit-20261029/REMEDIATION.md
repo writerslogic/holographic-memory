@@ -880,3 +880,15 @@ skips; package builds and workflow lints pass. Evidence and reproducible baselin
 are in `haystack-contracts-20261031/`. Exact-head CI remains required. This is
 partial adapter support, not full DocumentStore conformance: atomic FAIL/SKIP,
 full-document enumeration/filtering and serialization remain prerequisites.
+
+
+### Semantic Kernel minimum-version instantiation blocker (2026-10-31)
+
+Runtime inspection with semantic-kernel 1.39.4 / Python 3.10 confirms that all 12
+MemoryStoreBase methods remain abstract: the adapter uses obsolete `_async`
+names. Normal instantiation raises TypeError before any backend request. The
+prior unverified compatibility concern is now reproduced; source-level collection
+isolation concerns are still not runtime disclosure findings. SDK docs flag the
+adapter as unusable. `semantic-kernel-compatibility-20261031/` records the probe,
+log and restoration acceptance criteria. No extra or Python support was retired;
+renaming methods without replacing collection stubs would enable unsafe behavior.
