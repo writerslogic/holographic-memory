@@ -1,0 +1,12 @@
+{
+  "github_config": {
+    "id": 29953,
+    "crate": "warm-rust",
+    "repository_owner": "writerslogic",
+    "repository_owner_id": 257062916,
+    "repository_name": "warm",
+    "workflow_filename": "release.yml",
+    "environment": "crates-io",
+    "created_at": "2026-10-31T03:44:33.951086Z"
+  }
+}
