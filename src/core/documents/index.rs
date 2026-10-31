@@ -474,7 +474,11 @@ impl DocumentStore {
 
     /// A chunk's text from its inline copy or this store's text segment.
     pub(crate) fn chunk_text(&self, chunk: &StoredChunk) -> Option<String> {
-        text_of(chunk, self.text.as_deref())
+        self.try_chunk_text(chunk).expect("chunk text read")
+    }
+
+    pub(crate) fn try_chunk_text(&self, chunk: &StoredChunk) -> anyhow::Result<Option<String>> {
+        try_text_of(chunk, self.text.as_deref())
     }
 
     /// Whether document `id` is stored, here or live in the checkpoint under the store.
@@ -1269,7 +1273,7 @@ mod position_source_tests {
             vec![documents::prepare_search("red", &SearchOptions::default(), None).unwrap()],
         );
         let captured_result =
-            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap();
+            serde_json::to_value(documents::execute_search(&captured, 0).unwrap()).unwrap();
 
         store.insert(
             "live".into(),
@@ -1317,7 +1321,7 @@ mod position_source_tests {
         assert!(removed_source.upgrade().is_none());
         assert_eq!(serde_json::to_vec(&held).unwrap(), serialized);
         assert_eq!(
-            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+            serde_json::to_value(documents::execute_search(&captured, 0).unwrap()).unwrap(),
             captured_result
         );
         drop(held);

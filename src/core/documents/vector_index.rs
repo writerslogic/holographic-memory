@@ -50,7 +50,7 @@ use crate::core::sync::{Mutex, MutexGuard, RwLock};
 use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
 
-use super::index::{text_of, text_scrubbed};
+use super::index::{text_scrubbed, try_text_of};
 use super::{DocumentResult, DocumentStore, Embedding, StoredDocument, TextSegment};
 use crate::core::qgraph::{BuildParams, Graph, VGraph, VSearchParams};
 
@@ -613,23 +613,23 @@ struct Hit {
     score: f64,
 }
 
-fn to_result(hit: &Hit, segment: Option<&TextSegment>) -> DocumentResult {
+fn to_result(hit: &Hit, segment: Option<&TextSegment>) -> Result<DocumentResult> {
     let document = &hit.document;
     let chunk = &document.chunks[hit.chunk as usize];
     let score = hit.score.clamp(-1.0, 1.0);
-    DocumentResult {
+    Ok(DocumentResult {
         id: chunk.id.clone(),
         document_id: document.id.clone(),
         source_uri: document.source_uri.clone(),
         version: document.version.clone(),
         metadata: document.metadata.clone(),
-        text: text_of(chunk, segment),
+        text: try_text_of(chunk, segment)?,
         start_byte: chunk.start_byte,
         end_byte: chunk.end_byte,
         score,
         lexical_score: 0.0,
         semantic_score: Some(score),
-    }
+    })
 }
 
 /// Answers an unfiltered vector query from the snapshot. `query` is l2-normalised. `None`
@@ -648,7 +648,7 @@ pub(crate) fn search_vector_snapshot(
     else {
         return Ok(None);
     };
-    Ok(read_vector_hits(ranked, &store.read()))
+    read_vector_hits(ranked, &store.read())
 }
 
 /// The top hits of [`search_vector_snapshot`], ranked with no lock held across the scan;
@@ -664,14 +664,18 @@ pub(crate) struct RankedVectorHits {
 pub(crate) fn read_vector_hits(
     ranked: RankedVectorHits,
     _store: &DocumentStore,
-) -> Option<Vec<DocumentResult>> {
+) -> Result<Option<Vec<DocumentResult>>> {
     let segment = ranked.segment.as_deref();
     ranked
         .hits
         .iter()
         .map(|hit| {
             let scrubbed = text_scrubbed(&hit.document.chunks[hit.chunk as usize], segment);
-            (!scrubbed).then(|| to_result(hit, segment))
+            if scrubbed {
+                Ok(None)
+            } else {
+                to_result(hit, segment).map(Some)
+            }
         })
         .collect()
 }

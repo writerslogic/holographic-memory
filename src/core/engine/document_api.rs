@@ -219,7 +219,7 @@ impl WarmCore {
                 .into_iter()
                 .enumerate()
                 .map(|(i, hits)| documents::read_ranked(&captured, i, hits))
-                .collect();
+                .collect::<Result<_>>()?;
             if let Some(results) = read {
                 return Ok(results);
             }
@@ -227,9 +227,9 @@ impl WarmCore {
         self.hydrate_documents()?;
         let _transaction = self.mutation_gate.read();
         let captured = documents::capture_search(&self.documents.read(), captured.into_prepared());
-        Ok((0..captured.len())
+        (0..captured.len())
             .map(|i| documents::execute_search(&captured, i))
-            .collect())
+            .collect()
     }
 
     /// The number of documents containing at least one word of `text`: every document an
@@ -486,7 +486,7 @@ impl WarmCore {
                 let mut texts = Vec::with_capacity(document.chunks.len());
                 for chunk in &document.chunks {
                     texts.push(if chunk.vector_state == VectorState::Pending {
-                        Some(store.chunk_text(chunk).ok_or_else(|| {
+                        Some(store.try_chunk_text(chunk)?.ok_or_else(|| {
                             anyhow!(
                                 "document {} awaits deferred encoding but has no stored text",
                                 document.id
@@ -496,7 +496,7 @@ impl WarmCore {
                         None
                     });
                 }
-                let fingerprint = documents::document_fingerprint(&store, &document)
+                let fingerprint = documents::document_fingerprint(&store, &document)?
                     .ok_or_else(|| anyhow!("document {} has no stored text", document.id))?;
                 pending.push((document, fingerprint, texts));
             }

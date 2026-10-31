@@ -137,7 +137,7 @@ impl MemoryDocumentStore {
     pub fn search(&self, text: &str, options: &SearchOptions) -> Result<Vec<DocumentResult>> {
         let prepared = prepare_search(text, options, self.embedding_dimensions)?;
         let captured = capture_search(&self.store, vec![prepared]);
-        Ok(execute_search(&captured, 0))
+        execute_search(&captured, 0)
     }
 
     /// Removes a document; returns whether it existed.

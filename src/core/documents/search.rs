@@ -1079,15 +1079,18 @@ pub(crate) struct RankedHit {
 }
 
 impl RankedHit {
-    fn read(mut self, segment: Option<&super::text::TextSegment>) -> DocumentResult {
-        self.result.text = super::index::text_of(&self.document.chunks[self.chunk], segment);
-        self.result
+    fn read(mut self, segment: Option<&super::text::TextSegment>) -> Result<DocumentResult> {
+        self.result.text = super::index::try_text_of(&self.document.chunks[self.chunk], segment)?;
+        Ok(self.result)
     }
 }
 
 /// Ranks and reads a capture. A replace or delete scrubs the text it supersedes, so a capture
 /// that outlived the store's locks reads such text as empty (see [`read_ranked`]).
-pub(crate) fn execute_search(captured: &CapturedSearch, query: usize) -> Vec<DocumentResult> {
+pub(crate) fn execute_search(
+    captured: &CapturedSearch,
+    query: usize,
+) -> Result<Vec<DocumentResult>> {
     let segment = captured.queries[query].text.as_deref();
     rank_search(captured, query)
         .into_iter()
@@ -1107,12 +1110,16 @@ pub(crate) fn read_ranked(
     captured: &CapturedSearch,
     query: usize,
     hits: Vec<RankedHit>,
-) -> Option<Vec<DocumentResult>> {
+) -> Result<Option<Vec<DocumentResult>>> {
     let segment = captured.queries[query].text.as_deref();
     hits.into_iter()
         .map(|hit| {
             let scrubbed = super::index::text_scrubbed(&hit.document.chunks[hit.chunk], segment);
-            (!scrubbed).then(|| hit.read(segment))
+            if scrubbed {
+                Ok(None)
+            } else {
+                hit.read(segment).map(Some)
+            }
         })
         .collect()
 }
@@ -1419,7 +1426,8 @@ mod tests {
                                 super::super::search_impl(&store, query, &options, Some(3), false)
                                     .unwrap();
                             assert_eq!(
-                                serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                                serde_json::to_value(execute_search(&captured, 0).unwrap())
+                                    .unwrap(),
                                 serde_json::to_value(expected).unwrap()
                             );
                         }
@@ -1469,7 +1477,7 @@ mod tests {
             super::super::search_impl(&store, "common rare7", &options, Some(3), false).unwrap();
         store.insert("d007".into(), document(7, 3));
         assert_eq!(
-            serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+            serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap(),
             serde_json::to_value(expected).unwrap()
         );
     }
@@ -1515,7 +1523,7 @@ mod tests {
                 )
                 .unwrap();
                 assert_eq!(
-                    serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                    serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap(),
                     serde_json::to_value(expected).unwrap()
                 );
             }
@@ -1571,7 +1579,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+            serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap(),
             expected
         );
         let options = SearchOptions {
@@ -1593,7 +1601,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+            serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap(),
             expected
         );
     }
@@ -1735,7 +1743,7 @@ mod tests {
         assert!(old.upgrade().is_some());
         for (i, expected) in expected.into_iter().enumerate() {
             assert_eq!(
-                serde_json::to_value(execute_search(&captured, i)).unwrap(),
+                serde_json::to_value(execute_search(&captured, i).unwrap()).unwrap(),
                 expected
             );
         }
@@ -1768,7 +1776,7 @@ mod tests {
                 ));
             }
             assert_eq!(
-                serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap(),
                 serde_json::to_value(
                     super::super::search_impl(&store, text, &options, Some(3), false).unwrap()
                 )
@@ -1830,8 +1838,8 @@ mod tests {
             )],
         };
         (
-            serde_json::to_value(execute_search(&ranked, 0)).unwrap(),
-            serde_json::to_value(execute_search(&exhaustive, 0)).unwrap(),
+            serde_json::to_value(execute_search(&ranked, 0).unwrap()).unwrap(),
+            serde_json::to_value(execute_search(&exhaustive, 0).unwrap()).unwrap(),
         )
     }
 
@@ -2067,7 +2075,7 @@ mod tests {
                 ],
             };
             assert_eq!(
-                serde_json::to_value(execute_search(&mapped, 0)).unwrap(),
+                serde_json::to_value(execute_search(&mapped, 0).unwrap()).unwrap(),
                 expected,
                 "{text:?}"
             );
@@ -2169,7 +2177,7 @@ mod tests {
                 &store,
                 vec![prepare_search(&text, &options, Some(3)).unwrap()],
             );
-            let expected = serde_json::to_value(execute_search(&captured, 0)).unwrap();
+            let expected = serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap();
             for id in 0..count - 1 {
                 store.remove(&format!("d{id:03}"));
             }
@@ -2179,7 +2187,7 @@ mod tests {
                 &store.documents[&format!("d{:03}", count - 1)]
             ));
             assert_eq!(
-                serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap(),
                 expected
             );
         }
@@ -2220,7 +2228,7 @@ mod tests {
                 for _ in 0..8 {
                     for (i, expected) in expected.iter().enumerate() {
                         assert_eq!(
-                            serde_json::to_value(execute_search(&captured, i)).unwrap(),
+                            serde_json::to_value(execute_search(&captured, i).unwrap()).unwrap(),
                             *expected
                         );
                     }
@@ -2232,9 +2240,11 @@ mod tests {
                 vec![prepare_search("generation9", &SearchOptions::default(), Some(3)).unwrap()],
             );
             assert!(execute_search(&current, 0)
+                .unwrap()
                 .iter()
                 .all(|result| result.version == "9"));
             assert!(execute_search(&captured, 0)
+                .unwrap()
                 .iter()
                 .all(|result| result.version == "1"));
             assert_eq!(
@@ -2262,6 +2272,7 @@ mod tests {
                 vec![prepare_search("running", &options, Some(3)).unwrap()],
             );
             assert!(execute_search(&captured, 0)
+                .unwrap()
                 .iter()
                 .all(|result| result.score.is_finite()));
         }
@@ -2417,7 +2428,7 @@ mod latency_bench {
                     let t1 = Instant::now();
                     let captured = capture_search(&store, vec![prepared]);
                     let t2 = Instant::now();
-                    let hits = execute_search(&captured, 0);
+                    let hits = execute_search(&captured, 0).unwrap();
                     let t3 = Instant::now();
                     if pass == 0 {
                         let query = &captured.queries[0].prepared;

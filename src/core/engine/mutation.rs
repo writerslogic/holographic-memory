@@ -806,7 +806,7 @@ impl WarmCore {
                     .chunks
                     .iter()
                     .any(|chunk| chunk.vector_state == VectorState::Pending)
-                && document_fingerprint(&store, &document) == Some(fingerprint);
+                && document_fingerprint(&store, &document)? == Some(fingerprint);
             if !applicable {
                 return Ok(());
             }

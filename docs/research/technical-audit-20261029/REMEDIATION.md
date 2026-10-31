@@ -970,3 +970,46 @@ Follow-up call map (source inspection, not additional runtime reproductions):
 fingerprints and memory document views; those consumers must not silently turn
 errors into absent text. Existing `document_snapshot_tests` cover retained captures
 and concurrent deletion. Memory/get-view API changes require their own caller audit.
+
+
+### Fallible query text hydration (2026-10-31)
+
+Four runtime probes reproduce eight panics: text, vector-snapshot, phrase-fallback
+and captured queries each panic on truncated or same-length damaged cache text,
+despite already exposing Result contracts. Ranked hydration now propagates errors;
+a scrubbed capture remains a distinct retry outcome. Phrase fallback uses fallible
+text access, and in-memory search forwards the result. Four paired candidate
+probes pass; expanded mixed healthy/damaged-hit fixtures and seven existing
+snapshot/concurrency/recovery cases also pass (11 tests total). Evidence:
+`query-errors-20261031/`. Broader validation and CI remain pending.
+
+This closes the query-result slice of the preceding call map; deferred encoding
+is addressed below, while infallible views remain. Existing read guards across query text I/O remain;
+a separate change must capture and revalidate store/segment identity without
+weakening erasure or coherent retries. No new lock or critical-section extension
+is part of this error-propagation change.
+
+
+### Deferred-encoding cache failures and committed outcomes (2026-10-31)
+
+Two more probes reproduce four panics during encoding preparation or fingerprint
+validation at installation, for both truncation and same-length damage. The latter
+can happen after the encoding transaction is durable. Text/fingerprint reads now
+propagate errors; the existing post-commit wrapper reports CommittedMutationError
+instead of unwinding before reporting durability. Both tests pass: preparation
+leaves journal/revision unchanged, while a failed committed installation advances
+them and replay recovers encoded state from original text. Encoding is idempotent
+after repair/reopen. Evidence and independent reproduction patch are included in
+`query-errors-20261031/`; broader final validation and exact-head CI are pending.
+
+Remaining scope: legacy raw `WarmCore::query` logs deferred-catch-up failures and
+can omit pending vectors; existing get/list and memory-view helpers remain
+infallible. Do not claim full query completeness or universal I/O recovery.
+
+
+The combined query/encoding follow-up passes its final local gate: 11 snapshot,
+119 document (one deliberate benchmark skip), two deferred fault/replay, four
+ingest/postings, and 20 HTTP API tests; strict Clippy and scoped formatting pass.
+It is folded into PR #364 before merge, so its final exact-head CI covers chunk
+access, cache integrity, and error propagation together. The previous 3b5b61dd
+head had not completed its Windows gate and is not recorded as fully validated.
