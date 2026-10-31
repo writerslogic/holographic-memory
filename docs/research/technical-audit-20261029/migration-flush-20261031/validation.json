@@ -1,0 +1,66 @@
+{
+  "baseline": "5192ab7b",
+  "toolchain": "Rust 1.99.0",
+  "findings": [
+    {
+      "evidence": "src/core/admin.rs::copy_tree had cfg(unix) around file sync, explicitly excluding Windows.",
+      "classification": "Source-verified missing flush; not an observed hardware power-loss incident."
+    },
+    {
+      "evidence": "src/core/format/upgrade.rs copied retained files and top-level data-directory files without flushing their contents before publication.",
+      "classification": "Source-verified ordering gap."
+    }
+  ],
+  "mechanism": "One crate-private copy_file_synced helper retains native fs::copy, including native Windows metadata/alternate streams. Windows opens a writable flush handle after temporarily clearing the unpublished copy read-only bit when necessary, restoring it before propagating errors. Upgrade publication syncs directory entries where supported.",
+  "checks": [
+    {
+      "command": "cargo +1.99.0 test --offline --locked --lib core::admin::tests -- --test-threads=1",
+      "passed": 4,
+      "log": "admin-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --test format_upgrade_regressions -- --test-threads=1",
+      "passed": 8,
+      "log": "upgrade-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --lib --tests -- -D warnings",
+      "result": "pass",
+      "log": "clippy-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check",
+      "result": "pass",
+      "log": "fmt-final.log"
+    }
+  ],
+  "coverage": [
+    "Read-only nested file contents and permissions preserved, process lock excluded.",
+    "Mixed-version multi-tenant upgrade preserves read-only deployment metadata and current tenant arena.",
+    "Existing schema/checkpoint/source-byte preservation, audit-history upgrade and corruption checks pass."
+  ],
+  "limits": [
+    "Tests verify contents, permissions and workflows; they do not simulate hardware power loss.",
+    "No claim that the added data-preservation cases fail on the baseline: the missing sync was established by source inspection.",
+    "Windows runtime verification pending CI.",
+    "Windows directory sync remains a no-op; no complete power-loss or filesystem-independent durability guarantee.",
+    "No migration throughput measurement."
+  ],
+  "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers",
+  "integration_gate": "Pending PR and up-to-date main integration.",
+  "native_copy_refinement": {
+    "reason": "The initial unmerged stream-copy implementation would omit NTFS alternate streams preserved by native copying.",
+    "tests": "Windows-only alternate-stream assertions added to nested migration copies and top-level multi-tenant upgrade metadata. Their runtime verification awaits Windows CI.",
+    "local_final": {
+      "admin_tests": 4,
+      "upgrade_tests": 8,
+      "clippy": "pass",
+      "formatting": "pass",
+      "log_prefix": "native-"
+    },
+    "sources": [
+      "https://doc.rust-lang.org/std/fs/fn.copy.html",
+      "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-copyfilew"
+    ]
+  }
+}

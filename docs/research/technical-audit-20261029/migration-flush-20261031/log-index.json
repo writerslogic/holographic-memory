@@ -1,0 +1,42 @@
+[
+  {
+    "file": "admin-final.log",
+    "bytes": 668,
+    "sha256": "0b6f624b35bb03ac3ba15aabea82a4bea16bc71eea6ad3791e6c802c5907698d"
+  },
+  {
+    "file": "clippy-final.log",
+    "bytes": 136,
+    "sha256": "547e3f751ddee16943b84b90f8a1d0da83eafcdad0337ab9a3b61b32a6c6412d"
+  },
+  {
+    "file": "fmt-final.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "native-admin-final.log",
+    "bytes": 676,
+    "sha256": "135c5345435203fba8c188f06bc9c781e5462930c89b3edc4c84b9447239b27d"
+  },
+  {
+    "file": "native-clippy-final.log",
+    "bytes": 142,
+    "sha256": "d1c10176951793852c5d47f3227e9951f90af4aba4246cada2ace4f989086e81"
+  },
+  {
+    "file": "native-fmt-final.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "native-upgrade-final.log",
+    "bytes": 902,
+    "sha256": "2e3483c0a80af596717bd429f02e1c7000bc65df98c0065e3ccaf0545540591f"
+  },
+  {
+    "file": "upgrade-final.log",
+    "bytes": 896,
+    "sha256": "4763e3ad2f931dfe1ea59b9e56cee2f59b93f0f385341eccb6c92b470c53f9bf"
+  }
+]

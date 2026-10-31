@@ -69,6 +69,23 @@ or restart; the index is a runtime cache. Searches preserve the existing cosine 
 and metadata filters continue to apply before ranking. This method requires an
 `warm-server` version exposing `POST /api/v1/index/maintain`.
 
+## Timeouts and transport failures
+
+Both clients accept a timeout in seconds, `None`, or an `httpx.Timeout` with separate
+connect/read/write settings. For example, `timeout=httpx.Timeout(30.0, connect=5.0)`
+allows five seconds to connect and thirty seconds for subsequent I/O.
+
+The synchronous client's optimized transport handles plain HTTP without environment
+proxies. It applies each phase's socket timeout and preserves HTTPX
+phase-specific timeout/network errors. A read/write failure can occur after the server has
+received a mutation; reconcile its outcome before retrying. The transport does not
+resend failed requests. HTTPS URLs and configured proxies normally use HTTPX's own
+transport; passing an HTTPS request directly to `KeepAliveTransport` is rejected
+before any bytes are sent. A body-producer exception is raised before starting the
+HTTP exchange, so subsequent requests can still use the client. Connections are owned
+by their worker thread; the client's close registry does not retain sockets after a
+thread exits.
+
 ## Source Evidence
 
 `complete_evidence` packs complete source observations in your retrieval order. Each observation contains a turn handle, session handle, observation time, role, and verbatim text. Supply opaque caller IDs as lowercase SHA-256 hex handles, and keep their association with your original records.

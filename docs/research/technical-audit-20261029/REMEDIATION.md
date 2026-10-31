@@ -556,6 +556,59 @@ regression now verifies an alternate stream as well as ordinary bytes and
 permissions. The portable test, Clippy and formatting pass locally; Windows
 acceptance of this final metadata-preserving variant remains pending.
 
+### Python HTTP transport failure and lifetime contracts
+
+The plain-HTTP optimized SDK transport combined timeout budgets and classified
+post-send failures on fresh sockets as connection failures. It now applies separate
+connect/write/read socket deadlines and reports the matching HTTPX error class,
+without retrying requests. Direct HTTPS misuse is rejected before I/O (normal HTTPS
+clients already used HTTPX TLS). Body production happens before connection state
+changes, and a weak close registry stops retaining exited workers’ sockets.
+
+Five initial regressions and one thread-lifetime regression failed before their
+respective fixes. Real loopback checks plus client, memory and importer retry tests
+pass on CPython 3.10.19 and 3.14.7: 47 passed, one optional-orjson skip on each.
+Evidence, failed attempts and reproducible regression patches are retained in
+`python-transport-20261031/`. No latency, global pool-limit, automatic retry or
+restart-safe idempotency improvement is claimed. Full integration CI remains pending.
+
+Six additional SDK end-to-end tests pass against the actual local `warm-server`
+process, covering synchronous/asynchronous workflows, errors and request payloads.
+This complements the transport fixtures; it does not validate Windows execution.
+
+### Migration and upgrade file-flush ordering
+
+Source inspection found `admin::copy_tree` explicitly skipped Windows file flushes,
+and format upgrades copied retained/root-level files without flushing their contents
+before publication. A shared crate-private copy helper now flushes copied files and
+preserves permissions, retaining writable handles on Windows and native copies on
+Unix. Upgrade publication syncs staged directory entries where supported.
+
+Four admin tests and eight upgrade regressions pass locally, including read-only
+nested files, process-lock exclusion, mixed-version tenant arenas and read-only
+deployment metadata. Strict library/test Clippy and formatting pass. Evidence is
+in `migration-flush-20261031/`. These tests verify data and permissions, not hardware
+power-loss behavior; the missing flushes were established by source inspection, not
+by claiming a new test fails on the baseline. Windows execution and PR integration
+remain pending. Windows directory-sync limitations and throughput are unverified.
+
+The migration helper likewise retains native file copies rather than stream
+copying, preserving NTFS alternate streams. It restores the unpublished Windows
+copy’s read-only attribute after acquiring a writable flush handle, including the
+open-error path. Windows-only stream-preservation assertions cover both nested
+migration files and top-level upgrade metadata. The refined helper passes the
+four admin/eight upgrade checks and strict Clippy/format gates locally; its
+Windows execution is still pending. This does not prove power-loss durability.
+
+PR [#359](https://github.com/writerslogic/warm/pull/359) merged as `f78b2175`
+after 102 successful and 11 skipped check entries, no unresolved reviews and zero
+open code-scanning alerts. The merged tree exactly matches tested head `f0845612`.
+Windows run 41203375960 passed 806 default tests (14 skipped) and all 165 service
+tests (none skipped), including native-copy alternate streams, backup/restore,
+shutdown and idle boundaries. The final Windows log and check state are archived
+in `body-errors-20261031/`. This closes that PR’s integration gate; SDK/migration
+follow-up changes still require their own up-to-date CI gate.
+
 ### Dependency graph refresh and constrained remediation (2026-10-31)
 
 The refreshed GitHub dependency graph has **210 open alert records / 201 distinct

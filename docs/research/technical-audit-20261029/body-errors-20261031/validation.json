@@ -100,7 +100,19 @@
     "Streaming batches are not rolled back on body failure; retry requires reconciliation.",
     "No new restart-safe retry guarantee."
   ],
-  "integration_gate": "Pending PR checks; final tested head and merge record are authoritative.",
+  "integration_gate": {
+    "pr": 359,
+    "tested_head": "f08456123a6e9def8fe34d894393eaf063173caa",
+    "merge": "f78b2175a41d8558943755949642c6b19de33d6d",
+    "tested_and_merged_tree": "8d76cb1688414c5f2d76b23f06a63271655f996d",
+    "checks": {
+      "success": 102,
+      "skipped": 11
+    },
+    "unresolved_reviews": 0,
+    "open_code_scanning_alerts": 0,
+    "override": "Owner-review requirement only, after all checks completed successfully."
+  },
   "graph_contract": {
     "baseline": "a454f093",
     "baseline_failed": 1,
@@ -115,7 +127,7 @@
   "windows_coverage": {
     "previous": "Windows nextest job used default features; Cargo.toml default=[] excludes the HTTP and MCP binaries.",
     "added_command": "cargo nextest run --locked --features server,mcp --no-fail-fast --test-threads 1 --bin warm-server --bin warm-mcp --test server --test server_api --test server_ops --test server_abuse --test server_ann",
-    "status": "Initial expanded CI failed compiling an unconditional UnixListener import (run 41194768596). Unix-only variants, imports and cleanup are now platform-guarded; Windows rerun pending."
+    "status": "Run 41203375960 passed: default suite 806 passed/14 skipped; service suite 165 passed/0 skipped."
   },
   "integrated_main": "5192ab7b",
   "windows_console": {
@@ -140,7 +152,7 @@
     "local_snapshot_tests": 5,
     "local_clippy": "pass",
     "local_fmt": "pass",
-    "windows_acceptance": "Run 41199300291 passed the new read-only-copy regression and previously access-denied snapshot tests. Overall 162/165 passed; three timing/empty-response failures remain under investigation.",
+    "windows_acceptance": "Passed in run 41203375960, including the read-only/NTFS alternate-stream regression and backup round-trip.",
     "limits": [
       "Windows directory sync remains a no-op; this is not a full power-loss durability claim.",
       "Separate core admin migration copy_tree still skips Windows file flushing; not changed here.",
@@ -149,7 +161,7 @@
     "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers",
     "native_metadata": {
       "finding": "The initial unmerged byte-stream implementation omitted NTFS alternate streams; native fs::copy preserves them.",
-      "windows_test": "The read-only nested-file regression now also writes and verifies an NTFS alternate stream. Windows acceptance pending.",
+      "windows_test": "Read-only nested-file and NTFS alternate-stream assertions passed in run 41203375960.",
       "local_check": "Read-only-copy test, strict Clippy and formatting pass on macOS.",
       "sources": [
         "https://doc.rust-lang.org/std/fs/fn.copy.html",
@@ -186,6 +198,7 @@
       "No production throughput or latency claim.",
       "Empty backup response root cause not confirmed; serialization isolates cross-test contention and diagnostics identify the request if it recurs.",
       "Latest Windows CI required before merge."
-    ]
+    ],
+    "acceptance": "All 165 service checks passed in run 41203375960. Native copies and serialized fixtures were both changed; the earlier empty-response cause is not independently isolated."
   }
 }
