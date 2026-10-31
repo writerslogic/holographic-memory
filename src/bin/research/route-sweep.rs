@@ -124,14 +124,14 @@ fn run_route(
     kth: &[f64],
 ) -> Value {
     for q in queries.iter().take(10) {
-        let _ = warm.query(q, K as u32);
+        let _ = warm.query(q, K as u32).expect("vector query failed");
     }
     let route = warm.explain_query(&queries[0], K as u32).route;
     let mut lat = Vec::with_capacity(queries.len());
     let mut rec = Vec::with_capacity(queries.len());
     for (q, &kt) in queries.iter().zip(kth) {
         let t = Instant::now();
-        let res = warm.query(q, K as u32);
+        let res = warm.query(q, K as u32).expect("vector query failed");
         lat.push(t.elapsed().as_secs_f64() * 1e6);
         rec.push(recall(&res, vectors, q, kt));
     }

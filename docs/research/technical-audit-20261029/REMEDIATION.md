@@ -1217,3 +1217,54 @@ complete hash-bound OSV scan again reports four Chroma GHSA IDs and one DiskCach
 GHSA ID. This supersedes the preceding 246-package snapshot for final release
 assessment. Build and lock checks pass; final exact-head CI/merge remains pending.
 Evidence: [dspy-consumer-constraints-20261031/](dspy-consumer-constraints-20261031/).
+
+
+### Raw-vector query error propagation (2026-10-31, validation in progress)
+
+The deferred-encoding follow-up in PR #364 left raw `WarmCore::query` logging
+encoding errors and returning a successful subset. A new baseline regression
+confirms ten masked failures: dense-vector, triplet, analogy, sequence, and local
+federated entry points each return Ok for both a truncated cache and a same-length
+cache mutation. A healthy indexed row coexists with a pending document, so empty
+or partial success hides the failed catch-up. Revision/journal remain unchanged;
+repair and explicit encoding restore both indexed rows.
+
+The candidate changes `WarmCore::query`, `query_batch`, and `analyze_components`
+to return Result and propagates the error through existing fallible dense-vector,
+knowledge, authenticated, federated-local, and Node paths. Rust call sites must
+handle the new Result; in-tree fixtures, examples, benchmarks and callers are
+updated. Active benchmark callers now fail on query errors instead of measuring
+failed queries as successes; frozen benchmark evidence is preserved. The normal
+Node/C result shapes are unaffected; errors follow the existing binding channels.
+
+The stronger regression covers eight entry points before and after repair for
+both damage forms; it passes. All-feature/all-target compilation passes on Rust
+1.99.0. Engine concurrency/lifecycle tests pass (95 passed; one diagnostic test
+ignored because it requires an externally supplied index). Seven encoder-version,
+two ingest-mode, eleven reliability, and one security-sidecar tests pass. All 20
+HTTP API tests pass with `--test-threads=1`. The first parallel HTTP run passed 16
+and hit the existing 20-second response deadline in four tests; its log is retained.
+No deadline or assertion was relaxed. Serial success supports resource contention
+as an explanation, but does not establish the cause of the parallel timeouts.
+Strict all-feature/all-target Clippy with warnings denied and scoped formatting
+pass. Standalone ingest benchmark compilation first exposed an existing stale
+`IngestOptions` initializer; using the type's existing defaults for its additional
+fields restores compilation. Its check passes offline; the temporary lock seeded
+from the root lock is archived with the logs. The remote final gate remains.
+No change is made to lock ordering: document-store contention still
+skips catch-up and searches indexed vectors, as now explicitly documented. The
+API does not claim a full document snapshot under concurrent writes. Federated
+queries retain their explicitly documented remote-peer partial-failure policy;
+local encoding failure is an error. Existing infallible get/list and analogy
+convenience helpers remain separate work.
+
+Evidence: [raw-query-errors-20261031/](raw-query-errors-20261031/) contains the
+baseline probe, captured failure, passing corruption/recovery test and compilation
+log. This is separate from the SDK retirement PR #365 and is not merged yet.
+
+PR #365 subsequently merged as `50a6c9fe3049d48c2cdf205994efacfe6d3a60f0`:
+all 53 exact-head checks succeeded or were skipped, including required `check`
+from app 15368; no unresolved review threads or open code-scanning alerts.
+Only the owner-review requirement was bypassed. The verified signed merge tree
+matches tested tree `baf3a67a2600e9a7ad4b4b25ac5ecee893adcc4b`, and local main
+was fast-forwarded. Evidence: [SDK final gate](maintained-integrations-20261031/final-gate.json).

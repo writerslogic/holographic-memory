@@ -39,7 +39,11 @@ fn legacy_failed_audit_sync_does_not_hide_durable_create_or_delete() -> Result<(
                 .effect,
             "audit append"
         );
-        assert!(core.query(&vector, 10).iter().any(|hit| hit.id == id));
+        assert!(core
+            .query(&vector, 10)
+            .unwrap()
+            .iter()
+            .any(|hit| hit.id == id));
     }
     let error = core.delete("deleted").unwrap_err();
     assert_eq!(
@@ -51,12 +55,13 @@ fn legacy_failed_audit_sync_does_not_hide_durable_create_or_delete() -> Result<(
     );
     assert!(!core
         .query(&vector, 10)
+        .unwrap()
         .iter()
         .any(|hit| hit.id == "deleted"));
     drop(core);
     std::fs::remove_file(dir.path().join("audit.bin"))?;
     let core = WarmCore::new(1024, Some(path), Some(config))?;
-    let hits = core.query(&vector, 10);
+    let hits = core.query(&vector, 10).unwrap();
     assert!(hits.iter().any(|hit| hit.id == "survivor"));
     assert!(!hits.iter().any(|hit| hit.id == "deleted"));
     assert!(core.audit_since(0)?.is_empty());

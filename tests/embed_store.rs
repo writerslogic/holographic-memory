@@ -118,9 +118,10 @@ fn embedding_limits_fail_before_mutation_and_batches_share_one_admission() {
     assert!(core.try_find_analogy("cat", "dog", &oversized, 10).is_err());
     assert!(core.query_sequence(&[oversized], 10).is_err());
     let query = core.try_encode_text("cat").unwrap();
-    assert_eq!(core.query(&query, 16).len(), 8);
+    assert_eq!(core.query(&query, 16).unwrap().len(), 8);
     assert!(core
         .query(&query, 16)
+        .unwrap()
         .iter()
         .all(|hit| hit.similarity == 1.0));
     assert!(core.try_encode_text(" \t").unwrap().indices().is_empty());
@@ -128,9 +129,10 @@ fn embedding_limits_fail_before_mutation_and_batches_share_one_admission() {
     drop(core);
     let core = WarmCore::new(1024, Some(path), Some(cfg)).unwrap();
     assert_eq!(core.vector_count(), 8);
-    assert_eq!(core.query(&query, 16).len(), 8);
+    assert_eq!(core.query(&query, 16).unwrap().len(), 8);
     assert!(core
         .query(&query, 16)
+        .unwrap()
         .iter()
         .all(|hit| hit.similarity == 1.0));
 }

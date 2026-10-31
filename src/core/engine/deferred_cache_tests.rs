@@ -133,3 +133,56 @@ fn deferred_cache_failure_after_commit_reports_durability_and_replays() -> Resul
     );
     Ok(())
 }
+
+#[test]
+fn checked_queries_reject_partial_results_when_deferred_encoding_fails() -> Result<()> {
+    let mut accepted = Vec::new();
+    for truncate in [false, true] {
+        let directory = tempfile::tempdir()?;
+        let core = pending(directory.path())?;
+        let query = core.try_encode_text(TEXT)?;
+        core.memorize("healthy".into(), query.clone())?;
+        let revision = core.revision();
+        let journal = core.arena.checkpoint();
+        let original = damage(directory.path(), truncate)?;
+        let query_paths = || {
+            [
+                ("raw", core.query(&query, 10)),
+                (
+                    "batch",
+                    core.query_batch(std::slice::from_ref(&query), 10)
+                        .map(|groups| groups.into_iter().flatten().collect()),
+                ),
+                ("components", core.analyze_components(&query)),
+                ("dense", core.query_vector(&[1.0, 0.0], 10)),
+                (
+                    "triplet",
+                    core.query_triplet("head".into(), "relation".into(), 10),
+                ),
+                ("analogy", core.try_find_analogy("a", "b", "c", 10)),
+                ("sequence", core.query_sequence(&["needle".into()], 10)),
+                ("federated", core.federated_query(&[], &query, 10)),
+            ]
+        };
+        let outcomes = query_paths();
+        std::fs::write(directory.path().join("documents.text"), original)?;
+        for (path, outcome) in outcomes {
+            if outcome.is_ok() {
+                accepted.push((truncate, path));
+            }
+        }
+        assert_eq!(core.revision(), revision);
+        assert_eq!(core.arena.checkpoint(), journal);
+        assert_eq!(core.documents.read().pending_vector_count(), 1);
+        assert_eq!(core.encode_pending_documents()?, 1);
+        assert_eq!(core.query_vector(&[1.0, 0.0], 10)?.len(), 2);
+        for (path, outcome) in query_paths() {
+            assert!(outcome.is_ok(), "repaired {path} query failed: {outcome:?}");
+        }
+    }
+    assert!(
+        accepted.is_empty(),
+        "queries accepted incomplete results: {accepted:?}"
+    );
+    Ok(())
+}

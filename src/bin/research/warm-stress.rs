@@ -231,7 +231,7 @@ fn run_query_scaling(dim: usize, n: usize) -> ScalingResult {
     let bf_start = Instant::now();
     let mut bf_result = Vec::new();
     for _ in 0..n_queries {
-        bf_result = warm.query(&q_vec, 5);
+        bf_result = warm.query(&q_vec, 5).expect("vector query failed");
     }
     let bf_us = bf_start.elapsed().as_secs_f64() * 1_000_000.0 / n_queries as f64;
 
@@ -302,7 +302,7 @@ fn run_retrieval_quality(dim: usize, n_patterns: usize, n_queries: usize) -> Qua
         );
         let q_vec = warm.encode_text(&text);
 
-        let bf = warm.query(&q_vec, 5);
+        let bf = warm.query(&q_vec, 5).expect("vector query failed");
         let hf = warm.query_hopfield(&q_vec, 5);
 
         if let (Some(bf1), Some(hf1)) = (bf.first(), hf.first()) {

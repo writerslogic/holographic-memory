@@ -386,6 +386,7 @@ fn vector_hits(core: &WarmCore) -> Vec<String> {
         let probe = core.encode_text(&words(&mut state, 12));
         let mut hits: Vec<_> = core
             .query(&probe, 4096)
+            .unwrap()
             .into_iter()
             .map(|hit| (hit.similarity.to_bits(), hit.id))
             .collect();

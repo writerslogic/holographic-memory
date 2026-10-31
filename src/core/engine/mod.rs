@@ -1026,7 +1026,7 @@ impl WarmCore {
 
         let k = k as usize;
 
-        let local_results = self.query(query_vec, k as u32);
+        let local_results = self.query(query_vec, k as u32)?;
 
         let peer_outcomes: Vec<(String, Result<Vec<super::types::RetrievalResult>>)> = peer_paths
             .par_iter()
@@ -1036,7 +1036,7 @@ impl WarmCore {
                     Some(path.clone()),
                     Some(self.config.clone()),
                 )
-                .map(|peer| peer.query(query_vec, k as u32));
+                .and_then(|peer| peer.query(query_vec, k as u32));
                 (path.clone(), outcome)
             })
             .collect();

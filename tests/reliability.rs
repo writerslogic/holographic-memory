@@ -92,7 +92,7 @@ fn post_training_insert_survives_restart() -> anyhow::Result<()> {
     warm.flush()?;
     drop(warm);
     let warm = WarmCore::new(4096, Some(path), None)?;
-    assert_eq!(warm.query(&newest, 1)[0].id, "newest");
+    assert_eq!(warm.query(&newest, 1).unwrap()[0].id, "newest");
     Ok(())
 }
 
@@ -123,7 +123,7 @@ fn concurrent_updates_and_compaction_replay_identically() -> anyhow::Result<()> 
     assert_eq!(warm.vector_count(), 60);
     for i in (0..90).filter(|i| i % 3 != 0) {
         let vector = EntangledHVec::new_deterministic(4096, i + 1000);
-        assert_eq!(warm.query(&vector, 1)[0].id, format!("item-{i}"));
+        assert_eq!(warm.query(&vector, 1).unwrap()[0].id, format!("item-{i}"));
     }
     Ok(())
 }
@@ -190,7 +190,9 @@ fn corrupt_ann_cache_does_not_prevent_recovery_of_durable_data() -> anyhow::Resu
     let warm = WarmCore::new(4096, Some(path), None)?;
     assert_eq!(warm.vector_count(), 1000);
     assert_eq!(
-        warm.query(&EntangledHVec::new_deterministic(4096, 123), 1)[0].id,
+        warm.query(&EntangledHVec::new_deterministic(4096, 123), 1)
+            .unwrap()[0]
+            .id,
         "v123"
     );
     Ok(())
@@ -224,12 +226,12 @@ fn every_query_route_returns_best_match_first() -> anyhow::Result<()> {
     for i in 0..40 {
         single.memorize(format!("s-{i}"), scalar(i))?;
     }
-    assert_best_first(&single.query(&query, 5), "s-20");
+    assert_best_first(&single.query(&query, 5).unwrap(), "s-20");
     assert_best_first(&single.federated_query(&[], &query, 5)?, "s-20");
     for i in 40..1200 {
         single.memorize(format!("s-{i}"), scalar(i))?;
     }
-    assert_best_first(&single.query(&query, 5), "s-20");
+    assert_best_first(&single.query(&query, 5).unwrap(), "s-20");
 
     // Multi-shard merge.
     let dir = tempfile::tempdir()?;
@@ -244,6 +246,6 @@ fn every_query_route_returns_best_match_first() -> anyhow::Result<()> {
     for i in 0..40 {
         sharded.memorize(format!("s-{i}"), scalar(i))?;
     }
-    assert_best_first(&sharded.query(&query, 5), "s-20");
+    assert_best_first(&sharded.query(&query, 5).unwrap(), "s-20");
     Ok(())
 }

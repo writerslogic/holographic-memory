@@ -167,7 +167,7 @@ mod tests {
         assert_eq!(ids.len(), 2);
         drop(core);
         let core = open(dir.path())?;
-        assert_eq!(core.query(&vector, 10)[0].id, "durable");
+        assert_eq!(core.query(&vector, 10).unwrap()[0].id, "durable");
         let entries = core.audit_since(0)?;
         assert_eq!(
             entries

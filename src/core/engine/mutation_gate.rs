@@ -173,7 +173,7 @@ mod tests {
         });
         let reader_core = Arc::clone(&core);
         let (tx, rx) = mpsc::channel();
-        let reader = std::thread::spawn(move || tx.send(reader_core.query(&vector, 1)));
+        let reader = std::thread::spawn(move || tx.send(reader_core.query(&vector, 1).unwrap()));
         let observation = rx.recv_timeout(Duration::from_secs(5));
         drop(documents);
         compactor.join().unwrap()?;

@@ -359,8 +359,7 @@ impl WarmMemorySystem {
             let _span =
                 info_span!("query", k = k, trace_id = trace_id.as_deref().unwrap_or("")).entered();
             let q_vec = core.try_encode_text(&text)?;
-            let results = core.query(&q_vec, k);
-            Ok(results)
+            core.query(&q_vec, k)
         })
         .await
     }
@@ -386,8 +385,7 @@ impl WarmMemorySystem {
         let core = self.core.clone();
         run_async(move || {
             let q_vec = EntangledHVec::from_scalar(value, min, max, core.dimensions());
-            let results = core.query(&q_vec, k);
-            Ok(results)
+            core.query(&q_vec, k)
         })
         .await
     }
@@ -406,7 +404,7 @@ impl WarmMemorySystem {
                 .iter()
                 .map(|t| core.try_encode_text(t))
                 .collect::<anyhow::Result<_>>()?;
-            Ok(core.query_batch(&queries, k))
+            core.query_batch(&queries, k)
         })
         .await
     }
@@ -435,8 +433,7 @@ impl WarmMemorySystem {
         let core = self.core.clone();
         run_async(move || {
             let vec = core.try_encode_text(&text)?;
-            let results = core.analyze_components(&vec);
-            Ok(results)
+            core.analyze_components(&vec)
         })
         .await
     }

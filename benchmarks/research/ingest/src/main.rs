@@ -41,9 +41,9 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
-use writerslogic_warm::{DocumentInput, WarmCore, SearchOptions};
 use serde::{Deserialize, Serialize};
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -147,7 +147,12 @@ fn median(values: &[f64]) -> Option<f64> {
     })
 }
 
-fn build(documents: &[DocumentInput], dim: usize, batch: usize, options: &IngestOptions) -> Result<Built> {
+fn build(
+    documents: &[DocumentInput],
+    dim: usize,
+    batch: usize,
+    options: &IngestOptions,
+) -> Result<Built> {
     let dir = tempfile::tempdir().context("temporary store directory")?;
     let start = Instant::now();
     let core = WarmCore::new(dim as u32, Some(dir.path().display().to_string()), None)?;
@@ -167,6 +172,7 @@ fn build(documents: &[DocumentInput], dim: usize, batch: usize, options: &Ingest
 
 fn vector_hits(core: &WarmCore, text: &str) -> BTreeSet<(String, u64)> {
     core.query(&core.encode_text(text), 4096)
+        .expect("vector query failed")
         .into_iter()
         .map(|hit| (hit.id, hit.similarity.to_bits()))
         .collect()
@@ -177,9 +183,12 @@ fn main() -> Result<()> {
     ensure!(args.repeats >= 1, "repeats must be at least 1");
     ensure!(args.batch >= 1, "batch must be at least 1");
     let mode: EncodeMode = args.encode.parse()?;
-    let options = IngestOptions { encode: mode };
-    let bytes = std::fs::read(&args.input)
-        .with_context(|| format!("read {}", args.input.display()))?;
+    let options = IngestOptions {
+        encode: mode,
+        ..Default::default()
+    };
+    let bytes =
+        std::fs::read(&args.input).with_context(|| format!("read {}", args.input.display()))?;
     let mut input: Input = serde_json::from_slice(&bytes).context("parse input JSON")?;
     let store_text = match args.store_text.as_str() {
         "auto" => (mode == EncodeMode::Deferred).then_some(true),
@@ -224,8 +233,13 @@ fn main() -> Result<()> {
     let mut vector_mismatches = Vec::new();
     let queries: Vec<&Query> = input.queries.iter().take(args.parity_queries).collect();
     for query in &queries {
-        let expected = serde_json::to_value(reference.core.search_documents(&query.text, &query.options)?)?;
-        let actual = serde_json::to_value(last.core.search_documents(&query.text, &query.options)?)?;
+        let expected = serde_json::to_value(
+            reference
+                .core
+                .search_documents(&query.text, &query.options)?,
+        )?;
+        let actual =
+            serde_json::to_value(last.core.search_documents(&query.text, &query.options)?)?;
         if expected != actual {
             lexical_mismatches.push(query.id.clone());
         }

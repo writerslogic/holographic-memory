@@ -556,7 +556,7 @@ mod tests {
         assert_eq!(core.relation_count(), 0);
         assert_eq!(core.vector_count(), 3);
         assert_eq!(
-            core.query(&core.encode_text("replacement"), 1)[0].id,
+            core.query(&core.encode_text("replacement"), 1).unwrap()[0].id,
             "vector"
         );
         Ok(serde_json::to_value(results)?)
@@ -868,7 +868,7 @@ mod tests {
             assert_eq!(result.is_ok(), delta == 0);
             assert!(!core.storage_path.join("vectors_data.bin/CURRENT").exists());
             assert_eq!(
-                core.query(&core.encode_text("acknowledged"), 1)[0].id,
+                core.query(&core.encode_text("acknowledged"), 1).unwrap()[0].id,
                 "after"
             );
         }
