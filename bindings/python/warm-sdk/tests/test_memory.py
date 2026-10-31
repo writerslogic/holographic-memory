@@ -240,21 +240,15 @@ def test_capability_negotiation_preserves_service_errors():
             return httpx.Response(422, json={"error": {"code": "invalid_request", "message": "unsupported contractVersion"}})
         return httpx.Response(200, json={"capabilities": {"profile": "temporal-memory-v1", "contractVersion": 1}})
 
-    client = WarmClient("http://fixture.invalid", transport=httpx.MockTransport(handler))
-    try:
+    with WarmClient("http://fixture.invalid", transport=httpx.MockTransport(handler)) as client:
         assert client.memory.capabilities()["profile"] == "temporal-memory-v1"
         with pytest.raises(memory_module.MemoryError) as error:
             client.memory.capabilities(2)
         assert error.value.code == "invalid_request"
-    finally:
-        client.close()
 
     async def run():
-        client = AsyncWarmClient("http://fixture.invalid", transport=httpx.MockTransport(handler))
-        try:
+        async with AsyncWarmClient("http://fixture.invalid", transport=httpx.MockTransport(handler)) as client:
             assert (await client.memory.capabilities())["contractVersion"] == 1
             with pytest.raises(memory_module.MemoryError):
                 await client.memory.capabilities(2)
-        finally:
-            await client.aclose()
     asyncio.run(run())

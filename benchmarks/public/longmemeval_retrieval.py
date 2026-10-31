@@ -21,7 +21,7 @@ from pathlib import Path
 import longmemeval_pipeline as P
 from longmemeval_answer_evidence import _observation_key
 from longmemeval_dev_conversations import load_dev_conversations
-from proxies.beir_proxies import BM25, STOP, tok_warm
+from proxies.beir_proxies import BM25, STOP
 
 ROOT = Path(__file__).resolve().parents[2]
 SPLIT = ROOT / "benchmarks/public/longmemeval_split.json"

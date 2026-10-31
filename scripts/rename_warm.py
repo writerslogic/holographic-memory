@@ -4,7 +4,6 @@ import hashlib
 import json
 import pathlib
 import re
-import shutil
 import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
