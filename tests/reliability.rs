@@ -49,10 +49,10 @@ fn relation_deletion_survives_restart() -> anyhow::Result<()> {
     }))?;
     warm.add_relation(&relation)?;
     warm.remove_relation("a", "knows", "b")?;
-    assert_eq!(hms.relation_count(), 0);
-    hms.flush()?;
-    drop(hms);
-    assert_eq!(HmsCore::new(4096, Some(path), None)?.relation_count(), 0);
+    assert_eq!(warm.relation_count(), 0);
+    warm.flush()?;
+    drop(warm);
+    assert_eq!(WarmCore::new(4096, Some(path), None)?.relation_count(), 0);
     Ok(())
 }
 
@@ -60,8 +60,8 @@ fn relation_deletion_survives_restart() -> anyhow::Result<()> {
 fn incompatible_dimensions_are_rejected() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
     let path = dir.path().display().to_string();
-    drop(HmsCore::new(4096, Some(path.clone()), None)?);
-    assert!(HmsCore::new(8192, Some(path), None).is_err());
+    drop(WarmCore::new(4096, Some(path.clone()), None)?);
+    assert!(WarmCore::new(8192, Some(path), None).is_err());
     Ok(())
 }
 
