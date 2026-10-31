@@ -1,0 +1,307 @@
+diff --git a/bindings/python/warm-sdk/README.md b/bindings/python/warm-sdk/README.md
+index ba2ad7a7..f17339b1 100644
+--- a/bindings/python/warm-sdk/README.md
++++ b/bindings/python/warm-sdk/README.md
+@@ -65,6 +65,21 @@ or restart; the index is a runtime cache. Searches preserve the existing cosine
+ and metadata filters continue to apply before ranking. This method requires an
+ `warm-server` version exposing `POST /api/v1/index/maintain`.
+ 
++## Timeouts and transport failures
++
++Both clients accept a timeout in seconds, `None`, or an `httpx.Timeout` with separate
++connect/read/write settings. For example, `timeout=httpx.Timeout(30.0, connect=5.0)`
++allows five seconds to connect and thirty seconds for subsequent I/O.
++
++The synchronous client's optimized transport handles plain HTTP without environment
++proxies. It applies each phase's socket timeout and raises the corresponding HTTPX
++connect, write or read error. A read/write failure can occur after the server has
++received a mutation; reconcile its outcome before retrying. The transport does not
++resend failed requests. HTTPS URLs and configured proxies normally use HTTPX's own
++transport; passing an HTTPS request directly to `KeepAliveTransport` is rejected
++before any bytes are sent. A body-producer exception is raised before starting the
++HTTP exchange, so subsequent requests can still use the client.
++
+ ## Source Evidence
+ 
+ `complete_evidence` packs complete source observations in your retrieval order. Each observation contains a turn handle, session handle, observation time, role, and verbatim text. Supply opaque caller IDs as lowercase SHA-256 hex handles, and keep their association with your original records.
+diff --git a/bindings/python/warm-sdk/tests/test_transport.py b/bindings/python/warm-sdk/tests/test_transport.py
+index 7024227d..0f59e7a2 100644
+--- a/bindings/python/warm-sdk/tests/test_transport.py
++++ b/bindings/python/warm-sdk/tests/test_transport.py
+@@ -1,3 +1,4 @@
++import gc
+ import json
+ import math
+ import socket
+@@ -19,15 +20,35 @@ class _Handler(BaseHTTPRequestHandler):
+     # dropping idle keep-alive connections does.
+     drop_after_response = False
+ 
++    def setup(self):
++        super().setup()
++        with self.server.connection_lock:
++            self.server.open_connections += 1
++            self.server.no_connections.clear()
++
++    def finish(self):
++        try:
++            super().finish()
++        finally:
++            with self.server.connection_lock:
++                self.server.open_connections -= 1
++                if self.server.open_connections == 0:
++                    self.server.no_connections.set()
++
+     def do_POST(self):
+         body = self.rfile.read(int(self.headers["Content-Length"]))
+         self.server.seen.append((self.path, self.headers.get("Authorization"), body))
++        if self.path == "/slow":
++            time.sleep(0.6)
+         reply = json.dumps({"matches": [], "port": self.client_address[1]}).encode()
+         self.send_response(200)
+         self.send_header("Content-Type", "application/json")
+         self.send_header("Content-Length", str(len(reply)))
+         self.end_headers()
+-        self.wfile.write(reply)
++        try:
++            self.wfile.write(reply)
++        except (BrokenPipeError, ConnectionResetError):
++            self.close_connection = True
+         if self.drop_after_response:
+             self.close_connection = True
+ 
+@@ -41,6 +62,10 @@ def server():
+         handler = type("Handler", (_Handler,), {"drop_after_response": drop_after_response})
+         srv = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+         srv.seen = []
++        srv.connection_lock = threading.Lock()
++        srv.open_connections = 0
++        srv.no_connections = threading.Event()
++        srv.no_connections.set()
+         threading.Thread(target=srv.serve_forever, daemon=True).start()
+         servers.append(srv)
+         return srv, f"http://127.0.0.1:{srv.server_address[1]}"
+@@ -98,3 +123,104 @@ def test_json_body_rejects_non_finite_numbers(monkeypatch, use_orjson):
+     for bad in (math.nan, math.inf):
+         with pytest.raises(ValueError):
+             client_module._dumps({"query_vector": [0.0, bad]})
++
++
++def test_transport_rejects_https_before_sending_plaintext(server):
++    srv, url = server()
++    with httpx.Client(transport=KeepAliveTransport()) as client:
++        with pytest.raises(httpx.UnsupportedProtocol):
++            client.post(url.replace("http:", "https:", 1), content=b"private body")
++    assert srv.seen == []
++
++
++@pytest.mark.parametrize("reuse", [False, True])
++def test_transport_read_timeout_is_not_a_connect_timeout_or_the_connect_budget(server, reuse):
++    srv, url = server()
++    timeout = httpx.Timeout(2.0, read=0.05)
++    with httpx.Client(transport=KeepAliveTransport(), timeout=timeout) as client:
++        if reuse:
++            client.post(url + "/ready", content=b"ready").raise_for_status()
++        with pytest.raises(httpx.ReadTimeout):
++            client.post(url + "/slow", content=b"already sent")
++    assert [path for path, _, _ in srv.seen] == (["/ready", "/slow"] if reuse else ["/slow"])
++
++
++def test_transport_body_producer_failure_does_not_poison_the_connection(server):
++    srv, url = server()
++
++    def failed_body():
++        yield b"prefix"
++        raise RuntimeError("producer failed")
++
++    with httpx.Client(transport=KeepAliveTransport()) as client:
++        with pytest.raises(RuntimeError, match="producer failed"):
++            client.post(url + "/failed", content=failed_body())
++        response = client.post(url + "/healthy", content=b"valid")
++        response.raise_for_status()
++    assert [path for path, _, _ in srv.seen] == ["/healthy"]
++
++
++def test_transport_blocked_write_raises_write_timeout_without_retrying():
++    accepted = threading.Event()
++    release = threading.Event()
++    with socket.socket() as listener:
++        listener.bind(("127.0.0.1", 0))
++        listener.listen(1)
++        listener.settimeout(5)
++
++        def hold_connection():
++            with listener.accept()[0] as connection:
++                connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
++                accepted.set()
++                release.wait(5)
++
++        thread = threading.Thread(target=hold_connection, daemon=True)
++        thread.start()
++        try:
++            timeout = httpx.Timeout(2.0, write=0.05)
++            with httpx.Client(transport=KeepAliveTransport(), timeout=timeout) as client:
++                with pytest.raises(httpx.WriteTimeout):
++                    client.post(f"http://127.0.0.1:{listener.getsockname()[1]}/write", content=b"x" * (32 * 1024 * 1024))
++            assert accepted.is_set()
++            listener.settimeout(0.05)
++            try:
++                extra, _ = listener.accept()
++            except socket.timeout:
++                pass
++            else:
++                extra.close()
++                pytest.fail("the failed write was retried on another connection")
++        finally:
++            release.set()
++            thread.join(5)
++            assert not thread.is_alive()
++
++
++def test_transport_can_disable_only_the_read_timeout(server):
++    srv, url = server()
++    timeout = httpx.Timeout(0.05, read=None)
++    with httpx.Client(transport=KeepAliveTransport(), timeout=timeout) as client:
++        client.post(url + "/slow", content=b"valid").raise_for_status()
++    assert len(srv.seen) == 1
++
++
++def test_transport_releases_connections_when_worker_threads_exit(server):
++    srv, url = server()
++    errors = []
++    with httpx.Client(transport=KeepAliveTransport()) as client:
++        def send():
++            try:
++                client.post(url, content=b"valid").raise_for_status()
++            except Exception as exc:
++                errors.append(exc)
++
++        workers = [threading.Thread(target=send) for _ in range(8)]
++        for worker in workers:
++            worker.start()
++        for worker in workers:
++            worker.join(5)
++            assert not worker.is_alive()
++        assert errors == []
++        assert len(srv.seen) == len(workers)
++        gc.collect()
++        assert srv.no_connections.wait(2), "exited workers retained open keep-alive sockets"
+diff --git a/bindings/python/warm-sdk/writerslogic_warm_sdk/_transport.py b/bindings/python/warm-sdk/writerslogic_warm_sdk/_transport.py
+index 07357ecd..8931caeb 100644
+--- a/bindings/python/warm-sdk/writerslogic_warm_sdk/_transport.py
++++ b/bindings/python/warm-sdk/writerslogic_warm_sdk/_transport.py
+@@ -16,6 +16,8 @@ from typing import List, Optional
+ import httpx
+ 
+ _PROXY_VARS = ("http_proxy", "https_proxy", "all_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY")
++_TIMEOUT_ERRORS = (httpx.ConnectTimeout, httpx.WriteTimeout, httpx.ReadTimeout)
++_IO_ERRORS = (httpx.ConnectError, httpx.WriteError, httpx.ReadError)
+ 
+ 
+ def usable_for(url: str) -> bool:
+@@ -27,12 +29,6 @@ def usable_for(url: str) -> bool:
+     return httpx.URL(url).scheme == "http" and not any(os.environ.get(v) for v in _PROXY_VARS)
+ 
+ 
+-def _timeout(request: httpx.Request) -> Optional[float]:
+-    timeout = request.extensions.get("timeout") or {}
+-    values = [v for v in (timeout.get("connect"), timeout.get("read"), timeout.get("write")) if v is not None]
+-    return max(values) if values else None
+-
+-
+ def _stale(conn: http.client.HTTPConnection) -> bool:
+     """An idle keep-alive socket that is readable has been closed (or poisoned) by the peer."""
+     sock = conn.sock
+@@ -68,39 +64,48 @@ class KeepAliveTransport(httpx.BaseTransport):
+             self._local.conn, self._local.key = conn, key
+             with self._lock:
+                 self._conns.append(conn)
+-        elif conn.sock is not None:
+-            conn.sock.settimeout(timeout)
+         conn.timeout = timeout
+         return conn
+ 
+     def handle_request(self, request: httpx.Request) -> httpx.Response:
+-        timeout = _timeout(request)
+-        conn = self._connection(request, timeout)
+-        connecting = conn.sock is None
++        if request.url.scheme != "http":
++            raise httpx.UnsupportedProtocol(
++                "KeepAliveTransport supports only http URLs", request=request
++            )
++        body = request.read()
++        timeouts = request.extensions.get("timeout") or {}
++        conn = self._connection(request, timeouts.get("connect"))
++        phase = 0
+         try:
++            if conn.sock is None:
++                conn.connect()
++            phase = 1
++            conn.sock.settimeout(timeouts.get("write"))
+             conn.putrequest(request.method, request.url.raw_path.decode("ascii"), skip_host=True, skip_accept_encoding=True)
+             chunked = False
+             for name, value in request.headers.raw:
+                 conn.putheader(name, value)
+                 chunked = chunked or (name.lower() == b"transfer-encoding" and value.lower() == b"chunked")
+-            body = request.read()
+             if chunked:
+                 conn.endheaders([body] if body else [], encode_chunked=True)
+             else:
+                 conn.endheaders(body or None)
+-            res = conn.getresponse()
+-            body = res.read()
++            phase = 2
++            conn.sock.settimeout(timeouts.get("read"))
++            with conn.getresponse() as res:
++                body = res.read()
+         except socket.timeout as exc:
+             conn.close()
+-            raise (httpx.ConnectTimeout if connecting else httpx.ReadTimeout)(str(exc), request=request) from exc
+-        except (http.client.HTTPException, ConnectionError) as exc:
++            raise _TIMEOUT_ERRORS[phase](str(exc), request=request) from exc
++        except http.client.HTTPException as exc:
+             conn.close()
+-            if connecting and isinstance(exc, ConnectionRefusedError):
+-                raise httpx.ConnectError(str(exc), request=request) from exc
+             raise httpx.RemoteProtocolError(str(exc) or type(exc).__name__, request=request) from exc
+         except OSError as exc:
+             conn.close()
+-            raise (httpx.ConnectError if connecting else httpx.ReadError)(str(exc), request=request) from exc
++            raise _IO_ERRORS[phase](str(exc), request=request) from exc
++        except BaseException:
++            conn.close()
++            raise
+         if res.will_close:
+             conn.close()
+         return httpx.Response(
+diff --git a/bindings/python/warm-sdk/writerslogic_warm_sdk/client.py b/bindings/python/warm-sdk/writerslogic_warm_sdk/client.py
+index c990a4be..0a275c18 100644
+--- a/bindings/python/warm-sdk/writerslogic_warm_sdk/client.py
++++ b/bindings/python/warm-sdk/writerslogic_warm_sdk/client.py
+@@ -2,7 +2,7 @@ import hashlib
+ import json
+ import struct
+ from urllib.parse import quote
+-from typing import TYPE_CHECKING, Any, Dict, List, Optional
++from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+ 
+ import httpx
+ 
+@@ -140,7 +140,7 @@ class WarmClient:
+         zero_trust_key: str = "",
+         api_key: Optional[str] = None,
+         tenant_id: Optional[str] = None,
+-        timeout: int = 30,
++        timeout: Optional[Union[float, httpx.Timeout]] = 30,
+         mask_salt: Optional[bytes] = None,
+         transport: Optional[httpx.BaseTransport] = None,
+     ):
+@@ -216,7 +216,7 @@ class AsyncWarmClient:
+         zero_trust_key: str = "",
+         api_key: Optional[str] = None,
+         tenant_id: Optional[str] = None,
+-        timeout: int = 30,
++        timeout: Optional[Union[float, httpx.Timeout]] = 30,
+         mask_salt: Optional[bytes] = None,
+         transport: Optional[httpx.AsyncBaseTransport] = None,
+     ):

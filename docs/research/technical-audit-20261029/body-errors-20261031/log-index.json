@@ -215,6 +215,11 @@
     "sha256": "3299f8f903fb510a7bc7b0e8243f7e19a01d04fa579f497ed1e81548a1c0e902"
   },
   {
+    "file": "windows-final.log",
+    "bytes": 383137,
+    "sha256": "d8d3a1cce8de589cda236778b83b896c4e637d79abd2eb51990ac167fba39e1b"
+  },
+  {
     "file": "windows-snapshot-failure.log",
     "bytes": 81918,
     "sha256": "d0e260944d5a2c7bee94775cf13fd0b3ec3153cff3c223c139fcd2383bbfe435"
