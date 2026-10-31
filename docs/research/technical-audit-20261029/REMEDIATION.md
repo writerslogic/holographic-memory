@@ -776,7 +776,8 @@ projection options, rejects duplicate filter keys, and owns one explicitly
 closable client. Original node text is stored separately from metadata; a
 regression caught the previous metadata-prefixed text returned as node content.
 
-The framework's `delete(ref_doc_id)` means source-document deletion, but WARM
+The framework's [reference-delete contract](https://developers.llamaindex.ai/python/framework-api-reference/indices/vector/#llama_index.core.indices.vector_store.base.VectorStoreIndex.delete_ref_doc)
+means source-document deletion, but WARM
 passed that value to node deletion. A source ID colliding with an unrelated node
 therefore deleted that node (HTTP 200 in the retained baseline). Reference and
 filtered deletion now raise before writes. `delete_nodes` implements explicit-ID
@@ -786,7 +787,8 @@ sequential and can partially commit; they are not an atomic source-document purg
 This prevents the false deletion contract without claiming reference ownership
 or complete node/relationship reconstruction is implemented.
 
-The actual LlamaIndex vector-store types and Pydantic bridge were inspected.
+The actual LlamaIndex [vector-store types](https://developers.llamaindex.ai/python/framework-api-reference/storage/vector_store/)
+and installed Pydantic bridge were inspected.
 Its minimum 0.10.0 passes 42 final contracts on Python 3.10; 0.14.25 passes the
 full SDK suite on Python 3.14 (125 tests, including 48 LlamaIndex tests, plus
 46 subtests; 13 upstream asyncio deprecation warnings). The older framework

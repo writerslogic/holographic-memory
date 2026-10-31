@@ -30,5 +30,9 @@
     "No throughput/latency/relevance or overall security claim",
     "Full PR CI and integration with preceding PRs remain required"
   ],
-  "failed_workflow_trial": "Both framework versions failed with node_ids=[] from VectorStoreIndex.as_retriever; support the actual empty-list convention while rejecting nonempty restrictions."
+  "failed_workflow_trial": "Both framework versions failed with node_ids=[] from VectorStoreIndex.as_retriever; support the actual empty-list convention while rejecting nonempty restrictions.",
+  "primary_references": [
+    "https://developers.llamaindex.ai/python/framework-api-reference/storage/vector_store/",
+    "https://developers.llamaindex.ai/python/framework-api-reference/indices/vector/"
+  ]
 }
