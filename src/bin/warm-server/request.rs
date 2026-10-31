@@ -146,17 +146,22 @@ pub fn json_response(status: StatusCode, body: &Value) -> Response {
         .into_response()
 }
 
-fn replay(stored: &StoredResponse) -> Response {
-    let mut response = if stored.status.is_success() {
-        json_response(stored.status, &stored.body)
+fn stored_response(stored: &StoredResponse) -> Response {
+    let content_type = if stored.status.is_success() {
+        "application/json"
     } else {
-        let mut r = (stored.status, stored.body.to_string()).into_response();
-        r.headers_mut().insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static("application/problem+json"),
-        );
-        r
+        "application/problem+json"
     };
+    (
+        stored.status,
+        [(header::CONTENT_TYPE, content_type)],
+        stored.body.clone(),
+    )
+        .into_response()
+}
+
+fn replay(stored: &StoredResponse) -> Response {
+    let mut response = stored_response(stored);
     response
         .headers_mut()
         .insert("idempotent-replayed", HeaderValue::from_static("true"));
@@ -213,24 +218,20 @@ pub async fn json_write(
     };
     let worker = state.clone();
     let result = blocking(permit, move || {
-        // The stored replay shares the response body instead of deep-copying it.
-        let result = work(&worker, &tenant, bytes).map(|(status, body)| (status, Arc::new(body)));
+        let result = work(&worker, &tenant, bytes)
+            .map(|(status, body)| StoredResponse::new(status, &body, false));
         if let Some(guard) = guard {
             guard.complete(&match &result {
-                Ok((status, body)) => StoredResponse {
-                    status: *status,
-                    body: Arc::clone(body),
-                },
-                Err(e) => StoredResponse {
-                    status: e.status,
-                    body: Arc::new(e.problem()),
-                },
+                Ok(stored) => stored.clone(),
+                Err(e) => {
+                    StoredResponse::new(e.status, &e.problem(), e.code == "mutation_committed")
+                }
             });
         }
         result
     })
     .await?;
-    Ok(json_response(result.0, &result.1))
+    Ok(stored_response(&result))
 }
 
 #[cfg(test)]
@@ -239,21 +240,26 @@ mod committed_tests {
     use axum::body::Body;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    fn authorized_request(state: &AppState, key: &str) -> Request {
+        let mut request = Request::builder()
+            .method("POST")
+            .uri("/api/v1/documents")
+            .header("Authorization", "Bearer test-key")
+            .header("Idempotency-Key", key)
+            .body(Body::from("{}"))
+            .unwrap();
+        let principal = state.auth.authenticate(request.headers()).unwrap();
+        request.extensions_mut().insert(Arc::new(principal));
+        request
+    }
+
     #[tokio::test]
     async fn idempotent_retry_replays_a_committed_failure_without_repeating_work() {
         let dir = tempfile::tempdir().unwrap();
         let state = crate::tests::state_with(dir.path(), 2, &[]);
         let executions = Arc::new(AtomicUsize::new(0));
         for attempt in 0..2 {
-            let mut request = Request::builder()
-                .method("POST")
-                .uri("/api/v1/documents")
-                .header("Authorization", "Bearer test-key")
-                .header("Idempotency-Key", "committed-failure")
-                .body(Body::from("{}"))
-                .unwrap();
-            let principal = state.auth.authenticate(request.headers()).unwrap();
-            request.extensions_mut().insert(Arc::new(principal));
+            let request = authorized_request(&state, "committed-failure");
             let count = executions.clone();
             let result = json_write(
                 state.clone(),
@@ -285,5 +291,59 @@ mod committed_tests {
         }
         assert_eq!(executions.load(Ordering::SeqCst), 1);
         assert!(state.core("default").unwrap().has_document("durable"));
+    }
+
+    #[tokio::test]
+    async fn panic_after_commit_does_not_repeat_the_mutation() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(dir.path(), 2, &[]);
+        let executions = Arc::new(AtomicUsize::new(0));
+        for expected in ["internal", "idempotency_reconciliation_required"] {
+            let count = executions.clone();
+            let result = json_write(state.clone(), authorized_request(&state, "panic"), Scope::Write, move |state, tenant, _| {
+                count.fetch_add(1, Ordering::SeqCst);
+                state.core(tenant)?.memorize_document(serde_json::from_value(serde_json::json!({"id": "panic-durable", "text": "committed before panic"})).unwrap()).map_err(ApiError::from_core)?;
+                panic!("injected panic after durable mutation");
+            }).await;
+            assert_eq!(result.unwrap_err().code, expected);
+        }
+        assert_eq!(executions.load(Ordering::SeqCst), 1);
+        assert!(state.core("default").unwrap().has_document("panic-durable"));
+        assert_eq!(state.idem.usage(), (1, 0, 1));
+    }
+
+    #[tokio::test]
+    async fn oversized_replay_preserves_the_first_response_and_prevents_reexecution() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(dir.path(), 2, &["--idempotency-max-bytes", "1"]);
+        let executions = Arc::new(AtomicUsize::new(0));
+        for attempt in 0..2 {
+            let count = executions.clone();
+            let result = json_write(state.clone(), authorized_request(&state, "oversized"), Scope::Write, move |state, tenant, _| {
+                count.fetch_add(1, Ordering::SeqCst);
+                state.core(tenant)?.memorize_document(serde_json::from_value(serde_json::json!({"id": "large-response", "text": "committed once"})).unwrap()).map_err(ApiError::from_core)?;
+                Ok((StatusCode::CREATED, serde_json::json!({"result": "x".repeat(1024)})))
+            }).await;
+            if attempt == 0 {
+                let response = result.unwrap();
+                assert_eq!(response.status(), StatusCode::CREATED);
+                let body = to_bytes(response.into_body(), 4096).await.unwrap();
+                assert_eq!(
+                    serde_json::from_slice::<Value>(&body).unwrap()["result"],
+                    "x".repeat(1024)
+                );
+            } else {
+                assert_eq!(
+                    result.unwrap_err().code,
+                    "idempotency_reconciliation_required"
+                );
+            }
+        }
+        assert_eq!(executions.load(Ordering::SeqCst), 1);
+        assert!(state
+            .core("default")
+            .unwrap()
+            .has_document("large-response"));
+        assert_eq!(state.idem.usage(), (1, 0, 1));
     }
 }

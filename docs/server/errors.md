@@ -58,6 +58,13 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 ### idempotency_key_reused
 422. The `Idempotency-Key` was already used with a different method, path, tenant or body.
 
+### idempotency_reconciliation_required
+409. The original request may have executed, but its response is unavailable: the worker
+panicked or the response could not fit the replay byte budget. The key remains reserved
+until its TTL expires. Inspect the resulting state before deliberately issuing a new
+operation. This response has no `Retry-After`; blindly retrying with a new key or after
+expiry can repeat a committed mutation.
+
 ### payload_too_large
 413. The body, stream, line or archive exceeds its limit (`--max-body-bytes`, `--max-stream-bytes`, `--max-stream-line-bytes`, `--max-restore-bytes`).
 
@@ -85,9 +92,10 @@ Inspect the resulting state and reopen or reconcile it before retrying. A failur
 code does not mean that nothing was written. Use stable IDs and the idempotency key when
 retrying a logical operation.
 Unlike transient server errors, this response remains in the idempotency cache. The same
-key replays it while retained by the configured TTL/capacity, without repeating the durable
-mutation; reconcile the state before starting
-a deliberate new attempt.
+key replays it during its TTL without repeating the durable mutation. If its response
+cannot fit the replay byte budget, the key instead returns
+`idempotency_reconciliation_required`. Reconcile state before starting a deliberate new
+attempt. All retained keys are process-local and lost on restart.
 
 ### not_implemented
 501. Reserved for operations a build does not provide.
@@ -96,7 +104,9 @@ a deliberate new attempt.
 503. `/readyz` while the server is starting or shutting down.
 
 ### server_busy
-503. All `--max-concurrent-work` slots are taken and the wait queue (`--max-queue`) is full or the wait exceeded `--queue-timeout-ms`. Safe to retry; nothing was applied.
+503. Work admission is full or timed out, or a new idempotency key cannot fit
+`--idempotency-capacity` while existing keys remain protected. Safe to retry; this
+rejected attempt did not execute the operation.
 
 ### concurrent_mutation
 503. Concurrent writes exhausted the memory API's bounded snapshot or planning retries.

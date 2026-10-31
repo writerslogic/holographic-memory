@@ -336,6 +336,7 @@ impl AppState {
             idem: Idempotency::new(
                 Duration::from_secs(cfg.idempotency_ttl_seconds),
                 cfg.idempotency_capacity,
+                cfg.idempotency_max_bytes,
             ),
             ready: AtomicBool::new(false),
             started: Instant::now(),
@@ -669,12 +670,16 @@ impl AppState {
             })
             .collect();
         tenants.sort_by(|a, b| a.name.cmp(&b.name));
+        let (idempotency_records, idempotency_body_bytes, idempotency_unreplayable) =
+            self.idem.usage();
         Saturation {
             work_in_use: self.work.in_use(),
             work_capacity: self.work.capacity,
             queue_depth: self.work.queue_depth(),
             tenants,
-            idempotency_records: self.idem.len(),
+            idempotency_records,
+            idempotency_body_bytes,
+            idempotency_unreplayable,
             ready: self.ready.load(Ordering::Acquire),
         }
     }

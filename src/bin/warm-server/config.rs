@@ -200,9 +200,12 @@ pub struct Config {
     /// How long an Idempotency-Key replays its recorded response.
     #[arg(long, env = writerslogic_warm::compatibility::env_name("WARM_IDEMPOTENCY_TTL_SECONDS", "HMS_IDEMPOTENCY_TTL_SECONDS"), default_value_t = 600)]
     pub idempotency_ttl_seconds: u64,
-    /// Idempotency records kept in memory (oldest evicted first).
+    /// Maximum retained idempotency keys; unexpired keys are never evicted to admit new work.
     #[arg(long, env = writerslogic_warm::compatibility::env_name("WARM_IDEMPOTENCY_CAPACITY", "HMS_IDEMPOTENCY_CAPACITY"), default_value_t = 10_000)]
     pub idempotency_capacity: usize,
+    /// Maximum response-buffer bytes retained for idempotent replay.
+    #[arg(long, env = "WARM_IDEMPOTENCY_MAX_BYTES", default_value_t = 64 * 1024 * 1024)]
+    pub idempotency_max_bytes: usize,
 
     /// Largest NDJSON ingest stream.
     #[arg(long, env = writerslogic_warm::compatibility::env_name("WARM_MAX_STREAM_BYTES", "HMS_MAX_STREAM_BYTES"), default_value_t = 1u64 << 30)]
@@ -316,8 +319,11 @@ impl Config {
         if self.max_stream_line_bytes < 1024 || self.max_stream_line_bytes > 64 * 1024 * 1024 {
             bail!("--max-stream-line-bytes must be 1 KiB..=64 MiB");
         }
-        if self.idempotency_capacity == 0 {
-            bail!("--idempotency-capacity must be positive");
+        if self.idempotency_capacity == 0
+            || self.idempotency_max_bytes == 0
+            || self.idempotency_ttl_seconds == 0
+        {
+            bail!("--idempotency-capacity, --idempotency-max-bytes and --idempotency-ttl-seconds must be positive");
         }
         if self
             .cors_origins

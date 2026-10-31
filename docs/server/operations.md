@@ -34,6 +34,7 @@ One replica per data directory: a tenant store is owned by a single process thro
 | `warm_http_requests_total{route,method,status}` | Requests; routes are templates (`/api/v1/documents/{id}`), so cardinality is bounded. |
 | `warm_http_in_flight_requests`, `warm_connections_open`, `warm_connections_total` | Load. |
 | `warm_work_slots_in_use`, `warm_work_slots_capacity`, `warm_queue_depth` | Admission saturation; sustained `in_use == capacity` with a growing queue means raise `--max-concurrent-work` or add capacity. |
+| `warm_idempotency_records`, `warm_idempotency_body_bytes`, `warm_idempotency_unreplayable` | Retained retry keys, response-buffer allocation bytes, and keys requiring reconciliation. Records and bytes expire lazily on the next keyed request. |
 | `process_resident_memory_bytes` | RSS (Linux `/proc`, macOS `proc_pidinfo`). |
 | `warm_tenants_open`, `warm_tenant_documents{tenant}`, `warm_tenant_vectors{tenant}`, `warm_tenant_index_bytes{tenant}`, `warm_tenant_document_index_trained{tenant}` | Per-tenant size; a tenant that is mid-snapshot is skipped for that scrape. |
 | `warm_tenant_compactions_total`, `_failures_total`, `_seconds_total` | Compaction. |

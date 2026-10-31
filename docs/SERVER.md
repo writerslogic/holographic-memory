@@ -87,7 +87,7 @@ Index maintenance also builds the tenant's optional document index over stored e
 
 ### Retries and conditional requests
 
-- `Idempotency-Key` on `POST /api/v1/documents`, `/documents/batch` and the memory operations replays the recorded response of an earlier request with the same key, tenant, method, path and body (`Idempotent-Replayed: true`); the same key with a different request is 422 `idempotency_key_reused`, and a key still running is 409 `idempotency_in_flight`. Failures that should be retried (5xx, 429, 408) are not recorded. Records are kept in memory for `--idempotency-ttl-seconds` and bounded by `--idempotency-capacity`; they do not survive a restart, and ingest by id is an upsert, so replaying across a restart is safe.
+- `Idempotency-Key` on `POST /api/v1/documents`, `/documents/batch` and the memory operations replays the recorded response of an earlier request with the same key, tenant, method, path and body (`Idempotent-Replayed: true`); the same key with a different request is 422 `idempotency_key_reused`, and a key still running is 409 `idempotency_in_flight`. Transient failures (5xx, 429, 408) release the key, except typed `mutation_committed` errors. Completed keys are protected for `--idempotency-ttl-seconds`; running keys do not expire. Panics or insufficient replay-buffer capacity retain a key that returns 409 `idempotency_reconciliation_required`, preventing blind reexecution. Keys do not survive restart. An upsert alone does not guarantee that repeating every operation after restart is safe; reconcile IDs, versions and resulting state first.
 - `GET /api/v1/stats` and `GET /api/v1/documents` return a weak `ETag` that changes with every write made through the server, and answer `If-None-Match` with 304. Individual documents have no GET endpoint, so there is no per-document validator.
 
 ## Tenants
@@ -140,7 +140,21 @@ Snapshots, compaction and restore are described in [`server/operations.md`](serv
 
 New vector snapshots record a checksum of `rows-<epoch>.bin` in `CURRENT`; a mismatch disables the snapshot so queries fall back to the engine. Older snapshots remain readable and gain the checksum on the next maintenance run.
 
-Admission limits preserve in-flight idempotency records: if all records are running at capacity, a new key receives 503 and can retry. The rate limiter holds at most 10,000 tenant buckets; when full, requests for a new tenant receive 429 until idle buckets can be reclaimed. Existing tenant buckets continue operating normally.
+Admission limits preserve both running and unexpired completed idempotency keys. At
+`--idempotency-capacity`, new keys receive 503 before execution; existing keys can still
+replay. Size this capacity for the number of distinct keys admitted during the TTL plus
+in-flight work: the defaults retain 10,000 keys for 600 seconds, so a sustained stream
+of new keys above roughly 16 per second requires a larger capacity or shorter TTL.
+`--idempotency-max-bytes` independently bounds retained serialized response-buffer
+allocations (64 MiB by default). A response that does not fit is still returned to the
+original caller, but subsequent use of its key requires reconciliation. This limit
+does not cover response construction, active HTTP sends, key/record overhead, or total
+process RSS. The key-count limit bounds record overhead separately. Response clones
+share one serialized buffer instead of retaining and repeatedly serializing a JSON tree.
+
+The rate limiter holds at most 10,000 tenant buckets; when full, requests for a new tenant
+receive 429 until idle buckets can be reclaimed. Existing tenant buckets continue operating
+normally.
 
 ## What it does not provide
 

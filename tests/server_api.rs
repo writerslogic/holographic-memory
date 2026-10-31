@@ -570,6 +570,78 @@ fn idempotency_keys_replay_conflict_and_scope_to_the_tenant() {
 }
 
 #[test]
+fn idempotency_capacity_protects_completed_mutations_from_reexecution() {
+    let s = Server::open(&["--idempotency-capacity", "1"]);
+    let original = doc("protected", 1);
+    let first = s
+        .req("POST", "/api/v1/documents")
+        .header("Idempotency-Key", "protected")
+        .json(&original)
+        .send();
+    assert_eq!(first.status, 200);
+    let rejected = s
+        .req("POST", "/api/v1/documents")
+        .header("Idempotency-Key", "new")
+        .json(&doc("not-written", 2))
+        .send();
+    assert_eq!(rejected.status, 503);
+    assert_eq!(rejected.json()["code"], "server_busy");
+    assert_eq!(
+        s.req("DELETE", "/api/v1/documents/protected").send().status,
+        200
+    );
+    let replay = s
+        .req("POST", "/api/v1/documents")
+        .header("Idempotency-Key", "protected")
+        .json(&original)
+        .send();
+    assert_eq!(replay.body, first.body);
+    assert_eq!(replay.header("idempotent-replayed"), Some("true"));
+    assert_eq!(s.req("GET", "/api/v1/documents").send().json()["count"], 0);
+}
+
+#[test]
+fn idempotency_byte_pressure_requires_reconciliation_without_repeating_writes() {
+    let s = Server::open(&["--idempotency-max-bytes", "1"]);
+    let original = doc("protected", 1);
+    assert_eq!(
+        s.req("POST", "/api/v1/documents")
+            .header("Idempotency-Key", "large")
+            .json(&original)
+            .send()
+            .status,
+        200
+    );
+    assert_eq!(
+        s.req("DELETE", "/api/v1/documents/protected").send().status,
+        200
+    );
+    let retry = s
+        .req("POST", "/api/v1/documents")
+        .header("Idempotency-Key", "large")
+        .json(&original)
+        .send();
+    assert_eq!(retry.status, 409);
+    assert_eq!(retry.json()["code"], "idempotency_reconciliation_required");
+    assert_eq!(retry.header("retry-after"), None);
+    assert_eq!(
+        retry.header("content-type"),
+        Some("application/problem+json")
+    );
+    assert_eq!(s.req("GET", "/api/v1/documents").send().json()["count"], 0);
+    let metrics = s.req("GET", "/metrics").send().text();
+    assert!(metrics
+        .lines()
+        .any(|line| line == "warm_idempotency_records 1"));
+    assert!(metrics
+        .lines()
+        .any(|line| line == "warm_idempotency_body_bytes 0"));
+    assert!(metrics
+        .lines()
+        .any(|line| line == "warm_idempotency_unreplayable 1"));
+}
+
+#[test]
 fn ndjson_stream_commits_in_batches_and_reports_rejected_lines() {
     let s = Server::open(&["--stream-batch", "3", "--max-stream-line-bytes", "4096"]);
     let mut body = String::new();

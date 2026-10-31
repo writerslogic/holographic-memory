@@ -273,6 +273,27 @@ fn every_flag_has_an_environment_variable_and_a_documented_row() {
     assert!(checked >= 38, "only {checked} flags inspected");
 }
 
+#[test]
+fn idempotency_configuration_rejects_disabled_protection_bounds() {
+    for option in [
+        "--idempotency-capacity",
+        "--idempotency-max-bytes",
+        "--idempotency-ttl-seconds",
+    ] {
+        for value in [0, 1, 2] {
+            let config = Cli::try_parse_from(["warm-server", option, &value.to_string()])
+                .unwrap()
+                .config;
+            let result = config.validate(true);
+            if value == 0 {
+                assert!(result.unwrap_err().to_string().contains(option));
+            } else {
+                result.unwrap();
+            }
+        }
+    }
+}
+
 /// Idle tenants are flushed and closed, free their slot toward `--max-tenants`, and reopen
 /// with their data intact.
 #[test]

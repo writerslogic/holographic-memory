@@ -63,7 +63,8 @@ With neither `WARM_API_KEY` nor `--keys-file`, the server only starts if `--no-a
 | `--rate-limit-burst` | `WARM_RATE_LIMIT_BURST` | `0` | Per-tenant burst. 0 means one second of the sustained rate. |
 | `--max-documents-per-tenant` | `WARM_MAX_DOCUMENTS_PER_TENANT` | `0` | Per-tenant document ingest and memory `remember` quota ([scope and retry limits](../SERVER.md#limits-and-backpressure)); exceeding it gets 429 `quota_exceeded`. Replacing an existing id never counts. 0 disables. |
 | `--idempotency-ttl-seconds` | `WARM_IDEMPOTENCY_TTL_SECONDS` | `600` | How long an `Idempotency-Key` replays its response. |
-| `--idempotency-capacity` | `WARM_IDEMPOTENCY_CAPACITY` | `10000` | Records kept in memory; the oldest are evicted first. |
+| `--idempotency-capacity` | `WARM_IDEMPOTENCY_CAPACITY` | `10000` | Maximum retained keys. Full capacity rejects new keys with 503; unexpired keys are never evicted. |
+| `--idempotency-max-bytes` | `WARM_IDEMPOTENCY_MAX_BYTES` | `67108864` | Maximum retained response-buffer allocation bytes. Responses that do not fit retain a key requiring reconciliation instead of allowing duplicate execution. |
 
 ## Bulk transfer
 
