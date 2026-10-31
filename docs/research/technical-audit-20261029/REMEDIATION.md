@@ -157,8 +157,8 @@ bounded milestones, with no paid development API calls or model downloads.
 
 | Priority | Capability / shared constraint | Required evidence | State |
 |---|---|---|---|
-| 1 | HTTP retry safety and retained-memory bounds | Post-commit panic never blindly repeats work; byte/capacity pressure preserves protected keys; expiry reclaims allocations; real HTTP and concurrency regressions | Implemented on `fix/http-retry-safety`; local checks pass, integrated CI pending |
-| 2 | Restart-safe committed effects | Transaction-backed effect identities and intents, idempotent delivery, explicit ambiguous outcomes, replay/compaction/restore invariants, process-interruption tests | Design required; current audit/provenance and HTTP retry state remain separate from core transactions |
+| 1 | HTTP retry safety and retained-memory bounds | Post-commit panic never blindly repeats work; byte/capacity pressure preserves protected keys; expiry reclaims allocations; real HTTP and concurrency regressions | Merged in PR #352 (`f28095e0`); all CI checks pass |
+| 2 | Restart-safe committed effects | Transaction-backed effect identities and intents, idempotent delivery, explicit ambiguous outcomes, replay/compaction/restore invariants, process-interruption tests | Schema-6 audit queue implemented and under validation; provenance and HTTP restart receipts remain separate work |
 | 3 | Retrieval quality and workload performance | Reproducible local baselines, correctness-equivalent competitor workloads, update/churn/filter coverage, latency and allocation evidence | Preserve existing benchmark evidence; unresolved hot-query tail regression is not a demonstrated improvement |
 | 4 | Security lifecycle and assurance | Signing-key rotation and historical verification policy, adversarial validation, actionable dependency dispositions | Existing limitations in `docs/SECURITY.md`; no certification claim |
 | 5 | Interface and standards fidelity | Shared lifecycle/error/serialization checks across HTTP, native bindings, MCP and framework adapters; authoritative applicable requirements | Existing lifecycle fixtures are the baseline; expand where coverage is missing |
@@ -191,3 +191,107 @@ checks; both pass after the configuration and error references were updated.
 The response-buffer accounting includes serialization capacity, not merely JSON
 length, but excludes active sends and process-wide allocations. Capacity planning
 and the changed full-cache admission behavior are explicit in `docs/SERVER.md`.
+
+### Restart-safe audit delivery: implementation under validation
+
+Scope: make enabled engine audit effects recoverable without reapplying the data
+mutation. This does **not** by itself make HTTP requests restart-idempotent, deliver
+arbitrary external effects exactly once, or repair past missing audit records.
+
+Verified constraints:
+
+- `engine/mutation.rs::commit_payload_at_revision` appends one durable transaction
+  before publishing live state. A pending effect belongs in that same transaction;
+  a separately written request cache or sidecar intent has an unsafe crash interval.
+- Core revision counters are process-local opaque values, not durable event IDs.
+  Use a persisted unique effect ID rather than treating revision as a stable identity.
+- Compaction rewrites state, so pending effects must be included in its snapshot
+  and tail replay. Its own audit effect must be published with the new generation,
+  not appended to the old generation after compaction has already committed.
+- Document checkpoints exclude non-document state today. Effect metadata must be
+  represented in the journal alongside the checkpoint and accepted by overlay
+  replay without hydrating all documents or disabling checkpoints permanently.
+- The existing 105-byte audit format has no delivery identity. It cannot deduplicate
+  identical timestamp/operation/ID-hash records reliably. Preserve legacy history
+  and introduce a versioned effect-aware stream instead of guessing identity from
+  payload equality. Old stores must explicitly upgrade before writing new mutations.
+
+Implemented mechanism and mandatory invariants:
+
+1. Introduce schema-gated pending-audit and acknowledgement mutation records. An
+   intent carries a bounded stable identity and immutable signed event payload.
+   Validate pending count/bytes and identity conflicts under the writer lease
+   **before** appending the business mutation. Exhaustion must fail before commit.
+2. Keep a bounded FIFO of pending effects in committed journal order. A serialized
+   drainer delivers the front effect, syncs the audit stream, then durably acknowledges
+   it in the core journal. Stop on any delivery or acknowledgement error. New business
+   writes never skip an unresolved delivery and never reapply an old data mutation.
+3. Give the new audit stream fixed-size checksummed records and a version marker;
+   bind the effect identity into its signed message. Delivery can recognize the
+   last record after a crash between delivery and acknowledgement. This is valid
+   only with one ordered drainer and no bypass writer: at most one delivered effect
+   may lack an acknowledgement. A deduplicated retry must sync again before ack.
+4. Preserve the pending FIFO during compaction and restore; retain legacy audit
+   history in reads. Capture compaction's event in the generation being published.
+   Expose pending/recovery status explicitly. A missing or corrupt sidecar must not
+   silently acknowledge effects or reconstruct unsupported historical claims.
+5. Replay the original signed bytes after restart, including across signing-key
+   changes; do not relabel an old event by re-signing it as a new delivery. A new
+   signature-message helper must distinguish legacy records from effect-aware ones.
+
+Acceptance before merge: schema validation and explicit upgrade; new frozen golden
+store; current and legacy format verification; default/security/all-feature builds;
+crash injection before/after core append, audit write/sync and acknowledgement;
+concurrent writes and bounded backlog; compaction with pending/partially delivered
+effects; document-checkpoint overlay parity; restart with a repaired sidecar; snapshot
+and restore coverage; signature/identity tampering checks. Hardware power-loss and
+external-history anchoring remain unverified without separate evidence.
+
+Follow-on design remains necessary for provenance delivery (its chained sequence
+must be assigned under the provenance writer's own ordering contract), durable HTTP
+receipts for multi-transaction operations, restore incarnation boundaries, and
+per-tenant fair admission. Do not claim these are solved by the audit stream.
+
+Implementation notes from the source trace:
+
+- Reuse a separate `mutation_gate::MutationGate::maintenance()` lease for delivery:
+  its ticket queue releases its mutex before I/O. Do not hold the core writer lease
+  while delivering and then recursively acquire it to acknowledge.
+- Add pending/ack variants to `checkpoint_accepts` and exclude them from
+  `image.other_state`. Compaction writes pending records alongside the document
+  checkpoint; nonempty metadata frames naturally select overlay replay at open.
+- Prefer a separate versioned `audit.effects.bin` stream so legacy `audit.bin`
+  history requires no destructive conversion. Reads must cover both. Format
+  verification, known-file inventory, snapshots, upgrade and goldens must cover
+  the new file. A new public signable-message helper must expose the correct
+  domain-separated message including effect ID while preserving legacy verification.
+- The first durable-delivery scope is the existing audited engine operations:
+  vector memorize, delete and compaction. Document/meaning audit coverage needs
+  an explicit extension; do not quietly describe that scope as all engine writes.
+- Upgrade registry steps currently hardcode schema 5 while their implementation
+  writes the current schema. Adding schema 6 requires updating planner descriptions
+  and targets as well as the constant, plus a 5-to-6 step and new frozen golden.
+- Delivery/ack fault tests must prove that a retried already-written audit record
+  is re-synced before acknowledging. A failed core acknowledgement must stop the
+  drainer so checking only the audit stream's last effect ID remains sound.
+
+Validation progress (not yet a merge/readiness claim): the initial 36 audit-filtered unit
+checks passed, including delivered/unacknowledged replay, failed delivery plus compaction,
+concurrent writes, queue saturation, and process exits after core commit, effect write,
+sync, and acknowledgement. The expanded run passed 39 checks and exposed a test setup
+error: `has_document()` intentionally hydrates a checkpoint. The corrected test asserts
+lexical results and mapped serving directly and passes; audit delivery itself preserves the
+checkpoint. Additional crash points before commit and after compaction publication, pending
+snapshot copy/restore, scanner/upgrade compatibility and final gates remain in progress.
+
+The implementation adds one durable acknowledgement transaction per delivered audit event;
+this is extra write/sync cost, not a measured performance improvement. Production validation
+must include audit-enabled write latency and recovery throughput. Individual record signatures
+do not detect removal of whole records without an external history anchor. No hardware
+power-loss, generalized provenance recovery or restart-safe HTTP receipt claim is made.
+
+Pre-merge review found that an empty current journal does not prove a store has no audit
+history: compaction with logging disabled may leave only a document checkpoint. Initialization
+now durably creates the audit header before publishing `store.json`, and every subsequent
+schema-6 open requires the existing stream, including empty and checkpoint-only stores. New
+regressions cover both cases and interruption between header creation and schema publication.

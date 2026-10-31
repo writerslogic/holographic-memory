@@ -10,7 +10,7 @@ is a transaction. Schema 2 writes this JSON form:
 "HMS-TXN-2\0"  followed by  a JSON array of 1..=4096 mutations (UTF-8, no trailing bytes)
 ```
 
-Schemas 3–5 write the `HMS-TXN-3` binary form described below; readers accept both forms.
+Schemas 3–6 write the `HMS-TXN-3` binary form described below; readers accept both forms.
 A transaction is applied atomically: one frame, all or none. An unknown `HMS-TXN-<digits>\0` magic
 is a different journal version: newer ones are refused with "newer than supported", older ones
 (none were released) with the re-encode message. Any other prefix is refused.
@@ -19,6 +19,8 @@ Each mutation is a JSON object with exactly one key naming the variant (serde ex
 
 | Variant | Body | Replay effect |
 |---|---|---|
+| `AuditPending` | `{timestampMs, op, idHash, signature, effectId}` | schema 6: append a bounded, immutable audit intent to the delivery FIFO |
+| `AuditAcknowledged` | `{id: [u8;16]}` | schema 6: remove the matching FIFO head after durable delivery |
 | `Vector` | `{id, vector}` | set the vector `id`; drops meaning children derived from `id` |
 | `Atom` | `{id, vector}` | meaning memory only |
 | `Composite` | `{id, vector}` | set a composite vector |
@@ -37,7 +39,7 @@ Each mutation is a JSON object with exactly one key naming the variant (serde ex
 | `RelationType` | `{name, transitive, symmetric}` | declare a type |
 | `Rule` | `{name, input_relations, output_relation}` | needs `meaning_enabled` |
 
-Field naming is per struct (Relation and RelationType are camelCase, the rest snake_case);
+Field naming is per struct (Relation, RelationType and AuditPending are camelCase, the rest snake_case);
 treat the table as exact. Floats use shortest round-trip form (`0.0`).
 
 `vector` is `{"dim": <store dimensions>, "indices": [<u32>...]}`: sorted strictly ascending,
@@ -102,3 +104,27 @@ Gaps: the first value is absolute, each next one the difference to the previous 
 indices and term ids strictly ascending). Term ids index the frame's dictionary, so a chunk's
 terms come out in byte order. A binary payload decodes to exactly the mutations its
 `HMS-TXN-2` form would hold; `warm-format` and `verify` read it through that JSON form.
+
+## Durable audit delivery (schema 6)
+
+An audited vector memorize/delete transaction carries its `AuditPending` in the same frame.
+Compaction carries pending intents in FIFO order and appends its own intent to the staged
+generation before publication. Audit-only mutations do not invalidate document checkpoints.
+`op` is `"Memorize"`, `"Delete"`, or `"Compact"`; `idHash` is 32 bytes, `effectId` is 16 random
+bytes, and `signature` is a pair of fixed 32-byte arrays. The pending FIFO has at most 1024
+entries. Capacity, duplicate pending identities, and acknowledgement order are checked before
+appending a transaction and again during replay. A full queue rejects an audited operation
+before its business mutation commits.
+
+One ordered delivery lease serializes delivery and acknowledgement, without holding the core
+writer lease across sidecar I/O. The drainer syncs the audit record before committing its
+acknowledgement; any error stops the drain. Only the last stream record can have been delivered
+without acknowledgement, so matching that identity and payload safely deduplicates restart
+recovery. A matching record is synced again before acknowledgement. `flush_audit()` drains the
+queue through the tail captured when it acquires the delivery lease; new arrivals cannot make
+that call run indefinitely. Open resumes pending delivery, including intents committed before
+audit logging was disabled. Delivery errors fail opening rather than discard pending records.
+
+This covers the existing audited vector memorize, vector delete, and compaction operations.
+It does not add audit coverage for document/meaning APIs, recover provenance effects, or make
+HTTP idempotency durable across restarts.

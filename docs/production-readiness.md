@@ -128,16 +128,24 @@ compaction cleanup carry `CommittedMutationError`. HTTP reports `mutation_commit
 Node errors carry the same code prefix. Inspect the resulting state and reopen or reconcile
 it before retrying. This contract distinguishes durable data from completed auxiliary effects;
 it does not supply an automatic sidecar repair service or exactly-once external delivery.
-Reopening restores committed arena state and repairs torn sidecar tails; it does not recreate
-missing audit entries or provenance effects. Do not repeat a committed mutation merely to
-obtain an auxiliary record. HTTP replays a retained idempotency key's committed failure within
+Schema 6 journals audit intents with the audited vector memorize/delete operation and with
+compaction publication. Reopen and `flush_audit()` deliver pending records without repeating
+business mutations; `flush()` also drains them. Delivery identities deduplicate an audit write
+whose acknowledgement did not commit. The bounded queue holds at most 1024 intents and
+rejects further audited mutations before commit when full. Monitor
+`warm_tenant_audit_pending` and `warm_tenant_audit_recoverable`; the latter distinguishes
+legacy schemas with no delivery queue. Existing schemas require explicit format upgrade.
+This does not reconstruct missing historical audit records or provenance effects, expand
+which operations are audited, or prove history completeness against deletion of whole records.
+Do not repeat a committed mutation merely to obtain an auxiliary record. HTTP replays a
+retained idempotency key's committed failure within
 its cache TTL. Capacity pressure rejects new keys instead of evicting protected ones;
 if the response cannot fit the replay byte budget, its key requires reconciliation without
 reexecuting the operation. Worker panics retain the same protection. The cache is
 process-local and does not survive restart. Reconciliation
 after cache expiry or restart must compare application-owned IDs, versions and resulting state.
 Any external repair/delivery workflow must persist its own stable effect IDs and deduplicate
-delivery; WARM currently provides no such automatic retry worker.
+delivery; the core audit queue does not provide a general external-effect retry worker.
 
 Memory policy writes compare the planned core revision inside the journal writer lease.
 Independent wrappers and raw document writers therefore cannot commit stale conflict or

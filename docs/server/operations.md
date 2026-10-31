@@ -81,3 +81,11 @@ Recall at 10 was 1.0 for every system and size. warm-server wins at 1,000 docume
 **Soak** (4 minutes, 16 clients, 137,634 successful mixed requests, tenants rotating through 12 ids with at most 6 open): no errors other than 27 expected `tenant_limit` refusals, open file descriptors 26 to 35, work slots idle at the end, every tenant's contents matched the client's model both before and after a SIGTERM restart, SIGTERM exit code 0. RSS moved between 55 and 270 MB following tenant open and eviction cycles and ended at 144 MB from 139 MB at the start; the second-half linear fit reads +4.4 MB/min over that oscillation, so a longer run is needed to call it flat.
 
 **Container** (Lima VM, Docker 29, arm64): image 15,015,731 bytes (15 MB, of which 5.84 MB is the server binary); uid 65532, read-only root, no capabilities; RSS 10.0 MB (cgroup 13.5 MiB) after loading 2,000 documents of 16 dimensions; `docker stop` took 0.19 s and exited 0; data survived a restart on the volume; 118 MiB at 10,000 documents of 384 dimensions. Compose and the systemd unit were run for real (`systemd-analyze security`: exposure 1.2 OK). Not measured: x86_64 images, musl against glibc allocator throughput, a live Kubernetes cluster (no kind available; `helm lint` and `kubeconform -strict` pass).
+
+Schema 6 audit recovery exposes `warm_tenant_audit_pending` (committed records awaiting
+acknowledgement) and `warm_tenant_audit_recoverable` (1 for schema 6, 0 for legacy schemas).
+Investigate a persistent nonzero backlog before its 1024-entry limit rejects audited writes.
+Repair the underlying file/storage failure and call the existing flush operation or restart;
+never replay the business mutation to manufacture its missing audit record. Preserve both
+`audit.bin` and `audit.effects.bin` in backups. An upgrade enables future durable delivery,
+without reconstructing historical gaps.

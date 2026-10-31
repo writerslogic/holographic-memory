@@ -5,7 +5,7 @@
 
 ## audit.bin
 
-Opt-in (`audit_enabled`). Append-only, fixed 105-byte entries, no header:
+Legacy schemas 2–5, opt-in (`audit_enabled`). Append-only, fixed 105-byte entries, no header:
 
 ```
 0   8   timestamp_ms  u64
@@ -14,10 +14,35 @@ Opt-in (`audit_enabled`). Append-only, fixed 105-byte entries, no header:
 41  64  signature     Ed25519 over bytes 0..41, or zeros when signing is off
 ```
 
-Each append is fsynced. A reader ignores a trailing partial entry and skips entries whose op is
-not 1..=3. On open the writer cuts a trailing partial entry so later entries stay aligned.
+Each append is fsynced. A reader ignores a trailing partial entry and rejects unknown operation
+bytes with their offset, including entries outside the timestamp filter. The writer repairs a
+partial tail on open and before each append so later entries stay aligned.
 Note the id hash differs by build feature: it is not comparable across builds with and without
 `security`.
+
+## audit.effects.bin (schema 6)
+
+Every schema 6 store has this file, even with logging disabled. Its header is durably
+created before the new store schema is published; reopening an initialized store never
+creates a replacement history. Header: eight bytes `WARMAU02`.
+Each 125-byte record contains a 16-byte effect identity, the legacy 105-byte entry layout,
+and a little-endian CRC32 of the preceding 121 bytes. A signed record covers
+`WARM-AUDIT-2\0 || effect_id || timestamp_ms_le || op_byte || id_hash` (70 bytes), binding
+its delivery identity as well as the operation. `AuditEntry::signable_bytes()` returns the
+correct message for either format. Recovery delivers the originally signed bytes without
+re-signing under a potentially changed key.
+
+Open and offline verification validate every complete record with bounded scratch memory.
+An interrupted partial tail is repaired before delivery. Complete checksum or operation
+corruption is an error, as are conflicting payloads for the last delivered identity. A missing
+stream in any initialized schema 6 store fails open; restore the intact history from backup.
+An upgrade creates the new stream and preserves `audit.bin`; audit queries return legacy
+entries followed by new entries in their persisted order. These files must travel together
+with journal generations in backups and restores. CRC32 detects accidental corruption; it
+is not authentication. Signatures authenticate individual records, not completeness of the
+entire history: deletion of complete records requires an external history anchor to detect.
+
+See [MUTATIONS.md](MUTATIONS.md#durable-audit-delivery-schema-6) for delivery and recovery rules.
 
 ## Keys
 

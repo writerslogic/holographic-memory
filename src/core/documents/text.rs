@@ -12,6 +12,7 @@ use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use crate::core::durable_file::{positioned_read, positioned_write};
 use anyhow::{ensure, Context, Result};
 
 /// Appends are serialized by the store's write lock; readers (captured queries that outlive
@@ -155,56 +156,6 @@ impl TextSegment {
     pub(crate) fn len(&self) -> u64 {
         self.len.load(Ordering::Acquire)
     }
-}
-
-#[cfg(unix)]
-fn positioned_read(file: &File, buf: &mut [u8], at: u64) -> std::io::Result<()> {
-    use std::os::unix::fs::FileExt;
-    file.read_exact_at(buf, at)
-}
-
-#[cfg(unix)]
-fn positioned_write(file: &File, buf: &[u8], at: u64) -> std::io::Result<()> {
-    use std::os::unix::fs::FileExt;
-    file.write_all_at(buf, at)
-}
-
-#[cfg(windows)]
-fn positioned_write(file: &File, buf: &[u8], at: u64) -> std::io::Result<()> {
-    use std::os::windows::fs::FileExt;
-    let mut done = 0;
-    while done < buf.len() {
-        let n = file.seek_write(&buf[done..], at + done as u64)?;
-        if n == 0 {
-            return Err(std::io::ErrorKind::WriteZero.into());
-        }
-        done += n;
-    }
-    Ok(())
-}
-
-#[cfg(windows)]
-fn positioned_read(file: &File, buf: &mut [u8], at: u64) -> std::io::Result<()> {
-    use std::os::windows::fs::FileExt;
-    let mut done = 0;
-    while done < buf.len() {
-        let n = file.seek_read(&mut buf[done..], at + done as u64)?;
-        if n == 0 {
-            return Err(std::io::ErrorKind::UnexpectedEof.into());
-        }
-        done += n;
-    }
-    Ok(())
-}
-
-#[cfg(not(any(unix, windows)))]
-fn positioned_read(_: &File, _: &mut [u8], _: u64) -> std::io::Result<()> {
-    Err(std::io::ErrorKind::Unsupported.into())
-}
-
-#[cfg(not(any(unix, windows)))]
-fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()> {
-    Err(std::io::ErrorKind::Unsupported.into())
 }
 
 #[cfg(test)]

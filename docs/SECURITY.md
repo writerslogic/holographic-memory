@@ -38,7 +38,7 @@
 - **Library**: `ed25519-dalek` v3 (pure Rust, constant-time)
 - **Key generation**: `rand::rng()` (OS CSPRNG via `getrandom`)
 - **Key storage**: Raw 32-byte secret key at `{storage_path}/hms_signing.key`
-- **What is signed**: Each audit entry's signable prefix: `[timestamp_ms: u64][op: u8][id_hash: 32]` = 41 bytes
+- **What is signed**: Legacy entries cover `[timestamp_ms: u64][op: u8][id_hash: 32]` (41 bytes). Schema-6 effects prepend `WARM-AUDIT-2\0` and their 16-byte delivery identity (70 bytes total); use `AuditEntry::signable_bytes()`.
 - **Verification**: Public key derived from stored secret key on load
 
 ### AES-256-GCM Encryption
@@ -113,7 +113,7 @@ cleanup does not claim the legacy dependency stack is vulnerability-free.
 
 ## Audit Trail
 
-The audit log at `{storage_path}/audit.bin` is an append-only binary file with fixed-size 105-byte entries:
+For schemas 2–5, `{storage_path}/audit.bin` is an append-only binary file with fixed-size 105-byte entries:
 
 ```
 [timestamp_ms: u64][op: u8][id_hash: 32 bytes][signature: 64 bytes]
@@ -134,6 +134,18 @@ alignment; it does not reconstruct missing audit events or establish exactly-onc
 delivery. A failed repair prevents the new audit append, but the associated core
 mutation may already be committed as described in the
 [committed-effect contract](production-readiness.md#durability-and-concurrency).
+
+Schema 6 preserves legacy history and writes new entries to `audit.effects.bin` with a
+version header, effect identity, and per-record checksum. Enabled vector memorize/delete
+and compaction operations journal their audit intents atomically with the business change.
+Open and `flush_audit()` recover queued delivery without reapplying that change. Delivery
+is ordered and deduplicated across the write/acknowledgement crash interval, with at most
+1024 pending effects. A full backlog rejects additional audited changes before commit.
+Original signatures survive recovery unchanged; retain the original verification key.
+Neither CRC32 nor individual signatures prove that no whole record was removed. Historical
+history gaps, provenance delivery, and document/meaning audit coverage remain separate work.
+See the [persisted layout](file-format/ANCILLARY.md#auditeffectsbin-schema-6) and
+[delivery invariants](file-format/MUTATIONS.md#durable-audit-delivery-schema-6).
 
 ## IDF Clipping Poisoning Defense (Meaning Memory)
 

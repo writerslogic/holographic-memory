@@ -3,6 +3,7 @@
 
 use crate::core::sync::Mutex;
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 
@@ -13,7 +14,7 @@ pub type SignFnRef<'a> = Option<&'a dyn Fn(&[u8]) -> SignatureBytes>;
 
 /// Operation types for audit entries.
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AuditOp {
     Memorize = 1,
     Delete = 2,
@@ -34,18 +35,76 @@ impl AuditOp {
 /// A single audit log entry.
 /// Fixed layout: [timestamp_ms: u64][op: u8][id_hash: 32][sig: 64] = 105 bytes.
 /// When signing is disabled, sig is all zeros.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditEntry {
     pub timestamp_ms: u64,
     pub op: AuditOp,
     pub id_hash: [u8; 32],
+    #[serde(with = "signature_bytes")]
     pub signature: [u8; 64],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effect_id: Option<[u8; 16]>,
 }
 
-const ENTRY_SIZE: usize = 8 + 1 + 32 + 64; // 105 bytes
+pub(crate) const ENTRY_SIZE: usize = 8 + 1 + 32 + 64;
+
+mod signature_bytes {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn serialize<S: Serializer>(
+        signature: &[u8; 64],
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        let left: &[u8; 32] = signature[..32].try_into().expect("fixed signature half");
+        let right: &[u8; 32] = signature[32..].try_into().expect("fixed signature half");
+        (left, right).serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<[u8; 64], D::Error> {
+        let (left, right) = <([u8; 32], [u8; 32])>::deserialize(deserializer)?;
+        let mut signature = [0; 64];
+        signature[..32].copy_from_slice(&left);
+        signature[32..].copy_from_slice(&right);
+        Ok(signature)
+    }
+}
 
 impl AuditEntry {
-    fn to_bytes(&self) -> [u8; ENTRY_SIZE] {
+    pub(crate) fn prepare(
+        op: AuditOp,
+        id: &str,
+        effect_id: Option<[u8; 16]>,
+        sign_fn: SignFnRef<'_>,
+    ) -> Self {
+        let mut entry = Self {
+            timestamp_ms: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as u64,
+            op,
+            id_hash: hash_id(id),
+            signature: [0; 64],
+            effect_id,
+        };
+        if let Some(sign) = sign_fn {
+            entry.signature = sign(&entry.signable_bytes());
+        }
+        entry
+    }
+
+    /// The exact message covered by this entry's signature, including its delivery identity when present.
+    pub fn signable_bytes(&self) -> Vec<u8> {
+        let mut message = Vec::with_capacity(70);
+        if let Some(id) = self.effect_id {
+            message.extend_from_slice(b"WARM-AUDIT-2\0");
+            message.extend_from_slice(&id);
+        }
+        message.extend_from_slice(&self.to_bytes()[..41]);
+        message
+    }
+
+    pub(crate) fn to_bytes(&self) -> [u8; ENTRY_SIZE] {
         let mut buf = [0u8; ENTRY_SIZE];
         buf[0..8].copy_from_slice(&self.timestamp_ms.to_le_bytes());
         buf[8] = self.op as u8;
@@ -54,7 +113,7 @@ impl AuditEntry {
         buf
     }
 
-    fn from_bytes(buf: &[u8; ENTRY_SIZE]) -> Option<Self> {
+    pub(crate) fn from_bytes(buf: &[u8; ENTRY_SIZE]) -> Option<Self> {
         let timestamp_ms = u64::from_le_bytes(buf[0..8].try_into().expect("8-byte slice"));
         let op = AuditOp::from_u8(buf[8])?;
         let mut id_hash = [0u8; 32];
@@ -66,6 +125,7 @@ impl AuditEntry {
             op,
             id_hash,
             signature,
+            effect_id: None,
         })
     }
 }
@@ -106,23 +166,7 @@ impl AuditLog {
     /// signable bytes (timestamp + op + id_hash = 41 bytes) and should
     /// return a 64-byte signature, or None if signing is disabled.
     pub fn record(&self, op: AuditOp, id: &str, sign_fn: SignFnRef<'_>) -> Result<()> {
-        let timestamp_ms = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
-
-        let mut bytes = AuditEntry {
-            timestamp_ms,
-            op,
-            id_hash: hash_id(id),
-            signature: [0u8; 64],
-        }
-        .to_bytes();
-
-        if let Some(sign) = sign_fn {
-            let signature = sign(&bytes[..41]);
-            bytes[41..].copy_from_slice(&signature);
-        }
+        let bytes = AuditEntry::prepare(op, id, None, sign_fn).to_bytes();
 
         let mut file = self.file.lock();
         // A prior failed write can leave a partial record without closing this handle.
@@ -231,6 +275,7 @@ mod tests {
             op: AuditOp::Memorize,
             id_hash: [0xAB; 32],
             signature: [0xCD; 64],
+            effect_id: None,
         };
         let bytes = entry.to_bytes();
         let parsed = AuditEntry::from_bytes(&bytes).unwrap();
@@ -267,6 +312,7 @@ mod tests {
                     op: AuditOp::Memorize,
                     id_hash: [0; 32],
                     signature: [0; 64],
+                    effect_id: None,
                 }
                 .to_bytes();
                 let mut bytes = entry.repeat(index + 2);
@@ -292,6 +338,7 @@ mod tests {
                 op: AuditOp::Delete,
                 id_hash: hash_id("interrupted"),
                 signature: [0; 64],
+                effect_id: None,
             }
             .to_bytes();
             log.file

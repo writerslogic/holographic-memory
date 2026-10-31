@@ -659,6 +659,8 @@ impl AppState {
                 let c = t.compaction.lock().clone();
                 Some(TenantGauge {
                     name: t.name.clone(),
+                    audit_pending: core.pending_audit_effects(),
+                    audit_recoverable: core.durable_audit_delivery(),
                     documents: core.document_count() as u64,
                     vectors: core.document_embedding_count() as u64,
                     used_bytes: core.storage_health().used_bytes,

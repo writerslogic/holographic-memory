@@ -35,10 +35,7 @@ fn test_signed_audit_entries() {
     let key_path = dir.path().join("hms_signing.key");
     let mgr = SigningManager::new(&key_path).unwrap();
     for entry in &entries {
-        let mut signable = [0u8; 41];
-        signable[0..8].copy_from_slice(&entry.timestamp_ms.to_le_bytes());
-        signable[8] = entry.op as u8;
-        signable[9..41].copy_from_slice(&entry.id_hash);
+        let signable = entry.signable_bytes();
         mgr.verify(&signable, &entry.signature)
             .expect("Signature verification failed");
     }
@@ -68,10 +65,7 @@ fn test_signed_compact_audit() {
 
     let key_path = dir.path().join("hms_signing.key");
     let mgr = SigningManager::new(&key_path).unwrap();
-    let mut signable = [0u8; 41];
-    signable[0..8].copy_from_slice(&compact_entry.timestamp_ms.to_le_bytes());
-    signable[8] = compact_entry.op as u8;
-    signable[9..41].copy_from_slice(&compact_entry.id_hash);
+    let signable = compact_entry.signable_bytes();
     mgr.verify(&signable, &compact_entry.signature)
         .expect("Compact signature verification failed");
 }

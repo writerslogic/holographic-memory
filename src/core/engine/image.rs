@@ -100,6 +100,8 @@ impl WarmCore {
                     super::Mutation::Document(_)
                         | super::Mutation::DeleteDocument { .. }
                         | super::Mutation::EncodeDocument { .. }
+                        | super::Mutation::AuditPending(_)
+                        | super::Mutation::AuditAcknowledged { .. }
                 )
             })
     }

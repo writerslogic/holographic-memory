@@ -35,7 +35,8 @@ creation before any commit).
 | `encryption.salt` | Atomic and fsynced before the first frame. | `tests/format_crash.rs::salt_is_written_atomically` |
 | Vector update batch | One CRC32 frame per durable batch; an incomplete final frame is truncated, a complete bad frame fails open. | `qgraph::update::tests::torn_last_batch_at_every_byte_and_checksum_corruption` |
 | Vector consolidation | A synced checkpoint publishes a complete generation; its sequence suppresses old log replay before rotation. | `qgraph::update::tests::consolidation_interruption_recovers_committed_state` |
-| `audit.bin` | Entry append is fsynced; a torn entry is cut on the next open. | `tests/format_crash.rs::audit_torn_entry_is_repaired` |
+| `audit.bin` | Legacy entry append is fsynced; a torn entry is cut on open and before append. | `tests/format_crash.rs::audit_torn_entry_is_repaired` |
+| `audit.effects.bin` and schema-6 intents | Business commit persists its intent; delivery is synced before its journal acknowledgement. Recovery deduplicates an already delivered FIFO head and retains pending intents through compaction/checkpoints. | `audit_delivery::tests::process_crashes_at_commit_write_sync_and_ack_recover_once`, `compaction::tests::audit_intents_survive_snapshot_and_concurrent_compaction_tail` |
 | `documents.text` | Not durable; rebuilt on every open and rewritten by a purge through `documents.text.canonical` (a leftover is scrubbed at open). | `golden` tests |
 | Provenance files, `kel.json`, `shard_meta.json` | Plain or atomic single-file writes, no cross-file atomicity. **Not covered.** | |
 

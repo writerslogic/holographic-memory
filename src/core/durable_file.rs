@@ -2,12 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{bail, Result};
+use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub(crate) fn open_regular(path: &Path, write: bool) -> std::io::Result<std::fs::File> {
+    open_regular_mode(path, !write, write)
+}
+
+pub(crate) fn open_regular_read_write(path: &Path) -> std::io::Result<std::fs::File> {
+    open_regular_mode(path, true, true)
+}
+
+fn open_regular_mode(path: &Path, read: bool, write: bool) -> std::io::Result<std::fs::File> {
     let mut options = std::fs::OpenOptions::new();
-    options.read(!write).write(write);
+    options.read(read).write(write);
     #[cfg(unix)]
     {
         use std::os::unix::fs::OpenOptionsExt;
@@ -33,6 +42,56 @@ pub(crate) fn open_regular(path: &Path, write: bool) -> std::io::Result<std::fs:
         ));
     }
     Ok(file)
+}
+
+#[cfg(unix)]
+pub(crate) fn positioned_read(file: &File, buf: &mut [u8], at: u64) -> std::io::Result<()> {
+    use std::os::unix::fs::FileExt;
+    file.read_exact_at(buf, at)
+}
+
+#[cfg(unix)]
+pub(crate) fn positioned_write(file: &File, buf: &[u8], at: u64) -> std::io::Result<()> {
+    use std::os::unix::fs::FileExt;
+    file.write_all_at(buf, at)
+}
+
+#[cfg(windows)]
+pub(crate) fn positioned_write(file: &File, buf: &[u8], at: u64) -> std::io::Result<()> {
+    use std::os::windows::fs::FileExt;
+    let mut done = 0;
+    while done < buf.len() {
+        let n = file.seek_write(&buf[done..], at + done as u64)?;
+        if n == 0 {
+            return Err(std::io::ErrorKind::WriteZero.into());
+        }
+        done += n;
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+pub(crate) fn positioned_read(file: &File, buf: &mut [u8], at: u64) -> std::io::Result<()> {
+    use std::os::windows::fs::FileExt;
+    let mut done = 0;
+    while done < buf.len() {
+        let n = file.seek_read(&mut buf[done..], at + done as u64)?;
+        if n == 0 {
+            return Err(std::io::ErrorKind::UnexpectedEof.into());
+        }
+        done += n;
+    }
+    Ok(())
+}
+
+#[cfg(not(any(unix, windows)))]
+pub(crate) fn positioned_read(_: &File, _: &mut [u8], _: u64) -> std::io::Result<()> {
+    Err(std::io::ErrorKind::Unsupported.into())
+}
+
+#[cfg(not(any(unix, windows)))]
+pub(crate) fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()> {
+    Err(std::io::ErrorKind::Unsupported.into())
 }
 
 pub(crate) fn sync_directory(path: &Path) -> Result<()> {
@@ -205,6 +264,14 @@ pub(crate) fn create_identity_parent(path: &Path) -> Result<()> {
 
 #[cfg(feature = "security")]
 pub(crate) fn atomic_create(path: &Path, bytes: &[u8]) -> Result<bool> {
+    atomic_create_checked(path, bytes, identity_crash_point)
+}
+
+pub(crate) fn atomic_create_regular(path: &Path, bytes: &[u8]) -> Result<bool> {
+    atomic_create_checked(path, bytes, |_| {})
+}
+
+fn atomic_create_checked(path: &Path, bytes: &[u8], checkpoint: impl Fn(&str)) -> Result<bool> {
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -213,15 +280,15 @@ pub(crate) fn atomic_create(path: &Path, bytes: &[u8]) -> Result<bool> {
     temp.write_all(bytes)?;
     temp.as_file().sync_all()?;
     sync_mapped_file(temp.as_file())?;
-    identity_crash_point("synced");
+    checkpoint("synced");
     let created = match temp.persist_noclobber(path) {
         Ok(_) => true,
         Err(error) if error.error.kind() == std::io::ErrorKind::AlreadyExists => false,
         Err(error) => return Err(error.into()),
     };
-    identity_crash_point("published");
+    checkpoint("published");
     sync_directory(parent)?;
-    identity_crash_point("durable");
+    checkpoint("durable");
     Ok(created)
 }
 

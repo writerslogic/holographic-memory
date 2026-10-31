@@ -46,6 +46,8 @@ impl Histogram {
 #[derive(Default)]
 pub struct TenantGauge {
     pub name: String,
+    pub audit_pending: usize,
+    pub audit_recoverable: bool,
     pub documents: u64,
     pub vectors: u64,
     pub used_bytes: f64,
@@ -303,6 +305,16 @@ impl Metrics {
         }
         for (name, help, kind) in [
             (
+                "warm_tenant_audit_pending",
+                "Committed audit records awaiting acknowledgement.",
+                "gauge",
+            ),
+            (
+                "warm_tenant_audit_recoverable",
+                "1 when the tenant schema supports durable audit delivery.",
+                "gauge",
+            ),
+            (
                 "warm_tenant_documents",
                 "Documents stored per tenant.",
                 "gauge",
@@ -341,7 +353,10 @@ impl Metrics {
             let _ = writeln!(out, "# HELP {name} {help}\n# TYPE {name} {kind}");
             for t in &sat.tenants {
                 let trained = u8::from(t.index_trained);
+                let recoverable = u8::from(t.audit_recoverable);
                 let value: &dyn std::fmt::Display = match name {
+                    "warm_tenant_audit_pending" => &t.audit_pending,
+                    "warm_tenant_audit_recoverable" => &recoverable,
                     "warm_tenant_documents" => &t.documents,
                     "warm_tenant_vectors" => &t.vectors,
                     "warm_tenant_index_bytes" => &t.used_bytes,

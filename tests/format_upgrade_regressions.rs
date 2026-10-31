@@ -6,6 +6,47 @@ use format_common::goldens;
 use writerslogic_warm::core::format::{upgrade_store, verify_path, Verdict, VerifyOptions};
 
 #[test]
+fn audit_upgrade_preserves_legacy_history_and_enables_new_delivery() -> anyhow::Result<()> {
+    let root = tempfile::tempdir()?;
+    let source = root.path().join("legacy");
+    let output = root.path().join("upgraded");
+    let fixtures = goldens()?;
+    let fixture = fixtures
+        .iter()
+        .find(|fixture| fixture.name == "v4-audit")
+        .unwrap();
+    fixture.unpack(&source)?;
+    let core = writerslogic_warm::WarmCore::new(
+        fixture.dimensions(),
+        Some(source.display().to_string()),
+        Some(fixture.config()?),
+    )?;
+    let legacy = core.audit_since(0)?;
+    assert!(!legacy.is_empty());
+    assert!(legacy.iter().all(|entry| entry.effect_id.is_none()));
+    assert!(!core.durable_audit_delivery());
+    drop(core);
+    upgrade_store(&source, &output, false)?;
+    let core = writerslogic_warm::WarmCore::new(
+        fixture.dimensions(),
+        Some(output.display().to_string()),
+        Some(fixture.config()?),
+    )?;
+    assert!(core.durable_audit_delivery());
+    assert_eq!(core.audit_since(0)?, legacy);
+    core.memorize(
+        "new-effect".into(),
+        writerslogic_warm::EntangledHVec::new_deterministic(fixture.dimensions() as usize, 17),
+    )?;
+    let entries = core.audit_since(0)?;
+    assert_eq!(&entries[..legacy.len()], legacy.as_slice());
+    assert_eq!(entries.len(), legacy.len() + 1);
+    assert!(entries.last().unwrap().effect_id.is_some());
+    assert_eq!(core.pending_audit_effects(), 0);
+    Ok(())
+}
+
+#[test]
 fn mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
     let source = root.path().join("source");
@@ -168,7 +209,7 @@ fn schema_only_upgrade_preserves_checkpoint_and_source_bytes() -> anyhow::Result
     assert!(plan
         .steps
         .iter()
-        .any(|step| step.id == "store-schema-4-to-5"));
+        .any(|step| step.id == "store-schema-4-to-6"));
     assert!(!plan.steps.iter().any(|step| step.artefact == "arena"));
     upgrade_store(&source, &output, false)?;
     let mut after = file_fingerprints(&source)?;
