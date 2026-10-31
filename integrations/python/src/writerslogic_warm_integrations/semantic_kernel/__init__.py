@@ -6,7 +6,3 @@
 from .collection import WarmCollection, WarmStore
 
 __all__ = ["WarmCollection", "WarmStore"]
-
-HolographicCollection = WarmCollection
-HolographicStore = WarmStore
-__all__ += ['HolographicCollection', 'HolographicStore']

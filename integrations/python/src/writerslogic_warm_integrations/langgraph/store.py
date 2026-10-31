@@ -343,5 +343,3 @@ class WarmStore(BaseStore):
         text = self._index_text(op.value, op.index)
         vector = (await aembed_documents(self._embedder, [text]))[0] if text is not None else self._const
         await b.remember([self._item_record(op, created, now, vector, text is not None), self._marker_record(ns)])
-
-HolographicStore = WarmStore

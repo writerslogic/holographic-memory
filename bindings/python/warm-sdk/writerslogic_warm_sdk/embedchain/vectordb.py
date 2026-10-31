@@ -55,5 +55,3 @@ class WarmDB(BaseVectorDB):
 
     def reset(self):
         pass
-
-HolographicDB = WarmDB

@@ -57,5 +57,3 @@ class WarmVectorDb(VectorDb):
 
     def drop(self) -> None:
         pass
-
-HolographicVectorDb = WarmVectorDb

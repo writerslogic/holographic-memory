@@ -284,6 +284,3 @@ class WarmAsyncChatStore(AsyncDBChatStore):
 
     async def get_keys(self) -> List[str]:
         return await self._log.keys()
-
-HolographicChatStore = WarmChatStore
-HolographicAsyncChatStore = WarmAsyncChatStore

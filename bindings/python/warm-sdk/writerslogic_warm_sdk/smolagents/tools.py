@@ -47,5 +47,3 @@ class WarmSearchTool(Tool):
         
         results = [match.get("text", "") for match in res.get("matches", [])]
         return "\n\n---\n\n".join(results) if results else "No matches found."
-
-HolographicSearchTool = WarmSearchTool

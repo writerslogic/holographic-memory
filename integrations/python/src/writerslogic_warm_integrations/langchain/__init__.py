@@ -13,8 +13,3 @@ __all__ = [
     "WarmVectorStore",
     "LangChainEmbedder",
 ]
-
-HolographicChatMessageHistory = WarmChatMessageHistory
-HolographicRetriever = WarmRetriever
-HolographicVectorStore = WarmVectorStore
-__all__ += ['HolographicChatMessageHistory', 'HolographicRetriever', 'HolographicVectorStore']

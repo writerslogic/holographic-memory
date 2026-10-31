@@ -39,6 +39,3 @@ class WarmSearchTool(BaseTool):
             results.append(match.get("text", ""))
             
         return "\n\n---\n\n".join(results) if results else "No matches found."
-
-HolographicSearchSchema = WarmSearchSchema
-HolographicSearchTool = WarmSearchTool
