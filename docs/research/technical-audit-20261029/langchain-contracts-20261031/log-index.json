@@ -25,6 +25,16 @@
     "sha256": "17875b82319e81929305f33f08ac649912ca2d0be8812c3359e2d7f47172f70f"
   },
   {
+    "file": "final-actionlint.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "final-build.log",
+    "bytes": 305,
+    "sha256": "0dd4ea1cc03891760c245d047963619ab4f79bb404433e3908cbba99ecaf44cf"
+  },
+  {
     "file": "legacy-python310-final.log",
     "bytes": 100,
     "sha256": "b4397992675c721154b6cc7ce4661e6afc95b06e75e201a8a359276610d6eea0"
@@ -43,6 +53,11 @@
     "file": "lock-update.log",
     "bytes": 52,
     "sha256": "68b3e4853b8e751bd3b081a7caa5ac19e790afb10bbc547e489674750d463953"
+  },
+  {
+    "file": "locked-python314.log",
+    "bytes": 766,
+    "sha256": "a911a88dcf950dafe8f8c99c44620754c745886edd37a471a0da386028a9845d"
   },
   {
     "file": "minimum-python310.log",

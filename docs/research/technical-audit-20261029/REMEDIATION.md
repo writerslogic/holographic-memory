@@ -631,9 +631,10 @@ loses those IDs (13 pass / one fail in the compatibility trial). The declared
 minimum is now 0.3.86, matching the already locked legacy branch, which passes all
 17 final adapter tests on Python 3.10.19. Current 1.7.3 passes the full SDK suite
 on Python 3.14.7: 77 tests and 46 subtests, with 13 upstream asyncio deprecation
-warnings. All embeddings and server calls are local; no paid APIs, model downloads
-or relevance/latency claims. CI now exercises both tested framework/Python pairs
-against the real server with framework tracing disabled.
+warnings. The locked modern version, 1.7.0, also passes all 17 adapter contracts
+on Python 3.14. CI uses the two locked versions (0.3.86/3.10 and 1.7.0/3.14)
+against the real server with framework tracing disabled. All embeddings and
+server calls are local; no paid APIs, model downloads or relevance/latency claims.
 
 Offline lock validation, scoped actionlint/zizmor and distribution builds pass.
 No locked package/version pair changed; uv normalized existing resolution markers.

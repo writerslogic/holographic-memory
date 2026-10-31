@@ -270,7 +270,7 @@ jobs:
           LANGCHAIN_TRACING_V2: 'false'
         run: |
           uv run --no-project --python 3.10 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==0.3.86' pytest -q -rs tests/test_langchain_live.py
-          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==1.7.3' pytest -q -rs tests/test_langchain_live.py
+          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==1.7.0' pytest -q -rs tests/test_langchain_live.py
 
   node:
     name: node (${{ matrix.os }})

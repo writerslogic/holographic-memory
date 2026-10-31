@@ -8,7 +8,8 @@
   "accepted": {
     "langchain-core1.7.3_python3.10": "14 initial regressions passed",
     "langchain-core0.3.86_python3.10": "17 final contract tests passed",
-    "langchain-core1.7.3_python3.14": "77 full SDK tests and 46 subtests passed; 13 upstream asyncio deprecation warnings"
+    "langchain-core1.7.3_python3.14": "77 full SDK tests and 46 subtests passed; 13 upstream asyncio deprecation warnings",
+    "langchain-core1.7.0_python3.14": "17 final contract tests passed; 13 upstream asyncio deprecation warnings"
   },
   "rejected_minimum": {
     "version": "0.2.11",
@@ -29,6 +30,11 @@
     "No paid API/cloud/model calls; deterministic local embeddings",
     "Legacy dependency security remains unresolved",
     "Similarity retrieval only; scored/MMR/deletion adapter interfaces remain unsupported",
-    "Full PR CI gate pending"
+    "Full PR CI gate pending",
+    "Zizmor used its default offline mode and existing repository suppressions; no new suppressions"
+  ],
+  "ci_matrix": [
+    "langchain-core 0.3.86 / Python 3.10",
+    "langchain-core 1.7.0 / Python 3.14"
   ]
 }

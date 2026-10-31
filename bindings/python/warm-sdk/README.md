@@ -31,8 +31,8 @@ The earlier standalone `langchain-holographic` distribution is retired. For Lang
 `langchain_holographic` import and its local-store configuration when migrating.
 
 The LangChain adapter requires `langchain-core>=0.3.86`. It preserves supplied
-IDs through `add_texts`, `add_documents`, `from_texts`, and search results, and
-forwards `filter` from similarity retrievers to WARM. Metadata and ID counts must
+IDs through `add_texts`, `add_documents`, `from_texts`, and search results. Supply
+stable IDs for writes you may need to reconcile or retry. The adapter forwards `filter` from similarity retrievers to WARM. Metadata and ID counts must
 match the input texts before embedding begins; the embedder must return one
 vector per text before any upload. Call `store.close()` when finished. Similarity
 retrieval is supported; scored retrieval, MMR, and the adapter's deletion APIs are
