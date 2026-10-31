@@ -37,7 +37,7 @@ response. Size-limit violations remain 413, and body deadlines remain 408.
 400. `X-Tenant-ID` is not 1 to 64 characters of `[A-Za-z0-9_-]`.
 
 ### invalid_request
-422. The body parsed but a value is not acceptable: wrong vector length or non-finite values, `top_k` out of range, an id with control characters or the reserved `hms:` prefix, text that does not fit one chunk, a batch over the limits, an archive that is not a valid store, a malformed query string. The request was not applied.
+422. The body parsed but a value is not acceptable: wrong vector length or non-finite values, `top_k` out of range, an id with control characters or the reserved `hms:` prefix, text that does not fit one chunk, a batch over the limits, an archive that is not a valid store, a malformed query string. Streamed ingestion can retain earlier committed batches; reconcile stored records before retrying.
 
 ### unauthorized
 401. Missing, unknown, expired, disabled or wrong credentials. `WWW-Authenticate: Bearer` is set.
