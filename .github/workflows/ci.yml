@@ -166,6 +166,11 @@ jobs:
         run: cargo nextest run --locked --lib --stress-duration 5m --retries 0 --fail-fast -E 'test(delta_rows::tests)'
       - name: Unit and integration tests
         run: cargo nextest run --locked --no-fail-fast
+      - name: HTTP and MCP runtime contracts
+        run: >-
+          cargo nextest run --locked --features server,mcp --no-fail-fast --test-threads 1
+          --bin warm-server --bin warm-mcp
+          --test server --test server_api --test server_ops --test server_abuse --test server_ann
 
   bench-build:
     name: benchmarks compile

@@ -84,7 +84,21 @@ async fn shutdown_signal() {
             }
         }
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    {
+        match tokio::signal::windows::ctrl_break() {
+            Ok(mut signal) => {
+                tokio::select! {
+                    _ = tokio::signal::ctrl_c() => {}
+                    _ = signal.recv() => {}
+                }
+            }
+            Err(_) => {
+                let _ = tokio::signal::ctrl_c().await;
+            }
+        }
+    }
+    #[cfg(not(any(unix, windows)))]
     {
         let _ = tokio::signal::ctrl_c().await;
     }

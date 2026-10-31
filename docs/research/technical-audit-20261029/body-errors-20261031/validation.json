@@ -1,0 +1,204 @@
+{
+  "baseline": "171c80d3",
+  "toolchain": "Rust 1.99.0",
+  "features": "server",
+  "baseline_regressions": {
+    "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server body_failure -- --test-threads=1",
+    "passed": 0,
+    "failed": 4,
+    "log": "baseline.log",
+    "patch": "baseline-regressions.patch"
+  },
+  "checks": [
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server body -- --test-threads=1",
+      "passed": 7,
+      "log": "body-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server error::tests",
+      "passed": 4,
+      "log": "error-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server --bin warm-server -- -D warnings",
+      "result": "pass",
+      "log": "clippy-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check; git diff --check",
+      "result": "pass",
+      "log": "fmt-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server error::tests",
+      "passed": 4,
+      "log": "error-graph-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server --bin warm-server -- -D warnings",
+      "result": "pass",
+      "log": "clippy-graph-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check; git diff --check",
+      "result": "pass",
+      "log": "fmt-graph-final.log"
+    },
+    {
+      "command": "uvx --offline --from 'actionlint-py==1.7.12.25' actionlint .github/workflows/ci.yml",
+      "result": "pass",
+      "log": "actionlint.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server,mcp --bin warm-server -- --test-threads=1",
+      "passed": 72,
+      "log": "integrated-server.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server,mcp --bin warm-server --bin warm-mcp --test server_api -- -D warnings",
+      "result": "pass",
+      "log": "integrated-clippy.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check",
+      "result": "pass",
+      "log": "integrated-fmt.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server,mcp --test server_ops unix_socket",
+      "passed": 1,
+      "log": "unix-socket-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server,mcp --bin warm-server --bin warm-mcp --test server_ops -- -D warnings",
+      "result": "pass",
+      "log": "platform-clippy.log"
+    }
+  ],
+  "coverage": [
+    "Buffered size boundary 7/8/9 bytes against an 8-byte limit, across multiple frames",
+    "Injected body errors traverse real router and authentication middleware",
+    "No buffered write or retry-key reservation before a failed read",
+    "Admission and in-flight gauge released after every tested handler failure",
+    "Incomplete restore upload and staging directory removed",
+    "NDJSON preserves an earlier committed batch after a later transport failure",
+    "Underlying sensitive error text is absent from the response",
+    "Existing timeout and frame-independent batch tests pass"
+  ],
+  "sources": [
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.1",
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.14"
+  ],
+  "api_verification": {
+    "source": "axum 0.8.9 registry source, src/body/mod.rs; to_bytes documentation and implementation",
+    "module_sha256": "83a6632a770e9f3c0ddcdafc26dce4729a1c305f12eef0006c9200f38e774a5a",
+    "mechanism": "Inspect the axum error source for http_body_util::LengthLimitError, as documented by the installed version."
+  },
+  "limits": [
+    "Injected-stream regressions verify handler semantics, not response delivery over a disconnected network.",
+    "Streaming batches are not rolled back on body failure; retry requires reconciliation.",
+    "No new restart-safe retry guarantee."
+  ],
+  "integration_gate": {
+    "pr": 359,
+    "tested_head": "f08456123a6e9def8fe34d894393eaf063173caa",
+    "merge": "f78b2175a41d8558943755949642c6b19de33d6d",
+    "tested_and_merged_tree": "8d76cb1688414c5f2d76b23f06a63271655f996d",
+    "checks": {
+      "success": 102,
+      "skipped": 11
+    },
+    "unresolved_reviews": 0,
+    "open_code_scanning_alerts": 0,
+    "override": "Owner-review requirement only, after all checks completed successfully."
+  },
+  "graph_contract": {
+    "baseline": "a454f093",
+    "baseline_failed": 1,
+    "baseline_log": "graph-baseline.log",
+    "patch": "graph-regression.patch",
+    "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server explicit_graph_query",
+    "passed": 1,
+    "log": "graph-final.log",
+    "deficiency": "Existing index_unavailable code lacked a registered problem title and documentation; its 409 behavior was already implemented.",
+    "recovery": "The same actual router accepts an explicit exact query after the graph request returns 409."
+  },
+  "windows_coverage": {
+    "previous": "Windows nextest job used default features; Cargo.toml default=[] excludes the HTTP and MCP binaries.",
+    "added_command": "cargo nextest run --locked --features server,mcp --no-fail-fast --test-threads 1 --bin warm-server --bin warm-mcp --test server --test server_api --test server_ops --test server_abuse --test server_ann",
+    "status": "Run 41203375960 passed: default suite 806 passed/14 skipped; service suite 165 passed/0 skipped."
+  },
+  "integrated_main": "5192ab7b",
+  "windows_console": {
+    "source_finding": "Server test harness used Unix kill for every shutdown and SIGHUP reload; Windows server listened only for Ctrl+C.",
+    "mechanism": "Windows child process groups receive targeted Ctrl+Break; server handles it using Tokio. Windows key and certificate reload tests use existing authenticated endpoints. Unix signal coverage is retained.",
+    "local_checks": {
+      "server_ops": 13,
+      "key_rotation": 1,
+      "clippy": "pass",
+      "formatting": "pass"
+    },
+    "status": "Run 41197071913: 159/164 runtime tests passed, including graceful shutdown, drain, readiness, key/TLS reloads and unsupported Unix socket rejection. Five snapshot-related tests failed; required aggregate failed.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/windows/console/generateconsolectrlevent",
+      "https://docs.rs/tokio/latest/tokio/signal/windows/fn.ctrl_break.html"
+    ]
+  },
+  "snapshot_copy": {
+    "root_cause": "copy_store reopened copied files read-only before sync_all; Windows FlushFileBuffers requires GENERIC_WRITE.",
+    "fix": "Retain native fs::copy on every platform. On Windows temporarily clear the unpublished destination read-only bit only when necessary to open a writable handle, restore attributes before propagating open errors, then flush that handle.",
+    "regression": "snapshot_copy_preserves_read_only_files_and_skips_process_state checks nested data, exact byte count, read-only permissions and lock/compaction exclusions.",
+    "local_snapshot_tests": 5,
+    "local_clippy": "pass",
+    "local_fmt": "pass",
+    "windows_acceptance": "Passed in run 41203375960, including the read-only/NTFS alternate-stream regression and backup round-trip.",
+    "limits": [
+      "Windows directory sync remains a no-op; this is not a full power-loss durability claim.",
+      "Separate core admin migration copy_tree still skips Windows file flushing; not changed here.",
+      "No snapshot throughput claim."
+    ],
+    "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers",
+    "native_metadata": {
+      "finding": "The initial unmerged byte-stream implementation omitted NTFS alternate streams; native fs::copy preserves them.",
+      "windows_test": "Read-only nested-file and NTFS alternate-stream assertions passed in run 41203375960.",
+      "local_check": "Read-only-copy test, strict Clippy and formatting pass on macOS.",
+      "sources": [
+        "https://doc.rust-lang.org/std/fs/fn.copy.html",
+        "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-copyfilew"
+      ]
+    }
+  },
+  "timing_and_polling": {
+    "windows_run": 41199300291,
+    "failures": [
+      "Idle eviction assumed writes finish in less than one second.",
+      "Readiness test attempted requests after its two-second drain window.",
+      "Backup round-trip received an empty response under parallel filesystem-heavy tests; precise failed request was not logged."
+    ],
+    "changes": [
+      "Eviction receives a private explicit time argument; production uses the same monotonic clock. Test covers idle threshold -1/at/+1 milliseconds without sleeps.",
+      "Readiness fixture opens its query tenant before signaling; five-second configured delay retains corresponding 4.9-second minimum assertion.",
+      "Fallible polling returns None on connection refusal; ordinary send now includes method, path and last ten server events on empty responses.",
+      "Windows service fixtures run serially; all tests and internal multi-client concurrency checks remain enabled. Read timeout remains 20 seconds."
+    ],
+    "local_checks": {
+      "idle_boundaries": 1,
+      "operations": 13,
+      "closed_server_before_fix_failed": 1,
+      "closed_server_after_fix_passed": 1,
+      "readiness": 1,
+      "clippy": "pass",
+      "formatting": "pass",
+      "actionlint": "pass"
+    },
+    "baseline_patch": "closed-server-regression.patch",
+    "baseline_description": "Assertion added before changing the polling helper, on the working tree based on 2e01512e.",
+    "limits": [
+      "No production throughput or latency claim.",
+      "Empty backup response root cause not confirmed; serialization isolates cross-test contention and diagnostics identify the request if it recurs.",
+      "Latest Windows CI required before merge."
+    ],
+    "acceptance": "All 165 service checks passed in run 41203375960. Native copies and serialized fixtures were both changed; the earlier empty-response cause is not independently isolated."
+  }
+}

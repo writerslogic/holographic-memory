@@ -17,6 +17,7 @@ pub const PROBLEM_BASE: &str =
 /// Every `code` the server emits: (code, status, title). Documented in docs/server/errors.md.
 pub const CODES: &[(&str, u16, &str)] = &[
     ("invalid_json", 400, "Malformed JSON"),
+    ("invalid_body", 400, "Unreadable request body"),
     ("invalid_tenant", 400, "Invalid tenant id"),
     ("invalid_request", 422, "Invalid request"),
     ("unauthorized", 401, "Authentication required"),
@@ -26,6 +27,7 @@ pub const CODES: &[(&str, u16, &str)] = &[
     ("method_not_allowed", 405, "Method not allowed"),
     ("request_timeout", 408, "Request timed out"),
     ("conflict", 409, "Conflict"),
+    ("index_unavailable", 409, "Graph index unavailable"),
     (
         "idempotency_in_flight",
         409,
@@ -92,6 +94,14 @@ impl ApiError {
                 .then_some(1),
             www_authenticate: false,
         }
+    }
+
+    pub fn invalid_body() -> Self {
+        Self::new(
+            StatusCode::BAD_REQUEST,
+            "invalid_body",
+            "request body could not be read",
+        )
     }
 
     pub fn bad(message: impl Into<String>) -> Self {

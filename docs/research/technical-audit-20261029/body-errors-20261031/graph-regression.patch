@@ -1,0 +1,37 @@
+diff --git a/src/bin/warm-server/tests.rs b/src/bin/warm-server/tests.rs
+index 04983c96..fe372483 100644
+--- a/src/bin/warm-server/tests.rs
++++ b/src/bin/warm-server/tests.rs
+@@ -732,3 +732,32 @@ async fn body_failure_stream_preserves_prior_committed_batches() {
+ async fn body_failure_restore_cleans_up_the_incomplete_archive() {
+     failed_body_request("/api/v1/restore", "PUT", &[0; 1024], 0).await;
+ }
++
++
++#[tokio::test]
++async fn explicit_graph_query_has_a_documented_unavailability_problem_and_exact_fallback() {
++    use tower_service::Service;
++    let directory = tempfile::tempdir().unwrap();
++    let state = state(directory.path(), 1);
++    let mut app = routes::router(state);
++    for (mode, expected) in [("graph", 409), ("exact", 200)] {
++        let request = axum::http::Request::builder()
++            .method("POST")
++            .uri("/api/v1/query")
++            .header("Authorization", "Bearer test-key")
++            .header("Content-Type", "application/json")
++            .body(axum::body::Body::from(serde_json::json!({"query_vector":[1,0],"index":mode}).to_string()))
++            .unwrap();
++        let response = app.call(request).await.unwrap();
++        assert_eq!(response.status().as_u16(), expected);
++        let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024).await.unwrap();
++        let body: Value = serde_json::from_slice(&bytes).unwrap();
++        if mode == "graph" {
++            assert_eq!(body["code"], "index_unavailable");
++            assert_eq!(body["title"], "Graph index unavailable");
++            assert!(body["type"].as_str().unwrap().ends_with("#index_unavailable"));
++        } else {
++            assert_eq!(body["matches"], serde_json::json!([]));
++        }
++    }
++}

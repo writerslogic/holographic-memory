@@ -290,7 +290,7 @@ pub async fn restore_upload(State(state): State<Arc<AppState>>, req: Request) ->
                 })?;
             match frame {
                 None => break,
-                Some(Err(_)) => return Err(ApiError::bad("request body could not be read")),
+                Some(Err(_)) => return Err(ApiError::invalid_body()),
                 Some(Ok(frame)) => {
                     if let Ok(data) = frame.into_data() {
                         total += data.len() as u64;

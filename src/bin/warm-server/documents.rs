@@ -489,13 +489,7 @@ pub async fn ingest_stream(State(state): State<Arc<AppState>>, req: Request) -> 
             })?;
         match frame {
             None => ended = true,
-            Some(Err(_)) => {
-                return Err(ApiError::new(
-                    StatusCode::BAD_REQUEST,
-                    "invalid_request",
-                    "request body could not be read",
-                ))
-            }
+            Some(Err(_)) => return Err(ApiError::invalid_body()),
             Some(Ok(frame)) => {
                 let Ok(data) = frame.into_data() else {
                     continue;

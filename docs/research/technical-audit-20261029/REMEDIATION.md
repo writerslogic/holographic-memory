@@ -442,6 +442,120 @@ the warm-up token before measuring the burst, retaining every existing rate/quot
 assertion. All failed attempts remain in the evidence archive. No production timeout,
 rate limit, test assertion or validation gate was relaxed.
 
+
+### Request-body error classification and cleanup
+
+Four regressions fail on `171c80d3`: buffered reads label transport failure as 413;
+restore labels it 422; streaming ingest returns 400 with `invalid_request`, whose
+registered contract is 422. One `invalid_body` 400 problem now describes unreadable
+bodies consistently. Buffered reads retain 413 only for Axum's documented
+`LengthLimitError`; 408 deadlines remain unchanged. The underlying transport error
+text never enters the problem response. This follows the distinction between
+[RFC 9110 §15.5.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.1)
+and [§15.5.14](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.14).
+
+Seven body-handling and four error-contract checks pass, including multi-frame size
+boundaries, real-router error injection, work-slot/gauge reclamation, no buffered
+mutation or retry-key reservation, restore-upload cleanup, and preservation of a
+previously committed NDJSON batch. Strict binary Clippy, formatting and diff checks
+pass. Evidence: `body-errors-20261031/`. Response delivery after a network disconnect
+is not guaranteed, and streaming retries still require reconciliation. The complete
+PR gate remains required before merge.
+
+The same follow-up registers and documents the existing `index_unavailable` 409
+code, which lacked an entry in `error::CODES` and the error reference. A real-router
+check verifies the specific problem title and successful explicit exact-search fallback
+on the same empty store. Its baseline failed on the generic Conflict title; the 409
+routing behavior itself was already implemented. The targeted check and refreshed
+error-contract, Clippy and formatting gates pass.
+
+
+The existing Windows job ran default features only (`default = []`), excluding both
+HTTP and MCP runtime contracts. Its existing default-feature run is retained, followed
+by an explicit `server,mcp` nextest step scoped to both service binaries and the five
+server integration targets. Actionlint passes locally. Windows runtime acceptance is
+pending the new PR's exact-head CI, not inferred from local macOS results.
+
+
+PR [#358](https://github.com/writerslogic/warm/pull/358) merged as `5192ab7b` after
+68 successful and four skipped check entries, with no pending/failed checks or unresolved
+review threads. Its merged tree matches tested head `60088616`. This completes the
+header-semantics integration gate, including the pre-existing Windows default-feature job.
+It does not establish the expanded Windows service coverage added in the next follow-up.
+
+### Enforced CI protection
+
+Main's GitHub protection had `strict: true` but no required status contexts. After
+verifying the existing CI `check` aggregate succeeded, required status protection now
+names `check` from GitHub Actions app 15368. The aggregate fails unless all twelve
+listed prerequisite jobs succeed, including Windows tests and workflow lint. The
+strict up-to-date requirement and captured owner-review/admin settings remain intact.
+Before/after API evidence and the successful originating check are retained in
+`branch-protection-20261031/`. Conditional workflows outside this aggregate are still
+reviewed separately; this rule does not claim to enforce every GitHub check.
+
+
+After integrating main `5192ab7b`, the complete local server unit suite passes all
+72 tests with `server,mcp`; refreshed scoped Clippy and formatting pass. MCP source
+matches the 41-test validated header follow-up. The expanded Windows runtime gate
+remains pending, so local results are not presented as cross-platform verification.
+
+The expanded Windows step exposed an unconditional `tokio::net::UnixListener`
+import (CI run 41194768596), so the required aggregate correctly failed. Unix-only
+imports, listener variants, match arms and cleanup are now platform-guarded. A
+non-Unix CLI regression checks the existing explicit unsupported-platform error.
+The real Unix socket integration test and strict service Clippy pass locally;
+Windows runtime results remain pending. The failed CI log is preserved.
+
+Source inspection also found that the newly enabled service tests used Unix
+`kill` for shutdown and SIGHUP. Windows children now get their own process groups;
+the harness sends targeted Ctrl+Break and the server routes it through its existing
+drain/flush path. Windows reloads exercise the authenticated admin endpoints, while
+Unix retains SIGHUP coverage. No graceful-shutdown assertions were removed.
+All 13 local operations tests and the key-rotation test pass; strict scoped Clippy
+and formatting pass. Windows execution remains pending. The only added direct
+dependency is test-only `windows-sys`, already present at 0.61.2 in the lockfile.
+
+Windows CI run 41197071913 passed 159/164 service tests, including graceful
+shutdown/drain, readiness, TLS/key reloads and non-Unix socket rejection. Five
+snapshot-related tests failed. The unit-level log reports access denied: snapshot
+copying reopened each destination read-only before flushing, while Windows
+`FlushFileBuffers` requires a writable handle. Windows copying now retains that
+handle through permission restoration and flush; other platforms keep native copy.
+A portable regression covers nested read-only data, byte counts, permissions and
+process-state exclusions. Five local snapshot checks and refreshed strict Clippy
+and formatting pass; Windows acceptance remains pending.
+
+This fix does not establish full Windows power-loss durability: directory-sync
+helpers are still no-ops there. The separate core admin migration `copy_tree` also
+still skips Windows file flushes; that requires its own correction and validation.
+
+Windows run 41199300291 passed the read-only snapshot regression and cleared the
+access-denied failures, but finished 162/165: an idle test assumed writes took less
+than one second, a readiness test exhausted its two-second drain window, and a
+backup round-trip received an empty response without identifying the request.
+Eviction testing now injects explicit time at the idle boundary (-1/at/+1 ms),
+while production retains its monotonic clock. The readiness fixture pre-opens its
+tenant and tests a five-second delay with the matching minimum-time assertion.
+
+A stopped-server regression also exposed `try_send` panicking on connection
+refusal; it fails before the helper fix and passes afterward. Ordinary request
+failures now identify the method/path and recent server events. The Windows service
+step schedules independent fixtures serially, retaining every test and the
+multi-client concurrency inside them; socket read timeouts remain 20 seconds.
+All 13 local operations checks, the idle-boundary test, stopped-server/readiness
+checks, strict Clippy, formatting and actionlint pass. The backup timeout’s precise
+cause remains unconfirmed; the next Windows run must pass and is not overridden.
+
+A review of the unmerged Windows copy fix found that byte-stream copying would
+omit NTFS alternate streams preserved by `std::fs::copy`. Native copying is now
+retained everywhere. For a read-only Windows destination, only the unpublished
+copy’s read-only bit is temporarily cleared to acquire a writable flush handle;
+attributes are restored before propagating open errors or flushing. The Windows
+regression now verifies an alternate stream as well as ordinary bytes and
+permissions. The portable test, Clippy and formatting pass locally; Windows
+acceptance of this final metadata-preserving variant remains pending.
+
 ### Python HTTP transport failure and lifetime contracts
 
 The plain-HTTP optimized SDK transport combined timeout budgets and classified
@@ -485,3 +599,12 @@ open-error path. Windows-only stream-preservation assertions cover both nested
 migration files and top-level upgrade metadata. The refined helper passes the
 four admin/eight upgrade checks and strict Clippy/format gates locally; its
 Windows execution is still pending. This does not prove power-loss durability.
+
+PR [#359](https://github.com/writerslogic/warm/pull/359) merged as `f78b2175`
+after 102 successful and 11 skipped check entries, no unresolved reviews and zero
+open code-scanning alerts. The merged tree exactly matches tested head `f0845612`.
+Windows run 41203375960 passed 806 default tests (14 skipped) and all 165 service
+tests (none skipped), including native-copy alternate streams, backup/restore,
+shutdown and idle boundaries. The final Windows log and check state are archived
+in `body-errors-20261031/`. This closes that PR’s integration gate; SDK/migration
+follow-up changes still require their own up-to-date CI gate.
