@@ -725,3 +725,26 @@ operations tests, plus strict Clippy including test code and scoped formatting.
 The first default-parallel API run hit four 20-second response timeouts; the
 serial rerun matches CI and passes without changing deadlines. Both logs remain
 available; this is not evidence of unconstrained parallel-workload performance.
+
+
+The diagnostics gate at `3e036396` passed the full off-box round trip with its
+original payload and 20-second read deadline. Windows baseline: 807 pass / 14
+skip; service: 169 pass / one failure. The remaining failure was different: the
+size-limit test sent a 1,073,753,088-byte archive to a 4,096-byte limit. The server
+logged 413 after 70 ms, but the write-then-read harness received Windows 10053
+immediately on reading. [RFC 9110 §15.5.14](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.14)
+permits terminating oversized requests; it does not guarantee that a client
+continuing a massive upload receives that final response.
+
+Size rejection is now tested at 4,095 / 4,096 / 4,097 actual bytes: the in-limit
+truncated archives must receive 422, the over-limit body 413, all with problem
+JSON and empty staging. Full-size valid restore and corrupted/truncated archives
+remain covered. The hostile-archive fixture moves the full corruption payload
+and copies only the truncated half, eliminating redundant full-file allocations.
+No deadline or production limit changes. Large rejected uploads can still end
+in transport errors; no universally graceful-response or RSS/latency claim is
+made. The second failed gate is retained, and new exact-head CI remains required.
+
+The revised size-boundary cases and all 13 operations tests pass locally, as do
+strict operations Clippy, scoped formatting and diff validation. Windows CI
+remains required for this revision.
