@@ -744,3 +744,37 @@ passing API contracts does not establish framework security. Scored retrieval,
 MMR and adapter deletion remain explicitly unsupported. Evidence and the 14-case
 baseline reproduction patch are in `langchain-contracts-20261031/`; final PR checks
 remain required before merge.
+
+
+### Python LlamaIndex query and deletion contracts (2026-10-31)
+
+The adapter ignored metadata filters, query modes and constraints, and created an
+unowned HTTP client for each property access. Thirty-four initial real-server
+regressions fail on `363b837b`. It now applies flat AND/equality filters before
+server-side top-k, rejects unsupported modes/operators/ID restrictions and
+projection options, rejects duplicate filter keys, and owns one explicitly
+closable client. Original node text is stored separately from metadata; a
+regression caught the previous metadata-prefixed text returned as node content.
+
+The framework's `delete(ref_doc_id)` means source-document deletion, but WARM
+passed that value to node deletion. A source ID colliding with an unrelated node
+therefore deleted that node (HTTP 200 in the retained baseline). Reference and
+filtered deletion now raise before writes. `delete_nodes` implements explicit-ID
+deletion, validates the ID list before starting, tolerates only documented
+missing-node errors, and propagates authorization failures. Multiple deletes are
+sequential and can partially commit; they are not an atomic source-document purge.
+This prevents the false deletion contract without claiming reference ownership
+or complete node/relationship reconstruction is implemented.
+
+The actual LlamaIndex vector-store types and Pydantic bridge were inspected.
+Its minimum 0.10.0 passes 39 final contracts on Python 3.10; 0.14.25 passes the
+full SDK suite on Python 3.14 (122 tests, including 45 LlamaIndex tests, plus
+46 subtests; 13 upstream asyncio deprecation warnings). The older framework
+rejects nested filters during Pydantic construction; the newer one delegates
+rejection to WARM. An initial compatibility test expected only the latter and
+was corrected without changing production validation. Existing dependency bounds
+remain. CI exercises both versions against the real server; all vectors are local.
+Scoped workflow lint and package builds pass. Logs, hashes and the initial
+34-case baseline patch are in `llamaindex-contracts-20261031/`; no performance,
+relevance or overall security improvement is inferred from these contract tests.
+The integrated exact-head PR gate remains required before publication.

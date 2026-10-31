@@ -136,6 +136,26 @@ The indices in `selected` are mandatory; packing raises `ValueError` if they exc
 | Pydantic AI | `pydantic-ai` | `from writerslogic_warm_sdk.pydantic_ai import get_warm_tool` |
 | SmolAgents | `smolagents` | `from writerslogic_warm_sdk.smolagents import WarmSearchTool` |
 
+
+The LlamaIndex adapter supports dense similarity queries with flat equality
+metadata filters combined with AND. Filters run on the server before top-k
+selection. Plain node text and metadata are stored separately, without prepending
+metadata to the returned text. Unsupported search modes, operators, nested filters, ID restrictions
+and projection/hybrid options raise `NotImplementedError`; repeated filter keys
+raise `ValueError` instead of overwriting a constraint. The adapter owns one
+HTTP client; call `store.close()` when finished and construct a new store to
+change connection settings. These contracts are tested with llama-index-core
+0.10.0 and 0.14.25; this does not resolve the optional dependency advisories above.
+
+Use `delete_nodes([node_id, ...])` to delete known nodes. Missing nodes are already
+deleted; other errors propagate. Multiple deletions are sequential, not atomic,
+so a failure can follow earlier committed deletions. Reference-document deletion
+(`delete(ref_doc_id)`) and filtered deletion are unsupported and raise before any
+write. A reference-document ID must never be treated as a node ID: they can name
+different records. Full LlamaIndex relationship/node-type reconstruction remains
+outside this adapter's current TextNode result contract.
+
+
 ## Vector Masking
 
 Passing `zero_trust_key` masks every embedding client-side with a keyed signed permutation (`VectorMask`, scrypt-derived). The server can still rank vectors because inner products and cosine similarity are preserved exactly. This is obfuscation, **not encryption**: the server learns all pairwise similarities, and known plain/masked pairs reveal the key for the coordinates they cover. Pass a per-collection `mask_salt` (at least 16 bytes) shared by all clients of that collection. Masks produced by 0.1.0/0.1.1 are not compatible and were not secure.
