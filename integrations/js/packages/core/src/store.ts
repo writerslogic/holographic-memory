@@ -129,8 +129,8 @@ function loadNative(): typeof import('writerslogic-warm') {
 }
 
 function requireMetadata(memory: WarmMemorySystem): void {
-  if (typeof memory.listDocuments !== 'function' || typeof memory.getDocumentInfo !== 'function') {
-    throw new WarmError('install a current native binding with metadata paging and document info support', 'backend')
+  if (typeof memory.listDocuments !== 'function' || typeof memory.getDocumentInfo !== 'function' || typeof memory.revision !== 'function') {
+    throw new WarmError('install a current native binding with metadata paging, document info and revision support', 'backend')
   }
 }
 
@@ -240,7 +240,9 @@ export class WarmStore {
       return await op()
     } catch (cause) {
       if (cause instanceof WarmError) throw cause
-      throw new WarmError(`writerslogic-hms: ${(cause as Error).message}`, 'backend', { cause })
+      const message = cause instanceof Error ? cause.message : String(cause)
+      const code = message.startsWith('[resource_limit] ') ? 'resource_limit' : 'backend'
+      throw new WarmError(`writerslogic-warm: ${message}`, code, { cause })
     }
   }
 
@@ -320,6 +322,17 @@ export class WarmStore {
   /** Top-`k` records by fused BM25 and cosine rank (best passage per record). */
   async recall(query: string, options: RecallOptions = {}): Promise<Hit[]> {
     this.assertOpen()
+    const revision = this.memory.revision()
+    try {
+      return await this.recallSnapshot(query, options)
+    } finally {
+      if (this.memory.revision() !== revision) {
+        throw new WarmError('store changed during recall; retry the operation', 'concurrent_mutation')
+      }
+    }
+  }
+
+  private async recallSnapshot(query: string, options: RecallOptions): Promise<Hit[]> {
     const k = options.k ?? 4
     if (!Number.isInteger(k) || k < 1) throw new WarmError('k must be an integer >= 1', 'invalid_argument')
     if (k > this.maxFetch) throw new WarmError(`k=${k} exceeds maxFetch=${this.maxFetch}`, 'limit_exceeded')

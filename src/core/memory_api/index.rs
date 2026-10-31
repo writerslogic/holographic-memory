@@ -75,16 +75,33 @@ impl Index {
 
     pub(super) fn capture_edges(
         &self,
+        scope: Option<&BTreeSet<String>>,
         budget: &mut crate::core::query_limits::QueryBudget,
     ) -> anyhow::Result<HashMap<String, Vec<Edge>>> {
         let mut captured = HashMap::new();
-        for (id, edges) in &self.superseded_by {
+        let mut capture = |id: &String,
+                           edges: &Vec<Edge>,
+                           budget: &mut crate::core::query_limits::QueryBudget|
+         -> anyhow::Result<()> {
             budget.work(1 + edges.len())?;
             budget.reserve(256 + id.len() + edges.len() * std::mem::size_of::<Edge>())?;
             for edge in edges {
                 budget.reserve(edge.by.len())?;
             }
             captured.insert(id.clone(), edges.clone());
+            Ok(())
+        };
+        if let Some(scope) = scope {
+            for id in scope {
+                budget.work(1)?;
+                if let Some(edges) = self.superseded_by.get(id) {
+                    capture(id, edges, budget)?;
+                }
+            }
+        } else {
+            for (id, edges) in &self.superseded_by {
+                capture(id, edges, budget)?;
+            }
         }
         Ok(captured)
     }
@@ -341,7 +358,7 @@ mod tests {
                 max_bytes: limit,
                 ..Default::default()
             });
-            let result = index.capture_edges(&mut budget);
+            let result = index.capture_edges(None, &mut budget);
             assert_eq!(result.is_ok(), limit >= bytes);
             if let Err(error) = result {
                 assert_eq!(
@@ -355,8 +372,52 @@ mod tests {
                 max_work: limit,
                 ..Default::default()
             });
-            assert_eq!(index.capture_edges(&mut budget).is_ok(), limit >= 2);
+            assert_eq!(index.capture_edges(None, &mut budget).is_ok(), limit >= 2);
         }
+    }
+
+    #[test]
+    fn scoped_edges_include_outside_superseders_and_charge_only_selected_edges() {
+        use crate::core::query_limits::{QueryBudget, QueryLimits};
+        let mut index = Index::default();
+        index.insert("new", &stamp(2, &["old"]), &|_| None);
+        for i in 0..100 {
+            index.insert(&format!("irrelevant-{i}"), &stamp(2, &["other"]), &|_| None);
+        }
+        let scope = BTreeSet::from(["old".into()]);
+        let bytes = 256 + 6 + std::mem::size_of::<Edge>();
+        for limit in [bytes - 1, bytes, bytes + 1] {
+            let mut budget = QueryBudget::new(QueryLimits {
+                max_work: 3,
+                max_bytes: limit,
+                ..Default::default()
+            });
+            let result = index.capture_edges(Some(&scope), &mut budget);
+            assert_eq!(result.is_ok(), limit >= bytes);
+            if let Ok(edges) = result {
+                assert_eq!(edges.len(), 1);
+                assert_eq!(edges["old"][0].by, "new");
+            }
+        }
+        for limit in [2, 3, 4] {
+            let mut budget = QueryBudget::new(QueryLimits {
+                max_work: limit,
+                ..Default::default()
+            });
+            assert_eq!(
+                index.capture_edges(Some(&scope), &mut budget).is_ok(),
+                limit >= 3
+            );
+        }
+        let mut budget = QueryBudget::new(QueryLimits {
+            max_work: 0,
+            max_bytes: 0,
+            ..Default::default()
+        });
+        assert!(index
+            .capture_edges(Some(&BTreeSet::new()), &mut budget)
+            .unwrap()
+            .is_empty());
     }
 
     fn stamp(ingest: Millis, supersedes: &[&str]) -> Stamp {

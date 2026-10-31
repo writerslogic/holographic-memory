@@ -4358,6 +4358,7 @@ dependencies = [
  "crc32fast",
  "criterion",
  "ed25519-dalek",
+ "fastrand",
  "flate2",
  "foldhash",
  "futures-util",

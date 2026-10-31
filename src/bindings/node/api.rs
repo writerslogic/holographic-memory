@@ -144,6 +144,12 @@ impl WarmMemorySystem {
         run_async(move || Ok(core.get_document(&id).map(ListedDocument::from))).await
     }
 
+    /// Opaque store revision. Equal values bracket an unchanged store on this handle.
+    #[napi]
+    pub fn revision(&self) -> String {
+        self.core.revision().to_string()
+    }
+
     #[napi]
     // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
     pub fn security_status(&self) -> serde_json::Value {

@@ -1,0 +1,442 @@
+{
+  "date": "2026-10-30",
+  "base_commit": "411dd07b9c29ce8f27313da8ac082fd27c995a19",
+  "status": "four_repairs_verified_original_windows_attribution_unconfirmed",
+  "findings": {
+    "recall_generation": {
+      "status": "repaired_local_and_ci_checks_passed",
+      "contract": "Native revision equality brackets metadata eligibility, ranking, reranking and assembly; mutation returns concurrent_mutation.",
+      "baseline_reproduction": {
+        "filter": {
+          "parity": 1
+        },
+        "hits": [
+          {
+            "id": "x",
+            "text": "short",
+            "metadata": {
+              "parity": 0
+            },
+            "score": 2,
+            "lexicalScore": 2.0636088793168024,
+            "span": {
+              "start": 710,
+              "end": 789
+            },
+            "semanticScore": 0.22941572964191437
+          }
+        ],
+        "bytes": [
+          5
+        ]
+      },
+      "regressions": "Four deterministic native-backed tests fail on the original store.ts and pass with the repair: same-version replacement, deletion, delete/reinsert, and mutation after residual metadata selection."
+    },
+    "temporal_capture": {
+      "status": "repaired_local_and_ci_checks_passed",
+      "contract": "Intersect metadata with subject/entity predicates before retaining IDs or copying reverse edges; retain incoming edges from superseders outside scope. Unfiltered subject/entity queries use their postings.",
+      "tests": "The combined-filter regression failed with query work limit 16 before the final repair. The repaired current and all-history cases, scoped edge limit-1/limit/limit+1 cases, and all memory fixtures pass.",
+      "intersection_regression": "A crowded subject/entity with one metadata match exceeded max_work=16 before the intersection fix; it now succeeds. Both current and all-history selections are covered."
+    },
+    "resource_limit": {
+      "status": "repaired_local_and_ci_checks_passed",
+      "contract": "QueryLimitExceeded::CODE is resource_limit; native Node prefix and MemoryError code, HTTP 429 problem and legacy code; no partial answer or Retry-After; committed errors retain priority."
+    },
+    "windows_spill": {
+      "status": "reproduced_collision_repaired_original_ci_cause_unconfirmed",
+      "main_run": "https://github.com/writerslogic/holographic-memory/actions/runs/41023790294",
+      "job_id": 123957010821,
+      "main_failure_excerpt": "2026-10-30T08:02:30.3354646Z Cloud: Azure\n2026-10-30T08:02:30.3355140Z ##[endgroup]\n2026-10-30T08:02:30.3356549Z ##[group]Operating System\n2026-10-30T08:02:30.3357533Z Microsoft Windows Server 2025\n2026-10-30T08:02:30.3358189Z 10.0.26100\n2026-10-30T08:02:30.3358681Z Datacenter\n2026-10-30T08:02:30.3359179Z ##[endgroup]\n2026-10-30T08:02:30.3359179Z ##[endgroup]\n2026-10-30T08:02:30.3359702Z ##[group]Runner Image\n2026-10-30T08:02:30.3360263Z Image: windows-2025-vs2026\n2026-10-30T08:02:30.3360991Z Version: 20261021.278.1\n2026-10-30T08:02:30.3362684Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20261021.278/images/windows/Windows2025-VS2026-Readme.md\n2026-10-30T08:02:30.3364460Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261021.278\n2026-10-30T08:02:30.3365745Z ##[endgroup]\n2026-10-30T08:09:27.6540295Z   stderr \u2500\u2500\u2500\n2026-10-30T08:09:27.6540893Z \n2026-10-30T08:09:27.6542333Z     thread 'core::qgraph::update::delta_rows::tests::spilled_rows_keep_bits_and_detach_on_append' (6248) panicked at src\\core\\qgraph\\update\\delta_rows.rs:92:46:\n2026-10-30T08:09:27.6544407Z     called `Result::unwrap()` on an `Err` value: Os { code: 5, kind: PermissionDenied, message: \"Access is denied.\" }\n2026-10-30T08:09:27.6545518Z     stack backtrace:\n2026-10-30T08:09:27.6546115Z        0: std::panicking::panic_handler\n2026-10-30T08:09:27.6547097Z                  at /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library\\std\\src\\panicking.rs:679\n2026-10-30T08:23:00.1926724Z         PASS [ 528.077s] (772/772) holographic-memory::format_crash torn_append_at_every_byte\n2026-10-30T08:23:00.2021476Z \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n2026-10-30T08:23:00.2022485Z      Summary [ 924.645s] 772 tests run: 771 passed (10 slow), 1 failed, 14 skipped\n2026-10-30T08:23:00.2028008Z         FAIL [   0.085s] (460/772) holographic-memory core::qgraph::update::delta_rows::tests::spilled_rows_keep_bits_and_detach_on_append\n2026-10-30T08:23:00.2355061Z error: test run failed\n2026-10-30T08:23:00.8795424Z ##[error]Process completed with exit code 1.\n2026-10-30T08:23:01.0385689Z Post job cleanup.",
+      "diagnostic_change": "Operation context identifies temporary-directory creation, temporary-file creation, write, mapping, and Unix advice while preserving io::ErrorKind. Windows tests cover a forced directory-name collision, mapping lifetime/cleanup, and 8192 concurrent spill mappings without retries.",
+      "local_windows": {
+        "host": "writerslogic-02",
+        "access": "WSL invokes Windows MSVC executables directly",
+        "os": "Windows 10.0.26340.9767",
+        "compiler": "Rust 1.99.1, cargo-xwin 0.23.1, static CRT",
+        "observations": [
+          "Original spill behaviour passes, including 80,000 concurrent create/map/drop cycles.",
+          "Initial 656-test library run: 557 passed, 86 failed, 13 ignored. Disk exhaustion (Windows error 112) occurred; this is distinct from main's PermissionDenied (error 5).",
+          "Native Windows nextest with two processes passed 644 library and 131 integration tests (13 + 1 skipped). After the combined-filter repair and concurrent spill test were added, all 18 selected memory/spill tests passed, including the 8,192-mapping stress test."
+        ],
+        "task_directory": "/home/davidcondrey/hms-review-gaps",
+        "log": [
+          "windows-library.log",
+          "windows-integration.log",
+          "windows-intersection-stress.log"
+        ]
+      },
+      "diagnostic_ci": {
+        "run_id": 41092504502,
+        "url": "https://github.com/writerslogic/holographic-memory/actions/runs/41092504502",
+        "commit": "18613b4",
+        "windows_job_id": 124189749886,
+        "status": "success",
+        "tests_passed": 776,
+        "tests_skipped": 14,
+        "runner_image": "windows-2025-vs2026 20261021.278.1",
+        "log": "windows-server-2025-diagnostic.log",
+        "run_snapshot": "diagnostic-ci-41092504502.json",
+        "interpretation": "All CI jobs passed on the same runner image version as the original failure; this does not establish its cause."
+      },
+      "mapping_policy_probe": {
+        "host": "writerslogic-02",
+        "result": "no_reproduction",
+        "observed": "For 1, 1023, 1024 and 1025 floats, direct PAGE_READONLY and PAGE_READWRITE section creation succeeds; executable protections are denied. Default memmap2 probing and no_probe_handle both map successfully, with and without ProcessDynamicCodePolicy.ProhibitDynamicCode. No production change is justified by this probe.",
+        "source": "windows-mapping-policy.rs",
+        "log": "windows-mapping-policy.log",
+        "initial_setup": "First executable failed to load (exit 53) due to dynamic CRT; static CRT rebuild executes successfully.",
+        "references": [
+          "https://docs.rs/memmap2/0.9.12/memmap2/struct.MmapOptions.html#method.no_probe_handle",
+          "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setprocessmitigationpolicy"
+        ]
+      },
+      "boundary_stress_probe": {
+        "host": "writerslogic-02",
+        "result": "passed_no_reproduction",
+        "mappings": 800000,
+        "seconds": 370.37,
+        "method": "Production delta_rows.rs, changing only the existing concurrent test iteration count from 512 to 50000: four threads times 50000 loops times four boundary lengths. No retries.",
+        "command": "cargo test --offline --locked --target x86_64-pc-windows-msvc --lib delta_rows::tests::concurrent_spill_lifetimes -- --exact --nocapture",
+        "source": "windows-boundary-spill.rs",
+        "log": "windows-boundary-spill.log",
+        "environment": "xwin-env.sh; unset RUSTFLAGS to retain target-specific static CRT flags; CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUNNER=/usr/bin/env"
+      },
+      "collision_repair": {
+        "status": "verified_native_and_server_2025_ci",
+        "reproduction": "Replay the random temporary name already occupied by a directory. Windows tempfile creation returns error 5 instead of AlreadyExists; DeltaRows::mapped propagates PermissionDenied at create temporary file.",
+        "baseline_commit": "88a6f5c98a9085f5f96679419dea6610148f9f40",
+        "before_log": "windows-collision-regression-before.log",
+        "before_exit_code": 101,
+        "repair": "Create the Windows spill file inside an exclusively owned temporary directory. The mapping retains the directory, and field drop order releases the map before removing the directory. No permission retry or memory fallback.",
+        "after_log": "windows-collision-regression-after.log",
+        "after_exit_code": 0,
+        "native_tests_passed": 3,
+        "checks": [
+          "deterministic directory-name collision",
+          "bit-preserving snapshot and detach",
+          "directory retained while pinned and removed after final map release",
+          "8192 concurrent spill mappings"
+        ],
+        "attribution_limit": "This is a confirmed failure mode of the original implementation and a verified repair. The main CI log lacks operation/path context, so its exact historical cause remains unconfirmed."
+      },
+      "stress_ci": {
+        "run_id": 41095886707,
+        "windows_job_id": 124201415659,
+        "commit": "88a6f5c98a9085f5f96679419dea6610148f9f40",
+        "status": "cancelled_after_successful_stress",
+        "log": "windows-server-2025-stress-before.log",
+        "note": "The five-minute diagnostic passed. Its duplicate full suite was cancelled to validate the collision repair instead; this run is not counted as a passing full gate.",
+        "stress_iterations_passed": 79,
+        "stress_seconds": 301.316,
+        "mappings": 647484
+      }
+    }
+  },
+  "validation_directory": "target/review-gap-checks",
+  "constraints": [
+    "No paid services or benchmark credits used.",
+    "User authorized committing/pushing this branch and dispatching the existing CI workflow on 2026-10-30; no merge or publication requested.",
+    "Original campaign measurements and historical green PR results are retained; they do not resolve the later failing main gate."
+  ],
+  "validation": {
+    "rust_all_features": {
+      "command": "cargo +1.99.0 test --offline --locked --all-features --no-fail-fast",
+      "passed": 1308,
+      "failed": 0,
+      "ignored": 15,
+      "log": "final-gate.log",
+      "exit_code": 0
+    },
+    "frameworks": {
+      "command": "npm test --prefix integrations/js",
+      "passed": 104,
+      "failed": 0,
+      "log": "final-framework-tests.log",
+      "exit_code": 0
+    },
+    "node": {
+      "command": "npm test",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 3,
+      "log": "final-node-tests.log",
+      "exit_code": 0
+    },
+    "types": {
+      "command": "npm run test:types",
+      "exit_code": 0,
+      "log": "final-node-types.log"
+    },
+    "package": {
+      "command": "npm run test:package",
+      "exit_code": 0,
+      "log": "final-node-package.log"
+    },
+    "lint": {
+      "command": "cargo +1.99.0 clippy --offline --locked --all-targets --all-features -- -D warnings",
+      "exit_code": 0,
+      "log": "final-clippy.log"
+    },
+    "format": {
+      "command": "rustfmt +1.99.0 --edition 2021 --check --config skip_children=true <touched Rust files>",
+      "exit_code": 0,
+      "log": "final-format.log"
+    },
+    "msrv": {
+      "command": "cargo +1.89 check --offline --locked --no-default-features",
+      "exit_code": 0,
+      "log": "final-msrv.log"
+    },
+    "build_environment": {
+      "CARGO_BUILD_JOBS": 4,
+      "CARGO_PROFILE_DEV_OPT_LEVEL": 1,
+      "CARGO_PROFILE_TEST_OPT_LEVEL": 1,
+      "CARGO_PROFILE_DEV_DEBUG": 0,
+      "CARGO_PROFILE_TEST_DEBUG": 0
+    },
+    "build_target": "/Volumes/A/holographic-memory/target/review-gap-checks/build",
+    "notes": [
+      "The earlier all-features run and the two-process Windows suites passed before the final combined-filter refinement. Final-gate.log verifies the final source on macOS; windows-intersection-stress.log verifies the changed Windows memory/spill paths.",
+      "Setup logs include interrupted external-disk builds, a Windows CRT-loader setup failure in the remote raw log, and the separate Windows disk-full run. None are counted as successful gates.",
+      "Native bindings were regenerated from the final Rust source before final Node, framework, type and packed-package checks.",
+      "These original local gates cover commit 18613b4. Validation of the subsequent Windows collision repair is recorded separately under windows_repair_validation."
+    ]
+  },
+  "branch": "fix/review-completeness-20261030",
+  "log_archive": {
+    "path": "review-followup-logs.tar.gz",
+    "sha256": "96644a37326275cc609a2928d38041c46b865a7972b7b080cc8885712c10014a",
+    "index": "review-followup-log-index.json",
+    "files": 61
+  },
+  "initial_verified_source_files": [
+    {
+      "path": "index.d.ts",
+      "bytes": 14161,
+      "sha256": "dfb9220f3919bc700fdc89d7a36937d96de9a00973314bba22378d272820eb26"
+    },
+    {
+      "path": "integrations/js/packages/core/src/errors.ts",
+      "bytes": 430,
+      "sha256": "166611df2c4d46fc881f1e51fbac3a72b9e5d6bb08cea59fe458f41da75e4a6d"
+    },
+    {
+      "path": "integrations/js/packages/core/src/store.ts",
+      "bytes": 20533,
+      "sha256": "5c3c38f6176d0e6565661865e10c5ccc09d02490f6c2afe7569ad2c382d3ac25"
+    },
+    {
+      "path": "integrations/js/packages/core/test/store.test.mjs",
+      "bytes": 13388,
+      "sha256": "4851d238c18561bbcd15f7296ccb26296ee18f2b45b0cfd6ad194955df884f2e"
+    },
+    {
+      "path": "memory.d.ts",
+      "bytes": 6956,
+      "sha256": "4fbd70686b678b5ef38503b3b88e15904ccc91e099772d1b50061514c0e28b86"
+    },
+    {
+      "path": "src/bin/hms-server/error.rs",
+      "bytes": 8849,
+      "sha256": "3212c6c942336e03dc5cac1209db93711f7a98106494071f2536288c34436b45"
+    },
+    {
+      "path": "src/bindings/node/api.rs",
+      "bytes": 36674,
+      "sha256": "ccc002254d522cf52f19b044e0d5d04ac5b7f427754bfddc631e805c7c0c5903"
+    },
+    {
+      "path": "src/bindings/node/mod.rs",
+      "bytes": 3237,
+      "sha256": "b1835ca2ada0c4dc0b673d1591621f23f280d6216e228ae7be98a9b5bfe8b85b"
+    },
+    {
+      "path": "src/core/documents.rs",
+      "bytes": 76122,
+      "sha256": "bc96b7730c88cbf0a5488c12fe54e2653f3a4ef3892c630ff6524c1ecc852a84"
+    },
+    {
+      "path": "src/core/documents/index.rs",
+      "bytes": 53728,
+      "sha256": "6a0fdbf1e0cc1c19ac66e6d0fc15a7e76e88f40cc40914fa9f1ca43adb0bcc58"
+    },
+    {
+      "path": "src/core/engine/memory_access.rs",
+      "bytes": 8906,
+      "sha256": "b89ced6bbcd46c10fb291d79e87b60f97c10f452d59f63049578d4504bab9d68"
+    },
+    {
+      "path": "src/core/memory_api/index.rs",
+      "bytes": 17371,
+      "sha256": "1cb04db0a0c88c112f153c91b2eb51eb68ae958ba2bae7f9b7c53dba14bd5e16"
+    },
+    {
+      "path": "src/core/memory_api/recall.rs",
+      "bytes": 33026,
+      "sha256": "b16ebee1e5185525718fd909fee6fb04afa9de65d00b1cded92804ac4326b7c2"
+    },
+    {
+      "path": "src/core/qgraph/update/delta_rows.rs",
+      "bytes": 4369,
+      "sha256": "08eb8a2cfb886d590ab5fdc300d8b1109500f42971192207f4bdaa266a66c1c4"
+    },
+    {
+      "path": "src/core/query_limits.rs",
+      "bytes": 2351,
+      "sha256": "677a05479c00aa98362663ba8b7d87f3dbcfd8b2103d66ef22954016ad837c38"
+    }
+  ],
+  "source_files": [
+    {
+      "path": "index.d.ts",
+      "bytes": 14161,
+      "sha256": "dfb9220f3919bc700fdc89d7a36937d96de9a00973314bba22378d272820eb26"
+    },
+    {
+      "path": "integrations/js/packages/core/src/errors.ts",
+      "bytes": 430,
+      "sha256": "166611df2c4d46fc881f1e51fbac3a72b9e5d6bb08cea59fe458f41da75e4a6d"
+    },
+    {
+      "path": "integrations/js/packages/core/src/store.ts",
+      "bytes": 20533,
+      "sha256": "5c3c38f6176d0e6565661865e10c5ccc09d02490f6c2afe7569ad2c382d3ac25"
+    },
+    {
+      "path": "integrations/js/packages/core/test/store.test.mjs",
+      "bytes": 13388,
+      "sha256": "4851d238c18561bbcd15f7296ccb26296ee18f2b45b0cfd6ad194955df884f2e"
+    },
+    {
+      "path": "memory.d.ts",
+      "bytes": 6956,
+      "sha256": "4fbd70686b678b5ef38503b3b88e15904ccc91e099772d1b50061514c0e28b86"
+    },
+    {
+      "path": "src/bin/hms-server/error.rs",
+      "bytes": 8849,
+      "sha256": "3212c6c942336e03dc5cac1209db93711f7a98106494071f2536288c34436b45"
+    },
+    {
+      "path": "src/bindings/node/api.rs",
+      "bytes": 36674,
+      "sha256": "ccc002254d522cf52f19b044e0d5d04ac5b7f427754bfddc631e805c7c0c5903"
+    },
+    {
+      "path": "src/bindings/node/mod.rs",
+      "bytes": 3237,
+      "sha256": "b1835ca2ada0c4dc0b673d1591621f23f280d6216e228ae7be98a9b5bfe8b85b"
+    },
+    {
+      "path": "src/core/documents.rs",
+      "bytes": 76122,
+      "sha256": "bc96b7730c88cbf0a5488c12fe54e2653f3a4ef3892c630ff6524c1ecc852a84"
+    },
+    {
+      "path": "src/core/documents/index.rs",
+      "bytes": 53728,
+      "sha256": "6a0fdbf1e0cc1c19ac66e6d0fc15a7e76e88f40cc40914fa9f1ca43adb0bcc58"
+    },
+    {
+      "path": "src/core/engine/memory_access.rs",
+      "bytes": 8906,
+      "sha256": "b89ced6bbcd46c10fb291d79e87b60f97c10f452d59f63049578d4504bab9d68"
+    },
+    {
+      "path": "src/core/memory_api/index.rs",
+      "bytes": 17371,
+      "sha256": "1cb04db0a0c88c112f153c91b2eb51eb68ae958ba2bae7f9b7c53dba14bd5e16"
+    },
+    {
+      "path": "src/core/memory_api/recall.rs",
+      "bytes": 33026,
+      "sha256": "b16ebee1e5185525718fd909fee6fb04afa9de65d00b1cded92804ac4326b7c2"
+    },
+    {
+      "path": "src/core/qgraph/update/delta_rows.rs",
+      "bytes": 6834,
+      "sha256": "a8b57f2372c9a80ee42dde48eabc9ae1ff408d6805181c3dca102eddc99b1f00"
+    },
+    {
+      "path": "src/core/query_limits.rs",
+      "bytes": 2351,
+      "sha256": "677a05479c00aa98362663ba8b7d87f3dbcfd8b2103d66ef22954016ad837c38"
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 16568,
+      "sha256": "20b6228a7ed5bfab550b4ce37c0ef1271e4fd122c92d24e19217850ab891b908"
+    },
+    {
+      "path": "Cargo.lock",
+      "bytes": 120508,
+      "sha256": "ffef156ffc38c7044d6ebd98e6dd7c36805689074dce6dd0dd29bc36d4f1f425"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 13380,
+      "sha256": "cfd9e8a17147727274328f356bf4404d6e81ec010561befeb8401817dd69b590"
+    }
+  ],
+  "windows_repair_validation": {
+    "native_regression": {
+      "passed": 3,
+      "failed": 0,
+      "log": "windows-collision-regression-after.log"
+    },
+    "rust_all_features": {
+      "status": "success",
+      "exit_code": 0,
+      "log": "collision-final-rust.log",
+      "passed": 1308,
+      "failed": 0,
+      "ignored": 15
+    },
+    "ci": {
+      "status": "success",
+      "run_id": 41097465940,
+      "commit": "25726ffc62b47dcc281430c87e29cc217bb956d3",
+      "url": "https://github.com/writerslogic/holographic-memory/actions/runs/41097465940",
+      "windows_spill_stress": true,
+      "windows_job_id": 124206827640,
+      "windows_tests_passed": 777,
+      "windows_tests_skipped": 14,
+      "windows_stress_iterations": 65,
+      "windows_stress_seconds": 302.302,
+      "windows_stress_mappings": 532805,
+      "windows_log": "windows-server-2025-repair.log",
+      "aggregate_job_id": 124218202527,
+      "jobs_passed": 25,
+      "run_snapshot": "repair-ci-41097465940.json",
+      "jobs_snapshot": "repair-ci-jobs-41097465940.json",
+      "aggregate_log": "collision-final-aggregate.log",
+      "monitoring_note": "The CLI monitor encountered HTTP 502 twice, and job/run metadata later lagged completed logs (reporting in_progress/queued). Final metadata confirms all 25 jobs succeeded; the raw aggregate log records success at 17:43:28 UTC. No CI test failure was retried."
+    },
+    "native_root_tests": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 655,
+      "log": "windows-collision-root-tests.log",
+      "command": "cargo nextest run --offline --locked --target x86_64-pc-windows-msvc --lib -E \"test(delta_rows::tests) | test(interrupted_consolidation_keeps_spilled_rows_searchable_and_writable)\""
+    },
+    "windows_clippy": {
+      "exit_code": 0,
+      "log": "windows-collision-clippy.log",
+      "command": "cargo clippy --offline --locked --target x86_64-pc-windows-msvc --lib --tests -- -D warnings"
+    },
+    "clippy": {
+      "exit_code": 0,
+      "log": "collision-final-clippy.log",
+      "command": "cargo +1.99.0 clippy --offline --locked --all-targets --all-features -- -D warnings"
+    },
+    "msrv": {
+      "exit_code": 0,
+      "log": "collision-final-msrv.log",
+      "command": "cargo +1.89 check --offline --locked --no-default-features"
+    },
+    "format": {
+      "exit_code": 0,
+      "command": "rustfmt +1.99.0 --edition 2021 --check --config skip_children=true src/core/qgraph/update/delta_rows.rs"
+    }
+  }
+}
