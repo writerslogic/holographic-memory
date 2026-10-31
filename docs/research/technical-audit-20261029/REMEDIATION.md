@@ -158,8 +158,8 @@ bounded milestones, with no paid development API calls or model downloads.
 | Priority | Capability / shared constraint | Required evidence | State |
 |---|---|---|---|
 | 1 | HTTP retry safety and retained-memory bounds | Post-commit panic never blindly repeats work; byte/capacity pressure preserves protected keys; expiry reclaims allocations; real HTTP and concurrency regressions | Merged in PR #352 (`f28095e0`); all CI checks pass |
-| 2 | Restart-safe committed effects | Transaction-backed effect identities and intents, idempotent delivery, explicit ambiguous outcomes, replay/compaction/restore invariants, process-interruption tests | Schema-6 audit queue implemented and under validation; provenance and HTTP restart receipts remain separate work |
-| 3 | Retrieval quality and workload performance | Reproducible local baselines, correctness-equivalent competitor workloads, update/churn/filter coverage, latency and allocation evidence | Preserve existing benchmark evidence; unresolved hot-query tail regression is not a demonstrated improvement |
+| 2 | Restart-safe committed effects | Transaction-backed effect identities and intents, idempotent delivery, explicit ambiguous outcomes, replay/compaction/restore invariants, process-interruption tests | Merged in PR #353 (`79609861`); provenance and HTTP restart receipts remain separate work |
+| 3 | Retrieval quality and workload performance | Reproducible local baselines, correctness-equivalent competitor workloads, update/churn/filter coverage, latency and allocation evidence | Verified capture-allocation reduction; follow-up CI pending; historical tail regression and competitive evidence remain open |
 | 4 | Security lifecycle and assurance | Signing-key rotation and historical verification policy, adversarial validation, actionable dependency dispositions | Existing limitations in `docs/SECURITY.md`; no certification claim |
 | 5 | Interface and standards fidelity | Shared lifecycle/error/serialization checks across HTTP, native bindings, MCP and framework adapters; authoritative applicable requirements | Existing lifecycle fixtures are the baseline; expand where coverage is missing |
 | 6 | Operational recovery and observability | Restore generation and retry-state interactions, per-tenant isolation/resource admission, bounded diagnostics and operator acceptance checks | Review before introducing persistent request/effect state |
@@ -295,3 +295,54 @@ history: compaction with logging disabled may leave only a document checkpoint. 
 now durably creates the audit header before publishing `store.json`, and every subsequent
 schema-6 open requires the existing stream, including empty and checkpoint-only stores. New
 regressions cover both cases and interruption between header creation and schema publication.
+
+
+### Integrated audit delivery acceptance
+
+PR [#353](https://github.com/writerslogic/warm/pull/353) merged as `79609861` after
+all 71 check entries completed without failures or pending work (neutral/skipped
+jobs remain distinct from successful tests). The merged tree matches tested head
+`5431df4b`. Local final checks include 43 audit-filtered tests, the original-signature
+recovery and legacy-upgrade regressions, and 13 initialization/delivery checks with
+seven process-interruption phases. Strict security/experimental/server Clippy passed.
+The full local golden sweep was stopped under filesystem saturation; the complete
+platform/format matrix is established by the final CI gate, not that partial local run.
+Durable delivery covers vector memorize/delete and compaction, with the limitations
+in the design above; no score increase or generalized exactly-once claim follows.
+
+### Retrieval capture allocations and audit-cost validation
+
+The measured candidate replaces changed-ID String copies with bounded identities of
+base-index owners and avoids building slot membership when there is no dense delta.
+The index pins those allocations; the first replaced owner remains excluded through
+repeated replacement, deletion/recreation and subsequent index publication. Existing
+128-document, 1024-chunk and 64 KiB changed-ID limits are unchanged.
+
+Evidence in [retrieval-tail-20261031/validation.json](retrieval-tail-20261031/validation.json)
+compares the fixed `f28095e0` baseline and preserved candidate patch over five alternating
+rounds, 128 queries per group, a 10,000-document/16-dimensional corpus and 32 updates.
+All 5,120 full ordered result comparisons match the exhaustive oracle. Every one of
+640 paired updated-hot queries allocates exactly 22 fewer times (178 to 156); peak
+requested bytes remain unchanged. Medians of per-round updated-hot total p50/p99
+change by -1.27%/-7.29%, but paired timing variability and concurrent host activity
+preclude a production latency claim. These data do not resolve the older 32-sample
+historical tail regression or establish superiority against another implementation.
+
+Dense tests pass 12 checks; search tests pass 14 with one existing ignore; strict
+Clippy and formatting pass. The owner-lifetime regression retains captured queries
+through repeated replacement, delete/recreate, retraining and destruction of the
+live store. Raw samples, source/binary hashes, logs, host observations, the planned
+acceptance criteria and summary script are retained. Reproduce the measured source
+hashes without rebuilding with the `source_reproduction_command` in `validation.json`;
+`summarize.py` regenerates the numerical summary offline.
+The benchmark source stays pinned to its measured revision after integration.
+
+The new `audit_delivery` benchmark separately measures disabled, unsigned and signed
+single-writer commits, with reopen/result/signature checks outside the timing region.
+All three correctness modes and strict benchmark Clippy pass. The first local timing
+attempt was aborted after filesystem contention appeared and Criterion projected a
+run beyond the 240-second budget; no timing comparison is claimed. Its exact command,
+exit status and logs remain in [audit-cost-20261031/validation.json](audit-cost-20261031/validation.json).
+Use the command and limits in `docs/production-readiness.md` on the deployment filesystem;
+audit write cost and backlog recovery throughput remain unverified production criteria.
+The retrieval/benchmark follow-up requires its own complete PR gate before merge.
