@@ -1,0 +1,35 @@
+{
+  "base_revision": "7960986145b7364b062b0a5ad6674266cfd9a764",
+  "manifest_sha256": "bb8b0141d6b5f5aed80ba2d5efc3acd1a9a4ab83d29d3043278ed2355e52f139",
+  "lockfile_sha256": "84f8c568f40443bce2d57c367420f607bca8988f8bc6372f2b062b2d40c53b2a",
+  "sources": [
+    "https://crates.io/api/v1/crates/candle-core",
+    "https://crates.io/api/v1/crates/candle-core/0.11.1/dependencies",
+    "https://github.com/huggingface/candle/pull/4078"
+  ],
+  "upgrade": {
+    "candle": "0.11.0 -> 0.11.1",
+    "zip": "8.6.0 -> 9.2.0",
+    "minimum": "0.11.1 in CPU/Metal/CUDA declarations"
+  },
+  "validation": {
+    "models_passed": 30,
+    "embed_passed": 22,
+    "embed_existing_ignored": 1,
+    "embed_store_passed": 7,
+    "strict_clippy": "passed",
+    "format": "passed",
+    "known_rustsec_vulnerabilities": 0,
+    "unmaintained": [
+      "bincode 2.0.1 / RUSTSEC-2025-0141",
+      "paste 1.0.15 / RUSTSEC-2024-0436"
+    ],
+    "integrated_ci": "pending"
+  },
+  "limits": [
+    "Tests use local deterministic fixtures; no model downloads or paid calls.",
+    "The initial models filter with only local-embed selected zero tests; retained separately and not counted as validation.",
+    "No CUDA runtime or production model-quality claim.",
+    "Full cross-platform and binding checks require the final PR gate."
+  ]
+}

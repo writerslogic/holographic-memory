@@ -1,0 +1,38 @@
+{
+  "audit.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "clippy.log": {
+    "bytes": 2478,
+    "sha256": "bc4edf78553152477bb80cf5e2b6fcf49b671bc09f0a66710f7a9009aad7615c"
+  },
+  "embed-store.log": {
+    "bytes": 875,
+    "sha256": "c5444cf7a3951b3d7ec15bd26d363d9fcc8381683f9e399fd99b3ba818b56a43"
+  },
+  "embed.log": {
+    "bytes": 2301,
+    "sha256": "729c4b12c87e17bca2793958af51df6d9f0e173413ab90c07fa56f791bf7e843"
+  },
+  "fmt.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "models.log": {
+    "bytes": 6494,
+    "sha256": "83e9fd323cd1b0e622c300f2c3cc3a7c2baa98261fdd23ebc0aa8c213d6c9e7a"
+  },
+  "update.log": {
+    "bytes": 1510,
+    "sha256": "231d41c7147676cc0c96cc6b09214478b8985553132cebed8e7a82abdd501616"
+  },
+  "wrong-feature-filter.log": {
+    "bytes": 1866,
+    "sha256": "c9f2206c90f09f8b67783c256a58471fb1286c41540d28bf10fbf6b86fe0832a"
+  },
+  "zip-tree.log": {
+    "bytes": 380,
+    "sha256": "a9ca8431b11eb52e4a777b165c6a2dec1f2520ae3a798265f553342142cb47ce"
+  }
+}

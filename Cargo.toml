@@ -90,9 +90,9 @@ bytes = { version = "1", optional = true }
 futures-util = { version = "0.3", default-features = false, optional = true }
 # On-device model stages (`local-models`): CPU everywhere, Metal on macOS. Needs Rust >= 1.94:
 # candle-core 0.11 uses `stdarch_neon_f16` on aarch64 (fails on 1.89; 1.90-1.93 untested).
-candle-core = { version = "0.11", optional = true }
-candle-nn = { version = "0.11", optional = true }
-candle-transformers = { version = "0.11", optional = true }
+candle-core = { version = "0.11.1", optional = true }
+candle-nn = { version = "0.11.1", optional = true }
+candle-transformers = { version = "0.11.1", optional = true }
 tokenizers = { version = "0.23", default-features = false, features = ["fancy-regex"], optional = true }
 rust-stemmers = "1.2.0"
 # MCP server (`warm-mcp`): the official Rust SDK; client + child-process transport serve the tests.
@@ -101,16 +101,16 @@ tokio-util = { version = "0.7", optional = true }
 libm = { version = "0.2", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-candle-core = { version = "0.11", features = ["metal"], optional = true }
-candle-nn = { version = "0.11", features = ["metal"], optional = true }
-candle-transformers = { version = "0.11", features = ["metal"], optional = true }
+candle-core = { version = "0.11.1", features = ["metal"], optional = true }
+candle-nn = { version = "0.11.1", features = ["metal"], optional = true }
+candle-transformers = { version = "0.11.1", features = ["metal"], optional = true }
 
 # CUDA for the Modal image only, enabled from outside the crate with RUSTFLAGS="--cfg warm_cuda",
 # so `--all-features` never needs nvcc.
 [target.'cfg(warm_cuda)'.dependencies]
-candle-core = { version = "0.11", features = ["cuda"], optional = true }
-candle-nn = { version = "0.11", features = ["cuda"], optional = true }
-candle-transformers = { version = "0.11", features = ["cuda"], optional = true }
+candle-core = { version = "0.11.1", features = ["cuda"], optional = true }
+candle-nn = { version = "0.11.1", features = ["cuda"], optional = true }
+candle-transformers = { version = "0.11.1", features = ["cuda"], optional = true }
 
 [build-dependencies]
 napi-build = { version = "2.2", optional = true }

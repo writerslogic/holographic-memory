@@ -67,26 +67,22 @@
 
 ### Optional model dependency review
 
-`local-models` pulls Candle 0.11 and its transitive `zip` 8.6 dependency. That
-version is affected by [GHSA-m665-v7pm-7grj](https://github.com/zip-rs/zip2/security/advisories/GHSA-m665-v7pm-7grj).
-WARM loads these models through `VarBuilder::from_mmaped_safetensors` in
-`src/core/models/mod.rs`; it does not call Candle's PyTorch ZIP reader, ZIP
-streaming, or filesystem extraction. The advisory's inspection/extraction
-chain is therefore not reachable through this integration. This disposition
-does not declare ZIP 8.6 safe for arbitrary use. Reassess before adding a ZIP
-model loader or archive-validation/extraction path, and upgrade the transitive
-dependency when Candle supports a patched version.
-
-The October 31, 2026 review also covers ZIP advisories
+`local-models` requires Candle 0.11.1 or later; the lockfile resolves ZIP 9.2.0.
+This replaces the ZIP 8.6 dependency affected by
+[GHSA-m665-v7pm-7grj](https://github.com/zip-rs/zip2/security/advisories/GHSA-m665-v7pm-7grj),
 [GHSA-q7v9-x93c-xqv3](https://github.com/advisories/GHSA-q7v9-x93c-xqv3),
 [GHSA-8hxf-qr8p-62x4](https://github.com/advisories/GHSA-8hxf-qr8p-62x4),
 [GHSA-hjqx-j4rw-g7xv](https://github.com/advisories/GHSA-hjqx-j4rw-g7xv), and
 [GHSA-9hj8-73fh-9963](https://github.com/advisories/GHSA-9hj8-73fh-9963).
-These affect ZIP extraction, AES authentication and legacy decompression, none
-of which the safetensors loader invokes. Candle's fix is merged upstream in
-[PR 4078](https://github.com/huggingface/candle/pull/4078), but its latest
-published release remains 0.11.0. Keep the dependency alerts open until a
-patched Candle release can be adopted and the local-model tests pass.
+The upstream fix is [Candle PR 4078](https://github.com/huggingface/candle/pull/4078),
+included in the [0.11.1 release](https://crates.io/crates/candle-core/0.11.1).
+The minimum version applies to CPU, Metal and CUDA dependency declarations.
+
+WARM loads these models through `VarBuilder::from_mmaped_safetensors` in
+`src/core/models/mod.rs`; it does not invoke Candle's PyTorch ZIP reader or archive
+extraction. The prior reachability disposition did not declare ZIP 8.6 generally
+safe. Reassess the boundary before adding an archive loader, and retain model and
+binding regression checks when updating Candle.
 
 ### JavaScript development dependencies
 
