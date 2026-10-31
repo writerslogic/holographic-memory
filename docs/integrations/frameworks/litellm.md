@@ -2,7 +2,9 @@
 
 LiteLLM has no memory or vector-store interface. "Adapter" here is defined as: OpenAI-format function-tool schemas, a dispatcher that executes tool calls, and a bounded completion loop. The schema and dispatcher work with any OpenAI-compatible client (OpenAI SDK, Azure, Mistral, ...); only the default `completion` of the loop imports litellm.
 
-Tested against `litellm==1.106.0` (`mcp==2.3.0`, which litellm imports when `tools=` is passed), Python 3.12.
+Tested against `litellm==1.103.10` with `filelock==4.2.6`, Python 3.11, 3.12,
+and 3.14: eight tests pass on each. MCP is installed because LiteLLM imports it
+when `tools=` is passed; no paid model calls are used in these tests.
 
 ## Install
 
@@ -11,6 +13,13 @@ pip install "writerslogic-warm-integrations[litellm]"
 ```
 
 Needs a running `warm-server` whose `--input-dim` matches the embedder (default: 384).
+
+The extra requires `filelock>=4.2.6`. Current LiteLLM 1.106.6 caps Filelock below
+4, so the resolver selects compatible LiteLLM 1.103.10. The supported lower bound
+was adjusted after verifying both synchronous and asynchronous memory-tool loops;
+no dependency requirement is overridden. Keep this security floor when updating
+LiteLLM. Other LiteLLM providers, proxy features, and streaming workflows are not
+covered by the memory-tool tests.
 
 ## Use
 

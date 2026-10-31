@@ -1,0 +1,11 @@
+{
+  "wheel_sha256": "a6b6043f5b1ba6d03f76e5ebec588703ae6cc035b50cb999b50d5442f4dce3ad",
+  "python_boundaries": [
+    "3.11",
+    "3.12",
+    "3.14"
+  ],
+  "tests_per_boundary": 8,
+  "paid_calls": 0,
+  "model_downloads": 0
+}

@@ -1258,3 +1258,44 @@ Evidence: [semantic-kernel-security-20261031/](semantic-kernel-security-20261031
 contains resolution locks, OSV responses, upstream metadata, compatibility and
 consumer logs, and the tested server binary hash. The server was built from the
 separately validated PR #366 source tree; this change adds no Rust code.
+
+## Maintained integration profiles and LiteLLM (2026-10-31)
+
+Each of the 15 separate integration extras resolves independently for Python
+`>=3.12,<3.13`; they are not combined into a conflicting omnibus environment.
+With the preceding Semantic Kernel fix, the first deduplicated inventory had 269
+registry name/version pairs. Complete OSV queries found matches in CrewAI's Chroma,
+DSPy's DiskCache, and LiteLLM's Filelock dependencies. The other twelve profiles
+had no matches in this snapshot. This is a metadata-resolution audit, not runtime
+validation of every framework or coverage of every supported Python version.
+
+The LiteLLM profile selected 1.106.6 and Filelock 3.32.7, with 13 matched Filelock
+GHSA IDs. LiteLLM 1.106.6 declares `filelock>=3.16.1,<4.0`; 1.103.10 has no such
+cap. Both primary PyPI metadata records are archived. The published extra now
+requires `litellm>=1.103.10`, `filelock>=4.2.6`, and the existing `mcp>=2.3.0`.
+This permits the same compatible LiteLLM/Filelock pair already validated for
+DSPy, without overriding dependencies. Resolution also moves Hugging Face Hub
+1.33.0 to 2.4.0. Latest-version or broad LiteLLM-proxy compatibility is not claimed.
+
+All eight existing memory-tool tests pass with the secure graph on Python 3.11,
+3.12, and 3.14, including real sync/async LiteLLM mock completions, tool-call
+objects, user isolation, invalid calls and bounded loops against a real WARM
+server. Only LiteLLM's offline response path is used; no credits or models are
+downloaded. The 3.11/3.14 cases join CI. Wheel/sdist builds and a fresh wheel
+consumer confirm the extra activates Filelock 4.2.6/LiteLLM 1.103.10 without an
+external constraint. Strict workflow lint passes.
+
+The final 15 profiles contain 266 unique registry pairs. Unchanged pairs reuse
+the baseline OSV snapshot; the changed 75-pair LiteLLM graph was independently
+rescanned and has no matches. Thirteen profiles now have no matches. The remaining
+matches are the same four Chroma GHSA IDs in CrewAI and one DiskCache GHSA ID in
+DSPy; neither is suppressed or represented as resolved. The documented DSPy
+memory-cache profile covers the verified WARM retrieval path, not arbitrary
+DiskCache or Chroma use. Matching advisory versions do not establish exploitability
+through these adapters; no-match snapshots do not prove absence of vulnerabilities.
+
+Evidence: [integration-profile-security-20261031/](integration-profile-security-20261031/)
+contains all baseline profile locks, the explicitly synthetic deduplicated
+inventory, complete scan responses, the changed profile lock/scan, final per-extra
+coverage, upstream metadata, test logs, and wheel verification. These additions
+remain separate from the native query PR #366 and await their own final CI gate.

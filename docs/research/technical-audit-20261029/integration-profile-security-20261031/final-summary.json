@@ -1,0 +1,110 @@
+{
+  "method": "Baseline inventory responses reused for unchanged pairs; changed LiteLLM profile rescanned independently.",
+  "python": ">=3.12,<3.13",
+  "unique_registry_pairs": 266,
+  "profiles": [
+    {
+      "extra": "ag2",
+      "registry_pairs": 15,
+      "matches": []
+    },
+    {
+      "extra": "autogen",
+      "registry_pairs": 19,
+      "matches": []
+    },
+    {
+      "extra": "crewai",
+      "registry_pairs": 140,
+      "matches": [
+        {
+          "package": [
+            "chromadb",
+            "1.5.9"
+          ],
+          "ids": [
+            "GHSA-2wm9-hf6c-p5cr",
+            "GHSA-36p7-vc44-83pf",
+            "GHSA-f4j7-r4q5-qw2c",
+            "GHSA-xph7-9rjv-w5fr",
+            "PYSEC-2026-311",
+            "PYSEC-2026-3813",
+            "PYSEC-2026-3814",
+            "PYSEC-2026-3815"
+          ]
+        }
+      ]
+    },
+    {
+      "extra": "dspy",
+      "registry_pairs": 72,
+      "matches": [
+        {
+          "package": [
+            "diskcache",
+            "5.6.3"
+          ],
+          "ids": [
+            "GHSA-w8v5-vhqr-4h9v",
+            "PYSEC-2026-2447"
+          ]
+        }
+      ]
+    },
+    {
+      "extra": "haystack",
+      "registry_pairs": 45,
+      "matches": []
+    },
+    {
+      "extra": "langchain",
+      "registry_pairs": 35,
+      "matches": []
+    },
+    {
+      "extra": "langgraph",
+      "registry_pairs": 39,
+      "matches": []
+    },
+    {
+      "extra": "letta",
+      "registry_pairs": 14,
+      "matches": []
+    },
+    {
+      "extra": "litellm",
+      "registry_pairs": 75,
+      "matches": []
+    },
+    {
+      "extra": "llamaindex",
+      "registry_pairs": 63,
+      "matches": []
+    },
+    {
+      "extra": "mem0",
+      "registry_pairs": 35,
+      "matches": []
+    },
+    {
+      "extra": "openai-agents",
+      "registry_pairs": 42,
+      "matches": []
+    },
+    {
+      "extra": "pydantic-ai",
+      "registry_pairs": 22,
+      "matches": []
+    },
+    {
+      "extra": "semantic-kernel",
+      "registry_pairs": 97,
+      "matches": []
+    },
+    {
+      "extra": "smolagents",
+      "registry_pairs": 33,
+      "matches": []
+    }
+  ]
+}

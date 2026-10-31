@@ -14,7 +14,7 @@ Every adapter was run against a real `warm-server` (Python) or the native Node a
 | `openai-agents` | [openai-agents](openai-agents.md) | openai-agents 0.24.0 | real `Runner` with a scripted model |
 | `pydantic-ai` | [pydantic-ai](pydantic-ai.md) | pydantic-ai-slim 2.58.0 | `Agent.run` with `FunctionModel` / `TestModel` |
 | `smolagents` | [smolagents](smolagents.md) | smolagents 1.26.0 | `CodeAgent` and `ToolCallingAgent` with a scripted model |
-| `litellm` | [litellm](litellm.md) | litellm 1.106.0, mcp 2.3.0 | LiteLLM `mock_response` / `mock_tool_calls` loops |
+| `litellm` | [litellm](litellm.md) | litellm 1.103.10, Filelock 4.2.6 | LiteLLM `mock_response` / `mock_tool_calls` loops |
 | `crewai` | [crewai](crewai.md) | crewai 1.15.28 | real `Crew.kickoff()` with a scripted LLM |
 | `autogen` | [autogen](autogen.md) | autogen-agentchat / core / ext 0.7.5 | real `AssistantAgent` with a replay client |
 | `ag2` | [autogen](autogen.md) | ag2 1.1.2 | tool toolkit (AG2 1.x has no memory interface WARM can back) |
