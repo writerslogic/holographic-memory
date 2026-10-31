@@ -51,5 +51,5 @@ jobs:
         env:
           WARM_SERVER_BIN: ${{ github.workspace }}/target/release/warm-server
         run: |
-          uv sync --python 3.12 --group dev --group importers-test
-          uv run --python 3.12 pytest tests/importers -q -p no:cacheprovider
+          uv sync --locked --python 3.12 --group dev --group importers-test
+          uv run --no-sync --python 3.12 pytest tests/importers -q -p no:cacheprovider

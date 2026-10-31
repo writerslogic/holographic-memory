@@ -147,6 +147,31 @@ def test_mem0_platform_mock_roundtrip(mem0_api, run, server):
     assert hit[0]["id"] == "agent:a1::agent-1" and hit[0]["metadata"]["warm_created_at"].startswith("2025-04-01")
 
 
+@pytest.mark.parametrize("org_id,project_id", [("other-org", "proj_1"), ("org_1", "other-project")])
+def test_mem0_platform_rejects_mismatched_key_scope(mem0_api, org_id, project_id):
+    import inspect
+    from mem0 import MemoryClient
+    from writerslogic_warm_sdk.importers.sources.mem0 import Mem0PlatformSource
+
+    if "org_id" in inspect.signature(MemoryClient).parameters:
+        pytest.skip("legacy SDK accepts explicit project selection")
+    source = Mem0PlatformSource(M0_KEY, mem0_api.url, org_id, project_id, [], 4)
+    with pytest.raises(ImporterError, match="API key does not match"):
+        list(source.records())
+    mem0_api.assert_clean()
+
+
+def test_mem0_platform_matching_key_scope(mem0_api):
+    from writerslogic_warm_sdk.importers.sources.mem0 import Mem0PlatformSource
+
+    source = Mem0PlatformSource(M0_KEY, mem0_api.url, "org_1", "proj_1", [("user_id", "bob")], 4)
+    try:
+        assert len(list(source.records())) == 9
+    finally:
+        source.close()
+    mem0_api.assert_clean()
+
+
 def test_mem0_platform_mock_scope_filter_and_page_size_limit(mem0_api):
     src = mem0_platform_source(mem0_api, scopes=[("user_id", "bob")])
     ids = [r.id for r in src.records()]
@@ -234,7 +259,9 @@ def oss_config(tmp_path, store: str) -> Dict[str, Any]:
 
 def _close_qdrant(mem):
     mem.vector_store.client.close()
-    mem._telemetry_vector_store.client.close()
+    telemetry_store = getattr(mem, "_telemetry_vector_store", None)
+    if telemetry_store is not None:
+        telemetry_store.client.close()
 
 
 def mem0_oss_source(cfg, **kw):
@@ -280,15 +307,21 @@ def test_mem0_oss_real_scope_listing_for_other_stores(tmp_path, run):
     assert_faithful(report, 8 + 3 + 1, vectors=False)
 
 
-def test_mem0_oss_scope_limit_never_truncates_silently(tmp_path):
+@pytest.mark.parametrize("limit", [7, 8, 9])
+def test_mem0_oss_scope_limit_never_truncates_silently(tmp_path, limit):
     from writerslogic_warm_sdk.importers.sources.mem0 import Mem0Source
 
     cfg = oss_config(tmp_path, "qdrant")
     populate_mem0(cfg, _close_qdrant)
-    src = Mem0Source(cfg, [("user_id", "alice")], False, 5, 8)
-    with pytest.raises(ImporterError, match="raise --scope-limit"):
-        list(src.records())
-    src.close()
+    src = Mem0Source(cfg, [("user_id", "alice")], False, 5, limit)
+    try:
+        if limit <= 8:
+            with pytest.raises(ImporterError, match="raise --scope-limit"):
+                list(src.records())
+        else:
+            assert len(list(src.records())) == 8
+    finally:
+        src.close()
 
 
 def test_mem0_oss_config_secrets_are_masked(tmp_path, capsys):

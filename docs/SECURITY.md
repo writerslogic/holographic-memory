@@ -98,6 +98,19 @@ made for consumers' independently installed LlamaIndex dependencies. Keep the
 alert open pending the upstream dependency change. The workspace's `tsup` 9
 upgrade removes the vulnerable esbuild development-server dependency.
 
+### Legacy Embedchain optional dependency
+
+The `embedchain` and `all` Python extras still resolve Embedchain 0.1.128,
+which requires `mem0ai<0.2` and `chromadb<0.6`. Their existing mem0ai 0.1.116
+lock is retained; it is affected by
+[GHSA-7587-9684-52r6](https://github.com/advisories/GHSA-7587-9684-52r6) and
+[GHSA-jfv9-68m5-gjjr](https://github.com/advisories/GHSA-jfv9-68m5-gjjr).
+Do not use that extra to expose a mem0 server or to process untrusted
+Databricks queries. The independent `import-mem0` extra and importer test
+group now resolve mem0ai 2.2.1. Removing the legacy constraint requires an
+upstream Embedchain update or retirement of that optional adapter; this
+cleanup does not claim the legacy dependency stack is vulnerability-free.
+
 ## Audit Trail
 
 The audit log at `{storage_path}/audit.bin` is an append-only binary file with fixed-size 105-byte entries:
