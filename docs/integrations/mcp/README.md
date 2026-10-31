@@ -16,7 +16,7 @@ After the first release the launchers fetch a prebuilt binary for you:
 
 ```sh
 npx -y writerslogic-warm-mcp          # npm launcher
-uvx writerslogic-warm-mcp             # PyPI launcher
+uvx warm-mcp             # PyPI launcher
 ```
 
 Both verify the download against a SHA-256 table shipped inside the package and refuse to run a binary that does not match. `WARM_MCP_BINARY=/path/to/warm-mcp` makes them run your own build. The release assets are named `warm-mcp-<rust target triple>[.exe]` under the `mcp-v<version>` release; `integrations/mcp/scripts/build-release.sh` builds one and records its checksum.

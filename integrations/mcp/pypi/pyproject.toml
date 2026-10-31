@@ -5,8 +5,8 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "writerslogic-warm-mcp"
-version = "0.1.3"
+name = "warm-mcp"
+version = "0.1.4"
 description = "Launcher for the WARM MCP server (warm-mcp): private, on-device persistent memory for AI agents."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -29,6 +29,7 @@ Documentation = "https://writerslogic.com/warm/docs/latest/integrations/mcp/"
 Repository = "https://github.com/writerslogic/warm"
 
 [project.scripts]
+warm-mcp = "writerslogic_warm_mcp:main"
 writerslogic-warm-mcp = "writerslogic_warm_mcp:main"
 
 [tool.hatch.build.targets.wheel]

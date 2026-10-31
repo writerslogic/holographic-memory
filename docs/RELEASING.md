@@ -21,7 +21,7 @@ push both `vX.Y.Z` and `py-vX.Y.Z`; the native wheels build twice.
 
 ## MCP launcher release
 
-`writerslogic-warm-mcp` on npm and PyPI is versioned separately from the engine. Its launchers
+`writerslogic-warm-mcp` on npm and `warm-mcp` on PyPI is versioned separately from the engine. Its launchers
 download `warm-mcp` from a `mcp-vX.Y.Z` GitHub release and verify its hash against a table inside
 the package. The release workflow builds macOS arm64 and x64, Linux arm64 and x64 (glibc 2.17
 minimum), and Windows x64 binaries. It rejects missing or extra assets, tests both launchers with a
@@ -30,8 +30,8 @@ to npm, PyPI and the official MCP Registry. The Registry entry uses both package
 metadata proves ownership of `io.github.writerslogic/warm-mcp`.
 
 Before the first release, add a **pending Trusted Publisher** for the new project at
-`https://pypi.org/manage/account/publishing/`: project `writerslogic-warm-mcp`, owner
-`writerslogic`, repository `writerslogic-warm`, workflow `warm-mcp-release.yml`, environment `pypi`.
+`https://pypi.org/manage/account/publishing/`: project `warm-mcp`, owner
+`writerslogic`, repository `warm`, workflow `warm-mcp-release.yml`, environment `pypi`.
 PyPI creates the project on the first successful upload. The repository's `NPM_TOKEN` secret must
 have publish access to `writerslogic-warm-mcp`.
 
@@ -82,7 +82,7 @@ the highest tier, or any reported risk; then confirm the next scan reflects the 
 `mcp-container.yml` CI check covers the Docker build and stdio introspection before submission.
 
 Afterward, confirm `npm view writerslogic-warm-mcp version` and the PyPI project page show X.Y.Z.
-Run `uvx writerslogic-warm-mcp --version` and `npx -y writerslogic-warm-mcp --version` on a
+Run `uvx warm-mcp --version` and `npx -y writerslogic-warm-mcp --version` on a
 supported platform with an empty launcher cache; these commands print the underlying engine's
 version, which is independent of the launcher version.
 

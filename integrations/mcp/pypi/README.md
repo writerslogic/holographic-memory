@@ -15,13 +15,13 @@ Persistent local memory for AI agents through the Model Context Protocol. The se
 Python 3.9 or newer is required for this launcher. Run it directly with `uvx`:
 
 ```sh
-uvx writerslogic-warm-mcp
+uvx warm-mcp
 ```
 
 The default stdio transport works with MCP clients that launch a local command. To share one server between clients, use streamable HTTP:
 
 ```sh
-uvx writerslogic-warm-mcp --transport http
+uvx warm-mcp --transport http
 ```
 
 The HTTP endpoint defaults to `http://127.0.0.1:8765/mcp`. See the [MCP guide](https://writerslogic.com/warm/docs/latest/integrations/mcp/) for client configuration, storage locations, encryption, authentication, and available flags.

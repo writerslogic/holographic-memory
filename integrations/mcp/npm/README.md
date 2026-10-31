@@ -43,4 +43,4 @@ The package installs a small Node.js launcher. On first run, it downloads the ma
 
 Set `WARM_MCP_BINARY` to run your own `warm-mcp` build. `WARM_MCP_CACHE_DIR` changes the download cache. The [MCP guide](https://writerslogic.com/warm/docs/latest/integrations/mcp/) covers the server's `WARM_MCP_*` configuration variables.
 
-The same launcher is [available on PyPI](https://pypi.org/project/writerslogic-warm-mcp/).
+The same launcher is [available on PyPI](https://pypi.org/project/warm-mcp/).

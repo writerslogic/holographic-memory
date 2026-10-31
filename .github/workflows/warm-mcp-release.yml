@@ -144,7 +144,7 @@ jobs:
           WARM_MCP_BINARY="$PWD/mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu" node "$RUNNER_TEMP/mcp-npm/node_modules/writerslogic-warm-mcp/bin/cli.js" --version
           uv venv "$RUNNER_TEMP/mcp-venv"
           uv pip install --python "$RUNNER_TEMP/mcp-venv/bin/python" dist/pypi/*.whl
-          WARM_MCP_BINARY="$PWD/mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu" "$RUNNER_TEMP/mcp-venv/bin/writerslogic-warm-mcp" --version
+          WARM_MCP_BINARY="$PWD/mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu" "$RUNNER_TEMP/mcp-venv/bin/warm-mcp" --version
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mcp-packages
@@ -282,7 +282,7 @@ jobs:
               https://registry.npmjs.org/writerslogic-warm-mcp \
               | jq --exit-status --arg version "$version" '.versions[$version] != null' >/dev/null \
               && curl --fail --location --silent --show-error --max-time 15 \
-                "https://pypi.org/pypi/writerslogic-warm-mcp/$version/json" \
+                "https://pypi.org/pypi/warm-mcp/$version/json" \
                 | jq --exit-status --arg version "$version" '.info.version == $version' >/dev/null; then
               exit 0
             fi
