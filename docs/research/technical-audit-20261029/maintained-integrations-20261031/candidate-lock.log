@@ -1,0 +1,223 @@
+Using CPython 3.14.7
+Resolved 250 packages in 553ms
+Removed aiofile v3.8.8, v3.12.3
+Removed aioice v0.10.2
+Removed aiortc v1.15.0
+Removed alembic v1.20.1
+Removed anthropic v2.3.0
+Removed argcomplete v3.7.2
+Removed asgiref v3.12.1, v3.13.0
+Removed asttokens v3.0.2
+Updated async-timeout v4.0.3, v5.0.1 -> v5.0.1
+Removed asyncer v0.0.8
+Removed av v17.1.0
+Removed azure-ai-agents v1.2.0b6
+Removed azure-ai-projects v1.0.0, v2.4.0
+Removed azure-core v1.41.0
+Removed azure-identity v1.26.0
+Removed azure-storage-blob v12.31.0
+Removed backports-tarfile v1.2.0
+Removed beartype v0.23.1
+Removed beautifulsoup4 v4.15.0
+Removed blinker v1.9.0
+Updated boto3 v1.43.118 -> v1.43.123
+Updated botocore v1.43.118 -> v1.43.123
+Updated cachetools v7.2.5 -> v7.2.7
+Removed caio v0.9.25, v0.12.10
+Removed cfgv v3.5.0
+Removed chardet v7.7.0
+Removed chroma-hnswlib v0.7.6
+Updated chromadb v0.5.23, v1.5.9 -> v1.5.9
+Removed cloudevents v1.13.0, v2.2.0
+Removed cohere v5.21.1, v7.3.0
+Removed coloredlogs v15.0.1
+Removed colorlog v6.12.0
+Updated crewai v0.193.2, v1.15.30 -> v1.15.33
+Updated crewai-cli v1.15.30 -> v1.15.33
+Updated crewai-core v1.15.30 -> v1.15.33
+Removed datasets v5.0.1
+Removed decorator v5.3.1
+Updated deprecated v1.3.1, v3.0.0 -> v1.3.1, v3.0.1
+Removed dill v0.4.1
+Removed distlib v0.4.4
+Updated dnspython v2.8.0, v2.9.0 -> v2.9.1
+Updated dspy v2.6.13, v3.4.1 -> v3.4.1
+Updated dspy-ai v2.6.27, v3.4.1 -> v3.4.1
+Updated duckdb v1.5.6, v2.0.0 -> v2.0.0
+Removed email-validator v2.3.0
+Removed embedchain v0.1.128
+Removed eval-type-backport v0.4.0
+Removed exceptiongroup v1.3.1
+Removed executing v2.3.0
+Removed fasta2a v0.3.6
+Removed fastapi v0.162.0
+Removed fastavro v1.12.2, v1.13.1
+Updated fastcore v2.2.33 -> v2.2.35
+Removed fastmcp-slim v3.4.11
+Updated filelock v3.32.7 -> v4.2.6
+Updated fsspec v2026.6.0, v2026.9.0 -> v2026.9.0
+Removed google-auth v2.62.0
+Removed google-crc32c v1.9.0
+Removed google-genai v1.20.0, v2.33.0
+Updated googleapis-common-protos v1.75.0 -> v1.76.0
+Removed gptcache v0.1.44
+Updated griffe v2.3.0, v2.4.1 -> v2.4.1
+Updated griffecli v2.3.0, v2.4.1 -> v2.4.1
+Updated griffelib v2.3.0, v2.4.1 -> v2.4.1
+Removed groq v1.7.0
+Updated haystack-ai v3.0.0, v3.3.0, v3.4.1 -> v3.4.1
+Updated hf-xet v1.7.0 -> v1.8.0
+Updated httpcore2 v2.14.0, v2.16.0 -> v2.16.0
+Updated httpx2 v2.14.0, v2.16.0 -> v2.16.0
+Updated huggingface-hub v0.36.2, v1.33.0 -> v2.4.0
+Removed humanfriendly v10.0
+Removed identify v2.6.20
+Removed ifaddr v0.2.0
+Updated instructor v1.12.0, v1.15.4 -> v1.15.4
+Removed ipython v8.39.0, v9.17.1
+Removed ipython-pygments-lexers v1.1.1
+Removed isodate v0.7.2
+Removed jaraco-classes v3.4.0
+Removed jaraco-context v6.1.2
+Removed jaraco-functools v4.6.0
+Removed jedi v0.20.1
+Removed jeepney v0.9.0
+Updated jiter v0.10.0, v0.14.0 -> v0.14.0
+Updated json-repair v0.25.2, v0.60.1 -> v0.60.1
+Updated jsonpatch v1.37 -> v1.38
+Removed jsonpath-python v1.1.6
+Removed jsonpickle v4.1.4
+Updated jsonpointer v3.5 -> v3.6
+Removed jsonschema-path v0.3.4
+Removed keyring v25.7.0
+Updated lancedb v0.40.0 -> v0.41.0
+Removed langchain v0.3.30, v1.4.7
+Removed langchain-cohere v0.3.5
+Updated langchain-community v0.3.31, v0.4.2 -> v0.4.2
+Updated langchain-core v0.3.86, v1.7.0 -> v1.7.3
+Removed langchain-experimental v0.3.4
+Removed langchain-openai v0.2.14
+Updated langchain-text-splitters v0.3.11, v1.1.3 -> v1.1.3
+Removed langgraph v1.2.17
+Removed langgraph-checkpoint v4.3.0
+Removed langgraph-prebuilt v1.1.1
+Removed langgraph-sdk v0.4.9
+Updated langsmith v0.3.45, v0.14.12 -> v0.14.16
+Removed lazy-object-proxy v1.12.0, v1.13.0
+Updated litellm v1.74.9, v1.106.4 -> v1.103.10
+Removed logfire v5.3.0
+Updated logfire-api v5.3.0 -> v5.4.0
+Removed logfire-sdk v5.3.0
+Removed magicattr v0.1.7
+Removed mako v1.4.3
+Removed matplotlib-inline v0.2.2
+Updated mcp v1.27.2, v1.30.0 -> v1.30.0
+Updated mem0ai v0.1.116, v2.2.1 -> v2.2.1
+Removed mistralai v3.5.0
+Removed monotonic v1.6
+Updated more-itertools v11.1.0, v11.2.1 -> v11.2.1
+Removed mpmath v1.3.0
+Removed msal v1.39.0
+Removed msal-extensions v1.3.1
+Updated multidict v7.1.0, v7.2.1 -> v7.2.1
+Removed multiprocess v0.70.19
+Updated networkx v3.4.2, v3.6.1, v3.7 -> v3.6.1, v3.7
+Removed nodeenv v1.11.0
+Updated numpy v2.2.6, v2.4.6, v2.5.4 -> v2.4.6, v2.5.4
+Updated oauthlib v4.0.0 -> v4.0.1
+Updated onnxruntime v1.22.0, v1.31.1 -> v1.31.1
+Updated openai v1.109.1, v2.54.0 -> v2.54.0
+Removed openapi-core v0.19.5
+Removed openapi-schema-validator v0.6.3
+Removed openapi-spec-validator v0.7.2
+Updated opentelemetry-api v1.45.1 -> v1.45.2
+Updated opentelemetry-exporter-http-transport v0.66b1 -> v0.66b2
+Updated opentelemetry-exporter-otlp-common v0.66b1 -> v0.66b2
+Updated opentelemetry-exporter-otlp-proto-common v1.45.1 -> v1.45.2
+Updated opentelemetry-exporter-otlp-proto-grpc v1.45.1 -> v1.45.2
+Updated opentelemetry-exporter-otlp-proto-http v1.45.1 -> v1.45.2
+Removed opentelemetry-instrumentation v0.66b1
+Removed opentelemetry-instrumentation-asgi v0.66b1
+Removed opentelemetry-instrumentation-fastapi v0.66b1
+Removed opentelemetry-instrumentation-httpx v0.66b1
+Updated opentelemetry-proto v1.45.1 -> v1.45.2
+Updated opentelemetry-sdk v1.45.1 -> v1.45.2
+Updated opentelemetry-semantic-conventions v0.66b1 -> v0.66b2
+Removed opentelemetry-util-http v0.66b1
+Removed optuna v5.0.0
+Removed ormsgpack v1.12.2
+Updated packaging v25.0, v26.3 -> v26.3
+Updated pandas v2.3.3, v3.1.0 -> v3.1.0
+Removed parse v1.22.4
+Removed parso v0.8.7
+Removed pathable v0.4.4
+Removed pexpect v4.9.0
+Updated pillow v12.3.0, v13.0.0 -> v13.0.0
+Updated platformdirs v4.12.4, v4.14.0 -> v4.14.2
+Updated posthog v3.25.0, v7.77.0 -> v7.81.1
+Removed prance v25.4.8.0, v26.7.19.0
+Removed pre-commit v4.6.2, v4.7.0
+Removed prompt-toolkit v3.0.53
+Updated protobuf v5.29.6 -> v6.33.6
+Removed psutil v7.2.2
+Removed ptyprocess v0.7.0
+Removed pure-eval v0.2.4
+Removed py-key-value-aio v0.4.6
+Updated pyarrow v25.0.1, v26.0.0 -> v26.0.0
+Removed pyasn1 v0.6.5
+Removed pyasn1-modules v0.4.2
+Removed pybars4 v0.9.13
+Updated pycparser v3.11, v3.12 -> v3.12
+Updated pydantic v2.11.10, v2.12.5 -> v2.12.5
+Removed pydantic-ai v0.3.6, v2.31.1
+Updated pydantic-ai-slim v0.3.6, v2.31.1 -> v2.64.0
+Updated pydantic-core v2.33.2, v2.41.5 -> v2.41.5
+Removed pydantic-evals v0.3.6, v2.31.1
+Updated pydantic-graph v0.3.6, v2.31.1 -> v2.64.0
+Updated pydantic-settings v2.15.0, v2.16.2 -> v2.16.2
+Removed pyee v13.0.1, v16.0.0
+Removed pylibsrtp v1.0.0
+Removed pymeta3 v0.5.1
+Updated pymongo v4.18.3, v4.19.0 -> v4.19.0
+Removed pyopenssl v26.4.0
+Removed pypdf v5.9.0
+Removed pyperclip v1.11.0
+Removed pyreadline3 v3.5.6
+Removed pysbd v0.3.4
+Removed python-discovery v1.6.4
+Updated python-multipart v0.0.32 -> v0.0.33
+Updated pytz v2026.5 -> v2026.6
+Updated pyvespa v1.2.9 -> v1.2.10
+Removed pyvis v0.3.2
+Removed pywin32-ctypes v0.2.3
+Updated referencing v0.36.2 -> v0.37.0
+Removed rfc3339-validator v0.1.4
+Updated rich v13.9.4, v14.3.4 -> v14.3.4
+Updated rpds-py v0.30.0, v2026.9.1 -> v2026.9.1
+Removed ruamel-yaml v0.19.1
+Removed schema v0.7.8
+Removed scipy v1.15.3, v1.17.1, v1.18.1
+Removed secretstorage v3.5.0
+Removed semantic-kernel v1.39.4, v1.45.0
+Removed soupsieve v2.10, v3.0.4
+Updated sqlalchemy v2.0.55, v2.1.6 -> v2.1.6
+Updated sse-starlette v3.5.1, v3.6.0 -> v3.6.0
+Removed stack-data v0.6.3
+Updated starlette v1.7.0, v1.10.0 -> v1.10.0
+Removed sympy v1.14.0
+Removed tabulate v0.9.0
+Updated tenacity v9.1.4, v9.2.1 -> v9.2.1
+Updated tokenizers v0.20.3, v0.23.3 -> v0.23.3
+Removed traitlets v5.16.1
+Removed types-requests v2.33.0.20261006
+Removed ujson v6.0.0
+Updated uuid-utils v0.18.0 -> v0.19.0
+Updated uv v0.13.5 -> v0.13.6
+Updated validators v0.35.0, v0.36.0 -> v0.36.0
+Removed virtualenv v21.14.5
+Removed wcwidth v0.9.4
+Updated weaviate-client v4.24.0 -> v4.24.1
+Updated websockets v15.0.1 -> v17.4
+Removed werkzeug v3.1.1
+Updated wrapt v2.5.1 -> v2.5.2
+Updated zstandard v0.23.0, v0.25.0 -> v0.25.0

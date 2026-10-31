@@ -17,6 +17,8 @@ from dspy.utils import DummyLM
 
 from writerslogic_warm_integrations.dspy import WarmRetriever
 
+dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=True)
+
 retriever = WarmRetriever(
     k=2,
     url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"),
@@ -49,3 +51,4 @@ with dspy.context(lm=DummyLM([{"reasoning": "the first passage says so", "answer
 print(out.answer)
 print(retriever("Where does WARM run?").ids)
 retriever.delete(["warm", "dspy", "pasta"])
+retriever.close()

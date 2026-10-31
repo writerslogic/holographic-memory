@@ -1,0 +1,206 @@
+{"ghsa":"GHSA-g3hv-75wg-m249","manifest":"scripts/docs-api/package-lock.json","number":240,"package":"minimatch","patched":"11.0.1","range":"\u003c 11.0.1","severity":"medium"}
+{"ghsa":"GHSA-5849-834g-hvw5","manifest":"bindings/python/warm-sdk/uv.lock","number":239,"package":"pypdf","patched":"6.21.4","range":"\u003c 6.21.4","severity":"high"}
+{"ghsa":"GHSA-cggf-277g-3q54","manifest":"bindings/python/warm-sdk/uv.lock","number":238,"package":"pypdf","patched":"6.21.4","range":"\u003c 6.21.4","severity":"high"}
+{"ghsa":"GHSA-mfr5-77xh-9j7h","manifest":"bindings/python/warm-sdk/uv.lock","number":237,"package":"pypdf","patched":"6.21.4","range":"\u003c 6.21.4","severity":"high"}
+{"ghsa":"GHSA-42gh-23hr-vphw","manifest":"bindings/python/warm-sdk/uv.lock","number":236,"package":"pypdf","patched":"6.21.3","range":"\u003c 6.21.3","severity":"high"}
+{"ghsa":"GHSA-4vqv-7265-gm2w","manifest":"bindings/python/warm-sdk/uv.lock","number":235,"package":"pypdf","patched":"6.21.3","range":"\u003c 6.21.3","severity":"high"}
+{"ghsa":"GHSA-62m5-6wh8-28x7","manifest":"bindings/python/warm-sdk/uv.lock","number":234,"package":"pypdf","patched":"6.21.3","range":"\u003c 6.21.3","severity":"high"}
+{"ghsa":"GHSA-x3rh-gjgm-fmqc","manifest":"bindings/python/warm-sdk/uv.lock","number":233,"package":"pypdf","patched":"6.21.3","range":"\u003c 6.21.3","severity":"high"}
+{"ghsa":"GHSA-5324-3w58-qpp2","manifest":"bindings/python/warm-sdk/uv.lock","number":228,"package":"mem0ai","patched":"2.0.18","range":"\u003c 2.0.18","severity":"medium"}
+{"ghsa":"GHSA-6627-m3xw-93mp","manifest":"bindings/python/warm-sdk/uv.lock","number":227,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.30.0, \u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-9c4x-gm8v-wgc4","manifest":"bindings/python/warm-sdk/uv.lock","number":226,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.30.0, \u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-8mx5-7m5m-r77g","manifest":"bindings/python/warm-sdk/uv.lock","number":225,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.10.0, \u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-cwqr-hh33-gh44","manifest":"bindings/python/warm-sdk/uv.lock","number":224,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.20.4, \u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-rfpc-qcw5-3pc4","manifest":"bindings/python/warm-sdk/uv.lock","number":223,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.22.0, \u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-9j6q-wvj5-jgjg","manifest":"bindings/python/warm-sdk/uv.lock","number":222,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.32.6, \u003c= 4.2.0","severity":"low"}
+{"ghsa":"GHSA-69hj-f68j-2879","manifest":"bindings/python/warm-sdk/uv.lock","number":221,"package":"filelock","patched":"4.2.1","range":"\u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-j8f7-rjxc-mr56","manifest":"bindings/python/warm-sdk/uv.lock","number":220,"package":"filelock","patched":"4.0.9","range":"\u003e= 3.20.4, \u003c= 4.0.8","severity":"medium"}
+{"ghsa":"GHSA-m462-7rxw-wvpg","manifest":"bindings/python/warm-sdk/uv.lock","number":219,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.30.0, \u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-fq56-3cx3-fjxp","manifest":"bindings/python/warm-sdk/uv.lock","number":218,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.22.0, \u003c= 4.2.0","severity":"medium"}
+{"ghsa":"GHSA-w4fh-qvv9-3v23","manifest":"bindings/python/warm-sdk/uv.lock","number":217,"package":"mcp","patched":"1.30.0","range":"\u003e= 1.10.0, \u003c 1.30.0","severity":"medium"}
+{"ghsa":"GHSA-5h93-6whr-6q8j","manifest":"bindings/python/warm-sdk/uv.lock","number":216,"package":"mcp","patched":"1.30.0","range":"\u003e= 1.8.0, \u003c 1.30.0","severity":"medium"}
+{"ghsa":"GHSA-rwrf-2pqf-9j8j","manifest":"bindings/python/warm-sdk/uv.lock","number":215,"package":"mcp","patched":"1.30.0","range":"\u003e= 1.10.0, \u003c 1.30.0","severity":"medium"}
+{"ghsa":"GHSA-45c3-73f7-pv4m","manifest":"bindings/python/warm-sdk/uv.lock","number":214,"package":"dnspython","patched":"2.9.0","range":"\u003c 2.9.0","severity":"high"}
+{"ghsa":"GHSA-g5ff-637f-6q2m","manifest":"bindings/python/warm-sdk/uv.lock","number":213,"package":"litellm","patched":"1.95.0","range":"\u003c 1.95.0","severity":"high"}
+{"ghsa":"GHSA-hhww-mrg2-969h","manifest":"bindings/python/warm-sdk/uv.lock","number":212,"package":"litellm","patched":"1.85.0","range":"\u003e= 1.65.5, \u003c 1.85.0","severity":"medium"}
+{"ghsa":"GHSA-9vhv-jxww-xfm5","manifest":"bindings/python/warm-sdk/uv.lock","number":211,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.20.4, \u003c= 4.2.0","severity":"low"}
+{"ghsa":"GHSA-567q-5qvw-pf92","manifest":"bindings/python/warm-sdk/uv.lock","number":210,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.22.0, \u003c= 4.2.0","severity":"low"}
+{"ghsa":"GHSA-cx28-75q4-x26q","manifest":"bindings/python/warm-sdk/uv.lock","number":209,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"low"}
+{"ghsa":"GHSA-494p-63j8-28p3","manifest":"bindings/python/warm-sdk/uv.lock","number":208,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"low"}
+{"ghsa":"GHSA-394h-qwmc-48pf","manifest":"bindings/python/warm-sdk/uv.lock","number":207,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"high"}
+{"ghsa":"GHSA-fc2g-4w5p-6whm","manifest":"bindings/python/warm-sdk/uv.lock","number":206,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"medium"}
+{"ghsa":"GHSA-6w3r-xr62-4xcp","manifest":"bindings/python/warm-sdk/uv.lock","number":205,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"high"}
+{"ghsa":"GHSA-qmx5-4p3x-wvqf","manifest":"bindings/python/warm-sdk/uv.lock","number":204,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"low"}
+{"ghsa":"GHSA-hhxq-47xx-j5xx","manifest":"bindings/python/warm-sdk/uv.lock","number":203,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"medium"}
+{"ghsa":"GHSA-v4x8-3wr5-3wq8","manifest":"bindings/python/warm-sdk/uv.lock","number":202,"package":"filelock","patched":"4.2.1","range":"\u003e= 3.20.4, \u003c= 4.2.0","severity":"high"}
+{"ghsa":"GHSA-5x8w-8jj5-q52h","manifest":"bindings/python/warm-sdk/uv.lock","number":201,"package":"pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"critical"}
+{"ghsa":"GHSA-654x-cwwv-5j9c","manifest":"bindings/python/warm-sdk/uv.lock","number":200,"package":"Pillow","patched":"13.0.0","range":"\u003e= 11.2.1, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-6c7f-9265-g8fw","manifest":"bindings/python/warm-sdk/uv.lock","number":199,"package":"pypdf","patched":"6.21.2","range":"\u003c 6.21.2","severity":"high"}
+{"ghsa":"GHSA-jr96-gvgh-j3r4","manifest":"bindings/python/warm-sdk/uv.lock","number":198,"package":"pypdf","patched":"6.21.2","range":"\u003c 6.21.2","severity":"high"}
+{"ghsa":"GHSA-gmh7-3g9r-mjh5","manifest":"bindings/python/warm-sdk/uv.lock","number":197,"package":"pypdf","patched":"6.21.2","range":"\u003c 6.21.2","severity":"high"}
+{"ghsa":"GHSA-558c-9hv2-4prj","manifest":"bindings/python/warm-sdk/uv.lock","number":196,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"medium"}
+{"ghsa":"GHSA-78g4-xqwv-q3g8","manifest":"bindings/python/warm-sdk/uv.lock","number":195,"package":"pillow","patched":"13.0.0","range":"\u003e= 11.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-6vvc-x485-93v7","manifest":"bindings/python/warm-sdk/uv.lock","number":194,"package":"pypdf","patched":"6.21.0","range":"\u003c 6.21.0","severity":"medium"}
+{"ghsa":"GHSA-f54x-cmq8-qg57","manifest":"bindings/python/warm-sdk/uv.lock","number":193,"package":"pypdf","patched":"6.21.0","range":"\u003c 6.21.0","severity":"medium"}
+{"ghsa":"GHSA-cgf9-327m-v77c","manifest":"bindings/python/warm-sdk/uv.lock","number":192,"package":"pypdf","patched":"6.21.0","range":"\u003c 6.21.0","severity":"medium"}
+{"ghsa":"GHSA-g7cr-3p24-7wf7","manifest":"bindings/python/warm-sdk/uv.lock","number":191,"package":"Pillow","patched":"13.0.0","range":"\u003e= 9.4.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-9v9v-9qvf-h2hj","manifest":"bindings/python/warm-sdk/uv.lock","number":190,"package":"Pillow","patched":"13.0.0","range":"\u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-g4qv-2jxx-769h","manifest":"bindings/python/warm-sdk/uv.lock","number":189,"package":"Pillow","patched":"13.0.0","range":"\u003e= 11.0.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-3j72-p6qg-6xp7","manifest":"bindings/python/warm-sdk/uv.lock","number":188,"package":"Pillow","patched":"13.0.0","range":"\u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-4rm8-3hmm-39fg","manifest":"bindings/python/warm-sdk/uv.lock","number":187,"package":"pillow","patched":"13.0.0","range":"\u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-mrfp-p49p-3hf2","manifest":"bindings/python/warm-sdk/uv.lock","number":186,"package":"Pillow","patched":"13.0.0","range":"\u003e= 5.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-v9pv-5gc8-w2m6","manifest":"bindings/python/warm-sdk/uv.lock","number":185,"package":"Pillow","patched":"13.0.0","range":"\u003e= 11.0.0, \u003c 13.0.0","severity":"critical"}
+{"ghsa":"GHSA-24rc-8hj2-v98c","manifest":"bindings/python/warm-sdk/uv.lock","number":184,"package":"pillow","patched":"13.0.0","range":"\u003e= 9.1.0, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-g842-9rc4-69pw","manifest":"bindings/python/warm-sdk/uv.lock","number":183,"package":"pillow","patched":"13.0.0","range":"\u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-p8hx-v2p6-rp84","manifest":"bindings/python/warm-sdk/uv.lock","number":182,"package":"Pillow","patched":"13.0.0","range":"\u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-cw65-gx24-rc82","manifest":"bindings/python/warm-sdk/uv.lock","number":181,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"medium"}
+{"ghsa":"GHSA-43mp-35q3-x3fq","manifest":"bindings/python/warm-sdk/uv.lock","number":180,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"medium"}
+{"ghsa":"GHSA-c978-59m8-c77v","manifest":"bindings/python/warm-sdk/uv.lock","number":179,"package":"virtualenv","patched":"21.14.9","range":"\u003c 21.14.9","severity":"high"}
+{"ghsa":"GHSA-xvh5-g6gv-559v","manifest":"bindings/python/warm-sdk/uv.lock","number":178,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"high"}
+{"ghsa":"GHSA-332p-7hrc-92wf","manifest":"bindings/python/warm-sdk/uv.lock","number":177,"package":"Pillow","patched":"13.0.0","range":"\u003e= 2.0.0, \u003c 13.0.0","severity":"critical"}
+{"ghsa":"GHSA-4rr5-89j8-mwwm","manifest":"bindings/python/warm-sdk/uv.lock","number":176,"package":"pillow","patched":"13.0.0","range":"\u003e= 11.3.0, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-f2g6-542v-9j58","manifest":"bindings/python/warm-sdk/uv.lock","number":175,"package":"Pillow","patched":"13.0.0","range":"\u003e= 5.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-5xm2-6676-qcp9","manifest":"bindings/python/warm-sdk/uv.lock","number":174,"package":"Pillow","patched":"13.0.0","range":"\u003e= 8.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-gg2r-wvfm-q9rx","manifest":"bindings/python/warm-sdk/uv.lock","number":173,"package":"pillow","patched":"13.0.0","range":"\u003e= 4.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-jg86-v3jv-hrpm","manifest":"bindings/python/warm-sdk/uv.lock","number":172,"package":"Pillow","patched":"13.0.0","range":"\u003e= 5.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-254f-3936-288h","manifest":"bindings/python/warm-sdk/uv.lock","number":171,"package":"Pillow","patched":"13.0.0","range":"\u003e= 5.1.0, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-xgh8-jp6q-p5x8","manifest":"bindings/python/warm-sdk/uv.lock","number":170,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"medium"}
+{"ghsa":"GHSA-rfgq-q3w2-pmv2","manifest":"bindings/python/warm-sdk/uv.lock","number":169,"package":"Pillow","patched":"13.0.0","range":"\u003e= 9.1.0, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-74r2-7ff9-mjj2","manifest":"bindings/python/warm-sdk/uv.lock","number":168,"package":"Pillow","patched":"13.0.0","range":"\u003e= 5.4.0, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-22hg-r758-rrw9","manifest":"bindings/python/warm-sdk/uv.lock","number":167,"package":"Pillow","patched":"13.0.0","range":"\u003e= 7.2.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-fc9g-5qg7-mf45","manifest":"bindings/python/warm-sdk/uv.lock","number":166,"package":"pillow","patched":"13.0.0","range":"\u003e= 9.2.0, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-27h8-gf7j-v5hc","manifest":"bindings/python/warm-sdk/uv.lock","number":165,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"high"}
+{"ghsa":"GHSA-cp9v-662q-vvx9","manifest":"bindings/python/warm-sdk/uv.lock","number":164,"package":"pillow","patched":"13.0.0","range":"\u003e= 12.0.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-j4m9-6w36-pw47","manifest":"bindings/python/warm-sdk/uv.lock","number":163,"package":"pillow","patched":"13.0.0","range":"\u003e= 10.0.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-7mwm-ghpf-9vrm","manifest":"bindings/python/warm-sdk/uv.lock","number":162,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"high"}
+{"ghsa":"GHSA-4558-3h8r-v8xp","manifest":"bindings/python/warm-sdk/uv.lock","number":161,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"medium"}
+{"ghsa":"GHSA-w889-685w-c8fh","manifest":"bindings/python/warm-sdk/uv.lock","number":160,"package":"Pillow","patched":"13.0.0","range":"\u003e= 2.6.0, \u003c 13.0.0","severity":"critical"}
+{"ghsa":"GHSA-5hx5-vpf9-5wcv","manifest":"bindings/python/warm-sdk/uv.lock","number":159,"package":"pypdf","patched":"6.21.1","range":"\u003c 6.21.1","severity":"low"}
+{"ghsa":"GHSA-qfv9-64jg-mh7p","manifest":"bindings/python/warm-sdk/uv.lock","number":158,"package":"pypdf","patched":"6.20.1","range":"\u003c 6.20.1","severity":"medium"}
+{"ghsa":"GHSA-9mx8-4j7g-633p","manifest":"bindings/python/warm-sdk/uv.lock","number":157,"package":"pypdf","patched":"6.20.1","range":"\u003c 6.20.1","severity":"medium"}
+{"ghsa":"GHSA-39mj-jf6j-2qj3","manifest":"bindings/python/warm-sdk/uv.lock","number":156,"package":"pypdf","patched":"6.20.0","range":"\u003c 6.20.0","severity":"medium"}
+{"ghsa":"GHSA-vxj4-q4g9-crj7","manifest":"bindings/python/warm-sdk/uv.lock","number":155,"package":"virtualenv","patched":"21.14.7","range":"\u003c= 21.14.6","severity":"high"}
+{"ghsa":"GHSA-7mh2-4gg2-979f","manifest":"bindings/python/warm-sdk/uv.lock","number":154,"package":"pypdf","patched":"6.20.0","range":"\u003c 6.20.0","severity":"medium"}
+{"ghsa":"GHSA-58r4-6rv3-gfh8","manifest":"bindings/python/warm-sdk/uv.lock","number":153,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"high"}
+{"ghsa":"GHSA-65qm-jvmh-6pqg","manifest":"bindings/python/warm-sdk/uv.lock","number":152,"package":"Pillow","patched":"13.0.0","range":"\u003e= 9.2.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-vx6w-vv9f-6gvg","manifest":"bindings/python/warm-sdk/uv.lock","number":151,"package":"Pillow","patched":"13.0.0","range":"\u003e= 2.3.0, \u003c= 12.3.0","severity":"medium"}
+{"ghsa":"GHSA-q45j-58j2-45rg","manifest":"bindings/python/warm-sdk/uv.lock","number":150,"package":"Pillow","patched":"13.0.0","range":"\u003e= 5.3.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-pchr-8j38-3x4p","manifest":"bindings/python/warm-sdk/uv.lock","number":149,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"high"}
+{"ghsa":"GHSA-p4wg-p73j-c528","manifest":"bindings/python/warm-sdk/uv.lock","number":148,"package":"pillow","patched":"13.0.0","range":"\u003e= 5.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-462x-pgg6-55fp","manifest":"bindings/python/warm-sdk/uv.lock","number":147,"package":"pillow","patched":"13.0.0","range":"\u003e= 8.2.0, \u003c 13.0.0","severity":"medium"}
+{"ghsa":"GHSA-c6hw-5grf-ff96","manifest":"bindings/python/warm-sdk/uv.lock","number":146,"package":"Pillow","patched":"13.0.0","range":"\u003e= 8.1.0, \u003c 13.0.0","severity":"high"}
+{"ghsa":"GHSA-8g5g-8vmr-9782","manifest":"bindings/python/warm-sdk/uv.lock","number":145,"package":"Pillow","patched":"13.0.0","range":"\u003c= 12.3.0","severity":"critical"}
+{"ghsa":"GHSA-84m7-p3x7-pcfv","manifest":"bindings/python/warm-sdk/uv.lock","number":144,"package":"mcp","patched":"1.30.0","range":"\u003e= 1.8.0, \u003c 1.30.0","severity":"medium"}
+{"ghsa":"GHSA-6fqq-452j-qhrp","manifest":"bindings/python/warm-sdk/uv.lock","number":143,"package":"pydantic-ai-slim","patched":"2.53.0","range":"\u003e= 2.10.0, \u003c 2.53.0","severity":"high"}
+{"ghsa":"GHSA-6fqq-452j-qhrp","manifest":"bindings/python/warm-sdk/uv.lock","number":142,"package":"pydantic-ai","patched":"2.53.0","range":"\u003e= 2.10.0, \u003c 2.53.0","severity":"high"}
+{"ghsa":"GHSA-v36g-jcw9-x7cw","manifest":"bindings/python/warm-sdk/uv.lock","number":141,"package":"pydantic-ai-slim","patched":"2.52.0","range":"\u003e= 2.0.0b1, \u003c 2.52.0","severity":"medium"}
+{"ghsa":"GHSA-v36g-jcw9-x7cw","manifest":"bindings/python/warm-sdk/uv.lock","number":140,"package":"pydantic-ai","patched":"2.52.0","range":"\u003e= 2.0.0b1, \u003c 2.52.0","severity":"medium"}
+{"ghsa":"GHSA-3gh4-cghq-f8v4","manifest":"bindings/python/warm-sdk/uv.lock","number":139,"package":"pydantic-ai-slim","patched":"1.107.4","range":"\u003e= 0.3.4, \u003c 1.107.4","severity":"low"}
+{"ghsa":"GHSA-3gh4-cghq-f8v4","manifest":"bindings/python/warm-sdk/uv.lock","number":138,"package":"pydantic-ai","patched":"1.107.4","range":"\u003e= 0.3.4, \u003c 1.107.4","severity":"low"}
+{"ghsa":"GHSA-fpf4-vwcp-v4hp","manifest":"bindings/python/warm-sdk/uv.lock","number":137,"package":"pydantic-ai-slim","patched":"2.44.0","range":"\u003e= 2.0.0b1, \u003c 2.44.0","severity":"medium"}
+{"ghsa":"GHSA-fpf4-vwcp-v4hp","manifest":"bindings/python/warm-sdk/uv.lock","number":136,"package":"pydantic-ai","patched":"2.44.0","range":"\u003e= 2.0.0b1, \u003c 2.44.0","severity":"medium"}
+{"ghsa":"GHSA-4x9p-g9wm-8q7f","manifest":"bindings/python/warm-sdk/uv.lock","number":135,"package":"pydantic-ai-slim","patched":"2.44.0","range":"\u003e= 2.0.0b1, \u003c 2.44.0","severity":"low"}
+{"ghsa":"GHSA-4x9p-g9wm-8q7f","manifest":"bindings/python/warm-sdk/uv.lock","number":134,"package":"pydantic-ai-slim","patched":"1.107.6","range":"\u003e= 0.3.4, \u003c 1.107.6","severity":"low"}
+{"ghsa":"GHSA-4x9p-g9wm-8q7f","manifest":"bindings/python/warm-sdk/uv.lock","number":133,"package":"pydantic-ai","patched":"2.44.0","range":"\u003e= 2.0.0b1, \u003c 2.44.0","severity":"low"}
+{"ghsa":"GHSA-4x9p-g9wm-8q7f","manifest":"bindings/python/warm-sdk/uv.lock","number":132,"package":"pydantic-ai","patched":"1.107.6","range":"\u003e= 0.3.4, \u003c 1.107.6","severity":"low"}
+{"ghsa":"GHSA-vmxc-h2x2-jmf3","manifest":"bindings/python/warm-sdk/uv.lock","number":131,"package":"pydantic-ai-slim","patched":"2.44.0","range":"\u003e= 2.0.0b1, \u003c 2.44.0","severity":"medium"}
+{"ghsa":"GHSA-vmxc-h2x2-jmf3","manifest":"bindings/python/warm-sdk/uv.lock","number":130,"package":"pydantic-ai","patched":"2.44.0","range":"\u003e= 2.0.0b1, \u003c 2.44.0","severity":"medium"}
+{"ghsa":"GHSA-g6x2-hccm-hh4m","manifest":"bindings/python/warm-sdk/uv.lock","number":129,"package":"Werkzeug","patched":"3.1.9","range":"\u003c 3.1.9","severity":"medium"}
+{"ghsa":"GHSA-v247-6f48-mgcj","manifest":"bindings/python/warm-sdk/uv.lock","number":128,"package":"pypdf","patched":"6.19.0","range":"\u003c 6.19.0","severity":"high"}
+{"ghsa":"GHSA-php9-fj8v-98fj","manifest":"bindings/python/warm-sdk/uv.lock","number":127,"package":"pypdf","patched":"6.19.0","range":"\u003c 6.19.0","severity":"high"}
+{"ghsa":"GHSA-w23x-9jrw-r45c","manifest":"bindings/python/warm-sdk/uv.lock","number":126,"package":"pypdf","patched":"6.19.0","range":"\u003c 6.19.0","severity":"high"}
+{"ghsa":"GHSA-jw7q-gvrg-4vj3","manifest":"bindings/python/warm-sdk/uv.lock","number":125,"package":"pypdf","patched":"6.18.1","range":"\u003c 6.18.1","severity":"high"}
+{"ghsa":"GHSA-g9cg-prrw-2r8q","manifest":"bindings/python/warm-sdk/uv.lock","number":124,"package":"pypdf","patched":"6.18.1","range":"\u003c 6.18.1","severity":"high"}
+{"ghsa":"GHSA-fp3h-c4fm-7vvf","manifest":"bindings/python/warm-sdk/uv.lock","number":123,"package":"pypdf","patched":"6.18.1","range":"\u003c 6.18.1","severity":"high"}
+{"ghsa":"GHSA-5jq2-8x83-x246","manifest":"bindings/python/warm-sdk/uv.lock","number":122,"package":"pypdf","patched":"6.18.0","range":"\u003c 6.18.0","severity":"high"}
+{"ghsa":"GHSA-qv6h-rv94-w285","manifest":"bindings/python/warm-sdk/uv.lock","number":121,"package":"pypdf","patched":"6.17.0","range":"\u003c 6.17.0","severity":"high"}
+{"ghsa":"GHSA-3cv6-jpf6-8222","manifest":"bindings/python/warm-sdk/uv.lock","number":120,"package":"litellm","patched":"1.88.6","range":"\u003c 1.88.6","severity":"medium"}
+{"ghsa":"GHSA-hx8v-g79f-8w5f","manifest":"bindings/python/warm-sdk/uv.lock","number":119,"package":"litellm","patched":"1.83.9","range":"\u003c= 1.83.8","severity":"medium"}
+{"ghsa":"GHSA-m2v5-74w2-qhcj","manifest":"bindings/python/warm-sdk/uv.lock","number":118,"package":"litellm","patched":null,"range":"\u003c= 1.82.2","severity":"low"}
+{"ghsa":"GHSA-c693-x898-5g4h","manifest":"bindings/python/warm-sdk/uv.lock","number":117,"package":"litellm","patched":null,"range":"\u003c= 1.82.2","severity":"low"}
+{"ghsa":"GHSA-p897-vf7j-f5h8","manifest":"bindings/python/warm-sdk/uv.lock","number":116,"package":"litellm","patched":null,"range":"\u003c= 1.82.5","severity":"low"}
+{"ghsa":"GHSA-w2mh-qq9q-453x","manifest":"bindings/python/warm-sdk/uv.lock","number":115,"package":"litellm","patched":null,"range":"\u003c= 1.82.2","severity":"low"}
+{"ghsa":"GHSA-j37q-q7p9-vpwm","manifest":"bindings/python/warm-sdk/uv.lock","number":114,"package":"litellm","patched":null,"range":"\u003c= 1.82.2","severity":"medium"}
+{"ghsa":"GHSA-4jcj-7x88-m979","manifest":"bindings/python/warm-sdk/uv.lock","number":113,"package":"litellm","patched":"1.84.0","range":"\u003c 1.84.0","severity":"medium"}
+{"ghsa":"GHSA-qmf3-4767-5fg3","manifest":"bindings/python/warm-sdk/uv.lock","number":112,"package":"litellm","patched":null,"range":"\u003c= 1.82.2","severity":"low"}
+{"ghsa":"GHSA-mf52-j94g-746m","manifest":"bindings/python/warm-sdk/uv.lock","number":111,"package":"litellm","patched":null,"range":"\u003c= 1.82.2","severity":"low"}
+{"ghsa":"GHSA-6wvf-77m9-58rm","manifest":"bindings/python/warm-sdk/uv.lock","number":110,"package":"litellm","patched":"1.83.7","range":"\u003c 1.83.7","severity":"critical"}
+{"ghsa":"GHSA-fc8x-2rww-xw9m","manifest":"bindings/python/warm-sdk/uv.lock","number":109,"package":"pypdf","patched":"6.15.0","range":"\u003c 6.15.0","severity":"medium"}
+{"ghsa":"GHSA-23w6-3w8w-8484","manifest":"bindings/python/warm-sdk/uv.lock","number":108,"package":"pypdf","patched":"6.16.1","range":"\u003c 6.16.1","severity":"medium"}
+{"ghsa":"GHSA-763m-79hh-57f2","manifest":"bindings/python/warm-sdk/uv.lock","number":107,"package":"pypdf","patched":"6.16.1","range":"\u003c 6.16.1","severity":"medium"}
+{"ghsa":"GHSA-jp53-mhqp-8xcg","manifest":"bindings/python/warm-sdk/uv.lock","number":106,"package":"pypdf","patched":"6.16.0","range":"\u003c 6.16.0","severity":"medium"}
+{"ghsa":"GHSA-36p7-vc44-83pf","manifest":"bindings/python/warm-sdk/uv.lock","number":105,"package":"chromadb","patched":null,"range":"\u003e= 0.4.17, \u003c= 1.5.9","severity":"critical"}
+{"ghsa":"GHSA-xph7-9rjv-w5fr","manifest":"bindings/python/warm-sdk/uv.lock","number":104,"package":"chromadb","patched":null,"range":"\u003e= 0.5.0, \u003c= 1.5.9","severity":"high"}
+{"ghsa":"GHSA-2wm9-hf6c-p5cr","manifest":"bindings/python/warm-sdk/uv.lock","number":103,"package":"chromadb","patched":null,"range":"\u003e= 0.4.17, \u003c= 1.5.9","severity":"high"}
+{"ghsa":"GHSA-fp3f-mc75-235c","manifest":"bindings/python/warm-sdk/uv.lock","number":102,"package":"pypdf","patched":"6.15.0","range":"\u003c 6.15.0","severity":"medium"}
+{"ghsa":"GHSA-fwg2-594c-jp42","manifest":"bindings/python/warm-sdk/uv.lock","number":101,"package":"pypdf","patched":"6.15.0","range":"\u003c 6.15.0","severity":"medium"}
+{"ghsa":"GHSA-g867-7843-wf8q","manifest":"bindings/python/warm-sdk/uv.lock","number":100,"package":"pypdf","patched":"6.14.2","range":"\u003c 6.14.2","severity":"high"}
+{"ghsa":"GHSA-5xf7-4p34-54qr","manifest":"bindings/python/warm-sdk/uv.lock","number":99,"package":"pypdf","patched":"6.14.1","range":"\u003c 6.14.1","severity":"high"}
+{"ghsa":"GHSA-55h5-xmcq-c37v","manifest":"bindings/python/warm-sdk/uv.lock","number":98,"package":"pypdf","patched":"6.14.0","range":"\u003c 6.14.0","severity":"medium"}
+{"ghsa":"GHSA-5qjq-93h5-hrgp","manifest":"bindings/python/warm-sdk/uv.lock","number":97,"package":"pypdf","patched":"6.14.0","range":"\u003c 6.14.0","severity":"medium"}
+{"ghsa":"GHSA-72m8-9m7m-h278","manifest":"bindings/python/warm-sdk/uv.lock","number":96,"package":"litellm","patched":"1.82.0","range":"\u003c 1.82.0","severity":"low"}
+{"ghsa":"GHSA-7488-6r32-c95q","manifest":"bindings/python/warm-sdk/uv.lock","number":95,"package":"litellm","patched":"1.84.0","range":"\u003c 1.84.0","severity":"high"}
+{"ghsa":"GHSA-4g5m-c9r5-49xf","manifest":"bindings/python/warm-sdk/uv.lock","number":94,"package":"litellm","patched":"1.83.10","range":"\u003c 1.83.10","severity":"low"}
+{"ghsa":"GHSA-5jmr-gcrj-2c9q","manifest":"bindings/python/warm-sdk/uv.lock","number":93,"package":"litellm","patched":"1.83.7","range":"\u003c 1.83.7","severity":"medium"}
+{"ghsa":"GHSA-vj7q-gjh5-988w","manifest":"bindings/python/warm-sdk/uv.lock","number":92,"package":"mcp","patched":"1.28.1","range":"\u003c 1.28.1","severity":"high"}
+{"ghsa":"GHSA-xfqj-4cr9-9gr5","manifest":"bindings/python/warm-sdk/uv.lock","number":91,"package":"gptcache","patched":null,"range":"\u003c= 0.1.44","severity":"low"}
+{"ghsa":"GHSA-xf7x-x43h-rpqh","manifest":"bindings/python/warm-sdk/uv.lock","number":90,"package":"json-repair","patched":"0.60.1","range":"\u003c 0.60.1","severity":"high"}
+{"ghsa":"GHSA-g9xf-7f8q-9mcj","manifest":"bindings/python/warm-sdk/uv.lock","number":89,"package":"pypdf","patched":"6.13.1","range":"\u003c 6.13.1","severity":"medium"}
+{"ghsa":"GHSA-wpfp-gwwc-vwq6","manifest":"bindings/python/warm-sdk/uv.lock","number":88,"package":"litellm","patched":"1.83.10","range":"\u003c 1.83.10","severity":"high"}
+{"ghsa":"GHSA-qrc4-49gv-mv9m","manifest":"bindings/python/warm-sdk/uv.lock","number":87,"package":"litellm","patched":"1.83.14","range":"\u003c 1.83.14","severity":"high"}
+{"ghsa":"GHSA-f4xh-w4cj-qxq8","manifest":"bindings/python/warm-sdk/uv.lock","number":86,"package":"langsmith","patched":"0.8.18","range":"\u003c 0.8.18","severity":"high"}
+{"ghsa":"GHSA-jm82-fx9c-mx94","manifest":"bindings/python/warm-sdk/uv.lock","number":85,"package":"pypdf","patched":"6.13.3","range":"\u003c 6.13.3","severity":"medium"}
+{"ghsa":"GHSA-4xpc-pv4p-pm3w","manifest":"bindings/python/warm-sdk/uv.lock","number":84,"package":"litellm","patched":"1.84.0","range":"\u003c 1.84.0","severity":"critical"}
+{"ghsa":"GHSA-gr75-jv2w-4656","manifest":"bindings/python/warm-sdk/uv.lock","number":83,"package":"langchain","patched":"1.3.9","range":"\u003c= 1.3.8","severity":"medium"}
+{"ghsa":"GHSA-m2v9-299j-rv96","manifest":"bindings/python/warm-sdk/uv.lock","number":82,"package":"pypdf","patched":"6.13.0","range":"\u003c 6.13.0","severity":"medium"}
+{"ghsa":"GHSA-52x6-gq3r-vpf4","manifest":"bindings/python/warm-sdk/uv.lock","number":81,"package":"pypdf","patched":"6.13.0","range":"\u003c 6.13.0","severity":"medium"}
+{"ghsa":"GHSA-j543-4vmf-qm7v","manifest":"bindings/python/warm-sdk/uv.lock","number":80,"package":"pypdf","patched":"6.12.2","range":"\u003c 6.12.2","severity":"medium"}
+{"ghsa":"GHSA-5hgr-hg42-57jg","manifest":"bindings/python/warm-sdk/uv.lock","number":79,"package":"pypdf","patched":"6.12.2","range":"\u003c 6.12.2","severity":"medium"}
+{"ghsa":"GHSA-wjqc-6w8f-h24c","manifest":"bindings/python/warm-sdk/uv.lock","number":78,"package":"pypdf","patched":"6.12.1","range":"\u003c 6.12.1","severity":"medium"}
+{"ghsa":"GHSA-248m-82v9-q6g6","manifest":"bindings/python/warm-sdk/uv.lock","number":77,"package":"pypdf","patched":"6.12.0","range":"\u003c 6.12.0","severity":"medium"}
+{"ghsa":"GHSA-cj93-chg6-vgv8","manifest":"bindings/python/warm-sdk/uv.lock","number":76,"package":"pypdf","patched":"6.12.0","range":"\u003c 6.12.0","severity":"medium"}
+{"ghsa":"GHSA-f4j7-r4q5-qw2c","manifest":"bindings/python/warm-sdk/uv.lock","number":75,"package":"chromadb","patched":null,"range":"\u003e= 1.0.0, \u003c= 1.5.9","severity":"critical"}
+{"ghsa":"GHSA-jfv9-68m5-gjjr","manifest":"bindings/python/warm-sdk/uv.lock","number":74,"package":"mem0ai","patched":null,"range":"\u003c= 1.0.0","severity":"high"}
+{"ghsa":"GHSA-cgx8-qgvr-f7vf","manifest":"bindings/python/warm-sdk/uv.lock","number":73,"package":"mem0ai","patched":null,"range":"\u003c= 1.0.0","severity":"medium"}
+{"ghsa":"GHSA-gq6f-qwv9-rf4j","manifest":"bindings/python/warm-sdk/uv.lock","number":72,"package":"mem0ai","patched":null,"range":"\u003c= 1.0.0","severity":"medium"}
+{"ghsa":"GHSA-3644-q5cj-c5c7","manifest":"bindings/python/warm-sdk/uv.lock","number":71,"package":"langsmith","patched":"0.8.0","range":"\u003c 0.8.0","severity":"high"}
+{"ghsa":"GHSA-xqxw-r767-67m7","manifest":"bindings/python/warm-sdk/uv.lock","number":70,"package":"mem0ai","patched":"2.0.0b2","range":"\u003c 2.0.0b2","severity":"low"}
+{"ghsa":"GHSA-v4p8-mg3p-g94g","manifest":"bindings/python/warm-sdk/uv.lock","number":69,"package":"litellm","patched":"1.83.7","range":"\u003e= 1.74.2, \u003c 1.83.7","severity":"high"}
+{"ghsa":"GHSA-r7w7-9xr2-qq2r","manifest":"bindings/python/warm-sdk/uv.lock","number":68,"package":"langchain-openai","patched":"1.1.14","range":"\u003c 1.1.14","severity":"low"}
+{"ghsa":"GHSA-fv5p-p927-qmxr","manifest":"bindings/python/warm-sdk/uv.lock","number":67,"package":"langchain-text-splitters","patched":"1.1.2","range":"\u003c 1.1.2","severity":"medium"}
+{"ghsa":"GHSA-x284-j5p8-9c5p","manifest":"bindings/python/warm-sdk/uv.lock","number":66,"package":"pypdf","patched":"6.10.2","range":"\u003c 6.10.2","severity":"medium"}
+{"ghsa":"GHSA-4pxv-j86v-mhcw","manifest":"bindings/python/warm-sdk/uv.lock","number":65,"package":"pypdf","patched":"6.10.2","range":"\u003c 6.10.2","severity":"medium"}
+{"ghsa":"GHSA-7gw9-cf7v-778f","manifest":"bindings/python/warm-sdk/uv.lock","number":64,"package":"pypdf","patched":"6.10.2","range":"\u003c 6.10.2","severity":"medium"}
+{"ghsa":"GHSA-rr7j-v2q5-chgv","manifest":"bindings/python/warm-sdk/uv.lock","number":63,"package":"langsmith","patched":"0.7.31","range":"\u003c= 0.7.30","severity":"medium"}
+{"ghsa":"GHSA-jj6c-8h6c-hppx","manifest":"bindings/python/warm-sdk/uv.lock","number":62,"package":"pypdf","patched":"6.10.1","range":"\u003c 6.10.1","severity":"medium"}
+{"ghsa":"GHSA-3crg-w4f6-42mx","manifest":"bindings/python/warm-sdk/uv.lock","number":61,"package":"pypdf","patched":"6.10.0","range":"\u003c 6.10.0","severity":"medium"}
+{"ghsa":"GHSA-69x8-hrgq-fjj8","manifest":"bindings/python/warm-sdk/uv.lock","number":60,"package":"litellm","patched":"1.83.0","range":"\u003c 1.83.0","severity":"high"}
+{"ghsa":"GHSA-jjhc-v7c2-5hh6","manifest":"bindings/python/warm-sdk/uv.lock","number":59,"package":"litellm","patched":"1.83.0","range":"\u003c 1.83.0","severity":"critical"}
+{"ghsa":"GHSA-53mr-6c8q-9789","manifest":"bindings/python/warm-sdk/uv.lock","number":58,"package":"litellm","patched":"1.83.0","range":"\u003c 1.83.0","severity":"high"}
+{"ghsa":"GHSA-qh6h-p6c9-ff54","manifest":"bindings/python/warm-sdk/uv.lock","number":57,"package":"langchain-core","patched":"1.2.22","range":"\u003c 1.2.22","severity":"high"}
+{"ghsa":"GHSA-87mj-5ggw-8qc3","manifest":"bindings/python/warm-sdk/uv.lock","number":56,"package":"pypdf","patched":"6.9.2","range":"\u003c 6.9.2","severity":"medium"}
+{"ghsa":"GHSA-qpxp-75px-xjcp","manifest":"bindings/python/warm-sdk/uv.lock","number":55,"package":"pypdf","patched":"6.9.1","range":"\u003c 6.9.1","severity":"medium"}
+{"ghsa":"GHSA-hqmh-ppp3-xvm7","manifest":"bindings/python/warm-sdk/uv.lock","number":54,"package":"pypdf","patched":"6.8.0","range":"\u003c 6.8.0","severity":"medium"}
+{"ghsa":"GHSA-9m86-7pmv-2852","manifest":"bindings/python/warm-sdk/uv.lock","number":53,"package":"pypdf","patched":"6.7.5","range":"\u003c 6.7.5","severity":"medium"}
+{"ghsa":"GHSA-f2v5-7jq9-h8cg","manifest":"bindings/python/warm-sdk/uv.lock","number":52,"package":"pypdf","patched":"6.7.4","range":"\u003c 6.7.4","severity":"medium"}
+{"ghsa":"GHSA-x7hp-r3qg-r3cj","manifest":"bindings/python/warm-sdk/uv.lock","number":51,"package":"pypdf","patched":"6.7.3","range":"\u003c 6.7.3","severity":"medium"}
+{"ghsa":"GHSA-2rw7-x74f-jg35","manifest":"bindings/python/warm-sdk/uv.lock","number":50,"package":"pypdf","patched":"6.7.2","range":"\u003c 6.7.2","severity":"low"}
+{"ghsa":"GHSA-29vq-49wr-vm6x","manifest":"bindings/python/warm-sdk/uv.lock","number":49,"package":"werkzeug","patched":"3.1.6","range":"\u003c 3.1.6","severity":"medium"}
+{"ghsa":"GHSA-9mvc-8737-8j8h","manifest":"bindings/python/warm-sdk/uv.lock","number":48,"package":"pypdf","patched":"6.7.1","range":"\u003c 6.7.1","severity":"medium"}
+{"ghsa":"GHSA-wgvp-vg3v-2xq3","manifest":"bindings/python/warm-sdk/uv.lock","number":47,"package":"pypdf","patched":"6.7.1","range":"\u003c 6.7.1","severity":"medium"}
+{"ghsa":"GHSA-996q-pr4m-cvgq","manifest":"bindings/python/warm-sdk/uv.lock","number":46,"package":"pypdf","patched":"6.7.1","range":"\u003c 6.7.1","severity":"medium"}
+{"ghsa":"GHSA-w8v5-vhqr-4h9v","manifest":"bindings/python/warm-sdk/uv.lock","number":45,"package":"diskcache","patched":null,"range":"\u003c= 5.6.3","severity":"medium"}
+{"ghsa":"GHSA-2g6r-c272-w58r","manifest":"bindings/python/warm-sdk/uv.lock","number":44,"package":"langchain-core","patched":"1.2.11","range":"\u003c 1.2.11","severity":"low"}
+{"ghsa":"GHSA-2jrp-274c-jhv3","manifest":"bindings/python/warm-sdk/uv.lock","number":43,"package":"pydantic-ai-slim","patched":"1.56.0","range":"\u003e= 0.0.26, \u003c 1.56.0","severity":"high"}
+{"ghsa":"GHSA-2jrp-274c-jhv3","manifest":"bindings/python/warm-sdk/uv.lock","number":42,"package":"pydantic-ai","patched":"1.56.0","range":"\u003e= 0.0.26, \u003c 1.56.0","severity":"high"}
+{"ghsa":"GHSA-2q4j-m29v-hq73","manifest":"bindings/python/warm-sdk/uv.lock","number":41,"package":"pypdf","patched":"6.6.2","range":"\u003c 6.6.2","severity":"medium"}
+{"ghsa":"GHSA-4f6g-68pf-7vhv","manifest":"bindings/python/warm-sdk/uv.lock","number":40,"package":"pypdf","patched":"6.6.0","range":"\u003c 6.6.0","severity":"low"}
+{"ghsa":"GHSA-4xc4-762w-m6cg","manifest":"bindings/python/warm-sdk/uv.lock","number":39,"package":"pypdf","patched":"6.6.0","range":"\u003c 6.6.0","severity":"low"}
+{"ghsa":"GHSA-87hc-h4r5-73f7","manifest":"bindings/python/warm-sdk/uv.lock","number":38,"package":"Werkzeug","patched":"3.1.5","range":"\u003c 3.1.5","severity":"medium"}
+{"ghsa":"GHSA-hgf8-39gv-g3f2","manifest":"bindings/python/warm-sdk/uv.lock","number":37,"package":"werkzeug","patched":"3.1.4","range":"\u003c 3.1.4","severity":"medium"}
+{"ghsa":"GHSA-m449-cwjh-6pw7","manifest":"bindings/python/warm-sdk/uv.lock","number":36,"package":"pypdf","patched":"6.4.0","range":"\u003c 6.4.0","severity":"medium"}
+{"ghsa":"GHSA-vvw2-h478-xwr3","manifest":"bindings/python/warm-sdk/uv.lock","number":35,"package":"dspy","patched":null,"range":"\u003c= 3.0.3","severity":"medium"}
+{"ghsa":"GHSA-jfx9-29x2-rv3j","manifest":"bindings/python/warm-sdk/uv.lock","number":34,"package":"pypdf","patched":"6.1.3","range":"\u003c 6.1.3","severity":"medium"}
+{"ghsa":"GHSA-vr63-x8vc-m265","manifest":"bindings/python/warm-sdk/uv.lock","number":33,"package":"pypdf","patched":"6.1.3","range":"\u003c 6.1.3","severity":"medium"}
+{"ghsa":"GHSA-7hfw-26vp-jp8m","manifest":"bindings/python/warm-sdk/uv.lock","number":32,"package":"pypdf","patched":"6.0.0","range":"\u003c 6.0.0","severity":"medium"}
+{"ghsa":"GHSA-gcqx-w48m-w2h4","manifest":"integrations/js/package-lock.json","number":31,"package":"deepmerge","patched":null,"range":"\u003e= 4.2.0, \u003c= 4.3.1","severity":"low"}

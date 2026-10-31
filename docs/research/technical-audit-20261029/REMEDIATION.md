@@ -1013,3 +1013,207 @@ ingest/postings, and 20 HTTP API tests; strict Clippy and scoped formatting pass
 It is folded into PR #364 before merge, so its final exact-head CI covers chunk
 access, cache integrity, and error propagation together. The previous 3b5b61dd
 head had not completed its Windows gate and is not recorded as fully validated.
+
+
+### Maintained SDK integrations and dependency retirement (2026-10-31)
+
+User policy: prioritize maintained integrations and retire extras that cannot be
+secured. This supersedes the unresolved support-policy gate in the earlier
+October 31 dependency investigation. This change retires the SDK's `all`,
+`embedchain`, and legacy `semantic-kernel` extras and deletes their two obsolete
+adapter modules. No callers outside the retired modules were found; the separate
+current Semantic Kernel implementation under `integrations/python` is preserved,
+with its security gate explicit. Historical audit and rename evidence is retained.
+
+The SDK floor moves from Python 3.10 to 3.11, matching Python's published October
+1, 2026 end of life for 3.10. This is an intentional compatibility change, not a
+resolver marker that silently omits a requested integration. The Pydantic AI extra
+uses the official provider-free `pydantic-ai-slim>=2.64.0`; applications explicitly
+choose provider extras. The resolver constraint `filelock>=4.2.6` is not an
+incompatible override: all declared upstream requirements remain satisfied. It
+applies to this repository, not to independently resolved consumer installations.
+
+Before/after scan: every registry package/version pair in both complete locks was
+queried against the public OSV API, including inactive interpreter/extra forks.
+The SDK lock shrinks from 458 to 250 total packages (457 to 249 registry pairs).
+Affected pairs fall from 24 to 2; distinct GHSA IDs fall from 195 to 5. Raw OSV IDs
+include PYSEC aliases: 319 before, 10 after; these are not independent exploit
+counts. Separate GitHub alert snapshot: 206 open records / 197 distinct GHSA IDs,
+204 records for the SDK lock and two JavaScript locks. The two databases and their
+record granularities differ; neither count measures reproduced WARM exploits.
+
+Remaining SDK matches: Chroma 1.5.9 (four distinct GHSA IDs; direct importer/test
+and transitive CrewAI dependency) and DiskCache 5.6.3 (one; DSPy dependency).
+Current upstream package versions are still affected. Chroma importer code calls
+`PersistentClient` or `HttpClient` and read operations, not an HTTP server; that
+observation alone does not prove safe loading of stored collection configurations.
+DiskCache requires attacker write access to a cache directory. These integrations
+remain outside a security-qualified release until reachability and cache/source
+isolation are verified or dependencies replaced/retired. This pass does not claim
+zero advisories, secure optional extras, or safety of the separate integrations
+packages. No alert suppression, broken dependency overrides, or paid API/model
+calls were used.
+
+Validation: uv 0.13.6 resolves/checks the lock and builds wheel/sdist. An isolated
+installed wheel verifies Python metadata, removal of retired modules/extras, and
+real Pydantic AI tool registration. Offline FunctionModel + real local server
+checks pass on Python 3.11 and 3.14 (4 each): tenant isolation, normal retrieval,
+authorization errors, encoder failures, and connection closure. The latter exposed
+and fixes a leaked per-call client; both success and exceptions now close it.
+Base SDK on 3.11: 61 passed, 5 skips (four absent optional framework modules and
+orjson), 46 subtests. Existing minimum and current framework contracts pass:
+LangChain 0.3.86/1.7.3 (17/17), LlamaIndex 0.10.0/0.14.25 (42/48), Haystack
+2.0.0/3.4.1 (12/12), on Python 3.11/3.14 respectively. CI pins those versions and
+adds the Pydantic AI cases. Local checks reuse the existing server binary whose
+SHA-256 is recorded; final exact-head CI must build and test the server itself.
+The locked Python 3.12 importer group passes 173 cases with one opt-in embedded
+Weaviate skip (54.86s); it uses local stores and fixture HTTP servers. The optional
+fast transport passes 31 cases on Python 3.14. Workflow lint, 214 pinned-action
+checks, and diff whitespace checks pass. Final PR gate remains pending.
+
+Evidence: [maintained-integrations-20261031/](maintained-integrations-20261031/)
+contains the repeatable `scan_lock.py`, hash-bound complete OSV responses,
+GitHub alert snapshot, primary advisory records, lock/build logs, contract logs,
+and wheel check. `docs/SECURITY.md` corrects the older mem0ai 0.1.116 attribution:
+GHSA-7587-9684-52r6 currently starts at 0.1.117, so that one attribution was wrong;
+other legacy mem0 advisories were independent. Primary references:
+[Python support](https://devguide.python.org/versions/),
+[Pydantic AI slim installation](https://pydantic.dev/docs/ai/overview/install/),
+[OSV query API](https://google.github.io/osv.dev/post-v1-querybatch/).
+
+
+### Retained-text/query merge gate (2026-10-31)
+
+PR #364 final head `9368fcb25a6ee87ca00491ff020d47ceb57e8ddc` passed
+all 72 exact-head checks (success/skipped), including the required `check` from
+app 15368. No unresolved review threads or open code-scanning alerts remained.
+Merge `68aa40792698f4288c61f20c2e11bee215651c76` has a verified signature
+and exactly the tested tree `ff2e97b3d19d3067bd032a084ef6e405ebe6412d`.
+Only the owner-review requirement was bypassed after completion of all gates.
+Evidence: [query-errors-20261031/final-gate.json](query-errors-20261031/final-gate.json).
+
+### DSPy cache isolation and compatible dependency profile (2026-10-31)
+
+Follow-up to the remaining DiskCache advisory: official DSPy 3.4.1 wheel source
+shows lazy default-cache creation and separate disk/memory branches in
+`dspy.clients.cache.Cache`. Its public `configure_cache(enable_disk_cache=False,
+enable_memory_cache=True)` avoids importing/constructing DiskCache if applied
+before the first cache/LM use. Keep this process-wide choice in application setup;
+the WARM adapter does not silently mutate another application's global cache.
+The runnable offline example and quickstart now select this profile.
+
+A fresh-process regression forbids every DiskCache import, runs the real WARM
+retrieval/DummyLM example, then exercises a cache miss and an in-memory write/read.
+The cache round trip matters: DummyLM alone did not access the default cache, so
+an initial example-only check was insufficient. The strengthened baseline fails
+with `AssertionError: ['diskcache']`; the configured example passes. All 11 DSPy
+retriever/isolation tests pass against the real local WARM server using Python
+3.12, DSPy 3.4.1, LiteLLM 1.103.10, and Filelock 4.2.6, without paid calls.
+
+Resolver tradeoff made explicit: current LiteLLM 1.106.6 requires Filelock <4;
+the SDK constraint chooses compatible LiteLLM 1.103.10 rather than violating that
+upper bound. This is a deliberate version rollback, not a latest-everywhere
+upgrade. The lock also selects deprecated 1.3.1 (previous maximum 3.0.0), NetworkX
+3.6.1 (3.7), and NumPy 2.4.6 (2.5.4). The refreshed importer group passes its 173
+tests with this graph, and the added DSPy CI step pins the tested LiteLLM/Filelock
+pair. Unconstrained consumer installations can still select vulnerable Filelock;
+documentation provides explicit install constraints. No package override or
+advisory suppression is introduced. This preserves a useful supported workflow
+without claiming every optional framework path has been security-qualified.
+
+DiskCache remains installed and the full-lock OSV advisory count is unchanged.
+The mitigation covers the configured cache path; arbitrary direct DiskCache use,
+untrusted program deserialization, and later global cache reconfiguration are
+outside it. Chroma's four advisory matches and CrewAI's dependency remain open.
+The separate integrations package's whole dependency graph is not yet audited.
+Evidence: [dspy-cache-isolation-20261031/](dspy-cache-isolation-20261031/).
+
+
+### CrewAI and SmolAgents native tool contracts (2026-10-31)
+
+Inspection and actual framework calls reproduced two defects: CrewAI's WARM tool
+created a client for every call without closing it; SmolAgents 1.26.0 rejected the
+WARM tool constructor because its optional `top_k` parameter lacked the required
+nullable input declaration. The latter failed before any search could run.
+Eleven baseline cases failed (four unclosed CrewAI clients and seven SmolAgents
+construction failures). The tool descriptions also incorrectly promised
+"FHE-lite"/secure holographic storage; those claims are replaced with WARM search.
+
+CrewAI now closes its owned client on normal return, service rejection, and
+encoder exceptions. SmolAgents declares optional input semantics explicitly:
+omitted/None `top_k` means three, but zero still reaches the service's 422 rejection
+rather than being silently replaced by the default. Its reusable client has an
+explicit close/context-manager lifetime. Repeated close is harmless. Tests call
+real framework entry points (`BaseTool.run`, `Tool.__call__`) against a real local
+service, including tenant isolation, authorization, and both error paths. The
+client spy only tracks actual client lifetimes; service/encoder results are not
+mocked to restate the implementation.
+
+The SDK extras now require the actual verified framework versions, CrewAI 1.15.33
+and SmolAgents 1.26.0. Current CrewAI limits Python to <3.14, so SDK documentation
+states its 3.11–3.13 range. The registry package/version set is unchanged from the
+previous complete OSV scan: 249 pairs, with only root dependency metadata changed
+in the lock. This does not resolve Chroma advisories or qualify CrewAI's built-in
+storage, provider integrations, or arbitrary agents as secure.
+
+Validation: 11 cases passed on Python 3.11, 3.12, and 3.13; after adding the zero/one/
+two boundary checks, the final 13-case suite passed on 3.12. Wheel/sdist builds,
+uv 0.13.6 lock check, workflow lint, and diff checks pass. CI pins CrewAI 1.15.33,
+SmolAgents 1.26.0, LiteLLM 1.103.10, and Filelock 4.2.6, with telemetry disabled and
+only local encoders/service calls. Final PR/merge gate remains pending.
+Evidence: [framework-tools-20261031/](framework-tools-20261031/).
+
+
+### Archived Phidata adapter retirement and final SDK scan (2026-10-31)
+
+The remaining Phidata extra resolves 2.7.10, whose upstream repository
+[agno-agi/phidata](https://github.com/agno-agi/phidata) is archived. Inspecting and
+instantiating WARM's actual adapter fails: `create`, `delete`, `doc_exists`,
+`exists`, `name_exists`, and `upsert` remain abstract. Its `drop` also silently
+succeeds without deleting anything, and inserted IDs derive from process-random
+Python hashes when names are absent. The constructor failure is measured; those
+additional defects are source observations, not runtime exploit claims.
+
+Under the user's maintained-integration policy, remove the `phidata` extra and
+adapter rather than implement a new lifecycle/storage contract for an archived
+framework. No other production callers were found. Documentation removes the
+advertised working connector and explicitly does not claim an Agno replacement.
+The separate current integrations and historical audit/rename records remain.
+
+The final SDK lock has 246 total packages / 245 registry package-version pairs,
+compared with 458 / 457 before this work. This step removes only phidata, gitdb,
+gitpython, and smmap; no registry package/version additions or upgrades occur.
+A fresh complete OSV scan of this exact final lock still matches the same four
+Chroma GHSA IDs and one DiskCache GHSA ID (10 IDs including PYSEC aliases).
+Retirement is justified by archived support and broken contracts, not an invented
+Phidata vulnerability. The final installed wheel confirms all four retired extras
+and three modules are absent, with the Python 3.11 floor intact. Wheel/sdist and
+lock checks pass. Final exact-head CI/merge gate remains pending.
+Evidence: [phidata-retirement-20261031/](phidata-retirement-20261031/), including
+hash-bound scan, exact lock delta, upstream archive metadata and constructor output.
+
+
+### Publish the DSPy security floor to consumers (2026-10-31)
+
+The initial remediation constrained the repository's Filelock only. A normal
+consumer install of DSPy still chose LiteLLM 1.106.6 and vulnerable Filelock
+3.32.7 unless the documented profile was explicitly supplied. Close that packaging
+gap: both `warm-sdk[dspy]` and `writerslogic-warm-integrations[dspy]` now declare
+`filelock>=4.2.6`; the SDK depends directly on maintained `dspy>=3.4.1` rather than
+the old `dspy-ai` metapackage. These are ordinary published requirements, not
+resolver overrides. Incompatible application pins now fail resolution.
+
+Independent installs of the newly built SDK wheel's DSPy extra and the separate
+integrations package's extra, without a repository lock or external constraints,
+both select DSPy 3.4.1, Filelock 4.2.6, and compatible LiteLLM 1.103.10. Both real
+retrievers construct. These are package-install/constructor checks; the earlier
+11-case offline retrieval/cache suite verifies the same DSPy/LiteLLM/Filelock
+versions. Disk caching must still be disabled before use as documented; this
+floor does not remove the installed DiskCache advisory.
+
+The final candidate lock now contains 245 total packages / 244 registry pairs:
+only the redundant `dspy-ai` metapackage is additionally removed. The fresh
+complete hash-bound OSV scan again reports four Chroma GHSA IDs and one DiskCache
+GHSA ID. This supersedes the preceding 246-package snapshot for final release
+assessment. Build and lock checks pass; final exact-head CI/merge remains pending.
+Evidence: [dspy-consumer-constraints-20261031/](dspy-consumer-constraints-20261031/).

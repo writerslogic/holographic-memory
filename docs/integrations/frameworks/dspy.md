@@ -6,7 +6,17 @@
 `writerslogic_warm_integrations.dspy` provides a retriever for DSPy programs.
 
 - Tested against `dspy==3.4.1`, Python 3.12, `warm-server` built from this repository.
-- Extra: `pip install "writerslogic-warm-integrations[dspy]"`.
+- Tested dependency profile:
+
+  ```sh
+  uv add "writerslogic-warm-integrations[dspy]" "dspy==3.4.1" "litellm==1.103.10" "filelock>=4.2.6"
+  ```
+
+  LiteLLM 1.106.6 requires Filelock below 4; the current patched Filelock requires
+  the compatible older LiteLLM selected above. Do not assume an unconstrained
+  latest installation matches this profile. WARM's DSPy extras also declare the
+  Filelock floor in package metadata, preventing a vulnerable Filelock 3 fallback
+  even when the repository lock is not in use.
 
 ## Current DSPy retriever shape
 
@@ -17,6 +27,8 @@ DSPy no longer has a retriever base class to subclass. A retriever is a callable
 ```python
 import dspy
 from writerslogic_warm_integrations.dspy import WarmRetriever
+
+dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=True)
 
 retriever = WarmRetriever(k=3, url="http://127.0.0.1:8080", tenant_id="kb", input_dim=384)
 retriever.add(["WARM runs locally."], metadatas=[{"source": "docs"}])
@@ -32,6 +44,21 @@ class RAG(dspy.Module):
 ```
 
 Runnable (offline, `DummyLM`): `integrations/python/examples/dspy_rag.py`.
+
+## Cache safety
+
+Configure memory-only caching before any DSPy program, LM, or first access to
+`dspy.cache`, as in the quickstart. DSPy 3.4.1 lazily constructs its default disk
+cache; calling `configure_cache(enable_disk_cache=False, enable_memory_cache=True)`
+first prevents that construction. This setting is process-wide and must not be
+changed back by another component. It trades persistent response caching for
+in-process caching; WARM's stored memories are unaffected.
+
+DiskCache 5.6.3 remains an installed DSPy dependency with an unsafe-pickle advisory
+([GHSA-w8v5-vhqr-4h9v](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v)). This
+configuration avoids its use in the verified retrieval/cache workflow; it does
+not patch DiskCache, remove the advisory, or secure arbitrary application code
+that uses it directly. Do not load untrusted serialized DSPy programs or caches.
 
 ## API
 
@@ -66,3 +93,11 @@ DSPy has no filter concept; `filter=` is an WARM extension. A mapping of keys to
 ```sh
 WARM_SERVER_BIN=target/release/warm-server uv run --extra dspy pytest tests/dspy
 ```
+
+`test_cache_isolation.py` additionally runs the offline example in a fresh process
+that rejects every DiskCache import, then exercises a cache miss and an in-memory
+write/read. This catches lazy default-cache creation even though `DummyLM` alone
+does not use that cache. The default configuration fails the guard; the documented
+memory-only setup passes. Eleven tests pass with DSPy 3.4.1, LiteLLM 1.103.10,
+Filelock 4.2.6, and Python 3.12. This is a scoped mitigation, not a clean dependency
+scan or a guarantee about other DSPy features.

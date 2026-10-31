@@ -1,0 +1,71 @@
+/Users/davidcondrey/.cache/uv/archive-v0/7lJaDKqBjvVD2th8/lib/python3.12/site-packages/pytest_asyncio/plugin.py:300: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_offline_example_never_loads_diskcache __________________
+
+server = <conftest.Server object at 0x10969be00>
+tmp_path = PosixPath('/private/var/folders/f6/9fydz_3n0p13t2scsr8ppdlm0000gn/T/pytest-of-davidcondrey/pytest-229/test_offline_example_never_loa0')
+
+    def test_offline_example_never_loads_diskcache(server, tmp_path):
+        example = Path(__file__).resolve().parents[2] / "examples" / "dspy_rag.py"
+        code = """
+    import importlib.abc
+    import os
+    from pathlib import Path
+    import runpy
+    import sys
+    
+    attempts = []
+    class RejectDiskCache(importlib.abc.MetaPathFinder):
+        def find_spec(self, fullname, path=None, target=None):
+            if fullname == 'diskcache' or fullname.startswith('diskcache.'):
+                attempts.append(fullname)
+                raise ImportError('DiskCache is forbidden in this test')
+    
+    sys.meta_path.insert(0, RejectDiskCache())
+    runpy.run_path(sys.argv[1], run_name='__main__')
+    import dspy
+    request = {'prompt': 'local cache round trip'}
+    assert dspy.cache.get(request) is None
+    dspy.cache.put(request, {'answer': 'memory only'})
+    assert dspy.cache.get(request) == {'answer': 'memory only'}
+    assert attempts == [], attempts
+    assert not Path(os.environ['DSPY_CACHEDIR']).exists()
+    """
+        env = {**os.environ, "WARM_URL": server.url, "WARM_TENANT": server.tenant(),
+               "WARM_INPUT_DIM": str(server.dim), "DSPY_CACHEDIR": str(tmp_path / "cache"),
+               "LITELLM_LOCAL_MODEL_COST_MAP": "True", "WARM_API_KEY": ""}
+        result = subprocess.run([sys.executable, "-c", code, str(example)], env=env,
+                                capture_output=True, text=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: on your machine
+E         ['pasta', 'dspy']
+E         2026/10/31 12:15:33 WARNING dspy.clients: Failed to initialize disk cache, falling back to memory-only cache: DiskCache is forbidden in this test
+E         Traceback (most recent call last):
+E           File "<string>", line 22, in <module>
+E         AssertionError: ['diskcache']
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/davidcondrey/.cache/uv/builds-v0/.tmperTJlh/bin/python', '-c', "\nimport importlib.abc\... test\nTraceback (most recent call last):\n  File "<string>", line 22, in <module>\nAssertionError: [\'diskcache\']\n').returncode
+
+integrations/python/tests/dspy/test_cache_isolation.py:43: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+{"address":"127.0.0.1:62343","auth":"none","event":"listening","level":"info","tls":false,"ts":"2026-10-31T19:15:32.880Z","version":"0.6.5"}
+{"detail":"--no-auth: every caller has every scope","event":"authentication_disabled","level":"warn","ts":"2026-10-31T19:15:32.880Z"}
+----------------------------- Captured stderr call -----------------------------
+{"bytes_in":1804,"event":"request","key_id":"anonymous","latency_ms":72.403542,"level":"info","method":"POST","request_id":"2afe6d0b616ee7c8","route":"/api/v1/documents/batch","status":200,"tenant":"t74713x0","ts":"2026-10-31T19:15:33.193Z"}
+{"bytes_in":427,"event":"request","key_id":"anonymous","latency_ms":0.225625,"level":"info","method":"POST","request_id":"16baca7971759cd6","route":"/api/v1/query","status":200,"tenant":"t74713x0","ts":"2026-10-31T19:15:33.195Z"}
+{"bytes_in":427,"event":"request","key_id":"anonymous","latency_ms":0.122,"level":"info","method":"POST","request_id":"e14f8b119ec68b05","route":"/api/v1/query","status":200,"tenant":"t74713x0","ts":"2026-10-31T19:15:33.197Z"}
+{"bytes_in":null,"event":"request","key_id":"anonymous","latency_ms":3.812208,"level":"info","method":"DELETE","request_id":"ec27f8b20e3ebaa2","route":"/api/v1/documents/{id}","status":200,"tenant":"t74713x0","ts":"2026-10-31T19:15:33.201Z"}
+{"bytes_in":null,"event":"request","key_id":"anonymous","latency_ms":3.521209,"level":"info","method":"DELETE","request_id":"86ef2374cef85856","route":"/api/v1/documents/{id}","status":200,"tenant":"t74713x0","ts":"2026-10-31T19:15:33.205Z"}
+{"bytes_in":null,"event":"request","key_id":"anonymous","latency_ms":3.639667,"level":"info","method":"DELETE","request_id":"7be7fd4a507561e8","route":"/api/v1/documents/{id}","status":200,"tenant":"t74713x0","ts":"2026-10-31T19:15:33.209Z"}
+--------------------------- Captured stderr teardown ---------------------------
+{"delay_seconds":0,"event":"shutdown_signal","level":"info","ts":"2026-10-31T19:15:33.282Z"}
+{"event":"shutdown_started","level":"info","ts":"2026-10-31T19:15:33.283Z"}
+{"event":"shutdown_complete","level":"info","ts":"2026-10-31T19:15:33.298Z"}
+=========================== short test summary info ============================
+FAILED integrations/python/tests/dspy/test_cache_isolation.py::test_offline_example_never_loads_diskcache
+1 failed in 0.65s

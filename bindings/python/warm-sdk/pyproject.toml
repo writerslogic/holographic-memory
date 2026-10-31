@@ -10,7 +10,7 @@ dependencies = [
     "sniffio>=1.3",
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
 
 [project.urls]
@@ -22,13 +22,10 @@ Repository = "https://github.com/writerslogic/warm"
 langchain = ["langchain-core>=0.3.86"]
 llamaindex = ["llama-index-core>=0.10.0"]
 haystack = ["haystack-ai>=2.0.0"]
-semantic-kernel = ["semantic-kernel>=1.39.4"]
-dspy = ["dspy-ai>=2.4.0"]
-crewai = ["crewai>=0.28.0"]
-embedchain = ["embedchain>=0.1.114"]
-phidata = ["phidata>=2.4.0"]
-pydantic-ai = ["pydantic-ai>=0.0.14"]
-smolagents = ["smolagents>=1.0.0"]
+dspy = ["dspy>=3.4.1", "filelock>=4.2.6"]
+crewai = ["crewai>=1.15.33"]
+pydantic-ai = ["pydantic-ai-slim>=2.64.0"]
+smolagents = ["smolagents>=1.26.0"]
 import-files = ["numpy>=1.26", "pyarrow>=15", "duckdb>=1.0"]
 import-chroma = ["chromadb>=0.5"]
 import-sqlite-vec = ["sqlite-vec>=0.1.1"]
@@ -48,18 +45,6 @@ import-zep = ["zep-cloud>=2"]
 import-letta = ["letta-client>=0.1"]
 import-llamaindex = ["llama-index-core>=0.10"]
 import-langchain = ["langchain-core>=0.2", "faiss-cpu>=1.8"]
-all = [
-    "langchain-core>=0.3.86",
-    "llama-index-core>=0.10.0",
-    "haystack-ai>=2.0.0",
-    "semantic-kernel>=1.39.4",
-    "dspy-ai>=2.4.0",
-    "crewai>=0.28.0",
-    "embedchain>=0.1.114",
-    "phidata>=2.4.0",
-    "pydantic-ai>=0.0.14",
-    "smolagents>=1.0.0"
-]
 fast = [
     "orjson>=3.9",
 ]
@@ -111,8 +96,4 @@ importers-test = [
 ]
 
 [tool.uv]
-# embedchain pins chromadb<0.6, which has known advisories; the importer tests use current chromadb.
-conflicts = [
-    [{ extra = "embedchain" }, { group = "importers-test" }],
-    [{ extra = "all" }, { group = "importers-test" }],
-]
+constraint-dependencies = ["filelock>=4.2.6"]

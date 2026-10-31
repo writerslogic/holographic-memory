@@ -1,0 +1,516 @@
+{
+  "tested_head": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc",
+  "checks": [
+    {
+      "name": "check",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "deploy",
+      "status": "completed",
+      "conclusion": "skipped",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Publish warm-sdk to PyPI",
+      "status": "completed",
+      "conclusion": "skipped",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "CodeQL",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 57789,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (node-api)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (provenance)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (experimental)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (provenance-scitt)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (server)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "workflow lint and pins",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (security)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (local-models)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (conversation-memory)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "msrv (1.89)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (private-search)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "test (windows-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "deny",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "python sdk (live server)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "docs (rustdoc, warnings denied)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "node (macos-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "test (default features)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "clippy (python)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "lint (fmt, clippy)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "node (ubuntu-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "node (windows-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "benchmarks compile",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "retrieval-quality",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "test (all features)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "signoff",
+      "status": "completed",
+      "conclusion": "skipped",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "rebuild-for-tag",
+      "status": "completed",
+      "conclusion": "skipped",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "readme-rust-snippet",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "docs-unit-tests",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "demo-offline-agent",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "quickstart-python",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "quickstart-rust",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "quickstart-node",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "build",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "macos-latest",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "browser-checks",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "ubuntu-24.04-arm",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Build and test WARM SDK",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz ivf_decode",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "ubuntu-latest",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz did_parse",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz cawg_identity",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz connection_graph_log",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz server_requests",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz llm_output",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz cose_envelopes",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz provenance_json",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz operand_question",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "review",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz jumbf_decode",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "windows-latest",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz store_open",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz document_chunking",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz wire_inputs",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz private_query",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "warm-import against a real warm-server",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "fuzz document_engine",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "golden stores are append-only",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (javascript-typescript)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (csharp)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (javascript-typescript)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (go)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (python)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (go)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (rust)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (csharp)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (python)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (actions)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    },
+    {
+      "name": "Analyze (c-cpp)",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368,
+      "head_sha": "9368fcb25a6ee87ca00491ff020d47ceb57e8ddc"
+    }
+  ],
+  "merge": {
+    "sha": "68aa40792698f4288c61f20c2e11bee215651c76",
+    "tree": "ff2e97b3d19d3067bd032a084ef6e405ebe6412d",
+    "verified": true
+  },
+  "unresolved_review_threads": 0,
+  "open_code_scanning_alerts": 0
+}

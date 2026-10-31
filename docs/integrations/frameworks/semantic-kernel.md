@@ -1,6 +1,6 @@
 # Semantic Kernel (Python)
 
-`writerslogic_warm_integrations.semantic_kernel` implements Semantic Kernel's current vector store abstraction: `WarmStore` (a `VectorStore`) and `WarmCollection` (a `VectorStoreCollection` and `VectorSearch`). The legacy `MemoryStoreBase` connector style, including the adapter in `writerslogic_warm_sdk.semantic_kernel`, is superseded by this.
+`writerslogic_warm_integrations.semantic_kernel` implements Semantic Kernel's current vector store abstraction: `WarmStore` (a `VectorStore`) and `WarmCollection` (a `VectorStoreCollection` and `VectorSearch`). The legacy `MemoryStoreBase` connector style, including the removed adapter in `writerslogic_warm_sdk.semantic_kernel`, is superseded by this. This separate integration has not yet passed the current dependency security gate; inspect the [security notes](../../SECURITY.md#optional-python-integration-dependencies) before deployment.
 
 ## Install
 
