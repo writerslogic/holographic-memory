@@ -171,6 +171,11 @@ let hits = warm.search_documents("restore backups", &SearchOptions::default())?;
 println!("{} {:?}", hits[0].document_id, hits[0].source_uri);
 ```
 
+Unreleased Rust API change: `WarmCore::query`, `query_batch`, and
+`analyze_components` return `Result`. Handle the result with `?` or an explicit
+error branch; deferred-encoding failures no longer become successful partial
+query results.
+
 </details>
 
 <details>

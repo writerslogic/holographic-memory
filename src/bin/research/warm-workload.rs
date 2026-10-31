@@ -68,7 +68,7 @@ fn main() -> Result<()> {
         let query =
             EntangledHVec::new_deterministic(args.dimensions as usize, (i % args.vectors) as u64);
         let now = Instant::now();
-        warm.query(&query, 10);
+        warm.query(&query, 10)?;
         query_latency.push(now.elapsed().as_secs_f64() * 1000.0);
     }
     let mut write_latency = writer_task

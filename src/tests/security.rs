@@ -97,7 +97,7 @@ fn test_encrypted_arena_roundtrip() {
     assert_eq!(warm.vector_count(), 2);
 
     let q = warm.encode_text("encrypted data");
-    let results = warm.query(&q, 1);
+    let results = warm.query(&q, 1).unwrap();
     assert_eq!(results[0].id, "enc_1");
 }
 

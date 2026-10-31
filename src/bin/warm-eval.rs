@@ -92,7 +92,7 @@ fn main() -> Result<()> {
         let query = EntangledHVec::new_deterministic(dimensions, seed as u64);
         route = warm.explain_query(&query, 1).route;
         let started = Instant::now();
-        let result = warm.query(&query, 1);
+        let result = warm.query(&query, 1)?;
         latencies.push(started.elapsed().as_secs_f64() * 1_000_000.0);
         hits += usize::from(
             result

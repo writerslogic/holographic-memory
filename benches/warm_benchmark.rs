@@ -79,7 +79,7 @@ fn benchmark_warm(c: &mut Criterion) {
     c.bench_function("WarmCore query brute-force 100 items", |b| {
         b.iter(|| {
             let q_vec = warm.encode_text(black_box("test sentence"));
-            warm.query(black_box(&q_vec), black_box(5))
+            warm.query(black_box(&q_vec), black_box(5)).unwrap()
         })
     });
 
@@ -119,7 +119,7 @@ fn benchmark_warm_scaling(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("brute_force", n), &n, |b, _| {
             b.iter(|| {
                 let q = warm.encode_text(black_box("topic about variation"));
-                warm.query(black_box(&q), black_box(5))
+                warm.query(black_box(&q), black_box(5)).unwrap()
             })
         });
 

@@ -56,7 +56,7 @@ fn test_batch_memorize() {
     assert_eq!(warm.vector_count(), 3);
 
     let q = warm.encode_text("first batch item");
-    let results = warm.query(&q, 3);
+    let results = warm.query(&q, 3).unwrap();
     assert!(!results.is_empty());
 }
 
@@ -258,7 +258,7 @@ fn test_nsg_train_and_query() {
     assert!(warm.nsg_trained());
 
     let q = warm.encode_text("nsg document 0");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(!results.is_empty(), "NSG query should return results");
 }
 
@@ -322,7 +322,7 @@ fn test_adaptive_routing_e2e() {
     assert!(warm.nsg_trained());
 
     let q = warm.encode_text("routing item 0");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(
         !results.is_empty(),
         "Adaptive routing should return results via NSG"
@@ -397,7 +397,7 @@ fn test_sequence_memorize_and_query() {
 
     // Query with a partial sequence match
     let q = warm.encode_text("preheat oven").permute(0);
-    let results = warm.query(&q, 2);
+    let results = warm.query(&q, 2).unwrap();
     assert!(!results.is_empty(), "Sequence query should return results");
 }
 
@@ -416,7 +416,7 @@ fn test_scalar_query_ordering() {
 
     // Query near value 50 — should return items closest to 50
     let q = EntangledHVec::from_scalar(50.0, 0.0, 100.0, 10_000);
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(!results.is_empty(), "Scalar query should return results");
 
     // Top results should cluster around value 50 (idx 10)
@@ -446,7 +446,7 @@ fn test_analyze_components() {
     }
 
     let vec = warm.encode_text("component analysis document 0");
-    let results = warm.analyze_components(&vec);
+    let results = warm.analyze_components(&vec).unwrap();
     assert!(
         !results.is_empty(),
         "analyze_components should return results"
@@ -472,7 +472,7 @@ fn test_delete_existing() {
     assert_eq!(warm.vector_count(), 0);
 
     let q = warm.encode_text("hello");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(
         results.is_empty(),
         "Deleted vector should not appear in results"
@@ -521,7 +521,7 @@ fn test_delete_persistence() {
     let warm = WarmCore::new(10_000, Some(path), None).unwrap();
     assert_eq!(warm.vector_count(), 1);
     let q = warm.encode_text("keep me");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(!results.is_empty(), "Kept vector should survive restart");
 }
 
@@ -539,7 +539,7 @@ fn test_delete_and_rememorize() {
     assert_eq!(warm.vector_count(), 1);
 
     let q = warm.encode_text("version 2");
-    let results = warm.query(&q, 1);
+    let results = warm.query(&q, 1).unwrap();
     assert_eq!(results[0].id, "doc");
 }
 
@@ -565,7 +565,7 @@ fn test_compact_basic() {
 
     // Verify all live vectors still queryable
     let q = warm.encode_text("item 30");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(!results.is_empty(), "Should find results after compaction");
     assert_eq!(warm.vector_count(), 25);
 }
@@ -616,7 +616,7 @@ fn test_multi_shard_insert_query() {
     assert_eq!(warm.vector_count(), 100);
 
     let q = warm.encode_text("shard document 0");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(
         !results.is_empty(),
         "Multi-shard query should return results"
@@ -680,7 +680,7 @@ fn test_auto_shard_trigger() {
 
     // Verify queries still work after auto-sharding
     let q = warm.encode_text("auto shard 0");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(!results.is_empty(), "Should find results after auto-shard");
 }
 
@@ -1023,7 +1023,7 @@ fn test_ivf_index_persistence() {
         "IVF should be loaded from disk on re-open"
     );
     let q = warm.encode_text("ivf persist 0");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(!results.is_empty(), "IVF query should work after reload");
 }
 
@@ -1042,7 +1042,7 @@ fn test_query_batch() {
     let queries: Vec<EntangledHVec> = (0..3)
         .map(|i| warm.encode_text(&format!("batch query doc {}", i)))
         .collect();
-    let batch_results = warm.query_batch(&queries, 3);
+    let batch_results = warm.query_batch(&queries, 3).unwrap();
     assert_eq!(
         batch_results.len(),
         3,
@@ -1065,7 +1065,7 @@ fn test_memorize_vector_through_core() {
     assert_eq!(warm.vector_count(), 1);
 
     let q = EntangledHVec::from_dense(&dense, 10_000);
-    let results = warm.query(&q, 1);
+    let results = warm.query(&q, 1).unwrap();
     assert_eq!(results[0].id, "dense_1");
 }
 
@@ -1116,7 +1116,7 @@ fn test_nsg_index_persistence() {
         "NSG should be loaded from disk on re-open"
     );
     let q = warm.encode_text("persist nsg 0");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(!results.is_empty(), "NSG query should work after reload");
 }
 
@@ -1143,12 +1143,12 @@ fn test_nsg_accuracy_matches_brute_force() {
 
     // Query before training (brute force)
     let q = warm.encode_text("accuracy test 0");
-    let brute_results = warm.query(&q, 1);
+    let brute_results = warm.query(&q, 1).unwrap();
 
     warm.train_nsg().unwrap();
 
     // Query after training (NSG)
-    let nsg_results = warm.query(&q, 1);
+    let nsg_results = warm.query(&q, 1).unwrap();
 
     assert_eq!(
         brute_results[0].id, nsg_results[0].id,
@@ -1178,7 +1178,7 @@ fn test_multi_shard_results_from_multiple_shards() {
     }
 
     let q = warm.encode_text("multi verify");
-    let results = warm.query(&q, 20);
+    let results = warm.query(&q, 20).unwrap();
     assert!(
         results.len() >= 10,
         "Should return many results from across shards"
@@ -1225,7 +1225,7 @@ fn test_compact_multi_shard() {
     assert_eq!(warm.vector_count(), 15);
 
     let q = warm.encode_text("compact shard 20");
-    let results = warm.query(&q, 5);
+    let results = warm.query(&q, 5).unwrap();
     assert!(
         !results.is_empty(),
         "Should find results after multi-shard compact"
@@ -1260,7 +1260,7 @@ fn test_manual_ivf_train_and_query() {
     assert!(warm.ivf_trained());
 
     let q = warm.encode_text("document number 0");
-    let results = warm.query(&q, 10);
+    let results = warm.query(&q, 10).unwrap();
     assert!(!results.is_empty(), "IVF query should return results");
 }
 

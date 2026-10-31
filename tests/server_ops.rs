@@ -114,6 +114,10 @@ fn snapshot_restore_and_off_box_backup_round_trip() {
         .send();
     assert_eq!(archive.status, 200);
     assert_eq!(archive.header("content-type"), Some("application/x-tar"));
+    assert!(
+        archive.body.len() < 65 * 1024 * 1024,
+        "small-store archive exported journal capacity padding"
+    );
     let names: Vec<String> = tar::Archive::new(archive.body.as_slice())
         .entries()
         .unwrap()

@@ -97,7 +97,7 @@ fn main() -> Result<()> {
         ensure!(query.text.len() <= 64 * 1024, "query exceeds 64 KiB");
         let started = Instant::now();
         let vector = warm.encode_text(&query.text);
-        let results = warm.query(&vector, 10);
+        let results = warm.query(&vector, 10)?;
         let query_ns = started.elapsed().as_nanos();
         queries.push(json!({
             "id": query.id, "text": query.text, "relevant_ids": query.relevant_ids,
@@ -128,7 +128,7 @@ fn main() -> Result<()> {
         .iter()
         .map(|query| {
             Ok(json!({"id": query.id,
-                "results": reopened.query(&reopened.encode_text(&query.text), 10),
+                "results": reopened.query(&reopened.encode_text(&query.text), 10)?,
                 "lexical": reopened.search_documents(&query.text, &SearchOptions::default())?,
             }))
         })

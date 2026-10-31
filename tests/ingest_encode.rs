@@ -143,6 +143,7 @@ fn open(dir: &tempfile::TempDir) -> anyhow::Result<WarmCore> {
 /// store that encoded at ingest and one that encoded later, and ties are ordered by slot.
 fn vector_hits(core: &WarmCore, text: &str) -> BTreeSet<(String, u64)> {
     core.query(&core.encode_text(text), 4096)
+        .unwrap()
         .into_iter()
         .map(|hit| (hit.id, hit.similarity.to_bits()))
         .collect()
@@ -234,7 +235,7 @@ fn encode_modes_keep_lexical_results_and_defer_or_skip_vectors() -> anyhow::Resu
         .explain_query(&probe, 10)
         .rationale
         .contains("lexical-only"));
-    assert!(lexical.query(&probe, 10).is_empty());
+    assert!(lexical.query(&probe, 10).unwrap().is_empty());
 
     // The first vector query installs every deferred encoding; the results match a store
     // that encoded at ingest, chunk for chunk and bit for bit.

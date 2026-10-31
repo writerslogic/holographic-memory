@@ -77,7 +77,7 @@ fn main() {
         }
         let query = warm.encode_text("topic about variation");
         let route = warm.explain_query(&query, 5).route;
-        let (allocs, bytes, micros) = measure(|| warm.query(black_box(&query), 5));
+        let (allocs, bytes, micros) = measure(|| warm.query(black_box(&query), 5).unwrap());
         println!("| query k=5 | {n} | {route} | {allocs:.1} | {bytes:.0} | {micros:.2} |");
         let (allocs, bytes, micros) = measure(|| warm.query_hopfield(black_box(&query), 5));
         println!("| query_hopfield 5 | {n} | hopfield | {allocs:.1} | {bytes:.0} | {micros:.2} |");

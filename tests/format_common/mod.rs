@@ -275,10 +275,12 @@ pub fn check_expectations(core: &WarmCore, expect: &Value, dimensions: u32) -> R
     for vector in expect["vectors"].as_array().into_iter().flatten() {
         let id = vector["id"].as_str().context("vector id")?;
         let seed = vector["seed"].as_u64().context("seed")?;
-        let top = core.query(
-            &EntangledHVec::new_deterministic(dimensions as usize, seed),
-            1,
-        );
+        let top = core
+            .query(
+                &EntangledHVec::new_deterministic(dimensions as usize, seed),
+                1,
+            )
+            .unwrap();
         ensure!(
             top.first().map(|r| r.id.as_str()) == Some(id),
             "vector {id}: top hit {:?}",

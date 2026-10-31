@@ -1428,8 +1428,9 @@ mod tests {
             let (vector_tx, vector_rx) = mpsc::channel();
             let reader_core = Arc::clone(&core);
             let query_anchor = anchor.clone();
-            let vector_reader =
-                std::thread::spawn(move || vector_tx.send(reader_core.query(&query_anchor, 10)));
+            let vector_reader = std::thread::spawn(move || {
+                vector_tx.send(reader_core.query(&query_anchor, 10).unwrap())
+            });
             let (queued_tx, queued_rx) = mpsc::channel();
             let (committed_tx, committed_rx) = mpsc::channel();
             let second_core = Arc::clone(&core);

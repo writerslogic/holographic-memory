@@ -450,8 +450,8 @@ impl WarmCore {
     /// [`documents::EncodeMode::Deferred`] that is still awaiting them, and returns how many
     /// documents that was. Vectors are computed from the stored chunk text exactly as eager
     /// ingest computes them. Idempotent; concurrent callers serialize on the store's encode
-    /// gate and the second one finds nothing left. A vector query runs this first, so pending
-    /// documents are never silently missing from it.
+    /// gate and the second one finds nothing left. Vector queries attempt this when the
+    /// document store is available; call it explicitly to catch up before querying.
     pub fn encode_pending_documents(&self) -> Result<usize> {
         // A checkpoint holds no pending encodings, so a store served from one is read as it is
         // (its pending documents are all among those written since).
@@ -692,7 +692,7 @@ impl WarmCore {
     pub fn query_vector(&self, dense: &[f32], k: u32) -> Result<Vec<crate::RetrievalResult>> {
         self.validate_dense(dense)?;
         let vector = crate::EntangledHVec::from_dense(dense, self.dimensions);
-        Ok(self.query(&vector, k))
+        self.query(&vector, k)
     }
 
     pub(super) fn validate_dense(&self, dense: &[f32]) -> Result<()> {

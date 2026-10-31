@@ -120,6 +120,7 @@ fn words_v2_requires_explicit_reencoding_and_survives_reopen() -> Result<()> {
     assert_eq!(core.encode_text(&input.text).indices(), vector.indices());
     assert!(core
         .query(&vector, 10)
+        .unwrap()
         .iter()
         .any(|hit| hit.similarity > 0.0));
     assert!(WarmCore::new(1024, Some(destination.display().to_string()), None).is_err());
@@ -147,7 +148,7 @@ fn incompatible_encoders_preserve_schema_and_recover_after_compaction() -> Resul
             let warm = WarmCore::new(dim, Some(path.clone()), Some(config(encoder)))?;
             warm.memorize_document(input)?;
             for chunk in &chunks {
-                let found = warm.query(&warm.encode_text(&chunk.text), 100);
+                let found = warm.query(&warm.encode_text(&chunk.text), 100).unwrap();
                 assert!(found
                     .iter()
                     .any(|r| r.id == chunk.id && r.similarity == 1.0));
@@ -172,6 +173,7 @@ fn incompatible_encoders_preserve_schema_and_recover_after_compaction() -> Resul
             for chunk in &chunks {
                 assert!(warm
                     .query(&warm.encode_text(&chunk.text), 100)
+                    .unwrap()
                     .iter()
                     .any(|r| r.id == chunk.id && r.similarity == 1.0));
             }

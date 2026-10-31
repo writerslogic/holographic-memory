@@ -11,12 +11,14 @@ use rayon::prelude::*;
 
 impl WarmCore {
     /// Query the memory system for the k most similar vectors.
-    pub fn query(&self, query_vec: &EntangledHVec, k: u32) -> Vec<RetrievalResult> {
+    ///
+    /// Deferred-encoding failures return an error, not partial results. During document-store
+    /// contention only already-indexed vectors are searched; call `encode_pending_documents`
+    /// explicitly before querying when pending documents must be included.
+    pub fn query(&self, query_vec: &EntangledHVec, k: u32) -> anyhow::Result<Vec<RetrievalResult>> {
         if query_vec.dim != self.dimensions || k == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
-        // Documents memorized with deferred encoding join the vector index on first use; a
-        // failure leaves them pending (and absent from this query) and the next call retries.
         // `try_read`: a query must keep progressing while compaction or a mutation holds the
         // store for writing, so a contended lock means "no catch-up this time".
         if self
@@ -24,15 +26,14 @@ impl WarmCore {
             .try_read()
             .is_some_and(|store| store.pending_vector_count() > 0)
         {
-            if let Err(error) = self.encode_pending_documents() {
-                tracing::warn!(%error, "deferred document encoding failed; pending chunks stay outside this query");
-            }
+            self.encode_pending_documents()?;
         }
 
         let _transaction = self.mutation_gate.read();
-        self.shards
+        Ok(self
+            .shards
             .read()
-            .query(query_vec, k.min(10000), self.dimensions)
+            .query(query_vec, k.min(10000), self.dimensions))
     }
 
     /// The registry of agents admitted by verified access credentials.
@@ -55,7 +56,7 @@ impl WarmCore {
         self.agents
             .read()
             .authorize(agent_did, crate::core::provenance::access::Permission::Read)?;
-        Ok(self.query(query_vec, k))
+        self.query(query_vec, k)
     }
 
     pub fn explain_query(&self, query_vec: &EntangledHVec, k: u32) -> QueryExplanation {
@@ -187,19 +188,26 @@ impl WarmCore {
     }
 
     /// Process multiple queries in parallel using rayon.
-    pub fn query_batch(&self, queries: &[EntangledHVec], k: u32) -> Vec<Vec<RetrievalResult>> {
+    pub fn query_batch(
+        &self,
+        queries: &[EntangledHVec],
+        k: u32,
+    ) -> anyhow::Result<Vec<Vec<RetrievalResult>>> {
         queries.par_iter().map(|q| self.query(q, k)).collect()
     }
 
     /// Analyze components of a vector by finding its nearest neighbors.
     /// Filters by similarity threshold from QueryConfig (default 0.05).
-    pub fn analyze_components(&self, vector: &EntangledHVec) -> Vec<RetrievalResult> {
+    pub fn analyze_components(
+        &self,
+        vector: &EntangledHVec,
+    ) -> anyhow::Result<Vec<RetrievalResult>> {
         let cfg = &self.config.query;
-        let neighbors = self.query(vector, cfg.component_max_neighbors);
-        neighbors
+        let neighbors = self.query(vector, cfg.component_max_neighbors)?;
+        Ok(neighbors
             .into_iter()
             .filter(|r| r.similarity > cfg.component_similarity_threshold)
-            .collect()
+            .collect())
     }
 }
 

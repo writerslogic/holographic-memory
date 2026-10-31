@@ -58,7 +58,10 @@ fn benchmark_audit_delivery(c: &mut Criterion) {
                     assert_eq!(entries.len(), if audit { OPERATIONS as usize } else { 0 });
                     for i in 0..OPERATIONS {
                         let vector = EntangledHVec::new_deterministic(256, i);
-                        assert_eq!(reopened.query(&vector, 1)[0].id, format!("record-{i}"));
+                        assert_eq!(
+                            reopened.query(&vector, 1).unwrap()[0].id,
+                            format!("record-{i}")
+                        );
                     }
                     #[cfg(feature = "security")]
                     if signing {

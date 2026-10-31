@@ -282,7 +282,7 @@ fn legacy_compaction_tail_survives_each_plain_and_encrypted_publication_interrup
                 assert_eq!(core.relation_count(), 0);
                 assert_eq!(core.vector_count(), 3);
                 assert_eq!(
-                    core.query(&core.encode_text("replacement"), 1)[0].id,
+                    core.query(&core.encode_text("replacement"), 1)?[0].id,
                     "vector"
                 );
                 assert_eq!(

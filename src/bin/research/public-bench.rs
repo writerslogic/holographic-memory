@@ -570,12 +570,12 @@ fn ann(data: &Path, dim: u32, queries: Option<usize>, out: &Path) -> Result<()> 
         let t0 = Instant::now();
         let code = EntangledHVec::from_dense(q, dim as usize);
         let t1 = Instant::now();
-        let res = core.query(&code, K as u32);
+        let res = core.query(&code, K as u32)?;
         let t2 = Instant::now();
         enc_us.push((t1 - t0).as_secs_f64() * 1e6);
         search_us.push((t2 - t1).as_secs_f64() * 1e6);
         hits += res.iter().filter(|r| gold.contains(&r.id)).count();
-        let wide = core.query(&code, PREFILTER as u32);
+        let wide = core.query(&code, PREFILTER as u32)?;
         prefilter_hits += wide.iter().filter(|r| gold.contains(&r.id)).count();
     }
     let n = test.len();
@@ -1295,7 +1295,7 @@ fn beir(data: &Path, dim: u32, out: &Path) -> Result<()> {
         }
         let t0 = Instant::now();
         let code = EntangledHVec::from_dense(emb, dim as usize);
-        let hits = sparse.query(&code, K);
+        let hits = sparse.query(&code, K)?;
         latency
             .entry("warm_sparse")
             .or_default()

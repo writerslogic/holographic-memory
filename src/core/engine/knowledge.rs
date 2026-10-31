@@ -38,7 +38,7 @@ impl WarmCore {
         let vec_h = self.try_encode_text(&h)?;
         let vec_r = self.try_encode_text(&r)?;
         let query_vec = vec_h.bind(&vec_r);
-        Ok(self.query(&query_vec, k))
+        self.query(&query_vec, k)
     }
 
     /// Find analogy: A is to B as C is to ? Returns k closest matches.
@@ -59,7 +59,7 @@ impl WarmCore {
         let vec_b = self.try_encode_text(b)?;
         let vec_c = self.try_encode_text(c)?;
         let target = vec_a.bind(&vec_b).bind(&vec_c);
-        Ok(self.query(&target, k))
+        self.query(&target, k)
     }
 
     /// Query for sequences matching a partial sequence prefix.
@@ -67,7 +67,7 @@ impl WarmCore {
         if partial.is_empty() {
             return Ok(vec![]);
         }
-        Ok(self.query(&self.encode_sequence(partial)?, k))
+        self.query(&self.encode_sequence(partial)?, k)
     }
 
     /// Bundles `items`, each permuted by its position.
