@@ -4,7 +4,7 @@
 //! Operator endpoints: snapshots and restore, compaction, key reload, tenant listing.
 //! All need the `admin` scope; the key and tenant-listing endpoints also need an all-tenant key.
 
-use std::io::Write;
+use std::io::{Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -217,10 +217,103 @@ pub async fn restore_snapshot(
     ))
 }
 
+const MAX_ARCHIVE_METADATA_BYTES: u64 = 64 * 1024;
+
+// The normal tar iterator buffers extension records before yielding an entry. Inspect raw
+// headers first, seeking over file payloads and retaining only bounded PAX metadata.
+fn validate_archive_metadata(file: &mut std::fs::File, max_bytes: u64) -> Result<(), ApiError> {
+    let invalid = |why: &str| ApiError::bad(format!("invalid snapshot archive: {why}"));
+    let length = file.metadata().map_err(ApiError::internal)?.len();
+    let (mut offset, mut total, mut count) = (0u64, 0u64, 0usize);
+    let mut pending_size = None;
+    let mut extensions = 0u8;
+    loop {
+        file.seek(SeekFrom::Start(offset))
+            .map_err(ApiError::internal)?;
+        let mut archive = tar::Archive::new(&mut *file);
+        let mut entries = archive
+            .entries()
+            .map_err(|_| invalid("not a tar file"))?
+            .raw(true);
+        let Some(entry) = entries.next() else {
+            if extensions != 0 {
+                return Err(invalid("extension has no following entry"));
+            }
+            break;
+        };
+        let mut entry = entry.map_err(|_| invalid("unreadable entry"))?;
+        let kind = entry.header().entry_type();
+        let extension = if entry.header().as_gnu().is_some() || entry.header().as_ustar().is_some()
+        {
+            if kind.is_gnu_longname() {
+                1
+            } else if kind.is_gnu_longlink() {
+                2
+            } else if kind.is_pax_local_extensions() {
+                4
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+        let size = if extension != 0 {
+            if entry.size() > MAX_ARCHIVE_METADATA_BYTES {
+                return Err(invalid("extended metadata exceeds 64 KiB"));
+            }
+            if extensions & extension != 0 {
+                return Err(invalid("duplicate extension for one entry"));
+            }
+            extensions |= extension;
+            if kind.is_pax_local_extensions() {
+                if let Some(fields) = entry
+                    .pax_extensions()
+                    .map_err(|_| invalid("bad PAX metadata"))?
+                {
+                    for field in fields {
+                        let field = field.map_err(|_| invalid("bad PAX metadata"))?;
+                        if field.key_bytes() == b"size" {
+                            pending_size = Some(
+                                field
+                                    .value()
+                                    .ok()
+                                    .and_then(|value| value.parse::<u64>().ok())
+                                    .ok_or_else(|| invalid("bad PAX size"))?,
+                            );
+                            break;
+                        }
+                    }
+                }
+            }
+            entry.size()
+        } else {
+            if !(kind.is_file() || kind.is_dir()) {
+                return Err(invalid("only regular files and directories are allowed"));
+            }
+            extensions = 0;
+            let size = pending_size.take().unwrap_or(entry.size());
+            count += 1;
+            total = total.saturating_add(size);
+            if count > 100_000 || total > max_bytes {
+                return Err(invalid("archive is larger than this server accepts"));
+            }
+            size
+        };
+        offset = size
+            .checked_add(511)
+            .and_then(|size| offset.checked_add(512)?.checked_add(size & !511))
+            .filter(|end| *end <= length)
+            .ok_or_else(|| invalid("truncated or oversized entry"))?;
+    }
+    file.rewind().map_err(ApiError::internal)?;
+    Ok(())
+}
+
 /// Unpack a tar of regular files and directories into `dst`, refusing links, devices, absolute
 /// or parent-relative paths, and oversized archives.
-fn unpack_archive(file: std::fs::File, dst: &Path, max_bytes: u64) -> Result<(), ApiError> {
+fn unpack_archive(mut file: std::fs::File, dst: &Path, max_bytes: u64) -> Result<(), ApiError> {
     let invalid = |why: &str| ApiError::bad(format!("invalid snapshot archive: {why}"));
+    validate_archive_metadata(&mut file, max_bytes)?;
     std::fs::create_dir_all(dst).map_err(ApiError::internal)?;
     let mut archive = tar::Archive::new(file);
     let (mut total, mut count) = (0u64, 0usize);
@@ -238,7 +331,7 @@ fn unpack_archive(file: std::fs::File, dst: &Path, max_bytes: u64) -> Result<(),
             return Err(invalid("paths must be relative without \"..\""));
         }
         count += 1;
-        total = total.saturating_add(entry.header().size().unwrap_or(0));
+        total = total.saturating_add(entry.size());
         if count > 100_000 || total > max_bytes {
             return Err(invalid("archive is larger than this server accepts"));
         }
@@ -407,6 +500,146 @@ pub async fn list_tenants(State(state): State<Arc<AppState>>, req: Request) -> A
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn archive_with_pax_comment(path: &Path, size: usize) {
+        let mut builder = tar::Builder::new(std::fs::File::create(path).unwrap());
+        let prefix = format!("{size} comment=");
+        let payload = format!("{prefix}{}\n", "x".repeat(size - prefix.len() - 1));
+        let mut header = tar::Header::new_ustar();
+        header.set_entry_type(tar::EntryType::new(b'x'));
+        header.set_size(payload.len() as u64);
+        header.set_cksum();
+        builder
+            .append_data(&mut header, "pax", payload.as_bytes())
+            .unwrap();
+        let mut header = tar::Header::new_ustar();
+        header.set_size(3);
+        header.set_mode(0o644);
+        header.set_cksum();
+        builder
+            .append_data(&mut header, "data", b"abc".as_slice())
+            .unwrap();
+        builder.finish().unwrap();
+    }
+
+    #[test]
+    fn archive_extended_metadata_is_bounded_before_extraction() {
+        let dir = tempfile::tempdir().unwrap();
+        for size in [65535, 65536, 65537] {
+            let path = dir.path().join(format!("{size}.tar"));
+            let dst = dir.path().join(size.to_string());
+            archive_with_pax_comment(&path, size);
+            let result = unpack_archive(std::fs::File::open(path).unwrap(), &dst, 1024 * 1024);
+            if size <= 65536 {
+                result.unwrap();
+                assert_eq!(std::fs::read(dst.join("data")).unwrap(), b"abc");
+            } else {
+                assert_eq!(result.unwrap_err().status, StatusCode::UNPROCESSABLE_ENTITY);
+                assert!(!dst.join("data").exists());
+            }
+        }
+    }
+
+    fn raw_entry(file: &mut std::fs::File, kind: u8, name: &str, declared: u64, bytes: &[u8]) {
+        let mut header = tar::Header::new_gnu();
+        header.set_entry_type(tar::EntryType::new(kind));
+        header.set_path(name).unwrap();
+        header.set_mode(0o644);
+        header.set_size(declared);
+        header.set_cksum();
+        file.write_all(header.as_bytes()).unwrap();
+        file.write_all(bytes).unwrap();
+        let padding = (512 - bytes.len() % 512) % 512;
+        file.write_all(&vec![0; padding]).unwrap();
+    }
+
+    #[test]
+    fn archive_preflight_preserves_pax_sizes_across_gnu_names() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("snapshot.tar");
+        let mut file = std::fs::File::create(&path).unwrap();
+        raw_entry(&mut file, b'x', "pax", 10, b"10 size=3\n");
+        let long_name = "a".repeat(140);
+        let encoded_name = format!("{long_name}\0");
+        raw_entry(
+            &mut file,
+            b'L',
+            "././@LongLink",
+            encoded_name.len() as u64,
+            encoded_name.as_bytes(),
+        );
+        raw_entry(&mut file, b'0', "placeholder", 0, b"abc");
+        raw_entry(&mut file, b'0', "next", 2, b"de");
+        file.write_all(&[0; 1024]).unwrap();
+        drop(file);
+        let staged = dir.path().join("staged");
+        unpack_archive(std::fs::File::open(&path).unwrap(), &staged, 5).unwrap();
+        assert_eq!(std::fs::read(staged.join(long_name)).unwrap(), b"abc");
+        assert_eq!(std::fs::read(staged.join("next")).unwrap(), b"de");
+        let rejected = dir.path().join("too-small");
+        assert!(unpack_archive(std::fs::File::open(path).unwrap(), &rejected, 4).is_err());
+        assert!(!rejected.exists());
+    }
+
+    #[test]
+    fn oversized_extension_headers_are_rejected_without_reading_their_payload() {
+        let dir = tempfile::tempdir().unwrap();
+        for kind in [b'x', b'L', b'K'] {
+            let path = dir.path().join(format!("{kind}.tar"));
+            let mut file = std::fs::File::create(&path).unwrap();
+            raw_entry(&mut file, kind, "metadata", 65537, &[]);
+            drop(file);
+            let error = unpack_archive(
+                std::fs::File::open(path).unwrap(),
+                &dir.path().join("out"),
+                u64::MAX,
+            )
+            .unwrap_err();
+            assert!(
+                error.message.contains("extended metadata exceeds 64 KiB"),
+                "{}",
+                error.message
+            );
+        }
+    }
+
+    #[test]
+    fn archive_preflight_rejects_malformed_metadata_and_sparse_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        for case in [
+            "duplicate",
+            "dangling",
+            "bad-size",
+            "overflow",
+            "truncated",
+            "sparse",
+        ] {
+            let path = dir.path().join(format!("{case}.tar"));
+            let mut file = std::fs::File::create(&path).unwrap();
+            match case {
+                "duplicate" => {
+                    raw_entry(&mut file, b'x', "pax", 10, b"10 size=3\n");
+                    raw_entry(&mut file, b'x', "pax", 10, b"10 size=3\n");
+                    raw_entry(&mut file, b'0', "data", 3, b"abc");
+                }
+                "dangling" => raw_entry(&mut file, b'x', "pax", 10, b"10 size=3\n"),
+                "bad-size" => {
+                    raw_entry(&mut file, b'x', "pax", 10, b"10 size=x\n");
+                    raw_entry(&mut file, b'0', "data", 3, b"abc");
+                }
+                "overflow" => raw_entry(&mut file, b'0', "data", u64::MAX, &[]),
+                "truncated" => raw_entry(&mut file, b'0', "data", 1, &[]),
+                "sparse" => raw_entry(&mut file, b'S', "data", 0, &[]),
+                _ => unreachable!(),
+            }
+            drop(file);
+            let dst = dir.path().join(case);
+            let error =
+                unpack_archive(std::fs::File::open(path).unwrap(), &dst, u64::MAX).unwrap_err();
+            assert_eq!(error.status, StatusCode::UNPROCESSABLE_ENTITY, "{case}");
+            assert!(!dst.exists(), "{case}");
+        }
+    }
 
     #[test]
     fn uploaded_readonly_files_are_synced_without_changing_attributes() {
