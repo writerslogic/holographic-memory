@@ -15,13 +15,38 @@
     "sha256": "e78bbbf5180854ba73b565aeebcb7edecdb809de9875260a168b9b663c1ffec1"
   },
   {
+    "file": "clippy-graph-final.log",
+    "bytes": 137,
+    "sha256": "7094f986b5907e0ed7c511c92086c70d8633197defecf4c31c47be6052b36f94"
+  },
+  {
     "file": "error-final.log",
     "bytes": 960,
     "sha256": "81cc3c5f8e0e9699bf932a2701c19d52c06af6d4d69284f7e6a2ca3d4123a416"
   },
   {
+    "file": "error-graph-final.log",
+    "bytes": 960,
+    "sha256": "f64c8564fdff2ce06ccacd17d2a3446c87ed4081738485a4c920610c6f8344db"
+  },
+  {
     "file": "fmt-final.log",
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "fmt-graph-final.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "graph-baseline.log",
+    "bytes": 1323,
+    "sha256": "d4cc5e02f523823bf26b57afd66bcd7de472da08eb48592225018669d56a2d86"
+  },
+  {
+    "file": "graph-final.log",
+    "bytes": 927,
+    "sha256": "f36fbab39352441ad287a9cc60826dad9b1eefd9d61f45f577d13fa8482a5c1d"
   }
 ]

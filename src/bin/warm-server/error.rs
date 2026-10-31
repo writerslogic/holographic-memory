@@ -27,6 +27,7 @@ pub const CODES: &[(&str, u16, &str)] = &[
     ("method_not_allowed", 405, "Method not allowed"),
     ("request_timeout", 408, "Request timed out"),
     ("conflict", 409, "Conflict"),
+    ("index_unavailable", 409, "Graph index unavailable"),
     (
         "idempotency_in_flight",
         409,

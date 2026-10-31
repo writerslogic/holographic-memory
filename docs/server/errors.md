@@ -60,6 +60,11 @@ response. Size-limit violations remain 413, and body deadlines remain 408.
 ### conflict
 409. The request conflicts with the current state (for example a tenant store closed while the operation was starting; retry).
 
+### index_unavailable
+409. A query explicitly requested `index: "graph"`, but no graph index is built. Select `index: "exact"` or `"auto"` to allow a scan, or run index maintenance
+when the tenant has enough vectors to meet `--graph-min-rows`. The query did not write
+documents.
+
 ### idempotency_in_flight
 409. Another request with the same `Idempotency-Key` is still running. Retry after the indicated delay to receive its recorded response.
 

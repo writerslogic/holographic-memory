@@ -29,6 +29,21 @@
       "command": "cargo +1.99.0 fmt --all -- --check; git diff --check",
       "result": "pass",
       "log": "fmt-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server error::tests",
+      "passed": 4,
+      "log": "error-graph-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server --bin warm-server -- -D warnings",
+      "result": "pass",
+      "log": "clippy-graph-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check; git diff --check",
+      "result": "pass",
+      "log": "fmt-graph-final.log"
     }
   ],
   "coverage": [
@@ -55,5 +70,16 @@
     "Streaming batches are not rolled back on body failure; retry requires reconciliation.",
     "No new restart-safe retry guarantee."
   ],
-  "integration_gate": "Pending PR checks; final tested head and merge record are authoritative."
+  "integration_gate": "Pending PR checks; final tested head and merge record are authoritative.",
+  "graph_contract": {
+    "baseline": "a454f093",
+    "baseline_failed": 1,
+    "baseline_log": "graph-baseline.log",
+    "patch": "graph-regression.patch",
+    "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server explicit_graph_query",
+    "passed": 1,
+    "log": "graph-final.log",
+    "deficiency": "Existing index_unavailable code lacked a registered problem title and documentation; its 409 behavior was already implemented.",
+    "recovery": "The same actual router accepts an explicit exact query after the graph request returns 409."
+  }
 }

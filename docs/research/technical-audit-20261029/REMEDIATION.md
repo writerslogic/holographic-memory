@@ -423,6 +423,9 @@ pass. Evidence: `body-errors-20261031/`. Response delivery after a network disco
 is not guaranteed, and streaming retries still require reconciliation. The complete
 PR gate remains required before merge.
 
-A separate source inspection found `index_unavailable` emitted as 409 by
-`documents::vector_search` but absent from `error::CODES` and the error reference.
-Its graph-unavailable behavior and documented recovery need a targeted contract check.
+The same follow-up registers and documents the existing `index_unavailable` 409
+code, which lacked an entry in `error::CODES` and the error reference. A real-router
+check verifies the specific problem title and successful explicit exact-search fallback
+on the same empty store. Its baseline failed on the generic Conflict title; the 409
+routing behavior itself was already implemented. The targeted check and refreshed
+error-contract, Clippy and formatting gates pass.
