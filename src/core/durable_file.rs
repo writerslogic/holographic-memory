@@ -94,6 +94,29 @@ pub(crate) fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()
     Err(std::io::ErrorKind::Unsupported.into())
 }
 
+pub(crate) fn copy_file_synced(source: &Path, destination: &Path) -> Result<u64> {
+    let bytes = std::fs::copy(source, destination)?;
+    #[cfg(windows)]
+    {
+        let permissions = std::fs::metadata(destination)?.permissions();
+        let read_only = permissions.readonly();
+        if read_only {
+            let mut writable = permissions.clone();
+            writable.set_readonly(false);
+            std::fs::set_permissions(destination, writable)?;
+        }
+        // Restore attributes even when opening the writable flush handle failed.
+        let file = std::fs::OpenOptions::new().write(true).open(destination);
+        if read_only {
+            std::fs::set_permissions(destination, permissions)?;
+        }
+        file?.sync_all()?;
+    }
+    #[cfg(unix)]
+    File::open(destination)?.sync_all()?;
+    Ok(bytes)
+}
+
 pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     #[cfg(unix)]
     std::fs::File::open(path)?.sync_all()?;

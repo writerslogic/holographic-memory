@@ -2,7 +2,7 @@ import hashlib
 import json
 import struct
 from urllib.parse import quote
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import httpx
 
@@ -140,7 +140,7 @@ class WarmClient:
         zero_trust_key: str = "",
         api_key: Optional[str] = None,
         tenant_id: Optional[str] = None,
-        timeout: int = 30,
+        timeout: Optional[Union[float, httpx.Timeout]] = 30,
         mask_salt: Optional[bytes] = None,
         transport: Optional[httpx.BaseTransport] = None,
     ):
@@ -216,7 +216,7 @@ class AsyncWarmClient:
         zero_trust_key: str = "",
         api_key: Optional[str] = None,
         tenant_id: Optional[str] = None,
-        timeout: int = 30,
+        timeout: Optional[Union[float, httpx.Timeout]] = 30,
         mask_salt: Optional[bytes] = None,
         transport: Optional[httpx.AsyncBaseTransport] = None,
     ):
