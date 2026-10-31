@@ -291,3 +291,16 @@ projection fidelity against dense-cosine neighbors. See [evaluation.md](evaluati
 Small curated fixtures and synthetic self-recall are regression signals, not general quality
 or capacity guarantees. CI runs default/all-feature Rust tests, a Rust MSRV check, deterministic
 retrieval floors, and native/packed Node tests on Linux, macOS, and Windows.
+
+Measure durable audit write cost on the deployment filesystem with
+`cargo bench --locked --features security --bench audit_delivery`. Set `TMPDIR` to an
+owned directory on that filesystem. The benchmark compares disabled, unsigned and signed
+auditing for 16 individually committed 256-dimensional vectors per sample. Initialization,
+input generation, reopening, result checks and signature verification are outside the timed
+region; each timed write includes the actual journal and audit delivery/acknowledgement work.
+Every sample uses a fresh store, checks an empty pending queue, and verifies the persisted
+vectors and expected audit count after reopening. `cargo test --locked --features security
+--bench audit_delivery -- --test` runs its correctness checks without collecting timings.
+These measurements cover single-writer commits, not concurrent saturation, pending-backlog
+recovery, large vectors, hardware power loss or production tail-latency guarantees. Retain
+the revision, build profile, filesystem, host load and Criterion output with any reported result.
