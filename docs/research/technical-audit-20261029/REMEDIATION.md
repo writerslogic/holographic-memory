@@ -701,3 +701,8 @@ Two test runs used an incorrect HTTP-400 expectation; it was corrected to WARM's
 existing HTTP-422 invalid-request contract, with no production error downgrade.
 `archive-restore-20261031/` retains logs, hashes and a reproducible baseline patch.
 Windows CI remains required; filesystem power-loss durability is not established.
+
+The first full archive CI gate caught Clippy's `byte_char_slices` lint in a new
+test, which the earlier binary-only local Clippy target did not compile. The test
+now uses the equivalent byte string, and local strict Clippy includes `--tests`.
+CI failure logs and the expanded local check are retained; no lint was disabled.

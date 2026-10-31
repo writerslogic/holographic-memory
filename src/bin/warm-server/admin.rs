@@ -584,7 +584,7 @@ mod tests {
     #[test]
     fn oversized_extension_headers_are_rejected_without_reading_their_payload() {
         let dir = tempfile::tempdir().unwrap();
-        for kind in [b'x', b'L', b'K'] {
+        for kind in *b"xLK" {
             let path = dir.path().join(format!("{kind}.tar"));
             let mut file = std::fs::File::create(&path).unwrap();
             raw_entry(&mut file, kind, "metadata", 65537, &[]);

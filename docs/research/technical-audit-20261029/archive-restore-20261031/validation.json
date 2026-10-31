@@ -12,11 +12,13 @@
     "final_server_ops": 13,
     "strict_clippy": "passed",
     "format": "passed",
-    "diff_check": "passed"
+    "diff_check": "passed",
+    "strict_clippy_including_tests": "passed"
   },
   "failed_attempts": [
     "copy_store filter selected zero tests; corrected to snapshot_copy_preserves",
-    "Two metadata-test runs expected HTTP 400; corrected to existing ApiError::bad HTTP 422 contract; production error semantics unchanged"
+    "Two metadata-test runs expected HTTP 400; corrected to existing ApiError::bad HTTP 422 contract; production error semantics unchanged",
+    "PR360 head 7d093b23 failed Clippy byte_char_slices in a new test; use a byte string and include --tests in local Clippy"
   ],
   "coverage": [
     "65535/65536/65537-byte valid PAX records",
