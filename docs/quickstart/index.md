@@ -42,7 +42,7 @@ questions in `examples/quickstart/queries.json`, each with the article that answ
 
     The script embeds text with `toy_embed`, a small hashed bag of words so it needs no model
     download. It is lexical and only a stand-in: use a real embedding model for semantic
-    search. The `warm-py` wheel provides native vector search and phase vectors;
+    search. The `warm-python` wheel provides native vector search and phase vectors;
     it does not include document search.
 
 === "Node"

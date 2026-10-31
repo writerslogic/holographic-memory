@@ -8,7 +8,7 @@ version = "0.1.0"
 source = { directory = "bindings/embed-models/python" }
 
 [[package]]
-name = "warm-py"
+name = "warm-python"
 source = { editable = "." }
 
 [package.optional-dependencies]

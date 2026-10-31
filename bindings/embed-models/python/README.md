@@ -3,7 +3,7 @@
 # WARM Models
 
 The default offline embedding model pack for
-[`warm-py`](https://pypi.org/project/warm-py/).
+[`warm-python`](https://pypi.org/project/warm-python/).
 
 [Website](https://writerslogic.com/warm/) · [Documentation](https://writerslogic.com/warm/docs/latest/embeddings/) · [Source](https://github.com/writerslogic/warm) · [License](https://github.com/writerslogic/warm/blob/main/LICENSE)
 
@@ -12,7 +12,7 @@ The default offline embedding model pack for
 Install it through the native binding's `embed` extra:
 
 ```sh
-uv add "warm-py[embed]"
+uv add "warm-python[embed]"
 ```
 
 The wheel contains the pinned int8 pack for

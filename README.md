@@ -213,7 +213,7 @@ main().catch(error => { console.error(error); process.exit(1) })
 <summary><strong>Server and Python</strong></summary>
 
 The Python package `warm-sdk` is an HTTP client for `warm-server`, which stores vectors you
-supply. (`warm-py` provides native vector search and phase vectors, but no document search.)
+supply. (`warm-python` provides native vector search and phase vectors, but no document search.)
 
 ```sh
 cargo build --release --features server --bin warm-server

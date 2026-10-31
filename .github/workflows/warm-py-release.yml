@@ -35,7 +35,7 @@ jobs:
       contents: read
 
   publish:
-    name: Publish warm-py to PyPI
+    name: Publish warm-python to PyPI
     if: startsWith(github.ref, 'refs/tags/py-v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
     needs: wheels
     runs-on: ubuntu-latest

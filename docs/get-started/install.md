@@ -24,7 +24,7 @@ Package installation needs network access; the engine can run offline after inst
 |---|---|
 | Rust 1.89 or newer (the MSRV) | the Rust crate, the HTTP server and the Node build |
 | Node 22 or newer | the Node bindings; Node 24 for the quickstart, which uses `node:sqlite` |
-| Python 3.10 or newer | the Python SDK (`warm-py` needs 3.9) |
+| Python 3.10 or newer | the Python SDK (`warm-python` needs 3.9) |
 
 For Python, create and activate a virtual environment first: `uv venv`, then
 `source .venv/bin/activate` (PowerShell: `.venv\Scripts\Activate.ps1`).
@@ -59,11 +59,11 @@ For Python, create and activate a virtual environment first: `uv venv`, then
     WARM_API_KEY=change-me target/release/warm-server --input-dim 384
     ```
 
-    The `warm-py` wheel provides native vector search and phase vectors,
+    The `warm-python` wheel provides native vector search and phase vectors,
     imported as `writerslogic_warm`. It does not include document search.
 
     ```sh
-    uv pip install warm-py
+    uv pip install warm-python
     ```
 
 === "Node"

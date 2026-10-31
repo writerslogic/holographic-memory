@@ -13,7 +13,7 @@ at 1.0.0.
 | Surface | Versioned as | Stable in 1.x | Not covered |
 |---|---|---|---|
 | Rust crate (`writerslogic-warm`) | crate version | items reachable without the `experimental` feature, outside `core::format::scan` internals | `experimental` feature, `doc(hidden)`, `pub(crate)` |
-| Python (`warm-py` wheels, `warm-sdk`) | PyPI version | documented classes and functions | underscore names; the `phase` substrate is experimental |
+| Python (`warm-python` wheels, `warm-sdk`) | PyPI version | documented classes and functions | underscore names; the `phase` substrate is experimental |
 | Node (`writerslogic-warm` on npm) | npm version | the exports in `index.d.ts`, `memory.d.ts`, `semantic.d.ts` | undocumented properties |
 | HTTP (`warm-server`) | URL prefix `/api/v1` | documented endpoints, request and response fields, error codes | new optional fields may appear; new endpoints |
 | [C ABI](runtimes/c/README.md) | `writerslogic-warm-c` package version and `hms1_*` ABI major | documented v1 symbols, ownership rules and fixed value-struct layouts; size-tagged option structs grow append-only | Rust layouts, internal symbols and unversioned convenience macros |

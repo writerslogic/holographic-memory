@@ -26,7 +26,7 @@ paraphrases. The [quickstart](../quickstart/index.md) runs both ways.
 
 `warm-sdk` is an HTTP client for `warm-server`. The server wraps one store per tenant and
 holds the engine, so the Python process stays small and the store has one writer. The
-`warm-py` wheel on PyPI provides native vector search and phase vectors, and
+`warm-python` wheel on PyPI provides native vector search and phase vectors, and
 does not include document search. See the [server page](../SERVER.md).
 
 ## Does it send anything over the network?

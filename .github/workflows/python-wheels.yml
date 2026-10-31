@@ -79,7 +79,7 @@ jobs:
           bin="$RUNNER_TEMP/binding/bin"
           [ -d "$RUNNER_TEMP/binding/Scripts" ] && bin="$RUNNER_TEMP/binding/Scripts"
           "$bin/python" -m pip install --quiet numpy==2.0.2 pytest==8.3.5
-          "$bin/python" -m pip install --quiet --no-index --find-links dist warm-py
+          "$bin/python" -m pip install --quiet --no-index --find-links dist warm-python
           "$bin/python" -I -m pytest -q -p no:cacheprovider tests/python
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}

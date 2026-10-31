@@ -29,7 +29,7 @@ def main() -> int:
     models = tomllib.loads((ROOT / "bindings/embed-models/python/pyproject.toml").read_text())["project"]
     sdk = tomllib.loads((ROOT / "bindings/python/warm-sdk/pyproject.toml").read_text())["project"]
     problems = []
-    if native["name"] != "warm-py":
+    if native["name"] != "warm-python":
         problems.append(f"native Python distribution is {native['name']}")
     if models["name"] != "warm-models":
         problems.append(f"embedding model distribution is {models['name']}")

@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Install-time smoke test for the warm-py wheel: run an associative search.
+"""Install-time smoke test for the warm-python wheel: run an associative search.
 
 Run it with the interpreter of a clean virtualenv that has only the wheel installed:
     python scripts/ci/smoke_python.py [--expect-version X.Y.Z]
@@ -32,9 +32,9 @@ def main() -> int:
     parser.add_argument("--expect-version")
     args = parser.parse_args()
 
-    version = importlib.metadata.version("warm-py")
+    version = importlib.metadata.version("warm-python")
     if args.expect_version and version != args.expect_version:
-        print(f"installed warm-py {version}, expected {args.expect_version}", file=sys.stderr)
+        print(f"installed warm-python {version}, expected {args.expect_version}", file=sys.stderr)
         return 1
 
     keys = [hm.PhaseHVec.random(DIM, LEVELS, 1000 + i) for i in range(PAIRS)]
@@ -54,7 +54,7 @@ def main() -> int:
         print(f"resonator factorized to {factors}, expected [3, 5]", file=sys.stderr)
         return 1
 
-    print(f"warm-py {version}: {PAIRS}/{PAIRS} searches and resonator factorization ok")
+    print(f"warm-python {version}: {PAIRS}/{PAIRS} searches and resonator factorization ok")
     return 0
 
 

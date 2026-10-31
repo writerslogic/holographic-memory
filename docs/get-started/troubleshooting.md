@@ -12,7 +12,7 @@ Keep the original store intact while investigating.
 ## Python import fails
 
 For `from writerslogic_warm_sdk import WarmClient`, install `warm-sdk` in the same
-virtual environment as your application. `warm-py` has a different import name and API.
+virtual environment as your application. `warm-python` has a different import name and API.
 
 ```sh
 uv run --with warm-sdk python -c "from writerslogic_warm_sdk import WarmClient; print(WarmClient.__name__)"

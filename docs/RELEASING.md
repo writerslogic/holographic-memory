@@ -11,7 +11,7 @@ run.
 | --- | --- | --- |
 | `vX.Y.Z` | `.github/workflows/release.yml` | the crate, 8 npm native packages and the root npm package, Python wheels and sdist (as release assets), SBOMs, SLSA provenance, a draft GitHub release; then publishes the crate and the npm packages |
 | `py-models-vX.Y.Z` | `.github/workflows/warm-models-release.yml` | the pinned default offline `warm-models` pack, published to PyPI through Trusted Publishing |
-| `py-vX.Y.Z` | `.github/workflows/warm-py-release.yml` | `warm-py` wheels and sdist, published to PyPI through Trusted Publishing |
+| `py-vX.Y.Z` | `.github/workflows/warm-py-release.yml` | `warm-python` wheels and sdist, published to PyPI through Trusted Publishing |
 | `sdk-vX.Y.Z` | `.github/workflows/warm-sdk-release.yml` | `warm-sdk` wheel and sdist, published to PyPI through Trusted Publishing |
 | `mcp-vX.Y.Z` | `.github/workflows/mcp-release.yml` | five `warm-mcp` binaries, checksum tables embedded in npm and PyPI launchers, a GitHub release, then the launcher packages and official MCP Registry entry |
 
@@ -126,7 +126,7 @@ These cannot be committed; the publish jobs wait on them.
    npm Trusted Publishing alone does not authorize that command.
 4. PyPI: add pending Trusted Publishers under owner `writerslogic`, repository
    `warm`, environment `pypi`: `warm-models` uses
-   `warm-models-release.yml`, `warm-py` uses `warm-py-release.yml`, and
+   `warm-models-release.yml`, `warm-python` uses `warm-py-release.yml`, and
    `warm-sdk` uses `warm-sdk-release.yml`. The MCP launcher uses
    `warm-mcp-release.yml` with the same owner, repository and environment. PyPI permits three pending
    projects at a time; publish one before registering the fourth.
