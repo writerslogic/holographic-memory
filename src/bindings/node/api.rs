@@ -601,23 +601,19 @@ impl WarmMemorySystem {
     #[napi]
     // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
     pub async fn audit_since(&self, timestamp_ms: f64) -> Result<Vec<AuditEntryJs>> {
+        if !timestamp_ms.is_finite()
+            || timestamp_ms.fract() != 0.0
+            || !(0.0..=9_007_199_254_740_991.0).contains(&timestamp_ms)
+        {
+            return Err(napi::Error::from_reason(
+                "timestampMs must be a nonnegative safe integer",
+            ));
+        }
         let core = self.core.clone();
         let ts = timestamp_ms as u64;
         run_async(move || {
             let entries = core.audit_since(ts)?;
-            Ok(entries
-                .into_iter()
-                .map(|e| AuditEntryJs {
-                    timestamp_ms: e.timestamp_ms as f64,
-                    op: match e.op {
-                        crate::core::audit::AuditOp::Memorize => "memorize".to_string(),
-                        crate::core::audit::AuditOp::Delete => "delete".to_string(),
-                        crate::core::audit::AuditOp::Compact => "compact".to_string(),
-                    },
-                    id_hash: e.id_hash.iter().map(|b| format!("{:02x}", b)).collect(),
-                    signed: e.signature != [0u8; 64],
-                })
-                .collect())
+            Ok(entries.into_iter().map(AuditEntryJs::from).collect())
         })
         .await
     }

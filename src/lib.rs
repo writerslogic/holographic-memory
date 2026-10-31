@@ -10,6 +10,8 @@ pub mod core;
 #[cfg(feature = "node-api")]
 pub use bindings::node::*;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::core::audit::{AuditEntry, AuditOp};
 pub use crate::core::documents::{
     chunk_document, DocumentChunk, DocumentInput, DocumentRecord, DocumentResult, SearchOptions,
 };

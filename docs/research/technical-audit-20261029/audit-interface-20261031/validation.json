@@ -1,0 +1,30 @@
+{
+  "base_revision": "7960986145b7364b062b0a5ad6674266cfd9a764",
+  "source_hashes": {
+    "src/lib.rs": "6ac48dd8ec3a2f8bf42399bca85f810e94e82c0a16c8c06d9858c5b73703a8f5",
+    "src/bindings/node/api.rs": "fea038858045b957dda48d4f08f2ddf512142801a972d8d4c4e009c2c641c52e",
+    "src/bindings/node/types.rs": "a779413770a6a54b0d36953d384bfeccc4926f3537a37cedda71f29baf701c4e",
+    "index.d.ts": "95571923784a96bafb7def6d78e034f9c48d8b2f0b8727dd72748fea1181b08b",
+    "tests/node/audit.test.cjs": "b4aff8ab36dbce2a41b39c7aef46a40e9d80997973fd1a53171ef633f872a34e"
+  },
+  "validation": {
+    "native_build": "node-api,security; passed",
+    "node_integration_tests": 3,
+    "restarted_modes": [
+      "legacy signed",
+      "schema-6 signed",
+      "schema-6 unsigned"
+    ],
+    "independent_crypto": "Node Ed25519 verification with caller-generated public keys; tampered message and delivery identity rejected",
+    "timestamp_boundaries": "-1,0,1; MAX_SAFE_INTEGER-1,limit,limit+1; fractional/NaN/infinite values",
+    "typescript": "passed",
+    "strict_clippy": "passed",
+    "format": "passed",
+    "integrated_ci": "pending"
+  },
+  "limits": [
+    "No automatic audit key rotation or externally anchored history.",
+    "Caller must supply independently trusted historical keys.",
+    "A signature authenticates its message bytes, not unchecked display metadata."
+  ]
+}

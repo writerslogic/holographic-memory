@@ -1,0 +1,22 @@
+{
+  "build.log": {
+    "bytes": 3731,
+    "sha256": "4660217edadf9313a733a8ac170072486c253804bea13b2af2d06036366b56b2"
+  },
+  "clippy.log": {
+    "bytes": 1075,
+    "sha256": "debdeacce317c254095f1b1a774b4b8a4ac65ffad973993192a6af78573a5223"
+  },
+  "fmt.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "node-tests.log": {
+    "bytes": 369,
+    "sha256": "d4f637135d760d8ee0f40b5d903cf09e7d93e746f9e15f0bc8cf361aa79003a0"
+  },
+  "types.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

@@ -9,6 +9,29 @@ pub struct AuditEntryJs {
     pub op: String,
     pub id_hash: String,
     pub signed: bool,
+    pub effect_id: Option<String>,
+    pub signature: String,
+    pub signable_bytes: String,
+}
+
+impl From<crate::AuditEntry> for AuditEntryJs {
+    fn from(entry: crate::AuditEntry) -> Self {
+        let hex = |bytes: &[u8]| bytes.iter().map(|byte| format!("{byte:02x}")).collect();
+        Self {
+            timestamp_ms: entry.timestamp_ms as f64,
+            op: match entry.op {
+                crate::AuditOp::Memorize => "memorize",
+                crate::AuditOp::Delete => "delete",
+                crate::AuditOp::Compact => "compact",
+            }
+            .into(),
+            id_hash: hex(&entry.id_hash),
+            signed: entry.signature != [0; 64],
+            effect_id: entry.effect_id.map(|id| hex(&id)),
+            signature: hex(&entry.signature),
+            signable_bytes: hex(&entry.signable_bytes()),
+        }
+    }
 }
 
 /// A stored document as `listDocuments` returns it: identity and provenance, not text.

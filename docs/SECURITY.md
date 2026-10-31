@@ -57,7 +57,7 @@
 
 ## Limitations
 
-1. **No key rotation**: Changing the signing key invalidates verification of prior audit entries. Key rotation requires a re-signing migration (not yet implemented).
+1. **No automatic audit-key rotation**: Historical audit signatures remain valid under their original public keys. Preserve those independently trusted keys when selecting a new signing key; the audit records do not carry a signer identifier or a rotation trust chain. Re-signing old events would change their original evidence and is not required to verify them.
 2. **Library access control**: The embedded library has no user/role model; its caller
    controls access. The separate HTTP server supports [scoped keys and tenant isolation](server/auth.md).
 3. **Passphrase in config**: The encryption passphrase is passed via `SecurityConfig`. The calling application is responsible for secure passphrase management (environment variables, secret managers).
@@ -214,5 +214,16 @@ const warm = new WarmMemorySystem(16384, './storage', {
 // Query audit trail
 const entries = await warm.auditSince(Date.now() - 86400000); // last 24h
 ```
+
+`auditSince` requires a nonnegative safe integer timestamp. Each result includes
+hexadecimal `signature` and `signableBytes`, plus `effectId` for schema-6 deliveries.
+The `signed` flag means a signature is present; it does not verify authenticity.
+Use Node's `crypto.verify(null, Buffer.from(entry.signableBytes, 'hex'), trustedPublicKey,
+Buffer.from(entry.signature, 'hex'))` with an independently trusted Ed25519 public key.
+Verification authenticates the signed bytes; decode those bytes or compare the displayed
+fields against them when processing an untrusted response. Legacy messages are 41 bytes;
+effect-aware messages are 70 bytes and include the delivery ID. Rust callers can name
+`writerslogic_warm::AuditEntry` and `AuditOp` and use `AuditEntry::signable_bytes()`.
+Neither interface establishes completeness or ordering of the entire history.
 
 Custom builds fail if requested encryption/signing support is unavailable. The standard npm build includes `security`; use `securityStatus()` to confirm active configuration. Audit/provenance sidecar failures can occur after the main arena mutation commits. See [production-readiness.md](production-readiness.md) for transaction and failure boundaries.

@@ -135,6 +135,9 @@ export interface AuditEntryJs {
   op: string
   idHash: string
   signed: boolean
+  effectId?: string
+  signature: string
+  signableBytes: string
 }
 
 export interface CleanupResultJs {
