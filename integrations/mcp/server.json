@@ -14,19 +14,19 @@
     "url": "https://github.com/writerslogic/warm",
     "source": "github"
   },
-  "version": "0.1.4",
+  "version": "0.1.5",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "writerslogic-warm-mcp",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "runtimeHint": "npx",
       "transport": { "type": "stdio" }
     },
     {
       "registryType": "pypi",
       "identifier": "warm-mcp",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "runtimeHint": "uvx",
       "transport": { "type": "stdio" }
     }

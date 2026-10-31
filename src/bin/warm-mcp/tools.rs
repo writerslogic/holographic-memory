@@ -166,7 +166,7 @@ pub fn definitions(exposure: &Exposure, limits: &Limits) -> Vec<Value> {
                 "id": {"type": "string", "minLength": 1, "maxLength": 256, "description": "Stable id; replaces an existing memory with this id."},
                 "title": {"type": "string", "maxLength": 256, "description": "Optional display title; does not change the id."},
                 "tags": tags,
-                "metadata": {"type": "object", "description": "Arbitrary JSON object; keys starting with \"warm.\" are reserved.", "additionalProperties": true},
+                "metadata": {"type": "object", "description": format!("Arbitrary JSON object; keys starting with {:?} are reserved.", crate::memory::RESERVED), "additionalProperties": true},
                 "if_version": {"type": "string", "description": "Version from `remember` or `get`; write only if the stored version still matches. Cannot combine with `create_only`."},
                 "create_only": {"type": "boolean", "default": false, "description": "Reject the write if the chosen id already exists; cannot combine with `if_version`."},
                 "allow_empty": {"type": "boolean", "default": false, "description": "Permit blank text for file-like use; otherwise blank text is rejected."}

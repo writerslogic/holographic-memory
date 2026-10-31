@@ -1,0 +1,100 @@
+{
+  "checked_at": "2026-10-31T03:38:11.173141+00:00",
+  "policy": "https://docs.npmjs.com/policies/unpublish/",
+  "policy_requirements_after_72_hours": {
+    "maximum_weekly_downloads_exclusive": 300,
+    "required_owner_count": 1,
+    "requires_no_registry_dependents": true
+  },
+  "registry_snapshots": [
+    {
+      "package": "holographic-memory",
+      "downloads_source": "https://api.npmjs.org/downloads/point/last-week/holographic-memory",
+      "downloads": {
+        "downloads": 579,
+        "start": "2026-10-23",
+        "end": "2026-10-29",
+        "package": "holographic-memory"
+      },
+      "created": "2026-06-17T14:59:19.630Z",
+      "maintainers": [
+        "davidcondrey"
+      ]
+    },
+    {
+      "package": "holographic-memory-mcp",
+      "downloads_source": "https://api.npmjs.org/downloads/point/last-week/holographic-memory-mcp",
+      "downloads": {
+        "downloads": 770,
+        "start": "2026-10-23",
+        "end": "2026-10-29",
+        "package": "holographic-memory-mcp"
+      },
+      "created": "2026-10-25T22:48:13.480Z",
+      "maintainers": [
+        "davidcondrey"
+      ]
+    }
+  ],
+  "automated_unpublish": {
+    "run": "https://github.com/writerslogic/warm/actions/runs/41164744131",
+    "result": "denied_for_all_nine_core_packages",
+    "code": "E403",
+    "reason": "Granular access tokens that bypass two-factor authentication may not perform this action."
+  },
+  "interactive_core_unpublish": {
+    "result": "denied",
+    "code": "E422",
+    "evidence": "Main agent reported authenticated npm unpublish response after browser 2FA."
+  },
+  "eligibility_inference": "Both old root and MCP packages exceed the weekly download threshold; the retained old root depends on the eight old platform packages. No further automatic deletion retries are warranted.",
+  "core_deprecation_public_verification": [
+    {
+      "name": "holographic-memory",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-darwin-arm64",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-darwin-x64",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-linux-arm64-gnu",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-linux-arm64-musl",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-linux-x64-gnu",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-linux-x64-musl",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-win32-arm64-msvc",
+      "versions": 3,
+      "missing_deprecation": []
+    },
+    {
+      "name": "holographic-memory-win32-x64-msvc",
+      "versions": 3,
+      "missing_deprecation": []
+    }
+  ],
+  "mcp_deprecation": "pending_verified_replacement",
+  "legacy_models": "not_published_http_404"
+}
