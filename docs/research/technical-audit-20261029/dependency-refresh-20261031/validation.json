@@ -15,5 +15,10 @@
     "No reachability/exploit proof from alert presence",
     "No extras retired; Python minimum remains 3.10",
     "Rejected resolver and minimatch override trials are archived, not committed"
-  ]
+  ],
+  "final_base": "78f722cd09a02b6c63365c8c0450f4395d8378e0",
+  "final_sdk_tests": {
+    "python3.10": "46 passed, 1 skipped, 46 subtests",
+    "python3.14": "46 passed, 1 skipped, 46 subtests"
+  }
 }

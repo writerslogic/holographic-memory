@@ -30,6 +30,16 @@
     "sha256": "b508be2f4dfa027971632f797ddef031489074b8d8444d43d6c49ecef1185009"
   },
   {
+    "file": "final-sdk-python310.log",
+    "bytes": 662,
+    "sha256": "0a5b76caf73005018218dcb252766b8cc79013cc18ab550a8486778c514baa4b"
+  },
+  {
+    "file": "final-sdk-python314.log",
+    "bytes": 661,
+    "sha256": "3d2459a26a541462913c832eee8f5166d9a9e9b693fe388023ac512998e43c03"
+  },
+  {
     "file": "instructor-1.12.0-full-metadata.json",
     "bytes": 13819,
     "sha256": "47c394465f69739f40975db096aa690aee4e4a74b58bbd334f4ab8c5f520304b"

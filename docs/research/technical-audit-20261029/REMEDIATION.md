@@ -657,3 +657,13 @@ without removing compatibility. `docs/SECURITY.md` records the unresolved
 constraints. Resolver trials, metadata, API probe, and test logs are archived in
 `dependency-refresh-20261031/investigation.tar.gz` with a SHA-256 index. No paid
 services, model downloads, advisory suppressions, or unsupported safety claims.
+
+After integration with main `78f722cd`, the same focused dependency-validation
+commands pass 46 tests, one optional-orjson skip, and 46 subtests on each Python
+version, including the newly merged transport regressions. PR #361 itself merged
+only after 68 successful and four skipped checks, with no pending/failing checks
+or unresolved review threads. Its Windows gate passed 807 baseline tests (14
+existing skips) and 165 service tests (zero skips). Tested and merged trees match;
+`python-transport-20261031/validation.json` and its final-state/log evidence record
+the gate. Code-scanning open alerts were zero at that merge; dependency alerts
+remain tracked separately above.
