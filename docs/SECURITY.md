@@ -109,7 +109,10 @@ patched Pillow and Filelock releases. `pydantic-ai` now installs the official sl
 distribution, without all provider SDKs. The refreshed lock uses Pillow 13.0.0,
 Filelock 4.2.6, and Pydantic AI Slim 2.64.0. The Filelock constraint is a repository
 resolver guard, not a dependency override or a guarantee for independently
-resolved consumer environments.
+resolved consumer environments. It selects LiteLLM 1.103.10 because 1.106.6
+requires Filelock below 4; the documented DSPy profile pins that compatible pair
+and passes its local retrieval/cache tests. An unconstrained latest installation
+does not reproduce this profile.
 
 The full SDK lock scan on October 31, 2026 still matches four distinct Chroma
 advisories and one DiskCache advisory (OSV also returns duplicate PYSEC aliases):
@@ -127,9 +130,10 @@ advisories and one DiskCache advisory (OSV also returns duplicate PYSEC aliases)
 - DSPy requires DiskCache 5.6.3, whose default pickle deserialization permits code
   execution if an attacker can write its cache directory
   ([GHSA-w8v5-vhqr-4h9v](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v)).
-  Shared or untrusted cache directories are unsafe. A usable cache isolation or
-  cache-disable contract must be verified before this integration passes the
-  security gate; a successful framework import is not sufficient.
+  Shared or untrusted cache directories are unsafe. The [verified DSPy profile](integrations/frameworks/dspy.md#cache-safety)
+  disables disk caching before first use and tests a fresh process that rejects
+  DiskCache imports. This mitigates that cache path, not arbitrary use of the
+  dependency or untrusted serialized DSPy programs.
 
 These are dependency matches, not five reproduced WARM exploits. The base HTTP
 client depends only on `httpx` and `sniffio`; install only needed extras and audit

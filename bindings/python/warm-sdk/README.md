@@ -58,6 +58,12 @@ listing or similarity search. This adapter does not yet implement the complete
 Haystack DocumentStore protocol or support FilterRetriever. Call `store.close()`
 when finished. Do not treat unsupported operations as empty successful results.
 
+DSPy users must configure memory-only caching before the first cache or LM use:
+`dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=True)`.
+See the [tested dependency profile and its limits](https://github.com/writerslogic/warm/blob/main/docs/integrations/frameworks/dspy.md#cache-safety):
+newer LiteLLM versions can force an older vulnerable Filelock. The SDK lock
+alone does not constrain a consumer installation.
+
 The `pydantic-ai` extra installs `pydantic-ai-slim>=2.64.0`, which provides the
 framework without every provider SDK. Add the provider extra you actually use,
 for example `pydantic-ai-slim[openai]`; local tests need no paid provider.

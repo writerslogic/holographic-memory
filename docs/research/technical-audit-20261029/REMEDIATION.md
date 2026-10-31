@@ -1080,3 +1080,50 @@ other legacy mem0 advisories were independent. Primary references:
 [Python support](https://devguide.python.org/versions/),
 [Pydantic AI slim installation](https://pydantic.dev/docs/ai/overview/install/),
 [OSV query API](https://google.github.io/osv.dev/post-v1-querybatch/).
+
+
+### Retained-text/query merge gate (2026-10-31)
+
+PR #364 final head `9368fcb25a6ee87ca00491ff020d47ceb57e8ddc` passed
+all 72 exact-head checks (success/skipped), including the required `check` from
+app 15368. No unresolved review threads or open code-scanning alerts remained.
+Merge `68aa40792698f4288c61f20c2e11bee215651c76` has a verified signature
+and exactly the tested tree `ff2e97b3d19d3067bd032a084ef6e405ebe6412d`.
+Only the owner-review requirement was bypassed after completion of all gates.
+Evidence: [query-errors-20261031/final-gate.json](query-errors-20261031/final-gate.json).
+
+### DSPy cache isolation and compatible dependency profile (2026-10-31)
+
+Follow-up to the remaining DiskCache advisory: official DSPy 3.4.1 wheel source
+shows lazy default-cache creation and separate disk/memory branches in
+`dspy.clients.cache.Cache`. Its public `configure_cache(enable_disk_cache=False,
+enable_memory_cache=True)` avoids importing/constructing DiskCache if applied
+before the first cache/LM use. Keep this process-wide choice in application setup;
+the WARM adapter does not silently mutate another application's global cache.
+The runnable offline example and quickstart now select this profile.
+
+A fresh-process regression forbids every DiskCache import, runs the real WARM
+retrieval/DummyLM example, then exercises a cache miss and an in-memory write/read.
+The cache round trip matters: DummyLM alone did not access the default cache, so
+an initial example-only check was insufficient. The strengthened baseline fails
+with `AssertionError: ['diskcache']`; the configured example passes. All 11 DSPy
+retriever/isolation tests pass against the real local WARM server using Python
+3.12, DSPy 3.4.1, LiteLLM 1.103.10, and Filelock 4.2.6, without paid calls.
+
+Resolver tradeoff made explicit: current LiteLLM 1.106.6 requires Filelock <4;
+the SDK constraint chooses compatible LiteLLM 1.103.10 rather than violating that
+upper bound. This is a deliberate version rollback, not a latest-everywhere
+upgrade. The lock also selects deprecated 1.3.1 (previous maximum 3.0.0), NetworkX
+3.6.1 (3.7), and NumPy 2.4.6 (2.5.4). The refreshed importer group passes its 173
+tests with this graph, and the added DSPy CI step pins the tested LiteLLM/Filelock
+pair. Unconstrained consumer installations can still select vulnerable Filelock;
+documentation provides explicit install constraints. No package override or
+advisory suppression is introduced. This preserves a useful supported workflow
+without claiming every optional framework path has been security-qualified.
+
+DiskCache remains installed and the full-lock OSV advisory count is unchanged.
+The mitigation covers the configured cache path; arbitrary direct DiskCache use,
+untrusted program deserialization, and later global cache reconfiguration are
+outside it. Chroma's four advisory matches and CrewAI's dependency remain open.
+The separate integrations package's whole dependency graph is not yet audited.
+Evidence: [dspy-cache-isolation-20261031/](dspy-cache-isolation-20261031/).
