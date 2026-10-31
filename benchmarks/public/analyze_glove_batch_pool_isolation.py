@@ -28,7 +28,7 @@ def analyze(root):
     fingerprint = previous.common.fingerprints
     plan = json.loads((root / "plan.json").read_text())
     manifest = json.loads((root / "execution-manifest.json").read_text())
-    require(plan["schema"] == "hms-glove-batch-pool-ablation-plan-v2", "wrong isolation plan schema")
+    require(plan["schema"] == "warm-glove-batch-pool-ablation-plan-v2", "wrong isolation plan schema")
     require(plan["candidate_vertex_sha256"] == CANDIDATE_SHA, "isolation source SHA mismatch")
     require(plan["default_control_gate"] == DEFAULT_GATE and plan["secondary_default_control_gate"] == SECONDARY_GATE, "default-control gate changed")
     require(manifest["frozen_files"]["candidate-source/src/core/qgraph/vertex.rs"] == CANDIDATE_SHA, "archived candidate source differs from declared source")
@@ -53,7 +53,7 @@ def analyze(root):
     previous_binary = Path(costs["v1"]["root"]) / "candidate-binary"
     require(fingerprint(previous_binary)["sha256"] == costs["v1"]["binary_sha256"] and previous_binary.stat().st_size == costs["v1"]["binary_bytes"], "preserved v1 binary binding mismatch")
     result.update({
-        "schema": "hms-glove-batch-pool-isolation-analysis-v2",
+        "schema": "warm-glove-batch-pool-isolation-analysis-v2",
         "analyzer_sha256": fingerprint(Path(__file__))["sha256"],
         "reused_v1_analyzer_sha256": fingerprint(Path(previous.__file__))["sha256"],
         "default_control_gates": controls,

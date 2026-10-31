@@ -4,7 +4,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["cbor2==5.9.0", "cryptography==47.0.0", "base58==2.1.1"]
 # ///
-"""Independent wire fixture for the bounded HMS RFC 9942 receipt profile.
+"""Independent wire fixture for the bounded WARM RFC 9942 receipt profile.
 
 Keys are deterministic public test material. No service or authority is contacted.
 """
@@ -53,7 +53,7 @@ def fixture():
     wrong_identity = {**protected, 15: {1: "https://wrong.fixture.invalid", 2: subject}}
     wrong_proof = {396: {-1: [encode([2, 0, [bytes(32)]])]}}
     return {
-        "profile": "HMS RFC9942 VDS1 detached Ed25519; independently encoded and signed in Python",
+        "profile": "WARM RFC9942 VDS1 detached Ed25519; independently encoded and signed in Python",
         "implementations": {"cbor2": "5.9.0", "cryptography": "47.0.0", "base58": "2.1.1"},
         "issuer_public": b64(issuer_public), "service_public": b64(service_public),
         "subject": subject, "service_issuer": service_id, "current_root": b64(root),

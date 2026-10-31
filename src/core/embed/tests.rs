@@ -29,7 +29,10 @@ fn corpus() -> Vec<String> {
 #[test]
 #[ignore = "writes the shared synthetic native-binding fixture; run deliberately"]
 fn generate_binding_fixture() {
-    assert_eq!(std::env::var("HMS_EMBED_FIXTURE_WRITE").as_deref(), Ok("1"));
+    assert_eq!(
+        crate::compatibility::var("WARM_EMBED_FIXTURE_WRITE").as_deref(),
+        Ok("1")
+    );
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
     let bytes = tiny_pack_bytes(Quantization::Int8, Pooling::Mean);
     std::fs::write(root.join("tiny-embed-int8.hmsemb"), &bytes).unwrap();
@@ -469,7 +472,7 @@ fn offline_mode_fails_with_actionable_error_and_never_downloads() {
         ENV_PACK,
         ENV_MODEL_DIR,
         "offline mode is on",
-        "hms-embed fetch",
+        "warm-embed fetch",
         "sha256",
     ] {
         assert!(err.contains(needle), "missing {needle:?} in {err}");

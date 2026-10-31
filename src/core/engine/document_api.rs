@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use super::{
     mutation::{validate_id, Mutation},
-    HmsCore, ShardSet,
+    ShardSet, WarmCore,
 };
 use crate::core::documents::{
     self, DocumentInput, DocumentResult, IngestOptions, SearchOptions, VectorIndexMode,
@@ -19,7 +19,7 @@ use crate::core::documents::{
 const ENCODE_BATCH: usize = 1024;
 use crate::core::types::MemorizeBatchItem;
 
-impl HmsCore {
+impl WarmCore {
     pub fn security_status(&self) -> serde_json::Value {
         serde_json::json!({
             "securityCompiled": cfg!(feature = "security"),
@@ -656,7 +656,7 @@ impl HmsCore {
 }
 
 #[cfg(feature = "local-models")]
-impl HmsCore {
+impl WarmCore {
     /// Installs (or with `None` removes) the on-device model stages `memorize_document` and
     /// `search_documents` use. An embedder must match the store's embedding space.
     pub fn set_model_stages(

@@ -169,11 +169,11 @@ mod tests {
     fn effective_model_installation_rejects_same_dimension_different_identity() {
         let dir = tempfile::tempdir().unwrap();
         let original = tiny(1);
-        let config = crate::core::HmsConfig {
+        let config = crate::core::WarmConfig {
             embedding_space: Some(original.space()),
             ..Default::default()
         };
-        let core = crate::HmsCore::new(1024, Some(dir.path().display().to_string()), Some(config))
+        let core = crate::WarmCore::new(1024, Some(dir.path().display().to_string()), Some(config))
             .unwrap();
         let original = Arc::new(crate::core::models::ModelStages {
             embedder: Some(original),

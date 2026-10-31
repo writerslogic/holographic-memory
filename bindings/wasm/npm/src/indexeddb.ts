@@ -5,7 +5,7 @@ import { checkKey } from "./storage.js";
 import type { StorageAdapter } from "./types.js";
 
 export interface IndexedDbStorageOptions {
-  /** Database name (default `"holographic-memory"`). */
+  /** Database name (default `"writerslogic-warm"`). */
   database?: string;
   /** Object store name (default `"snapshots"`). */
   store?: string;
@@ -36,7 +36,7 @@ export class IndexedDbStorage implements StorageAdapter {
   #db: Promise<IDBDatabase> | undefined;
 
   constructor(options: IndexedDbStorageOptions = {}) {
-    this.#database = options.database ?? "holographic-memory";
+    this.#database = options.database ?? "writerslogic-warm";
     this.#store = options.store ?? "snapshots";
     this.#factory = options.factory ?? globalThis.indexedDB;
     if (!this.#factory) throw new Error("IndexedDB is unavailable in this runtime");

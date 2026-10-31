@@ -12,5 +12,5 @@ export * from "./common.js";
 const require = createRequire(import.meta.url);
 
 export const { openStore, loadWasm } = bind(async (simd) =>
-  require(simd ? "./wasm/node/simd/hms_wasm.cjs" : "./wasm/node/scalar/hms_wasm.cjs") as WasmApi,
+  require(simd ? "./wasm/node/simd/warm_wasm.cjs" : "./wasm/node/scalar/warm_wasm.cjs") as WasmApi,
 );

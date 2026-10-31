@@ -1,11 +1,11 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-import type { HmsStore } from './store.js'
+import type { WarmStore } from './store.js'
 import type { Metadata } from './filters.js'
 
 const SEQ_DIGITS = 10
 const BATCH = 100
-const queues = new WeakMap<HmsStore['memory'], Map<string, Promise<unknown>>>()
+const queues = new WeakMap<WarmStore['memory'], Map<string, Promise<unknown>>>()
 
 export interface LogEntry {
   seq: number
@@ -14,7 +14,7 @@ export interface LogEntry {
 }
 
 /**
- * An append-only, gap-free ordered log inside an `HmsStore`.
+ * An append-only, gap-free ordered log inside an `WarmStore`.
  *
  * Entry `n` of log `name` is the record
  * `name#<n zero padded>`. The length is found by galloping and binary search over `get`
@@ -26,7 +26,7 @@ export class OrderedLog {
   private length: number | undefined
 
   constructor(
-    private readonly store: HmsStore,
+    private readonly store: WarmStore,
     readonly name: string,
   ) {
     if (!name) throw new RangeError('log name must be non-empty')
@@ -91,7 +91,7 @@ export class OrderedLog {
       entries.map((e, i) => ({
         id: this.id(start + i),
         text: e.text,
-        metadata: { ...(e.metadata ?? {}), hms_log: this.name, hms_seq: start + i },
+        metadata: { ...(e.metadata ?? {}), warm_log: this.name, warm_seq: start + i },
       })),
     )
     this.length = start + entries.length
@@ -147,7 +147,7 @@ export class OrderedLog {
         await this.store.forget(Array.from({ length: Math.min(BATCH, end) }, (_, i) => this.id(end - 1 - i)))
       }
       // Earlier versions could leave holes before the retained tail after an interrupted clear.
-      await this.store.forgetWhere({ hms_log: this.name })
+      await this.store.forgetWhere({ warm_log: this.name })
       this.length = 0
     })
   }
@@ -173,6 +173,6 @@ export function unpackPayload<T>(entry: { text: string; metadata: Metadata }): T
 }
 
 function stripLog(metadata: Metadata): Metadata {
-  const { hms_log: _l, hms_seq: _s, ...rest } = metadata
+  const { warm_log: _l, warm_seq: _s, ...rest } = metadata
   return rest
 }

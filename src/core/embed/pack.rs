@@ -7,7 +7,7 @@
 //! tensor order, contiguous data), so converting the same upstream files always produces the
 //! same bytes.
 //!
-//! Layout: `HMSEMB01` | u64 LE header length | header JSON | tokenizer.json bytes | tensor data
+//! Layout: `WARMEMB01` | u64 LE header length | header JSON | tokenizer.json bytes | tensor data
 //! in header order, each tensor immediately after the previous one.
 
 use std::io::Read;
@@ -325,7 +325,7 @@ pub(crate) fn read(path: &Path, expected_sha256: Option<&str>) -> Result<Loaded>
     let magic = t.exact(8, "magic")?;
     ensure!(
         magic == MAGIC,
-        "{} is not a holographic-memory embedding pack",
+        "{} is not a writerslogic-warm embedding pack",
         path.display()
     );
     let hl = u64::from_le_bytes(t.exact(8, "header length")?.try_into().expect("8 bytes"));

@@ -1,12 +1,12 @@
 {
   "mcpServers": {
-    "holographic-memory": {
+    "writerslogic-warm": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "holographic-memory-mcp"],
+      "args": ["-y", "writerslogic-warm-mcp"],
       "env": {
-        "HMS_MCP_NAMESPACE_STRATEGY": "project",
-        "HMS_MCP_PROJECT": "${workspaceFolder}"
+        "WARM_MCP_NAMESPACE_STRATEGY": "project",
+        "WARM_MCP_PROJECT": "${workspaceFolder}"
       }
     }
   }

@@ -23,7 +23,7 @@ from pathlib import Path
 
 LINUX = platform.system() == "Linux"
 # On a root container (Modal) servers that refuse root (Postgres, OpenSearch) run as this user.
-RUN_AS = os.environ.get("HMS_BENCH_SERVER_USER", "hmsbench")
+RUN_AS = os.environ.get("WARM_BENCH_SERVER_USER", "hmsbench")
 
 
 def free_ports(count):

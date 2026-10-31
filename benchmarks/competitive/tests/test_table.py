@@ -68,7 +68,7 @@ def test_every_cell_recomputes_from_its_results_file():
         metrics, _, _ = table.metrics_for(path, data)
         for cell in group:
             if cell.get("derived"):
-                mine, other = metrics[cell["metric"]][cell["hms"]], metrics[cell["metric"]][cell["other"]]
+                mine, other = metrics[cell["metric"]][cell["warm"]], metrics[cell["metric"]][cell["other"]]
                 adv = table.advantage(cell["metric"], mine, other)
                 if adv is None:  # one side not measured (n/m), e.g. a static index's replace: no factor is drawn
                     assert cell["factor"] is None and cell["ci"] is None and cell["text"] == "n/m"
@@ -95,7 +95,7 @@ def test_cited_files_are_committed_and_table_is_current():
     for file in cited:
         assert (ROOT / file).exists()
         assert tracked(ROOT / file), f"{file} is cited but not committed"
-    assert table.main(check=True) == 0, "run ./benchmarks/competitive/hms-bench table"
+    assert table.main(check=True) == 0, "run ./benchmarks/competitive/warm-bench table"
 
 
 @pytest.mark.skipif(not HAVE_RESULTS, reason="no committed competitive results yet")
@@ -110,15 +110,15 @@ def test_published_tables_regenerate_byte_for_byte(tmp_path):
         target.write_bytes(content)
     harness = Path("benchmarks/competitive")
     shutil.copytree(ROOT / harness / "hmsbench", tmp_path / harness / "hmsbench", ignore=shutil.ignore_patterns("__pycache__"))
-    shutil.copy2(ROOT / harness / "hms-bench", tmp_path / harness / "hms-bench")
-    generated = subprocess.run([sys.executable, str(tmp_path / harness / "hms-bench"), "table"], cwd=tmp_path,
+    shutil.copy2(ROOT / harness / "warm-bench", tmp_path / harness / "warm-bench")
+    generated = subprocess.run([sys.executable, str(tmp_path / harness / "warm-bench"), "table"], cwd=tmp_path,
                                capture_output=True, text=True)
     assert generated.returncode == 0, generated.stderr
     for path, content in expected.items():
         assert (tmp_path / path).read_bytes() == content, f"stale generated file: {path}"
 
 
-def fake_ann(hms_qps, other_qps, spread=0.01):
+def fake_ann(warm_qps, other_qps, spread=0.01):
     def serve(qps):
         return {"configs": [{"params": {"ef": 64}, "recall_at_10": 0.96,
                              "repeats": [{"qps": qps * (1 + spread * i), "p50_us": 1, "p99_us": 2} for i in range(2)]}],
@@ -129,13 +129,13 @@ def fake_ann(hms_qps, other_qps, spread=0.01):
 
     runs = [{"build_s": 2.0, "peak_rss_bytes": 2**22, "index_bytes": 2**20}] * 2
     return {"schema_version": 1, "kind": "ann", "suite": "t", "commit": "0" * 40, "date": "2026-01-01T00:00:00", "hardware": {"class": "test"},
-            "dataset": {"name": "d", "n_train": 1, "n_test": 1}, "systems": {registry.HMS: system(hms_qps, []), "hnswlib": system(other_qps, runs)}}
+            "dataset": {"name": "d", "n_train": 1, "n_test": 1}, "systems": {registry.WARM: system(warm_qps, []), "hnswlib": system(other_qps, runs)}}
 
 
 def test_verdicts_follow_the_interval_and_orientation():
     clear = fake_ann(2000, 1000)
     m = analyze.ann_metrics("x.json", clear, level=0.99)
-    mine, other = m["qps@recall0.95"][registry.HMS], m["qps@recall0.95"]["hnswlib"]
+    mine, other = m["qps@recall0.95"][registry.WARM], m["qps@recall0.95"]["hnswlib"]
     adv = table.advantage("qps@recall0.95", mine, other)
     assert table.verdict(adv) == "WIN" and adv["factor"] == pytest.approx(2.0, rel=0.05)
     # lower is better: a build twice as slow is a loss with the factor below 1.
@@ -145,7 +145,7 @@ def test_verdicts_follow_the_interval_and_orientation():
     assert adv["factor"] == 0.5 and table.verdict(adv) == "n/v"
     tie = fake_ann(1000, 1000, spread=0.0)
     m = analyze.ann_metrics("x.json", tie, level=0.99)
-    assert table.verdict(table.advantage("qps@recall0.95", m["qps@recall0.95"][registry.HMS], m["qps@recall0.95"]["hnswlib"])) == "TIE"
+    assert table.verdict(table.advantage("qps@recall0.95", m["qps@recall0.95"][registry.WARM], m["qps@recall0.95"]["hnswlib"])) == "TIE"
 
 
 def test_unreached_recall_target_is_reported_not_dropped():
@@ -192,16 +192,16 @@ def test_raw_pass_timings_from_older_files_summarise_like_stored_summaries():
 
 @pytest.mark.parametrize("kind", ["ann", "text"])
 @pytest.mark.parametrize("classes, expected", [
-    ({"hms-server": "per-request-flush", "qdrant-server": "per-request-flush"}, "n/v"),
-    ({"hms-server": "per-request-flush", "qdrant-server": "periodic"}, "n/v"),
-    ({"hms-server": "per-request-flush", "qdrant-server": "undocumented"}, "n/v"),
-    ({"hms-server": "per-request-flush"}, "n/v"),
+    ({"warm-server": "per-request-flush", "qdrant-server": "per-request-flush"}, "n/v"),
+    ({"warm-server": "per-request-flush", "qdrant-server": "periodic"}, "n/v"),
+    ({"warm-server": "per-request-flush", "qdrant-server": "undocumented"}, "n/v"),
+    ({"warm-server": "per-request-flush"}, "n/v"),
     ({}, "n/v"),
 ])
 def test_server_operation_verdicts_require_matching_recorded_classes(kind, classes, expected, monkeypatch):
     data = fake_ann(2000, 1000)
-    data["systems"] = {"hms-server": data["systems"][registry.HMS], "qdrant-server": data["systems"]["hnswlib"]}
-    data.update(kind=kind, mode="server", reference="hms-server", facts={}, protocol={"durability_class": classes})
+    data["systems"] = {"warm-server": data["systems"][registry.WARM], "qdrant-server": data["systems"]["hnswlib"]}
+    data.update(kind=kind, mode="server", reference="warm-server", facts={}, protocol={"durability_class": classes})
     if not classes:
         data.pop("protocol")
     data["hardware"].update(cpu="c", logical_cores=1, memory_bytes=2**30, os="o")
@@ -220,14 +220,14 @@ def test_server_operation_verdicts_require_matching_recorded_classes(kind, class
     assert len(derived) == 2
     assert {c["verdict"] for c in derived} == {expected}
     rows = [line for line in markdown.splitlines() if line.startswith(("| Replace one", "| Delete one"))]
-    matching = classes.get("hms-server") == classes.get("qdrant-server") == "per-request-flush"
+    matching = classes.get("warm-server") == classes.get("qdrant-server") == "per-request-flush"
     if matching:
         assert all(c["factor"] == 2 for c in derived)
         assert not any(r[0] in operation_keys for r in tally["WIN"])
     else:
         assert all("†" in line for line in rows)
         assert all(c["factor"] is None and c["ci"] is None for c in derived)
-        assert "durability classes " + (classes.get("hms-server") or "unrecorded") in markdown
+        assert "durability classes " + (classes.get("warm-server") or "unrecorded") in markdown
         assert "vs " + (classes.get("qdrant-server") or "unrecorded") + "; no verdict" in markdown
     assert not any(g["metric"] in operation_keys for g in gaps)
 
@@ -245,10 +245,10 @@ def test_audit_invalid_measurement_and_unknown_revision_cannot_win():
     data = fake_ann(2000, 1000)
     data["commit"] = "unknown"
     m, _, _ = table.metrics_for(Path("x.json"), data)
-    assert table.verdict(table.advantage("qps@recall0.95", m["qps@recall0.95"][registry.HMS], m["qps@recall0.95"]["hnswlib"])) == "n/v"
+    assert table.verdict(table.advantage("qps@recall0.95", m["qps@recall0.95"][registry.WARM], m["qps@recall0.95"]["hnswlib"])) == "n/v"
     data["measurement_validity"] = {"qps@recall0.95": {"status": "valid"}}
     m, _, _ = table.metrics_for(Path("x.json"), data)
-    assert m["qps@recall0.95"][registry.HMS]["validity"] == "unverified"
+    assert m["qps@recall0.95"][registry.WARM]["validity"] == "unverified"
     data["commit"] = "a" * 40
     data["measurement_validity"] = {"serving_rss_mib": {"status": "invalid", "reason": "inherited process high-water mark"}}
     m, _, _ = table.metrics_for(Path("x.json"), data)
@@ -259,7 +259,7 @@ def test_audit_invalid_measurement_and_unknown_revision_cannot_win():
 def test_audit_text_uncertainty_counts_process_rounds_not_passes():
     rounds = [{"passes": [{"queries": 1, "total_ns": ns, "p50_ns": ns, "p99_ns": ns}] * 3,
                "peak_rss_bytes": 1024, "cold_start_s": 1.0} for ns in (100, 200, 400)]
-    data = {"systems": {"hms": {"serve_rounds": rounds, "build_runs": [{"ingest_s": 1.0, "peak_rss_bytes": 1024, "disk_bytes": 1024}]}}}
+    data = {"systems": {"warm": {"serve_rounds": rounds, "build_runs": [{"ingest_s": 1.0, "peak_rss_bytes": 1024, "disk_bytes": 1024}]}}}
     cells = analyze.text_metrics("x", data)
-    assert cells["qps"]["hms"]["n"] == 3
-    assert cells["p99_latency"]["hms"]["n"] == 3
+    assert cells["qps"]["warm"]["n"] == 3
+    assert cells["p99_latency"]["warm"]["n"] == 3

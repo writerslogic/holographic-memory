@@ -167,7 +167,7 @@ export async function seal(state: CipherState, plain: Uint8Array): Promise<Uint8
 
 /** Parses an envelope's header without decrypting it. */
 export function readHeader(bytes: Uint8Array): { params: KdfParams; salt: Uint8Array } {
-  if (!isEncrypted(bytes)) throw new Error("not an encrypted holographic-memory snapshot");
+  if (!isEncrypted(bytes)) throw new Error("not an encrypted writerslogic-warm snapshot");
   if (bytes.length < HEADER_BYTES + TAG_BYTES) throw new Error("encrypted snapshot is truncated");
   if (bytes[4] !== VERSION) throw new Error(`unsupported encrypted snapshot version ${bytes[4]}`);
   const kdf = (Object.keys(KDF_IDS) as Kdf[]).find((name) => KDF_IDS[name] === bytes[5]);

@@ -1,16 +1,16 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use hms_research_evidence::contract::{
+use warm_research_evidence::contract::{
     Claim, Interval, Modality, Selection, Source, Span, MAX_SOURCES, MAX_SOURCE_BYTES,
 };
-use hms_research_evidence::store::{
+use warm_research_evidence::store::{
     validate_bundle, EvidenceStore, MAX_CONTROL_BYTES, MAX_METADATA_BYTES, MAX_PENDING_DELETIONS,
     MAX_REVOKED_VERSIONS, STORE_DIMENSIONS,
 };
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-use holographic_memory::core::memory_api::{ForgetOptions, ForgetScope};
-use holographic_memory::{DocumentInput, HmsCore, Memory};
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::core::memory_api::{ForgetOptions, ForgetScope};
+use writerslogic_warm::{DocumentInput, WarmCore, Memory};
 use serde_json::{json, Value};
 
 fn source(id: &str, text: &str) -> Source {
@@ -94,7 +94,7 @@ fn raw_document(namespace: &str, source: &Source, claims: &[Claim]) -> DocumentI
 }
 
 fn inject(path: &std::path::Path, documents: Vec<DocumentInput>) {
-    let core = HmsCore::new(STORE_DIMENSIONS, Some(path.to_str().unwrap().into()), None).unwrap();
+    let core = WarmCore::new(STORE_DIMENSIONS, Some(path.to_str().unwrap().into()), None).unwrap();
     core.memorize_documents_with(
         documents,
         &IngestOptions {
@@ -132,7 +132,7 @@ fn control_document(namespace: &str, revoked: &[Value], pending: &[Value]) -> Do
 }
 
 fn stored_control(path: &std::path::Path, namespace: &str) -> Option<Value> {
-    let core = HmsCore::new(STORE_DIMENSIONS, Some(path.to_str().unwrap().into()), None).unwrap();
+    let core = WarmCore::new(STORE_DIMENSIONS, Some(path.to_str().unwrap().into()), None).unwrap();
     core.get_document(&format!("evidence-control:v1:{}", hex(namespace)))
         .map(|record| record.metadata)
 }
@@ -642,7 +642,7 @@ fn pending_deletion_recovers_after_control_delete_and_purge_crash_boundaries() {
         );
         if phase > 0 {
             let core = std::sync::Arc::new(
-                HmsCore::new(
+                WarmCore::new(
                     STORE_DIMENSIONS,
                     Some(directory.path().to_str().unwrap().into()),
                     None,
@@ -744,7 +744,7 @@ fn corrupt_control_and_mismatched_pending_versions_fail_before_deletion() {
             EvidenceStore::open(directory.path(), "research").is_err(),
             "corruption {corruption}"
         );
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             STORE_DIMENSIONS,
             Some(directory.path().to_str().unwrap().into()),
             None,

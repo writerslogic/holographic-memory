@@ -1,7 +1,7 @@
-"""Summarize a Bemula run of HMS into benchmarks/results/bemula_v1.json.
+"""Summarize a Bemula run of WARM into benchmarks/results/bemula_v1.json.
 
-Reads the run directories written by run_hms.py (metrics.json, items.jsonl, run_meta.json),
-the HMS query/forget log, and the published baseline metrics in the Bemula checkout. Each
+Reads the run directories written by run_warm.py (metrics.json, items.jsonl, run_meta.json),
+the WARM query/forget log, and the published baseline metrics in the Bemula checkout. Each
 failed forget-variant efficacy or attack item is attributed from the logged recall:
 `engine` when recall returned a purged id, `policy` when the request's target value (the
 retention gold answer) appears in the retrieved context, `model` otherwise (the value was
@@ -35,17 +35,17 @@ def _pick(metrics: dict) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bemula", type=Path, required=True, help="Bemula checkout")
-    ap.add_argument("--hms-run", type=Path, required=True)
+    ap.add_argument("--warm-run", type=Path, required=True)
     ap.add_argument("--rag-run", type=Path, required=True)
     ap.add_argument("--log", type=Path, required=True)
     ap.add_argument("--dialogues", type=Path, required=True)
-    ap.add_argument("--meta", type=Path, required=True, help="JSON with suite commit, models, HMS SHA")
+    ap.add_argument("--meta", type=Path, required=True, help="JSON with suite commit, models, WARM SHA")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
 
-    hms = json.loads((args.hms_run / "metrics.json").read_text())
+    warm = json.loads((args.warm_run / "metrics.json").read_text())
     rag = json.loads((args.rag_run / "metrics.json").read_text())
-    items = _jsonl(args.hms_run / "items.jsonl")
+    items = _jsonl(args.warm_run / "items.jsonl")
     log = _jsonl(args.log)
 
     # Retention gold per request: the stored value a forget request targets.
@@ -91,8 +91,8 @@ def main() -> None:
     result = json.loads(args.meta.read_text())
     result.update(
         {
-            "hms": _pick(hms),
-            "hms_items": hms.get("num_items"),
+            "warm": _pick(warm),
+            "warm_items": warm.get("num_items"),
             "same_day_rag": _pick(rag),
             "published_deepseek": published,
             "forget_requests": {"in_suite": requests, **review},

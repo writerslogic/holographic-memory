@@ -3,11 +3,11 @@ search:
   exclude: true
 ---
 
-# Gaps: where HMS loses or ties
+# Gaps: where WARM loses or ties
 
-Generated with the table from the committed results; a gap stays here until a measured change closes it. Factor is HMS advantage (below 1 = HMS worse). Hypotheses are unmeasured unless a file is cited.
+Generated with the table from the committed results; a gap stays here until a measured change closes it. Factor is WARM advantage (below 1 = WARM worse). Hypotheses are unmeasured unless a file is cited.
 
-| Status | Dataset | Hardware class | Metric | Comparator | HMS | Comparator value | Factor [interval] | Hypothesis | Code path |
+| Status | Dataset | Hardware class | Metric | Comparator | WARM | Comparator value | Factor [interval] | Hypothesis | Code path |
 |---|---|---|---|---|---|---|---|---|---|
 | LOSS | memory (4,559 documents, 100 queries) | `modal-x86_64-8vcpu-32g` | Ingest/build time | SQLite FTS5 | 2.515 s | 2.061 | 0.82x [0.79, 0.85] | unprofiled hypothesis: per-document text encoding in documents::prepare (src/core/encoding.rs) dominates ingest; profile it, then a lexical-only ingest path or a cheaper encoder is the lever | src/core/documents.rs prepare + src/core/engine/document_api.rs memorize_documents |
 | LOSS | memory (4,559 documents, 100 queries) | `modal-x86_64-8vcpu-32g` | Peak RSS, build | SQLite FTS5 | 132.8 MiB | 120.5 | 0.91x [0.91, 0.91] | unprofiled hypothesis: the arena and index are built in memory before commit; streaming commits per batch | src/core/documents.rs (prepare, search), src/core/documents/search.rs, src/core/engine/document_api.rs |

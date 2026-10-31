@@ -62,9 +62,9 @@ class CandidateWheelTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "candidate.whl"
             with zipfile.ZipFile(path, "w") as archive:
-                archive.writestr("holographic_memory/holographic_memory.abi3.so", b"native fixture")
-                archive.writestr("holographic_memory/__init__.py", b"pass")
-            self.assertEqual(wheel.native_members(path), {"holographic_memory/holographic_memory.abi3.so": {"bytes": 14, "sha256": hashlib.sha256(b"native fixture").hexdigest()}})
+                archive.writestr("writerslogic_warm/writerslogic_warm.abi3.so", b"native fixture")
+                archive.writestr("writerslogic_warm/__init__.py", b"pass")
+            self.assertEqual(wheel.native_members(path), {"writerslogic_warm/writerslogic_warm.abi3.so": {"bytes": 14, "sha256": hashlib.sha256(b"native fixture").hexdigest()}})
             self.assertEqual(list(Path(directory).iterdir()), [path])
 
     def test_wheel_paths_duplicates_and_missing_native_are_rejected(self):

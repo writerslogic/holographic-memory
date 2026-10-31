@@ -1,12 +1,12 @@
 [package]
-name = "hms-native-bridge"
+name = "warm-native-bridge"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.96"
 publish = false
 
 [lib]
-name = "hms_native_bridge"
+name = "warm_native_bridge"
 crate-type = ["cdylib"]
 
 [dependencies]

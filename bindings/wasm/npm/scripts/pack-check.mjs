@@ -4,7 +4,7 @@
 // Verifies the publishable artifact, not the source tree: `npm pack`, install the tarball into a
 // fresh directory, and import it from Node, Deno and Bun (and check types resolve with tsc).
 //   node scripts/pack-check.mjs [scratch-dir]
-// Deno and Bun are used when found on PATH (or HMS_DENO / HMS_BUN).
+// Deno and Bun are used when found on PATH (or WARM_DENO / WARM_BUN).
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -14,7 +14,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const scratch = process.argv[2] ?? mkdtempSync(join(tmpdir(), "hms-pack-"));
+const scratch = process.argv[2] ?? mkdtempSync(join(tmpdir(), "warm-pack-"));
 mkdirSync(scratch, { recursive: true });
 
 function sh(command, args, options = {}) {
@@ -38,11 +38,11 @@ for (const required of [
   "dist/file.js",
   "dist/opfs.js",
   "dist/indexeddb.js",
-  "dist/wasm/web/simd/hms_wasm_bg.wasm",
-  "dist/wasm/web/scalar/hms_wasm_bg.wasm",
-  "dist/wasm/bundler/simd/hms_wasm_bg.wasm",
-  "dist/wasm/node/scalar/hms_wasm.cjs",
-  "dist/wasm/deno/simd/hms_wasm.js",
+  "dist/wasm/web/simd/warm_wasm_bg.wasm",
+  "dist/wasm/web/scalar/warm_wasm_bg.wasm",
+  "dist/wasm/bundler/simd/warm_wasm_bg.wasm",
+  "dist/wasm/node/scalar/warm_wasm.cjs",
+  "dist/wasm/deno/simd/warm_wasm.js",
 ]) {
   assert.ok(files.includes(required), `tarball is missing ${required}`);
 }
@@ -68,9 +68,9 @@ writeFileSync(join(consumer, "package.json"), JSON.stringify({ name: "consumer",
 sh("npm", ["install", "--no-audit", "--no-fund", join(scratch, tarName), "typescript@5", "@types/node@22"], { cwd: consumer });
 
 const program = `
-import { openStore } from "@holographic-memory/wasm";
-import { FileStorage } from "@holographic-memory/wasm/storage/file";
-const dir = await (await import("node:fs/promises")).mkdtemp((await import("node:os")).tmpdir() + "/hms-consumer-");
+import { openStore } from "@writerslogic/warm-wasm";
+import { FileStorage } from "@writerslogic/warm-wasm/storage/file";
+const dir = await (await import("node:fs/promises")).mkdtemp((await import("node:os")).tmpdir() + "/warm-consumer-");
 const store = await openStore({ dimensions: 512, storage: new FileStorage(dir), encryption: { passphrase: "p", iterations: 1000 } });
 await store.memorizeDocument({ id: "a", text: "installed from the tarball" });
 await store.close();
@@ -83,8 +83,8 @@ console.log("ok " + (again.simd ? "simd" : "scalar"));
 writeFileSync(join(consumer, "check.mjs"), program);
 const runners = [
   ["node", [process.execPath, ["check.mjs"]]],
-  ["deno", [process.env.HMS_DENO ?? "deno", ["run", "--allow-read", "--allow-write", "--allow-env", "check.mjs"]]],
-  ["bun", [process.env.HMS_BUN ?? "bun", ["check.mjs"]]],
+  ["deno", [process.env.WARM_DENO ?? "deno", ["run", "--allow-read", "--allow-write", "--allow-env", "check.mjs"]]],
+  ["bun", [process.env.WARM_BUN ?? "bun", ["check.mjs"]]],
 ];
 for (const [name, [command, runnerArgs]] of runners) {
   const r = spawnSync(command, runnerArgs, { cwd: consumer, encoding: "utf8" });
@@ -98,10 +98,10 @@ for (const [name, [command, runnerArgs]] of runners) {
 
 writeFileSync(
   join(consumer, "types.ts"),
-  `import { openStore, type DocumentResult, type StorageAdapter } from "@holographic-memory/wasm";
-import { IndexedDbStorage } from "@holographic-memory/wasm/storage/indexeddb";
-import { OpfsStorage } from "@holographic-memory/wasm/storage/opfs";
-import { FileStorage } from "@holographic-memory/wasm/storage/file";
+  `import { openStore, type DocumentResult, type StorageAdapter } from "@writerslogic/warm-wasm";
+import { IndexedDbStorage } from "@writerslogic/warm-wasm/storage/indexeddb";
+import { OpfsStorage } from "@writerslogic/warm-wasm/storage/opfs";
+import { FileStorage } from "@writerslogic/warm-wasm/storage/file";
 const adapters: StorageAdapter[] = [new IndexedDbStorage(), new OpfsStorage(), new FileStorage("x")];
 const store = await openStore({ storage: adapters[0] });
 const hits: DocumentResult[] = await store.searchDocuments("q", { k: 3, bm25K1: 1.2 });

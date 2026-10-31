@@ -250,7 +250,7 @@ conditional result or unresolved operands. Exhausting a retrieval pool does not
 prove complete enumeration; bounds over observed candidates are not bounds over
 all events. Incomplete solver search must remain explicit.
 
-HMS already has exact triple postings, multi-hop traversal, bitemporal facts and
+WARM already has exact triple postings, multi-hop traversal, bitemporal facts and
 source/premise recovery. The new work is evidence-addressed event assertions and
 their executable relation semantics, not another generic graph. Exact execution
 cannot establish that a model extracted the correct assertion. The local
@@ -279,7 +279,7 @@ has relevant precedent in [IRCoT](https://aclanthology.org/2023.acl-long.557/);
 temporal graph memory and graph/passage integration are explored in
 [Zep](https://arxiv.org/abs/2501.13956) and
 [HippoRAG 2](https://arxiv.org/abs/2502.14802). Their reported gains do not predict
-HMS gains.
+WARM gains.
 
 ### Forget scoped information across its derivations
 
@@ -299,10 +299,10 @@ they are not independent support. Seek a bounded deletion or coarsening plan
 that breaks every known proof of the forbidden target while respecting protected facts. If preservation
 constraints make this impossible, report that conflict. These checks cover only
 the recorded evidence and rule vocabulary, not arbitrary model inference or
-guessing. HMS already has exact forgetting scopes and research claim-family
+guessing. WARM already has exact forgetting scopes and research claim-family
 deletion; the new invariant spans alternative derivations and replay. The
 `narrative-lens` actor-forgetting action retains proposition/evidence history and
-must not be substituted for HMS privacy deletion.
+must not be substituted for WARM privacy deletion.
 
 ### Compare mechanisms before a live benchmark
 
@@ -361,7 +361,7 @@ cache, so the timed workload includes fallback retrieval.
 ## Run document relevance without a model
 
 ```sh
-cargo run --release --bin hms-eval -- \
+cargo run --release --bin warm-eval -- \
   --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
 ```
 
@@ -410,7 +410,7 @@ Save this complete example as `my.json`:
 ```
 
 ```sh
-cargo run --release --bin hms-eval -- --dataset my.json --dimensions 4096 --k 3
+cargo run --release --bin warm-eval -- --dataset my.json --dimensions 4096 --k 3
 ```
 
 `--k` is the number of distinct document IDs scored per query (1–1000, default
@@ -464,8 +464,8 @@ relevance. Exact dense document retrieval avoids this sparse projection loss.
 ## Concurrent workload
 
 ```sh
-cargo run --release --features cli --bin hms-workload -- --vectors 1200 --operations 300 --dimensions 4096
-cargo run --release --features cli --bin hms-workload -- --vectors 10000 --operations 1000 --dimensions 4096
+cargo run --release --features cli --bin warm-workload -- --vectors 1200 --operations 300 --dimensions 4096
+cargo run --release --features cli --bin warm-workload -- --vectors 10000 --operations 1000 --dimensions 4096
 ```
 
 One writer replaces vectors and also deletes/reinserts every fifth ID while one reader queries

@@ -39,20 +39,20 @@ scripts/build-android.sh           # four ABIs into android/src/main/jniLibs
 ## Use
 
 ```kotlin
-val store = HmsStore.open(
-    File(filesDir, "hms").absolutePath,
+val store = WarmStore.open(
+    File(filesDir, "warm").absolutePath,
     StoreOptions(dimensions = 4096u, encryptionKey = keyFromKeystore))
 
 store.ingest(DocumentInput(id = "note-1", text = "Title\nBody ...", titleWeight = 3u))
 val hits = store.search("title", SearchOptions(k = 10u, bm25K1 = 1.2, bm25B = 0.75))
 store.snapshot(backupDir.absolutePath)
-val restored = HmsStore.restore(backupDir.absolutePath, otherDir.absolutePath, sameOptions)
+val restored = WarmStore.restore(backupDir.absolutePath, otherDir.absolutePath, sameOptions)
 ```
 
 Disk-touching calls are `suspend` functions that run on a worker thread, with `…Blocking`
-variants. A store is thread-safe. A directory opens once per process (`HmsException.StoreLocked`);
+variants. A store is thread-safe. A directory opens once per process (`WarmException.StoreLocked`);
 `shutdown()` releases it at once, `close()` (AutoCloseable) drops the handle. Errors are the
-sealed `HmsException` (`InvalidInput`, `StoreLocked`, `Encryption`, `IncompatibleStore`,
+sealed `WarmException` (`InvalidInput`, `StoreLocked`, `Encryption`, `IncompatibleStore`,
 `NotFound`, `AlreadyExists`, `Corrupt`, `Io`, `Closed`, `Internal`; each carries `details`).
 Metadata and filters are JSON object strings (`metadataJson`, `filterJson`).
 

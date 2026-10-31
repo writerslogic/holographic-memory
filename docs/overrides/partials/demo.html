@@ -2,29 +2,29 @@
     SPDX-License-Identifier: Apache-2.0
     Markup for the client-side bind/bundle/resonate demo; the behaviour is in
     docs/javascripts/demo.js. Nothing here talks to a server. -#}
-<div class="hms-demo hms-card" data-hms-demo>
-  <div class="hms-demo__head">
+<div class="warm-demo warm-card" data-warm-demo>
+  <div class="warm-demo__head">
     <h3>A memory in one vector</h3>
-    <button type="button" class="hms-btn hms-btn--small" data-act="reroll">New random vectors</button>
+    <button type="button" class="warm-btn warm-btn--small" data-act="reroll">New random vectors</button>
   </div>
-  <p class="hms-fine">4,096 bits hold every key-value pair at once. Pick how many pairs, damage the memory, and ask for one value back.</p>
-  <div class="hms-demo__controls">
+  <p class="warm-fine">4,096 bits hold every key-value pair at once. Pick how many pairs, damage the memory, and ask for one value back.</p>
+  <div class="warm-demo__controls">
     <label><span>Pairs bundled</span><output data-out="k">7</output><input type="range" min="3" max="63" step="2" value="7" data-in="k"></label>
     <label><span>Bits flipped</span><output data-out="noise">20%</output><input type="range" min="0" max="50" value="20" data-in="noise"></label>
     <label><span>Ask for</span><select data-in="key" aria-label="Key to ask for"></select></label>
   </div>
-  <div class="hms-demo__body">
-    <figure class="hms-demo__mem">
+  <div class="warm-demo__body">
+    <figure class="warm-demo__mem">
       <canvas width="256" height="256" data-canvas role="img" aria-label="The 4,096 bits of the memory vector as a 64 by 64 grid. Flipped bits are highlighted."></canvas>
-      <figcaption><span class="hms-swatch hms-swatch--on"></span> bit set <span class="hms-swatch hms-swatch--flip"></span> flipped by damage</figcaption>
+      <figcaption><span class="warm-swatch warm-swatch--on"></span> bit set <span class="warm-swatch warm-swatch--flip"></span> flipped by damage</figcaption>
     </figure>
-    <div class="hms-demo__res">
-      <p class="hms-demo__q">Similarity of the unbound memory to each known value</p>
-      <ol class="hms-bars" data-bars></ol>
-      <p class="hms-demo__verdict" data-verdict aria-live="polite"></p>
+    <div class="warm-demo__res">
+      <p class="warm-demo__q">Similarity of the unbound memory to each known value</p>
+      <ol class="warm-bars" data-bars></ol>
+      <p class="warm-demo__verdict" data-verdict aria-live="polite"></p>
     </div>
   </div>
-  <details class="hms-demo__how">
+  <details class="warm-demo__how">
     <summary>What is being computed</summary>
     <p>Each key and each value is a random 4,096-bit vector. A pair is <code>key XOR value</code>. The memory is the bitwise majority of all pairs, then <em>damage</em> flips the chosen share of its bits. To ask, XOR the memory with a key and measure the fraction of matching bits against every value. Unrelated vectors match about half their bits, with a spread near 0.8 percentage points, so a match well above 0.5 is the stored value. More pairs shrink the signal; more damage shrinks it too. Past some point the answer is wrong, and the demo says so.</p>
   </details>

@@ -150,7 +150,7 @@ def freeze(args):
     extensions = {}
     for arm, path in (("baseline", args.baseline), ("candidate", args.candidate)):
         original = record(path)
-        target = snapshots / (arm + "-holographic_memory.so")
+        target = snapshots / (arm + "-writerslogic_warm.so")
         shutil.copyfile(original["path"], target)
         target.chmod(0o444)
         extensions[arm] = {**record(target), "original_path": original["path"]}
@@ -253,21 +253,21 @@ def run(args):
             raise FileExistsError("refusing to reuse an existing VIBE dataset or result path")
         (vibe / "data" / (alias + ".hdf5")).symlink_to(view)
         environment = {name: value for name, value in os.environ.items()
-                       if not name.startswith(("HMS_QGRAPH_", "HMS_QAG_"))}
+                       if not name.startswith(("WARM_QGRAPH_", "WARM_QAG_"))}
         environment.update({name: "1" for name in THREADS})
-        environment.update(HMS_QAG_BASELINE_SO=frozen["extensions"]["baseline"]["path"],
-                           HMS_QAG_CANDIDATE_SO=frozen["extensions"]["candidate"]["path"],
-                           HMS_QAG_VALIDATION_IDS=str(reserved),
-                           HMS_QAG_TRAINING_QUERIES=str(Path(frozen["training"]) / "queries.f32"),
-                           HMS_QAG_TRAINING_QUERIES_SHA256=digest(Path(frozen["training"]) / "queries.f32"))
+        environment.update(WARM_QAG_BASELINE_SO=frozen["extensions"]["baseline"]["path"],
+                           WARM_QAG_CANDIDATE_SO=frozen["extensions"]["candidate"]["path"],
+                           WARM_QAG_VALIDATION_IDS=str(reserved),
+                           WARM_QAG_TRAINING_QUERIES=str(Path(frozen["training"]) / "queries.f32"),
+                           WARM_QAG_TRAINING_QUERIES_SHA256=digest(Path(frozen["training"]) / "queries.f32"))
         command = [frozen["bench"], alias, "1", "vibe", frozen["definitions"], "nolock"]
         before = {"schema_version": 1, "created_utc": now(), "phase": frozen["phase"],
                   "freeze": record(frozen_path), "host": host(), "command": command,
-                  "outer_flock": str(Path.home() / "hms-timing.lock"),
+                  "outer_flock": str(Path.home() / "warm-timing.lock"),
                   "harness_sha256": frozen["harness_sha256"], "dataset_view": record(view),
                   "validation_export": record(exported), "reserved_ids": record(reserved),
                   "environment": {name: environment[name] for name in environment
-                                  if name in THREADS or name.startswith("HMS_QAG_")}}
+                                  if name in THREADS or name.startswith("WARM_QAG_")}}
         write_new(directory / "before.json", before)
         process = subprocess.run(command, cwd=vibe, env=environment, capture_output=True, text=True)
         with (directory / "bench-stdout.txt").open("x") as stream:
@@ -302,7 +302,7 @@ def run(args):
         with raw.open("rb") as source, saved_raw.open("xb") as target:
             shutil.copyfileobj(source, target)
         saved_raw.chmod(0o444)
-        log = Path.home() / "vibe-hms/logs" / (alias + "-" + Path(frozen["definitions"]).name + ".log")
+        log = Path.home() / "vibe-warm/logs" / (alias + "-" + Path(frozen["definitions"]).name + ".log")
         if log.exists():
             with log.open("rb") as source, (directory / "bench.log").open("xb") as target:
                 shutil.copyfileobj(source, target)
@@ -331,15 +331,15 @@ def main():
     for name in ("source", "native", "training", "config", "baseline", "candidate", "out"):
         prepare.add_argument("--" + name, type=Path, required=True)
     prepare.add_argument("--validation-report", type=Path)
-    prepare.add_argument("--vibe", type=Path, default=Path.home() / "vibe-hms/vibe")
-    prepare.add_argument("--bench", type=Path, default=Path.home() / "vibe-hms/bench.sh")
+    prepare.add_argument("--vibe", type=Path, default=Path.home() / "vibe-warm/vibe")
+    prepare.add_argument("--bench", type=Path, default=Path.home() / "vibe-warm/bench.sh")
     execute = commands.add_parser("run")
     execute.add_argument("--freeze", type=Path, required=True)
     execute.add_argument("--run-id", required=True)
     execute.add_argument("--runs", type=Path, default=Path.home() / "sol-qag/runs")
     args = parser.parse_args()
     if (sys.platform != "linux" or socket.gethostname().split(".")[0] != "writerslogic-02"
-            or os.environ.get("HMS_QAG_OUTER_LOCK") != "1"
+            or os.environ.get("WARM_QAG_OUTER_LOCK") != "1"
             or any(os.environ.get(name) != "1" for name in THREADS)):
         parser.error("execute on writerslogic-02 through qag_execute.sh and its outer flock")
     freeze(args) if args.command == "freeze" else run(args)

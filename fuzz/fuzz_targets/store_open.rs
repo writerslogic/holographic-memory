@@ -14,8 +14,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-use holographic_memory::core::admin::verify_store;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::core::admin::verify_store;
+use writerslogic_warm::{DocumentInput, WarmCore, SearchOptions};
 use libfuzzer_sys::fuzz_target;
 
 const DIMENSIONS: u32 = 256;
@@ -61,7 +61,7 @@ fn template() -> &'static Template {
         let root = dir.path().join("store");
         {
             let core =
-                HmsCore::new(DIMENSIONS, Some(root.display().to_string()), None).expect("create");
+                WarmCore::new(DIMENSIONS, Some(root.display().to_string()), None).expect("create");
             for (id, text) in [
                 ("backups", "Restore backups from verified snapshots."),
                 ("rivers", "Rivers carry water to the sea across the plain."),
@@ -117,7 +117,7 @@ fuzz_target!(|data: &[u8]| {
     std::fs::write(&target, bytes).expect("write target");
 
     let _ = verify_store(&store, None);
-    if let Ok(core) = HmsCore::new(DIMENSIONS, Some(store.display().to_string()), None) {
+    if let Ok(core) = WarmCore::new(DIMENSIONS, Some(store.display().to_string()), None) {
         let _ = core.search_documents("restore backups snapshots", &SearchOptions::default());
         let _ = core.has_document("backups");
     }

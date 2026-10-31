@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { HolographicMemorySystem } from '../index.mjs'
+import { WarmMemorySystem } from '../index.mjs'
 import { createLocalEmbedder, createLocalReranker, DocumentMemory } from '../semantic.js'
 
 const args = process.argv.slice(2)
@@ -15,7 +15,7 @@ function option(name, fallback) {
 // Dispose native mappings in a child process before removing the temporary store,
 // including on Windows where mapped files cannot be removed while open.
 if (!args.includes('--worker')) {
-  const temporary = await mkdtemp(join(tmpdir(), 'hms-local-eval-'))
+  const temporary = await mkdtemp(join(tmpdir(), 'warm-local-eval-'))
   let status = 1
   try {
     const result = spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...args, '--worker', '--temporary-dir', temporary], { stdio: 'inherit' })
@@ -34,15 +34,15 @@ const rerank = option('--reranker-dir') ? await createLocalReranker({ modelPath:
 if (rerank && !option('--reranker-revision')) throw new Error('--reranker-revision is required for a reproducible report')
 const directory = option('--temporary-dir')
 try {
-  const hms = new HolographicMemorySystem(16384, directory, {
+  const warm = new WarmMemorySystem(16384, directory, {
     embeddingModel: embedder.space.model, embeddingRevision: embedder.space.revision, embeddingDimensions: embedder.space.dimensions,
   })
-  const memory = new DocumentMemory(hms, { embedder })
-  const rerankedMemory = rerank ? new DocumentMemory(hms, { embedder, rerank }) : undefined
+  const memory = new DocumentMemory(warm, { embedder })
+  const rerankedMemory = rerank ? new DocumentMemory(warm, { embedder, rerank }) : undefined
   await memory.ingest(dataset.documents)
   const metrics = {}
   for (const [name, search] of [
-    ['lexical', text => hms.searchDocuments(text, { k: 5 })],
+    ['lexical', text => warm.searchDocuments(text, { k: 5 })],
     ['hybrid', text => memory.search(text, { k: 5 })],
     ...(rerankedMemory ? [['hybrid_reranked', text => rerankedMemory.search(text, { k: 5 })]] : []),
   ]) {
@@ -65,7 +65,7 @@ try {
       mrr_at_5: reciprocalRank / dataset.queries.length, p95_latency_ms: latency[Math.round((latency.length - 1) * 0.95)] }
   }
   const denseDocuments = await embedder.encodeDocuments(dataset.documents.map(document => document.text))
-  const projectionStore = new HolographicMemorySystem(16384, join(directory, 'projection'), {
+  const projectionStore = new WarmMemorySystem(16384, join(directory, 'projection'), {
     embeddingModel: embedder.space.model, embeddingRevision: embedder.space.revision, embeddingDimensions: embedder.space.dimensions,
   })
   for (let i = 0; i < denseDocuments.length; i++) await projectionStore.memorizeVector(dataset.documents[i].id, Float32Array.from(denseDocuments[i]))

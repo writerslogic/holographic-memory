@@ -2,12 +2,12 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
-# Generates Swift or Kotlin sources from a compiled hms_mobile library's UniFFI metadata.
+# Generates Swift or Kotlin sources from a compiled warm_mobile library's UniFFI metadata.
 #
 #   generate-bindings.sh swift  <out-dir>
 #   generate-bindings.sh kotlin <out-dir> [global-config.toml]
 #
-# LIBRARY=<path> names an already built libhms_mobile.{dylib,so} (any target built from this
+# LIBRARY=<path> names an already built libwarm_mobile.{dylib,so} (any target built from this
 # source: the metadata is identical). Without it, a debug library is built for the host.
 # CARGO_TARGET_DIR defaults to <crate>/target.
 set -euo pipefail
@@ -27,8 +27,8 @@ library="${LIBRARY:-}"
 if [ -z "$library" ]; then
   (cd "$crate" && cargo build --lib)
   case "$(uname -s)" in
-    Darwin) library="$target/debug/libhms_mobile.dylib" ;;
-    *) library="$target/debug/libhms_mobile.so" ;;
+    Darwin) library="$target/debug/libwarm_mobile.dylib" ;;
+    *) library="$target/debug/libwarm_mobile.so" ;;
   esac
 fi
 

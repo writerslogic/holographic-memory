@@ -20,8 +20,8 @@ class NativeBoundaryChecks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         HARNESS.check_environment()
-        cls.bridge = HARNESS.import_bridge(os.environ["HMS_NATIVE_BRIDGE"])
-        data = Path.home() / ".cache/hms-bench/glove-100-angular/train.f32"
+        cls.bridge = HARNESS.import_bridge(os.environ["WARM_NATIVE_BRIDGE"])
+        data = Path.home() / ".cache/warm-bench/glove-100-angular/train.f32"
         cls.raw = np.fromfile(data, dtype="<f4", count=10256 * 100).reshape(-1, 100)
         cls.base = HARNESS.normalized(cls.raw[:10240])
         cls.queries = HARNESS.normalized(cls.raw[10240:], query=True)
@@ -35,7 +35,7 @@ class NativeBoundaryChecks(unittest.TestCase):
         np.testing.assert_array_equal(actual, individual)
         self.assertEqual(actual.dtype, np.dtype("int64"))
         self.assertEqual(actual.shape, (16, 10))
-        with tempfile.TemporaryDirectory(dir=os.environ["HMS_NATIVE_TEST_DIR"]) as directory:
+        with tempfile.TemporaryDirectory(dir=os.environ["WARM_NATIVE_TEST_DIR"]) as directory:
             path = Path(directory) / "index.bin"
             self.index.save(str(path))
             loaded = self.bridge.NativeIndex.load(str(path))
@@ -70,7 +70,7 @@ class NativeBoundaryChecks(unittest.TestCase):
                               "seed": HARNESS.SEED, "metric": "inner_product", "by_residual": True}, {"nprobe": 32}),
         }
         for system, (build, search) in configurations.items():
-            with self.subTest(system=system), tempfile.TemporaryDirectory(dir=os.environ["HMS_NATIVE_TEST_DIR"]) as directory:
+            with self.subTest(system=system), tempfile.TemporaryDirectory(dir=os.environ["WARM_NATIVE_TEST_DIR"]) as directory:
                 adapter = HARNESS.Adapter(system, build, self.bridge)
                 adapter.fit(self.base if system == "faiss_ivfpq" else self.base[:512])
                 adapter.configure(search)
@@ -86,7 +86,7 @@ class NativeBoundaryChecks(unittest.TestCase):
 
     def test_recovery_retains_first_gated_attempt_and_rejects_changed_predictions(self):
         labels = self.index.query(self.queries, 10, 128, 32, 0)
-        with tempfile.TemporaryDirectory(dir=os.environ["HMS_NATIVE_TEST_DIR"]) as directory:
+        with tempfile.TemporaryDirectory(dir=os.environ["WARM_NATIVE_TEST_DIR"]) as directory:
             predictions = HARNESS.save_array(labels, directory)
             row = {"point_id": "real-glove-functional-check", "round": 0, "mode": "single_query_loop",
                    "query_start": 0, "query_end": 16, "attempt": 0, "lock_id": "first",
@@ -111,7 +111,7 @@ class NativeBoundaryChecks(unittest.TestCase):
 
     def test_curve_headroom_uses_two_next_depths_on_real_measured_grids(self):
         configurations = {
-            "hms": (512, self.config, [{"ef": depth, "rerank": rerank, "patience": 0}
+            "warm": (512, self.config, [{"ef": depth, "rerank": rerank, "patience": 0}
                                       for depth in [16, 32, 64, 96, 128, 192, 256] for rerank in [16, 32]]),
             "faiss_ivfpq": (10240, {"nlist": 32, "pq_m": 25, "pq_bits": 8, "train_rows": 10240, "niter": 20,
                                    "seed": HARNESS.SEED, "metric": "inner_product", "by_residual": True},
@@ -120,7 +120,7 @@ class NativeBoundaryChecks(unittest.TestCase):
         for system, (count, build, settings) in configurations.items():
             with self.subTest(system=system):
                 adapter = HARNESS.Adapter(system, build, self.bridge)
-                if system == "hms":
+                if system == "warm":
                     adapter.index = self.index
                 else:
                     adapter.fit(self.base[:count])
@@ -142,7 +142,7 @@ class NativeBoundaryChecks(unittest.TestCase):
                 expected = {point["point_id"] for point in seeds}
                 for seed in seeds:
                     search = seed["search_config"]
-                    key = "ef" if system == "hms" else "nprobe"
+                    key = "ef" if system == "warm" else "nprobe"
                     siblings = [point for point in grid if all(point["search_config"][name] == value
                                 for name, value in search.items() if name != key)]
                     larger = sorted((point for point in siblings if point["search_config"][key] > search[key]),

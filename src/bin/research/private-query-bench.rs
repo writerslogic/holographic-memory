@@ -5,13 +5,13 @@
 //! `benchmarks/results/private_query.json`. Run with
 //! `cargo run --release --features private-search --bin private-query-bench`.
 
-use holographic_memory::core::entangled::EntangledHVec;
-use holographic_memory::core::intersection::sparse_intersection_count;
-use holographic_memory::core::private_query::{
-    Client, Params, PublicMatrix, Server, ERROR_SIGMA, ERROR_TAIL, LWE_DIM, SEED_LEN,
-};
 use serde_json::json;
 use std::time::Instant;
+use writerslogic_warm::core::entangled::EntangledHVec;
+use writerslogic_warm::core::intersection::sparse_intersection_count;
+use writerslogic_warm::core::private_query::{
+    Client, Params, PublicMatrix, Server, ERROR_SIGMA, ERROR_TAIL, LWE_DIM, SEED_LEN,
+};
 
 const DIM: usize = 16384;
 const SIZES: [usize; 3] = [1_000, 10_000, 100_000];

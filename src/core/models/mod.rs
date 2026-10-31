@@ -3,7 +3,7 @@
 
 //! On-device model stages (feature `local-models`): Qwen3 embedding, Qwen3 re-ranking and a
 //! Qwen3 instruct LLM for fact extraction and query rewriting, run with candle on the CPU, Metal
-//! (macOS) or CUDA (`--cfg hms_cuda` builds only). Weights load from local directories; this
+//! (macOS) or CUDA (`--cfg warm_cuda` builds only). Weights load from local directories; this
 //! module never downloads anything and makes no network calls.
 
 mod embed;
@@ -101,9 +101,9 @@ pub fn check_revision(source: &ModelSource) -> Result<()> {
 }
 
 /// CUDA when compiled in and present, else Metal when present, else CPU.
-/// `HMS_MODEL_DEVICE=cpu` forces the CPU.
+/// `WARM_MODEL_DEVICE=cpu` forces the CPU.
 pub fn default_device() -> Result<Device> {
-    if std::env::var("HMS_MODEL_DEVICE").is_ok_and(|v| v == "cpu") {
+    if crate::compatibility::var("WARM_MODEL_DEVICE").is_ok_and(|v| v == "cpu") {
         return Ok(Device::Cpu);
     }
     if candle_core::utils::cuda_is_available() {

@@ -1,9 +1,9 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""smolagents: a CodeAgent that remembers and recalls through Holographic Memory.
+"""smolagents: a CodeAgent that remembers and recalls through WARM.
 
-Needs a running hms-server (HMS_URL, default http://127.0.0.1:8080, default --input-dim 384).
+Needs a running warm-server (WARM_URL, default http://127.0.0.1:8080, default --input-dim 384).
 A scripted model stands in for the LLM; use `InferenceClientModel`/`LiteLLMModel` for a real one.
 
     uv run --extra smolagents python examples/smolagents_memory.py
@@ -15,8 +15,8 @@ import uuid
 from smolagents import CodeAgent, Model
 from smolagents.models import ChatMessage
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.smolagents import memory_tools
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.smolagents import memory_tools
 
 
 class Script(Model):
@@ -28,7 +28,7 @@ class Script(Model):
         return ChatMessage(role="assistant", content=f"Thought: next\n<code>\n{self.bodies.pop(0)}\n</code>")
 
 
-config = HmsConfig(url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
+config = WarmConfig(url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
 agent = CodeAgent(
     tools=memory_tools(config, user_id="alice"),
     model=Script(

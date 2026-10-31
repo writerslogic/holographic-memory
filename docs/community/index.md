@@ -1,5 +1,5 @@
 ---
-description: How to ask questions, report bugs, contribute code and docs, and report a security problem for Holographic Memory.
+description: How to ask questions, report bugs, contribute code and docs, and report a security problem for WARM.
 next_steps:
   - title: Governance
     text: Who decides what, and how.
@@ -14,22 +14,22 @@ next_steps:
 
 # Community
 
-HMS is maintained by WritersLogic under an Apache-2.0 license. Everything happens in public on
-[GitHub](https://github.com/writerslogic/holographic-memory).
+WARM is maintained by WritersLogic under an Apache-2.0 license. Everything happens in public on
+[GitHub](https://github.com/writerslogic/warm).
 
 ## Ask and report
 
 | I want to | Go to |
 |---|---|
-| Ask how something works | [Discussions](https://github.com/writerslogic/holographic-memory/discussions), after checking the [FAQ](../reference/faq.md) and the [glossary](../reference/glossary.md) |
-| Report a bug | [Open an issue](https://github.com/writerslogic/holographic-memory/issues/new/choose) with the smallest input that reproduces it, your OS, Rust and Node versions and the enabled Cargo features |
+| Ask how something works | [Discussions](https://github.com/writerslogic/warm/discussions), after checking the [FAQ](../reference/faq.md) and the [glossary](../reference/glossary.md) |
+| Report a bug | [Open an issue](https://github.com/writerslogic/warm/issues/new/choose) with the smallest input that reproduces it, your OS, Rust and Node versions and the enabled Cargo features |
 | Suggest a feature | An issue first, so the approach can be agreed before code is written |
 | Report a vulnerability | Privately, as described in the [security policy](../SECURITY.md). Never in a public issue |
 
 ## Contribute
 
 - Pick an issue labelled
-  [good first issue](https://github.com/writerslogic/holographic-memory/labels/good%20first%20issue).
+  [good first issue](https://github.com/writerslogic/warm/labels/good%20first%20issue).
   Each one names the files involved and how to check the result.
 - Read [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, the checks CI runs and the sign-off
   every commit needs. There is no CLA: you keep your copyright and certify your right to

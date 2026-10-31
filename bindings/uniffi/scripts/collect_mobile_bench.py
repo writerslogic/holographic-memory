@@ -4,7 +4,7 @@
 the repeated runs of the `mobile_bench` example.
 
     uv run python bindings/uniffi/scripts/collect_mobile_bench.py \
-        --target-dir ./.hms-target-mobile --bench-dir /Volumes/hmsram/bench
+        --target-dir ./.warm-target-mobile --bench-dir /Volumes/hmsram/bench
 
 The bench directory should be on a RAM disk or fast flash: on spinning disks the numbers
 measure the disk. Run the Rust example binaries are built first with
@@ -51,19 +51,19 @@ def size(path: Path):
 def sizes(target: Path):
     out = {"android": {}, "apple": {}}
     for abi, triple in ANDROID.items():
-        so = ROOT / "bindings/kotlin/android/src/main/jniLibs" / abi / "libhms_mobile.so"
+        so = ROOT / "bindings/kotlin/android/src/main/jniLibs" / abi / "libwarm_mobile.so"
         out["android"][abi] = {
             "triple": triple,
             "strippedSoBytes": size(so),
-            "staticLibBytes": size(target / triple / "release/libhms_mobile.a"),
+            "staticLibBytes": size(target / triple / "release/libwarm_mobile.a"),
         }
     for triple in APPLE:
         rel = target / triple / "release"
         out["apple"][triple] = {
-            "strippedDylibBytes": size(rel / "libhms_mobile.dylib"),
-            "staticLibBytes": size(rel / "libhms_mobile.a"),
+            "strippedDylibBytes": size(rel / "libwarm_mobile.dylib"),
+            "staticLibBytes": size(rel / "libwarm_mobile.a"),
         }
-    xc = ROOT / "bindings/swift/Frameworks/hms_mobileFFI.xcframework"
+    xc = ROOT / "bindings/swift/Frameworks/warm_mobileFFI.xcframework"
     out["xcframeworkBytes"] = sum(f.stat().st_size for f in xc.rglob("*") if f.is_file()) if xc.exists() else None
     aar = list((ROOT / "bindings/kotlin/android/build/outputs/aar").glob("*release*.aar"))
     out["releaseAarBytes"] = size(aar[0]) if aar else None

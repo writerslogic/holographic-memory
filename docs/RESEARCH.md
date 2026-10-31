@@ -1,6 +1,6 @@
 # Research: Neuro-Symbolic Reasoning with Resonator Networks
 
-This document details the mathematical foundation of the "Resonator Network" implemented in HMS, which allows the system to solve symbolic factorization problems.
+This document details the mathematical foundation of the "Resonator Network" implemented in WARM, which allows the system to solve symbolic factorization problems.
 
 ## The Inverse Product Problem
 
@@ -41,14 +41,14 @@ The system behaves like a hopfield network or a coupled oscillator. It typically
 
 ## Applications
 
-This capability transforms HMS from a passive storage system into an active solver for:
+This capability transforms WARM from a passive storage system into an active solver for:
 *   **Visual Scene Decomposition**: Factorizing a scene vector into (Object, Attribute, Location).
 *   **Language Parsing**: Unpacking sentence structures (Subject, Verb, Object).
 *   **Analogical Mapping**: Solving $A:B :: C:?$.
 
 ## SOTA Retrieval: Sparse-Native Inverted Indexing
 
-As of version 0.2.0, HMS has transitioned its primary retrieval engine from standard ANN techniques (IVF/PQ) to a **Sparse-Native Inverted Index** optimized for the specific sparsity observed in VSA hypervectors.
+As of version 0.2.0, WARM has transitioned its primary retrieval engine from standard ANN techniques (IVF/PQ) to a **Sparse-Native Inverted Index** optimized for the specific sparsity observed in VSA hypervectors.
 
 ### The Problem with Dense ANN (PQ/HNSW) for VSAs
 Standard Approximate Nearest Neighbor (ANN) algorithms like Product Quantization (PQ) are designed for dense embeddings. When applied to ultra-sparse hypervectors ($\rho \approx 1/256$), they introduce significant quantization noise and return scores on incompatible scales, requiring expensive re-ranking.
@@ -65,7 +65,7 @@ The Sparse-Native engine provides a "candidate shortlist" (e.g., Top-1000) for u
 
 ## Deterministic Quantized Substrate (validated)
 
-The resonator dynamics above run on HMS's quantized-phase substrate (`core::PhaseHVec`), where each dimension is a discrete phase index in $\mathbb{Z}_N$ and binding is phase-addition mod $N$. The stored state is therefore an exact, replay-verifiable integer fold of its inputs, not a lossy float embedding.
+The resonator dynamics above run on WARM's quantized-phase substrate (`core::PhaseHVec`), where each dimension is a discrete phase index in $\mathbb{Z}_N$ and binding is phase-addition mod $N$. The stored state is therefore an exact, replay-verifiable integer fold of its inputs, not a lossy float embedding.
 
 A pre-registered experiment (`docs/PREREGISTRATION-binding-readout.md` §20) compared quantized and continuous-phase factorization. The reported accuracy distributions overlap down to 4 bits/dimension across the tested operating range. A 30-seed follow-up spans 4- and 3-bit resolution and $D \in \{512, 1024, 2048\}$; 2-bit shows a deficit near the capacity knee. Overlapping distributions are evidence for these workloads, not a universal equivalence result.
 
@@ -88,12 +88,12 @@ score improvement.
 | [Building Holographic Entanglement by Measurement](https://arxiv.org/abs/2601.21065) | Structured graph interactions and conditional boundary reduction are useful analogies. The constant-time preparation claim concerns a quantum protocol, not a CPU graph query. |
 | [Holographic Banners](https://arxiv.org/abs/2604.02514) | A semiclassical construction relating boundary and interior descriptions; no directly implementable associative-memory shortcut was identified. |
 | [Holographic Knowledge Manifolds](https://arxiv.org/abs/2509.10518) | Withdrawn by its author for significant errors. Its accuracy, speed, and forgetting claims are excluded from implementation evidence. |
-| [Holographic Memory for Zero-Shot Compositional Reasoning in Knowledge Graphs](https://arxiv.org/abs/2606.24948) | An overloaded global bundle can lose second-hop facts even with the correct intermediate entity. This motivates explicit directionality and per-hop accuracy checks; its results do not prove a universal capacity bound. |
-| [Adapting A Vector-Symbolic Memory for Lisp ACT-R](https://arxiv.org/abs/2508.15630) | A partial cue can recover an episode's associated slots. HMS applies this to exact source dependency closure, with budget limits and explicit unresolved links. A separate phase sidecar must beat exact episode indexing before adoption. |
-| [Dense Holographic Associative Memories](https://arxiv.org/abs/2606.18492) | The optical architecture realizes an attention-style associative readout. HMS already has softmax/sparse cleanup; optical material efficiency does not establish CPU speed or eliminate stored codebooks. |
-| [High-Capacity Angularly-Multiplexed Holographic Memory Operating at Single Photon Level](https://arxiv.org/abs/1604.06049) | Independently addressed channels reduce cross-talk while consuming physical degrees of freedom. Software partitions must likewise count their storage and routing cost. |
+| [WARM for Zero-Shot Compositional Reasoning in Knowledge Graphs](https://arxiv.org/abs/2606.24948) | An overloaded global bundle can lose second-hop facts even with the correct intermediate entity. This motivates explicit directionality and per-hop accuracy checks; its results do not prove a universal capacity bound. |
+| [Adapting A Vector-Symbolic Memory for Lisp ACT-R](https://arxiv.org/abs/2508.15630) | A partial cue can recover an episode's associated slots. WARM applies this to exact source dependency closure, with budget limits and explicit unresolved links. A separate phase sidecar must beat exact episode indexing before adoption. |
+| [Dense Holographic Associative Memories](https://arxiv.org/abs/2606.18492) | The optical architecture realizes an attention-style associative readout. WARM already has softmax/sparse cleanup; optical material efficiency does not establish CPU speed or eliminate stored codebooks. |
+| [High-Capacity Angularly-Multiplexed WARM Operating at Single Photon Level](https://arxiv.org/abs/1604.06049) | Independently addressed channels reduce cross-talk while consuming physical degrees of freedom. Software partitions must likewise count their storage and routing cost. |
 | [Divide-Conquer-and-Merge: Memory- and Time-Efficient Holographic Displays](https://arxiv.org/abs/2404.10777) | Partitioned computation motivates bounded working state and streamed codebook access. Its CNN hologram-synthesis measurements are not transferable software speedup estimates. |
-| [Deep-learning-based data page classification for holographic memory](https://arxiv.org/abs/1707.00684) | Robustness to optical page corruption is task-specific. HMS checks corrupted-query parity; introducing a trained image classifier would not solve symbolic factorization. |
+| [Deep-learning-based data page classification for holographic memory](https://arxiv.org/abs/1707.00684) | Robustness to optical page corruption is task-specific. WARM checks corrupted-query parity; introducing a trained image classifier would not solve symbolic factorization. |
 
 The resulting changes optimize exact phase arithmetic, offer packed resonator
 codebooks, preserve directed phase-graph roles, and enrich conversation context

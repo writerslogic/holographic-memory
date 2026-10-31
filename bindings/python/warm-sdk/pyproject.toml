@@ -1,0 +1,118 @@
+[project]
+name = "writerslogic-warm-sdk"
+version = "0.1.3"
+description = "HTTP client and agent-framework adapters for a WritersLogic Adaptive Retention & Memory service"
+authors = [
+    {name = "WritersLogic", email = "david@writerslogic.com"},
+]
+dependencies = [
+    "httpx>=0.27.0",
+    "sniffio>=1.3",
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+
+[project.urls]
+Homepage = "https://writerslogic.com/warm/"
+Documentation = "https://writerslogic.com/warm/docs/"
+Repository = "https://github.com/writerslogic/warm"
+
+[project.optional-dependencies]
+langchain = ["langchain-core>=0.1.0"]
+llamaindex = ["llama-index-core>=0.10.0"]
+haystack = ["haystack-ai>=2.0.0"]
+semantic-kernel = ["semantic-kernel>=1.39.4"]
+dspy = ["dspy-ai>=2.4.0"]
+crewai = ["crewai>=0.28.0"]
+embedchain = ["embedchain>=0.1.114"]
+phidata = ["phidata>=2.4.0"]
+pydantic-ai = ["pydantic-ai>=0.0.14"]
+smolagents = ["smolagents>=1.0.0"]
+import-files = ["numpy>=1.26", "pyarrow>=15", "duckdb>=1.0"]
+import-chroma = ["chromadb>=0.5"]
+import-sqlite-vec = ["sqlite-vec>=0.1.1"]
+import-lancedb = ["lancedb>=0.9", "pyarrow>=15"]
+import-qdrant = ["qdrant-client>=1.9"]
+import-faiss = ["faiss-cpu>=1.8", "numpy>=1.26"]
+import-hnswlib = ["hnswlib>=0.8", "numpy>=1.26"]
+import-annoy = ["annoy>=1.17", "numpy>=1.26"]
+import-pinecone = ["pinecone>=5"]
+import-milvus = ["pymilvus>=2.4"]
+import-pgvector = ["psycopg[binary]>=3.1"]
+import-redis = ["redis>=5"]
+import-mongodb = ["pymongo>=4.6"]
+import-openai = ["openai>=1.40"]
+import-mem0 = ["mem0ai>=0.1,<0.2"]
+import-zep = ["zep-cloud>=2"]
+import-letta = ["letta-client>=0.1"]
+import-llamaindex = ["llama-index-core>=0.10"]
+import-langchain = ["langchain-core>=0.2", "faiss-cpu>=1.8"]
+all = [
+    "langchain-core>=0.1.0",
+    "llama-index-core>=0.10.0",
+    "haystack-ai>=2.0.0",
+    "semantic-kernel>=1.39.4",
+    "dspy-ai>=2.4.0",
+    "crewai>=0.28.0",
+    "embedchain>=0.1.114",
+    "phidata>=2.4.0",
+    "pydantic-ai>=0.0.14",
+    "smolagents>=1.0.0"
+]
+fast = [
+    "orjson>=3.9",
+]
+
+[project.scripts]
+warm-import = "writerslogic_warm_sdk.importers.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["writerslogic_warm_sdk"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+importers-test = [
+    "annoy>=1.17.3",
+    "chromadb>=1.0.0",
+    "duckdb>=1.5.6",
+    "elasticsearch>=9.5.1",
+    "faiss-cpu>=1.15.1",
+    "hnswlib>=0.8.0",
+    "lancedb>=0.40.0",
+    "langchain-community>=0.3.31",
+    "langchain-core>=0.3.86",
+    "letta-client>=1.12.1",
+    "llama-index-core>=0.14.25",
+    "mem0ai>=0.1.115,<0.2",
+    "milvus-lite>=3.2.2",
+    "numpy>=2.2.6",
+    "openai>=1.109.1",
+    "opensearch-py>=3.2.0",
+    "pandas>=2.3.3",
+    "pgvector>=0.5.1",
+    "pinecone>=10.1.0",
+    "psycopg[binary]>=3.3.6",
+    "pyarrow>=25.0.1",
+    "pymilvus>=3.0.2",
+    "pymongo>=4.18.3",
+    "pyvespa>=1.2.9",
+    "qdrant-client>=1.19.1",
+    "redis>=8.1.0",
+    "sqlite-vec>=0.1.9",
+    "weaviate-client>=4.23.1",
+    "zep-cloud>=4.0.0",
+]
+
+[tool.uv]
+# embedchain pins chromadb<0.6, which has known advisories; the importer tests use current chromadb.
+conflicts = [
+    [{ extra = "embedchain" }, { group = "importers-test" }],
+    [{ extra = "all" }, { group = "importers-test" }],
+]

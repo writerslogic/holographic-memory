@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Python surface of the local embedder (feature `local-embed`): `Embedder` and `SemanticIndex`.
-//! Inference runs without the GIL. The companion package `holographic_memory_models`, when
+//! Inference runs without the GIL. The companion package `writerslogic_warm_models`, when
 //! installed, supplies its pinned model pack without a first-use download.
 
 use std::collections::HashMap;
@@ -27,7 +27,7 @@ enum OneOrMany {
 
 /// A directory of model packs installed by the companion package, if any.
 fn companion_dir(py: Python<'_>) -> Option<PathBuf> {
-    let module = py.import("holographic_memory_models").ok()?;
+    let module = py.import("writerslogic_warm_models").ok()?;
     module
         .call_method0("pack_dir")
         .ok()?

@@ -19,10 +19,10 @@ Rust:
 
 ```rust
 use std::sync::Arc;
-use holographic_memory::core::memory_api::*;
-use holographic_memory::HmsCore;
+use writerslogic_warm::core::memory_api::*;
+use writerslogic_warm::WarmCore;
 
-let core = Arc::new(HmsCore::new(4096, Some("./store".into()), None)?);
+let core = Arc::new(WarmCore::new(4096, Some("./store".into()), None)?);
 let memory = Memory::new(core);
 
 memory.remember(RememberInput {
@@ -48,25 +48,25 @@ let why = memory.explain("where does Alice live", "home-1", &RecallOptions::defa
 memory.forget(&ForgetScope::Subject { subject: "alice/city".into() }, &ForgetOptions::default())?;
 ```
 
-Node (`holographic-memory/memory`):
+Node (`writerslogic-warm/memory`):
 
 ```js
-const { HolographicMemorySystem } = require('holographic-memory')
-const { Memory } = require('holographic-memory/memory')
+const { WarmMemorySystem } = require('writerslogic-warm')
+const { Memory } = require('writerslogic-warm/memory')
 
-const memory = new Memory(new HolographicMemorySystem(4096, './store'), { supersession: 'latest-by-subject' })
+const memory = new Memory(new WarmMemorySystem(4096, './store'), { supersession: 'latest-by-subject' })
 await memory.remember('Alice lives in Paris', { subject: 'alice/city', validFrom: new Date('2020-01-01') })
 await memory.remember('Alice lives in Berlin', { subject: 'alice/city', validFrom: new Date('2025-01-01') })
 await memory.recall('where does Alice live')                       // Berlin
 await memory.recall('where does Alice live', { asOf: new Date('2021-06-01') })   // Paris
 ```
 
-Python (`holographic-memory-sdk`, against `hms-server`):
+Python (`writerslogic-warm-sdk`, against `warm-server`):
 
 ```python
-from holographic_sdk import HolographicClient
+from writerslogic_warm_sdk import WarmClient
 
-memory = HolographicClient("http://localhost:8080").memory
+memory = WarmClient("http://localhost:8080").memory
 memory.remember("Alice lives in Paris", subject="alice/city", valid_from=dt.datetime(2020, 1, 1))
 memory.recall("where does Alice live", as_of=dt.datetime(2021, 6, 1), explain=True)
 ```
@@ -167,7 +167,7 @@ the store directory, before reopen, after an abort in a child process, and after
 
 - **Always, before `forget` returns:** the deleted chunks' records in `documents.text` are
   overwritten with zeros and synced. Postings and the memory-API index live in memory and are
-  rebuilt from the journal; no file stores terms. A bare `HmsCore::delete_document` zeroes the
+  rebuilt from the journal; no file stores terms. A bare `WarmCore::delete_document` zeroes the
   records too but leaves their fsync to the next `forget`, purge or compaction (a design that
   synced the text segment in every delete measured about 4 ms instead of 60 us on macOS;
   `benchmarks/results/purge_v1.json`, recorded before journal commits used `F_FULLFSYNC`). The
@@ -197,7 +197,7 @@ purge rebuilds what a delete leaves shaped by history: the text segment and the 
 order, as a reopen lays them out), a published vector snapshot and its graph (with the same
 graph choice, so a purge costs one graph build when the snapshot has one), and the dense
 document index. Compaction
-writes vectors in id order. `HmsCore::revision` and the vector index status `generation`
+writes vectors in id order. `WarmCore::revision` and the vector index status `generation`
 advance by one per mutation from a random value per open, so a reading does not reveal how
 many inserts and deletes came before it. Checked by `tests/forget_equivalence.rs` and by the
 paired-store experiment `forget-experiment` (feature `experimental`; results in
@@ -291,7 +291,7 @@ recency did not beat plain search on either type (best: 1.00/1.00 at a 365-day h
 for knowledge-update; temporal-reasoning 0.88/0.96 for search against at most 0.80/0.88
 with recency). As-of the question date lowers temporal-reasoning recall to 0.76/0.84 because
 this dataset dates some evidence sessions after the question date. The sample is small and
-this is a sanity check, not a result: HMS does not win on temporal reasoning here with
+this is a sanity check, not a result: WARM does not win on temporal reasoning here with
 recency or as-of, and no tuned value is claimed.
 
 ## HTTP, Node and Python
@@ -310,15 +310,15 @@ serde form of the Rust types, unknown fields rejected.
 | `applyForgetting` | `{"includeChain", "dryRun" (default true), "purge"}` | as `forget` |
 | `consolidate` | `{"dryRun" (default true), "allowDestructive"}` | `{"created", "forgotten", "dryRun"}` |
 
-`hms-server` serves them as `POST /api/v1/memory/{op}` with the same tenant header, API key and
+`warm-server` serves them as `POST /api/v1/memory/{op}` with the same tenant header, API key and
 body limits as the document routes. Errors: 422 `invalid_request`, 404 `not_found`, 409
 `conflict`. Embeddings must have the server's `--input-dim` values; without one a fact is
 lexical-only. Policies for every tenant come from `--memory-config <file.json>` (or
-`HMS_MEMORY_CONFIG`), a `MemoryConfig` in JSON, validated at startup.
+`WARM_MEMORY_CONFIG`), a `MemoryConfig` in JSON, validated at startup.
 
-Node: `new Memory(system, config)` from `holographic-memory/memory`; times are `Date` or integer
+Node: `new Memory(system, config)` from `writerslogic-warm/memory`; times are `Date` or integer
 milliseconds, results carry milliseconds, errors are `MemoryError` with `code`. Python:
-`HolographicClient(...).memory` / `AsyncHolographicClient(...).memory` (or `MemoryClient`),
+`WarmClient(...).memory` / `AsyncWarmClient(...).memory` (or `MemoryClient`),
 fully typed with a `memory.pyi` stub; times are `datetime` or integer milliseconds;
 `MemoryError` carries `code` and `status`. The client-side vector mask applies to embeddings
 sent through `remember` and `recall`.
@@ -357,18 +357,18 @@ Source capabilities above do not establish what an older released binary or pack
 
 ## Original conversation evidence (Rust, opt-in)
 
-Build with `--features conversation-memory` for `ConversationMemory`. It owns an `HmsCore`
+Build with `--features conversation-memory` for `ConversationMemory`. It owns an `WarmCore`
 by value; share the wrapper through `Arc` and configure the core before constructing it.
 This keeps one writer responsible for its immutable session/version namespace.
 
 ```rust
-use holographic_memory::core::memory_api::{
+use writerslogic_warm::core::memory_api::{
     ConversationInput, ConversationMemory, ConversationRecallOptions,
     ConversationRole, ConversationTurn,
 };
-use holographic_memory::HmsCore;
+use writerslogic_warm::WarmCore;
 
-let core = HmsCore::new(4096, Some("./conversation-store".into()), None)?;
+let core = WarmCore::new(4096, Some("./conversation-store".into()), None)?;
 let memory = ConversationMemory::new(core)?;
 memory.remember(ConversationInput {
     session_id: "calibration-session".into(),

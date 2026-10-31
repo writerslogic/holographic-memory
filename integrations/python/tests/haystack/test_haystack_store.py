@@ -14,11 +14,11 @@ from haystack.document_stores.types import DuplicatePolicy, FilterPolicy  # noqa
 from haystack.errors import FilterError  # noqa: E402
 from haystack.utils import Secret  # noqa: E402
 
-from holographic_integrations.core import FunctionEmbedder, HashingEmbedder, HmsError  # noqa: E402
-from holographic_integrations.haystack import (  # noqa: E402
-    HolographicDocumentStore, HolographicEmbeddingRetriever, HolographicTextRetriever,
+from writerslogic_warm_integrations.core import FunctionEmbedder, HashingEmbedder, WarmError  # noqa: E402
+from writerslogic_warm_integrations.haystack import (  # noqa: E402
+    WarmDocumentStore, WarmEmbeddingRetriever, WarmTextRetriever,
 )
-from holographic_integrations.haystack import _filters  # noqa: E402
+from writerslogic_warm_integrations.haystack import _filters  # noqa: E402
 
 DIM = 64
 TOPICS = ["astronomy telescope galaxy", "cooking pasta tomato", "football goal striker", "python code compiler"]
@@ -26,7 +26,7 @@ TOPICS = ["astronomy telescope galaxy", "cooking pasta tomato", "football goal s
 
 def make_store(server, **kw):
     kw.setdefault("embedding_dim", DIM)
-    return HolographicDocumentStore(url=server.url, tenant_id=server.tenant(), **kw)
+    return WarmDocumentStore(url=server.url, tenant_id=server.tenant(), **kw)
 
 
 def docs(n=8):
@@ -102,18 +102,18 @@ def test_invalid_filters_raise_even_on_empty_store(server):
 @pytest.mark.parametrize("count", [9, 10, 11])
 def test_enumeration_limit_boundary(server_factory, count):
     srv = server_factory(DIM, max_top_k=10, max_tenants=100000)
-    store = HolographicDocumentStore(url=srv.url, tenant_id=srv.tenant(), embedding_dim=DIM, list_buckets=1, max_fetch=10)
+    store = WarmDocumentStore(url=srv.url, tenant_id=srv.tenant(), embedding_dim=DIM, list_buckets=1, max_fetch=10)
     store.write_documents(docs(count))
     if count < 10:
         assert store.count_documents() == count
     else:
-        with pytest.raises(HmsError, match="list_buckets"):
+        with pytest.raises(WarmError, match="list_buckets"):
             store.count_documents()
 
 
 def test_buckets_extend_enumeration_past_max_fetch(server_factory):
     srv = server_factory(DIM, max_top_k=10, max_tenants=100000)
-    store = HolographicDocumentStore(url=srv.url, tenant_id=srv.tenant(), embedding_dim=DIM, list_buckets=16, max_fetch=10)
+    store = WarmDocumentStore(url=srv.url, tenant_id=srv.tenant(), embedding_dim=DIM, list_buckets=16, max_fetch=10)
     store.write_documents(docs(40))
     assert store.count_documents() == 40
     assert len(store.filter_documents({"field": "meta.n", "operator": ">=", "value": 20})) == 20
@@ -123,8 +123,8 @@ def test_buckets_extend_enumeration_past_max_fetch(server_factory):
 
 def test_collections_share_a_tenant_without_mixing(server):
     tenant = server.tenant()
-    a = HolographicDocumentStore(url=server.url, tenant_id=tenant, collection="a", embedding_dim=DIM)
-    b = HolographicDocumentStore(url=server.url, tenant_id=tenant, collection="b", embedding_dim=DIM)
+    a = WarmDocumentStore(url=server.url, tenant_id=tenant, collection="a", embedding_dim=DIM)
+    b = WarmDocumentStore(url=server.url, tenant_id=tenant, collection="b", embedding_dim=DIM)
     d = Document(id="same", content="shared id")
     a.write_documents([d])
     b.write_documents([Document(id="same", content="other")], DuplicatePolicy.FAIL)
@@ -143,30 +143,30 @@ def test_masked_store_still_retrieves(server):
 
 
 def test_serialization_roundtrip(server, monkeypatch):
-    monkeypatch.setenv("HMS_API_KEY", "secret-from-env")
-    store = HolographicDocumentStore(
+    monkeypatch.setenv("WARM_API_KEY", "secret-from-env")
+    store = WarmDocumentStore(
         url=server.url, tenant_id="abc", collection="c", embedding_dim=DIM, embedder=HashingEmbedder(DIM, bigrams=False),
         list_buckets=8, return_embedding=False,
     )
     data = store.to_dict()
     assert "secret-from-env" not in json.dumps(data)
-    again = HolographicDocumentStore.from_dict(data)
+    again = WarmDocumentStore.from_dict(data)
     assert (again.tenant_id, again.collection, again.list_buckets, again.return_embedding) == ("abc", "c", 8, False)
     assert again.embedder.bigrams is False
-    retriever = HolographicTextRetriever(store, filters={"field": "meta.a", "operator": "==", "value": "b"}, top_k=3)
-    back = HolographicTextRetriever.from_dict(retriever.to_dict())
+    retriever = WarmTextRetriever(store, filters={"field": "meta.a", "operator": "==", "value": "b"}, top_k=3)
+    back = WarmTextRetriever.from_dict(retriever.to_dict())
     assert back.top_k == 3 and back.filters == retriever.filters and back.document_store.collection == "c"
-    emb = HolographicEmbeddingRetriever(store, scale_score=True, filter_policy=FilterPolicy.MERGE)
-    assert HolographicEmbeddingRetriever.from_dict(emb.to_dict()).filter_policy == FilterPolicy.MERGE
+    emb = WarmEmbeddingRetriever(store, scale_score=True, filter_policy=FilterPolicy.MERGE)
+    assert WarmEmbeddingRetriever.from_dict(emb.to_dict()).filter_policy == FilterPolicy.MERGE
     with pytest.raises(ValueError):
-        HolographicDocumentStore(embedder=FunctionEmbedder(lambda texts: [[1.0] * DIM for _ in texts], DIM), embedding_dim=DIM).to_dict()
+        WarmDocumentStore(embedder=FunctionEmbedder(lambda texts: [[1.0] * DIM for _ in texts], DIM), embedding_dim=DIM).to_dict()
 
 
 def test_pipeline_with_retrievers_and_filter_policy(server):
     store = make_store(server)
     store.write_documents(docs(12))
     pipe = Pipeline()
-    pipe.add_component("retriever", HolographicTextRetriever(store, top_k=3, filter_policy=FilterPolicy.MERGE,
+    pipe.add_component("retriever", WarmTextRetriever(store, top_k=3, filter_policy=FilterPolicy.MERGE,
                                                              filters={"field": "meta.topic", "operator": "==", "value": "cooking"}))
     out = pipe.run({"retriever": {"query": "pasta tomato", "filters": {"field": "meta.n", "operator": ">", "value": 4}}})
     got = out["retriever"]["documents"]
@@ -180,14 +180,14 @@ def test_embedding_retriever_cosine_and_scale(server):
     store = make_store(server)
     emb = HashingEmbedder(DIM)
     store.write_documents([Document(content=t, embedding=emb.embed_query(t)) for t in TOPICS])
-    r = HolographicEmbeddingRetriever(store, top_k=2)
+    r = WarmEmbeddingRetriever(store, top_k=2)
     out = r.run(emb.embed_query(TOPICS[2]))["documents"]
     assert out[0].content == TOPICS[2] and out[0].score == pytest.approx(1.0, abs=1e-6)
     scaled = r.run(emb.embed_query(TOPICS[2]), scale_score=True, return_embedding=True)["documents"]
     assert scaled[0].score == pytest.approx(1.0, abs=1e-6) and scaled[0].embedding is not None
     assert r.run(emb.embed_query("x"), top_k=0) == {"documents": []}
     with pytest.raises(ValueError):
-        HolographicEmbeddingRetriever(store, top_k=0)
+        WarmEmbeddingRetriever(store, top_k=0)
 
 
 async def test_async_store_and_components(server):
@@ -196,7 +196,7 @@ async def test_async_store_and_components(server):
         assert await store.write_documents_async(docs(8)) == 8
         assert await store.count_documents_async() == 8
         assert await store.write_documents_async(docs(8), DuplicatePolicy.SKIP) == 0
-        r = HolographicTextRetriever(store, top_k=2)
+        r = WarmTextRetriever(store, top_k=2)
         out = (await r.run_async("python code compiler item3"))["documents"]
         assert out[0].meta["n"] == 3
         assert await store.delete_by_filter_async({"field": "meta.topic", "operator": "==", "value": "python"}) == 2
@@ -216,10 +216,10 @@ def test_text_queries_mode_sends_text_to_service():
         seen.append((request.url.path, body))
         if request.url.path.endswith("/query"):
             return httpx.Response(200, json={"matches": [
-                {"id": "d1", "text": "hello", "metadata": {"_hms_id": "d1", "_hms_collection": "", "k": "v", "hs_bucket": 0}, "score": 0.03}]})
+                {"id": "d1", "text": "hello", "metadata": {"_warm_id": "d1", "_warm_collection": "", "k": "v", "hs_bucket": 0}, "score": 0.03}]})
         return httpx.Response(200, json={"added": len(body)})
 
-    store = HolographicDocumentStore(url="http://svc", embedding_dim=8, text_queries=True, transport=httpx.MockTransport(handler))
+    store = WarmDocumentStore(url="http://svc", embedding_dim=8, text_queries=True, transport=httpx.MockTransport(handler))
     store.write_documents([Document(id="d1", content="hello")], DuplicatePolicy.OVERWRITE)
     [doc] = store.text_retrieval("hello there", top_k=1)
     batch = next(b for p, b in seen if p.endswith("batch"))

@@ -3,8 +3,8 @@
 
 //! Node surface of the local embedder (features `node-api` + `local-embed`): `LocalEmbedder` and
 //! `SemanticIndex`. Inference runs on the blocking pool, never on the JS thread. The optional
-//! package `holographic-memory-models` supplies model packs offline (`index.js` points
-//! `HMS_EMBED_MODEL_DIR` at it).
+//! package `writerslogic-warm-models` supplies model packs offline (`index.js` points
+//! `WARM_EMBED_MODEL_DIR` at it).
 
 use std::sync::Arc;
 

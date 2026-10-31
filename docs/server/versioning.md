@@ -1,4 +1,4 @@
-# hms-server API versioning policy
+# warm-server API versioning policy
 
 The HTTP contract is versioned by path prefix. Everything under `/api/v1` is the v1 contract. The unprefixed operational endpoints (`/healthz`, `/readyz`, `/metrics`, `/openapi.json`) are not versioned and follow the compatibility rules below.
 

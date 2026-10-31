@@ -1,14 +1,14 @@
 [package]
-name = "holographic-memory"
+name = "writerslogic-warm"
 version = "0.6.4"
 edition = "2021"
 rust-version = "1.89"
 license = "Apache-2.0"
 authors = ["WritersLogic, Inc. <david@writerslogic.com>"]
 description = "Local-first search engine and agent memory: fast approximate nearest-neighbor and BM25 full-text search, encrypted stores, provable deletion, built on vector-symbolic architectures."
-repository = "https://github.com/writerslogic/holographic-memory"
-homepage = "https://holographic-memory.com"
-documentation = "https://docs.rs/holographic-memory"
+repository = "https://github.com/writerslogic/warm"
+homepage = "https://writerslogic.com/warm"
+documentation = "https://docs.rs/writerslogic-warm"
 keywords = ["vector-database", "vector-search", "full-text-search", "agent-memory", "rag"]
 categories = ["database-implementations", "text-processing", "algorithms", "data-structures", "science"]
 readme = "README.md"
@@ -94,7 +94,7 @@ candle-nn = { version = "0.11", optional = true }
 candle-transformers = { version = "0.11", optional = true }
 tokenizers = { version = "0.23", default-features = false, features = ["fancy-regex"], optional = true }
 rust-stemmers = "1.2.0"
-# MCP server (`hms-mcp`): the official Rust SDK; client + child-process transport serve the tests.
+# MCP server (`warm-mcp`): the official Rust SDK; client + child-process transport serve the tests.
 rmcp = { version = "3.7", default-features = false, features = ["server", "client", "transport-io", "transport-child-process", "transport-streamable-http-server"], optional = true }
 tokio-util = { version = "0.7", optional = true }
 libm = { version = "0.2", optional = true }
@@ -104,9 +104,9 @@ candle-core = { version = "0.11", features = ["metal"], optional = true }
 candle-nn = { version = "0.11", features = ["metal"], optional = true }
 candle-transformers = { version = "0.11", features = ["metal"], optional = true }
 
-# CUDA for the Modal image only, enabled from outside the crate with RUSTFLAGS="--cfg hms_cuda",
+# CUDA for the Modal image only, enabled from outside the crate with RUSTFLAGS="--cfg warm_cuda",
 # so `--all-features` never needs nvcc.
-[target.'cfg(hms_cuda)'.dependencies]
+[target.'cfg(warm_cuda)'.dependencies]
 candle-core = { version = "0.11", features = ["cuda"], optional = true }
 candle-nn = { version = "0.11", features = ["cuda"], optional = true }
 candle-transformers = { version = "0.11", features = ["cuda"], optional = true }
@@ -122,7 +122,7 @@ tempfile = "3"
 rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring", "pem"] }
 
 [[bench]]
-name = "hms_benchmark"
+name = "warm_benchmark"
 harness = false
 
 [[example]]
@@ -159,7 +159,7 @@ provenance = ["security", "dep:parking_lot", "coset", "ciborium", "bs58", "multi
 provenance-scitt = ["provenance", "ureq"]
 # Experimental VSA research modules (algebraic_codebook, block_codes, bloom_memory,
 # bundle_subset, connection_graph, counting_bloom_memory, operand_retriever,
-# phase_graph), the connection and phase graph hooks on HmsCore, the qgraph
+# phase_graph), the connection and phase graph hooks on WarmCore, the qgraph
 # diagnostics, projection_diagnostic and quantized IVF modules, the capped-union
 # text encoder and the experiment binaries that exercise them. Off by default so
 # they are not part of the published public API.
@@ -179,15 +179,15 @@ local-embed-download = ["local-embed", "ureq"]
 # Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
-# HTTP service for the holographic-memory-sdk Python client (`hms-server` binary).
+# HTTP service for the writerslogic-warm-sdk Python client (`warm-server` binary).
 server = ["dep:parking_lot", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/io-util", "tokio/fs", "tokio/signal", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
-# MCP server over stdio and streamable HTTP (`hms-mcp` binary). Encryption at rest needs `security`;
+# MCP server over stdio and streamable HTTP (`warm-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.
 mcp = ["dep:parking_lot", "dep:rmcp", "dep:tokio-util", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/signal", "cli", "axum", "subtle", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:futures-util", "tokio/io-util", "ureq"]
 
 [[bin]]
-name = "hms-embed"
-path = "src/bin/hms-embed.rs"
+name = "warm-embed"
+path = "src/bin/warm-embed.rs"
 required-features = ["local-embed", "cli"]
 
 [[bin]]
@@ -196,40 +196,40 @@ path = "benchmarks/embedding/embed_store_bench.rs"
 required-features = ["local-embed", "cli"]
 
 [[bin]]
-name = "hms-eval"
-path = "src/bin/hms-eval.rs"
+name = "warm-eval"
+path = "src/bin/warm-eval.rs"
 
 [[bin]]
-name = "hms-admin"
-path = "src/bin/hms-admin.rs"
+name = "warm-admin"
+path = "src/bin/warm-admin.rs"
 required-features = ["cli"]
 
 [[bin]]
-name = "hms-format"
-path = "src/bin/hms-format.rs"
+name = "warm-format"
+path = "src/bin/warm-format.rs"
 required-features = ["cli"]
 
 [[bin]]
-name = "hms-server"
-path = "src/bin/hms-server/main.rs"
+name = "warm-server"
+path = "src/bin/warm-server/main.rs"
 required-features = ["server"]
 
 [[bin]]
-name = "hms-mcp"
-path = "src/bin/hms-mcp.rs"
+name = "warm-mcp"
+path = "src/bin/warm-mcp.rs"
 required-features = ["mcp"]
 
 # Experiment harnesses that depend on `experimental` modules. Declared
 # explicitly so they only build with `--features experimental`. Research drivers
 # under src/bin/research have explicit paths; shipped tools stay in src/bin.
 [[bin]]
-name = "hms-benchmark-suite"
-path = "src/bin/research/hms-benchmark-suite.rs"
+name = "warm-benchmark-suite"
+path = "src/bin/research/warm-benchmark-suite.rs"
 required-features = ["experimental"]
 
 [[bin]]
-name = "hms-scaling"
-path = "src/bin/research/hms-scaling.rs"
+name = "warm-scaling"
+path = "src/bin/research/warm-scaling.rs"
 required-features = ["experimental"]
 
 [[bin]]
@@ -355,7 +355,7 @@ required-features = ["experimental"]
 name = "encoder_version_probe"
 required-features = ["experimental", "cli"]
 
-# cargo-fuzz compiles with --cfg fuzzing (see src/bin/hms-server.rs and fuzz/).
+# cargo-fuzz compiles with --cfg fuzzing (see src/bin/warm-server.rs and fuzz/).
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
 
@@ -379,8 +379,8 @@ path = "src/bin/research/memory-api-bench.rs"
 required-features = ["cli"]
 
 [[bin]]
-name = "hms-workload"
-path = "src/bin/research/hms-workload.rs"
+name = "warm-workload"
+path = "src/bin/research/warm-workload.rs"
 required-features = ["cli"]
 
 [[bin]]
@@ -446,12 +446,12 @@ name = "fixed-point-holographic"
 path = "src/bin/research/fixed-point-holographic.rs"
 
 [[bin]]
-name = "hms-research-bench"
-path = "src/bin/research/hms-research-bench.rs"
+name = "warm-research-bench"
+path = "src/bin/research/warm-research-bench.rs"
 
 [[bin]]
-name = "hms-stress"
-path = "src/bin/research/hms-stress.rs"
+name = "warm-stress"
+path = "src/bin/research/warm-stress.rs"
 
 [[bin]]
 name = "kernel-capacity-sweep"

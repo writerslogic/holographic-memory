@@ -1,5 +1,5 @@
 {
-  "schema": "hms-research-forget/v1",
+  "schema": "warm-research-forget/v1",
   "generated_unix_s": 1792563503,
   "config": {
     "dim": 16384,
@@ -68,7 +68,7 @@
           "max_abs_view_z": 0.6656248985483498,
           "max_abs_count_z": 0.2513129747175485,
           "example": {
-            "schema": "hms-forget/certificate-v1",
+            "schema": "warm-forget/certificate-v1",
             "dim": 16384,
             "tau": 1,
             "counter_bits": 16,
@@ -358,7 +358,7 @@
           "max_abs_view_z": 1.4733539827448623,
           "max_abs_count_z": 1.5559394197463814,
           "example": {
-            "schema": "hms-forget/certificate-v1",
+            "schema": "warm-forget/certificate-v1",
             "dim": 16384,
             "tau": 1,
             "counter_bits": 16,
@@ -648,7 +648,7 @@
           "max_abs_view_z": 1.5368224648620221,
           "max_abs_count_z": 2.5479925481999945,
           "example": {
-            "schema": "hms-forget/certificate-v1",
+            "schema": "warm-forget/certificate-v1",
             "dim": 16384,
             "tau": 1,
             "counter_bits": 16,
@@ -938,7 +938,7 @@
           "max_abs_view_z": 2.989284167998013,
           "max_abs_count_z": 2.5330290991993873,
           "example": {
-            "schema": "hms-forget/certificate-v1",
+            "schema": "warm-forget/certificate-v1",
             "dim": 16384,
             "tau": 1,
             "counter_bits": 16,
@@ -1228,7 +1228,7 @@
           "max_abs_view_z": 0.0,
           "max_abs_count_z": 2.8633422791250447,
           "example": {
-            "schema": "hms-forget/certificate-v1",
+            "schema": "warm-forget/certificate-v1",
             "dim": 16384,
             "tau": 1,
             "counter_bits": 16,
@@ -1518,7 +1518,7 @@
           "max_abs_view_z": 0.0,
           "max_abs_count_z": 3.4568300330952666,
           "example": {
-            "schema": "hms-forget/certificate-v1",
+            "schema": "warm-forget/certificate-v1",
             "dim": 16384,
             "tau": 1,
             "counter_bits": 16,

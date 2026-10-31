@@ -3,7 +3,7 @@
 
 import pytest
 
-import holographic_memory as hm
+import writerslogic_warm as hm
 
 
 @pytest.mark.parametrize("dim,n", [(3, 16), (5, 16), (4, 15), (4, 17)])

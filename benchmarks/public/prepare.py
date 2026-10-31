@@ -6,7 +6,7 @@
 
 ANN sets come from ann-benchmarks (https://ann-benchmarks.com/<name>.hdf5) and ship their own
 ground-truth neighbours. BEIR sets come from the BEIR distribution and are embedded here with a
-pinned sentence-transformers model. Output goes to $HMS_BENCH_DATA (default ~/.cache/hms-bench),
+pinned sentence-transformers model. Output goes to $WARM_BENCH_DATA (default ~/.cache/warm-bench),
 never into the repository.
 
 Layout per dataset directory:
@@ -47,7 +47,7 @@ MODEL_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
 
 
 def root() -> Path:
-    return Path(os.environ.get("HMS_BENCH_DATA", Path.home() / ".cache" / "hms-bench"))
+    return Path(os.environ.get("WARM_BENCH_DATA", Path.home() / ".cache" / "warm-bench"))
 
 
 def fetch(url: str, dest: Path) -> Path:

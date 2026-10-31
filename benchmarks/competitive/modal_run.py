@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Run an hms-bench suite (default heavy: full GloVe-100, SIFT-1M) on Modal, one container per shard.
+"""Run an warm-bench suite (default heavy: full GloVe-100, SIFT-1M) on Modal, one container per shard.
 
   uv run --with modal modal run --detach benchmarks/competitive/modal_run.py --cap-usd 12
   uv run --with modal modal run --detach benchmarks/competitive/modal_run.py --cap-usd 30 \
@@ -34,8 +34,8 @@ CPU, MEM_GIB = 8, 32
 USD_PER_HOUR = CPU * 0.0473 + MEM_GIB * 0.008  # published rates, as in benchmarks/public/ann_modal_confirm.py
 HW_CLASS = "modal-x86_64-8vcpu-32g"
 
-VOL = modal.Volume.from_name("hms-bench-run", create_if_missing=True)
-app = modal.App("hms-bench-run")
+VOL = modal.Volume.from_name("warm-bench-run", create_if_missing=True)
+app = modal.App("warm-bench-run")
 image = (
     modal.Image.debian_slim(python_version="3.13")
     .apt_install("curl", "build-essential", "pkg-config", "time", "git", "openjdk-17-jdk-headless")
@@ -71,10 +71,10 @@ def run(archive: bytes, suite: str, args: list[str], cap_usd: float, tag: str, r
     # different CPUs, and the source-built comparators are compiled for the CPU that runs them.
     results_dir = Path("/vol/results") / tag
     results_dir.mkdir(parents=True, exist_ok=True)
-    env = {**os.environ, "PATH": f"/root/.cargo/bin:{os.environ['PATH']}", "HMS_BENCH_DATA": "/vol/data", "HMS_BENCH_HW_CLASS": HW_CLASS,
-           "HMS_BENCH_WORK": "/tmp/hms-work", "HMS_BENCH_ENVS": "/tmp/hms-envs", "HMS_BENCH_RESULTS": str(results_dir),
-           "HMS_BENCH_COMMIT": revision, "CARGO_TARGET_DIR": "/tmp/target", "CARGO_BUILD_JOBS": str(CPU), "PYTHONUNBUFFERED": "1"}
-    # The profile the harness runs and measures (runner.HMS_PROFILE).
+    env = {**os.environ, "PATH": f"/root/.cargo/bin:{os.environ['PATH']}", "WARM_BENCH_DATA": "/vol/data", "WARM_BENCH_HW_CLASS": HW_CLASS,
+           "WARM_BENCH_WORK": "/tmp/warm-work", "WARM_BENCH_ENVS": "/tmp/warm-envs", "WARM_BENCH_RESULTS": str(results_dir),
+           "WARM_BENCH_COMMIT": revision, "CARGO_TARGET_DIR": "/tmp/target", "CARGO_BUILD_JOBS": str(CPU), "PYTHONUNBUFFERED": "1"}
+    # The profile the harness runs and measures (runner.WARM_PROFILE).
     subprocess.run(["cargo", "build", "--profile", "dist", "--features", "cli,mimalloc", "--bin", "public-bench", "--example", "competitive_text"], cwd=work, env=env, check=True)
     # The cap stops the run gracefully only if it falls before the platform's hard timeout.
     budget_s = min(cap_usd / USD_PER_HOUR * 3600, TIMEOUT_S - 1800) - (time.time() - started)
@@ -83,7 +83,7 @@ def run(archive: bytes, suite: str, args: list[str], cap_usd: float, tag: str, r
     status = "completed"
     with log.open("w") as handle:
         try:
-            subprocess.run(["uv", "run", "--script", "benchmarks/competitive/hms-bench", "run", "--suite", suite, *args], cwd=work, env=env,
+            subprocess.run(["uv", "run", "--script", "benchmarks/competitive/warm-bench", "run", "--suite", suite, *args], cwd=work, env=env,
                            stdout=handle, stderr=subprocess.STDOUT, timeout=max(budget_s, 60), check=True)
         except subprocess.TimeoutExpired:
             status = f"stopped at the ${cap_usd:.2f} cap or the platform timeout"
@@ -97,7 +97,7 @@ def run(archive: bytes, suite: str, args: list[str], cap_usd: float, tag: str, r
 
 
 def shard_args(spec: str) -> list[str]:
-    """`ann:glove-100-angular` or `text:beir:scifact,memory` -> hms-bench run arguments."""
+    """`ann:glove-100-angular` or `text:beir:scifact,memory` -> warm-bench run arguments."""
     only, _, datasets = spec.partition(":")
     return ["--only", only] + (["--datasets", *datasets.split(",")] if datasets else [])
 
@@ -120,7 +120,7 @@ def main(suite: str = "heavy", cap_usd: float = 12.0, only: str = "both", datase
             print("shard failed:", repr(out)[-400:])
             continue
         for name, text in out["results"].items():
-            target = Path.home() / ".cache/hms-bench/competitive/smoke" if name.startswith("smoke-") else dest
+            target = Path.home() / ".cache/warm-bench/competitive/smoke" if name.startswith("smoke-") else dest
             target.mkdir(parents=True, exist_ok=True)
             (target / name).write_text(text)
         print(json.dumps({k: v for k, v in out.items() if k != "results"}, indent=2))

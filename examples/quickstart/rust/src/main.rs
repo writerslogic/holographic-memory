@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, WarmCore, SearchOptions};
 use rusqlite::Connection;
 
 const DIMENSIONS: u32 = 4096;
@@ -74,14 +74,14 @@ fn main() -> Result<()> {
     // 1. Ingest. A store is a directory (`None` would use the current directory); it persists
     // there and reopens with the same arguments.
     let store_dir = tempfile::tempdir()?;
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         DIMENSIONS,
         Some(store_dir.path().display().to_string()),
         None,
     )?;
     let start = Instant::now();
     let inputs: Vec<DocumentInput> = corpus.iter().map(to_input).collect();
-    hms.memorize_documents(inputs)?;
+    warm.memorize_documents(inputs)?;
     println!(
         "ingested {} documents in {:.1?}",
         corpus.len(),
@@ -101,8 +101,8 @@ fn main() -> Result<()> {
     }
 
     // 2. Search both engines with the same queries.
-    println!("\n{:<58} {:<9} {:<9} expected", "query", "HMS", "FTS5");
-    let (mut hms_hits, mut fts_hits) = (0, 0);
+    println!("\n{:<58} {:<9} {:<9} expected", "query", "WARM", "FTS5");
+    let (mut warm_hits, mut fts_hits) = (0, 0);
     for q in &queries {
         let query = q["query"].as_str().context("query")?;
         let expect = q["expect"].as_str().context("expect")?;
@@ -110,8 +110,8 @@ fn main() -> Result<()> {
             k: Some(3),
             ..Default::default()
         };
-        let results = hms.search_documents(query, &options)?;
-        let hms_top = results
+        let results = warm.search_documents(query, &options)?;
+        let warm_top = results
             .first()
             .map_or("-", |r| r.document_id.as_str())
             .to_owned();
@@ -122,23 +122,23 @@ fn main() -> Result<()> {
                 |row| row.get(0),
             )
             .unwrap_or_else(|_| "-".to_owned());
-        hms_hits += usize::from(hms_top == expect);
+        warm_hits += usize::from(warm_top == expect);
         fts_hits += usize::from(fts_top == expect);
-        println!("{query:<58} {hms_top:<9} {fts_top:<9} {expect}");
+        println!("{query:<58} {warm_top:<9} {fts_top:<9} {expect}");
     }
     println!(
-        "top-1 correct: HMS {hms_hits}/{n}, FTS5 {fts_hits}/{n}",
+        "top-1 correct: WARM {warm_hits}/{n}, FTS5 {fts_hits}/{n}",
         n = queries.len()
     );
     ensure!(
-        hms_hits >= 5,
-        "HMS found the expected article for only {hms_hits} queries"
+        warm_hits >= 5,
+        "WARM found the expected article for only {warm_hits} queries"
     );
     // --8<-- [end:compare]
 
     // --8<-- [start:hit]
     // Hits carry the passage and its byte range in the source text.
-    let hit = &hms.search_documents("asylum from persecution", &SearchOptions::default())?[0];
+    let hit = &warm.search_documents("asylum from persecution", &SearchOptions::default())?[0];
     println!(
         "\n{} bytes {}..{} score {:.3}: {}",
         hit.document_id,
@@ -153,11 +153,11 @@ fn main() -> Result<()> {
     // 3. Encrypt: the same corpus in a persistent store with AES-256-GCM (Argon2id key).
     let secret_dir = tempfile::tempdir()?;
     let secret_path = secret_dir.path().display().to_string();
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.security.encryption_enabled = true;
     config.security.encryption_passphrase = Some("correct horse battery staple".into());
 
-    let sealed = HmsCore::new(DIMENSIONS, Some(secret_path.clone()), Some(config.clone()))?;
+    let sealed = WarmCore::new(DIMENSIONS, Some(secret_path.clone()), Some(config.clone()))?;
     sealed.memorize_documents(corpus.iter().map(to_input).collect())?;
     sealed.flush()?;
     println!("\nsecurity status: {}", sealed.security_status());
@@ -170,13 +170,13 @@ fn main() -> Result<()> {
     ensure!(leaks.is_empty(), "plaintext passage found in {leaks:?}");
     println!("no store file holds the passage text");
 
-    let reopened = HmsCore::new(DIMENSIONS, Some(secret_path.clone()), Some(config.clone()))?;
+    let reopened = WarmCore::new(DIMENSIONS, Some(secret_path.clone()), Some(config.clone()))?;
     let hit = &reopened.search_documents("paid holidays", &SearchOptions::default())?[0];
     println!("reopened with the passphrase, top hit: {}", hit.document_id);
     drop(reopened);
 
     config.security.encryption_passphrase = Some("wrong passphrase".into());
-    let Err(error) = HmsCore::new(DIMENSIONS, Some(secret_path), Some(config)) else {
+    let Err(error) = WarmCore::new(DIMENSIONS, Some(secret_path), Some(config)) else {
         anyhow::bail!("opening with the wrong passphrase must fail");
     };
     println!("opening with a wrong passphrase fails: {error}");

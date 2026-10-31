@@ -3,7 +3,7 @@
 
 // Screenshots of the landing page and one documentation page at desktop, tablet and phone
 // widths in light and dark. Usage: node shots.mjs <site-root> <out-dir> [path ...]
-// The site must have been built with HMS_SITE_URL pointing at http://127.0.0.1:<port>/<version>/.
+// The site must have been built with WARM_SITE_URL pointing at http://127.0.0.1:<port>/<version>/.
 import { mkdir } from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { serve } from './serve.mjs'

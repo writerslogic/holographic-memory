@@ -2,28 +2,28 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::core::audit::AuditOp;
-use crate::core::engine::HmsCore;
+use crate::core::engine::WarmCore;
 use crate::core::security::SigningManager;
 
 #[test]
 fn test_signed_audit_entries() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.security.signing_enabled = true;
     config.security.audit_enabled = true;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
     )
     .unwrap();
 
-    let v = hms.encode_text("signed audit test");
-    hms.memorize("sig_1".to_string(), v).unwrap();
-    hms.delete("sig_1").unwrap();
+    let v = warm.encode_text("signed audit test");
+    warm.memorize("sig_1".to_string(), v).unwrap();
+    warm.delete("sig_1").unwrap();
 
-    let entries = hms.audit_since(0).unwrap();
+    let entries = warm.audit_since(0).unwrap();
     assert_eq!(entries.len(), 2);
 
     // All entries should be signed (non-zero signature)
@@ -47,22 +47,22 @@ fn test_signed_audit_entries() {
 #[test]
 fn test_signed_compact_audit() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.security.signing_enabled = true;
     config.security.audit_enabled = true;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
     )
     .unwrap();
 
-    let v = hms.encode_text("compact signed");
-    hms.memorize("cs_1".to_string(), v).unwrap();
-    hms.compact().unwrap();
+    let v = warm.encode_text("compact signed");
+    warm.memorize("cs_1".to_string(), v).unwrap();
+    warm.compact().unwrap();
 
-    let entries = hms.audit_since(0).unwrap();
+    let entries = warm.audit_since(0).unwrap();
     let compact_entry = entries.iter().find(|e| e.op == AuditOp::Compact).unwrap();
     assert_ne!(compact_entry.signature, [0u8; 64]);
 
@@ -82,28 +82,28 @@ fn test_encrypted_arena_roundtrip() {
     let path = dir.path().to_string_lossy().to_string();
 
     {
-        let mut config = crate::core::config::HmsConfig::default();
+        let mut config = crate::core::config::WarmConfig::default();
         config.security.encryption_enabled = true;
         config.security.encryption_passphrase = Some("test-passphrase-123".to_string());
 
-        let hms = HmsCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
-        let v = hms.encode_text("encrypted data");
-        hms.memorize("enc_1".to_string(), v).unwrap();
-        let v2 = hms.encode_text("more encrypted data");
-        hms.memorize("enc_2".to_string(), v2).unwrap();
-        assert_eq!(hms.vector_count(), 2);
+        let warm = WarmCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
+        let v = warm.encode_text("encrypted data");
+        warm.memorize("enc_1".to_string(), v).unwrap();
+        let v2 = warm.encode_text("more encrypted data");
+        warm.memorize("enc_2".to_string(), v2).unwrap();
+        assert_eq!(warm.vector_count(), 2);
     }
 
     // Reopen with same passphrase — should decrypt and recover
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.security.encryption_enabled = true;
     config.security.encryption_passphrase = Some("test-passphrase-123".to_string());
 
-    let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
-    assert_eq!(hms.vector_count(), 2);
+    let warm = WarmCore::new(10_000, Some(path), Some(config)).unwrap();
+    assert_eq!(warm.vector_count(), 2);
 
-    let q = hms.encode_text("encrypted data");
-    let results = hms.query(&q, 1);
+    let q = warm.encode_text("encrypted data");
+    let results = warm.query(&q, 1);
     assert_eq!(results[0].id, "enc_1");
 }
 
@@ -112,23 +112,23 @@ fn test_encrypted_compact_roundtrip() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().to_string_lossy().to_string();
 
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.security.encryption_enabled = true;
     config.security.encryption_passphrase = Some("compact-test".to_string());
 
-    let hms = HmsCore::new(10_000, Some(path.clone()), Some(config.clone())).unwrap();
+    let warm = WarmCore::new(10_000, Some(path.clone()), Some(config.clone())).unwrap();
     for i in 0..10 {
-        let v = hms.encode_text(&format!("encrypted compact {}", i));
-        hms.memorize(format!("ec_{}", i), v).unwrap();
+        let v = warm.encode_text(&format!("encrypted compact {}", i));
+        warm.memorize(format!("ec_{}", i), v).unwrap();
     }
     for i in 0..5 {
-        hms.delete(&format!("ec_{}", i)).unwrap();
+        warm.delete(&format!("ec_{}", i)).unwrap();
     }
-    hms.compact().unwrap();
-    assert_eq!(hms.vector_count(), 5);
+    warm.compact().unwrap();
+    assert_eq!(warm.vector_count(), 5);
 
     // Reopen after compaction
-    drop(hms);
-    let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
-    assert_eq!(hms.vector_count(), 5);
+    drop(warm);
+    let warm = WarmCore::new(10_000, Some(path), Some(config)).unwrap();
+    assert_eq!(warm.vector_count(), 5);
 }

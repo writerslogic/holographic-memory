@@ -3,7 +3,7 @@
 
 """LiteLLM: OpenAI-format memory tools and a tool loop.
 
-Needs a running hms-server (HMS_URL, default http://127.0.0.1:8080, default --input-dim 384).
+Needs a running warm-server (WARM_URL, default http://127.0.0.1:8080, default --input-dim 384).
 LiteLLM's `mock_*` arguments stand in for the LLM, one scripted turn per call; drop the
 wrapper and pass a real `model=` to use a provider.
 
@@ -16,10 +16,10 @@ import uuid
 
 import litellm
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.litellm import MemoryTools
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.litellm import MemoryTools
 
-config = HmsConfig(url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
+config = WarmConfig(url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
 tools = MemoryTools(config, user_id="alice")
 
 turns = iter([

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """x86 confirmation of the 1A kernel and build levers on Modal (1A, replaces the blocked GCE run).
 
-  modal volume create hms-ann-confirm
-  modal volume put hms-ann-confirm ~/.cache/hms-bench/glove-100-angular /glove-100-angular
+  modal volume create warm-ann-confirm
+  modal volume put warm-ann-confirm ~/.cache/warm-bench/glove-100-angular /glove-100-angular
   uv run --with modal modal run --detach benchmarks/public/ann_modal_confirm.py \
       --baseline a46108c --tip <sha> --cap-usd 10
 
@@ -43,8 +43,8 @@ CONFIG = [
     "--holdout", "2000", "--max-load", "1000", "--max-wait-secs", "0",
 ]
 
-VOL = modal.Volume.from_name("hms-ann-confirm", create_if_missing=True)
-app = modal.App("hms-ann-confirm")
+VOL = modal.Volume.from_name("warm-ann-confirm", create_if_missing=True)
+app = modal.App("warm-ann-confirm")
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("curl", "build-essential", "pkg-config", "time")

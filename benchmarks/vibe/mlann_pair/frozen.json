@@ -3,7 +3,7 @@
   "created_utc": "2026-10-22T17:04:34.744675+00:00",
   "source_sha": "e0c8096f7cad6c297eafdacc63b13057daf7852c",
   "primary_vibe_sha": "7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c",
-  "selection": "fixed RF80/depth13 prior reference; supplemental CPU comparator, no new HMS intervention",
+  "selection": "fixed RF80/depth13 prior reference; supplemental CPU comparator, no new WARM intervention",
   "constructor": {
     "metric": "ip",
     "trees": 80,

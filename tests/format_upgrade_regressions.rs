@@ -3,7 +3,7 @@
 
 mod format_common;
 use format_common::goldens;
-use holographic_memory::core::format::{upgrade_store, verify_path, Verdict, VerifyOptions};
+use writerslogic_warm::core::format::{upgrade_store, verify_path, Verdict, VerifyOptions};
 
 #[test]
 fn mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
@@ -37,8 +37,8 @@ fn mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
 #[test]
 fn scanner_rejects_incomplete_stored_triple() {
     let input = br#"[{"StoredTriple":{}}]"#;
-    let mut replay = holographic_memory::core::format::scan::Replay::default();
-    assert!(holographic_memory::core::format::scan::check_transaction(
+    let mut replay = writerslogic_warm::core::format::scan::Replay::default();
+    assert!(writerslogic_warm::core::format::scan::check_transaction(
         input,
         Some(256),
         &mut replay
@@ -50,7 +50,7 @@ fn scanner_rejects_incomplete_stored_triple() {
 fn nul_prefixed_document_survives_compaction() -> anyhow::Result<()> {
     let root = tempfile::tempdir()?;
     let path = root.path().display().to_string();
-    let core = holographic_memory::HmsCore::new(256, Some(path.clone()), None)?;
+    let core = writerslogic_warm::WarmCore::new(256, Some(path.clone()), None)?;
     let input = serde_json::from_value(serde_json::json!({
         "id": "live", "text": format!("{}live searchable text", "\0".repeat(16))
     }))?;
@@ -58,7 +58,7 @@ fn nul_prefixed_document_survives_compaction() -> anyhow::Result<()> {
     assert!(core.has_document("live"));
     core.compact()?;
     drop(core);
-    let core = holographic_memory::HmsCore::new(256, Some(path), None)?;
+    let core = writerslogic_warm::WarmCore::new(256, Some(path), None)?;
     assert!(
         core.has_document("live"),
         "unscrubbed live document was discarded during compaction"
@@ -89,7 +89,7 @@ fn verify_agrees_with_replay_on_missing_fields() -> anyhow::Result<()> {
         .open(&segment)?
         .set_len(len)?;
     let report = verify_path(&store, &VerifyOptions::default())?;
-    let opened = holographic_memory::HmsCore::new(
+    let opened = writerslogic_warm::WarmCore::new(
         fixture.dimensions(),
         Some(store.display().to_string()),
         Some(fixture.config()?),
@@ -133,7 +133,7 @@ fn recoverable_current_tenant_does_not_block_data_dir_upgrade() -> anyhow::Resul
     assert_eq!(verification.frames, before.frames);
     let tenant = output.join("tenants/6e6577");
     assert!(tenant.join("vectors_data.bin/seg_0.bin").is_file());
-    let core = holographic_memory::HmsCore::new(
+    let core = writerslogic_warm::WarmCore::new(
         current.dimensions(),
         Some(tenant.display().to_string()),
         Some(current.config()?),
@@ -150,7 +150,7 @@ fn recoverable_current_tenant_does_not_block_data_dir_upgrade() -> anyhow::Resul
 #[test]
 fn schema_only_upgrade_preserves_checkpoint_and_source_bytes() -> anyhow::Result<()> {
     use format_common::{check_expectations, file_fingerprints};
-    use holographic_memory::core::format::{plan_upgrade, STORE_SCHEMA_VERSION};
+    use writerslogic_warm::core::format::{plan_upgrade, STORE_SCHEMA_VERSION};
     let root = tempfile::tempdir()?;
     let source = root.path().join("source");
     let output = root.path().join("output");
@@ -179,7 +179,7 @@ fn schema_only_upgrade_preserves_checkpoint_and_source_bytes() -> anyhow::Result
         file_fingerprints(&source.join("vectors_data.bin"))?,
         file_fingerprints(&output.join("vectors_data.bin"))?
     );
-    let core = holographic_memory::HmsCore::new(
+    let core = writerslogic_warm::WarmCore::new(
         fixture.dimensions(),
         Some(output.display().to_string()),
         Some(fixture.config()?),
@@ -190,15 +190,15 @@ fn schema_only_upgrade_preserves_checkpoint_and_source_bytes() -> anyhow::Result
 
 #[test]
 fn old_schema_governance_requires_explicit_upgrade() -> anyhow::Result<()> {
-    use holographic_memory::core::HmsConfig;
-    use holographic_memory::{EntangledHVec, HmsCore};
+    use writerslogic_warm::core::WarmConfig;
+    use writerslogic_warm::{EntangledHVec, WarmCore};
     let root = tempfile::tempdir()?;
     let source = root.path().join("source");
     let output = root.path().join("output");
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.meaning.enabled = true;
     config.cognition.governor_forget_unreferenced = true;
-    drop(HmsCore::new(
+    drop(WarmCore::new(
         256,
         Some(source.display().to_string()),
         Some(config.clone()),
@@ -212,7 +212,7 @@ fn old_schema_governance_requires_explicit_upgrade() -> anyhow::Result<()> {
         source.join("store.json.crc32"),
         format!("{:08x}\n", crc32fast::hash(&bytes)),
     )?;
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         256,
         Some(source.display().to_string()),
         Some(config.clone()),
@@ -223,7 +223,7 @@ fn old_schema_governance_requires_explicit_upgrade() -> anyhow::Result<()> {
         .govern_memory()
         .unwrap_err()
         .to_string()
-        .contains("hms-format upgrade"));
+        .contains("warm-format upgrade"));
     assert_eq!(core.revision(), revision);
     assert_eq!(core.meaning_atom_count(), 1);
     drop(core);
@@ -232,7 +232,7 @@ fn old_schema_governance_requires_explicit_upgrade() -> anyhow::Result<()> {
         4
     );
     upgrade_store(&source, &output, false)?;
-    let core = HmsCore::new(256, Some(output.display().to_string()), Some(config))?;
+    let core = WarmCore::new(256, Some(output.display().to_string()), Some(config))?;
     core.govern_memory()?;
     assert_eq!(core.meaning_atom_count(), 0);
     assert_eq!(core.vector_count(), 1);

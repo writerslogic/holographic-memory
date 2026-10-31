@@ -425,8 +425,8 @@ pub fn phase_resonator_factorize(
 /// into any composite `bind(f1, ..., fk)` from the composite alone.
 ///
 /// ```
-/// use holographic_memory::core::phase_hvec::PhaseHVec;
-/// use holographic_memory::core::PhaseResonator;
+/// use writerslogic_warm::core::phase_hvec::PhaseHVec;
+/// use writerslogic_warm::core::PhaseResonator;
 ///
 /// // Three factor codebooks (e.g. subject / relation / object alphabets),
 /// // each 6 entries at 8-bit phase resolution in D = 1024.

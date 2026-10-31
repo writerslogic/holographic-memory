@@ -190,7 +190,7 @@ impl NativeIndex {
 }
 
 #[pymodule]
-fn hms_native_bridge(module: &Bound<'_, PyModule>) -> PyResult<()> {
+fn warm_native_bridge(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativeIndex>()?;
     Ok(())
 }

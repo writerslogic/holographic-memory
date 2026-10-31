@@ -10,9 +10,9 @@ import run_glove_local_diagnosis as base
 import run_glove_prepared_diagnosis as monitor
 
 
-ROOT = Path("/Volumes/A/hms-coordination/benchmark-improvement-20261024/vector-glove-query-diagnosis-v1")
+ROOT = Path("/Volumes/A/warm-coordination/benchmark-improvement-20261024/vector-glove-query-diagnosis-v1")
 INPUT = base.ROOT / "input"
-INDEX = base.ROOT.with_name("vector-glove-local-diagnosis-attempt5") / "plain.hms"
+INDEX = base.ROOT.with_name("vector-glove-local-diagnosis-attempt5") / "plain.warm"
 FILES = ["Cargo.toml", "Cargo.lock", "benchmarks/public/vector_glove_development.rs", "benchmarks/public/analyze_glove_development.py", "benchmarks/public/run_glove_development.py", "benchmarks/public/run_glove_local_diagnosis.py", "benchmarks/public/run_glove_prepared_diagnosis.py"]
 
 
@@ -69,7 +69,7 @@ def main():
         "limits": {"compile_s": 600, "native_s": 180, "overall_s": 900, "compile_sampled_tree_rss_gib": 4, "native_sampled_tree_rss_gib": 2},
         "memory_scope": "Sampled child-tree RSS approximately200ms, not peak/unique memory or strict OS enforcement; controller/preparation/sampler excluded",
         "test_scope": "Only new harness binary tests; CI opt1/debug0 test profile; build+test command shares compile guard",
-        "lock": str(Path.home() / "hms-timing.lock"), "official_test_arrays_read": False,
+        "lock": str(Path.home() / "warm-timing.lock"), "official_test_arrays_read": False,
         "timing_interpretation": "Within-process repeated development queries only. Separate-process/hardware uncertainty absent. Exact truth uses exhaustive f64 cosine from original f32 rows.",
     }
     base.save(ROOT / "plan.json", plan)
@@ -79,11 +79,11 @@ def main():
         target = archive / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(base.TREE / name, target)
-    lock = (Path.home() / "hms-timing.lock").open("a+")
+    lock = (Path.home() / "warm-timing.lock").open("a+")
     base.fcntl.flock(lock, base.fcntl.LOCK_EX | base.fcntl.LOCK_NB)
     try:
         deadline = time.monotonic() + 900
-        with Path("/Volumes/A/hms-coordination/RUN-ALL.md").open("a") as coordination:
+        with Path("/Volumes/A/warm-coordination/RUN-ALL.md").open("a") as coordination:
             coordination.write(f"\n{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} Vector development harness owner acquired local timing flock for query-only exactS diagnosis; plan {ROOT / 'plan.json'}. Existing train-only fixture/attempt5 serialized index; one compile job/Rayon thread,4GiB compile and2GiB native sampledRSS,600scompile/180snative/900stotal. No candidate, official arrays, remote action or lexical work.\n")
         if subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=base.TREE, text=True).strip() != base.SOURCE:
             raise RuntimeError("wrong source revision")

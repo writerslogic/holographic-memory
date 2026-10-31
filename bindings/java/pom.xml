@@ -7,12 +7,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.writerslogic</groupId>
-  <artifactId>holographic-memory</artifactId>
+  <artifactId>writerslogic-warm</artifactId>
   <version>0.1.0</version>
   <packaging>jar</packaging>
-  <name>Holographic Memory</name>
-  <description>Java 22+ binding (Foreign Function and Memory API, no JNI) for the Holographic Memory System document store.</description>
-  <url>https://github.com/writerslogic/holographic-memory</url>
+  <name>WARM</name>
+  <description>Java 22+ binding (Foreign Function and Memory API, no JNI) for the WritersLogic Adaptive Retention &amp; Memory document store.</description>
+  <url>https://github.com/writerslogic/warm</url>
   <licenses>
     <license>
       <name>Apache-2.0</name>
@@ -20,8 +20,8 @@
     </license>
   </licenses>
   <scm>
-    <url>https://github.com/writerslogic/holographic-memory</url>
-    <connection>scm:git:https://github.com/writerslogic/holographic-memory.git</connection>
+    <url>https://github.com/writerslogic/warm</url>
+    <connection>scm:git:https://github.com/writerslogic/warm.git</connection>
   </scm>
 
   <properties>
@@ -29,9 +29,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>5.11.4</junit.version>
     <!-- Directory holding the built native library (cargo's release dir by default). -->
-    <hms.native.dir>${project.basedir}/../c/target/release</hms.native.dir>
+    <warm.native.dir>${project.basedir}/../c/target/release</warm.native.dir>
     <!-- Directory of per-platform native libraries to bundle, laid out as <rid>/<library>. -->
-    <hms.bundle.dir>${project.basedir}/natives</hms.bundle.dir>
+    <warm.bundle.dir>${project.basedir}/natives</warm.bundle.dir>
   </properties>
 
   <dependencies>
@@ -46,7 +46,7 @@
   <build>
     <resources>
       <resource>
-        <directory>${hms.bundle.dir}</directory>
+        <directory>${warm.bundle.dir}</directory>
         <targetPath>META-INF/native</targetPath>
         <filtering>false</filtering>
       </resource>
@@ -71,7 +71,7 @@
           <argLine>--enable-native-access=ALL-UNNAMED</argLine>
           <forkedProcessTimeoutInSeconds>120</forkedProcessTimeoutInSeconds>
           <systemPropertyVariables>
-            <hms.library.path>${hms.native.dir}</hms.library.path>
+            <warm.library.path>${warm.native.dir}</warm.library.path>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -83,7 +83,7 @@
           <archive>
             <manifestEntries>
               <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
-              <Automatic-Module-Name>com.writerslogic.holographicmemory</Automatic-Module-Name>
+              <Automatic-Module-Name>com.writerslogic.warm</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

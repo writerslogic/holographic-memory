@@ -9,7 +9,7 @@ Security fixes are applied to `main`; there is no long-term support branch yet.
 **Please do not report security vulnerabilities through public GitHub issues.**
 
 Open a private advisory via
-[GitHub Security Advisories](https://github.com/writerslogic/holographic-memory/security/advisories/new),
+[GitHub Security Advisories](https://github.com/writerslogic/warm/security/advisories/new),
 or email **admin@writerslogic.com**.
 
 Please include a description of the vulnerability and its impact, steps to reproduce (without real

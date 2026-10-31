@@ -12,8 +12,8 @@ import pytest
 
 mem0 = pytest.importorskip("mem0")
 
-from holographic_integrations.core import HashingEmbedder, HmsConfig  # noqa: E402
-from holographic_integrations.mem0 import Memory as ShimMemory  # noqa: E402
+from writerslogic_warm_integrations.core import HashingEmbedder, WarmConfig  # noqa: E402
+from writerslogic_warm_integrations.mem0 import Memory as ShimMemory  # noqa: E402
 
 DIM = 64
 
@@ -72,7 +72,7 @@ def scenario(m):
 
 
 def test_result_shapes_match_real_mem0(real, server):
-    shim = ShimMemory(hms=HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM)))
+    shim = ShimMemory(warm=WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM)))
     a, b = scenario(real), scenario(shim)
     for key in a:
         assert shapes(a[key]) == shapes(b[key]), key

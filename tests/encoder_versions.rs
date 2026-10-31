@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::Result;
-use holographic_memory::core::{admin::reencode_documents, encoding::TextEncoder, HmsConfig};
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
+use writerslogic_warm::core::{admin::reencode_documents, encoding::TextEncoder, WarmConfig};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
-fn config(encoder: TextEncoder) -> HmsConfig {
-    HmsConfig {
+fn config(encoder: TextEncoder) -> WarmConfig {
+    WarmConfig {
         text_encoder: encoder,
         ..Default::default()
     }
@@ -41,7 +41,7 @@ fn encoders_match_prechange_vectors_at_density_boundaries() -> Result<()> {
         }
         for dim in [1, 255, 256, 257, 1024, 4096, 16384] {
             let dir = tempfile::tempdir()?;
-            let hms = HmsCore::new(
+            let warm = WarmCore::new(
                 dim,
                 Some(dir.path().display().to_string()),
                 Some(config(encoder)),
@@ -54,7 +54,7 @@ fn encoders_match_prechange_vectors_at_density_boundaries() -> Result<()> {
                         unreachable!("not in the golden list")
                     }
                 };
-                let actual = hms.encode_text(&row.text);
+                let actual = warm.encode_text(&row.text);
                 assert_eq!(actual.indices(), expected, "{encoder:?}, D{dim}");
                 assert!(actual.indices().len() <= (dim as usize / 256).max(1));
                 assert!(actual.indices().windows(2).all(|pair| pair[0] < pair[1]));
@@ -72,7 +72,7 @@ fn capped_union_requires_experimental_before_creating_a_store() -> Result<()> {
     }
     let dir = tempfile::tempdir()?;
     let target = dir.path().join("unavailable");
-    let error = HmsCore::new(
+    let error = WarmCore::new(
         1024,
         Some(target.display().to_string()),
         Some(config(TextEncoder::MultiscaleCappedUnionV1)),
@@ -94,17 +94,17 @@ fn words_v2_requires_explicit_reencoding_and_survives_reopen() -> Result<()> {
         "manual",
         "Café records explain backups and safe recovery steps.",
     );
-    let old = HmsCore::new(1024, Some(original.display().to_string()), None)?;
+    let old = WarmCore::new(1024, Some(original.display().to_string()), None)?;
     old.memorize_document(input.clone())?;
     let before = serde_json::to_value(old.search_documents("backups", &SearchOptions::default())?)?;
     drop(old);
     let schema = std::fs::read(original.join("store.json"))?;
     let v2 = config(TextEncoder::MultiscaleWordsV2);
-    assert!(HmsCore::new(1024, Some(original.display().to_string()), Some(v2.clone())).is_err());
+    assert!(WarmCore::new(1024, Some(original.display().to_string()), Some(v2.clone())).is_err());
     assert_eq!(std::fs::read(original.join("store.json"))?, schema);
     std::fs::write(&source, format!("{}\n", serde_json::to_string(&input)?))?;
     reencode_documents(&source, &destination, 1024, v2.clone())?;
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         1024,
         Some(destination.display().to_string()),
         Some(v2.clone()),
@@ -116,13 +116,13 @@ fn words_v2_requires_explicit_reencoding_and_survives_reopen() -> Result<()> {
     let vector = core.encode_text(&input.text);
     core.compact()?;
     drop(core);
-    let core = HmsCore::new(1024, Some(destination.display().to_string()), Some(v2))?;
+    let core = WarmCore::new(1024, Some(destination.display().to_string()), Some(v2))?;
     assert_eq!(core.encode_text(&input.text).indices(), vector.indices());
     assert!(core
         .query(&vector, 10)
         .iter()
         .any(|hit| hit.similarity > 0.0));
-    assert!(HmsCore::new(1024, Some(destination.display().to_string()), None).is_err());
+    assert!(WarmCore::new(1024, Some(destination.display().to_string()), None).is_err());
     assert_eq!(std::fs::read(original.join("store.json"))?, schema);
     Ok(())
 }
@@ -143,18 +143,18 @@ fn incompatible_encoders_preserve_schema_and_recover_after_compaction() -> Resul
                 "manual",
                 "Café records explain backups and safe recovery steps.",
             );
-            let chunks = holographic_memory::chunk_document(&input)?;
-            let hms = HmsCore::new(dim, Some(path.clone()), Some(config(encoder)))?;
-            hms.memorize_document(input)?;
+            let chunks = writerslogic_warm::chunk_document(&input)?;
+            let warm = WarmCore::new(dim, Some(path.clone()), Some(config(encoder)))?;
+            warm.memorize_document(input)?;
             for chunk in &chunks {
-                let found = hms.query(&hms.encode_text(&chunk.text), 100);
+                let found = warm.query(&warm.encode_text(&chunk.text), 100);
                 assert!(found
                     .iter()
                     .any(|r| r.id == chunk.id && r.similarity == 1.0));
             }
-            let before = hms.search_documents("backups", &SearchOptions::default())?;
-            hms.compact()?;
-            drop(hms);
+            let before = warm.search_documents("backups", &SearchOptions::default())?;
+            warm.compact()?;
+            drop(warm);
             let schema = std::fs::read(dir.path().join("store.json"))?;
             let other = match encoder {
                 TextEncoder::MultiscaleWordsV1 => TextEncoder::MultiscaleCappedUnionV1,
@@ -162,16 +162,16 @@ fn incompatible_encoders_preserve_schema_and_recover_after_compaction() -> Resul
                 | TextEncoder::LocalEmbedV1
                 | TextEncoder::MultiscaleWordsV2 => TextEncoder::MultiscaleWordsV1,
             };
-            assert!(HmsCore::new(dim, Some(path.clone()), Some(config(other))).is_err());
+            assert!(WarmCore::new(dim, Some(path.clone()), Some(config(other))).is_err());
             assert_eq!(std::fs::read(dir.path().join("store.json"))?, schema);
-            let hms = HmsCore::new(dim, Some(path), Some(config(encoder)))?;
+            let warm = WarmCore::new(dim, Some(path), Some(config(encoder)))?;
             assert_eq!(
-                serde_json::to_value(hms.search_documents("backups", &SearchOptions::default())?)?,
+                serde_json::to_value(warm.search_documents("backups", &SearchOptions::default())?)?,
                 serde_json::to_value(before)?
             );
             for chunk in &chunks {
-                assert!(hms
-                    .query(&hms.encode_text(&chunk.text), 100)
+                assert!(warm
+                    .query(&warm.encode_text(&chunk.text), 100)
                     .iter()
                     .any(|r| r.id == chunk.id && r.similarity == 1.0));
             }
@@ -193,7 +193,7 @@ fn reencoding_changes_only_the_new_store_and_rejects_incomplete_input() -> Resul
         "manual",
         "Café records explain backups and safe recovery steps.",
     );
-    let old = HmsCore::new(4096, Some(original_path.display().to_string()), None)?;
+    let old = WarmCore::new(4096, Some(original_path.display().to_string()), None)?;
     old.memorize_document(input.clone())?;
     let expected = old.search_documents("backups", &SearchOptions::default())?;
     drop(old);
@@ -210,19 +210,19 @@ fn reencoding_changes_only_the_new_store_and_rejects_incomplete_input() -> Resul
     assert!(inspection.checksums_verified);
     assert_eq!(std::fs::read_to_string(&source)?, line);
     assert_eq!(std::fs::read(original_path.join("store.json"))?, old_schema);
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         4096,
         Some(target.display().to_string()),
         Some(union_config.clone()),
     )?;
     assert_eq!(
-        serde_json::to_value(hms.search_documents("backups", &SearchOptions::default())?)?,
+        serde_json::to_value(warm.search_documents("backups", &SearchOptions::default())?)?,
         serde_json::to_value(&expected)?
     );
     let target_schema = std::fs::read(target.join("store.json"))?;
     assert!(reencode_documents(&source, &target, 4096, union_config).is_err());
     assert_eq!(std::fs::read(target.join("store.json"))?, target_schema);
-    let old = HmsCore::new(4096, Some(original_path.display().to_string()), None)?;
+    let old = WarmCore::new(4096, Some(original_path.display().to_string()), None)?;
     assert_eq!(
         serde_json::to_value(old.search_documents("backups", &SearchOptions::default())?)?,
         serde_json::to_value(expected)?
@@ -232,23 +232,23 @@ fn reencoding_changes_only_the_new_store_and_rejects_incomplete_input() -> Resul
 
 #[test]
 fn abrupt_exit_child() -> Result<()> {
-    let Ok(path) = std::env::var("HMS_TEST_ENCODER_RECOVERY_ROOT") else {
+    let Ok(path) = std::env::var("WARM_TEST_ENCODER_RECOVERY_ROOT") else {
         return Ok(());
     };
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         4096,
         Some(path),
         Some(config(TextEncoder::MultiscaleCappedUnionV1)),
     )?;
-    hms.memorize_document(document(
+    warm.memorize_document(document(
         "keep",
         "Acknowledged backups survive abrupt process exits.",
     ))?;
-    hms.memorize_document(document(
+    warm.memorize_document(document(
         "remove",
         "Deleted obsolete backups must stay absent.",
     ))?;
-    hms.delete_document("remove")?;
+    warm.delete_document("remove")?;
     std::process::exit(73);
 }
 
@@ -260,24 +260,24 @@ fn new_encoder_recovers_acknowledged_writes_after_abrupt_exit() -> Result<()> {
     let dir = tempfile::tempdir()?;
     let child = std::process::Command::new(std::env::current_exe()?)
         .args(["--exact", "abrupt_exit_child"])
-        .env("HMS_TEST_ENCODER_RECOVERY_ROOT", dir.path())
+        .env("WARM_TEST_ENCODER_RECOVERY_ROOT", dir.path())
         .output()?;
     assert_eq!(child.status.code(), Some(73), "{:?}", child);
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         4096,
         Some(dir.path().display().to_string()),
         Some(config(TextEncoder::MultiscaleCappedUnionV1)),
     )?;
-    let found = hms.search_documents("backups", &SearchOptions::default())?;
+    let found = warm.search_documents("backups", &SearchOptions::default())?;
     assert!(!found.is_empty());
     assert!(found.iter().all(|r| r.document_id == "keep"));
     assert!(found
         .iter()
         .all(|r| r.source_uri.as_deref() == Some("original.md")));
-    hms.memorize_document(document(
+    warm.memorize_document(document(
         "new",
         "Recovery permits further acknowledged writes.",
     ))?;
-    hms.compact()?;
+    warm.compact()?;
     Ok(())
 }

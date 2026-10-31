@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-// SessionStart hook: tells the model that Holographic Memory is connected and how to use it. The hook
+// SessionStart hook: tells the model that WARM is connected and how to use it. The hook
 // never opens the memory store itself: the MCP server holds the store lock for the session.
 import { readFileSync } from "node:fs";
 
@@ -13,9 +13,9 @@ try {
   // No or malformed stdin: fall back to the startup text.
 }
 
-const prefix = "mcp__plugin_holographic-memory_holographic-memory__";
+const prefix = "mcp__plugin_writerslogic-warm_writerslogic-warm__";
 const lines = [
-  "Holographic Memory is connected: durable, private memory stored on this machine.",
+  "WARM is connected: durable, private memory stored on this machine.",
   `- Before starting work, call ${prefix}recall with the task or question to retrieve relevant earlier decisions and facts.`,
   `- Save durable facts, decisions, conventions and open questions with ${prefix}remember (one topic per memory, a stable id such as "decisions/<topic>" so later writes replace it, tags for grouping).`,
   `- Use ${prefix}list and ${prefix}get to review, ${prefix}forget to remove stale memories.`,

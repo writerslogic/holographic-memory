@@ -5,7 +5,7 @@ if [[ ${EUID} -ne 0 || $(uname -m) != x86_64 ]]; then
   echo 'Run as root on the dedicated x86_64 AML VM.' >&2
   exit 1
 fi
-if [[ -e /opt/hms-aml/src || -e /etc/systemd/system/hms-aml.service ]]; then
+if [[ -e /opt/warm-aml/src || -e /etc/systemd/system/warm-aml.service ]]; then
   echo 'AML installation already exists; inspect it before retrying.' >&2
   exit 1
 fi
@@ -13,7 +13,7 @@ fi
 native_commit=12c80decb094d57ee13ba187a01bf1de8788ca2f
 adapter_commit=a25cb4c53731eaa950155dfc1c9f1a8e9184b15c
 adapter_sha256=1d5875e28b2b273e5bbe26c00bf60ca0be2b5621313313e82636a2230026f452
-root=/opt/hms-aml
+root=/opt/warm-aml
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 test -f "$script_dir/runtime-requirements.txt" || {
   echo 'Keep runtime-requirements.txt next to gce_install.sh.' >&2
@@ -34,13 +34,13 @@ chmod 0644 /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
 apt-get update
 apt-get install -y caddy
 
-id -u hms-aml >/dev/null 2>&1 || useradd --system --home-dir /var/lib/hms-aml \
-  --create-home --shell /usr/sbin/nologin hms-aml
+id -u warm-aml >/dev/null 2>&1 || useradd --system --home-dir /var/lib/warm-aml \
+  --create-home --shell /usr/sbin/nologin warm-aml
 install -d -m 0755 "$root"
-install -d -o hms-aml -g hms-aml -m 0700 /var/lib/hms-aml/stores
-install -d -o hms-aml -g hms-aml -m 0700 /etc/hms-aml
+install -d -o warm-aml -g warm-aml -m 0700 /var/lib/warm-aml/stores
+install -d -o warm-aml -g warm-aml -m 0700 /etc/warm-aml
 
-git clone --filter=blob:none https://github.com/writerslogic/holographic-memory.git "$root/src"
+git clone --filter=blob:none https://github.com/writerslogic/warm.git "$root/src"
 git -C "$root/src" checkout --detach "$native_commit"
 git -C "$root/src" cat-file -e "${adapter_commit}^{commit}"
 install -d -m 0755 "$root/src/benchmarks/public/aml_cycle2"
@@ -60,12 +60,12 @@ RUSTUP_HOME="$root/rustup" CARGO_HOME="$root/cargo" \
   sh "$root/rustup-init.sh" -y --default-toolchain 1.96.0 --profile minimal
 cd "$root/src"
 RUSTUP_HOME="$root/rustup" CARGO_HOME="$root/cargo" \
-  "$root/cargo/bin/cargo" build --locked --release --features server --bin hms-server
-binary_sha256=$(sha256sum "$root/src/target/release/hms-server" | cut -d' ' -f1)
-printf '%s  %s\n' "$binary_sha256" "$root/src/target/release/hms-server" > "$root/native.sha256"
+  "$root/cargo/bin/cargo" build --locked --release --features server --bin warm-server
+binary_sha256=$(sha256sum "$root/src/target/release/warm-server" | cut -d' ' -f1)
+printf '%s  %s\n' "$binary_sha256" "$root/src/target/release/warm-server" > "$root/native.sha256"
 
 python3 -m venv "$root/uv-bootstrap"
-cat > "$root/uv-bootstrap-requirements.txt" <<'HMS_UV_REQUIREMENTS'
+cat > "$root/uv-bootstrap-requirements.txt" <<'WARM_UV_REQUIREMENTS'
 uv==0.12.10 \
     --hash=sha256:0334577671a65b621faddfdf5f9e9dd4eb08eaa7231c4405c4a7f4f17d224d9f \
     --hash=sha256:0ac914e9750bb1de2518d444cc1cff084f4eff3eefe9cdd5814b775443a16df1 \
@@ -86,28 +86,28 @@ uv==0.12.10 \
     --hash=sha256:f43c06b19137bb05877b0ec59c4932878db5d1aeb6f7b5c33259c22e0359c4fe \
     --hash=sha256:f7d6248ad9f2d282fea795f248da8fa666ab382df50d8385bd98e01049440a0c \
     --hash=sha256:f7f2bc56fbd367b1066e8461a82e51e8886bbab52b1f8d1793af8ce52232348c
-HMS_UV_REQUIREMENTS
+WARM_UV_REQUIREMENTS
 "$root/uv-bootstrap/bin/pip" install --disable-pip-version-check --require-hashes -r "$root/uv-bootstrap-requirements.txt"
 "$root/uv-bootstrap/bin/uv" venv --python 3.12 "$root/venv"
 install -m 0644 "$script_dir/runtime-requirements.txt" "$root/runtime-requirements.txt"
 "$root/uv-bootstrap/bin/uv" pip install --python "$root/venv/bin/python" \
   --require-hashes -r "$root/runtime-requirements.txt"
 
-cat > /etc/systemd/system/hms-aml.service <<EOF
+cat > /etc/systemd/system/warm-aml.service <<EOF
 [Unit]
-Description=Holographic Memory AML Add/Search endpoint
+Description=WARM AML Add/Search endpoint
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/etc/hms-aml/token.env
+ConditionPathExists=/etc/warm-aml/token.env
 
 [Service]
 Type=simple
-User=hms-aml
-Group=hms-aml
+User=warm-aml
+Group=warm-aml
 WorkingDirectory=$root/src/benchmarks/public/aml_cycle2
-Environment=HOME=/var/lib/hms-aml
+Environment=HOME=/var/lib/warm-aml
 Environment=PYTHONDONTWRITEBYTECODE=1
-ExecStart=$root/venv/bin/python $root/src/benchmarks/public/aml_cycle2/local_host.py --binary $root/src/target/release/hms-server --binary-sha256 $binary_sha256 --data-dir /var/lib/hms-aml/stores --token-file /etc/hms-aml/token.env
+ExecStart=$root/venv/bin/python $root/src/benchmarks/public/aml_cycle2/local_host.py --binary $root/src/target/release/warm-server --binary-sha256 $binary_sha256 --data-dir /var/lib/warm-aml/stores --token-file /etc/warm-aml/token.env
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=1900
@@ -116,11 +116,11 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
-ReadWritePaths=/var/lib/hms-aml
+ReadWritePaths=/var/lib/warm-aml
 
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable hms-aml.service
+systemctl enable warm-aml.service
 echo "AML_INSTALL_READY native_commit=$native_commit adapter_sha256=$actual_adapter_sha256 binary_sha256=$binary_sha256"

@@ -138,7 +138,7 @@ class ReaderIntegrity(unittest.TestCase):
         return call, json.loads(ledger_path.read_text()), api
 
     def test_subcap_and_total_cap_at_minus_one_at_limit_plus_one_microdollar(self):
-        with tempfile.TemporaryDirectory(prefix="hms-reader-integrity-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="warm-reader-integrity-") as temporary:
             work = Path(temporary)
             _, calibration, _ = self.offline_call(work / "calibration", self.ledger(), "calibration")
             reserve = calibration["entries"][0]["reserved_usd"]
@@ -164,7 +164,7 @@ class ReaderIntegrity(unittest.TestCase):
                             self.assertAlmostEqual(final["total_usd"], prospective + reserve)
 
     def test_reserved_or_cached_calls_are_never_charged_twice(self):
-        with tempfile.TemporaryDirectory(prefix="hms-reader-integrity-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="warm-reader-integrity-") as temporary:
             work = Path(temporary)
             original, final, _ = self.offline_call(work, self.ledger(), "same_real_dev_call")
             ledger_path = work / "ledger.json"

@@ -27,7 +27,7 @@ HISTORICAL = ROOT / "benchmarks/results/evidence_completeness_dev.json"
 SPLIT = ROOT / "benchmarks/public/longmemeval_split.json"
 DEFAULT_WORK = ROOT / "benchmarks/results/longmemeval_user_first_v1"
 SOURCE_WORK = ROOT / "target/conversation-geometry-validation/models"
-EXPORT = Path.home() / ".cache/hms-bench/holo_dev/export_dev.json"
+EXPORT = Path.home() / ".cache/warm-bench/holo_dev/export_dev.json"
 ARM = "user_first"
 SYSTEM = "matched_gpt54"
 
@@ -240,7 +240,7 @@ def prepare(work, mode):
                             (Path(__file__), Path(__file__).with_name("longmemeval_reader_budget.py"),
                              Path(__file__).with_name("longmemeval_dev_sources.py"), BASELINE, v1_path, HISTORICAL, SPLIT, evidence_path,
                              SOURCE_WORK / "manifest.json", ROOT / reader.PROTOCOL, ROOT / reader.PREREGISTRATION)]}
-    report["artifacts"].append({"path": "~/.cache/hms-bench/holo_dev/export_dev.json", "sha256": reader.sha(EXPORT)})
+    report["artifacts"].append({"path": "~/.cache/warm-bench/holo_dev/export_dev.json", "sha256": reader.sha(EXPORT)})
     save(report, work)
     print(json.dumps(report["summary"]), flush=True)
 

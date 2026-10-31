@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 import { createHash } from 'node:crypto'
-import { HmsError } from './errors.js'
+import { WarmError } from './errors.js'
 
 interface Passage {
   text?: string | null
@@ -18,7 +18,7 @@ interface Source {
 
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024
 const digest = (text: Buffer): string => createHash('sha256').update(text).digest('hex')
-const corrupt = (): never => { throw new HmsError('stored source text is incomplete or corrupt; reingest the authoritative source', 'backend') }
+const corrupt = (): never => { throw new WarmError('stored source text is incomplete or corrupt; reingest the authoritative source', 'backend') }
 
 function part(p: Passage, total: number): Buffer {
   if (!p || typeof p.text !== 'string' || !Number.isSafeInteger(p.startByte) || !Number.isSafeInteger(p.endByte) ||
@@ -32,7 +32,7 @@ function part(p: Passage, total: number): Buffer {
 // length and digest in the same document mutation, without duplicating covered source text.
 export function captureSource(text: string, passages: Passage[]): Source {
   const source = Buffer.from(text, 'utf8')
-  if (source.length > MAX_SOURCE_BYTES) throw new HmsError('record exceeds 8 MiB', 'limit_exceeded')
+  if (source.length > MAX_SOURCE_BYTES) throw new WarmError('record exceeds 8 MiB', 'limit_exceeded')
   const gaps: Source['gaps'] = []
   let end = 0
   const gap = (startByte: number, endByte: number): void => {

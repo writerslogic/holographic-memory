@@ -1,13 +1,13 @@
 {
-  "name": "holographic-memory-models",
+  "name": "writerslogic-warm-models",
   "version": "0.1.0",
-  "description": "Offline model packs for the local embedder of holographic-memory",
+  "description": "Offline model packs for the local embedder of writerslogic-warm",
   "license": "Apache-2.0",
   "main": "index.js",
   "files": ["index.js", "packs/*.hmsemb"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/writerslogic/holographic-memory",
+    "url": "https://github.com/writerslogic/warm",
     "directory": "bindings/embed-models/node"
   }
 }

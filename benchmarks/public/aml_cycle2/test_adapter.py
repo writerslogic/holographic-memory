@@ -139,9 +139,9 @@ class ProvenanceRouteTests(unittest.IsolatedAsyncioTestCase):
 
 class LiveServerTests(unittest.TestCase):
     def test_auth_idempotence_and_user_isolation(self) -> None:
-        binary = os.environ.get("HMS_BIN")
+        binary = os.environ.get("WARM_BIN")
         if not binary:
-            self.skipTest("set HMS_BIN to run exact-S hms-server integration")
+            self.skipTest("set WARM_BIN to run exact-S warm-server integration")
         with tempfile.TemporaryDirectory() as data:
             process = subprocess.Popen([binary, "--no-auth", "--bind", "127.0.0.1:18897", "--data-dir", data,
                                         "--max-top-k", "100", "--max-tenants", "4", "--log-level", "error"],
@@ -153,7 +153,7 @@ class LiveServerTests(unittest.TestCase):
                             break
                     time.sleep(0.1)
                 else:
-                    self.fail("hms-server did not become ready")
+                    self.fail("warm-server did not become ready")
 
                 async def exercise() -> None:
                     app = create_app("http://127.0.0.1:18897", "secret")

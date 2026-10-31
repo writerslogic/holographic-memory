@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use hms_research_evidence::proof::*;
+use warm_research_evidence::proof::*;
 use std::collections::BTreeSet;
 
 fn node(id: &str, supports: &[&[&str]]) -> ProofNode {

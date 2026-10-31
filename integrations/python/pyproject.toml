@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [project]
-name = "holographic-integrations"
+name = "writerslogic-warm-integrations"
 version = "0.1.0"
-description = "Agent and RAG framework adapters for Holographic Memory"
+description = "Agent and RAG framework adapters for WARM"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "WritersLogic", email = "david@writerslogic.com" }]
-dependencies = ["holographic-memory-sdk>=0.1.3", "httpx>=0.27"]
+dependencies = ["writerslogic-warm-sdk>=0.1.3", "httpx>=0.27"]
 
 # Framework dependency trees conflict: install exactly one framework extra per environment.
 # Lower bounds are the versions the adapters were tested against (docs/integrations/frameworks/MATRIX.md).
@@ -57,14 +57,14 @@ conflicts = [
 ]
 
 [tool.uv.sources]
-holographic-memory-sdk = { path = "../../bindings/python/holographic-sdk" }
+writerslogic-warm-sdk = { path = "../../bindings/python/warm-sdk" }
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/holographic_integrations"]
+packages = ["src/writerslogic_warm_integrations", "src/holographic_integrations"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

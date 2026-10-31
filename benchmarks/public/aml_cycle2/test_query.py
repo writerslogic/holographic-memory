@@ -278,8 +278,8 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
 
 class NativeSyntheticTests(unittest.TestCase):
     def test_exact_s_long_query_and_user_isolation(self):
-        binary=os.environ.get('HMS_QUERY_TEST_BINARY')
-        if not binary:self.skipTest('HMS_QUERY_TEST_BINARY enables bounded synthetic exact-S integration')
+        binary=os.environ.get('WARM_QUERY_TEST_BINARY')
+        if not binary:self.skipTest('WARM_QUERY_TEST_BINARY enables bounded synthetic exact-S integration')
         with tempfile.TemporaryDirectory() as data:
             process=subprocess.Popen([binary,'--no-auth','--bind','127.0.0.1:0','--data-dir',data,
                 '--max-top-k','100','--max-tenants','4','--input-dim','384','--log-level','error'],

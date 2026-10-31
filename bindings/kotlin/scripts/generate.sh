@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Regenerates the committed Kotlin sources for the JVM module and the Android module.
-# LIBRARY=<libhms_mobile.dylib|.so> reuses a built library; otherwise a host debug build is made.
+# LIBRARY=<libwarm_mobile.dylib|.so> reuses a built library; otherwise a host debug build is made.
 set -euo pipefail
 
 kotlin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

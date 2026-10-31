@@ -100,10 +100,10 @@ def main():
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(diagnosis.TREE / name, target)
     diagnosis.rss_tree = attributed_rss_tree
-    lock = (Path.home() / "hms-timing.lock").open("a+")
+    lock = (Path.home() / "warm-timing.lock").open("a+")
     diagnosis.fcntl.flock(lock, diagnosis.fcntl.LOCK_EX | diagnosis.fcntl.LOCK_NB)
     try:
-        with Path("/Volumes/A/hms-coordination/RUN-ALL.md").open("a") as coordination:
+        with Path("/Volumes/A/warm-coordination/RUN-ALL.md").open("a") as coordination:
             coordination.write(f"\n{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} Vector-only attempt{plan['attempt']} acquired local timing flock; plan {ROOT / 'plan.json'}, prepared attempt1 inputs reused by hash, one compile job/one Rayon thread,600s compile/180s pernative/900s total; explicit4GiB compile/unchanged2GiB native sampled child-tree RSS guards. Attempt4 single-rustc guard failure preserved;32GiB host. Baseline diagnosis only, no remote action or lexical work.\n")
         deadline = time.monotonic() + 900
         tree = diagnosis.TREE
@@ -136,10 +136,10 @@ def main():
         for mode in ["plain", "profiled"]:
             child_env = dict(env)
             if mode == "profiled":
-                child_env["HMS_QGRAPH_BUILD_PROFILE"] = "1"
+                child_env["WARM_QGRAPH_BUILD_PROFILE"] = "1"
             run(mode, [str(binary), str(data), str(ROOT / f"{mode}.json"), mode], child_env, 180, deadline, 2, sampling=mode == "profiled")
         a, b = [json.loads((ROOT / f"{mode}.json").read_text()) for mode in ["plain", "profiled"]]
-        if a["graph_hash"] != b["graph_hash"] or diagnosis.sha(ROOT / "plain.hms") != diagnosis.sha(ROOT / "profiled.hms"):
+        if a["graph_hash"] != b["graph_hash"] or diagnosis.sha(ROOT / "plain.warm") != diagnosis.sha(ROOT / "profiled.warm"):
             raise ValueError("graph/index changed under profiling")
         if [(r["ef"], r["ids"]) for r in a["settings"]] != [(r["ef"], r["ids"]) for r in b["settings"]]:
             raise ValueError("ordered query IDs changed under profiling")

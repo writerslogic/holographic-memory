@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
-CACHE = Path.home() / ".cache/hms-bench"
+CACHE = Path.home() / ".cache/warm-bench"
 OUT = ROOT / "benchmarks/results/proxies_2026-10_beir.json"
 MODEL, REV = "sentence-transformers/all-MiniLM-L6-v2", "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
 STOP = set("a an and are as at be by for from has he in is it its of on that the to was were will with this these those or not but if than then so such which who whom whose what when where why how do does did can could should would may might must shall i you we they them their our your his her she him my me us".split())
@@ -51,7 +51,7 @@ def load_split(name, split):
     return corpus, queries, qrels
 
 
-def tok_hms(s):
+def tok_warm(s):
     return [t for t in re.split(r"[^0-9A-Za-zÀ-￿]+", s.lower()) if t]
 
 
@@ -106,10 +106,10 @@ def stemming(sets):
         dids = [d for d, _ in corpus]
         qids = [q for q, _ in queries]
         variants = {
-            "hms_tokenizer": tok_hms,
-            "stop_words": lambda s: [t for t in tok_hms(s) if t not in STOP],
-            "porter": lambda s: st.stemWords(tok_hms(s)),
-            "porter_stop": lambda s: st.stemWords([t for t in tok_hms(s) if t not in STOP]),
+            "warm_tokenizer": tok_warm,
+            "stop_words": lambda s: [t for t in tok_warm(s) if t not in STOP],
+            "porter": lambda s: st.stemWords(tok_warm(s)),
+            "porter_stop": lambda s: st.stemWords([t for t in tok_warm(s) if t not in STOP]),
         }
         res[f"{name}_{split}"] = {"n_queries": len(qids), "n_docs": len(dids)}
         for v, tok in variants.items():
@@ -137,7 +137,7 @@ def fusion(sets):
         D = np.fromfile(emb_path, dtype=np.float32).reshape(len(dids), -1)
         Q = model.encode([q for _, q in queries], batch_size=64, normalize_embeddings=True, convert_to_numpy=True)
         dense = Q @ D.T
-        bm = BM25([x for _, x in corpus], lambda s: st.stemWords([t for t in tok_hms(s) if t not in STOP]))
+        bm = BM25([x for _, x in corpus], lambda s: st.stemWords([t for t in tok_warm(s) if t not in STOP]))
         lex = np.stack([bm.score(q) for _, q in queries])
         out = {"n_queries": len(qids)}
         out["dense_only"] = ndcg10(run_from_scores(qids, dids, dense), qrels)[0]

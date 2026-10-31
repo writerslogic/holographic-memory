@@ -28,7 +28,7 @@ def _fetch(url, dest):
     if not dest.exists():
         dest.parent.mkdir(parents=True, exist_ok=True)
         tmp = dest.with_suffix(dest.suffix + ".part")
-        request = urllib.request.Request(url, headers={"User-Agent": "hms-bench/1.0"})
+        request = urllib.request.Request(url, headers={"User-Agent": "warm-bench/1.0"})
         with urllib.request.urlopen(request) as response, tmp.open("wb") as out:
             while block := response.read(1 << 20):
                 out.write(block)

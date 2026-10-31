@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-// Drives the backend with SDK-typed commands against a real hms-mcp process (HMS_MCP_BIN).
+// Drives the backend with SDK-typed commands against a real warm-mcp process (WARM_MCP_BIN).
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -10,28 +10,28 @@ import { after, describe, it } from "node:test";
 import Anthropic from "@anthropic-ai/sdk";
 import type { BetaMemoryTool20250818Command } from "@anthropic-ai/sdk/resources/beta";
 
-import { HolographicMemoryTool, normalizePath } from "../src/index.js";
+import { WarmMemoryTool, normalizePath } from "../src/index.js";
 
-const BIN = process.env["HMS_MCP_BIN"];
-assert.ok(BIN, "set HMS_MCP_BIN to the hms-mcp binary");
-const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "hms-memtool-"));
+const BIN = process.env["WARM_MCP_BIN"];
+assert.ok(BIN, "set WARM_MCP_BIN to the warm-mcp binary");
+const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "warm-memtool-"));
 after(() => fs.rmSync(scratch, { recursive: true, force: true }));
 let n = 0;
 
 function env(): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && !k.startsWith("HMS_MCP_")) out[k] = v;
+  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && !k.startsWith("WARM_MCP_")) out[k] = v;
   return out;
 }
 
 async function open(extra: string[] = [], dir = path.join(scratch, `s${n++}`)) {
-  const tool = await HolographicMemoryTool.connect({
+  const tool = await WarmMemoryTool.connect({
     connection: { command: BIN, args: ["--data-dir", dir, "--namespace-arg", ...extra], env: env() },
   });
   return { tool, dir };
 }
 
-const run = (tool: HolographicMemoryTool, command: BetaMemoryTool20250818Command) => {
+const run = (tool: WarmMemoryTool, command: BetaMemoryTool20250818Command) => {
   const runnable = tool.asTool();
   return runnable.run(command) as Promise<string>;
 };
@@ -201,7 +201,7 @@ describe("memory tool commands", () => {
     try {
       const lines = Array.from({ length: 250 }, (_, i) => `line ${i + 1} ${"w".repeat(4)}`);
       await tool.store.put("/memories/long.txt", `${lines.join("\n")}\n`, { createOnly: true });
-      const short = new HolographicMemoryTool(tool.store, { maxViewChars: 500 });
+      const short = new WarmMemoryTool(tool.store, { maxViewChars: 500 });
       const first = await short.view({ command: "view", path: "/memories/long.txt" } as never);
       assert.ok(first.length < 700);
       const next = first.match(/starting at line (\d+)/);
@@ -260,7 +260,7 @@ describe("memory tool commands", () => {
   it("keeps namespaces separate", async () => {
     const dir = path.join(scratch, `s${n++}`);
     const mk = (namespace: string) =>
-      HolographicMemoryTool.connect({
+      WarmMemoryTool.connect({
         connection: { command: BIN!, args: ["--data-dir", dir, "--namespace-arg"], env: env() },
         namespace,
       });

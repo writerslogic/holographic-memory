@@ -4,7 +4,7 @@
 //! The document store exported to JavaScript: ingest, search, delete, stats and a
 //! checksummed export/import, over the engine's in-memory document store.
 
-use holographic_memory::core::documents::{DocumentInput, MemoryDocumentStore, SearchOptions};
+use writerslogic_warm::core::documents::{DocumentInput, MemoryDocumentStore, SearchOptions};
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
@@ -36,15 +36,15 @@ fn err(e: anyhow::Error) -> JsError {
 /// A local document store. Mirrors the Node binding's document surface:
 /// `memorizeDocument(s)`, `searchDocuments`, `deleteDocument`, `chunkDocument`.
 #[wasm_bindgen]
-pub struct HmsStore {
+pub struct WarmStore {
     inner: MemoryDocumentStore,
 }
 
 #[wasm_bindgen]
-impl HmsStore {
+impl WarmStore {
     /// `options`: `{ dimensions?: number, embeddingDimensions?: number }` (default 16384, none).
     #[wasm_bindgen(constructor)]
-    pub fn new(options: JsValue) -> Result<HmsStore, JsError> {
+    pub fn new(options: JsValue) -> Result<WarmStore, JsError> {
         let options: StoreOptions = if options.is_undefined() || options.is_null() {
             StoreOptions::default()
         } else {
@@ -55,13 +55,13 @@ impl HmsStore {
             options.embedding_dimensions,
         )
         .map_err(err)?;
-        Ok(HmsStore { inner })
+        Ok(WarmStore { inner })
     }
 
     /// Restores a store from bytes produced by `exportBytes`.
     #[wasm_bindgen(js_name = importBytes)]
-    pub fn import_bytes(bytes: &[u8]) -> Result<HmsStore, JsError> {
-        Ok(HmsStore {
+    pub fn import_bytes(bytes: &[u8]) -> Result<WarmStore, JsError> {
+        Ok(WarmStore {
             inner: MemoryDocumentStore::import(bytes).map_err(err)?,
         })
     }
@@ -90,7 +90,7 @@ impl HmsStore {
     #[wasm_bindgen(js_name = chunkDocument)]
     pub fn chunk_document(&self, input: JsValue) -> Result<JsValue, JsError> {
         let input: DocumentInput = from_js(input, "document")?;
-        to_js(&holographic_memory::chunk_document(&input).map_err(err)?)
+        to_js(&writerslogic_warm::chunk_document(&input).map_err(err)?)
     }
 
     /// BM25 (optionally fused with dense embeddings) over the stored passages.

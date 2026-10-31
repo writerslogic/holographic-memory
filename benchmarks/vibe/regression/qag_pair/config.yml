@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 float:
   any:
-  - name: hms-qag-regression
+  - name: warm-qag-regression
     module: vibe.algorithms.qag_pair
     constructor: QAGPair
-    singularity_image: hms
+    singularity_image: warm
     disabled: false
     ood: false
     base_args: ['@metric']

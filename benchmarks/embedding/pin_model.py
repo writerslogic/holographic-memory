@@ -1,11 +1,11 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 """Pins a registry model: downloads the upstream files at one commit, hashes them, builds the
-int8 pack with `hms-embed pack` and prints the Rust `ModelSpec` entry for
+int8 pack with `warm-embed pack` and prints the Rust `ModelSpec` entry for
 src/core/embed/registry.rs.
 
   uv run --no-project python benchmarks/embedding/pin_model.py --repo BAAI/bge-small-en-v1.5 \
-      --id bge-small-en-v1.5 --pooling cls --binary $TARGET/release/hms-embed --workdir DIR
+      --id bge-small-en-v1.5 --pooling cls --binary $TARGET/release/warm-embed --workdir DIR
 """
 import argparse
 import hashlib

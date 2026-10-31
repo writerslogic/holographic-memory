@@ -1,8 +1,8 @@
 {
- "schema": "hms.research.relevance/1",
+ "schema": "warm.research.relevance/1",
  "generated_utc": "2026-10-21T05:59:06+00:00",
  "protocol": {
-  "inputs": "NFCorpus cache; queries with IDCG@10 = 0 dropped; BM25 k1=1.2 b=0.75 HMS tokenizer (roc.py); cosine = Q D^T on l2-normalised f32 rows cast to f64.",
+  "inputs": "NFCorpus cache; queries with IDCG@10 = 0 dropped; BM25 k1=1.2 b=0.75 WARM tokenizer (roc.py); cosine = Q D^T on l2-normalised f32 rows cast to f64.",
   "pool": "BM25 top-200 (positive scores only) | cosine top-200; PRF adds | cos' top-200. Channels z-scored over the pool; fused = (1-w) z(BM25) + w z(dense); top-100 by score, ties to the lower document index.",
   "metrics": "nDCG@10 linear gain over judged grades (1, 2); recall@100 = judged-relevant in the fused top-100 / judged-relevant.",
   "folds": "primary: tune = odd 0-based query index in queries.jsonl order, eval = even; swapped: mirrored. Every parameter chosen by tune-fold mean nDCG@10; eval reported once per family.",

@@ -1,0 +1,13 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+"""CrewAI adapter: `WarmMemoryStorage` for `Memory(storage=...)` and
+`WarmKnowledgeStorage` for `Knowledge(storage=...)`. Requires `crewai`."""
+
+from .knowledge import WarmKnowledgeStorage
+from .storage import WarmMemoryStorage, similarity
+
+__all__ = ["WarmKnowledgeStorage", "WarmMemoryStorage", "similarity"]
+
+HolographicKnowledgeStorage = WarmKnowledgeStorage
+__all__ += ['HolographicKnowledgeStorage']

@@ -16,16 +16,16 @@ from letta_client import Letta  # noqa: E402
 from letta_client.types import Passage  # noqa: E402
 from letta_client.types.agents.passage_search_response import PassageSearchResponse  # noqa: E402
 
-from holographic_integrations.core import HmsConfig  # noqa: E402
-from holographic_integrations.letta import ArchivalMemory, AsyncArchivalMemory, agent_secrets, register_tools  # noqa: E402
-from holographic_integrations.letta import tools as letta_tools  # noqa: E402
+from writerslogic_warm_integrations.core import WarmConfig  # noqa: E402
+from writerslogic_warm_integrations.letta import ArchivalMemory, AsyncArchivalMemory, agent_secrets, register_tools  # noqa: E402
+from writerslogic_warm_integrations.letta import tools as letta_tools  # noqa: E402
 
 AGENT = "agent-11111111-1111-4111-8111-111111111111"
 OTHER = "agent-22222222-2222-4222-8222-222222222222"
 
 
 def cfg(server, **kw):
-    return HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
+    return WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
 
 
 def test_passages_resource_surface_matches_letta_client():
@@ -108,7 +108,7 @@ def test_builtin_tool_semantics(server):
 def test_list_beyond_the_service_cap(server_factory, total):
     """limit-1, limit, limit+1 and several pages with max_fetch=10."""
     srv = server_factory(64, max_top_k=10)
-    c = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    c = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
     with ArchivalMemory(c, buckets=8) as mem:
         ids = [mem.create(AGENT, text=f"passage {i}", created_at=f"2024-01-{i + 1:02d}T00:00:00+00:00")[0].id for i in range(total)]
         got = mem.list(AGENT, limit=1000)
@@ -143,16 +143,16 @@ def test_uploaded_tools_match_letta_builtin_signatures():
 
 
 def test_uploaded_tool_source_runs_against_the_real_service(server, monkeypatch):
-    for k, v in {"HMS_URL": server.url, "HMS_TENANT_ID": server.tenant(), "HMS_INPUT_DIM": str(server.dim)}.items():
+    for k, v in {"WARM_URL": server.url, "WARM_TENANT_ID": server.tenant(), "WARM_INPUT_DIM": str(server.dim)}.items():
         monkeypatch.setenv(k, v)
     namespace: dict = {}
     exec(letta_tools.INSERT_SOURCE, namespace)  # noqa: S102  (our own constant, as Letta's sandbox would)
     exec(letta_tools.SEARCH_SOURCE, namespace)
     state = types.SimpleNamespace(id=AGENT)
-    assert namespace["hms_archival_insert"](state, "tool made memory about volcanoes", ["geo"]) is None
-    out = json.loads(namespace["hms_archival_search"](state, "tool made memory about volcanoes", tags=["geo"]))
+    assert namespace["warm_archival_insert"](state, "tool made memory about volcanoes", ["geo"]) is None
+    out = json.loads(namespace["warm_archival_search"](state, "tool made memory about volcanoes", tags=["geo"]))
     assert out[0]["content"] == "tool made memory about volcanoes" and out[0]["tags"] == ["geo"]
-    assert json.loads(namespace["hms_archival_search"](types.SimpleNamespace(id=OTHER), "volcanoes")) == []
+    assert json.loads(namespace["warm_archival_search"](types.SimpleNamespace(id=OTHER), "volcanoes")) == []
 
 
 def test_register_tools_through_letta_client_wire():
@@ -167,10 +167,10 @@ def test_register_tools_through_letta_client_wire():
     assert [t.id for t in tools] == ["tool-1", "tool-2"]
     assert [m for m, _, _ in seen] == ["PUT", "PUT"] and all(p == "/v1/tools/" for _, p, _ in seen)
     for _, _, body in seen:
-        assert body["pip_requirements"] == [{"name": "holographic-integrations", "version": "0.1.0"}]
+        assert body["pip_requirements"] == [{"name": "writerslogic-warm-integrations", "version": "0.1.0"}]
         compile(body["source_code"], "<tool>", "exec")
-    assert "def hms_archival_insert(" in seen[0][2]["source_code"] and "def hms_archival_search(" in seen[1][2]["source_code"]
-    assert agent_secrets("http://h:8080", api_key="k", input_dim=384) == {"HMS_URL": "http://h:8080", "HMS_API_KEY": "k", "HMS_INPUT_DIM": "384"}
+    assert "def warm_archival_insert(" in seen[0][2]["source_code"] and "def warm_archival_search(" in seen[1][2]["source_code"]
+    assert agent_secrets("http://h:8080", api_key="k", input_dim=384) == {"WARM_URL": "http://h:8080", "WARM_API_KEY": "k", "WARM_INPUT_DIM": "384"}
 
 
 def test_timestamps_are_monotone_for_default_created_at(server):

@@ -28,14 +28,14 @@ echo "rustc: $(rustc --version --verbose | tr '\n' ' ')"
 echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH root=$root"
 
 # 1. Command line tools.
-cargo build --locked --release --features server --bin hms-eval --bin hms-server
-cp target/release/hms-eval target/release/hms-server "$out/"
+cargo build --locked --release --features server --bin warm-eval --bin warm-server
+cp target/release/warm-eval target/release/warm-server "$out/"
 
 # 2. The napi cdylib (what becomes the .node binding), without the Node loader step.
 cargo build --locked --release --lib --features node-api,security
 case "$(uname -s)" in
-  Linux) lib=libholographic_memory.so ;;
-  Darwin) lib=libholographic_memory.dylib ;;
+  Linux) lib=libwriterslogic_warm.so ;;
+  Darwin) lib=libwriterslogic_warm.dylib ;;
   *) echo "unsupported host" >&2; exit 1 ;;
 esac
 cp "target/release/$lib" "$out/node-api-$lib"

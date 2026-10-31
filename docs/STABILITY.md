@@ -3,7 +3,7 @@
 
 # Stability and compatibility
 
-HMS follows [semantic versioning](https://semver.org). The crate is **0.x today**: until 1.0 a
+WARM follows [semantic versioning](https://semver.org). The crate is **0.x today**: until 1.0 a
 minor release may break any surface, but the on-disk promise below is already kept (every
 released store, v0.6.1, opens in the current code; see `tests/golden/`). The 1.x promises start
 at 1.0.0.
@@ -12,11 +12,11 @@ at 1.0.0.
 
 | Surface | Versioned as | Stable in 1.x | Not covered |
 |---|---|---|---|
-| Rust crate (`holographic-memory`) | crate version | items reachable without the `experimental` feature, outside `core::format::scan` internals | `experimental` feature, `doc(hidden)`, `pub(crate)` |
-| Python (`holographic-memory-py` wheels, `holographic-memory-sdk`) | PyPI version | documented classes and functions | underscore names; the `phase` substrate is experimental |
-| Node (`holographic-memory` on npm) | npm version | the exports in `index.d.ts`, `memory.d.ts`, `semantic.d.ts` | undocumented properties |
-| HTTP (`hms-server`) | URL prefix `/api/v1` | documented endpoints, request and response fields, error codes | new optional fields may appear; new endpoints |
-| [C ABI](runtimes/c/README.md) | `holographic-memory-c` package version and `hms1_*` ABI major | documented v1 symbols, ownership rules and fixed value-struct layouts; size-tagged option structs grow append-only | Rust layouts, internal symbols and unversioned convenience macros |
+| Rust crate (`writerslogic-warm`) | crate version | items reachable without the `experimental` feature, outside `core::format::scan` internals | `experimental` feature, `doc(hidden)`, `pub(crate)` |
+| Python (`writerslogic-warm-py` wheels, `writerslogic-warm-sdk`) | PyPI version | documented classes and functions | underscore names; the `phase` substrate is experimental |
+| Node (`writerslogic-warm` on npm) | npm version | the exports in `index.d.ts`, `memory.d.ts`, `semantic.d.ts` | undocumented properties |
+| HTTP (`warm-server`) | URL prefix `/api/v1` | documented endpoints, request and response fields, error codes | new optional fields may appear; new endpoints |
+| [C ABI](runtimes/c/README.md) | `writerslogic-warm-c` package version and `hms1_*` ABI major | documented v1 symbols, ownership rules and fixed value-struct layouts; size-tagged option structs grow append-only | Rust layouts, internal symbols and unversioned convenience macros |
 | [Go](runtimes/go/README.md), [Java](runtimes/java/README.md) and [.NET](runtimes/dotnet/README.md) | binding package version and underlying C ABI major | documented wrappers over the versioned C contract | private FFI helpers; package availability is recorded in each runtime guide |
 | [Swift](runtimes/swift/README.md) and [Kotlin](runtimes/kotlin/README.md) | UniFFI crate and binding package version | experimental until a stable binding contract is declared | generated UniFFI interfaces, metadata and packaging layouts |
 | [WebAssembly](runtimes/wasm/README.md) | WASM crate and npm package version | experimental until a stable binding contract is declared | generated JavaScript glue, scalar/SIMD artifact layout and experimental APIs |
@@ -36,7 +36,7 @@ and say so in the changelog.
 1. **Backward:** a store written by any 1.x opens in every later 1.x, read-write, without a
    migration step. The same holds for released 0.x stores (v0.6.1 is in `tests/golden/`).
 2. **Never silently converted:** the engine keeps writing a store in the format it has. A
-   format change is performed by `hms-format upgrade`, which writes a new store and leaves the
+   format change is performed by `warm-format upgrade`, which writes a new store and leaves the
    old one untouched.
 3. **Forward:** an older reader meeting a version it does not know (arena manifest, `store.json`
    schema, journal magic) refuses to open and says "newer than supported"; it does not
@@ -51,11 +51,11 @@ and say so in the changelog.
    checkpoint. The current development writer creates new stores with schema 5, which additionally permits namespace-scoped
    durable meaning maintenance. Schemas 2, 3 and 4 remain readable and writable in their
    original format; governance that needs scoped mutations returns an upgrade error. Run
-   `hms-format upgrade <source> <destination>` explicitly to enable schema 5 in a new copy.
+   `warm-format upgrade <source> <destination>` explicitly to enable schema 5 in a new copy.
    Schema-only upgrades retain the existing arena and checkpoints unchanged; old readers
    refuse schema 5 rather than misreading scoped deletions.
 4. **Breaking the format** happens only in a major release, with the old format still readable
-   or an `hms-format upgrade` step, and a golden store for each side.
+   or an `warm-format upgrade` step, and a golden store for each side.
 5. **Caches** (`documents.text`, `indices.json`, NSG/IVF files, `shard_meta.json` aside) may
    change at any release; the engine discards and rebuilds what it cannot read.
 6. **Encoders are permanent:** an encoder name always produces the same vectors. Changing output
@@ -71,7 +71,7 @@ Standalone persisted vector update directories have their own version 1 contract
 [file-format/VECTOR-UPDATES.md](file-format/VECTOR-UPDATES.md). Their committed golden
 checkpoints and logs are read and regenerated by `vector_format_golden_and_drift_gate`;
 they are covered by the same append-only golden-file gate. The standalone vertex encoding
-inside a checkpoint remains `HMSVGR01`.
+inside a checkpoint remains `WARMVGR01`.
 
 ## Deprecation
 
@@ -87,5 +87,5 @@ series.
 - `conversation-memory`, `private-search`, `local-models` (model stage APIs and model directory layout), `provenance*`
   file layouts (`provenance_log.jsonl`, `kel.json`) until they get their own specification;
 - the standalone qgraph/IVF cache files, benchmark binaries and their output formats,
-  `hms-eval`, `hms-admin` output JSON field order;
+  `warm-eval`, `warm-admin` output JSON field order;
 - the NSG/IVF bincode layout and anything else the format documents call a cache.

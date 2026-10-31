@@ -16,7 +16,7 @@ def ndcg10(ranked, graded):
 
 def qrels_for(dataset, split):
     rows = {}
-    with (Path.home() / ".cache/hms-bench/downloads" / dataset / "qrels" / f"{split}.tsv").open() as f:
+    with (Path.home() / ".cache/warm-bench/downloads" / dataset / "qrels" / f"{split}.tsv").open() as f:
         next(f)
         for line in f:
             q, d, g = line.rstrip().split("\t")

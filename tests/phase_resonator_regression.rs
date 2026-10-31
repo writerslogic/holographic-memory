@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use holographic_memory::core::{phase_hvec, phase_resonator};
+use writerslogic_warm::core::{phase_hvec, phase_resonator};
 
 #[allow(dead_code)]
 #[path = "../benchmarks/results/holography_resonator_v1/baseline.rs"]

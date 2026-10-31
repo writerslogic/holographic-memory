@@ -7,7 +7,7 @@ use std::sync::Arc;
 use anyhow::{ensure, Context, Result};
 use serde::Serialize;
 
-use super::{mutation::Mutation, HmsCore};
+use super::{mutation::Mutation, WarmCore};
 use crate::core::documents::StoredDocument;
 use crate::core::storage::StagedArena;
 
@@ -59,7 +59,7 @@ enum DocumentMutation<'a> {
     Document(crate::core::documents::DocumentWithText<'a>),
 }
 
-impl HmsCore {
+impl WarmCore {
     pub fn compact(&self) -> Result<()> {
         self.compact_impl(|| {}, || {}, false)
     }
@@ -281,7 +281,7 @@ impl HmsCore {
             if let Some(id) = absent_atom {
                 anyhow::ensure!(
                     self.schema >= crate::core::format::MEANING_MAINTENANCE_SCHEMA_VERSION,
-                    "preserving scoped meaning state requires schema 5; use hms-format upgrade"
+                    "preserving scoped meaning state requires schema 5; use warm-format upgrade"
                 );
                 mutations.push(Mutation::DeleteAtom { id });
             }
@@ -382,14 +382,14 @@ mod tests {
     use std::time::Duration;
 
     use crate::core::documents::{DocumentInput, SearchOptions};
-    use crate::core::HmsConfig;
+    use crate::core::WarmConfig;
     use serde_json::json;
 
-    fn config() -> HmsConfig {
+    fn config() -> WarmConfig {
         super::super::fixture_config(2)
     }
 
-    fn configurations() -> impl Iterator<Item = HmsConfig> {
+    fn configurations() -> impl Iterator<Item = WarmConfig> {
         [false, true]
             .into_iter()
             .filter(|encrypted| !encrypted || cfg!(feature = "security"))
@@ -419,7 +419,7 @@ mod tests {
             for config in configurations() {
                 let directory = tempfile::tempdir()?;
                 let path = directory.path().display().to_string();
-                let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+                let core = WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
                 core.memorize_documents(
                     (0..count)
                         .map(|i| document(&format!("row-{i:03}"), "1"))
@@ -433,7 +433,7 @@ mod tests {
                 assert_eq!(Arc::strong_count(&owner), 1);
                 assert_eq!(core.documents.read().dense_index_trained(), count > 128);
                 drop(core);
-                let reopened = HmsCore::new(1024, Some(path), Some(config))?;
+                let reopened = WarmCore::new(1024, Some(path), Some(config))?;
                 assert!(!reopened.has_document("row-000"));
                 assert_eq!(reopened.document_count(), count - 1);
             }
@@ -445,7 +445,7 @@ mod tests {
     fn published_compaction_failure_reports_a_committed_outcome_and_reopens() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let path = Some(dir.path().display().to_string());
-        let core = HmsCore::new(256, path.clone(), Some(config()))?;
+        let core = WarmCore::new(256, path.clone(), Some(config()))?;
         core.memorize_document(document("kept", "v1"))?;
         let before = core.revision();
         let error = core
@@ -462,7 +462,7 @@ mod tests {
         assert!(core.has_document("kept"));
         std::fs::remove_dir(dir.path().join("indices.json"))?;
         drop(core);
-        let core = HmsCore::new(256, path, Some(config()))?;
+        let core = WarmCore::new(256, path, Some(config()))?;
         assert_eq!(
             core.get_document("kept").unwrap().text.as_deref(),
             Some("needle durable source")
@@ -471,7 +471,7 @@ mod tests {
         Ok(())
     }
 
-    fn seed(core: &HmsCore) -> Result<()> {
+    fn seed(core: &WarmCore) -> Result<()> {
         core.memorize_document(document("replace", "old"))?;
         core.memorize_document(document("delete", "old"))?;
         core.memorize("vector".into(), core.encode_text("original"))?;
@@ -483,7 +483,7 @@ mod tests {
         Ok(())
     }
 
-    fn mutate(core: &HmsCore) -> Result<()> {
+    fn mutate(core: &WarmCore) -> Result<()> {
         core.memorize_documents(vec![document("replace", "new"), document("insert", "new")])?;
         core.delete_document("delete")?;
         core.memorize("vector".into(), core.encode_text("replacement"))?;
@@ -492,7 +492,7 @@ mod tests {
         Ok(())
     }
 
-    fn assert_current(core: &HmsCore) -> Result<serde_json::Value> {
+    fn assert_current(core: &WarmCore) -> Result<serde_json::Value> {
         let options = SearchOptions {
             embedding: Some(vec![1.0, 0.0]),
             source_uri: Some("source:new".into()),
@@ -518,7 +518,7 @@ mod tests {
         for config in configurations() {
             let directory = tempfile::tempdir()?;
             let path = directory.path().display().to_string();
-            let core = Arc::new(HmsCore::new(
+            let core = Arc::new(WarmCore::new(
                 1024,
                 Some(path.clone()),
                 Some(config.clone()),
@@ -562,7 +562,7 @@ mod tests {
             }
             assert_eq!(batch_frames, 1);
             drop(core);
-            let restored = HmsCore::new(1024, Some(path), Some(config))?;
+            let restored = WarmCore::new(1024, Some(path), Some(config))?;
             assert_eq!(assert_current(&restored)?, expected);
         }
         Ok(())
@@ -571,7 +571,7 @@ mod tests {
     #[test]
     fn compaction_snapshot_shares_document_payloads_after_replacement() -> Result<()> {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             Some(config()),
@@ -596,14 +596,15 @@ mod tests {
 
     #[test]
     fn compaction_replay_crash_child() -> Result<()> {
-        let Ok(root) = std::env::var("HMS_TEST_CORE_REPLAY_ROOT") else {
+        let Ok(root) = crate::compatibility::var("WARM_TEST_CORE_REPLAY_ROOT") else {
             return Ok(());
         };
-        let encrypted = std::env::var("HMS_TEST_CORE_REPLAY_ENCRYPTED").as_deref() == Ok("true");
+        let encrypted =
+            crate::compatibility::var("WARM_TEST_CORE_REPLAY_ENCRYPTED").as_deref() == Ok("true");
         let config = configurations()
             .find(|config| config.security.encryption_enabled == encrypted)
             .unwrap();
-        let core = HmsCore::new(1024, Some(root), Some(config))?;
+        let core = WarmCore::new(1024, Some(root), Some(config))?;
         seed(&core)?;
         core.compact_impl(|| mutate(&core).unwrap(), || {}, false)
     }
@@ -618,15 +619,15 @@ mod tests {
                         "--exact",
                         "core::engine::compaction::tests::compaction_replay_crash_child",
                     ])
-                    .env("HMS_TEST_CORE_REPLAY_ROOT", directory.path())
+                    .env("WARM_TEST_CORE_REPLAY_ROOT", directory.path())
                     .env(
-                        "HMS_TEST_CORE_REPLAY_ENCRYPTED",
+                        "WARM_TEST_CORE_REPLAY_ENCRYPTED",
                         config.security.encryption_enabled.to_string(),
                     )
-                    .env("HMS_TEST_COMPACTION_PHASE", phase)
+                    .env("WARM_TEST_COMPACTION_PHASE", phase)
                     .output()?;
                 assert_eq!(output.status.code(), Some(73), "{phase}: {output:?}");
-                let core = HmsCore::new(
+                let core = WarmCore::new(
                     1024,
                     Some(directory.path().display().to_string()),
                     Some(config.clone()),
@@ -651,7 +652,7 @@ mod tests {
     }
 
     /// Hits of a few queries over every lexical fixture document, scores as bits.
-    fn lexical_answers(core: &HmsCore) -> Result<Vec<String>> {
+    fn lexical_answers(core: &WarmCore) -> Result<Vec<String>> {
         let mut out = Vec::new();
         for query in ["alpha", "beta gamma", "delta", "after"] {
             for hit in core.search_documents(query, &SearchOptions::default())? {
@@ -668,16 +669,17 @@ mod tests {
 
     #[test]
     fn checkpoint_compaction_crash_child() -> Result<()> {
-        let Ok(root) = std::env::var("HMS_TEST_CHECKPOINT_ROOT") else {
+        let Ok(root) = crate::compatibility::var("WARM_TEST_CHECKPOINT_ROOT") else {
             return Ok(());
         };
-        let encrypted = std::env::var("HMS_TEST_CHECKPOINT_ENCRYPTED").as_deref() == Ok("true");
+        let encrypted =
+            crate::compatibility::var("WARM_TEST_CHECKPOINT_ENCRYPTED").as_deref() == Ok("true");
         let mut config = configurations()
             .find(|config| config.security.encryption_enabled == encrypted)
             .unwrap();
         config.embedding_space = None;
         // The parent wrote the first checkpoint; this compaction replaces it and is cut short.
-        let core = HmsCore::new(1024, Some(root), Some(config))?;
+        let core = WarmCore::new(1024, Some(root), Some(config))?;
         let options = lexical_options();
         core.compact_impl(
             || {
@@ -701,7 +703,7 @@ mod tests {
                 let directory = tempfile::tempdir()?;
                 let mut plain = config.clone();
                 plain.document_checkpoint.enabled = false;
-                let core = HmsCore::new(
+                let core = WarmCore::new(
                     1024,
                     Some(directory.path().display().to_string()),
                     Some(plain),
@@ -719,7 +721,7 @@ mod tests {
             for phase in ["staged", "published", "mapped"] {
                 let directory = tempfile::tempdir()?;
                 {
-                    let core = HmsCore::new(
+                    let core = WarmCore::new(
                         1024,
                         Some(directory.path().display().to_string()),
                         Some(config.clone()),
@@ -739,12 +741,12 @@ mod tests {
                         "--exact",
                         "core::engine::compaction::tests::checkpoint_compaction_crash_child",
                     ])
-                    .env("HMS_TEST_CHECKPOINT_ROOT", directory.path())
+                    .env("WARM_TEST_CHECKPOINT_ROOT", directory.path())
                     .env(
-                        "HMS_TEST_CHECKPOINT_ENCRYPTED",
+                        "WARM_TEST_CHECKPOINT_ENCRYPTED",
                         config.security.encryption_enabled.to_string(),
                     )
-                    .env("HMS_TEST_COMPACTION_PHASE", phase)
+                    .env("WARM_TEST_COMPACTION_PHASE", phase)
                     .output()?;
                 assert_eq!(output.status.code(), Some(73), "{phase}: {output:?}");
                 let generation = crate::core::durable_file::arena_generation(
@@ -754,7 +756,7 @@ mod tests {
                     generation.join(super::super::image::FILE).exists(),
                     "{phase}: the live generation holds a checkpoint"
                 );
-                let core = HmsCore::new(
+                let core = WarmCore::new(
                     1024,
                     Some(directory.path().display().to_string()),
                     Some(config.clone()),
@@ -770,7 +772,7 @@ mod tests {
     fn concurrent_compactors_serialize_without_losing_intervening_mutations() -> Result<()> {
         let directory = tempfile::tempdir()?;
         let path = directory.path().display().to_string();
-        let core = Arc::new(HmsCore::new(1024, Some(path.clone()), Some(config()))?);
+        let core = Arc::new(WarmCore::new(1024, Some(path.clone()), Some(config()))?);
         seed(&core)?;
         let other_core = Arc::clone(&core);
         let (start_tx, start_rx) = mpsc::channel();
@@ -790,7 +792,7 @@ mod tests {
         other.join().unwrap()?;
         let expected = assert_current(&core)?;
         drop(core);
-        let restored = HmsCore::new(1024, Some(path), Some(config()))?;
+        let restored = WarmCore::new(1024, Some(path), Some(config()))?;
         assert_eq!(assert_current(&restored)?, expected);
         Ok(())
     }
@@ -799,7 +801,7 @@ mod tests {
     fn replay_rejects_partial_frames_and_accepts_exact_capture_boundaries() -> Result<()> {
         for delta in [-1_isize, 0, 1] {
             let directory = tempfile::tempdir()?;
-            let core = HmsCore::new(1024, Some(directory.path().display().to_string()), None)?;
+            let core = WarmCore::new(1024, Some(directory.path().display().to_string()), None)?;
             let mut cursor = core.arena.stats().used_bytes;
             core.memorize("after".into(), core.encode_text("acknowledged"))?;
             let stage = tempfile::tempdir_in(directory.path())?;
@@ -829,7 +831,7 @@ mod tests {
         for config in configurations() {
             let directory = tempfile::tempdir()?;
             let path = directory.path().display().to_string();
-            let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
             let initial = crate::EntangledHVec::new_deterministic(1024, 1);
             let during = crate::EntangledHVec::new_deterministic(1024, 2);
             let late = crate::EntangledHVec::new_deterministic(1024, 3);
@@ -848,7 +850,7 @@ mod tests {
                 serde_json::to_value(core.search_documents("needle", &Default::default())?)?;
             assert_eq!(expected[0]["version"], "late");
             drop(core);
-            let restored = HmsCore::new(1024, Some(path), Some(config))?;
+            let restored = WarmCore::new(1024, Some(path), Some(config))?;
             assert_eq!(
                 restored
                     .shards

@@ -8,5 +8,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   shims: true,
-  external: ['@holographic-memory/core', '@openai/agents', 'zod', 'holographic-memory'],
+  external: ['@writerslogic/warm-core', '@openai/agents', 'zod', 'writerslogic-warm'],
 })

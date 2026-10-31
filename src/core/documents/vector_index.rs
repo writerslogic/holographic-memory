@@ -116,7 +116,7 @@ impl VectorIndexMode {
     }
 }
 
-/// Per-query options of [`crate::HmsCore::search_vectors`].
+/// Per-query options of [`crate::WarmCore::search_vectors`].
 #[derive(Clone, Debug)]
 pub struct VectorQueryOptions {
     pub mode: VectorIndexMode,

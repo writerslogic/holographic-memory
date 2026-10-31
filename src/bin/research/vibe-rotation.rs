@@ -3,15 +3,15 @@
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::qgraph::{
-    diagnostics::{RotationControl, RotationSearcher},
-    BuildParams, Graph, VGraph, VSearchParams, VSearcher,
-};
 use serde_json::{json, Value};
 use std::{
     fs,
     path::{Path, PathBuf},
     time::Instant,
+};
+use writerslogic_warm::core::qgraph::{
+    diagnostics::{RotationControl, RotationSearcher},
+    BuildParams, Graph, VGraph, VSearchParams, VSearcher,
 };
 
 #[derive(Parser)]

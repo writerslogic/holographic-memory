@@ -3,9 +3,9 @@
 
 """LangChain: vector store, retriever with a metadata filter, and persistent chat history.
 
-Needs a running hms-server started with `--input-dim 384` (the default):
-    HMS_API_KEY=... hms-server --input-dim 384
-Set HMS_URL / HMS_API_KEY if not local. Embeddings here are the offline lexical
+Needs a running warm-server started with `--input-dim 384` (the default):
+    WARM_API_KEY=... warm-server --input-dim 384
+Set WARM_URL / WARM_API_KEY if not local. Embeddings here are the offline lexical
 `HashingEmbedder`; pass any LangChain `Embeddings` (OpenAI, HuggingFace, Ollama) instead.
 """
 
@@ -15,19 +15,19 @@ import uuid
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage
 
-from holographic_integrations.core import HashingEmbedder
-from holographic_integrations.langchain import (
+from writerslogic_warm_integrations.core import HashingEmbedder
+from writerslogic_warm_integrations.langchain import (
     EmbedderAsLangChain,
-    HolographicChatMessageHistory,
-    HolographicRetriever,
-    HolographicVectorStore,
+    WarmChatMessageHistory,
+    WarmRetriever,
+    WarmVectorStore,
 )
 
-URL = os.environ.get("HMS_URL", "http://127.0.0.1:8080")
-KEY = os.environ.get("HMS_API_KEY")
+URL = os.environ.get("WARM_URL", "http://127.0.0.1:8080")
+KEY = os.environ.get("WARM_API_KEY")
 TENANT = "example-" + uuid.uuid4().hex[:8]  # a private store for this run
 
-store = HolographicVectorStore(
+store = WarmVectorStore(
     EmbedderAsLangChain(HashingEmbedder(384)), url=URL, api_key=KEY, tenant_id=TENANT, collection="docs"
 )
 store.add_documents(
@@ -39,15 +39,15 @@ store.add_documents(
     ids=["a", "b", "c"],
 )
 
-retriever = HolographicRetriever(vectorstore=store, k=2, filter={"region": "eu"}, include_score=True)
+retriever = WarmRetriever(vectorstore=store, k=2, filter={"region": "eu"}, include_score=True)
 for doc in retriever.invoke("how did revenue change"):
-    print(f"{doc.metadata['hms_score']:.3f}  {doc.id}  {doc.page_content}")
+    print(f"{doc.metadata['warm_score']:.3f}  {doc.id}  {doc.page_content}")
 
 # operators run client-side on over-fetched candidates (documented limit)
 recent = store.similarity_search("revenue", k=3, filter={"year": {"$gte": 2025}})
 print([d.id for d in recent])
 
-history = HolographicChatMessageHistory("session-1", url=URL, api_key=KEY, tenant_id=TENANT)
+history = WarmChatMessageHistory("session-1", url=URL, api_key=KEY, tenant_id=TENANT)
 history.add_messages([HumanMessage("What grew in Europe?"), AIMessage("Revenue, by twelve percent.")])
 print([f"{m.type}: {m.content}" for m in history.messages])
 

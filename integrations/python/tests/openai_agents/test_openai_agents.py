@@ -15,12 +15,12 @@ from agents.models.interface import Model
 from agents.usage import Usage
 from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.openai_agents import HolographicSession, memory_tools
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.openai_agents import WarmSession, memory_tools
 
 
 def cfg(server, **kw):
-    return HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
+    return WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
 
 
 def message(text):
@@ -60,7 +60,7 @@ def user(text):
 
 
 async def test_is_a_session_and_runner_replays_history(server):
-    session = HolographicSession("conv-1", cfg(server))
+    session = WarmSession("conv-1", cfg(server))
     assert isinstance(session, Session)
     model = ScriptedModel([[message("first reply")], [message("second reply")]])
     agent = Agent(name="a", model=model)
@@ -74,7 +74,7 @@ async def test_is_a_session_and_runner_replays_history(server):
     stored = await session.get_items()
     assert [i.get("role") for i in stored] == ["user", "assistant", "user", "assistant"]
     # another process: a fresh session object over the same tenant sees the same history
-    again = HolographicSession("conv-1", HmsConfig(url=server.url, tenant_id=session.backend.config.tenant_id, input_dim=server.dim))
+    again = WarmSession("conv-1", WarmConfig(url=server.url, tenant_id=session.backend.config.tenant_id, input_dim=server.dim))
     assert await again.get_items() == stored
     await session.aclose()
     await again.aclose()
@@ -82,7 +82,7 @@ async def test_is_a_session_and_runner_replays_history(server):
 
 async def test_sessions_are_isolated_by_id(server):
     c = cfg(server)
-    a, b = HolographicSession("a", c), HolographicSession("b", c)
+    a, b = WarmSession("a", c), WarmSession("b", c)
     await a.add_items([user("for a")])
     await b.add_items([user("for b")])
     assert await a.get_items() == [user("for a")]
@@ -92,7 +92,7 @@ async def test_sessions_are_isolated_by_id(server):
 
 @pytest.mark.parametrize("n", [49, 50, 51, 100, 101, 230])
 async def test_order_and_limits_across_page_boundaries(server, n):
-    s = HolographicSession("big", cfg(server))
+    s = WarmSession("big", cfg(server))
     items = [user(f"msg {i:04d}") for i in range(n)]
     for start in range(0, n, 37):  # several add_items calls, not aligned with pages
         await s.add_items(items[start : start + 37])
@@ -110,14 +110,14 @@ async def test_order_and_limits_across_page_boundaries(server, n):
 
 
 async def test_default_limit_from_session_settings(server):
-    s = HolographicSession("lim", cfg(server), session_settings={"limit": 3})
+    s = WarmSession("lim", cfg(server), session_settings={"limit": 3})
     await s.add_items([user(str(i)) for i in range(10)])
     assert [i["content"] for i in await s.get_items()] == ["7", "8", "9"]
     assert len(await s.get_items(limit=5)) == 5
 
 
 async def test_large_item_spans_parts_and_pop_removes_them(server):
-    s = HolographicSession("parts", cfg(server), chunk_chars=500, max_parts=4)
+    s = WarmSession("parts", cfg(server), chunk_chars=500, max_parts=4)
     big = {"type": "function_call_output", "call_id": "c", "output": "é" * 1200}
     await s.add_items([user("before"), big, user("after")])
     assert await s.get_items() == [user("before"), big, user("after")]
@@ -132,7 +132,7 @@ async def test_large_item_spans_parts_and_pop_removes_them(server):
 
 async def test_page_size_must_fit_service_cap(server):
     with pytest.raises(ValueError):
-        HolographicSession("x", cfg(server, max_fetch=20), page_size=21)
+        WarmSession("x", cfg(server, max_fetch=20), page_size=21)
 
 
 async def test_memory_tools_drive_a_real_agent_loop(server):

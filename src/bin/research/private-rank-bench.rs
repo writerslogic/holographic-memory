@@ -17,14 +17,14 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::{Args, Parser, Subcommand};
-use holographic_memory::core::private_query::clustered::{
-    DenseClient, DenseMatrix, DenseParams, DenseServer, FAILURE_LOG2_BUDGET,
-};
-use holographic_memory::core::private_query::{ERROR_SIGMA, ERROR_TAIL, LWE_DIM, SEED_LEN};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rayon::prelude::*;
 use serde_json::{json, Value};
+use writerslogic_warm::core::private_query::clustered::{
+    DenseClient, DenseMatrix, DenseParams, DenseServer, FAILURE_LOG2_BUDGET,
+};
+use writerslogic_warm::core::private_query::{ERROR_SIGMA, ERROR_TAIL, LWE_DIM, SEED_LEN};
 
 const DIM: usize = 100;
 const TOP: usize = 10;

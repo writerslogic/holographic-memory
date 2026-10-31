@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { HolographicVector } from '../dist/index.js'
 
-const vector = new HolographicVector({ id: 'hms', dimension: 4, path: mkdtempSync(join(tmpdir(), 'hms-mastra-ex-')) })
+const vector = new HolographicVector({ id: 'warm', dimension: 4, path: mkdtempSync(join(tmpdir(), 'warm-mastra-ex-')) })
 await vector.createIndex({ indexName: 'notes', dimension: 4 })
 await vector.upsert({
   indexName: 'notes',

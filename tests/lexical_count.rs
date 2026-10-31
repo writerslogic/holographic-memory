@@ -7,8 +7,8 @@
 
 use std::collections::BTreeSet;
 
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 fn input(id: &str, text: &str) -> DocumentInput {
     DocumentInput {
@@ -25,7 +25,7 @@ fn input(id: &str, text: &str) -> DocumentInput {
     }
 }
 
-fn matching_ids(core: &HmsCore, query: &str) -> BTreeSet<String> {
+fn matching_ids(core: &WarmCore, query: &str) -> BTreeSet<String> {
     let options = SearchOptions {
         k: Some(1000),
         candidate_limit: Some(4096),
@@ -39,7 +39,7 @@ fn matching_ids(core: &HmsCore, query: &str) -> BTreeSet<String> {
 #[test]
 fn count_matches_the_documents_a_lexical_search_returns() {
     let dir = tempfile::tempdir().unwrap();
-    let core = HmsCore::new(64, Some(dir.path().display().to_string()), None).unwrap();
+    let core = WarmCore::new(64, Some(dir.path().display().to_string()), None).unwrap();
     let words = ["red", "green", "blue", "cyan", "gold", "grey", "pink"];
     let mut state = 0x9E37_79B9_7F4A_7C15u64;
     let mut next = |bound: usize| {
@@ -89,7 +89,7 @@ fn count_matches_the_documents_a_lexical_search_returns() {
 #[test]
 fn unstemmed_documents_match_only_their_own_words() {
     let dir = tempfile::tempdir().unwrap();
-    let core = HmsCore::new(64, Some(dir.path().display().to_string()), None).unwrap();
+    let core = WarmCore::new(64, Some(dir.path().display().to_string()), None).unwrap();
     let stemmed = IngestOptions {
         encode: EncodeMode::Lexical,
         ..Default::default()
@@ -111,6 +111,6 @@ fn unstemmed_documents_match_only_their_own_words() {
     assert_eq!(matching_ids(&core, "observatories"), plural);
     // The unstemmed form survives a reopen from the journal.
     drop(core);
-    let core = HmsCore::new(64, Some(dir.path().display().to_string()), None).unwrap();
+    let core = WarmCore::new(64, Some(dir.path().display().to_string()), None).unwrap();
     assert_eq!(matching_ids(&core, "observatory"), both);
 }

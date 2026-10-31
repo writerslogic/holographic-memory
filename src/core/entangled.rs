@@ -463,7 +463,7 @@ impl EntangledHVec {
     }
 
     /// Fixed-domain, contribution-clipped histogram followed by noisy top-k.
-    /// The dimension must be public; prefer HmsCore::bundle for empty datasets.
+    /// The dimension must be public; prefer WarmCore::bundle for empty datasets.
     pub fn bundle_dp<V: Borrow<Self>>(vectors: &[V], epsilon: f64) -> Self {
         let dim = vectors.first().map_or(0, |v| v.borrow().dim);
         Self::bundle_dp_in_space(vectors, epsilon, dim)

@@ -63,7 +63,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::core::HmsCore;
+use crate::core::WarmCore;
 use index::Index;
 
 #[cfg(feature = "conversation-memory")]
@@ -173,7 +173,7 @@ impl MemoryConfig {
 /// Several `Memory` values over one core stay correct: each notices the others' writes by
 /// the store revision and rebuilds its index, at the cost of one scan.
 pub struct Memory {
-    core: Arc<HmsCore>,
+    core: Arc<WarmCore>,
     config: MemoryConfig,
     supersession: Arc<dyn SupersessionPolicy>,
     /// Whether the supersession policy can return links; the default never does, so writes
@@ -190,11 +190,11 @@ pub struct Memory {
 
 impl Memory {
     /// A memory over `core` with the default, do-nothing policies.
-    pub fn new(core: Arc<HmsCore>) -> Self {
+    pub fn new(core: Arc<WarmCore>) -> Self {
         Self::with_config(core, MemoryConfig::default()).expect("the default config is valid")
     }
 
-    pub fn with_config(core: Arc<HmsCore>, config: MemoryConfig) -> Result<Self> {
+    pub fn with_config(core: Arc<WarmCore>, config: MemoryConfig) -> Result<Self> {
         config.validate()?;
         let supersession_active = config.supersession != SupersessionSpec::Explicit;
         let supersession: Arc<dyn SupersessionPolicy> = match config.supersession {
@@ -282,7 +282,7 @@ impl Memory {
 
     /// The engine underneath, for documents, vectors and raw search. Facts are documents
     /// with the fact id as the document id.
-    pub fn core(&self) -> &Arc<HmsCore> {
+    pub fn core(&self) -> &Arc<WarmCore> {
         &self.core
     }
 

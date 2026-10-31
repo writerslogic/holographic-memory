@@ -29,7 +29,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-DL = Path.home() / ".cache/hms-bench/downloads"
+DL = Path.home() / ".cache/warm-bench/downloads"
 Q_BGE = "Represent this sentence for searching relevant passages: "
 
 # id -> (query prefix, passage prefix, engine-supported architecture)
@@ -168,7 +168,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--models", nargs="*", default=list(CANDIDATES))
-    ap.add_argument("--cache", type=Path, default=Path("/tmp/hms-embed-select"))
+    ap.add_argument("--cache", type=Path, default=Path("/tmp/warm-embed-select"))
     ap.add_argument("--device", default="mps")
     ap.add_argument("--batch", type=int, default=32)
     args = ap.parse_args()

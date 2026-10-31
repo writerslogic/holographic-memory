@@ -111,7 +111,7 @@ def run(folder, binary):
     previous = os.environ.get("RAYON_NUM_THREADS")
     os.environ["RAYON_NUM_THREADS"] = "1"
     try:
-        with Path("./.hms-target/timing.lock").open("a") as lock:
+        with Path("./.warm-target/timing.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             for dim in protocol["dimensions"]:
                 for repetition in range(protocol["rounds"]):

@@ -1,20 +1,20 @@
-# HMS under Mem0's benchmark harness (memory-benchmarks)
+# WARM under Mem0's benchmark harness (memory-benchmarks)
 
 This directory runs [mem0ai/memory-benchmarks](https://github.com/mem0ai/memory-benchmarks), Mem0's
-current harness for LoCoMo, LongMemEval-S and BEAM, against HMS. The harness runs **unmodified** at
-commit `4b61c5d31b9c668a12b4f5e78064248a02c82d2b` with **no patches**. HMS replaces only the memory
+current harness for LoCoMo, LongMemEval-S and BEAM, against WARM. The harness runs **unmodified** at
+commit `4b61c5d31b9c668a12b4f5e78064248a02c82d2b` with **no patches**. WARM replaces only the memory
 backend:
 
 ```
 memory-benchmarks run.py --backend oss --mem0-host http://127.0.0.1:<shim>
         |  POST /memories, POST /search (Mem0 OSS REST, benchmarks/common/mem0_client.py)
-   shim.py  ->  hms-server POST /api/v1/memory/{remember,recall}   (one tenant per harness user_id)
+   shim.py  ->  warm-server POST /api/v1/memory/{remember,recall}   (one tenant per harness user_id)
         |  OpenAI calls: OPENAI_BASE_URL -> openai_proxy.py -> api.openai.com (logs params, usage, spend cap)
 ```
 
 | File | Role |
 |---|---|
-| `shim.py` | Mem0 OSS REST surface over the hms-server memory API |
+| `shim.py` | Mem0 OSS REST surface over the warm-server memory API |
 | `retrieval_config.json` | Frozen primary retrieval configuration (token-matched: `max_context_tokens: 7000`). It is copied into the manifest with its sha256 |
 | `retrieval_config_count_matched.json` | Documented alternative: literal top-200 with no token cap. Not scheduled |
 | `openai_proxy.py` | Authenticated local proxy with durable reservations, pinned GPT-5 routing and validated usage |
@@ -44,7 +44,7 @@ quote.
   no per-benchmark branch.
 - **Long facts.** A fact over the engine's single-fact limit (60 KiB / 4000 words here) is split on
   word boundaries into several facts with the same time. That's 6 of 124,345 LongMemEval-S pairs.
-- **No model calls at ingest.** The shim and hms-server call no LLM and no embedding model.
+- **No model calls at ingest.** The shim and warm-server call no LLM and no embedding model.
 - **Time.** The harness `timestamp` (session date, unix seconds) becomes the fact's `eventTime`.
   `created_at` is returned as naive UTC ISO-8601 (`2023-05-08T13:56:00`), which the harness's
   `_to_human_date` parses and sorts. The Mem0 Platform uses the same timestamp semantics.
@@ -52,7 +52,7 @@ quote.
 - **Search.** `memory/recall` with `k = limit` (200), lexical (BM25) only, default options, best
   first, then the token budget. Results are `{"id", "memory", "score", "created_at"}`, the normalised shape `mem0_client`
   produces.
-- **Isolation.** There is one hms-server tenant per harness `user_id`: one per LoCoMo conversation,
+- **Isolation.** There is one warm-server tenant per harness `user_id`: one per LoCoMo conversation,
   per LongMemEval question and per BEAM conversation.
 - **Token budget (primary).** `max_context_tokens: 7000` caps the returned memory text at 7,000
   o200k tokens, matching Mem0's documented ~7k memory tokens per query. The budget is filled in rank
@@ -67,7 +67,7 @@ quote.
 - The shim branches on no question text pattern and has no per-question or per-benchmark parameter.
 - `load_config` rejects unknown keys.
 - The configuration is frozen in `retrieval_config.json` before the run. The manifest records its
-  sha256 alongside the HMS commit, the dirty flag and the hms-server binary sha256.
+  sha256 alongside the WARM commit, the dirty flag and the warm-server binary sha256.
 - With `--predict-only` first, the predict directory hash goes into the manifest. A later
   `--evaluate-only` scores exactly that retrieval.
 - Retrieval is deterministic. Two fresh servers returned identical top-200 lists for all 152
@@ -135,7 +135,7 @@ be true; this was checked on a 1-question LoCoMo evaluate-only smoke run ($0.02)
 
 ## Commands
 
-These are the exact commands. Paid runs start only with the final HMS SHA from the coordinator. Put
+These are the exact commands. Paid runs start only with the final WARM SHA from the coordinator. Put
 `--data-dir` on a local SSD.
 
 Before a paid final run, create one owner-only directory outside Git and a mode-600 JSON policy
@@ -182,20 +182,20 @@ git clone https://github.com/mem0ai/memory-benchmarks /path/memory-benchmarks
 git -C /path/memory-benchmarks checkout 4b61c5d31b9c668a12b4f5e78064248a02c82d2b
 uv venv /path/venv && VIRTUAL_ENV=/path/venv uv pip install -r /path/memory-benchmarks/requirements.txt \
     datasets python-dateutil tiktoken          # BEAM imports datasets and dateutil; shim and price.py use tiktoken
-git -C /path/hms checkout <final SHA>
-CARGO_TARGET_DIR=/path/target cargo build --release --features server --bin hms-server
+git -C /path/warm checkout <final SHA>
+CARGO_TARGET_DIR=/path/target cargo build --release --features server --bin warm-server
 export OPENAI_API_KEY=...                      # never written to any log or manifest
 PY=/path/venv/bin/python; H=benchmarks/public/mem0_protocol
-C="--clone /path/memory-benchmarks --python $PY --hms-bin /path/target/release/hms-server"
-LOCOMO=~/.cache/hms-bench/locomo/locomo10.json                      # sha256 79fa87e9...
-LME=~/.cache/hms-bench/downloads/longmemeval_s_cleaned.json
-BEAM=~/.cache/hms-bench/beam                                         # harness caches beam_<size>.json here
+C="--clone /path/memory-benchmarks --python $PY --warm-bin /path/target/release/warm-server"
+LOCOMO=~/.cache/warm-bench/locomo/locomo10.json                      # sha256 79fa87e9...
+LME=~/.cache/warm-bench/downloads/longmemeval_s_cleaned.json
+BEAM=~/.cache/warm-bench/beam                                         # harness caches beam_<size>.json here
 
 # 1. LoCoMo: retrieval only ($0), offline price, then the private final allocation
 $PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
     --max-spend 0 -- --predict-only
 $PY $H/price.py --clone /path/memory-benchmarks --benchmark locomo \
-    --predict runs/locomo/harness-out/predicted_hms-locomo --calls runs/locomo-smoke/openai_calls.jsonl
+    --predict runs/locomo/harness-out/predicted_warm-locomo --calls runs/locomo-smoke/openai_calls.jsonl
 $PY $H/run_mem0_protocol.py locomo $C --work runs/locomo --data-dir /ssd/locomo --dataset $LOCOMO \
     --max-spend "$LOCOMO_ALLOCATION_USD" --budget-ledger "$BUDGET_LEDGER" \
     --budget-allocation final-locomo -- --evaluate-only
@@ -279,7 +279,7 @@ and exhausted transport retries produce a nonzero wrapper exit even if the upstr
 zero. A successful length-limited call with an empty answer and a recorded wrong score remains a
 scored result; the existing empty-answer audit reports it.
 
-Run `live_smoke.py --binary <hms-server> --config retrieval_config_hybrid_dev.json --output <new-dir>`
+Run `live_smoke.py --binary <warm-server> --config retrieval_config_hybrid_dev.json --output <new-dir>`
 with the harness Python environment for synthetic ingest, timestamp, semantic retrieval and tenant
 isolation checks. Development measurements must use a conversation partition declared before
 examining question failures; a smoke result alone is not benchmark accuracy evidence.

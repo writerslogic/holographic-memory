@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! `hms-research-forget`: kill test for exact deletion from a counter-backed
+//! `warm-research-forget`: kill test for exact deletion from a counter-backed
 //! sparse-hypervector bundle.
 //!
 //! For each `(n, delete_frac)` row: generate `n` engine hypervectors at `--dim`
@@ -32,20 +32,20 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::{bail, Context, Result};
 use clap::{Parser, ValueEnum};
-use holographic_memory::core::entangled::hash_u64;
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::core::entangled::hash_u64;
+use writerslogic_warm::EntangledHVec;
 use serde::Serialize;
 
-use hms_research_forget::bundle::{
+use warm_research_forget::bundle::{
     BaselineDelete, CapacityPolicy, Counter, CounterBundle, Digest32, MemoryAccounting,
     ThresholdedBundle,
 };
-use hms_research_forget::certificate::{
+use warm_research_forget::certificate::{
     chain_break, delete_with_certificate, verify, DeletionCertificate, DEFAULT_SIGMA,
 };
-use hms_research_forget::{median, sample, z_group, Sample};
+use warm_research_forget::{median, sample, z_group, Sample};
 
-const SCHEMA: &str = "hms-research-forget/v1";
+const SCHEMA: &str = "warm-research-forget/v1";
 const ITEM_TAG: u64 = 0x4954_454D_535F_0001;
 const DELETE_TAG: u64 = 0x4445_4C45_5445_0002;
 const PROBE_TAG: u64 = 0x5052_4F42_4553_0003;
@@ -97,7 +97,7 @@ impl TauSpec {
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "hms-research-forget",
+    name = "warm-research-forget",
     about = "Exact deletion from a counter-backed sparse-hypervector bundle: kill test"
 )]
 struct Cli {

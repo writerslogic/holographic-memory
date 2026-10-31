@@ -1,4 +1,4 @@
-"""HMS scaling benchmarks on Modal — parallel runs across dimensions and densities."""
+"""WARM scaling benchmarks on Modal — parallel runs across dimensions and densities."""
 
 import json
 import logging
@@ -7,9 +7,9 @@ import datetime
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
-log = logging.getLogger("hms-bench")
+log = logging.getLogger("warm-bench")
 
-app = modal.App("hms-scaling-benchmarks")
+app = modal.App("warm-scaling-benchmarks")
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -18,13 +18,13 @@ image = (
         "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
     )
     .env({"PATH": "/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"})
-    .add_local_dir("./HMS/src", "/app/src", copy=True)
-    .add_local_file("./HMS/Cargo.toml", "/app/Cargo.toml", copy=True)
-    .add_local_file("./HMS/Cargo.lock", "/app/Cargo.lock", copy=True)
-    .add_local_file("./HMS/build.rs", "/app/build.rs", copy=True)
-    .add_local_dir("./HMS/benches", "/app/benches", copy=True)
+    .add_local_dir("./WARM/src", "/app/src", copy=True)
+    .add_local_file("./WARM/Cargo.toml", "/app/Cargo.toml", copy=True)
+    .add_local_file("./WARM/Cargo.lock", "/app/Cargo.lock", copy=True)
+    .add_local_file("./WARM/build.rs", "/app/build.rs", copy=True)
+    .add_local_dir("./WARM/benches", "/app/benches", copy=True)
     .run_commands(
-        "cd /app && cargo build --release --bin hms-scaling",
+        "cd /app && cargo build --release --bin warm-scaling",
     )
 )
 
@@ -46,7 +46,7 @@ def run_benchmark(dim: int, density: int) -> dict:
     import subprocess
     try:
         result = subprocess.run(
-            ["/app/target/release/hms-scaling", "--dim", str(dim), "--density", str(density), "--json"],
+            ["/app/target/release/warm-scaling", "--dim", str(dim), "--density", str(density), "--json"],
             capture_output=True, text=True, timeout=3000,
         )
         if result.returncode != 0:

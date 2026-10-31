@@ -10,12 +10,12 @@ pytest.importorskip("smolagents")
 from smolagents import CodeAgent, Model, ToolCallingAgent
 from smolagents.models import ChatMessage, ChatMessageToolCall, ChatMessageToolCallFunction
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.smolagents import memory_tools
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.smolagents import memory_tools
 
 
 def cfg(server):
-    return HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
+    return WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
 
 
 class Scripted(Model):

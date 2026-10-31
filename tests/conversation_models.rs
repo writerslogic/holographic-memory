@@ -6,20 +6,20 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
-use holographic_memory::core::memory_api::{
+use writerslogic_warm::core::memory_api::{
     ConversationInput, ConversationMemory, ConversationRecallOptions, ConversationRole,
     ConversationTurn,
 };
-use holographic_memory::core::models::{
+use writerslogic_warm::core::models::{
     default_device, Embedder, EmbeddingQueryTask, ModelSource, ModelStages, PINNED,
 };
-use holographic_memory::core::HmsConfig;
-use holographic_memory::HmsCore;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::WarmCore;
 
 #[test]
 fn conversation_sources_reject_user_only_fact_extraction() -> Result<()> {
     let dir = tempfile::tempdir()?;
-    let core = HmsCore::new(4096, Some(dir.path().display().to_string()), None)?;
+    let core = WarmCore::new(4096, Some(dir.path().display().to_string()), None)?;
     core.set_model_stages(Some(Arc::new(ModelStages {
         extract_facts: true,
         ..Default::default()
@@ -29,22 +29,22 @@ fn conversation_sources_reject_user_only_fact_extraction() -> Result<()> {
 }
 
 #[test]
-#[ignore = "requires pinned local weights in HMS_CONVERSATION_MODEL_DIR"]
+#[ignore = "requires pinned local weights in WARM_CONVERSATION_MODEL_DIR"]
 fn conversation_embedding_retrieves_original_assistant_evidence() -> Result<()> {
-    let model_dir = std::env::var_os("HMS_CONVERSATION_MODEL_DIR")
-        .context("set HMS_CONVERSATION_MODEL_DIR to Qwen3-Embedding-0.6B")?;
+    let model_dir = std::env::var_os("WARM_CONVERSATION_MODEL_DIR")
+        .context("set WARM_CONVERSATION_MODEL_DIR to Qwen3-Embedding-0.6B")?;
     let (_, revision) = PINNED
         .iter()
         .find(|(name, _)| *name == "Qwen/Qwen3-Embedding-0.6B")
         .context("missing pinned embedding model")?;
     let mut embedder = Embedder::load(&ModelSource::new(model_dir, *revision), &default_device()?)?;
     embedder.set_query_task(EmbeddingQueryTask::Conversation);
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(embedder.space()),
         ..Default::default()
     };
     let dir = tempfile::tempdir()?;
-    let core = HmsCore::new(4096, Some(dir.path().display().to_string()), Some(config))?;
+    let core = WarmCore::new(4096, Some(dir.path().display().to_string()), Some(config))?;
     core.set_model_stages(Some(Arc::new(ModelStages {
         embedder: Some(embedder),
         ..Default::default()

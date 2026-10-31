@@ -1,7 +1,7 @@
 {
-  "name": "@holographic-memory/llamaindex",
+  "name": "@writerslogic/warm-llamaindex",
   "version": "0.1.0",
-  "description": "LlamaIndex.TS vector store and key-value store (doc store, index store) backed by Holographic Memory",
+  "description": "LlamaIndex.TS vector store and key-value store (doc store, index store) backed by WARM",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -20,7 +20,7 @@
     "test": "tsup && node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@holographic-memory/core": "^0.1.0"
+    "@writerslogic/warm-core": "^0.1.0"
   },
   "peerDependencies": {
     "@llamaindex/core": ">=0.6.22 <0.7.0"

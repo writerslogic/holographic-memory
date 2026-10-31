@@ -17,7 +17,7 @@
 //! (src/core/documents.rs:147-156). `idf = ln(1 + (N - df + 0.5) / (df + 0.5))`
 //! (Lucene/BEIR form; the root's idf was not read). Query terms are weighted by
 //! their query frequency. This is an own implementation over the same stems:
-//! the root's document search is only reachable through `HmsCore` and was not
+//! the root's document search is only reachable through `WarmCore` and was not
 //! used.
 //!
 //! # Data layout

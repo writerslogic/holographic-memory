@@ -91,7 +91,7 @@
    "vectors": 10000
   }
  },
- "binary": "/Volumes/A/.hms-target-r3/release/hms-server",
+ "binary": "/Volumes/A/.warm-target-r3/release/warm-server",
  "components": {
   "arithmetic": {
    "bbox_nodes_f32_mb": 0.9169921875,
@@ -134,5 +134,5 @@
   "text_bytes": 12
  },
  "platform": "darwin",
- "schema": "hms-rss-breakdown/1"
+ "schema": "warm-rss-breakdown/1"
 }

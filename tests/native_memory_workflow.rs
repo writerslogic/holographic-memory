@@ -1,12 +1,12 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use holographic_memory::{
-    core::memory_api::{ManualClock, Memory, MemoryError},
-    HmsCore,
-};
 use serde_json::{json, Value};
 use std::sync::Arc;
+use writerslogic_warm::{
+    core::memory_api::{ManualClock, Memory, MemoryError},
+    WarmCore,
+};
 
 fn run_fixture(fixture: &Value, name: &str) -> usize {
     let dir = tempfile::tempdir().unwrap();
@@ -17,7 +17,7 @@ fn run_fixture(fixture: &Value, name: &str) -> usize {
     let mut failures = Vec::new();
     for (phase, steps) in fixture["phases"].as_array().unwrap().iter().enumerate() {
         let core =
-            Arc::new(HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap());
+            Arc::new(WarmCore::new(4096, Some(dir.path().display().to_string()), None).unwrap());
         let memory = Memory::new(core.clone()).with_clock(clock.clone());
         for (step, case) in steps.as_array().unwrap().iter().enumerate() {
             if let Some(time) = case["clock"].as_i64() {
@@ -114,7 +114,7 @@ fn shared_memory_negotiation_and_validation_contract() {
         serde_json::from_str(include_str!("fixtures/memory_contract_cases_v1.json")).unwrap();
     let directory = tempfile::tempdir().unwrap();
     let memory = Memory::new(Arc::new(
-        HmsCore::new(1024, Some(directory.path().display().to_string()), None).unwrap(),
+        WarmCore::new(1024, Some(directory.path().display().to_string()), None).unwrap(),
     ));
     for case in fixture["cases"].as_array().unwrap() {
         let result = memory.call(case["op"].as_str().unwrap(), case["request"].clone());

@@ -11,9 +11,9 @@ use std::collections::BTreeMap;
 
 use anyhow::{ensure, Context, Result};
 use format_common::*;
-use holographic_memory::core::format::{verify_path, Verdict, VerifyOptions};
-use holographic_memory::HmsCore;
 use serde_json::Value;
+use writerslogic_warm::core::format::{verify_path, Verdict, VerifyOptions};
+use writerslogic_warm::WarmCore;
 
 fn le32(b: &[u8], at: usize) -> u32 {
     u32::from_le_bytes(b[at..at + 4].try_into().unwrap())
@@ -157,7 +157,7 @@ fn the_spec_alone_decodes_every_golden_journal() -> Result<()> {
                     Some(json) => std::borrow::Cow::Borrowed(json),
                     None => {
                         ensure!(plain.starts_with(b"HMS-TXN-3\0"), "journal magic");
-                        holographic_memory::core::format::scan::transaction_json(&plain)
+                        writerslogic_warm::core::format::scan::transaction_json(&plain)
                             .context("journal magic")?
                             .map_err(anyhow::Error::msg)?
                     }
@@ -289,7 +289,7 @@ fn open_changes_only_what_the_spec_lists() -> Result<()> {
             .map(|k| {
                 let bytes = std::fs::read(store.join(k)).unwrap();
                 let end =
-                    holographic_memory::core::format::scan::scan_segment(&bytes, true, |_, _| {})
+                    writerslogic_warm::core::format::scan::scan_segment(&bytes, true, |_, _| {})
                         .end_offset;
                 (k.clone(), end)
             })
@@ -298,7 +298,7 @@ fn open_changes_only_what_the_spec_lists() -> Result<()> {
             .keys()
             .map(|k| (k.clone(), std::fs::read(store.join(k)).unwrap()))
             .collect();
-        drop(HmsCore::new(
+        drop(WarmCore::new(
             golden.dimensions(),
             Some(store.display().to_string()),
             Some(golden.config()?),
@@ -334,7 +334,7 @@ fn open_changes_only_what_the_spec_lists() -> Result<()> {
 }
 
 fn refused(golden: &Golden, store: &std::path::Path, needle: &str) -> Result<()> {
-    let error = match HmsCore::new(
+    let error = match WarmCore::new(
         golden.dimensions(),
         Some(store.display().to_string()),
         Some(golden.config()?),
@@ -383,7 +383,7 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
         "\"version\": 2",
         &format!(
             "\"version\": {}",
-            holographic_memory::core::format::STORE_SCHEMA_VERSION + 1
+            writerslogic_warm::core::format::STORE_SCHEMA_VERSION + 1
         ),
     );
     std::fs::write(&schema, &text)?;
@@ -413,7 +413,7 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
     let mut text = std::fs::read(store.join("documents.text"))?;
     text[4] = 3;
     std::fs::write(store.join("documents.text"), text)?;
-    ensure!(HmsCore::new(
+    ensure!(WarmCore::new(
         golden.dimensions(),
         Some(store.display().to_string()),
         Some(golden.config()?)
@@ -426,11 +426,11 @@ fn future_versions_are_refused_cleanly() -> Result<()> {
 /// one over the 64 KiB chunk limit verifies clean and plans an upgrade.
 #[test]
 fn whole_document_record_over_the_chunk_limit_verifies() -> Result<()> {
-    use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-    use holographic_memory::DocumentInput;
+    use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+    use writerslogic_warm::DocumentInput;
     let dir = tempfile::tempdir()?;
     let store = dir.path().join("store");
-    let core = HmsCore::new(64, Some(store.display().to_string()), None)?;
+    let core = WarmCore::new(64, Some(store.display().to_string()), None)?;
     let text = "harbor lantern ".repeat(5000);
     ensure!(text.len() > 64 * 1024);
     let input: DocumentInput = serde_json::from_value(serde_json::json!({
@@ -452,6 +452,6 @@ fn whole_document_record_over_the_chunk_limit_verifies() -> Result<()> {
         "whole-document store does not verify: {:?}",
         report.findings
     );
-    holographic_memory::core::format::plan_upgrade(&store)?;
+    writerslogic_warm::core::format::plan_upgrade(&store)?;
     Ok(())
 }

@@ -20,9 +20,9 @@ The package is available as source in this repository; no prebuilt XCFramework r
 bindings/swift/scripts/build-xcframework.sh
 ```
 
-Writes `bindings/swift/Frameworks/hms_mobileFFI.xcframework` (iOS device, iOS simulator
+Writes `bindings/swift/Frameworks/warm_mobileFFI.xcframework` (iOS device, iOS simulator
 arm64+x86_64, macOS arm64+x86_64, Mac Catalyst arm64+x86_64) and regenerates
-`Sources/HolographicMemory/HmsMobile.swift` from the library's UniFFI metadata. `SLICES="ios
+`Sources/WarmMemory/WarmMobile.swift` from the library's UniFFI metadata. `SLICES="ios
 ios-sim"` builds a subset; `IPHONEOS_DEPLOYMENT_TARGET` (15.0) and `MACOSX_DEPLOYMENT_TARGET`
 (12.0) set the deployment floor. Add the package by path, or publish the xcframework as a
 release asset and switch `Package.swift` to a `url` + `checksum` binary target.
@@ -30,9 +30,9 @@ release asset and switch `Package.swift` to a `url` + `checksum` binary target.
 ## Use
 
 ```swift
-import HolographicMemory
+import WarmMemory
 
-let store = try await HmsStore.open(
+let store = try await WarmStore.open(
     path: directory.path,
     options: StoreOptions(dimensions: 4096, encryptionKey: keyFromKeychain))
 
@@ -40,13 +40,13 @@ _ = try await store.ingest(input: DocumentInput(id: "note-1", text: "Title\nBody
 let hits = try await store.search(
     query: "title", options: SearchOptions(k: 10, bm25K1: 1.2, bm25B: 0.75))
 let info = try await store.snapshot(destination: backupURL.path)
-let restored = try await HmsStore.restore(
+let restored = try await WarmStore.restore(
     snapshotPath: backupURL.path, path: otherDir.path, options: sameOptions)
 ```
 
 Every disk-touching call has an `async` form and a `…Blocking` form. A store is thread-safe:
-share one handle across tasks. A directory opens once per process (`HmsError.StoreLocked`);
-call `shutdown()` to release it before reopening. Errors are the typed `HmsError` enum:
+share one handle across tasks. A directory opens once per process (`WarmError.StoreLocked`);
+call `shutdown()` to release it before reopening. Errors are the typed `WarmError` enum:
 `InvalidInput`, `StoreLocked`, `Encryption`, `IncompatibleStore`, `NotFound`, `AlreadyExists`,
 `Corrupt`, `Io`, `Closed`, `Internal`.
 
@@ -55,8 +55,8 @@ metadata comes back as `metadataJson`.
 
 ## Sample
 
-`bindings/swift/Examples/HmsSample` is a SwiftUI note-search app (`swift run` on macOS; the same
-package builds for the iOS simulator with `xcodebuild -scheme HmsSample -destination
+`bindings/swift/Examples/WarmSample` is a SwiftUI note-search app (`swift run` on macOS; the same
+package builds for the iOS simulator with `xcodebuild -scheme WarmSample -destination
 'generic/platform=iOS Simulator' build`).
 
 ## Verified
@@ -64,7 +64,7 @@ package builds for the iOS simulator with `xcodebuild -scheme HmsSample -destina
 Run against the xcframework built by the script:
 
 - `swift test` on macOS arm64: 7 XCTest cases pass.
-- `xcodebuild test -scheme HolographicMemory -destination 'platform=iOS Simulator,name=iPhone 17'`
+- `xcodebuild test -scheme WarmMemory -destination 'platform=iOS Simulator,name=iPhone 17'`
   (iOS 26.5 simulator): the same 7 cases pass.
 - The sample builds with `swift build` (macOS) and `xcodebuild` (iOS simulator).
 

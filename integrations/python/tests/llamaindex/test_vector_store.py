@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""HolographicVectorStore against a real hms-server.
+"""WarmVectorStore against a real warm-server.
 
 `SimpleVectorStore` (llama-index-core's reference implementation) is the oracle for filter
 semantics: every filter case must select the same node ids from both stores.
@@ -28,7 +28,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
-from holographic_integrations.llamaindex import HolographicVectorStore
+from writerslogic_warm_integrations.llamaindex import WarmVectorStore
 
 DIM = 16
 
@@ -65,7 +65,7 @@ def nodes(n=12):
 @pytest.fixture
 def store(server_factory):
     srv = server_factory(DIM)
-    s = HolographicVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM)
+    s = WarmVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM)
     yield s
     s.close()
 
@@ -180,7 +180,7 @@ def test_unsupported_modes_are_rejected(store):
 @pytest.mark.parametrize("delta", [-1, 0, 1])
 def test_similarity_top_k_at_server_cap(server_factory, delta):
     srv = server_factory(DIM, max_top_k=10)
-    s = HolographicVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=10)
+    s = WarmVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=10)
     s.add(nodes(12))
     k = 10 + delta
     if k > 10:
@@ -193,13 +193,13 @@ def test_similarity_top_k_at_server_cap(server_factory, delta):
 
 def test_residual_filter_can_return_fewer_than_k(server_factory):
     srv = server_factory(DIM, max_top_k=10)
-    s = HolographicVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=10, overfetch=1)
+    s = WarmVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=10, overfetch=1)
     s.add(nodes(12))
     f = MetadataFilters(filters=[F("idx", 11, FilterOperator.GTE)])
     # overfetch=1: only the 3 nearest candidates are examined, so matches outside them are lost
     short = s.query(VectorStoreQuery(query_embedding=vec(0), similarity_top_k=3, filters=f))
     wide = dataclasses.replace(s._config, overfetch=4)
-    s2 = HolographicVectorStore(config=wide)
+    s2 = WarmVectorStore(config=wide)
     full = s2.query(VectorStoreQuery(query_embedding=vec(0), similarity_top_k=3, filters=f))
     assert len(short.ids) <= len(full.ids) == 1
     s.close(); s2.close()
@@ -220,7 +220,7 @@ async def test_async_paths(store):
 def test_index_roundtrip_with_retriever_and_query_engine(server_factory):
     srv = server_factory(8)
     embed = MockEmbedding(embed_dim=8)
-    store = HolographicVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=8)
+    store = WarmVectorStore(url=srv.url, tenant_id=srv.tenant(), input_dim=8)
     ctx = StorageContext.from_defaults(vector_store=store)
     docs = [Document(text=f"document number {i} about topic {i % 3}", doc_id=f"doc{i}", metadata={"grp": i % 2}) for i in range(6)]
     index = VectorStoreIndex.from_documents(docs, storage_context=ctx, embed_model=embed)

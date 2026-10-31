@@ -172,24 +172,24 @@ class ServerSystem:
         raise Unsupported("no deletion")
 
 
-# ------------------------------------------------------------------ hms-server
+# ------------------------------------------------------------------ warm-server
 
-def hms_server_binary():
+def warm_server_binary():
     target = Path(os.environ.get("CARGO_TARGET_DIR", HERE.parents[2] / "target"))
-    path = Path(os.environ.get("HMS_BENCH_HMS_SERVER", target / "release" / "hms-server"))
+    path = Path(os.environ.get("WARM_BENCH_WARM_SERVER", target / "release" / "warm-server"))
     if not path.exists():
-        raise servers.NotAvailable(f"{path} missing; build with `cargo build --release --features server --bin hms-server`")
+        raise servers.NotAvailable(f"{path} missing; build with `cargo build --release --features server --bin warm-server`")
     return path
 
 
-class HmsServer(ServerSystem):
-    ENGINE = "hms-server"
+class WarmServer(ServerSystem):
+    ENGINE = "warm-server"
     BUILDS = {"graph": {"index": "graph", "build": "server default (BuildParams::default, VGraph::from_graph)", "ingest_encode": "lexical"}}
     SWEEPS = {"graph": [{"ef": e} for e in EF_SWEEP]}
 
     def command(self):
         (self.port,) = self.ports(1)
-        argv = [hms_server_binary(), "--bind", f"127.0.0.1:{self.port}", "--data-dir", self.data, "--no-auth",
+        argv = [warm_server_binary(), "--bind", f"127.0.0.1:{self.port}", "--data-dir", self.data, "--no-auth",
                 "--input-dim", self.dim, "--ingest-encode", "lexical", "--graph-min-rows", "1", "--tenant-idle-seconds", "0",
                 "--max-top-k", "100", "--log-level", "warn", "--compaction-interval-seconds", "0"]
         return argv, {"RAYON_NUM_THREADS": str(self.threads)}, None
@@ -230,10 +230,10 @@ class HmsServer(ServerSystem):
             self.http.call("DELETE", f"/api/v1/documents/{int(i)}")
 
 
-class HmsServerText(HmsServer):
+class WarmServerText(WarmServer):
     """Lexical text: `remember` (memory API) stores each document as a fact; queries go to
     `/api/v1/search`, document search's BM25 ranking returning ids and scores only, with the
-    same options as the embedded `hms` row (equal to `recall` with lexicalWeight 1 /
+    same options as the embedded `warm` row (equal to `recall` with lexicalWeight 1 /
     semanticWeight 0 on facts without validity or supersession metadata)."""
 
     BUILDS = {"default": {}}
@@ -274,7 +274,7 @@ class HmsServerText(HmsServer):
 
 class QdrantServer(ServerSystem):
     ENGINE = "qdrant"
-    # m32e500 matches the HMS graph's build effort (degree 64 at level 0, construction ef 500).
+    # m32e500 matches the WARM graph's build effort (degree 64 at level 0, construction ef 500).
     BUILDS = {"m16": {"m": 16, "ef_construct": 100}, "m32e500": {"m": 32, "ef_construct": 500}}
     SWEEPS = {k: [{"ef": e} for e in EF_SWEEP] for k in BUILDS}
 
@@ -437,7 +437,7 @@ class OpenSearchBase(ServerSystem):
         conf = self.workdir / "config"
         if not conf.exists():
             shutil.copytree(home / "config", conf)
-        heap = os.environ.get("HMS_BENCH_OPENSEARCH_HEAP", "4g")
+        heap = os.environ.get("WARM_BENCH_OPENSEARCH_HEAP", "4g")
         settings = {"path.data": self.data, "path.logs": self.logs, "http.port": self.port, "transport.port": transport,
                     "network.host": "127.0.0.1", "discovery.type": "single-node", "cluster.name": "hmsbench", "node.name": "n1",
                     "plugins.security.disabled": "true", "bootstrap.memory_lock": "false"}
@@ -543,9 +543,9 @@ class Postgres(ServerSystem):
         pg = self.pg
         settings = {"listen_addresses": "127.0.0.1", "port": self.port, "unix_socket_directories": "",
                     "max_parallel_workers_per_gather": 0, "max_parallel_maintenance_workers": max(self.threads - 1, 0),
-                    "maintenance_work_mem": os.environ.get("HMS_BENCH_PG_MAINTENANCE_WORK_MEM", "4GB"),
+                    "maintenance_work_mem": os.environ.get("WARM_BENCH_PG_MAINTENANCE_WORK_MEM", "4GB"),
                     "log_min_messages": "warning"}
-        # hms-server ends each commit in F_FULLFSYNC on macOS; fsync_writethrough holds Postgres to
+        # warm-server ends each commit in F_FULLFSYNC on macOS; fsync_writethrough holds Postgres to
         # the same drive-cache flush. Elsewhere the default wal_sync_method already matches msync.
         if sys.platform == "darwin":
             settings["wal_sync_method"] = "fsync_writethrough"
@@ -857,7 +857,7 @@ class Meilisearch(ServerSystem):
 class Typesense(ServerSystem):
     ENGINE = "typesense"
     BUILDS = {"default": {}}
-    KEY = "hms-bench-local"
+    KEY = "warm-bench-local"
 
     def command(self):
         self.port, peering = self.ports(2)
@@ -962,9 +962,9 @@ class OpenSearchBm25(OpenSearchBase):
         self.http.call("DELETE", f"/{self.INDEX}/_doc/{urllib.parse.quote(doc['id'], safe='')}?refresh=true")
 
 
-ANN = {"hms-server": HmsServer, "qdrant-server": QdrantServer, "weaviate": WeaviateServer, "opensearch-knn": OpenSearchKnn,
+ANN = {"warm-server": WarmServer, "qdrant-server": QdrantServer, "weaviate": WeaviateServer, "opensearch-knn": OpenSearchKnn,
        "pgvector": PgVector, "redis-vss": RedisVss}
-TEXT = {"hms-server": HmsServerText, "meilisearch": Meilisearch, "typesense": Typesense, "opensearch-bm25": OpenSearchBm25, "pg-tsvector": PgTsvector,
+TEXT = {"warm-server": WarmServerText, "meilisearch": Meilisearch, "typesense": Typesense, "opensearch-bm25": OpenSearchBm25, "pg-tsvector": PgTsvector,
         "paradedb": ParadeDb}
 
 

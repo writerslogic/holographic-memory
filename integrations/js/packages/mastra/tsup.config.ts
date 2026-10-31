@@ -7,5 +7,5 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: true,
   clean: true,
-  external: ['@mastra/core', '@holographic-memory/core', 'holographic-memory'],
+  external: ['@mastra/core', '@writerslogic/warm-core', 'writerslogic-warm'],
 })

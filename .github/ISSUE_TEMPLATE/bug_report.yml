@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in HMS
+description: Report a bug in WARM
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -14,7 +14,7 @@ body:
     attributes:
       label: Description
       description: A clear description of what the bug is
-      placeholder: When I call the HMS store/search API, it ...
+      placeholder: When I call the WARM store/search API, it ...
     validations:
       required: true
 

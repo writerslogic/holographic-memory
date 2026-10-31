@@ -52,7 +52,7 @@ COMMITS = {
 }
 SOURCE_DIR = Path(__file__).resolve().parent
 ROOT = SOURCE_DIR.parents[1]
-SYSTEMS = ("hms", "faiss_hnsw", "faiss_ivfpq", "hnswlib")
+SYSTEMS = ("warm", "faiss_hnsw", "faiss_ivfpq", "hnswlib")
 
 
 def canonical(value):
@@ -130,7 +130,7 @@ def read_array(item):
 
 
 def import_bridge(path):
-    loader = importlib.machinery.ExtensionFileLoader("hms_native_bridge", str(Path(path).resolve()))
+    loader = importlib.machinery.ExtensionFileLoader("warm_native_bridge", str(Path(path).resolve()))
     spec = importlib.util.spec_from_loader(loader.name, loader)
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
@@ -164,7 +164,7 @@ def machine():
 
 
 def native_runtime_artifacts(system, bridge_path):
-    if system == "hms":
+    if system == "warm":
         paths = [Path(bridge_path)]
     elif system == "hnswlib":
         paths = [Path(hnswlib.__file__)]
@@ -248,7 +248,7 @@ def grids(name, dim):
         build_id = fingerprint({"dataset": name, "system": system, "build": build})
         variants.append({"system": system, "build_id": build_id, "build_config": build,
                          "search_grid": [{"point_id": fingerprint({"build_id": build_id, "search": p}), "search_config": p} for p in search]})
-    add("hms", {"degree": 64 if dim == 256 else 32, "build_ef": 200, "alpha": 1.0,
+    add("warm", {"degree": 64 if dim == 256 else 32, "build_ef": 200, "alpha": 1.0,
                 "seed": 0x5EED, "bits": 8, "residual_bits": 8, "align": True,
                 "reorder": False, "id_bytes": 3},
         [{"ef": e, "rerank": r, "patience": p} for e in ef for r in ([16, 64] if dim == 256 else [16]) for p in [0, 256 if dim == 256 else 384]])
@@ -306,7 +306,7 @@ def preregister(args):
              "generated_sources": receipt["generated_sources"], "bridge_linked_libraries": receipt["linked_libraries"],
              "mandatory_preregistration": artifact(args.preregistration),
              "references": references, "versions": VERSIONS, "commits": COMMITS,
-             "hms_source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+             "warm_source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
              "machine": machine(), "compiler": subprocess.check_output(["rustc", "--version"], text=True).strip(),
              "rustflags": receipt["environment"]["RUSTFLAGS"], "datasets": datasets,
              "targets": [0.90, 0.95], "k": K, "recall_definition": "ann-benchmarks angular distance <= tenth true distance + 1e-3",
@@ -361,7 +361,7 @@ class Adapter:
     def fit(self, train):
         d = train.shape[1]
         p = self.build
-        if self.system == "hms":
+        if self.system == "warm":
             self.index = self.bridge.NativeIndex.build(train, canonical(p))
         elif self.system == "faiss_hnsw":
             self.index = faiss.IndexHNSWFlat(d, p["M"], faiss.METRIC_INNER_PRODUCT)
@@ -386,7 +386,7 @@ class Adapter:
             raise ValueError("unknown native system")
 
     def save(self, path):
-        if self.system == "hms":
+        if self.system == "warm":
             self.index.save(str(path))
         elif self.system == "hnswlib":
             self.index.save_index(str(path))
@@ -394,7 +394,7 @@ class Adapter:
             faiss.write_index(self.index, str(path))
 
     def load(self, path, dim):
-        if self.system == "hms":
+        if self.system == "warm":
             self.index = self.bridge.NativeIndex.load(str(path))
         elif self.system == "hnswlib":
             self.index = hnswlib.Index(space="ip", dim=dim)
@@ -413,14 +413,14 @@ class Adapter:
             self.index.nprobe = search["nprobe"]
 
     def query(self, q, k):
-        if self.system == "hms":
+        if self.system == "warm":
             return self.index.query(q, k, self.search["ef"], self.search["rerank"], self.search["patience"])
         if self.system == "hnswlib":
             return self.index.knn_query(q, k=k, num_threads=1)[0]
         return self.index.search(q, k)[1]
 
     def memory(self):
-        if self.system == "hms":
+        if self.system == "warm":
             payload, allocated, workspace = self.index.memory()
             return {"index_payload_bytes": payload, "index_allocated_bytes": allocated, "persistent_workspace_bytes": workspace,
                     "internal_accounting": "exact Rust field sizes and heap capacities; allocator metadata excluded"}
@@ -680,7 +680,7 @@ def round_point(args):
                "predictions": save_array(out, args.artifacts_dir), "latencies_ns": save_array(latencies, args.artifacts_dir) if len(latencies) else None,
                "timer": clock, "load_samples": [load_before, load_after], "load_gate_met": met, "preliminary": not met, "timing_claim": met,
                "workspace": {"persistent_bytes": memory["persistent_workspace_bytes"],
-                             "query_interface_peak_bytes": out.nbytes + batch_size * K * (8 if variant["system"] == "hms" else 12),
+                             "query_interface_peak_bytes": out.nbytes + batch_size * K * (8 if variant["system"] == "warm" else 12),
                              "observed_rss_growth_peak_bytes": None, "observed_rss_endpoint_growth_bytes": max(0, rss_after - rss_before),
                              "internal_accounting": memory["internal_accounting"]},
                "rss": {"baseline_bytes": baseline, "after_load_bytes": after_load,
@@ -731,12 +731,12 @@ def score_round(args):
 
 def verify_inherited_lock(path, lock_id):
     lock = json.loads(Path(path).read_text())
-    fd = int(os.environ["HMS_NATIVE_LOCK_FD"])
-    expected = os.stat("./.hms-target/timing.lock")
+    fd = int(os.environ["WARM_NATIVE_LOCK_FD"])
+    expected = os.stat("./.warm-target/timing.lock")
     current = os.fstat(fd)
     if lock["status"] != "held" or lock["lock_id"] != lock_id or (expected.st_dev, expected.st_ino) != (current.st_dev, current.st_ino):
         raise ValueError("timing lock proof differs")
-    probe = os.open("./.hms-target/timing.lock", os.O_RDWR)
+    probe = os.open("./.warm-target/timing.lock", os.O_RDWR)
     try:
         try:
             fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -756,7 +756,7 @@ def lock_run(args):
     if command[:1] != ["round-point"]:
         raise ValueError("lock-run accepts only a round-point invocation")
     idle_sample(args.max_wait)
-    lock_path = "./.hms-target/timing.lock"
+    lock_path = "./.warm-target/timing.lock"
     fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
     lock_id = str(uuid.uuid4())
     lock = None
@@ -766,7 +766,7 @@ def lock_run(args):
         lock = {"lock_id": lock_id, "status": "held", "pid": os.getpid(), "path": lock_path, "timer": acquired,
                 "max_seconds": 900, "command": [sys.executable, str(Path(__file__).resolve()), *command]}
         write_json(args.lock_record, lock, exclusive=True)
-        env = os.environ | {"HMS_NATIVE_LOCK_FD": str(fd)}
+        env = os.environ | {"WARM_NATIVE_LOCK_FD": str(fd)}
         completed = subprocess.run([sys.executable, str(Path(__file__).resolve()), *command,
                                     "--lock-id", lock_id, "--lock-record", args.lock_record], env=env, pass_fds=(fd,), timeout=890)
         lock["exit_code"] = completed.returncode
@@ -867,9 +867,9 @@ def assemble(args):
                         coverage_ok = False
                     position = end
                 coverage_ok &= position == protocol["datasets"][point["dataset"]]["n_test"]
-    systems = {system: {"version": "frozen_hms_bridge" if system == "hms" else VERSIONS["hnswlib" if system == "hnswlib" else "faiss-cpu"],
-                        "source_commit": protocol["hms_source_commit"] if system == "hms" else COMMITS["hnswlib" if system == "hnswlib" else "faiss"],
-                        "architecture": platform.machine(), "compile_options": "-C target-cpu=native" if system == "hms" else (faiss.get_compile_options() if system.startswith("faiss") else None),
+    systems = {system: {"version": "frozen_warm_bridge" if system == "warm" else VERSIONS["hnswlib" if system == "hnswlib" else "faiss-cpu"],
+                        "source_commit": protocol["warm_source_commit"] if system == "warm" else COMMITS["hnswlib" if system == "hnswlib" else "faiss"],
+                        "architecture": platform.machine(), "compile_options": "-C target-cpu=native" if system == "warm" else (faiss.get_compile_options() if system.startswith("faiss") else None),
                         "module_artifacts": protocol["runtime_artifacts"][system], "thread_environment": THREAD_ENV} for system in SYSTEMS}
     datasets = {name: {k: v for k, v in data.items() if k != "variants"} for name, data in protocol["datasets"].items()}
     complete = coverage_ok and all(r["load_gate_met"] for r in rows)
@@ -921,7 +921,7 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     register = sub.add_parser("preregister")
     register.add_argument("--bridge", required=True)
-    register.add_argument("--data-dir", default=str(Path.home() / ".cache/hms-bench/downloads"))
+    register.add_argument("--data-dir", default=str(Path.home() / ".cache/warm-bench/downloads"))
     register.add_argument("--reference-dir", required=True)
     register.add_argument("--build-receipt", required=True)
     register.add_argument("--preregistration", required=True)

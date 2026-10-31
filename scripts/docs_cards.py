@@ -24,7 +24,7 @@ def _ttf(fonts_dir, name):
 
         font = TTFont(str(Path(fonts_dir) / name))
         font.flavor = None
-        tmp = Path(tempfile.mkdtemp(prefix="hms-og-")) / name.replace(".woff2", ".ttf")
+        tmp = Path(tempfile.mkdtemp(prefix="warm-og-")) / name.replace(".woff2", ".ttf")
         font.save(str(tmp))
         _fonts[key] = str(tmp)
     return _fonts[key]
@@ -77,7 +77,7 @@ def render(path, fonts_dir, title, section, description):
     for dx, color in ((-8, TEAL), (8, VIOLET)):
         for r in (6, 12, 18):
             d.ellipse([cx + dx - r, cy - r, cx + dx + r, cy + r], outline=color, width=2)
-    d.text((140, 74), "Holographic Memory", font=_font(fonts_dir, 30, 600), fill=(232, 236, 244))
+    d.text((140, 74), "WARM", font=_font(fonts_dir, 30, 600), fill=(232, 236, 244))
     if section:
         d.text((72, 190), section.upper(), font=_font(fonts_dir, 24, 600), fill=TEAL)
     title_font = _font(fonts_dir, 68, 650)
@@ -89,5 +89,5 @@ def render(path, fonts_dir, title, section, description):
     for line in _wrap(d, description, desc_font, 760, 2):
         d.text((72, y + 16), line, font=desc_font, fill=MUTED)
         y += 40
-    d.text((72, H - 64), "docs.holographic-memory.com", font=_font(fonts_dir, 24, 500), fill=MUTED)
+    d.text((72, H - 64), "writerslogic.com/warm/docs", font=_font(fonts_dir, 24, 500), fill=MUTED)
     img.convert("RGB").quantize(colors=96, method=Image.Quantize.MEDIANCUT).save(path, optimize=True)

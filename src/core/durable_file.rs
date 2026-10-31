@@ -145,7 +145,7 @@ pub(crate) fn scrub_remove_dir(dir: &Path) -> Result<()> {
 }
 
 /// Manifests that carry a `<name>.crc32` sidecar holding the CRC32 of their bytes, so a flip
-/// inside a value that still parses is caught at open and by `hms-admin verify`. Both are
+/// inside a value that still parses is caught at open and by `warm-admin verify`. Both are
 /// written once; `indices.json`, which every flush rewrites, is not on the list: a crash
 /// between a rewrite's sidecar and its file would otherwise make an intact store refuse to
 /// open, and the file is a cache that already binds itself with a checkpoint and per-file
@@ -228,7 +228,11 @@ pub(crate) fn atomic_create(path: &Path, bytes: &[u8]) -> Result<bool> {
 #[cfg(feature = "security")]
 fn identity_crash_point(phase: &str) {
     #[cfg(test)]
-    if std::env::var("HMS_IDENTITY_CRASH_AT").ok().as_deref() == Some(phase) {
+    if crate::compatibility::var("WARM_IDENTITY_CRASH_AT")
+        .ok()
+        .as_deref()
+        == Some(phase)
+    {
         std::process::exit(84);
     }
     let _ = phase;

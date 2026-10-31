@@ -9,7 +9,7 @@ dependencies and its serving memory are unchanged (see [Default build](#default-
 
 | Feature | Adds |
 |---|---|
-| `local-embed` | the engine, `Embedder`, `SemanticIndex`, `TextEncoder::LocalEmbedV1`, the `hms-embed` tool. No network code. |
+| `local-embed` | the engine, `Embedder`, `SemanticIndex`, `TextEncoder::LocalEmbedV1`, the `warm-embed` tool. No network code. |
 | `local-embed-download` | `ureq`; first-use download of the pinned upstream files. |
 
 Python wheels enable both. The default npm addon build enables `node-api,security` and does
@@ -21,7 +21,7 @@ optional native Node API below. The JavaScript `semantic` wrapper has its own em
 Rust:
 
 ```rust
-use holographic_memory::core::embed::{Embedder, EmbedOptions, SemanticIndex};
+use writerslogic_warm::core::embed::{Embedder, EmbedOptions, SemanticIndex};
 use std::sync::Arc;
 
 let embedder = Arc::new(Embedder::new(&EmbedOptions::default())?);   // default model
@@ -30,20 +30,20 @@ index.add(&["a", "b"], &["The cat sat on the mat.", "Quarterly revenue grew."])?
 let hits = index.search("feline on a rug", 3)?;                     // [{id, score, text}]
 ```
 
-Python (`uv pip install holographic-memory-py`; add `[embed]` for the pinned default offline pack):
+Python (`uv pip install writerslogic-warm-py`; add `[embed]` for the pinned default offline pack):
 
 ```python
-import holographic_memory as hm
+import writerslogic_warm as hm
 index = hm.SemanticIndex()                       # default model
 index.add(["a", "b"], ["The cat sat on the mat.", "Quarterly revenue grew."])
 index.search("feline on a rug", k=3)             # [(id, score, text), ...]
-hm.Embedder(threads=4, max_length=256).embed_query("what is HMS?")   # list[float]
+hm.Embedder(threads=4, max_length=256).embed_query("what is WARM?")   # list[float]
 ```
 
-Node (`npm i holographic-memory`; `npm i holographic-memory-models` adds offline packs):
+Node (`npm i writerslogic-warm`; `npm i writerslogic-warm-models` adds offline packs):
 
 ```js
-const { LocalEmbedder, SemanticIndex } = require('holographic-memory')
+const { LocalEmbedder, SemanticIndex } = require('writerslogic-warm')
 const embedder = await LocalEmbedder.load()
 const index = SemanticIndex.create(embedder)
 await index.add(['a', 'b'], ['The cat sat on the mat.', 'Quarterly revenue grew.'])
@@ -55,19 +55,19 @@ await index.search('feline on a rug', 3)
 One line selects the embedder for ingest and search of a store:
 
 ```rust
-let config = HmsConfig { text_encoder: TextEncoder::LocalEmbedV1, ..HmsConfig::default() };
-let core = HmsCore::new(4096, Some(path), Some(config))?;
+let config = WarmConfig { text_encoder: TextEncoder::LocalEmbedV1, ..WarmConfig::default() };
+let core = WarmCore::new(4096, Some(path), Some(config))?;
 core.memorize_documents(docs)?;             // chunks are embedded in batches
 core.search_documents("feline on a rug", &SearchOptions::default())?;   // hybrid: BM25 + cosine
 ```
 
-`local-embed-v1` loads the embedder from `HmsConfig::local_embed` (`EmbedOptions`, defaults when
+`local-embed-v1` loads the embedder from `WarmConfig::local_embed` (`EmbedOptions`, defaults when
 absent), fills `embedding_space` from the model, embeds chunks that arrive without embeddings, embeds
 text queries, and encodes `encode_text` as a sparse sketch of the embedding. The store schema records
 model, upstream revision, quantization and dimension, so a store opened with a different model is
 rejected. Existing encoders (`multiscale-words-v1`, `multiscale-capped-union-v1`) and their stores are
 untouched; to add dense vectors to a lexical store, install an embedder with
-`HmsCore::set_text_embedder` (the store's `embedding_space` must equal `Embedder::space()`).
+`WarmCore::set_text_embedder` (the store's `embedding_space` must equal `Embedder::space()`).
 Callers that pass their own `embeddings` / `embedding` are never overridden.
 
 ## Options
@@ -76,14 +76,14 @@ All fields of `EmbedOptions` (camelCase in JSON / Node, keyword arguments in Pyt
 
 | Option | Default | Meaning |
 |---|---|---|
-| `model` | `default` | registry id (`hms-embed list`) or the path of a `.hmsemb` pack |
+| `model` | `default` | registry id (`warm-embed list`) or the path of a `.hmsemb` pack |
 | `sha256` | none | expected hash of a pack given by path (registry models always use their pin) |
 | `maxLength` | model's (512, or 256) | tokens per text, specials included; longer texts are truncated |
 | `pooling`, `normalize`, `queryPrefix`, `passagePrefix` | model's | override the model conventions |
 | `batchSize`, `maxBatchTokens` | 32, 2048 | sequences / soft token budget per forward pass; one sequence may exceed the token budget up to `maxLength` |
 | `limits` | see below | hard call-level text, input-byte, retained-token, output-byte and concurrent-call limits |
 | `threads` | all cores | size of the embedder's private thread pool |
-| `offline` | `HMS_EMBED_OFFLINE` | never touch the network |
+| `offline` | `WARM_EMBED_OFFLINE` | never touch the network |
 | `modelDir`, `cacheDir` | env / platform cache | where packs are searched / downloaded to |
 
 Determinism: output is bit-identical for any `threads`, any `batchSize` and any batch composition on
@@ -115,7 +115,7 @@ Node exposes `embedQueryWithReport` and `embedPassagesWithReport`; Python expose
 same fields with snake_case input keys). Python's `limits` dictionary accepts snake_case or
 camelCase keys. Existing vector-only methods retain their output shapes and truncation policy.
 
-Rust store callers can use `HmsCore::try_encode_text` and `try_find_analogy` to propagate
+Rust store callers can use `WarmCore::try_encode_text` and `try_find_analogy` to propagate
 model and resource failures. Their legacy infallible counterparts panic on failure instead of
 logging an error and returning an empty vector. Batch writes embed together under one admission;
 encoding failures return before the journal transaction, preserving existing records.
@@ -126,11 +126,11 @@ A pack is one file (`<id>-int8.hmsemb`: header, tokenizer, quantized tensors). T
 `src/core/embed/registry.rs` pins, per model id, the upstream commit, the sha256 and size of each
 upstream file, and the sha256 of the converted pack. Resolution order for a registry model:
 
-1. `HMS_EMBED_PACK` (path of the pack file)
-2. `modelDir` option / `HMS_EMBED_MODEL_DIR` (directory containing the pack)
-3. the cache (`HMS_EMBED_CACHE`, else the platform cache directory)
+1. `WARM_EMBED_PACK` (path of the pack file)
+2. `modelDir` option / `WARM_EMBED_MODEL_DIR` (directory containing the pack)
+3. the cache (`WARM_EMBED_CACHE`, else the platform cache directory)
 4. `local-embed-download` builds only, and never when offline: download the pinned upstream files from
-   `https://huggingface.co` (override the host with `HMS_EMBED_MIRROR`), verify every file's size and
+   `https://huggingface.co` (override the host with `WARM_EMBED_MIRROR`), verify every file's size and
    sha256, convert to a pack, verify the pack's sha256, then rename into the cache.
 
 Every load re-hashes exactly the bytes it parses; a mismatch fails before any weight is used
@@ -139,15 +139,15 @@ you named (path, env, model directory) is never modified. An unreachable model f
 variables to set. Air-gapped:
 
 ```sh
-hms-embed fetch default --out ./packs            # on a connected machine
-export HMS_EMBED_MODEL_DIR=./packs HMS_EMBED_OFFLINE=1   # on the offline one
+warm-embed fetch default --out ./packs            # on a connected machine
+export WARM_EMBED_MODEL_DIR=./packs WARM_EMBED_OFFLINE=1   # on the offline one
 ```
 
-`holographic-memory-py[embed]` installs `holographic-memory-models`, which carries the pinned
+`writerslogic-warm-py[embed]` installs `writerslogic-warm-models`, which carries the pinned
 default Granite embedding pack. The Python `Embedder` also uses packs from
-`HMS_EMBED_MODEL_DIR` or the local cache. Fetch other models on a connected machine with
-`hms-embed fetch`, then copy them to an offline machine if needed.
-`hms-embed pack` converts a local BERT-family Hugging Face directory.
+`WARM_EMBED_MODEL_DIR` or the local cache. Fetch other models on a connected machine with
+`warm-embed fetch`, then copy them to an offline machine if needed.
+`warm-embed pack` converts a local BERT-family Hugging Face directory.
 
 Why not bundle weights in the Rust crate: crates.io caps a crate at 10 MB and the smallest good int8
 pack is about 25 MB. Python wheels (100 MB limit) and npm can carry them, so they do.

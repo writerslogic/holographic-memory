@@ -10,47 +10,47 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 /// Status returned by every fallible function. Zero is success; every failure also leaves a
 /// message readable with `hms1_last_error_message` on the calling thread.
 #[allow(non_camel_case_types)]
-pub type hms_status_t = i32;
+pub type warm_status_t = i32;
 
 /// Success.
-pub const HMS_OK: hms_status_t = 0;
+pub const WARM_OK: warm_status_t = 0;
 /// A required pointer argument was NULL (or a non-empty buffer had a NULL pointer).
-pub const HMS_ERR_NULL_POINTER: hms_status_t = 1;
+pub const WARM_ERR_NULL_POINTER: warm_status_t = 1;
 /// An argument was malformed or out of range, or the engine rejected the request.
-pub const HMS_ERR_INVALID_ARGUMENT: hms_status_t = 2;
+pub const WARM_ERR_INVALID_ARGUMENT: warm_status_t = 2;
 /// A string argument was not valid UTF-8.
-pub const HMS_ERR_INVALID_UTF8: hms_status_t = 3;
+pub const WARM_ERR_INVALID_UTF8: warm_status_t = 3;
 /// A handle is not a live handle of the expected kind (closed, freed, or never issued).
-pub const HMS_ERR_INVALID_HANDLE: hms_status_t = 4;
+pub const WARM_ERR_INVALID_HANDLE: warm_status_t = 4;
 /// An operating-system I/O failure.
-pub const HMS_ERR_IO: hms_status_t = 5;
+pub const WARM_ERR_IO: warm_status_t = 5;
 /// The store is open in another engine (this or another process).
-pub const HMS_ERR_LOCKED: hms_status_t = 6;
+pub const WARM_ERR_LOCKED: warm_status_t = 6;
 /// The encryption key is missing, wrong, or the store cannot be decrypted with it.
-pub const HMS_ERR_ENCRYPTION: hms_status_t = 7;
+pub const WARM_ERR_ENCRYPTION: warm_status_t = 7;
 /// Stored data failed an integrity check.
-pub const HMS_ERR_CORRUPT: hms_status_t = 8;
+pub const WARM_ERR_CORRUPT: warm_status_t = 8;
 /// A length or count exceeds a documented limit.
-pub const HMS_ERR_LIMIT_EXCEEDED: hms_status_t = 9;
+pub const WARM_ERR_LIMIT_EXCEEDED: warm_status_t = 9;
 /// A `struct_size` field is smaller than the first field it must cover.
-pub const HMS_ERR_ABI_MISMATCH: hms_status_t = 10;
+pub const WARM_ERR_ABI_MISMATCH: warm_status_t = 10;
 /// A Rust panic was caught at the boundary; the store should be considered suspect.
-pub const HMS_ERR_PANIC: hms_status_t = 98;
+pub const WARM_ERR_PANIC: warm_status_t = 98;
 /// An unclassified engine failure.
-pub const HMS_ERR_INTERNAL: hms_status_t = 99;
+pub const WARM_ERR_INTERNAL: warm_status_t = 99;
 
 /// Largest single input buffer accepted, in bytes.
-pub const HMS_MAX_BUFFER_BYTES: usize = 1 << 30;
+pub const WARM_MAX_BUFFER_BYTES: usize = 1 << 30;
 /// Largest element count accepted for any input array.
-pub const HMS_MAX_ARRAY_LEN: usize = 1 << 24;
+pub const WARM_MAX_ARRAY_LEN: usize = 1 << 24;
 
 pub(crate) struct ApiError {
-    pub code: hms_status_t,
+    pub code: warm_status_t,
     pub message: String,
 }
 
 impl ApiError {
-    pub fn new(code: hms_status_t, message: impl Into<String>) -> Self {
+    pub fn new(code: warm_status_t, message: impl Into<String>) -> Self {
         Self {
             code,
             message: message.into(),
@@ -58,24 +58,24 @@ impl ApiError {
     }
 
     /// Classify an engine error. `default` applies when nothing more specific is recognised.
-    pub fn from_engine(error: &anyhow::Error, default: hms_status_t) -> Self {
+    pub fn from_engine(error: &anyhow::Error, default: warm_status_t) -> Self {
         let message = format!("{error:#}");
         let lower = message.to_ascii_lowercase();
         let code = if lower.contains("already open") {
-            HMS_ERR_LOCKED
+            WARM_ERR_LOCKED
         } else if lower.contains("decrypt")
             || lower.contains("encryption")
             || lower.contains("passphrase")
             || lower.contains("aes-256")
         {
-            HMS_ERR_ENCRYPTION
+            WARM_ERR_ENCRYPTION
         } else if lower.contains("checksum") || lower.contains("corrupt") {
-            HMS_ERR_CORRUPT
+            WARM_ERR_CORRUPT
         } else if error
             .chain()
             .any(|cause| cause.downcast_ref::<std::io::Error>().is_some())
         {
-            HMS_ERR_IO
+            WARM_ERR_IO
         } else {
             default
         };
@@ -86,7 +86,7 @@ impl ApiError {
 pub(crate) type ApiResult<T> = Result<T, ApiError>;
 
 struct Slot {
-    code: hms_status_t,
+    code: warm_status_t,
     /// UTF-8 message, always NUL terminated.
     message: Vec<u8>,
 }
@@ -98,13 +98,13 @@ thread_local! {
 fn clear() {
     LAST.with(|slot| {
         let mut slot = slot.borrow_mut();
-        slot.code = HMS_OK;
+        slot.code = WARM_OK;
         slot.message.clear();
         slot.message.push(0);
     });
 }
 
-fn record(error: &ApiError) -> hms_status_t {
+fn record(error: &ApiError) -> warm_status_t {
     LAST.with(|slot| {
         let mut slot = slot.borrow_mut();
         slot.code = error.code;
@@ -117,10 +117,10 @@ fn record(error: &ApiError) -> hms_status_t {
 }
 
 /// Run `body` with the last-error slot reset, converting failures and panics to a status.
-pub(crate) fn guard(body: impl FnOnce() -> ApiResult<()>) -> hms_status_t {
+pub(crate) fn guard(body: impl FnOnce() -> ApiResult<()>) -> warm_status_t {
     clear();
     match catch_unwind(AssertUnwindSafe(body)) {
-        Ok(Ok(())) => HMS_OK,
+        Ok(Ok(())) => WARM_OK,
         Ok(Err(error)) => record(&error),
         Err(payload) => {
             let detail = payload
@@ -129,16 +129,16 @@ pub(crate) fn guard(body: impl FnOnce() -> ApiResult<()>) -> hms_status_t {
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_else(|| "non-string panic payload".to_owned());
             record(&ApiError::new(
-                HMS_ERR_PANIC,
+                WARM_ERR_PANIC,
                 format!("internal panic: {detail}"),
             ))
         }
     }
 }
 
-/// The code of the last failed call on this thread, or `HMS_OK` if the last call succeeded.
+/// The code of the last failed call on this thread, or `WARM_OK` if the last call succeeded.
 #[no_mangle]
-pub extern "C" fn hms1_last_error_code() -> hms_status_t {
+pub extern "C" fn hms1_last_error_code() -> warm_status_t {
     LAST.with(|slot| slot.borrow().code)
 }
 

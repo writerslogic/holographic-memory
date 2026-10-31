@@ -1,6 +1,6 @@
 # Source: faiss
 
-`hms-import faiss --index FILE [--id-map F] [--texts F] [--metadata F] [--namespace NS]`
+`warm-import faiss --index FILE [--id-map F] [--texts F] [--metadata F] [--namespace NS]`
 
 Reads a FAISS index written with `faiss.write_index`. FAISS stores vectors and integer ids only, so text, string ids and metadata come from sidecar files you supply. Verified against real `faiss-cpu` 1.15 (Flat, HNSWFlat, IDMap2, IVFFlat); no mocks.
 
@@ -20,7 +20,7 @@ All sidecars are row-aligned with the index storage order and streamed in lockst
 
 - `--id-map`: `.npy`, `.txt`, `.jsonl` or a `.json` list (one external id per row), or a `.json` object `{"<faiss id>": "<external id>"}` that renames native ids.
 - `--texts`: `.jsonl` (a JSON string per line, or `{"text": ...}`) or `.txt` (one per line, no newlines inside a text).
-- `--metadata`: `.jsonl`, one object per row. `--created-at-key` / `--updated-at-key` name metadata keys copied into the HMS timestamps (the originals stay in metadata).
+- `--metadata`: `.jsonl`, one object per row. `--created-at-key` / `--updated-at-key` name metadata keys copied into the WARM timestamps (the originals stay in metadata).
 - `--namespace`: one namespace for every row.
 
 IVF indexes are enumerated list by list, which has no row order, so row-aligned `--id-map` lists, `--texts` and `--metadata` are refused for IVF; use an object id map or rebuild as Flat/IDMap. An `IndexIDMap` wrapped around an IVF index is not supported.

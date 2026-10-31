@@ -1,12 +1,12 @@
 ---
-description: "What holographic means in Holographic Memory: superposed hypervectors that degrade gracefully, and which parts of the engine have that property."
+description: "What holographic means in WARM: superposed hypervectors that degrade gracefully, and which parts of the engine have that property."
 ---
 # What "holographic" means here
 
 In a hologram every part of the plate carries a degraded copy of the whole image. A
 **hypervector** memory works the same way: many items are superposed into one high-dimensional
 vector, no single coordinate stores any one item, and damaging the vector degrades every item a
-little instead of erasing a few. That is the sense in which HMS is holographic. It is a property
+little instead of erasing a few. That is the sense in which WARM is holographic. It is a property
 of the vector-symbolic layer, and this page says exactly which parts of the engine have it.
 
 ## The vectors
@@ -63,7 +63,7 @@ and atomic replace. Choose it for that, not for holographic behaviour.
 ## Graceful degradation, measured
 
 Corrupting a stored vector should degrade retrieval smoothly. The committed sweep
-[`benchmark_scaling_results.json`](https://github.com/writerslogic/holographic-memory/blob/main/benchmarks/results/benchmark_scaling_results.json)
+[`benchmark_scaling_results.json`](https://github.com/writerslogic/warm/blob/main/benchmarks/results/benchmark_scaling_results.json)
 holds a codebook of 100 stored vectors, replaces 0 to 90 percent (steps of 10) of a probe's active
 indices with random ones, and checks whether the original vector is the nearest neighbour
 (Jaccard) or the Hopfield cleanup output. Both were correct for all 30 probes at every corruption

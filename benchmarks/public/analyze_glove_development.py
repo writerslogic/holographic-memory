@@ -47,7 +47,7 @@ def load(path):
     require(path.stat().st_size <= 256 * 1024 * 1024, "result exceeds 256 MiB analyzer bound")
     with path.open() as stream:
         raw = json.load(stream)
-    require(raw["schema"] == "hms-glove-development-v1" and raw["development_only"] is True, "wrong schema/scope")
+    require(raw["schema"] == "warm-glove-development-v1" and raw["development_only"] is True, "wrong schema/scope")
     require((raw["construction_count"], raw["query_count"], raw["dim"], raw["k"]) == (65536, 256, 100, 10), "wrong geometry")
     require(1 <= raw["repeats"] <= 1000 and 1 <= len(raw["efs"]) <= 16 and raw["repeats"] * len(raw["efs"]) <= 1000, "wrong repeat grid")
     require(len(set(raw["efs"])) == len(raw["efs"]) and all(10 <= ef <= 4096 for ef in raw["efs"]), "wrong ef grid")
@@ -137,7 +137,7 @@ def main():
     require((args.candidate is None) == (args.disabled is None), "candidate and disabled must be supplied together")
     loaded = {name: load(path) for name, path in [("baseline", args.baseline), ("candidate", args.candidate), ("disabled", args.disabled)] if path is not None}
     result = {
-        "schema": "hms-glove-development-analysis-v1", "development_only": True,
+        "schema": "warm-glove-development-analysis-v1", "development_only": True,
         "analyzer_sha256": fingerprints(Path(__file__))["sha256"],
         "uncertainty_scope": "10000 fixed-seed percentile bootstrap resamples of whole repeat IDs, paired by matching query order for ratios. Repeats share a process/index/hardware, so intervals are conditional diagnostics and exclude independent process/build/hardware uncertainty. Query observations are never treated as independent repeat samples; pooled tail quantiles are descriptive only. Separately timed processes can drift; pairing alone does not establish causality.",
         "binding_scope": "SHA256 of raw outputs and current files whose CRC32 matches execution. Caller must additionally preserve SHA-bound native source/binary, commands, environment, resource receipts and arm execution order.",

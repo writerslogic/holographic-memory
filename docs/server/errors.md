@@ -1,10 +1,10 @@
-# hms-server errors
+# warm-server errors
 
 Every failure of an API call is an RFC 9457 `application/problem+json` document:
 
 ```json
 {
-  "type": "https://github.com/writerslogic/holographic-memory/blob/main/docs/server/errors.md#invalid_request",
+  "type": "https://github.com/writerslogic/warm/blob/main/docs/server/errors.md#invalid_request",
   "title": "Invalid request",
   "status": 422,
   "detail": "top_k must be 1..=100",

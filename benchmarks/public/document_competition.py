@@ -4,7 +4,7 @@
 # requires-python = "==3.13.9"
 # dependencies = []
 # ///
-"""Paired public train/dev lexical retrieval against SQLite FTS5 and previous HMS."""
+"""Paired public train/dev lexical retrieval against SQLite FTS5 and previous WARM."""
 
 import argparse
 import fcntl
@@ -34,7 +34,7 @@ def sha(path):
 
 def prepare(folder):
     folder.mkdir(parents=True, exist_ok=True)
-    cache = Path.home() / ".cache/hms-bench/downloads"
+    cache = Path.home() / ".cache/warm-bench/downloads"
     for dataset, split in [("scifact", "train"), ("nfcorpus", "dev")]:
         source = cache / dataset
         qrels = {}
@@ -140,15 +140,15 @@ def main():
         "binary_sha256": {arm: sha(path) for arm, path in binaries.items()},
         "sqlite_version": sqlite3.sqlite_version, "sqlite_primary_docs": "https://www.sqlite.org/fts5.html",
         "sqlite_tokenizer": "Porter1 over unicode61 (default diacritic folding)",
-        "hms_tokenizer": "English Snowball Porter2 over lowercase Unicode alphanumeric tokens",
-        "idf_difference": "SQLite log((N-df+.5)/(df+.5)) floored at 1e-6; HMS log(1+(N-df+.5)/(df+.5))",
+        "warm_tokenizer": "English Snowball Porter2 over lowercase Unicode alphanumeric tokens",
+        "idf_difference": "SQLite log((N-df+.5)/(df+.5)) floored at 1e-6; WARM log(1+(N-df+.5)/(df+.5))",
         "matched": "same complete corpora, questions, top-100, persistent index, no retained source text; no model stages",
-        "limits": "single local ARM host; lexical-only SQLite lacks HMS vectors; load<3 required for timing claims",
+        "limits": "single local ARM host; lexical-only SQLite lacks WARM vectors; load<3 required for timing claims",
     }
     write(folder / "protocol.json", protocol)
     measurements, summary = [], {}
     started = time.monotonic()
-    with Path("./.hms-target/timing.lock").open("a") as lock:
+    with Path("./.warm-target/timing.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         for dataset, split in protocol["datasets"].items():
             input_path = folder / f"{dataset}-{split}-input.json"
@@ -183,7 +183,7 @@ def main():
                         if reference is None:
                             reference = actual
                         if actual != reference:
-                            raise ValueError("HMS exact result parity failed")
+                            raise ValueError("WARM exact result parity failed")
                     qualities[arm] = quality(raw["rows"], qrels)
                     cells[arm].append([row["elapsed_ns"] for row in raw["rows"]])
                     peak = peak_rss_bytes(log_path.read_text(), platform.system())
@@ -203,7 +203,7 @@ def main():
                              "p95_ns": quantile(list(itertools.chain.from_iterable(rounds)), .95),
                              "p99_ns": quantile(list(itertools.chain.from_iterable(rounds)), .99)} for arm, rounds in cells.items()}
             summary[dataset] = {"queries": len(qrels), "quality": qualities, "latency": latency,
-                                "exact_hms_query_pairs": len(qrels) * args.rounds,
+                                "exact_warm_query_pairs": len(qrels) * args.rounds,
                                 "baseline_over_candidate_mean": latency["baseline"]["mean_ns"] / latency["candidate"]["mean_ns"],
                                 "sqlite_over_candidate_mean": latency["sqlite"]["mean_ns"] / latency["candidate"]["mean_ns"]}
             write(folder / "summary.json", {"results": summary, "load_gate_met": all(row["load_gate_met"] for row in measurements)})

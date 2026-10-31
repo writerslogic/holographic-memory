@@ -14,15 +14,15 @@
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::memory_api::{
-    HistoryMode, Memory, RecallOptions, RememberInput, SupersessionSpec,
-};
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
+use writerslogic_warm::core::memory_api::{
+    HistoryMode, Memory, RecallOptions, RememberInput, SupersessionSpec,
+};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -106,16 +106,16 @@ fn summary(mut nanos: Vec<u128>) -> Value {
 
 fn child(args: &Args, kind: &str) -> Result<Value> {
     let dir = tempfile::tempdir()?;
-    let core = Arc::new(HmsCore::new(
+    let core = Arc::new(WarmCore::new(
         args.dimensions,
         Some(dir.path().display().to_string()),
-        Some(HmsConfig::default()),
+        Some(WarmConfig::default()),
     )?);
     let n = args.n;
     let build_start = Instant::now();
     let memory = Memory::with_config(
         core.clone(),
-        holographic_memory::core::memory_api::MemoryConfig {
+        writerslogic_warm::core::memory_api::MemoryConfig {
             supersession: SupersessionSpec::Explicit,
             ..Default::default()
         },

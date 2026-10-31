@@ -1,6 +1,6 @@
 {#- Copyright 2024-2026 WritersLogic Contributors
     SPDX-License-Identifier: Apache-2.0 -#}
-<footer class="md-footer hms-footer">
+<footer class="md-footer warm-footer">
   {% if "navigation.footer" in features %}
     {% if page.previous_page or page.next_page %}
       {% if page.meta and page.meta.hide %}
@@ -34,14 +34,14 @@
       </nav>
     {% endif %}
   {% endif %}
-  <div class="hms-footer__cols md-grid">
-    <div class="hms-footer__brand">
-      <a class="hms-footer__logo" href="{{ base_url }}/" aria-label="Holographic Memory home">
+  <div class="warm-footer__cols md-grid">
+    <div class="warm-footer__brand">
+      <a class="warm-footer__logo" href="{{ base_url }}/" aria-label="WARM home">
         <img src="{{ config.theme.logo }}" alt="" width="28" height="28">
-        <span>Holographic Memory</span>
+        <span>WARM</span>
       </a>
-      <p>{{ config.extra.hms.tagline }}</p>
-      <p class="hms-footer__ver">Documentation for <code>{{ config.extra.hms.ref }}</code>{% if config.extra.hms.is_latest %} (latest){% endif %}</p>
+      <p>{{ config.extra.warm.tagline }}</p>
+      <p class="warm-footer__ver">Documentation for <code>{{ config.extra.warm.ref }}</code>{% if config.extra.warm.is_latest %} (latest){% endif %}</p>
     </div>
     <nav aria-label="Documentation">
       <h2>Documentation</h2>
@@ -67,9 +67,9 @@
       <ul>
         <li><a href="{{ config.repo_url }}">GitHub</a></li>
         <li><a href="{{ config.repo_url }}/issues">Issues</a></li>
-        <li><a href="https://crates.io/crates/holographic-memory">crates.io</a></li>
-        <li><a href="https://pypi.org/project/holographic-memory-sdk/">PyPI</a></li>
-        <li><a href="{{ config.repo_url }}/blob/main/LICENSE">{{ config.extra.hms.license }} license</a></li>
+        <li><a href="https://crates.io/crates/writerslogic-warm">crates.io</a></li>
+        <li><a href="https://pypi.org/project/writerslogic-warm-sdk/">PyPI</a></li>
+        <li><a href="{{ config.repo_url }}/blob/main/LICENSE">{{ config.extra.warm.license }} license</a></li>
       </ul>
     </nav>
   </div>

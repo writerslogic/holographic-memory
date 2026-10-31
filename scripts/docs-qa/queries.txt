@@ -21,12 +21,12 @@ ndcg | glossary
 recall@k | glossary
 hopfield | glossary
 resonator network | glossary,RESEARCH,DETERMINISTIC-RESONATOR
-hms-server | SERVER
+warm-server | SERVER
 api key | SERVER,SECURITY,api/http,server/auth
 python client | api/python
 phase vector | api/python
 typescript | api/node
-HolographicMemorySystem | api/node
+WarmMemorySystem | api/node
 changelog | changelog
 release notes | changelog
 contributing | community

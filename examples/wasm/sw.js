@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Caches every same-origin GET it serves, so the page and its WebAssembly keep loading offline.
-const CACHE = "hms-demo-v1";
+const CACHE = "warm-demo-v1";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));

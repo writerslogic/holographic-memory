@@ -232,7 +232,7 @@ impl TrustStore {
     }
 
     /// Require an imported, signed status list whose `validFrom` is no older than
-    /// this many seconds. The caller supplies authenticated snapshots; HMS makes no fetch.
+    /// this many seconds. The caller supplies authenticated snapshots; WARM makes no fetch.
     pub fn require_recent_status_lists(&mut self, max_age_seconds: u64) -> &mut Self {
         self.max_status_list_age_seconds = Some(max_age_seconds);
         self.require_status_lists = true;

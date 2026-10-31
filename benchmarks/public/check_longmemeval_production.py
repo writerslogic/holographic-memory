@@ -28,7 +28,7 @@ from longmemeval_dev_conversations import SOURCE_SHA256, SPLIT_SHA256, load_dev_
 SYSTEM, ARM = 'sol61_reader', 'production_recall'
 SOURCE_GATE = {'metadata_ids_verified': 500, 'dev_records_decoded': 100, 'heldout_records_decoded': 0}
 DEFAULT_WORK = ROOT / 'benchmarks/results/longmemeval_production_v1'
-SOURCE = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
+SOURCE = Path.home() / '.cache/warm-bench/downloads/longmemeval_s_cleaned.json'
 PINNED = {
     'Qwen3-Embedding-0.6B': '97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3',
     'Qwen3-Reranker-0.6B': 'e61197ed45024b0ed8a2d74b80b4d909f1255473',

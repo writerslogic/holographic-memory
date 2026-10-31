@@ -1,5 +1,5 @@
 """LongMemEval S-dev proxies on the cached Qwen3-Embedding-0.6B turn embeddings of the dev
-export (`~/.cache/hms-bench/holo_dev`, the 100 frozen dev questions
+export (`~/.cache/warm-bench/holo_dev`, the 100 frozen dev questions
 held-out ids untouched).
 Dense-exact ranking is the arm
 the official eval_utils scores it. Usage:
@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "benchmarks/public"))
 import longmemeval_pipeline as P  # noqa: E402
 
-CACHE = Path.home() / ".cache/hms-bench"
+CACHE = Path.home() / ".cache/warm-bench"
 EXPORT = CACHE / "holo_dev"
 EVAL = CACHE / "downloads/longmemeval_eval_utils_9e0b455f4ef0.py"
 OUT = ROOT / "benchmarks/results/proxies_2026-10_lme.json"

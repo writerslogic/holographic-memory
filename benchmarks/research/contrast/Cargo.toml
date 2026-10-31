@@ -1,5 +1,5 @@
 [package]
-name = "hms-research-contrast"
+name = "warm-research-contrast"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.89"
@@ -20,7 +20,7 @@ clap = { version = "4.4", features = ["derive"] }
 rust-stemmers = "1.2.0"
 
 [[bin]]
-name = "hms-contrast"
+name = "warm-contrast"
 path = "src/main.rs"
 
 [profile.release]

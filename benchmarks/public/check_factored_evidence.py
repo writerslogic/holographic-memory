@@ -134,7 +134,7 @@ def check(report, source, split, baseline, historical, fingerprints):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", type=Path)
-    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json")
+    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json")
     parser.add_argument("--reproduction", type=Path)
     parser.add_argument("--tamper", action="store_true")
     args = parser.parse_args()
@@ -153,7 +153,7 @@ def main():
     fingerprints = {"source_sha256": SOURCE_SHA256, "split_sha256": sha(split_path),
                     "baseline_sha256": sha(baseline_path), "historical_sha256": sha(historical_path),
                     "protocol_sha256": sha(args.report.parent / "protocol.json"),
-                    "codec_sha256": sha(ROOT / "bindings/python/holographic-sdk/holographic_sdk/evidence.py"),
+                    "codec_sha256": sha(ROOT / "bindings/python/warm-sdk/writerslogic_warm_sdk/evidence.py"),
                     "producer_sha256": sha(ROOT / "benchmarks/public/factored_evidence_diagnostic.py")}
     report = json.loads(args.report.read_text())
     summary = check(report, source, split, baseline, historical, fingerprints)

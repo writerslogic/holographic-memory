@@ -1,22 +1,22 @@
-# Anthropic memory tool on Holographic Memory
+# Anthropic memory tool on WARM
 
-Anthropic's client-side [memory tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool) (`{"type": "memory_20250818", "name": "memory"}`) lets Claude read and write a `/memories` directory that your application serves. These packages serve it from a Holographic Memory store through `hms-mcp`, so Claude's memory files are also searchable by meaning.
+Anthropic's client-side [memory tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool) (`{"type": "memory_20250818", "name": "memory"}`) lets Claude read and write a `/memories` directory that your application serves. These packages serve it from a WARM store through `warm-mcp`, so Claude's memory files are also searchable by meaning.
 
 | Language | Package | Entry points |
 |---|---|---|
-| Python | `holographic-memory-claude-tool` (`hms_memory_tool`) | `HolographicMemoryTool` (async, `BetaAsyncAbstractMemoryTool`), `HolographicMemoryToolSync` (`BetaAbstractMemoryTool`) |
-| TypeScript | `holographic-memory-claude-tool` | `HolographicMemoryTool` (implements the SDK's `MemoryToolHandlers`; `asTool()` wraps it with `betaMemoryTool`) |
+| Python | `writerslogic-warm-claude-tool` (`warm_memory_tool`) | `WarmMemoryTool` (async, `BetaAsyncAbstractMemoryTool`), `WarmMemoryToolSync` (`BetaAbstractMemoryTool`) |
+| TypeScript | `writerslogic-warm-claude-tool` | `WarmMemoryTool` (implements the SDK's `MemoryToolHandlers`; `asTool()` wraps it with `betaMemoryTool`) |
 
-Both connect to an `hms-mcp` server over stdio (they start it) or streamable HTTP (`url=`), and both add a companion tool, `memory_recall`, for semantic recall.
+Both connect to an `warm-mcp` server over stdio (they start it) or streamable HTTP (`url=`), and both add a companion tool, `memory_recall`, for semantic recall.
 
 ## Use
 
 ```python
 import anthropic
-from hms_memory_tool import HolographicMemoryToolSync
+from warm_memory_tool import WarmMemoryToolSync
 
 client = anthropic.Anthropic()
-with HolographicMemoryToolSync.connect(command="hms-mcp") as memory:
+with WarmMemoryToolSync.connect(command="warm-mcp") as memory:
     final = client.beta.messages.tool_runner(
         model="claude-sonnet-5-5", max_tokens=1024,
         messages=[{"role": "user", "content": "Remember that Acme Corp prefers email follow-ups."}],
@@ -25,7 +25,7 @@ with HolographicMemoryToolSync.connect(command="hms-mcp") as memory:
 ```
 
 ```ts
-const memory = await HolographicMemoryTool.connect({ connection: { command: "hms-mcp" } });
+const memory = await WarmMemoryTool.connect({ connection: { command: "warm-mcp" } });
 const final = await client.beta.messages.toolRunner({
   model: "claude-sonnet-5-5", max_tokens: 1024,
   messages: [{ role: "user", content: "Remember that Acme Corp prefers email follow-ups." }],
@@ -34,7 +34,7 @@ const final = await client.beta.messages.toolRunner({
 await memory.close();
 ```
 
-Connection options: `command`/`args`/`env` (Python) or `connection: { command, args, env }` (TypeScript) start a server; `url` (and `token`, default `HMS_MCP_TOKEN`) connect to a shared `hms-mcp --transport http`. `namespace` selects a store on a server started with `--namespace-arg`: one store per user or per agent. `max_file_bytes` can only lower the server's limit.
+Connection options: `command`/`args`/`env` (Python) or `connection: { command, args, env }` (TypeScript) start a server; `url` (and `token`, default `WARM_MCP_TOKEN`) connect to a shared `warm-mcp --transport http`. `namespace` selects a store on a server started with `--namespace-arg`: one store per user or per agent. `max_file_bytes` can only lower the server's limit.
 
 ## Command behaviour
 
@@ -61,15 +61,15 @@ Errors are raised as the SDK's tool error (`ToolError` in Python, a thrown `Erro
 
 ## Semantic recall
 
-`memory.recall(query, k=5)` and the companion `memory_recall` tool return the files most relevant to a query with a relevance score and an excerpt. Files are stored with the tag `memory-file`, so recall covers only memory files even when the same store also holds other memories. Recall is lexical (BM25) in the default `hms-mcp` build and hybrid lexical plus semantic when the server runs with an embedding model; `docs/integrations/mcp/README.md` says which build gives which.
+`memory.recall(query, k=5)` and the companion `memory_recall` tool return the files most relevant to a query with a relevance score and an excerpt. Files are stored with the tag `memory-file`, so recall covers only memory files even when the same store also holds other memories. Recall is lexical (BM25) in the default `warm-mcp` build and hybrid lexical plus semantic when the server runs with an embedding model; `docs/integrations/mcp/README.md` says which build gives which.
 
 ## Tests
 
 ```sh
 # Python
-HMS_MCP_BIN=/path/to/hms-mcp uv run --project integrations/claude-memory-tool/python pytest integrations/claude-memory-tool/python/tests
+WARM_MCP_BIN=/path/to/warm-mcp uv run --project integrations/claude-memory-tool/python pytest integrations/claude-memory-tool/python/tests
 # TypeScript
-cd integrations/claude-memory-tool/typescript && npm install && HMS_MCP_BIN=/path/to/hms-mcp npm test
+cd integrations/claude-memory-tool/typescript && npm install && WARM_MCP_BIN=/path/to/warm-mcp npm test
 ```
 
-Both suites run against a real `hms-mcp` process and drive the backend with the Anthropic SDKs' own command types. They cover every command and error string, 20 path-traversal forms, directory moves and conflicts, long-file paging and the size limit (limit and limit plus one), concurrent edits of one file, restart persistence, namespace isolation and semantic recall, and they run the SDK tool runner end to end (`client.beta.messages.tool_runner` / `toolRunner`) against a scripted model endpoint: the runner sends `{"type": "memory_20250818", "name": "memory"}`, dispatches `tool_use` blocks to the backend and returns `is_error` for a traversal attempt. No Anthropic API call is made; a live model was not used for this tool.
+Both suites run against a real `warm-mcp` process and drive the backend with the Anthropic SDKs' own command types. They cover every command and error string, 20 path-traversal forms, directory moves and conflicts, long-file paging and the size limit (limit and limit plus one), concurrent edits of one file, restart persistence, namespace isolation and semantic recall, and they run the SDK tool runner end to end (`client.beta.messages.tool_runner` / `toolRunner`) against a scripted model endpoint: the runner sends `{"type": "memory_20250818", "name": "memory"}`, dispatches `tool_use` blocks to the backend and returns `is_error` for a traversal attempt. No Anthropic API call is made; a live model was not used for this tool.

@@ -21,15 +21,15 @@
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::memory_api::{
-    HistoryMode, Memory, MemoryConfig, RecallOptions, RecencyBasis, RecencySpec, RememberInput,
-};
-use holographic_memory::{HmsCore, SearchOptions};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::sync::Arc;
+use writerslogic_warm::core::memory_api::{
+    HistoryMode, Memory, MemoryConfig, RecallOptions, RecencyBasis, RecencySpec, RememberInput,
+};
+use writerslogic_warm::{SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -138,7 +138,7 @@ fn main() -> Result<()> {
 
     for q in &questions {
         let dir = tempfile::tempdir()?;
-        let core = Arc::new(HmsCore::new(
+        let core = Arc::new(WarmCore::new(
             1024,
             Some(dir.path().display().to_string()),
             None,

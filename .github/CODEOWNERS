@@ -3,7 +3,7 @@
 #
 # Every owner must be a user or a team that exists and has write access, otherwise GitHub
 # ignores the rule and the "require review from code owners" protection checks nothing
-# (`gh api repos/writerslogic/holographic-memory/codeowners/errors` lists problems).
+# (`gh api repos/writerslogic/warm/codeowners/errors` lists problems).
 # Add a team here when one exists; until then the maintainer owns everything.
 
 * @dcondrey

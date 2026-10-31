@@ -91,7 +91,7 @@ def main():
         'reader_model': meta['reader_model'], 'judge_model': meta['judge_model'], 'temperature': 0.0,
         'embedding_model': meta['embedding_model'], 'k_per_speaker': meta['k_per_speaker'],
         'token_budget': meta['token_budget'], 'recall_options': meta['recall_options'],
-        'hms_sha': meta['hms_sha'], 'hms_surface': 'hms-server memory API (POST /api/v1/memory/remember, recall)',
+        'warm_sha': meta['warm_sha'], 'warm_surface': 'warm-server memory API (POST /api/v1/memory/remember, recall)',
         'split': meta['split'],
         'split_rule': 'first three conversations in file order are the tuning set, fixed before any run',
         'scores': 'fractions; f1/bleu1/j are means over independent reader passes',

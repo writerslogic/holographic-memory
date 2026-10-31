@@ -281,8 +281,9 @@ impl PersistentArena {
         };
         if source.exists() {
             let bytes = std::fs::read(&source)?;
-            let manifest: FormatManifest = serde_json::from_slice(&bytes)
-                .map_err(|e| anyhow!("Invalid HMS storage manifest {}: {}", source.display(), e))?;
+            let manifest: FormatManifest = serde_json::from_slice(&bytes).map_err(|e| {
+                anyhow!("Invalid WARM storage manifest {}: {}", source.display(), e)
+            })?;
             if manifest.magic != FORMAT_MAGIC {
                 return Err(anyhow!(
                     "Storage manifest has unknown magic: {}",
@@ -692,7 +693,7 @@ impl PersistentArena {
 
     /// Drops the resident pages of `[global_offset, global_offset + len)` once their bytes
     /// are copied out (replay) or committed; the next read refaults them from the file. A
-    /// hint, so an out-of-range span is ignored. Off with `HMS_RELEASE_JOURNAL_PAGES=0`.
+    /// hint, so an out-of-range span is ignored. Off with `WARM_RELEASE_JOURNAL_PAGES=0`.
     pub(crate) fn release_pages(&self, global_offset: usize, len: usize) {
         if len == 0 || !super::os_memory::release_journal_pages_enabled() {
             return;
@@ -1060,7 +1061,7 @@ impl Drop for PersistentArena {
 
 #[cfg(test)]
 fn compaction_crash_point(phase: &str) {
-    if std::env::var("HMS_TEST_COMPACTION_PHASE").as_deref() == Ok(phase) {
+    if crate::compatibility::var("WARM_TEST_COMPACTION_PHASE").as_deref() == Ok(phase) {
         std::process::exit(73);
     }
 }
@@ -1239,7 +1240,7 @@ mod tests {
 
     #[test]
     fn compaction_crash_child() -> Result<()> {
-        let Ok(root) = std::env::var("HMS_TEST_COMPACTION_ROOT") else {
+        let Ok(root) = crate::compatibility::var("WARM_TEST_COMPACTION_ROOT") else {
             return Ok(());
         };
         let root = PathBuf::from(root);
@@ -1354,8 +1355,8 @@ mod tests {
             let root = tempdir()?;
             let output = std::process::Command::new(std::env::current_exe()?)
                 .args(["--exact", "core::storage::tests::compaction_crash_child"])
-                .env("HMS_TEST_COMPACTION_ROOT", root.path())
-                .env("HMS_TEST_COMPACTION_PHASE", phase)
+                .env("WARM_TEST_COMPACTION_ROOT", root.path())
+                .env("WARM_TEST_COMPACTION_PHASE", phase)
                 .output()?;
             assert_eq!(output.status.code(), Some(73));
             let arena = PersistentArena::new(root.path().join("arena"))?;

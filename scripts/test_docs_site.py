@@ -3,7 +3,7 @@
 
 """Tests for the docs-site generators. Run: python -m unittest scripts/test_docs_site.py
 
-Each test pins a rule the site depends on: a number is never dropped or rounded in HMS's favour,
+Each test pins a rule the site depends on: a number is never dropped or rounded in WARM's favour,
 a generated reference fails loudly on input it does not understand, and canonical URLs never
 point at a page that does not exist.
 """
@@ -40,36 +40,36 @@ class BrandingTests(unittest.TestCase):
 
 
 class VectorChartTests(unittest.TestCase):
-    def chart(self, table, competitors=(), hms=()):
+    def chart(self, table, competitors=(), warm=()):
         with tempfile.TemporaryDirectory() as tmp:
             Path(tmp, "r.json").write_text(json.dumps({
                 "dataset": {"name": "d"}, "environment": [{"cpu": "cpu"}], "max_load": 3.0,
-                "qps_at_recall": table, "competitors": list(competitors), "hms": list(hms),
+                "qps_at_recall": table, "competitors": list(competitors), "warm": list(warm),
             }))
-            spec = {"file": "r.json", "title": "t", "recall_targets": ["0.90", "0.95"], "hms_prefix": "HMS",
-                    "annotations": {"HMS slow": "unconfirmed"}, "link": "x.md"}
+            spec = {"file": "r.json", "title": "t", "recall_targets": ["0.90", "0.95"], "warm_prefix": "WARM",
+                    "annotations": {"WARM slow": "unconfirmed"}, "link": "x.md"}
             return docs_charts.vector_chart(Path(tmp), spec)
 
     def test_a_system_that_misses_a_target_stays_on_the_chart(self):
         out = self.chart({
-            "HMS fast": {"0.90": {"qps": 900.0}, "0.95": {"qps": None, "method": "not reached"}},
+            "WARM fast": {"0.90": {"qps": 900.0}, "0.95": {"qps": None, "method": "not reached"}},
             "Other": {"0.90": {"qps": 500.0}, "0.95": {"qps": 100.0}},
         })
         self.assertIn("not reached", out["svg"])
         self.assertIn("Other", out["svg"])
-        self.assertTrue(any("no HMS configuration reached it" in line for line in out["summary"]))
+        self.assertTrue(any("no WARM configuration reached it" in line for line in out["summary"]))
 
     def test_summary_says_slower_when_a_competitor_wins(self):
         out = self.chart({
-            "HMS fast": {"0.90": {"qps": 400.0}, "0.95": {"qps": None}},
+            "WARM fast": {"0.90": {"qps": 400.0}, "0.95": {"qps": None}},
             "Other": {"0.90": {"qps": 500.0}, "0.95": {"qps": 100.0}},
         })
         self.assertTrue(any("slower than" in line for line in out["summary"]))
 
     def test_annotated_rows_are_marked_and_excluded_from_the_headline_sentence(self):
         out = self.chart({
-            "HMS slow": {"0.90": {"qps": 9000.0}, "0.95": {"qps": None}},
-            "HMS fast": {"0.90": {"qps": 400.0}, "0.95": {"qps": None}},
+            "WARM slow": {"0.90": {"qps": 9000.0}, "0.95": {"qps": None}},
+            "WARM fast": {"0.90": {"qps": 400.0}, "0.95": {"qps": None}},
             "Other": {"0.90": {"qps": 500.0}, "0.95": {"qps": 100.0}},
         })
         sentence = next(l for l in out["summary"] if l.startswith("At recall@10 of 0.90"))
@@ -79,31 +79,31 @@ class VectorChartTests(unittest.TestCase):
 
     def test_load_gate_counts_every_configuration(self):
         out = self.chart(
-            {"HMS fast": {"0.90": {"qps": 1.0}, "0.95": {"qps": 1.0}}},
+            {"WARM fast": {"0.90": {"qps": 1.0}, "0.95": {"qps": 1.0}}},
             competitors=[{"load_gate_met": True}, {"load_gate_met": False}],
-            hms=[{"sweep": [{"load_gate_met": False}]}],
+            warm=[{"sweep": [{"load_gate_met": False}]}],
         )
         self.assertEqual((out["gate_met"], out["gate_total"]), (1, 3))
 
 
 class CHeaderTests(unittest.TestCase):
-    HEADER = """#define HMS_H
+    HEADER = """#define WARM_H
 // The ABI major version.
-#define HMS_ABI_MAJOR 1
+#define WARM_ABI_MAJOR 1
 
 // An open store. Opaque to C.
-typedef struct hms_store_t hms_store_t;
+typedef struct warm_store_t warm_store_t;
 
 // Options.
 typedef struct {
   // Size of this struct.
   uint32_t struct_size;
-} hms_open_options_t;
+} warm_open_options_t;
 
 // Open a store.
 // # Safety
 // `path` must be valid.
-hms_status_t hms1_open(const hms_open_options_t *options, hms_store_t **out);
+warm_status_t hms1_open(const warm_open_options_t *options, warm_store_t **out);
 """
 
     def test_declarations_keep_their_comments(self):
@@ -113,15 +113,15 @@ hms_status_t hms1_open(const hms_open_options_t *options, hms_store_t **out);
             text = docs_cheader.render(header)
         self.assertIn("### `hms1_open`", text)
         self.assertIn("**Safety**", text)
-        self.assertIn("### `hms_open_options_t`", text)
+        self.assertIn("### `warm_open_options_t`", text)
         self.assertIn("struct_size;", text)
-        self.assertNotIn("### `HMS_H`", text, "an include guard is not API")
+        self.assertNotIn("### `WARM_H`", text, "an include guard is not API")
 
 
 class OpenApiTests(unittest.TestCase):
     SPEC = {
         "openapi": "3.0.3",
-        "info": {"title": "hms-server", "version": "1"},
+        "info": {"title": "warm-server", "version": "1"},
         "paths": {"/query": {"post": {
             "summary": "Query", "tags": ["Search"],
             "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Q"}}}},
@@ -177,7 +177,7 @@ class Pyo3StubTests(unittest.TestCase):
                     capture_output=True, text=True, timeout=30,
                 )
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                stub = tree / ".docs-gen" / "pyi" / "holographic_memory" / "__init__.py"
+                stub = tree / ".docs-gen" / "pyi" / "writerslogic_warm" / "__init__.py"
                 self.assertEqual(stub.read_text(), expected)
 
     def test_the_real_module_is_described(self):

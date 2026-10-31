@@ -27,7 +27,7 @@ class VersionTests(unittest.TestCase):
             "package-lock.json",
             "pyproject.toml",
             "bindings/embed-models/python/pyproject.toml",
-            "bindings/python/holographic-sdk/pyproject.toml",
+            "bindings/python/warm-sdk/pyproject.toml",
             "docs/server/openapi.json",
         ):
             destination = self.tree / relative
@@ -35,7 +35,7 @@ class VersionTests(unittest.TestCase):
             shutil.copyfile(ROOT / relative, destination)
         version = tomllib.loads((ROOT / "Cargo.toml").read_text())["package"]["version"]
         (self.tree / "Cargo.toml").write_text(
-            f'[package]\nname = "holographic-memory"\nversion = "{version}"\nedition = "2021"\n'
+            f'[package]\nname = "writerslogic-warm"\nversion = "{version}"\nedition = "2021"\n'
         )
         (self.tree / "src").mkdir()
         (self.tree / "src/lib.rs").write_text("")

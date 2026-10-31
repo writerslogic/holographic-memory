@@ -100,8 +100,8 @@ def prepare(audit_path, audit_sha256, source_manifest, call_log, development_fre
             or not 0 <= original_spend <= 48):
         raise ValueError("original spend must fit the finite recovery allocation")
     signature = development_freeze["binding"]
-    if (manifest["hms"]["dirty"] or manifest["harness"]["commit"] != signature["harness_commit"]
-            or manifest["hms"]["server_binary_sha256"] != signature["server_binary_sha256"]
+    if (manifest["warm"]["dirty"] or manifest["harness"]["commit"] != signature["harness_commit"]
+            or manifest["warm"]["server_binary_sha256"] != signature["server_binary_sha256"]
             or manifest["adapter"]["shim_sha256"] != signature["shim_sha256"]
             or manifest["retrieval_config_sha256"] != signature["retrieval_config_sha256"]):
         raise ValueError("partial attempt uses different frozen quality sources")

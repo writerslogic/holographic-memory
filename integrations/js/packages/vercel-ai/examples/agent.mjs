@@ -7,10 +7,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ToolLoopAgent, wrapLanguageModel } from 'ai'
 import { MockLanguageModelV4 } from 'ai/test'
-import { HmsStore } from '@holographic-memory/core'
+import { WarmStore } from '@writerslogic/warm-core'
 import { memoryMiddleware, memoryTools } from '../dist/index.js'
 
-const store = new HmsStore({ path: mkdtempSync(join(tmpdir(), 'hms-example-')), dimensions: 1024 })
+const store = new WarmStore({ path: mkdtempSync(join(tmpdir(), 'warm-example-')), dimensions: 1024 })
 const usage = { inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined }, outputTokens: { total: 1, text: 1, reasoning: undefined } }
 
 const script = [

@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process'
 import { test } from 'node:test'
 import { pathToFileURL } from 'node:url'
 import { Document } from '@langchain/core/documents'
-import { HashingEmbedder, HmsError, HmsVectorStore } from '../dist/index.js'
+import { HashingEmbedder, WarmError, WarmVectorStore } from '../dist/index.js'
 
 const hashing = new HashingEmbedder(256)
 /** A LangChain `Embeddings` over the deterministic hashing embedder, so tests need no model. */
@@ -16,13 +16,13 @@ const embeddings = {
   embedDocuments: (texts) => hashing.encodeDocuments(texts),
   embedQuery: (text) => hashing.encodeQuery(text),
 }
-const tmp = () => mkdtempSync(join(tmpdir(), 'hms-lc-'))
-const make = (opts = {}) => HmsVectorStore.create(embeddings, { path: tmp(), dimensions: 1024, ...opts })
+const tmp = () => mkdtempSync(join(tmpdir(), 'warm-lc-'))
+const make = (opts = {}) => WarmVectorStore.create(embeddings, { path: tmp(), dimensions: 1024, ...opts })
 const docs = (n, extra = {}) =>
   Array.from({ length: n }, (_, i) => new Document({ pageContent: `alpha beta gamma number${i} topic${i % 3}`, metadata: { n: i, parity: i % 2, ...extra } }))
 
 test('fromTexts then similaritySearch returns the best match first and honours k', async () => {
-  const vs = await HmsVectorStore.fromTexts(
+  const vs = await WarmVectorStore.fromTexts(
     ['the cat sat on the mat', 'dogs chase cats in the park', 'quantum chromodynamics of gluons'],
     [{ id: 1 }, { id: 2 }, { id: 3 }],
     embeddings,
@@ -95,7 +95,7 @@ test('k boundary: maxFetch-1, maxFetch, maxFetch+1', async () => {
   await vs.addDocuments(docs(12))
   assert.equal((await vs.similaritySearch('alpha', 9)).length, 9)
   assert.equal((await vs.similaritySearch('alpha', 10)).length, 10)
-  await assert.rejects(vs.similaritySearch('alpha', 11), (e) => e instanceof HmsError && e.code === 'limit_exceeded')
+  await assert.rejects(vs.similaritySearch('alpha', 11), (e) => e instanceof WarmError && e.code === 'limit_exceeded')
 })
 
 test('a filter with client-side terms can return fewer than k when candidates run out', async () => {
@@ -147,7 +147,7 @@ test('asRetriever invokes similarity and mmr retrieval with a filter', async () 
 
 test('collection scopes ids and queries inside one native store', async () => {
   const path = tmp()
-  const a = await HmsVectorStore.create(embeddings, { path, dimensions: 1024, collection: 'a' })
+  const a = await WarmVectorStore.create(embeddings, { path, dimensions: 1024, collection: 'a' })
   const b = new (a.constructor)(embeddings, { store: new a.store.constructor({ memory: a.store.memory, embedder: a.store.embedder, collection: 'b' }) })
   await a.addDocuments([new Document({ pageContent: 'in collection a', metadata: {} })], { ids: ['same'] })
   await b.addDocuments([new Document({ pageContent: 'in collection b', metadata: {} })], { ids: ['same'] })
@@ -168,23 +168,23 @@ test('data persists across a process restart', async () => {
       '-e',
       `
     import { Document } from '@langchain/core/documents'
-    import { HmsVectorStore, HashingEmbedder } from ${JSON.stringify(dist)}
+    import { WarmVectorStore, HashingEmbedder } from ${JSON.stringify(dist)}
     const h = new HashingEmbedder(256)
     const emb = { embedDocuments: (t) => h.encodeDocuments(t), embedQuery: (t) => h.encodeQuery(t) }
-    const vs = await HmsVectorStore.create(emb, { path: ${JSON.stringify(path)}, dimensions: 1024, embeddingSpace: ${JSON.stringify(space)} })
+    const vs = await WarmVectorStore.create(emb, { path: ${JSON.stringify(path)}, dimensions: 1024, embeddingSpace: ${JSON.stringify(space)} })
     await vs.addDocuments([0, 1, 2].map((i) => new Document({ pageContent: 'alpha beta gamma number' + i + ' topic' + (i % 3), metadata: {} })), { ids: ['x', 'y', 'z'] })
     await vs.store.close()
   `,
     ],
     { cwd: new URL('..', import.meta.url).pathname },
   )
-  const vs = await HmsVectorStore.create(embeddings, { path, dimensions: 1024, embeddingSpace: space })
+  const vs = await WarmVectorStore.create(embeddings, { path, dimensions: 1024, embeddingSpace: space })
   assert.deepEqual((await vs.getByIds(['x', 'z'])).map((d) => d.id), ['x', 'z'])
   assert.deepEqual((await vs.similaritySearch('alpha beta gamma number1 topic1', 1)).map((d) => d.id), ['y'])
 })
 
-test('encryption at rest is switched on through hmsConfig and the store still searches', async () => {
-  const vs = await make({ hmsConfig: { encryptionEnabled: true, encryptionPassphrase: 'correct horse battery staple' } })
+test('encryption at rest is switched on through warmConfig and the store still searches', async () => {
+  const vs = await make({ warmConfig: { encryptionEnabled: true, encryptionPassphrase: 'correct horse battery staple' } })
   assert.equal(vs.store.memory.securityStatus().encryptionActive, true)
   await vs.addDocuments(docs(4))
   assert.equal((await vs.similaritySearch('alpha beta gamma number2 topic2', 1))[0].metadata.n, 2)

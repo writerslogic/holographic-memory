@@ -241,7 +241,7 @@ def main():
     parser.add_argument("--arm", choices=["baseline", "candidate"])
     args = parser.parse_args()
     folder = args.folder.resolve()
-    env = os.environ | {"RUSTUP_TOOLCHAIN": "1.96.0", "CARGO_TARGET_DIR": "./.hms-target",
+    env = os.environ | {"RUSTUP_TOOLCHAIN": "1.96.0", "CARGO_TARGET_DIR": "./.warm-target",
                         "CARGO_BUILD_JOBS": "3", "RAYON_NUM_THREADS": "4"}
     if args.action == "prepare":
         prepare(folder)

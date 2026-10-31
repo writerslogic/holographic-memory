@@ -1185,15 +1185,15 @@ impl ProvenanceManager {
                     // The signature only proves the key signed *some* payload: it must be a
                     // store manifest for this manifest's store hash, or an envelope signed for
                     // a fact, a head or another store verifies when pasted in.
-                    let parsed = serde_json::from_slice::<c2pa_manifest::HmsManifest>(&payload)
+                    let parsed = serde_json::from_slice::<c2pa_manifest::WarmManifest>(&payload)
                         .map_err(|e| {
                             anyhow::anyhow!("signed payload is not a store manifest: {e}")
                         });
                     let binding = parsed
                         .as_ref()
                         .map_err(|e| anyhow::anyhow!("{e}"))
-                        .and_then(|hms_manifest| {
-                            let signed = c2pa_manifest::signed_store_hash(hms_manifest)?;
+                        .and_then(|warm_manifest| {
+                            let signed = c2pa_manifest::signed_store_hash(warm_manifest)?;
                             if signed == hex_encode(&manifest.store_hash) {
                                 Ok(())
                             } else {
@@ -1203,9 +1203,9 @@ impl ProvenanceManager {
                             }
                         });
                     details.push(outcome_detail("manifest_binding", &binding));
-                    if let Ok(ref hms_manifest) = parsed {
+                    if let Ok(ref warm_manifest) = parsed {
                         if let Some(data) = store_data {
-                            let hash_ok = c2pa_manifest::validate_store_hash(hms_manifest, data)
+                            let hash_ok = c2pa_manifest::validate_store_hash(warm_manifest, data)
                                 .unwrap_or(false);
                             details.push(VerificationDetail {
                                 check: "store_hash".to_string(),
@@ -2432,7 +2432,9 @@ mod tests {
             "sha256".to_string(),
             vec![0x11u8; 32],
         )];
-        let assertion = mgr.create_cawg_assertion(&referenced, "hms agent").unwrap();
+        let assertion = mgr
+            .create_cawg_assertion(&referenced, "warm agent")
+            .unwrap();
 
         // The manager's own CAWG issuer (did:jwk of its key) is trusted by self_trust.
         assert!(mgr

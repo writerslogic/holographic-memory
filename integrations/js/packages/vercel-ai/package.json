@@ -1,7 +1,7 @@
 {
-  "name": "@holographic-memory/vercel-ai",
+  "name": "@writerslogic/warm-vercel-ai",
   "version": "0.1.0",
-  "description": "Vercel AI SDK memory tools and retrieval middleware backed by Holographic Memory",
+  "description": "Vercel AI SDK memory tools and retrieval middleware backed by WARM",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -19,7 +19,7 @@
     "test": "tsup && node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@holographic-memory/core": "^0.1.0"
+    "@writerslogic/warm-core": "^0.1.0"
   },
   "peerDependencies": {
     "ai": ">=7.0.0 <8",

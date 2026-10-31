@@ -12,7 +12,7 @@ defineSuite({
   api,
   FileStorage,
   scratch: async () => {
-    const dir = await Deno.makeTempDir({ prefix: "hms-wasm-" });
+    const dir = await Deno.makeTempDir({ prefix: "warm-wasm-" });
     made.push(dir);
     return dir;
   },

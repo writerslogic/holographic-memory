@@ -28,7 +28,7 @@ from longmemeval_dev_conversations import load_dev_conversations
 
 SYSTEM, ARM = 'matched_gpt54', 'full_history'
 DEFAULT_WORK = ROOT / 'benchmarks/results/longmemeval_complete_history_v1'
-SOURCE = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
+SOURCE = Path.home() / '.cache/warm-bench/downloads/longmemeval_s_cleaned.json'
 SOURCE_POLICY = 'all complete original dev user and assistant turns including unpaired assistant blocks; no retrieval, filtering, or truncation'
 
 
@@ -235,7 +235,7 @@ def check_work(work):
     paths = {'split': public / 'longmemeval_split.json', 'baseline': results / 'longmemeval_dev_answers_v3.json',
              'history': results / 'evidence_completeness_dev.json',
              'official': public / 'reader_protocol_v1.json', 'preregistration': results / 'preregistration_2026-10.json',
-             'export': artifact_path('~/.cache/hms-bench/holo_dev/export_dev.json')}
+             'export': artifact_path('~/.cache/warm-bench/holo_dev/export_dev.json')}
     required = list(paths.values()) + [SOURCE] + [public / name for name in (
         'longmemeval_complete_history.py', 'longmemeval_role_reader.py', 'longmemeval_full_history.py',
         'longmemeval_user_first.py', 'longmemeval_reader_api.py', 'longmemeval_role_retrieval.py',

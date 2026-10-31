@@ -57,7 +57,7 @@ def main(a):
     env = {**os.environ, "RAYON_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"}
 
     def run(label, arguments, cores="2,3", threads="1", output=None):
-        command = ["flock", "-F", str(Path.home() / "hms-timing.lock"), "taskset", "-c", cores, *map(str, arguments)]
+        command = ["flock", "-F", str(Path.home() / "warm-timing.lock"), "taskset", "-c", cores, *map(str, arguments)]
         commands.append({"label": label, "command": command, "environment": {"RAYON_NUM_THREADS": threads, "OMP_NUM_THREADS": threads}})
         with (a.work / f"{label}.stdout").open("w") as stdout, (a.work / f"{label}.stderr").open("w") as stderr:
             with subprocess.Popen(command, env={**env, "RAYON_NUM_THREADS": threads, "OMP_NUM_THREADS": threads}, stdout=stdout, stderr=stderr) as process:
@@ -86,7 +86,7 @@ def main(a):
               "--quantized-search", "--residual", "--residual-bits", "8", "--vertex-bits", "8", "--id-bytes", "3", "--align-rows", "--reorder",
               "--ef", "10,16,24,32,48,64,96,128,192,256", "--rerank", "32,64", "--max-load", "1000000", "--max-wait-secs", "0"]
     build_path = a.work / "build.json"
-    build = run("hms-build", [a.after, "ann-qgraph", *shared, "--save-index", vertex, "--save-updates", updated, "--out", build_path], "12-21", "10", build_path)
+    build = run("warm-build", [a.after, "ann-qgraph", *shared, "--save-index", vertex, "--save-updates", updated, "--out", build_path], "12-21", "10", build_path)
     before_path = a.work / "before.json"
     before = run("before", [a.before, "ann-qgraph", *shared, "--load-index", vertex, "--residency", "mapped", "--latency", "--repeats", "2", "--out", before_path], output=before_path)
     after_path = a.work / "after.json"
@@ -109,12 +109,12 @@ def main(a):
     report = {"commit": a.commit, "before_commit": a.before_commit, "command": sys.argv, "commands": commands,
               "hardware": subprocess.check_output(["lscpu"], text=True), "dataset": json.loads((a.data / "meta.json").read_text()),
               "summary": {str(t): {"before": best(before["sweep"], t, True), "after": best(after["configs"], t), "hnswlib": best(hnsw["configs"], t)} for t in (0.90, 0.95, 0.99)},
-              "hms": {"build": build, "before": before, "after": after, "cold": cold, "operations": ops},
+              "warm": {"build": build, "before": before, "after": after, "cold": cold, "operations": ops},
               "hnswlib": {"build": hnsw_build, "serve": hnsw, "operations": hnsw_ops_report},
               "notes": ["One run per arm; timing noise is not estimated by independent repetitions.",
                         "Before is the immutable mapped base; after opens the updatable directory with an empty delta.",
                         "Recall is measured before updates; randomized and 50k tests cover updates and consolidation.",
-                        "HMS operation batches contain 1% of ids and include commit; hnswlib uses its harness save_index flush."]}
+                        "WARM operation batches contain 1% of ids and include commit; hnswlib uses its harness save_index flush."]}
     a.out.write_text(json.dumps(report, indent=2) + "\n")
 
 

@@ -2,7 +2,7 @@
 
 Measured 2026-10-05 on an Apple M4 (10 cores, macOS). Results: `benchmarks/results/public_*.json`.
 Harness: `benchmarks/public/prepare.py` (downloads and embeds data outside the repository),
-`src/bin/research/public-bench.rs` (drives HMS) and `benchmarks/public/evaluate.py` (scores runs and runs
+`src/bin/research/public-bench.rs` (drives WARM) and `benchmarks/public/evaluate.py` (scores runs and runs
 the comparison libraries on the same data).
 
 The machine was not idle: load average ranged from 4 to 37 during the runs, and every result
@@ -16,14 +16,14 @@ at revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`, L2-normalized, computed 
 
 | Method | SciFact nDCG@10 | SciFact R@100 | NFCorpus nDCG@10 | NFCorpus R@100 |
 |---|---|---|---|---|
-| HMS hybrid (document API, stemmed BM25 + exact cosine, min-max score blend) | **0.729** | 0.953 | **0.355** | 0.322 |
-| HMS lexical (document API BM25, Porter stemming) | 0.688 | 0.925 | 0.323 | 0.249 |
-| HMS dense (document API, exact cosine) | 0.645 | 0.925 | 0.317 | 0.311 |
-| HMS sparse vector path (`from_dense` + inverted index, D=16384) | 0.470 | 0.779 | 0.209 | 0.207 |
+| WARM hybrid (document API, stemmed BM25 + exact cosine, min-max score blend) | **0.729** | 0.953 | **0.355** | 0.322 |
+| WARM lexical (document API BM25, Porter stemming) | 0.688 | 0.925 | 0.323 | 0.249 |
+| WARM dense (document API, exact cosine) | 0.645 | 0.925 | 0.317 | 0.311 |
+| WARM sparse vector path (`from_dense` + inverted index, D=16384) | 0.470 | 0.779 | 0.209 | 0.207 |
 | Reference: exact cosine in NumPy, same embeddings | 0.645 | 0.925 | 0.316 | 0.312 |
 | Reference: BM25 as published in the BEIR paper (Thakur et al. 2021, main nDCG@10 results) | 0.665 | | 0.325 | |
-| Previous HMS hybrid (unstemmed BM25, reciprocal rank fusion; measured 2026-10-05) | 0.683 | 0.954 | 0.344 | 0.325 |
-| Previous HMS lexical (unstemmed) | 0.662 | 0.886 | 0.307 | 0.237 |
+| Previous WARM hybrid (unstemmed BM25, reciprocal rank fusion; measured 2026-10-05) | 0.683 | 0.954 | 0.344 | 0.325 |
+| Previous WARM lexical (unstemmed) | 0.662 | 0.886 | 0.307 | 0.237 |
 
 Re-measured 2026-10-07 (load 70 to 119, which does not affect nDCG) after two document-API
 changes chosen on NFCorpus dev and SciFact train qrels only (`benchmarks/results/proxies_2026-10_beir.json`;
@@ -33,9 +33,9 @@ and semantic lists in place of reciprocal rank fusion (+0.017 / +0.016 on dev/tr
 available as `fusion: "rrf"`). Chunks stored before stemming keep matching unstemmed query
 terms.
 
-- HMS's dense search matches the independent NumPy reference. This is a correctness check of the
+- WARM's dense search matches the independent NumPy reference. This is a correctness check of the
   document API; it says nothing new about the embedding model.
-- HMS's BM25 is now above the published BM25 on SciFact (+0.023) and 0.002 under it on NFCorpus.
+- WARM's BM25 is now above the published BM25 on SciFact (+0.023) and 0.002 under it on NFCorpus.
 - Hybrid search is the best configuration on both sets: +0.084 / +0.038 nDCG@10 over dense alone.
 - The sparse vector path loses about 27% (SciFact) and 34% (NFCorpus) of nDCG@10 relative to exact
   cosine on the same embeddings. It is not suitable as the primary semantic retrieval path; the
@@ -48,13 +48,13 @@ Datasets and ground truth from [ann-benchmarks](https://ann-benchmarks.com): `ny
 system searches single-threaded, one query at a time; builds use all cores. FAISS 1.15.1,
 hnswlib 0.8.0.
 
-HMS's only vector-search path is the sparse one: each dense vector is encoded with `from_dense`
+WARM's only vector-search path is the sparse one: each dense vector is encoded with `from_dense`
 (D=16384, 64 active indices) and searched exactly in the inverted index. Its query time includes
 encoding, because the other systems take dense input directly.
 
 | System | nytimes recall@10 | nytimes QPS | glove recall@10 | glove QPS | glove memory |
 |---|---|---|---|---|---|
-| HMS sparse (D=16384) | 0.34 | 204 | 0.25 | 34 | 2.5 GB RSS |
+| WARM sparse (D=16384) | 0.34 | 204 | 0.25 | 34 | 2.5 GB RSS |
 | FAISS flat (exact) | 0.99 | 206 | 1.00 | 124 | 0.47 GB vectors |
 | FAISS HNSW M=16, efSearch=16 | 0.69 | 13,782 | 0.56 | 19,861 | 0.64 GB |
 | FAISS HNSW M=16, efSearch=128 | 0.88 | 2,875 | 0.83 | 4,111 | 0.64 GB |
@@ -63,11 +63,11 @@ encoding, because the other systems take dense input directly.
 
 Full sweeps are in the result files.
 
-- HMS is behind at every operating point. On glove, HNSW reaches higher recall than HMS at roughly
-  600 times the throughput, and exact FAISS search is faster than HMS while returning the right
+- WARM is behind at every operating point. On glove, HNSW reaches higher recall than WARM at roughly
+  600 times the throughput, and exact FAISS search is faster than WARM while returning the right
   answer.
 - The cause is the encoder, not the index: the inverted index is exact over the sparse codes, but
-  the codes keep only part of the neighbour structure. The true top-10 is inside HMS's top-100 for
+  the codes keep only part of the neighbour structure. The true top-10 is inside WARM's top-100 for
   54% of results on both sets (`experimental_prefilter` in the result files), so even an exact
   re-rank of 100 candidates would not close the gap.
 - Encoding dominates build time (155 s for nytimes, 265 s for glove, all cores) and is about half
@@ -96,13 +96,13 @@ runs are in the file), QPS at a target interpolated in log(QPS) between the Pare
 that bracket it; builds use all cores; competitors at the parameters their authors recommend
 (`benchmarks/public/ann_extra.py`). Every row ran with the 1-minute load above the gate of 3
 (other builds and timings shared the machine; load 5 to 103, recorded per row), so the
-absolute QPS are indicative only, and the two HMS rows ran at different loads (9-28 against 7-9).
+absolute QPS are indicative only, and the two WARM rows ran at different loads (9-28 against 7-9).
 Table: `uv run --script benchmarks/public/qgraph_table.py nytimes-256-angular`.
 
-| System | QPS @ 0.90 | QPS @ 0.95 | HMS/sys @ 0.90 | Index bytes | sys/HMS bytes | Build s | Load 1m |
+| System | QPS @ 0.90 | QPS @ 0.95 | WARM/sys @ 0.90 | Index bytes | sys/WARM bytes | Build s | Load 1m |
 |---|---|---|---|---|---|---|---|
-| HMS VGraph (8-bit codes, rerank) | 4,409 | not reached | 1.00 | 226,310,960 | 1.00 | 111 (graph from the checked cache: 1) | 9-28 |
-| HMS VGraph (4-bit codes, opt-in) | 13,133 | not reached | 0.34 | 171,790,960 | 0.76 | (cache: 4) | 7-9 |
+| WARM VGraph (8-bit codes, rerank) | 4,409 | not reached | 1.00 | 226,310,960 | 1.00 | 111 (graph from the checked cache: 1) | 9-28 |
+| WARM VGraph (4-bit codes, opt-in) | 13,133 | not reached | 0.34 | 171,790,960 | 0.76 | (cache: 4) | 7-9 |
 | SymphonyQG (rabitqlib, raw refinement) | 5,913 | not reached | 0.75 | 705,280,166 | 3.12 | 17 | 6-8 |
 | SymphonyQG (rabitqlib, 4-bit refinement) | not reached | not reached | | 447,761,210 | 1.98 | 18 | 9-13 |
 | FAISS HNSW M=16 | 2,038 | 379 | 2.16 | 338,802,554 | 1.50 | 51 | 11-75 |
@@ -122,7 +122,7 @@ Read as the file reads it:
   bytes. The 4-bit VGraph row is 2.2x SymphonyQG, but it ran at load 7-9 while the 8-bit row ran at
   9-28; the paired held-out ratio of 4-bit over 8-bit is x1.20, not x3. Treat the 4-bit row as
   unconfirmed until a rerun at equal load.
-- At recall 0.95 no HMS row is bracketed: both sweeps stopped at ef 512 with recall 0.948 (the test
+- At recall 0.95 no WARM row is bracketed: both sweeps stopped at ef 512 with recall 0.948 (the test
   set is harder than the held-out train vectors, where ef 384 gave 0.950). FAISS, hnswlib, Lucene
   and RaBitQ IVF 1+8 reach it (379, 509, 348, 129-278 and 803 QPS).
 - Memory: RaBitQ IVF (1+4: 55.5 MB, 1+8: 92.6 MB) and RaBitQ HNSW (95.3 MB) are 2.4-4.1x SMALLER
@@ -140,7 +140,7 @@ Read as the file reads it:
 The earlier edge-code index (1,024-bit RaBitQ codes per edge, 2.97 GB on nytimes, 7,297 / 1,427
 QPS at load below 3) is superseded by `VGraph`; its sweeps stay in
 `benchmarks/results/public_qgraph_edge_<set>.json`. The competitors are timed through a Python
-per-query loop (Lucene through a Java loop) and HMS through a native loop; that per-query
+per-query loop (Lucene through a Java loop) and WARM through a native loop; that per-query
 overhead was not measured.
 
 ### Stop rule and 1-bit screen (held-out, 2026-10-07)
@@ -176,24 +176,24 @@ Results: `benchmarks/results/public_longmemeval_s.json`.
 
 | Granularity | Level | Method | Recall@5 | Recall@10 | nDCG@5 | nDCG@10 |
 |---|---|---|---|---|---|---|
-| Round | Turn | HMS dense (exact cosine) | 0.511 | 0.711 | 0.570 | 0.623 |
-| Round | Turn | HMS lexical (BM25) | 0.599 | 0.718 | 0.642 | 0.675 |
-| Round | Turn | HMS hybrid | **0.668** | **0.785** | **0.681** | **0.712** |
-| Round | Session | HMS dense (exact cosine) | 0.690 | 0.840 | 0.611 | 0.647 |
-| Round | Session | HMS lexical (BM25) | 0.668 | 0.768 | 0.658 | 0.684 |
-| Round | Session | HMS hybrid | **0.764** | **0.854** | **0.702** | **0.723** |
-| Session | Session | HMS dense (exact cosine) | 0.852 | 0.938 | 0.861 | 0.878 |
-| Session | Session | HMS lexical (BM25) | 0.823 | 0.893 | 0.862 | 0.877 |
-| Session | Session | HMS hybrid | **0.876** | **0.952** | **0.904** | **0.919** |
+| Round | Turn | WARM dense (exact cosine) | 0.511 | 0.711 | 0.570 | 0.623 |
+| Round | Turn | WARM lexical (BM25) | 0.599 | 0.718 | 0.642 | 0.675 |
+| Round | Turn | WARM hybrid | **0.668** | **0.785** | **0.681** | **0.712** |
+| Round | Session | WARM dense (exact cosine) | 0.690 | 0.840 | 0.611 | 0.647 |
+| Round | Session | WARM lexical (BM25) | 0.668 | 0.768 | 0.658 | 0.684 |
+| Round | Session | WARM hybrid | **0.764** | **0.854** | **0.702** | **0.723** |
+| Session | Session | WARM dense (exact cosine) | 0.852 | 0.938 | 0.861 | 0.878 |
+| Session | Session | WARM lexical (BM25) | 0.823 | 0.893 | 0.862 | 0.877 |
+| Session | Session | WARM hybrid | **0.876** | **0.952** | **0.904** | **0.919** |
 
-HMS dense reproduces an independent NumPy exact-cosine ranking on the same embeddings to every
+WARM dense reproduces an independent NumPy exact-cosine ranking on the same embeddings to every
 digit (the result file carries both).
 
 On this data and model, hybrid is above dense on every overall metric at every granularity and
 level (nDCG@10: +0.089 round/turn, +0.076 round/session, +0.041 session). The runs are single
 deterministic passes with no confidence intervals or significance test. Caveats that bound the
 comparison: MiniLM truncates input at 256 tokens, so a session embedding sees only the start of
-the concatenated user turns (the lexical index sees all of it); HMS BM25 is the engine's own, not
+the concatenated user turns (the lexical index sees all of it); WARM BM25 is the engine's own, not
 the `rank_bm25` used by the official `flat-bm25`; zero-score items follow scored items in
 haystack order in the lexical run.
 
@@ -213,7 +213,7 @@ several sessions, all of which must be retrieved), single-session-preference, an
 temporal-reasoning. Preference is the one type where hybrid is below dense at round granularity
 (30 questions; lexical matching works against implicit preference questions). Temporal questions
 are where round-level hybrid helps most (turn Recall@10 0.614 to 0.787), but they are still
-weaker than the other types, and HMS has no date-aware filtering that would use the question
+weaker than the other types, and WARM has no date-aware filtering that would use the question
 date.
 
 Published numbers (Wu et al., ICLR 2025, Table 3), LongMemEval_M with Stella V5 1.5B:
@@ -239,7 +239,7 @@ here. No ranking against the paper is implied.
 - As a vector index, `VGraph` is ahead of FAISS HNSW, hnswlib and Lucene HNSW on single-thread QPS
   at recall 0.90 and below them on bytes on nytimes (Apple M4, load above the gate: indicative), and
   behind SymphonyQG on QPS and behind RaBitQ on bytes. No x86 number exists yet, and the
-  distinctive parts of HMS (the compositional VSA algebra, structured memory and provenance) are
+  distinctive parts of WARM (the compositional VSA algebra, structured memory and provenance) are
   not what these benchmarks measure.
 
 ## Reproduce
@@ -248,12 +248,12 @@ here. No ranking against the paper is implied.
 uv run --script benchmarks/public/prepare.py beir scifact
 uv run --script benchmarks/public/prepare.py ann glove-100-angular
 cargo build --release --features cli,mimalloc --bin public-bench
-./target/release/public-bench beir --data ~/.cache/hms-bench/scifact --dim 16384 --out scifact.json
+./target/release/public-bench beir --data ~/.cache/warm-bench/scifact --dim 16384 --out scifact.json
 uv run --script benchmarks/public/evaluate.py beir scifact scifact.json
-./target/release/public-bench ann --data ~/.cache/hms-bench/glove-100-angular --dim 16384 --out glove.json
+./target/release/public-bench ann --data ~/.cache/warm-bench/glove-100-angular --dim 16384 --out glove.json
 uv run --script benchmarks/public/evaluate.py ann glove-100-angular glove.json
 uv run --script benchmarks/public/prepare.py longmemeval s
-./target/release/public-bench longmemeval --data ~/.cache/hms-bench/longmemeval_s --out lme.json
+./target/release/public-bench longmemeval --data ~/.cache/warm-bench/longmemeval_s --out lme.json
 uv run --script benchmarks/public/evaluate.py longmemeval s lme.json
 ```
 
@@ -279,7 +279,7 @@ timed end to end. Embedder and re-ranker parity with the Python stages on 48 tur
 
 ### Batched model stages on Metal
 
-`benchmarks/results/local_models_batching.json`. HMS now vendors the Qwen3 forward pass so that
+`benchmarks/results/local_models_batching.json`. WARM now vendors the Qwen3 forward pass so that
 Metal and CUDA can batch: the decoder runs continuous batching with left-padded rows, the encoders
 run right-padded batches. Inputs: the first 64 distinct LongMemEval_S haystack sessions
 (`prompts::fact_prompt`, greedy, up to 1536 new tokens), 96 user turns, 96 questions and 96

@@ -3,11 +3,11 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::core::{admin::inspect_store, encoding::TextEncoder, HmsConfig};
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
 use serde_json::json;
 use std::{collections::BTreeMap, io::Read, path::PathBuf, time::Instant};
+use writerslogic_warm::core::{admin::inspect_store, encoding::TextEncoder, WarmConfig};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -74,54 +74,54 @@ fn main() -> Result<()> {
         (1..=512).contains(&input.documents.len()) && (1..=128).contains(&input.queries.len()),
         "input count bounds"
     );
-    let config = HmsConfig {
+    let config = WarmConfig {
         text_encoder: args.encoder,
         ..Default::default()
     };
     let path = args.store.display().to_string();
     let started = Instant::now();
-    let hms = HmsCore::new(args.dimensions, Some(path.clone()), Some(config.clone()))?;
+    let warm = WarmCore::new(args.dimensions, Some(path.clone()), Some(config.clone()))?;
     let init_ns = started.elapsed().as_nanos();
     let started = Instant::now();
     for document in &input.documents {
         ensure!(
-            holographic_memory::chunk_document(document)?.len() == 1,
+            writerslogic_warm::chunk_document(document)?.len() == 1,
             "one chunk per source"
         );
-        hms.memorize_document(document.clone())?;
+        warm.memorize_document(document.clone())?;
     }
-    hms.flush()?;
+    warm.flush()?;
     let ingest_ns = started.elapsed().as_nanos();
     let mut queries = Vec::new();
     for query in &input.queries {
         ensure!(query.text.len() <= 64 * 1024, "query exceeds 64 KiB");
         let started = Instant::now();
-        let vector = hms.encode_text(&query.text);
-        let results = hms.query(&vector, 10);
+        let vector = warm.encode_text(&query.text);
+        let results = warm.query(&vector, 10);
         let query_ns = started.elapsed().as_nanos();
         queries.push(json!({
             "id": query.id, "text": query.text, "relevant_ids": query.relevant_ids,
             "indices": vector.indices(), "results": results, "query_ns": query_ns,
-            "lexical": hms.search_documents(&query.text, &SearchOptions::default())?,
+            "lexical": warm.search_documents(&query.text, &SearchOptions::default())?,
         }));
     }
     let vectors: Vec<_> = input
         .documents
         .iter()
         .map(|document| {
-            let chunk = holographic_memory::chunk_document(document)?.remove(0);
+            let chunk = writerslogic_warm::chunk_document(document)?.remove(0);
             Ok(json!({"id": chunk.id, "document_id": document.id,
-            "indices": hms.encode_text(&chunk.text).indices()}))
+            "indices": warm.encode_text(&chunk.text).indices()}))
         })
         .collect::<Result<_>>()?;
     let before = inspect_store(&args.store, true)?;
     let before_files = file_sizes(&args.store, &args.store)?;
     let started = Instant::now();
-    hms.compact()?;
+    warm.compact()?;
     let compact_ns = started.elapsed().as_nanos();
-    drop(hms);
+    drop(warm);
     let started = Instant::now();
-    let reopened = HmsCore::new(args.dimensions, Some(path), Some(config))?;
+    let reopened = WarmCore::new(args.dimensions, Some(path), Some(config))?;
     let restart_ns = started.elapsed().as_nanos();
     let restart_results: Vec<_> = input
         .queries

@@ -21,7 +21,7 @@ fn main() {
         fs::write(output.join(name), bytes).unwrap();
     }
     let declaration = format!(
-        "#[allow(dead_code)] pub mod core {{ pub mod error {{ #[derive(Debug, thiserror::Error)] pub enum HmsError {{ #[error(\"Invalid parameter: {{details}}\")] InvalidParam {{ details: String }} }} }} #[path = {:?}] pub mod qgraph; }}",
+        "#[allow(dead_code)] pub mod core {{ pub mod error {{ #[derive(Debug, thiserror::Error)] pub enum WarmError {{ #[error(\"Invalid parameter: {{details}}\")] InvalidParam {{ details: String }} }} }} #[path = {:?}] pub mod qgraph; }}",
         output.join("mod.rs").to_str().unwrap()
     );
     fs::write(output.parent().unwrap().join("core.rs"), declaration).unwrap();

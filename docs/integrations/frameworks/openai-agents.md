@@ -1,30 +1,30 @@
 # OpenAI Agents SDK
 
-`holographic_integrations.openai_agents` provides a persistent `Session` and a long-term memory tool set for the OpenAI Agents SDK (`openai-agents`).
+`writerslogic_warm_integrations.openai_agents` provides a persistent `Session` and a long-term memory tool set for the OpenAI Agents SDK (`openai-agents`).
 
 Tested against `openai-agents==0.24.0` (`openai==3.35.1`), Python 3.12.
 
 ## Install
 
 ```sh
-pip install "holographic-integrations[openai-agents]"
+pip install "writerslogic-warm-integrations[openai-agents]"
 ```
 
-You need a running `hms-server` (see `docs/SERVER.md`); its `--input-dim` must equal your embedder's dimension (default embedder: 384).
+You need a running `warm-server` (see `docs/SERVER.md`); its `--input-dim` must equal your embedder's dimension (default embedder: 384).
 
 ## Session
 
 ```python
 from agents import Agent, Runner
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.openai_agents import HolographicSession
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.openai_agents import WarmSession
 
-config = HmsConfig(url="http://127.0.0.1:8080", tenant_id="acme")
-session = HolographicSession("conversation-42", config)
+config = WarmConfig(url="http://127.0.0.1:8080", tenant_id="acme")
+session = WarmSession("conversation-42", config)
 result = await Runner.run(Agent(name="a"), "hello", session=session)
 ```
 
-`HolographicSession` subclasses `agents.memory.SessionABC` and implements `get_items(limit)`, `add_items`, `pop_item`, `clear_session`, `session_id` and `session_settings` exactly as the protocol defines them (`limit` returns the latest N items in chronological order; `SessionSettings.limit` is the default). `Runner.run`, `run_sync` and `run_streamed` all take it. `isinstance(s, agents.memory.Session)` holds.
+`WarmSession` subclasses `agents.memory.SessionABC` and implements `get_items(limit)`, `add_items`, `pop_item`, `clear_session`, `session_id` and `session_settings` exactly as the protocol defines them (`limit` returns the latest N items in chronological order; `SessionSettings.limit` is the default). `Runner.run`, `run_sync` and `run_streamed` all take it. `isinstance(s, agents.memory.Session)` holds.
 
 ### Storage and limits
 
@@ -43,16 +43,16 @@ Text queries are not used for sessions; the stored vector is only needed because
 ## Memory tools
 
 ```python
-from holographic_integrations.openai_agents import memory_tools
+from writerslogic_warm_integrations.openai_agents import memory_tools
 
 agent = Agent(name="assistant", tools=memory_tools(config, user_id="alice"))
 ```
 
-Returns `remember(text, tags?)`, `recall(query, k?)` and `forget(memory_id)` as `FunctionTool`s. `user_id` is stored as metadata; `recall` is restricted to it (equality filter, pushed to the service) and `forget` refuses ids owned by another user. `k` is clamped to `max_k` (default 20). `sync=True` builds blocking tools on `HmsBackend`; the default uses `AsyncHmsBackend`.
+Returns `remember(text, tags?)`, `recall(query, k?)` and `forget(memory_id)` as `FunctionTool`s. `user_id` is stored as metadata; `recall` is restricted to it (equality filter, pushed to the service) and `forget` refuses ids owned by another user. `k` is clamped to `max_k` (default 20). `sync=True` builds blocking tools on `WarmBackend`; the default uses `AsyncWarmBackend`.
 
 ## Knobs
 
-Everything is on `HmsConfig`: `url`, `api_key`, `tenant_id`, `collection` (scope inside a tenant), `embedder` (the encoder; default lexical `HashingEmbedder`), `text_queries` (let the service embed, needs its `local-models` stages), `zero_trust_key` (client-side vector masking, obfuscation not encryption), `max_fetch`, `overfetch`. The BM25 and title-weight options belong to the native engine and are not reachable through the HTTP service.
+Everything is on `WarmConfig`: `url`, `api_key`, `tenant_id`, `collection` (scope inside a tenant), `embedder` (the encoder; default lexical `HashingEmbedder`), `text_queries` (let the service embed, needs its `local-models` stages), `zero_trust_key` (client-side vector masking, obfuscation not encryption), `max_fetch`, `overfetch`. The BM25 and title-weight options belong to the native engine and are not reachable through the HTTP service.
 
 ## Metadata filters
 
@@ -60,7 +60,7 @@ The adapter does not expose a filter argument: sessions are keyed by session id,
 
 ## Conformance
 
-Run with a real `hms-server` and a scripted `Model` (no network): `Runner.run` replays history to the second run, items round-trip equal across a fresh session object, `limit`/`pop_item`/`clear_session` semantics, per-session isolation, tool loop through the SDK's own tool executor (`ToolContext`, strict schemas). `pytest tests/openai_agents`. The SDK ships no public conformance suite for third-party sessions.
+Run with a real `warm-server` and a scripted `Model` (no network): `Runner.run` replays history to the second run, items round-trip equal across a fresh session object, `limit`/`pop_item`/`clear_session` semantics, per-session isolation, tool loop through the SDK's own tool executor (`ToolContext`, strict schemas). `pytest tests/openai_agents`. The SDK ships no public conformance suite for third-party sessions.
 
 ## Limitations
 

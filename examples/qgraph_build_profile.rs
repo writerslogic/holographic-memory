@@ -22,8 +22,8 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering::Relaxed};
 use std::sync::Mutex;
 use std::time::Instant;
 
-use holographic_memory::core::qgraph::order_diagnostic::order_locality;
-use holographic_memory::core::qgraph::{
+use writerslogic_warm::core::qgraph::order_diagnostic::order_locality;
+use writerslogic_warm::core::qgraph::{
     set_build_phase_hook, BuildParams, Graph, Metric, Residency, VGraph,
 };
 

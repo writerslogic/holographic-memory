@@ -9,10 +9,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use holographic_memory::core::admin::inspect_store;
-use holographic_memory::core::{EmbeddingSpace, HmsConfig};
-use holographic_memory::{
-    chunk_document, DocumentChunk, DocumentInput, DocumentResult, HmsCore, SearchOptions,
+use writerslogic_warm::core::admin::inspect_store;
+use writerslogic_warm::core::{EmbeddingSpace, WarmConfig};
+use writerslogic_warm::{
+    chunk_document, DocumentChunk, DocumentInput, DocumentResult, WarmCore, SearchOptions,
 };
 use parking_lot::{Mutex, RwLock};
 
@@ -21,8 +21,8 @@ use crate::types::*;
 
 /// An open store. Opaque to C.
 #[allow(non_camel_case_types)]
-pub struct hms_store_t {
-    core: HmsCore,
+pub struct warm_store_t {
+    core: WarmCore,
     /// Mutations hold the read side; a snapshot holds the write side so the copied files are
     /// a single consistent point in time.
     barrier: RwLock<()>,
@@ -31,27 +31,27 @@ pub struct hms_store_t {
 
 /// A search result set. Opaque to C; read with `hms1_results_count` and `hms1_results_get`.
 #[allow(non_camel_case_types)]
-pub struct hms_results_t {
+pub struct warm_results_t {
     hits: Vec<DocumentResult>,
     metadata: Vec<String>,
 }
 
 /// A chunking result. Opaque to C; read with `hms1_chunks_count` and `hms1_chunks_get`.
 #[allow(non_camel_case_types)]
-pub struct hms_chunks_t {
+pub struct warm_chunks_t {
     chunks: Vec<DocumentChunk>,
 }
 
 /// Live store handles, keyed by an opaque token. Looking one up clones the `Arc`, so closing a handle while another thread is inside a call on it is safe and a stale
 /// or forged handle is rejected instead of dereferenced.
-fn registry() -> &'static Mutex<HashMap<usize, Arc<hms_store_t>>> {
-    static REGISTRY: OnceLock<Mutex<HashMap<usize, Arc<hms_store_t>>>> = OnceLock::new();
+fn registry() -> &'static Mutex<HashMap<usize, Arc<warm_store_t>>> {
+    static REGISTRY: OnceLock<Mutex<HashMap<usize, Arc<warm_store_t>>>> = OnceLock::new();
     REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn lookup(handle: *const hms_store_t) -> ApiResult<Arc<hms_store_t>> {
+fn lookup(handle: *const warm_store_t) -> ApiResult<Arc<warm_store_t>> {
     if handle.is_null() {
-        return Err(ApiError::new(HMS_ERR_NULL_POINTER, "store handle is NULL"));
+        return Err(ApiError::new(WARM_ERR_NULL_POINTER, "store handle is NULL"));
     }
     registry()
         .lock()
@@ -59,7 +59,7 @@ fn lookup(handle: *const hms_store_t) -> ApiResult<Arc<hms_store_t>> {
         .cloned()
         .ok_or_else(|| {
             ApiError::new(
-                HMS_ERR_INVALID_HANDLE,
+                WARM_ERR_INVALID_HANDLE,
                 "store handle is closed or was never issued",
             )
         })
@@ -75,7 +75,7 @@ fn tri_state(value: i32, what: &str) -> ApiResult<Option<bool>> {
         1 => Ok(Some(true)),
         -1 => Ok(Some(false)),
         other => Err(ApiError::new(
-            HMS_ERR_INVALID_ARGUMENT,
+            WARM_ERR_INVALID_ARGUMENT,
             format!("{what} must be -1, 0 or 1 (got {other})"),
         )),
     }
@@ -85,41 +85,41 @@ fn tri_state(value: i32, what: &str) -> ApiResult<Option<bool>> {
 /// still set `struct_size`.
 ///
 /// # Safety
-/// `options` must be NULL or point to a writable `hms_open_options_t`.
+/// `options` must be NULL or point to a writable `warm_open_options_t`.
 #[no_mangle]
-pub unsafe extern "C" fn hms1_open_options_init(options: *mut hms_open_options_t) {
+pub unsafe extern "C" fn hms1_open_options_init(options: *mut warm_open_options_t) {
     if let Some(options) = options.as_mut() {
-        *options = hms_open_options_t::DEFAULT;
+        *options = warm_open_options_t::DEFAULT;
     }
 }
 
 /// Fill `options` with the library defaults (all flags clear).
 ///
 /// # Safety
-/// `options` must be NULL or point to a writable `hms_search_options_t`.
+/// `options` must be NULL or point to a writable `warm_search_options_t`.
 #[no_mangle]
-pub unsafe extern "C" fn hms1_search_options_init(options: *mut hms_search_options_t) {
+pub unsafe extern "C" fn hms1_search_options_init(options: *mut warm_search_options_t) {
     if let Some(options) = options.as_mut() {
-        *options = hms_search_options_t::DEFAULT;
+        *options = warm_search_options_t::DEFAULT;
     }
 }
 
 /// Open or create the store in directory `path` with vectors of `dimensions` (1..=1000000).
 ///
 /// A store directory is held by exactly one open handle at a time, across processes
-/// (`HMS_ERR_LOCKED` otherwise). `options` may be NULL for defaults. On success `*out`
+/// (`WARM_ERR_LOCKED` otherwise). `options` may be NULL for defaults. On success `*out`
 /// receives a handle that must be released with `hms1_store_close`; on failure `*out` is NULL.
 ///
 /// # Safety
-/// `path` and every `hms_str_t` in `options` must be valid for their lengths; `out` must be
+/// `path` and every `warm_str_t` in `options` must be valid for their lengths; `out` must be
 /// writable.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_store_open(
-    path: hms_str_t,
+    path: warm_str_t,
     dimensions: u32,
-    options: *const hms_open_options_t,
-    out: *mut *mut hms_store_t,
-) -> hms_status_t {
+    options: *const warm_open_options_t,
+    out: *mut *mut warm_store_t,
+) -> warm_status_t {
     if let Some(out) = out.as_mut() {
         *out = std::ptr::null_mut();
     }
@@ -128,28 +128,28 @@ pub unsafe extern "C" fn hms1_store_open(
         let path = utf8(path, "path")?;
         if path.is_empty() || path.contains('\0') {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 "path must be non-empty and contain no NUL",
             ));
         }
         if !(1..=1_000_000).contains(&dimensions) {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!("dimensions must be between 1 and 1000000 (got {dimensions})"),
             ));
         }
-        let options = overlay(options, hms_open_options_t::DEFAULT, "options")?;
+        let options = overlay(options, warm_open_options_t::DEFAULT, "options")?;
         if options.flags != 0 {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 "options.flags is reserved and must be zero",
             ));
         }
-        let mut config = HmsConfig::default();
+        let mut config = WarmConfig::default();
         if let Some(key) = opt_utf8(options.encryption_key, "options.encryption_key")? {
             if key.is_empty() {
                 return Err(ApiError::new(
-                    HMS_ERR_INVALID_ARGUMENT,
+                    WARM_ERR_INVALID_ARGUMENT,
                     "encryption key must not be empty",
                 ));
             }
@@ -177,14 +177,14 @@ pub unsafe extern "C" fn hms1_store_open(
             }
             _ => {
                 return Err(ApiError::new(
-                    HMS_ERR_INVALID_ARGUMENT,
+                    WARM_ERR_INVALID_ARGUMENT,
                     "embedding_model, embedding_revision and embedding_dimensions go together",
                 ))
             }
         }
-        let core = HmsCore::new(dimensions, Some(path.to_owned()), Some(config))
-            .map_err(|e| ApiError::from_engine(&e, HMS_ERR_IO))?;
-        let store = Arc::new(hms_store_t {
+        let core = WarmCore::new(dimensions, Some(path.to_owned()), Some(config))
+            .map_err(|e| ApiError::from_engine(&e, WARM_ERR_IO))?;
+        let store = Arc::new(warm_store_t {
             core,
             barrier: RwLock::new(()),
             path: PathBuf::from(path),
@@ -194,34 +194,34 @@ pub unsafe extern "C" fn hms1_store_open(
         static NEXT: AtomicUsize = AtomicUsize::new(1);
         let token = NEXT.fetch_add(1, Ordering::Relaxed) << 4;
         registry().lock().insert(token, store);
-        *out = token as *mut hms_store_t;
+        *out = token as *mut warm_store_t;
         Ok(())
     })
 }
 
 /// Flush and release a store. Calls already running on it complete first; afterwards the
 /// handle is invalid. NULL is ignored. Closing an unknown or already closed handle returns
-/// `HMS_ERR_INVALID_HANDLE`. If the final flush fails the handle is still released and the
+/// `WARM_ERR_INVALID_HANDLE`. If the final flush fails the handle is still released and the
 /// failure is reported.
 #[no_mangle]
-pub extern "C" fn hms1_store_close(store: *mut hms_store_t) -> hms_status_t {
+pub extern "C" fn hms1_store_close(store: *mut warm_store_t) -> warm_status_t {
     guard(|| {
         if store.is_null() {
             return Ok(());
         }
         let removed = registry().lock().remove(&(store as usize)).ok_or_else(|| {
-            ApiError::new(HMS_ERR_INVALID_HANDLE, "store handle is closed or unknown")
+            ApiError::new(WARM_ERR_INVALID_HANDLE, "store handle is closed or unknown")
         })?;
         let flushed = {
             let _mutations = removed.barrier.read();
             removed.core.flush()
         };
         drop(removed);
-        flushed.map_err(|e| ApiError::from_engine(&e, HMS_ERR_IO))
+        flushed.map_err(|e| ApiError::from_engine(&e, WARM_ERR_IO))
     })
 }
 
-fn document_input(doc: &hms_document_t) -> ApiResult<DocumentInput> {
+fn document_input(doc: &warm_document_t) -> ApiResult<DocumentInput> {
     let id = utf8(doc.id, "document.id")?.to_owned();
     let text = utf8(doc.text, "document.text")?.to_owned();
     let source_uri = opt_utf8(doc.source_uri, "document.source_uri")?.map(str::to_owned);
@@ -230,7 +230,7 @@ fn document_input(doc: &hms_document_t) -> ApiResult<DocumentInput> {
         None => None,
         Some(json) => Some(serde_json::from_str(json).map_err(|e| {
             ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!("document.metadata_json is not JSON: {e}"),
             )
         })?),
@@ -241,7 +241,7 @@ fn document_input(doc: &hms_document_t) -> ApiResult<DocumentInput> {
         -1 => Some(false),
         other => {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!("document.store_text must be -1, 0 or 1 (got {other})"),
             ))
         }
@@ -249,7 +249,7 @@ fn document_input(doc: &hms_document_t) -> ApiResult<DocumentInput> {
     let embeddings = if doc.embedding_rows == 0 && doc.embedding_dim == 0 {
         if !doc.embeddings.is_null() {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 "document.embeddings is set but its shape is 0 x 0",
             ));
         }
@@ -257,14 +257,14 @@ fn document_input(doc: &hms_document_t) -> ApiResult<DocumentInput> {
     } else {
         if doc.embedding_rows == 0 || doc.embedding_dim == 0 {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 "document embedding rows and dimension must both be nonzero",
             ));
         }
         let total = doc
             .embedding_rows
             .checked_mul(doc.embedding_dim)
-            .ok_or_else(|| ApiError::new(HMS_ERR_LIMIT_EXCEEDED, "embedding shape overflows"))?;
+            .ok_or_else(|| ApiError::new(WARM_ERR_LIMIT_EXCEEDED, "embedding shape overflows"))?;
         let flat = slice(doc.embeddings, total, "document.embeddings")?;
         Some(
             flat.chunks_exact(doc.embedding_dim)
@@ -292,15 +292,15 @@ fn document_input(doc: &hms_document_t) -> ApiResult<DocumentInput> {
 /// call; each document is bounded by the engine (8 MiB of text).
 ///
 /// # Safety
-/// `documents` must point to `count` valid `hms_document_t` whose strings and embeddings are
+/// `documents` must point to `count` valid `warm_document_t` whose strings and embeddings are
 /// valid for their lengths for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_store_ingest(
-    store: *mut hms_store_t,
-    documents: *const hms_document_t,
+    store: *mut warm_store_t,
+    documents: *const warm_document_t,
     count: usize,
     chunk_counts: *mut u32,
-) -> hms_status_t {
+) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let docs = slice(documents, count, "documents")?;
@@ -316,7 +316,7 @@ pub unsafe extern "C" fn hms1_store_ingest(
             store
                 .core
                 .memorize_documents(inputs)
-                .map_err(|e| ApiError::from_engine(&e, HMS_ERR_INVALID_ARGUMENT))?
+                .map_err(|e| ApiError::from_engine(&e, WARM_ERR_INVALID_ARGUMENT))?
         };
         if !chunk_counts.is_null() {
             // SAFETY: the caller promised room for `count` entries; `counts` has `count`.
@@ -326,8 +326,8 @@ pub unsafe extern "C" fn hms1_store_ingest(
     })
 }
 
-fn search_options(options: *const hms_search_options_t) -> ApiResult<SearchOptions> {
-    let o = overlay(options, hms_search_options_t::DEFAULT, "options")?;
+fn search_options(options: *const warm_search_options_t) -> ApiResult<SearchOptions> {
+    let o = overlay(options, warm_search_options_t::DEFAULT, "options")?;
     let document_ids = if o.document_id_count == 0 {
         None
     } else {
@@ -347,7 +347,7 @@ fn search_options(options: *const hms_search_options_t) -> ApiResult<SearchOptio
         None => None,
         Some(json) => Some(serde_json::from_str(json).map_err(|e| {
             ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!("options.filter_json is not JSON: {e}"),
             )
         })?),
@@ -359,16 +359,16 @@ fn search_options(options: *const hms_search_options_t) -> ApiResult<SearchOptio
         source_uri: opt_utf8(o.source_uri, "options.source_uri")?.map(str::to_owned),
         document_ids,
         embedding,
-        lexical_weight: flagged(o.flags, HMS_SEARCH_SET_LEXICAL_WEIGHT, o.lexical_weight),
-        semantic_weight: flagged(o.flags, HMS_SEARCH_SET_SEMANTIC_WEIGHT, o.semantic_weight),
+        lexical_weight: flagged(o.flags, WARM_SEARCH_SET_LEXICAL_WEIGHT, o.lexical_weight),
+        semantic_weight: flagged(o.flags, WARM_SEARCH_SET_SEMANTIC_WEIGHT, o.semantic_weight),
         min_semantic_score: flagged(
             o.flags,
-            HMS_SEARCH_SET_MIN_SEMANTIC_SCORE,
+            WARM_SEARCH_SET_MIN_SEMANTIC_SCORE,
             o.min_semantic_score,
         ),
         fusion: opt_utf8(o.fusion, "options.fusion")?.map(str::to_owned),
-        bm25_k1: flagged(o.flags, HMS_SEARCH_SET_BM25_K1, o.bm25_k1),
-        bm25_b: flagged(o.flags, HMS_SEARCH_SET_BM25_B, o.bm25_b),
+        bm25_k1: flagged(o.flags, WARM_SEARCH_SET_BM25_K1, o.bm25_k1),
+        bm25_b: flagged(o.flags, WARM_SEARCH_SET_BM25_B, o.bm25_b),
     })
 }
 
@@ -381,11 +381,11 @@ fn search_options(options: *const hms_search_options_t) -> ApiResult<SearchOptio
 /// must be writable.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_store_search(
-    store: *mut hms_store_t,
-    query: hms_str_t,
-    options: *const hms_search_options_t,
-    out: *mut *mut hms_results_t,
-) -> hms_status_t {
+    store: *mut warm_store_t,
+    query: warm_str_t,
+    options: *const warm_search_options_t,
+    out: *mut *mut warm_results_t,
+) -> warm_status_t {
     if let Some(out) = out.as_mut() {
         *out = std::ptr::null_mut();
     }
@@ -397,9 +397,9 @@ pub unsafe extern "C" fn hms1_store_search(
         let hits = store
             .core
             .search_documents(query, &options)
-            .map_err(|e| ApiError::from_engine(&e, HMS_ERR_INVALID_ARGUMENT))?;
+            .map_err(|e| ApiError::from_engine(&e, WARM_ERR_INVALID_ARGUMENT))?;
         let metadata = hits.iter().map(|h| h.metadata.to_string()).collect();
-        *out = Box::into_raw(Box::new(hms_results_t { hits, metadata }));
+        *out = Box::into_raw(Box::new(warm_results_t { hits, metadata }));
         Ok(())
     })
 }
@@ -409,7 +409,7 @@ pub unsafe extern "C" fn hms1_store_search(
 /// # Safety
 /// `results` must be NULL or a live result set.
 #[no_mangle]
-pub unsafe extern "C" fn hms1_results_count(results: *const hms_results_t) -> usize {
+pub unsafe extern "C" fn hms1_results_count(results: *const warm_results_t) -> usize {
     // SAFETY: NULL is handled; a non-NULL pointer is a live result set by contract.
     unsafe { results.as_ref() }.map_or(0, |r| r.hits.len())
 }
@@ -420,16 +420,16 @@ pub unsafe extern "C" fn hms1_results_count(results: *const hms_results_t) -> us
 /// `results` must be a live result set and `out` writable.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_results_get(
-    results: *const hms_results_t,
+    results: *const warm_results_t,
     index: usize,
-    out: *mut hms_result_t,
-) -> hms_status_t {
+    out: *mut warm_result_t,
+) -> warm_status_t {
     guard(|| {
         let results = require_ptr(results, "results")?;
         let out = require_out(out, "out")?;
         let hit = results.hits.get(index).ok_or_else(|| {
             ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!(
                     "index {index} is out of range for {} hits",
                     results.hits.len()
@@ -437,13 +437,13 @@ pub unsafe extern "C" fn hms1_results_get(
             )
         })?;
         let optional =
-            |value: &Option<String>| value.as_deref().map_or(hms_str_t::ABSENT, hms_str_t::of);
-        *out = hms_result_t {
-            id: hms_str_t::of(&hit.id),
-            document_id: hms_str_t::of(&hit.document_id),
+            |value: &Option<String>| value.as_deref().map_or(warm_str_t::ABSENT, warm_str_t::of);
+        *out = warm_result_t {
+            id: warm_str_t::of(&hit.id),
+            document_id: warm_str_t::of(&hit.document_id),
             source_uri: optional(&hit.source_uri),
-            version: hms_str_t::of(&hit.version),
-            metadata_json: hms_str_t::of(&results.metadata[index]),
+            version: warm_str_t::of(&hit.version),
+            metadata_json: warm_str_t::of(&results.metadata[index]),
             text: optional(&hit.text),
             start_byte: hit.start_byte,
             end_byte: hit.end_byte,
@@ -460,7 +460,7 @@ pub unsafe extern "C" fn hms1_results_get(
 /// # Safety
 /// `results` must be NULL or a result set not yet freed.
 #[no_mangle]
-pub unsafe extern "C" fn hms1_results_free(results: *mut hms_results_t) {
+pub unsafe extern "C" fn hms1_results_free(results: *mut warm_results_t) {
     if !results.is_null() {
         // Dropping Vec<String> cannot panic, so no guard is needed on this void function.
         drop(Box::from_raw(results));
@@ -474,10 +474,10 @@ pub unsafe extern "C" fn hms1_results_free(results: *mut hms_results_t) {
 /// `id` must be valid for its length; `deleted` NULL or writable.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_store_delete(
-    store: *mut hms_store_t,
-    id: hms_str_t,
+    store: *mut warm_store_t,
+    id: warm_str_t,
     deleted: *mut i32,
-) -> hms_status_t {
+) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let id = utf8(id, "id")?;
@@ -486,7 +486,7 @@ pub unsafe extern "C" fn hms1_store_delete(
             store
                 .core
                 .delete_document(id)
-                .map_err(|e| ApiError::from_engine(&e, HMS_ERR_INVALID_ARGUMENT))?
+                .map_err(|e| ApiError::from_engine(&e, WARM_ERR_INVALID_ARGUMENT))?
         };
         if let Some(deleted) = deleted.as_mut() {
             *deleted = bool_i32(existed);
@@ -498,19 +498,19 @@ pub unsafe extern "C" fn hms1_store_delete(
 /// Read store statistics into `out`; set `out->struct_size` first.
 ///
 /// # Safety
-/// `out` must be writable for `out->struct_size` bytes (at most `sizeof(hms_stats_t)` are
+/// `out` must be writable for `out->struct_size` bytes (at most `sizeof(warm_stats_t)` are
 /// written).
 #[no_mangle]
 pub unsafe extern "C" fn hms1_store_stats(
-    store: *mut hms_store_t,
-    out: *mut hms_stats_t,
-) -> hms_status_t {
+    store: *mut warm_store_t,
+    out: *mut warm_stats_t,
+) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let index = store.core.index_status();
         let health = store.core.storage_health();
-        let stats = hms_stats_t {
-            struct_size: std::mem::size_of::<hms_stats_t>() as u32,
+        let stats = warm_stats_t {
+            struct_size: std::mem::size_of::<warm_stats_t>() as u32,
             dimensions: store.core.dimensions() as u32,
             vector_count: store.core.vector_count(),
             nsg_trained: bool_i32(index.nsg_trained),
@@ -535,15 +535,15 @@ pub unsafe extern "C" fn hms1_store_stats(
 /// As `hms1_store_stats`.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_store_security_status(
-    store: *mut hms_store_t,
-    out: *mut hms_security_status_t,
-) -> hms_status_t {
+    store: *mut warm_store_t,
+    out: *mut warm_security_status_t,
+) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let status = store.core.security_status();
         let flag = |name: &str| bool_i32(status[name].as_bool().unwrap_or(false));
-        let value = hms_security_status_t {
-            struct_size: std::mem::size_of::<hms_security_status_t>() as u32,
+        let value = warm_security_status_t {
+            struct_size: std::mem::size_of::<warm_security_status_t>() as u32,
             security_compiled: flag("securityCompiled"),
             encryption_active: flag("encryptionActive"),
             signing_active: flag("signingActive"),
@@ -557,34 +557,34 @@ pub unsafe extern "C" fn hms1_store_security_status(
 
 /// Flush all state to durable storage.
 #[no_mangle]
-pub extern "C" fn hms1_store_flush(store: *mut hms_store_t) -> hms_status_t {
+pub extern "C" fn hms1_store_flush(store: *mut warm_store_t) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let _mutation = store.barrier.read();
         store
             .core
             .flush()
-            .map_err(|e| ApiError::from_engine(&e, HMS_ERR_IO))
+            .map_err(|e| ApiError::from_engine(&e, WARM_ERR_IO))
     })
 }
 
 /// Rewrite the transaction log without superseded and deleted records, reclaiming space.
 /// Safe alongside concurrent searches and ingests.
 #[no_mangle]
-pub extern "C" fn hms1_store_compact(store: *mut hms_store_t) -> hms_status_t {
+pub extern "C" fn hms1_store_compact(store: *mut warm_store_t) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let _mutation = store.barrier.read();
         store
             .core
             .compact()
-            .map_err(|e| ApiError::from_engine(&e, HMS_ERR_IO))
+            .map_err(|e| ApiError::from_engine(&e, WARM_ERR_IO))
     })
 }
 
 /// Train any index whose configured threshold has been reached. Idempotent.
 #[no_mangle]
-pub extern "C" fn hms1_store_maintain(store: *mut hms_store_t) -> hms_status_t {
+pub extern "C" fn hms1_store_maintain(store: *mut warm_store_t) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let _mutation = store.barrier.read();
@@ -592,13 +592,13 @@ pub extern "C" fn hms1_store_maintain(store: *mut hms_store_t) -> hms_status_t {
             .core
             .maintain_indices()
             .map(|_| ())
-            .map_err(|e| ApiError::from_engine(&e, HMS_ERR_INTERNAL))
+            .map_err(|e| ApiError::from_engine(&e, WARM_ERR_INTERNAL))
     })
 }
 
 fn copy_tree(source: &Path, destination: &Path) -> ApiResult<()> {
     let io = |e: std::io::Error, path: &Path| {
-        ApiError::new(HMS_ERR_IO, format!("{}: {e}", path.display()))
+        ApiError::new(WARM_ERR_IO, format!("{}: {e}", path.display()))
     };
     std::fs::create_dir(destination).map_err(|e| io(e, destination))?;
     for entry in std::fs::read_dir(source).map_err(|e| io(e, source))? {
@@ -619,7 +619,7 @@ fn copy_tree(source: &Path, destination: &Path) -> ApiResult<()> {
                 .map_err(|e| io(e, &target))?;
         } else {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!(
                     "snapshot refuses link or special file {}",
                     entry.path().display()
@@ -643,21 +643,21 @@ fn copy_tree(source: &Path, destination: &Path) -> ApiResult<()> {
 /// `destination` must be valid for its length.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_store_snapshot(
-    store: *mut hms_store_t,
-    destination: hms_str_t,
-) -> hms_status_t {
+    store: *mut warm_store_t,
+    destination: warm_str_t,
+) -> warm_status_t {
     guard(|| {
         let store = lookup(store)?;
         let destination = PathBuf::from(utf8(destination, "destination")?);
         if destination.as_os_str().is_empty() {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 "destination is empty",
             ));
         }
         if destination.exists() {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!(
                     "snapshot destination {} already exists",
                     destination.display()
@@ -669,37 +669,37 @@ pub unsafe extern "C" fn hms1_store_snapshot(
             .filter(|p| !p.as_os_str().is_empty())
             .unwrap_or_else(|| Path::new("."));
         std::fs::create_dir_all(parent)
-            .map_err(|e| ApiError::new(HMS_ERR_IO, format!("{}: {e}", parent.display())))?;
+            .map_err(|e| ApiError::new(WARM_ERR_IO, format!("{}: {e}", parent.display())))?;
         let source = store
             .path
             .canonicalize()
-            .map_err(|e| ApiError::new(HMS_ERR_IO, format!("{}: {e}", store.path.display())))?;
+            .map_err(|e| ApiError::new(WARM_ERR_IO, format!("{}: {e}", store.path.display())))?;
         let parent = parent
             .canonicalize()
-            .map_err(|e| ApiError::new(HMS_ERR_IO, format!("{}: {e}", parent.display())))?;
+            .map_err(|e| ApiError::new(WARM_ERR_IO, format!("{}: {e}", parent.display())))?;
         if parent.starts_with(&source) {
             return Err(ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 "snapshot destination cannot be inside the store",
             ));
         }
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_or(0, |d| d.as_nanos());
-        let temporary = parent.join(format!(".hms-snapshot-{}-{nonce}", std::process::id()));
+        let temporary = parent.join(format!(".warm-snapshot-{}-{nonce}", std::process::id()));
         let result = (|| {
             {
                 let _quiesce = store.barrier.write();
                 store
                     .core
                     .flush()
-                    .map_err(|e| ApiError::from_engine(&e, HMS_ERR_IO))?;
+                    .map_err(|e| ApiError::from_engine(&e, WARM_ERR_IO))?;
                 copy_tree(&source, &temporary)?;
             }
             inspect_store(&temporary, true)
-                .map_err(|e| ApiError::from_engine(&e, HMS_ERR_CORRUPT))?;
+                .map_err(|e| ApiError::from_engine(&e, WARM_ERR_CORRUPT))?;
             let name = destination.file_name().ok_or_else(|| {
-                ApiError::new(HMS_ERR_INVALID_ARGUMENT, "destination has no name")
+                ApiError::new(WARM_ERR_INVALID_ARGUMENT, "destination has no name")
             })?;
             std::fs::rename(&temporary, parent.join(name))
                 .and_then(|()| {
@@ -707,7 +707,7 @@ pub unsafe extern "C" fn hms1_store_snapshot(
                     std::fs::File::open(&parent)?.sync_all()?;
                     Ok(())
                 })
-                .map_err(|e| ApiError::new(HMS_ERR_IO, format!("publishing snapshot: {e}")))
+                .map_err(|e| ApiError::new(WARM_ERR_IO, format!("publishing snapshot: {e}")))
         })();
         if result.is_err() && temporary.exists() {
             let _ = std::fs::remove_dir_all(&temporary);
@@ -721,12 +721,12 @@ pub unsafe extern "C" fn hms1_store_snapshot(
 /// receives a chunk set to release with `hms1_chunks_free`.
 ///
 /// # Safety
-/// `document` must point to a valid `hms_document_t`; `out` must be writable.
+/// `document` must point to a valid `warm_document_t`; `out` must be writable.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_chunk_document(
-    document: *const hms_document_t,
-    out: *mut *mut hms_chunks_t,
-) -> hms_status_t {
+    document: *const warm_document_t,
+    out: *mut *mut warm_chunks_t,
+) -> warm_status_t {
     if let Some(out) = out.as_mut() {
         *out = std::ptr::null_mut();
     }
@@ -735,8 +735,8 @@ pub unsafe extern "C" fn hms1_chunk_document(
         let document = require_ptr(document, "document")?;
         let input = document_input(document)?;
         let chunks = chunk_document(&input)
-            .map_err(|e| ApiError::from_engine(&e, HMS_ERR_INVALID_ARGUMENT))?;
-        *out = Box::into_raw(Box::new(hms_chunks_t { chunks }));
+            .map_err(|e| ApiError::from_engine(&e, WARM_ERR_INVALID_ARGUMENT))?;
+        *out = Box::into_raw(Box::new(warm_chunks_t { chunks }));
         Ok(())
     })
 }
@@ -746,7 +746,7 @@ pub unsafe extern "C" fn hms1_chunk_document(
 /// # Safety
 /// `chunks` must be NULL or a live chunk set.
 #[no_mangle]
-pub unsafe extern "C" fn hms1_chunks_count(chunks: *const hms_chunks_t) -> usize {
+pub unsafe extern "C" fn hms1_chunks_count(chunks: *const warm_chunks_t) -> usize {
     // SAFETY: NULL is handled; a non-NULL pointer is a live chunk set by contract.
     unsafe { chunks.as_ref() }.map_or(0, |c| c.chunks.len())
 }
@@ -757,25 +757,25 @@ pub unsafe extern "C" fn hms1_chunks_count(chunks: *const hms_chunks_t) -> usize
 /// `chunks` must be a live chunk set and `out` writable.
 #[no_mangle]
 pub unsafe extern "C" fn hms1_chunks_get(
-    chunks: *const hms_chunks_t,
+    chunks: *const warm_chunks_t,
     index: usize,
-    out: *mut hms_chunk_t,
-) -> hms_status_t {
+    out: *mut warm_chunk_t,
+) -> warm_status_t {
     guard(|| {
         let chunks = require_ptr(chunks, "chunks")?;
         let out = require_out(out, "out")?;
         let chunk = chunks.chunks.get(index).ok_or_else(|| {
             ApiError::new(
-                HMS_ERR_INVALID_ARGUMENT,
+                WARM_ERR_INVALID_ARGUMENT,
                 format!(
                     "index {index} is out of range for {} chunks",
                     chunks.chunks.len()
                 ),
             )
         })?;
-        *out = hms_chunk_t {
-            id: hms_str_t::of(&chunk.id),
-            text: hms_str_t::of(&chunk.text),
+        *out = warm_chunk_t {
+            id: warm_str_t::of(&chunk.id),
+            text: warm_str_t::of(&chunk.text),
             start_byte: chunk.start_byte,
             end_byte: chunk.end_byte,
         };
@@ -788,7 +788,7 @@ pub unsafe extern "C" fn hms1_chunks_get(
 /// # Safety
 /// `chunks` must be NULL or a chunk set not yet freed.
 #[no_mangle]
-pub unsafe extern "C" fn hms1_chunks_free(chunks: *mut hms_chunks_t) {
+pub unsafe extern "C" fn hms1_chunks_free(chunks: *mut warm_chunks_t) {
     if !chunks.is_null() {
         drop(Box::from_raw(chunks));
     }

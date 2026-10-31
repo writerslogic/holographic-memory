@@ -18,26 +18,26 @@ import {
   type UpsertVectorParams,
   type VectorFilter,
 } from '@mastra/core/vector'
-import { HmsError, HmsStore, parseFilter, type Embedder, type FilterLike, type HmsStoreOptions, type Metadata, type StoredRecord } from '@holographic-memory/core'
-import type { HolographicMemorySystem } from 'holographic-memory'
+import { WarmError, WarmStore, parseFilter, type Embedder, type FilterLike, type WarmStoreOptions, type Metadata, type StoredRecord } from '@writerslogic/warm-core'
+import type { WarmMemorySystem } from 'writerslogic-warm'
 
-const REGISTRY = '__hms_indexes__'
+const REGISTRY = '__warm_indexes__'
 const STORE_NAME = 'HOLOGRAPHIC'
 
 export interface HolographicVectorOptions
-  extends Pick<HmsStoreOptions, 'path' | 'hmsConfig' | 'maxFetch' | 'overfetch' | 'dimensions'> {
+  extends Pick<WarmStoreOptions, 'path' | 'warmConfig' | 'maxFetch' | 'overfetch' | 'dimensions'> {
   id: string
   /** Vector length of every index in this store. Fixed when the store is created. Default 1536. */
   dimension?: number
   /** An existing native memory created for this dimension (embedding model `mastra-supplied`). */
-  memory?: HolographicMemorySystem
+  memory?: WarmMemorySystem
   /** Hypervector dimensions of a created store (default 4096). */
   hypervectorDimensions?: number
 }
 
 function suppliedEmbedder(dimensions: number): Embedder {
   const refuse = async (): Promise<never> => {
-    throw new HmsError('Mastra supplies vectors; text is never embedded by this store', 'invalid_argument')
+    throw new WarmError('Mastra supplies vectors; text is never embedded by this store', 'invalid_argument')
   }
   return {
     space: { model: 'mastra-supplied', revision: '1', dimensions, normalization: 'l2', metric: 'cosine' },
@@ -56,18 +56,18 @@ function normalizeDates(value: unknown): unknown {
 }
 
 /**
- * Mastra vector store over the Holographic Memory native engine.
+ * Mastra vector store over the WARM native engine.
  *
  * An index is a collection inside one engine store; all indexes share the store's vector dimension.
  * Scores are cosine similarity. Filters use Mastra's MongoDB-style syntax.
  */
 export class HolographicVector extends MastraVector<VectorFilter> {
   readonly dimension: number
-  private readonly memory: HolographicMemorySystem
+  private readonly memory: WarmMemorySystem
   private readonly options: HolographicVectorOptions
   private readonly embedder: Embedder
-  private readonly registry: HmsStore
-  private readonly stores = new Map<string, HmsStore>()
+  private readonly registry: WarmStore
+  private readonly stores = new Map<string, WarmStore>()
   private lock: Promise<unknown> = Promise.resolve()
 
   constructor(options: HolographicVectorOptions) {
@@ -75,12 +75,12 @@ export class HolographicVector extends MastraVector<VectorFilter> {
     this.options = options
     this.dimension = options.dimension ?? 1536
     this.embedder = suppliedEmbedder(this.dimension)
-    const base = new HmsStore({
+    const base = new WarmStore({
       embedder: this.embedder,
       dimensions: options.hypervectorDimensions ?? options.dimensions,
       ...(options.memory ? { memory: options.memory } : {}),
       ...(options.path ? { path: options.path } : {}),
-      ...(options.hmsConfig ? { hmsConfig: options.hmsConfig } : {}),
+      ...(options.warmConfig ? { warmConfig: options.warmConfig } : {}),
       ...(options.maxFetch ? { maxFetch: options.maxFetch } : {}),
       collection: REGISTRY,
     })
@@ -90,7 +90,7 @@ export class HolographicVector extends MastraVector<VectorFilter> {
 
   private fail(id: string, cause: unknown, category = ErrorCategory.THIRD_PARTY, details: Record<string, string | number> = {}): never {
     if (cause instanceof MastraError) throw cause
-    const code = cause instanceof HmsError && cause.code === 'invalid_argument' ? ErrorCategory.USER : category
+    const code = cause instanceof WarmError && cause.code === 'invalid_argument' ? ErrorCategory.USER : category
     throw new MastraError(
       { id: `${STORE_NAME}_VECTOR_${id}_FAILED` as Uppercase<string>, domain: ErrorDomain.MASTRA_VECTOR, category: code, details },
       cause,
@@ -107,10 +107,10 @@ export class HolographicVector extends MastraVector<VectorFilter> {
     return run
   }
 
-  private store(indexName: string): HmsStore {
+  private store(indexName: string): WarmStore {
     let s = this.stores.get(indexName)
     if (!s) {
-      s = new HmsStore({
+      s = new WarmStore({
         memory: this.memory,
         embedder: this.embedder,
         collection: indexName,
@@ -300,4 +300,4 @@ export class HolographicVector extends MastraVector<VectorFilter> {
   }
 }
 
-export { HmsError }
+export { WarmError }

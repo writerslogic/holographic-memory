@@ -1,7 +1,7 @@
-<img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" width="88" alt="Holographic Memory System" align="left">
+<img src="https://raw.githubusercontent.com/writerslogic/warm/main/assets/crystal-halo/crystal-detailed-static.png" width="88" alt="WritersLogic Adaptive Retention & Memory" align="left">
 
-<h1>HMS fuzzing</h1>
-<p><strong>Deterministic, allocation-bounded fuzz targets for every parser of untrusted input in the Holographic Memory System.</strong></p>
+<h1>WARM fuzzing</h1>
+<p><strong>Deterministic, allocation-bounded fuzz targets for every parser of untrusted input in the WritersLogic Adaptive Retention & Memory.</strong></p>
 
 <br clear="left">
 
@@ -24,7 +24,7 @@ Dictionaries are in `fuzz/dictionaries/` (`-dict=fuzz/dictionaries/server.dict`)
 | `document_engine` | `DocumentInput` + `SearchOptions` JSON through memorize, search and delete in a live store | none |
 | `store_open` | a valid store with one file overwritten, truncated, appended to or replaced: manifests and CRC sidecars, arena frames, document log, indices; `verify_store` then open then search | none |
 | `jumbf_decode` | JUMBF (ISO 19566-5) box hierarchies | `provenance` |
-| `cose_envelopes` | COSE_Sign1, the signed HMS manifest, the SCITT signed statement | `provenance` |
+| `cose_envelopes` | COSE_Sign1, the signed WARM manifest, the SCITT signed statement | `provenance` |
 | `cawg_identity` | CAWG identity assertion CBOR with its embedded COSE and did:jwk | `provenance` |
 | `did_parse` | did:key, did:jwk, did:web and DID documents | `provenance` |
 | `provenance_json` | W3C VC, Sigstore bundle JSON and the KERI key event log file | `provenance` |

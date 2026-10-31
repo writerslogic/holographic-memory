@@ -46,7 +46,7 @@ transcript below is exactly what you will see, and CI diffs every run against it
 - Replace the temporary directory with a path you keep. The store is a directory and takes an
   exclusive lock while open.
 - To rank by meaning rather than shared words, pass `embeddings` on each document and an
-  `embedding` in `SearchOptions`. HMS then fuses exact cosine with BM25.
+  `embedding` in `SearchOptions`. WARM then fuses exact cosine with BM25.
 - The retrieval here is lexical on purpose, so it is easy to reason about and test. It is not a
   claim that BM25 alone is enough for a production assistant; see the
   [benchmarks](../PUBLIC-BENCHMARKS.md) for how the hybrid does on public data.

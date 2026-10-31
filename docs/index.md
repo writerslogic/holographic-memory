@@ -1,6 +1,6 @@
 ---
 template: home.html
-title: Holographic Memory
+title: WARM
 description: Hybrid search, graph indexing, and vector-symbolic memory. Local-first retrieval and associative memory with crash-safe storage and no service calls.
 hide:
   - navigation
@@ -12,10 +12,10 @@ hide:
 
 The document pipeline is conventional retrieval: stemmed BM25 fused with exact cosine over
 embeddings you supply. The vector-symbolic layer powers the meaning memory, composition and the
-experimental vector index. Where HMS loses to another system on a measured benchmark, the
+experimental vector index. Where WARM loses to another system on a measured benchmark, the
 [benchmark pages](PUBLIC-BENCHMARKS.md) say so, and every number on this site traces to a
 committed file under
-[`benchmarks/results/`](https://github.com/writerslogic/holographic-memory/tree/main/benchmarks/results).
+[`benchmarks/results/`](https://github.com/writerslogic/warm/tree/main/benchmarks/results).
 
 New here? Start with the [quickstart](quickstart/index.md), then read
 [what "holographic" means in this code](concepts/holographic.md). Looking something up? Use the

@@ -29,8 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Every generated reference must exist: a missing rustdoc or typedoc output fails the build.
-      HMS_BUILD_RUSTDOC: '1'
-      HMS_DOCS_REQUIRE_API: '1'
+      WARM_BUILD_RUSTDOC: '1'
+      WARM_DOCS_REQUIRE_API: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -85,9 +85,12 @@ jobs:
             README.md CONTRIBUTING.md '_site/dev/**/*.html'
           fail: true
 
+      - name: Build legacy-domain redirects
+        run: node scripts/build-docs-redirects.mjs _site _legacy-docs
+
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: _site
+          path: _legacy-docs
 
   # axe, Lighthouse, real search queries and screenshots, run against a build served locally.
   # Thresholds: zero serious or critical axe violations, Lighthouse at least 95 in every
@@ -122,7 +125,7 @@ jobs:
       # reference is built and checked by the `build` job; this build skips it.
       - name: Build the site for local serving
         env:
-          HMS_SITE_BASE: http://127.0.0.1:8123
+          WARM_SITE_BASE: http://127.0.0.1:8123
         run: bash scripts/build-docs-site.sh _site
 
       - name: axe (serious and critical violations fail)

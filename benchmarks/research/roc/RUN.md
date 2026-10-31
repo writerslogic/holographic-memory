@@ -9,7 +9,7 @@ NFCorpus, and by how much. Standalone Python (numpy only), no Rust, no network, 
 uv run --no-project --with numpy python benchmarks/research/roc/roc.py
 ```
 
-Options: `--cache <dir>` (default `~/.cache/hms-bench/nfcorpus`), `--out <json>` (default
+Options: `--cache <dir>` (default `~/.cache/warm-bench/nfcorpus`), `--out <json>` (default
 `benchmarks/research/roc/out/roc_v1.json`; the directory is created). Works from any cwd.
 
 Expected wall clock: 10-40 s on one CPU core (BM25 indexing a few seconds, 2 x 1440 sigmoid-gate
@@ -26,14 +26,14 @@ file on any mismatch.
 Split facts recorded in the output: the cache holds 323 queries / 12334 judgments (grades 1 and
 2 only), which is the BEIR nfcorpus *test* split by count; the reference numbers (BM25 0.2916,
 MiniLM 0.3024, gte-small 0.3398) were measured on dev (324 queries) and are printed for
-orientation only. BEIR train qrels are in `~/.cache/hms-bench/downloads/nfcorpus/qrels/train.tsv`
+orientation only. BEIR train qrels are in `~/.cache/warm-bench/downloads/nfcorpus/qrels/train.tsv`
 but there are no embeddings for train queries, so the disjoint tuning split is by 0-based query
 index parity in queries.jsonl order: tune = odd, eval = even (primary fold); the swapped fold and
 a count-weighted cross-fit mean are also reported.
 
 ## Output
 
-`benchmarks/research/roc/out/roc_v1.json` (schema `hms.research.roc/1`), floats rounded to 6
+`benchmarks/research/roc/out/roc_v1.json` (schema `warm.research.roc/1`), floats rounded to 6
 decimals, `null` for undefined AUCs. Top-level keys:
 
 | key | content |
@@ -103,7 +103,7 @@ selected (eval 0.3459, oracles 0.3774 best channel / 0.3970 best weight).
 uv run --no-project --with numpy python benchmarks/research/roc/relevance.py
 ```
 
-Options: `--cache <dir>` (default `~/.cache/hms-bench/nfcorpus`), `--out <json>` (default
+Options: `--cache <dir>` (default `~/.cache/warm-bench/nfcorpus`), `--out <json>` (default
 `benchmarks/research/roc/out/relevance_v1.json`). Same input checks as `roc.py` (row counts,
 f32 sizes, sha256 recorded). Deterministic: fixed tie-break, bootstrap seed 0, no hash-order
 dependence. Expected wall clock 20-60 s on one core (BM25 a few seconds; 2 folds x up to 9
@@ -111,7 +111,7 @@ PRF corpus re-scores of 323 x 3633 x 384; everything else is on compact pools). 
 
 ## Protocol (exact)
 
-* Queries with IDCG@10 = 0 are dropped. BM25 (k1 1.2, b 0.75, HMS tokenizer) and cosine
+* Queries with IDCG@10 = 0 are dropped. BM25 (k1 1.2, b 0.75, WARM tokenizer) and cosine
   (`Q D^T`, l2-normalised rows) as in `roc.py`.
 * Pool per query: BM25 top-200 (positive scores only) | cosine top-200; PRF adds | cos' top-200.
   Both channels z-scored over the pool; fused = (1-w) z(BM25) + w z(dense); fused top-100 with
@@ -150,7 +150,7 @@ PRF corpus re-scores of 323 x 3633 x 384; everything else is on compact pools). 
 
 ## Output
 
-`benchmarks/research/roc/out/relevance_v1.json` (schema `hms.research.relevance/1`), floats to 6
+`benchmarks/research/roc/out/relevance_v1.json` (schema `warm.research.relevance/1`), floats to 6
 decimals. Keys: `protocol` (procedure text), `constants`, `data` (counts, pool width, input
 sha256s), `all_queries` (channel and oracle numbers over all scored queries, the zsum weight curve,
 statistic quantiles), `folds.primary` / `folds.swapped` (`bm25`, `cosine`, `oracle_eval`,

@@ -20,7 +20,7 @@ v2      ordinary batching, the honest baseline: S = X [q_1..q_K], exact
         top-10 per column.  Same MACs per query as `single`, but the corpus
         is streamed once per K queries, so wall time per query drops.
 v1      keyed / plain superposition.  Q = sum_i P_i q_i with P_i a fixed
-        seeded signed permutation of coordinates (mode "key", the HMS
+        seeded signed permutation of coordinates (mode "key", the WARM
         permute/bind construction) or P_i = I (mode "sum").  One matvec
         s = X Q gives a mixed score per doc.  A shared pool of C docs is
         selected by |s| ("abs") or by s ("pos"); every query of the group
@@ -785,7 +785,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     here = Path(__file__).resolve().parent
     p = argparse.ArgumentParser(description="Holographic query batching kill test (numpy, single core).")
     p.add_argument("--datasets", default="synthetic,nfcorpus", help="comma list of synthetic,nfcorpus")
-    p.add_argument("--nfcorpus-dir", default=str(Path.home() / ".cache" / "hms-bench" / "nfcorpus"))
+    p.add_argument("--nfcorpus-dir", default=str(Path.home() / ".cache" / "warm-bench" / "nfcorpus"))
     p.add_argument("--out", default=None, help=f"output JSON (default {here / 'out' / 'hqb_v1.json'})")
     p.add_argument("--n", type=int, default=50_000, help="corpus size (synthetic: generated; nfcorpus: real + distractors)")
     p.add_argument("--queries", type=int, default=500, help="held-out queries (nfcorpus: capped at the 323 in the file)")

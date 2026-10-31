@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default)]
-pub struct HmsConfig {
+pub struct WarmConfig {
     pub text_encoder: super::encoding::TextEncoder,
     pub ivf: IVFConfig,
     pub nsg: NSGConfig,
@@ -262,7 +262,7 @@ impl Default for CognitionConfig {
     }
 }
 
-impl HmsConfig {
+impl WarmConfig {
     pub(crate) fn validate(&self) -> anyhow::Result<()> {
         anyhow::ensure!(
             self.text_encoder != super::encoding::TextEncoder::MultiscaleCappedUnionV1

@@ -24,7 +24,7 @@ class QAGServing(BaseANN):
         if metric != "ip":
             raise ValueError("serving comparison requires original inner product")
         self._module = _load_extension(
-            _extension_path("HMS_QAG_CANDIDATE_SO"), "_hms_qag_serving"
+            _extension_path("WARM_QAG_CANDIDATE_SO"), "_warm_qag_serving"
         )
         self.degree, self.build_ef = degree, build_ef
         self._indexes, self._seconds = {}, {}

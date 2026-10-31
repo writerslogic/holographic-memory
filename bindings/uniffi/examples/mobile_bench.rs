@@ -10,7 +10,7 @@
 
 use std::time::Instant;
 
-use hms_mobile::{DocumentInput, HmsStore, SearchOptions, StoreOptions};
+use warm_mobile::{DocumentInput, WarmStore, SearchOptions, StoreOptions};
 
 struct Rng(u64);
 
@@ -131,7 +131,7 @@ fn main() {
     let vocabulary = 30_000;
     let zipf = Zipf::new(vocabulary);
     let mut rng = Rng(0x9E37_79B9_7F4A_7C15);
-    let dir = std::env::var("BENCH_DIR").unwrap_or_else(|_| "/tmp/hms-mobile-bench".into());
+    let dir = std::env::var("BENCH_DIR").unwrap_or_else(|_| "/tmp/warm-mobile-bench".into());
     let _ = std::fs::remove_dir_all(&dir);
     let path = format!("{dir}/store");
     let options = StoreOptions {
@@ -141,7 +141,7 @@ fn main() {
 
     let rss_start = rss_bytes();
     let t = Instant::now();
-    let store = HmsStore::open_blocking(path.clone(), Some(options.clone())).unwrap();
+    let store = WarmStore::open_blocking(path.clone(), Some(options.clone())).unwrap();
     let open_empty_ms = t.elapsed().as_secs_f64() * 1e3;
 
     // Single-document ingest latency on the first 500, then batches of 100.
@@ -204,12 +204,12 @@ fn main() {
     drop(store);
 
     let t = Instant::now();
-    let reopened = HmsStore::open_blocking(path, Some(options.clone())).unwrap();
+    let reopened = WarmStore::open_blocking(path, Some(options.clone())).unwrap();
     let reopen_ms = t.elapsed().as_secs_f64() * 1e3;
     let rss_reopened = rss_bytes();
     drop(reopened);
     let t = Instant::now();
-    let restored = HmsStore::restore_blocking(
+    let restored = WarmStore::restore_blocking(
         format!("{dir}/snap"),
         format!("{dir}/restored"),
         Some(options),

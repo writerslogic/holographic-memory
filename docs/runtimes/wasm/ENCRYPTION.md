@@ -33,7 +33,7 @@ inference, not measurement.
 ## Format
 
 ```
-"HMSE" | version u8 | kdf u8 | p1 u32 | p2 u32 | p3 u32 | salt[16] | nonce[12] | ciphertext+tag
+"WARME" | version u8 | kdf u8 | p1 u32 | p2 u32 | p3 u32 | salt[16] | nonce[12] | ciphertext+tag
 ```
 
 kdf 1 = PBKDF2 (`p1` = iterations); kdf 2 = Argon2id (`p1` = KiB, `p2` = passes, `p3` = lanes). All

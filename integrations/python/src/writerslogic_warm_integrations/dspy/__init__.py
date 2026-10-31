@@ -1,0 +1,10 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+from .retriever import WarmRetriever, WarmRM
+
+__all__ = ["WarmRetriever", "WarmRM"]
+
+HolographicRetriever = WarmRetriever
+HolographicRM = WarmRM
+__all__ += ['HolographicRetriever', 'HolographicRM']

@@ -13,13 +13,13 @@ use std::str::FromStr;
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Serialize;
 
-use hms_research_challenge::audit;
-use hms_research_challenge::eval::{self, Results, RunOptions};
-use hms_research_challenge::store::DEFAULT_DIMENSIONS;
-use hms_research_challenge::synth::{self, GenConfig, Split, FROZEN_SEED};
+use warm_research_challenge::audit;
+use warm_research_challenge::eval::{self, Results, RunOptions};
+use warm_research_challenge::store::DEFAULT_DIMENSIONS;
+use warm_research_challenge::synth::{self, GenConfig, Split, FROZEN_SEED};
 
 const USAGE: &str = "\
-hms-research-challenge <command> [options]
+warm-research-challenge <command> [options]
 
 commands
   generate  --out FILE [--split tune|test] [--families N] [--conflict-fraction F] [--seed S]
@@ -156,7 +156,7 @@ fn print_results(results: &Results) {
         "{:<36} {:>8} {:>8} {:>7} {:>8} {:>10} {:>10}",
         "method", "correct", "ans-only", "stale", "miss-exc", "p50 us", "p95 us"
     );
-    for name in hms_research_challenge::baselines::METHODS {
+    for name in warm_research_challenge::baselines::METHODS {
         if let Some(report) = results.methods.get(name) {
             println!(
                 "{:<36} {:>7.1}% {:>7.1}% {:>6.1}% {:>7.1}% {:>10.1} {:>10.1}",

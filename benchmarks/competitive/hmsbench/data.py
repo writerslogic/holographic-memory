@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Dataset preparation. Sources come from benchmarks/public/prepare.py (cached under CACHE);
 subsets are cut deterministically and their exact cosine truth recomputed, so every system and
-HMS read byte-identical files."""
+WARM read byte-identical files."""
 
 import hashlib
 import json
@@ -40,7 +40,7 @@ def source_ann(name):
             hdf5.parent.mkdir(parents=True, exist_ok=True)
             part = hdf5.with_suffix(".part")
             # The ann-benchmarks host rejects urllib's default User-Agent.
-            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "hms-bench/1.0"})) as response, part.open("wb") as out:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "warm-bench/1.0"})) as response, part.open("wb") as out:
                 while block := response.read(1 << 22):
                     out.write(block)
             part.rename(hdf5)

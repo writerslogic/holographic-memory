@@ -91,10 +91,10 @@ def main(args):
     if rustc != baseline_manifest["rustc"]:
         raise RuntimeError("toolchain changed from baseline")
     env = {key: os.environ[key] for key in ["PATH", "HOME", "TMPDIR", "RUSTUP_HOME", "CARGO_HOME", "DEVELOPER_DIR", "SDKROOT"] if key in os.environ}
-    env.update({"CARGO_TARGET_DIR": str(base.TREE / "target"), "CARGO_BUILD_JOBS": "1", "RAYON_NUM_THREADS": "1", "CARGO_PROFILE_RELEASE_DEBUG": "1", "CARGO_PROFILE_RELEASE_STRIP": "none", "HMS_QGRAPH_PREFETCH": "0", "HMS_QGRAPH_BATCH_EST": "0", "HMS_QGRAPH_FRONTIER": "1", "HMS_QGRAPH_BLOCK_SCREEN": "0", "HMS_QGRAPH_RERANK_Z": "0"})
-    declared_env = {key: value for key, value in env.items() if key.startswith(("CARGO_", "RAYON_", "HMS_"))}
+    env.update({"CARGO_TARGET_DIR": str(base.TREE / "target"), "CARGO_BUILD_JOBS": "1", "RAYON_NUM_THREADS": "1", "CARGO_PROFILE_RELEASE_DEBUG": "1", "CARGO_PROFILE_RELEASE_STRIP": "none", "WARM_QGRAPH_PREFETCH": "0", "WARM_QGRAPH_BATCH_EST": "0", "WARM_QGRAPH_FRONTIER": "1", "WARM_QGRAPH_BLOCK_SCREEN": "0", "WARM_QGRAPH_RERANK_Z": "0"})
+    declared_env = {key: value for key, value in env.items() if key.startswith(("CARGO_", "RAYON_", "WARM_"))}
     plan = {
-        "schema": "hms-glove-batch-pool-ablation-plan-v2", "development_only": True,
+        "schema": "warm-glove-batch-pool-ablation-plan-v2", "development_only": True,
         "source": base.SOURCE, "candidate_vertex_sha256": args.candidate_sha256,
         "candidate_mechanism": "Same8-key batch-merge mechanism, API and buffers asv1; dispatch once per query to const-specialized loops to address measured disabled-arm regression; no threshold tuning",
         "reason_for_isolation": "Preservedv1 enabled/S improvement did not excuse disabled/S regression; defaultcontrol gates declared before v2 data",
@@ -104,7 +104,7 @@ def main(args):
         "input_declaration_sha256": base.sha(query.INPUT / "declaration.json"), "index_sha256": base.sha(query.INDEX),
         "block_orders": ORDERS, "efs": [10, 20, 40, 80, 120, 160, 240, 400, 640], "repeats_per_process": 7,
         "k": 10, "rerank": 64, "seed": 539365412, "knob_mode": "env",
-        "arms": {"baseline": {"binary": "baseline-binary", "HMS_QGRAPH_BATCH_POOL": "0"}, "disabled": {"binary": "candidate-binary", "HMS_QGRAPH_BATCH_POOL": "0"}, "enabled": {"binary": "candidate-binary", "HMS_QGRAPH_BATCH_POOL": "1"}},
+        "arms": {"baseline": {"binary": "baseline-binary", "WARM_QGRAPH_BATCH_POOL": "0"}, "disabled": {"binary": "candidate-binary", "WARM_QGRAPH_BATCH_POOL": "0"}, "enabled": {"binary": "candidate-binary", "WARM_QGRAPH_BATCH_POOL": "1"}},
         "sample_after_timings": {"arm": "enabled", "ef": 240, "repeats": 1000, "duration_s": 5, "interval_ms": 1},
         "primary_gate": {"ef": 80, "recall_floor": 0.95, "minimum_geomean_qps_ratio": 1.10, "bootstrap_lower_strictly_above": 1.0, "contrasts": ["enabled_over_baseline", "enabled_over_disabled"]},
         "default_control_gate": {"ef": 80, "contrast": "disabled_over_baseline", "minimum_geomean_qps_ratio": 0.99, "bootstrap_lower_at_least": 0.98},
@@ -114,7 +114,7 @@ def main(args):
         "uncertainty": "Collapse7 repeats per fresh process, paired whole-process-block bootstrap enumerating27 resamples;3blocks lowpower, conditionalhardware only. No query/repeat pseudoreplication.",
         "limits": {"compile_s": 600, "native_s": 180, "overall_s": 900, "compile_sampled_tree_rss_gib": 4, "native_sampled_tree_rss_gib": 2},
         "memory_scope": "Approximately200ms sampled summed child-tree RSS, not strict OS peak or unique memory; controller/source preparation/sampler excluded",
-        "lock": str(Path.home() / "hms-timing.lock"), "environment": declared_env,
+        "lock": str(Path.home() / "warm-timing.lock"), "environment": declared_env,
         "official_test_arrays_read": False, "competitive_or_leaderboard_claim": False,
         "rustc": rustc, "hardware": subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string", "hw.memsize", "hw.ncpu"], text=True),
         "previous_candidate": {"root": str(PREVIOUS), "vertex_sha256": previous_plan["candidate_vertex_sha256"], "binary_sha256": previous_complete["sha256"]["candidate-binary"], "binary_bytes": (PREVIOUS / "candidate-binary").stat().st_size, "compile_receipt_sha256": frozen["v1-compile.receipt.json"], "compile_elapsed_s": previous_compile["elapsed_s"], "compile_sampled_summed_process_tree_rss_kib": previous_compile["sampled_summed_process_tree_rss_kib"]},
@@ -122,10 +122,10 @@ def main(args):
         "frozen_source_and_harness_sha256": frozen,
     }
     base.save(ROOT / "plan.json", plan)
-    lock = (Path.home() / "hms-timing.lock").open("a+")
+    lock = (Path.home() / "warm-timing.lock").open("a+")
     base.fcntl.flock(lock, base.fcntl.LOCK_EX | base.fcntl.LOCK_NB)
     try:
-        with Path("/Volumes/A/hms-coordination/RUN-ALL.md").open("a") as coordination:
+        with Path("/Volumes/A/warm-coordination/RUN-ALL.md").open("a") as coordination:
             coordination.write(f"\n{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} Vector batch-pool isolationv2 owner acquired local timing flock; plan {ROOT / 'plan.json'},same8-key mechanism withquery-level constdispatch, frozen defaultcontrol gates and3balanced blocks ofS/disabled/enabled full9efcurves with7withinprocess repeats; distinct sample afterward.1compilejob/1Rayon,4GiBcompile/2GiBnative sampledRSS,600/180/900s guards. No finalarrays/remoteaction/lexical work.\n")
         verify_native(native, args.candidate_sha256)
         monitor.run("compile", ["cargo", "build", "--offline", "--locked", "--release", "--features", "experimental", "--bin", "vector-glove-development"], env, 600, deadline, 4)
@@ -138,12 +138,12 @@ def main(args):
             for position, arm in enumerate(order):
                 name = f"block{block}-{arm}"
                 settings = plan["arms"][arm]
-                arm_env = dict(env, HMS_QGRAPH_BATCH_POOL=settings["HMS_QGRAPH_BATCH_POOL"])
+                arm_env = dict(env, WARM_QGRAPH_BATCH_POOL=settings["WARM_QGRAPH_BATCH_POOL"])
                 command = [str(ROOT / settings["binary"]), str(query.INPUT), str(query.INDEX), str(ROOT / f"{name}.json"), "--knobs", "env"]
                 started = time.monotonic()
                 query.query_run(name, command, arm_env, deadline)
-                timed_runs[name] = {"block": block, "position": position, "arm": arm, "command": command, "started_monotonic_s": started, "finished_monotonic_s": time.monotonic(), "environment": dict(declared_env, HMS_QGRAPH_BATCH_POOL=settings["HMS_QGRAPH_BATCH_POOL"]), "binary_sha256": frozen[settings["binary"]], "result_sha256": base.sha(ROOT / f"{name}.json")}
-        sample_env = dict(env, HMS_QGRAPH_BATCH_POOL="1")
+                timed_runs[name] = {"block": block, "position": position, "arm": arm, "command": command, "started_monotonic_s": started, "finished_monotonic_s": time.monotonic(), "environment": dict(declared_env, WARM_QGRAPH_BATCH_POOL=settings["WARM_QGRAPH_BATCH_POOL"]), "binary_sha256": frozen[settings["binary"]], "result_sha256": base.sha(ROOT / f"{name}.json")}
+        sample_env = dict(env, WARM_QGRAPH_BATCH_POOL="1")
         query.query_run("candidate-sampled", [str(ROOT / "candidate-binary"), str(query.INPUT), str(query.INDEX), str(ROOT / "candidate-sampled.json"), "--knobs", "env", "--efs", "240", "--repeats", "1000"], sample_env, deadline, sampling=True)
         profile = {name: {"path": name, "sha256": base.sha(ROOT / name)} for name in ["baseline.sample.txt", "baseline.sample.receipt.json", "candidate-sampled.sample.txt", "candidate-sampled.receipt.json", "candidate-sampled.json"] if (ROOT / name).exists()}
         base.save(ROOT / "execution-manifest.json", {"plan_sha256": base.sha(ROOT / "plan.json"), "frozen_files": frozen, "timed_runs": timed_runs, "profile_evidence": profile, "compile_cost": compile_cost})

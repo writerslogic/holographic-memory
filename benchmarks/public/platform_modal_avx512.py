@@ -46,11 +46,11 @@ def source_tar() -> bytes:
     return buf.getvalue()
 
 
-SRC = Path("/tmp/hms-platform-src.tar")
+SRC = Path("/tmp/warm-platform-src.tar")
 if modal.is_local():
     SRC.write_bytes(source_tar())
 
-app = modal.App("hms-platform-avx512")
+app = modal.App("warm-platform-avx512")
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("curl", "build-essential", "pkg-config")
@@ -78,7 +78,7 @@ def probe(i: int) -> dict:
     )
     bench = subprocess.run(
         ["/opt/kbench", "dot_kernel_microbench", "--ignored", "--nocapture", "--test-threads=1"],
-        text=True, capture_output=True, env={"HMS_PLATFORM_BENCH_OUT": str(out)},
+        text=True, capture_output=True, env={"WARM_PLATFORM_BENCH_OUT": str(out)},
     )
     return {
         "probe": i, "cpu_model": model, "flags": wanted,

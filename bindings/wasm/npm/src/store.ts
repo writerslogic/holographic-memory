@@ -25,7 +25,7 @@ import type {
   WasmStore,
 } from "./types.js";
 
-const DEFAULT_KEY = "hms-store";
+const DEFAULT_KEY = "warm-store";
 const DEFAULT_DEBOUNCE_MS = 500;
 
 /** Typed arrays become plain arrays, which is what the module's deserializer accepts. */
@@ -106,7 +106,7 @@ export class HolographicStore {
           "the snapshot is not encrypted but `encryption` was given; open it without encryption and call setEncryption()",
         );
       }
-      inner = wasm.HmsStore.importBytes(plain);
+      inner = wasm.WarmStore.importBytes(plain);
       for (const [name, want, have] of [
         ["dimensions", options.dimensions, inner.dimensions],
         ["embeddingDimensions", options.embeddingDimensions, inner.stats().embeddingDimensions],
@@ -117,7 +117,7 @@ export class HolographicStore {
         }
       }
     } else {
-      inner = new wasm.HmsStore({
+      inner = new wasm.WarmStore({
         dimensions: options.dimensions,
         embeddingDimensions: options.embeddingDimensions,
       });

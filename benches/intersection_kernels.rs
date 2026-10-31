@@ -6,8 +6,8 @@
 //! measurements are recorded in benchmarks/results/intersection_kernels.json.
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use holographic_memory::core::intersection::sparse_intersection_count;
 use std::hint::black_box;
+use writerslogic_warm::core::intersection::sparse_intersection_count;
 
 const UNIVERSE: u32 = 262_144;
 const NA: usize = 64;

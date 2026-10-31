@@ -3,13 +3,13 @@
 //! Experimental access to the production query-neighborhood projection primitive.
 
 use super::Graph;
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 
 pub use super::projection::ProjectionStats;
 
 impl Graph {
     /// Applies the production training routine to a cached, untrained diagnostic graph.
-    pub fn train_diagnostic(&mut self, queries: &[f32]) -> Result<(), HmsError> {
+    pub fn train_diagnostic(&mut self, queries: &[f32]) -> Result<(), WarmError> {
         super::projection::validate_queries(queries, self.dim, self.metric)?;
         self.apply_training_queries(queries)
     }
@@ -22,7 +22,7 @@ impl Graph {
         query_neighbor_ids: &[u32],
         neighbors_per_query: usize,
         projected_degree: usize,
-    ) -> Result<ProjectionStats, HmsError> {
+    ) -> Result<ProjectionStats, WarmError> {
         self.project_neighborhoods(
             training_queries,
             query_neighbor_ids,

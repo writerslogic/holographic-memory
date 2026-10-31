@@ -507,15 +507,15 @@ fn readers_continue_while_consolidation_performs_io() {
 
 #[test]
 fn streaming_crash_child() {
-    let Some(path) = std::env::var_os("HMS_TEST_CRASH_DIR") else {
+    let Some(path) = crate::compatibility::var_os("WARM_TEST_CRASH_DIR") else {
         return;
     };
     let path = PathBuf::from(path);
-    let stop: u8 = std::env::var("HMS_TEST_CRASH_STEP")
+    let stop: u8 = crate::compatibility::var("WARM_TEST_CRASH_STEP")
         .unwrap()
         .parse()
         .unwrap();
-    let mode = std::env::var("HMS_TEST_CRASH_MODE").unwrap();
+    let mode = crate::compatibility::var("WARM_TEST_CRASH_MODE").unwrap();
     let index = UpdatableVGraph::open(&path).unwrap();
     index.replace(1, &[9.; 4]).unwrap();
     index.delete(2).unwrap();
@@ -566,9 +566,9 @@ fn killed_commit_and_consolidation_recover_complete_generations() {
                     "core::qgraph::update::tests::streaming_crash_child",
                     "--nocapture",
                 ])
-                .env("HMS_TEST_CRASH_DIR", &path)
-                .env("HMS_TEST_CRASH_STEP", point.to_string())
-                .env("HMS_TEST_CRASH_MODE", mode)
+                .env("WARM_TEST_CRASH_DIR", &path)
+                .env("WARM_TEST_CRASH_STEP", point.to_string())
+                .env("WARM_TEST_CRASH_MODE", mode)
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
                 .spawn()
@@ -778,7 +778,7 @@ fn vector_format_golden_and_drift_gate() {
             manifest.vertex_path(Path::new("")),
         ] {
             let generated = std::fs::read(path.join(&file)).unwrap();
-            if std::env::var_os("HMS_GENERATE_VECTOR_GOLDEN").is_some() {
+            if crate::compatibility::var_os("WARM_GENERATE_VECTOR_GOLDEN").is_some() {
                 std::fs::create_dir_all(&golden).unwrap();
                 std::fs::write(golden.join(&file), &generated).unwrap();
             }
@@ -1549,7 +1549,7 @@ fn consolidation_live_set_peak() {
             }
         })
         .unwrap();
-    let n: usize = std::env::var("HMS_CONSOLIDATION_ROWS")
+    let n: usize = crate::compatibility::var("WARM_CONSOLIDATION_ROWS")
         .map_or(Ok(100_000), |s| s.parse())
         .unwrap();
     assert!((1024..=3_000_000).contains(&n));

@@ -61,7 +61,7 @@ mod documents {
     }
 
     mod postings {
-        include!(env!("HMS_POSTINGS_SOURCE"));
+        include!(env!("WARM_POSTINGS_SOURCE"));
 
         pub(super) fn profile() {
             use crate::{CALLS, LIVE, PEAK, REQUESTED};

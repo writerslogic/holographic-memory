@@ -9,7 +9,7 @@ All notable changes to this project are generated from the commit history.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
 [Conventional Commits](https://www.conventionalcommits.org/).
 
-[v0.6.3 migration and integrity notes](https://docs.holographic-memory.com/latest/releasing/v0.6.3/).
+[v0.6.3 migration and integrity notes](https://writerslogic.com/warm/docs/latest/releasing/v0.6.3/).
 """
 # Hash order breaks timestamp ties so merged branches render consistently.
 body = """

@@ -18,12 +18,12 @@ use std::sync::Arc;
 
 use anyhow::{ensure, Context, Result};
 use format_common::*;
-use holographic_memory::core::admin::migrate_store;
-use holographic_memory::core::format::{self, verify_path, Verdict, VerifyOptions};
-use holographic_memory::core::memory_api::{Clock, Memory, RecallOptions, RememberInput};
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, EntangledHVec, HmsCore};
 use serde_json::{json, Value};
+use writerslogic_warm::core::admin::migrate_store;
+use writerslogic_warm::core::format::{self, verify_path, Verdict, VerifyOptions};
+use writerslogic_warm::core::memory_api::{Clock, Memory, RecallOptions, RememberInput};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, EntangledHVec, WarmCore};
 
 const DIM: u32 = 1024;
 
@@ -141,7 +141,7 @@ fn specs() -> Vec<Spec> {
         },
         Spec {
             name: "v4-snapshot",
-            description: "The output of `hms-admin migrate` (a verified point-in-time copy) of \
+            description: "The output of `warm-admin migrate` (a verified point-in-time copy) of \
                           a compacted store.",
             compact: true,
             snapshot: true,
@@ -286,8 +286,8 @@ fn seed_schema(store: &Path, version: u32) -> Result<()> {
     Ok(())
 }
 
-fn embedding_space() -> holographic_memory::EmbeddingSpace {
-    holographic_memory::EmbeddingSpace {
+fn embedding_space() -> writerslogic_warm::EmbeddingSpace {
+    writerslogic_warm::EmbeddingSpace {
         model: "golden-model".into(),
         revision: "1".into(),
         dimensions: 3,
@@ -296,8 +296,8 @@ fn embedding_space() -> holographic_memory::EmbeddingSpace {
     }
 }
 
-fn config_for(spec: &Spec) -> Result<HmsConfig> {
-    let mut config = HmsConfig {
+fn config_for(spec: &Spec) -> Result<WarmConfig> {
+    let mut config = WarmConfig {
         text_encoder: spec.encoder.parse()?,
         ..Default::default()
     };
@@ -341,7 +341,7 @@ impl Clock for Tick {
     }
 }
 
-fn memory_facts(core: Arc<HmsCore>) -> Result<Value> {
+fn memory_facts(core: Arc<WarmCore>) -> Result<Value> {
     let memory = Memory::new(core).with_clock(Arc::new(Tick(AtomicI64::new(1_760_000_000_000))));
     let fact = |id: &str, text: &str| RememberInput {
         id: Some(id.into()),
@@ -414,7 +414,7 @@ fn expected_documents(name: &str, deleted: &[&str]) -> Result<Vec<Value>> {
 /// Builds the store of `spec` in `store` with the current code and returns its `expect`.
 fn build(spec: &Spec, store: &Path) -> Result<Value> {
     if spec.schema != format::STORE_SCHEMA_VERSION {
-        drop(HmsCore::new(
+        drop(WarmCore::new(
             DIM,
             Some(store.display().to_string()),
             Some(config_for(spec)?),
@@ -424,7 +424,7 @@ fn build(spec: &Spec, store: &Path) -> Result<Value> {
     if let Some(version) = spec.manifest {
         // The engine refuses an arena without a store.json, so let it write the schema first,
         // then swap the empty current-format arena for one with an older manifest.
-        drop(HmsCore::new(
+        drop(WarmCore::new(
             DIM,
             Some(store.display().to_string()),
             Some(config_for(spec)?),
@@ -435,7 +435,7 @@ fn build(spec: &Spec, store: &Path) -> Result<Value> {
         }
         seed_manifest(store, version)?;
     }
-    let core = Arc::new(HmsCore::new(
+    let core = Arc::new(WarmCore::new(
         DIM,
         Some(store.display().to_string()),
         Some(config_for(spec)?),
@@ -443,8 +443,8 @@ fn build(spec: &Spec, store: &Path) -> Result<Value> {
     let dim = DIM as usize;
     let mut expect = match spec.kind {
         Kind::Text if spec.checkpoint => {
-            let lexical = holographic_memory::core::documents::IngestOptions {
-                encode: holographic_memory::core::documents::EncodeMode::Lexical,
+            let lexical = writerslogic_warm::core::documents::IngestOptions {
+                encode: writerslogic_warm::core::documents::EncodeMode::Lexical,
                 ..Default::default()
             };
             for document in corpus("text.json")? {
@@ -769,22 +769,22 @@ fn write_manifest() -> Result<()> {
     Ok(())
 }
 
-/// `HMS_GOLDEN_WRITE=1 cargo test --features security,experimental --test format_golden
-/// generate_goldens -- --ignored --nocapture`; `HMS_V061_DIR` points at the directory holding
+/// `WARM_GOLDEN_WRITE=1 cargo test --features security,experimental --test format_golden
+/// generate_goldens -- --ignored --nocapture`; `WARM_V061_DIR` points at the directory holding
 /// the stores `gen_v061` wrote.
 #[test]
 #[ignore = "writes tests/golden; run deliberately"]
 fn generate_goldens() -> Result<()> {
     ensure!(
-        std::env::var_os("HMS_GOLDEN_WRITE").is_some(),
-        "set HMS_GOLDEN_WRITE=1"
+        std::env::var_os("WARM_GOLDEN_WRITE").is_some(),
+        "set WARM_GOLDEN_WRITE=1"
     );
     let mut written = Vec::new();
-    if let Some(root) = std::env::var_os("HMS_V061_DIR") {
+    if let Some(root) = std::env::var_os("WARM_V061_DIR") {
         written.extend(import_released(Path::new(&root))?);
     }
     written.extend(derive()?);
-    written.extend(generate(std::env::var("HMS_GOLDEN_ONLY").ok().as_deref())?);
+    written.extend(generate(std::env::var("WARM_GOLDEN_ONLY").ok().as_deref())?);
     println!("wrote goldens: {written:?}");
     Ok(())
 }
@@ -852,7 +852,7 @@ fn every_current_version_has_a_golden() -> Result<()> {
 fn expect_open_error(golden: &Golden, store: &Path, needle: &str) -> Result<()> {
     let before = file_fingerprints(store)?;
     let config = golden.config()?;
-    let error = match HmsCore::new(
+    let error = match WarmCore::new(
         golden.dimensions(),
         Some(store.display().to_string()),
         Some(config),
@@ -872,7 +872,7 @@ fn expect_open_error(golden: &Golden, store: &Path, needle: &str) -> Result<()> 
     Ok(())
 }
 
-fn check_memory(core: &Arc<HmsCore>, expect: &Value) -> Result<()> {
+fn check_memory(core: &Arc<WarmCore>, expect: &Value) -> Result<()> {
     let memory = Memory::new(core.clone());
     for recall in expect["recalls"].as_array().into_iter().flatten() {
         let hits = memory.recall(
@@ -903,7 +903,7 @@ fn check_memory(core: &Arc<HmsCore>, expect: &Value) -> Result<()> {
         let id = document["id"].as_str().unwrap();
         let hits = core.search_documents(
             document["text"].as_str().unwrap(),
-            &holographic_memory::SearchOptions {
+            &writerslogic_warm::SearchOptions {
                 document_ids: Some(vec![id.into()]),
                 k: Some(1),
                 candidate_limit: Some(10),
@@ -927,7 +927,7 @@ fn check_memory(core: &Arc<HmsCore>, expect: &Value) -> Result<()> {
 }
 
 fn open_and_check(golden: &Golden, store: &Path) -> Result<()> {
-    let core = Arc::new(HmsCore::new(
+    let core = Arc::new(WarmCore::new(
         golden.dimensions(),
         Some(store.display().to_string()),
         Some(golden.config()?),
@@ -955,7 +955,7 @@ fn every_golden_opens_with_current_code() -> Result<()> {
         }
         if !golden.openable_here() {
             // Without the feature the store cannot be created, so it must be refused cleanly.
-            let result = HmsCore::new(
+            let result = WarmCore::new(
                 golden.dimensions(),
                 Some(store.display().to_string()),
                 Some(golden.config().unwrap_or_default()),
@@ -977,7 +977,7 @@ fn every_golden_opens_with_current_code() -> Result<()> {
     Ok(())
 }
 
-/// `hms-format verify` agrees with what each golden declares about itself, and a deep check
+/// `warm-format verify` agrees with what each golden declares about itself, and a deep check
 /// (a private copy opened by the engine) agrees with the journal replay.
 #[test]
 fn verify_agrees_with_every_golden() -> Result<()> {
@@ -1036,11 +1036,11 @@ fn verify_agrees_with_every_golden() -> Result<()> {
         {
             continue;
         }
-        std::env::set_var("HMS_GOLDEN_PASSPHRASE", PASSPHRASE);
+        std::env::set_var("WARM_GOLDEN_PASSPHRASE", PASSPHRASE);
         let deep = verify_path(
             &store,
             &VerifyOptions {
-                passphrase_env: Some("HMS_GOLDEN_PASSPHRASE".into()),
+                passphrase_env: Some("WARM_GOLDEN_PASSPHRASE".into()),
                 deep: true,
             },
         )?;
@@ -1146,7 +1146,7 @@ fn old_formats_stay_writable_in_place() -> Result<()> {
         let store = scratch.path().join("store");
         golden.unpack(&store)?;
         {
-            let core = HmsCore::new(
+            let core = WarmCore::new(
                 golden.dimensions(),
                 Some(store.display().to_string()),
                 Some(golden.config()?),
@@ -1157,7 +1157,7 @@ fn old_formats_stay_writable_in_place() -> Result<()> {
             }))?)?;
             core.flush()?;
         }
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             golden.dimensions(),
             Some(store.display().to_string()),
             Some(golden.config()?),

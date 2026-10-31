@@ -1,0 +1,24 @@
+{
+  "sha256": {
+    "benchmarks/results/vsa_episodes_v1/PLAN.json": "90676b11455c5d0c933da5e24b5240a8199e62fcb2a202597b7deecba22c5c38",
+    "benchmarks/research/vsa_episodes/src/main.rs": "c403f05e6c4872691de491acd5ce6846b44dcf873d7d234d8448520f3ec81e70",
+    "benchmarks/research/vsa_episodes/Cargo.toml": "dd67c712f95b7b5fdecccb5b2f871041a1557b08be5a50da71aca453ef223681",
+    "benchmarks/research/vsa_episodes/Cargo.lock": "fd5e88c307030c7a412cca5de6d0030e0c51ce7215a5f99103f0f078ed2ad459",
+    "benchmarks/research/vsa_episodes/run.py": "ebfea914a928bf40ebaa2fec5e4204eb1a678f283a656ab08e1e095c12ee88fa",
+    "target/vsa-episodes-eval/release/hms-vsa-episodes-eval": "5c8ce3e875a505f4cd85787b253eb7426464bd94f899d5b3ffdcafde0cdb6019",
+    "src/core/phase_hvec.rs": "23788c7a49322e04fe107845b64300668fee8e60c99bbbdac36d30285fea1e11",
+    "benchmarks/research/contrast/src/hv.rs": "8c20eb3bef2e08d85cf275f3ca103e9973fab2ffac8ea2bcd03c8a2047ce53e9",
+    "benchmarks/research/contrast/src/bm25.rs": "e87b8ba00e6bd51336a339014c3b8efbc71ae5a680fcf321999ad8768604268c"
+  },
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "hardware": "Apple M4",
+  "memory_bytes": 34359738368,
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1\n",
+  "development": true,
+  "execution_head": "b10329c629c80550649625b178d9cdcc045cd5ee",
+  "isolation": "Single process/thread; other host workloads not controlled. Microsecond timings are indicative, not production SLAs.",
+  "started_unix": 1793394691.65956,
+  "exit_code": 0,
+  "elapsed_seconds": 11.517553091049194
+}

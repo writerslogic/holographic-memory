@@ -138,7 +138,7 @@ def summarize(rows, partition):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    cache = Path.home() / ".cache/hms-bench"
+    cache = Path.home() / ".cache/warm-bench"
     p.add_argument("--run", type=Path, default=cache / "longmemeval_s/runs/s-dev-small-all2")
     p.add_argument("--cache", type=Path, default=cache / "holo_dev")
     p.add_argument("--output", type=Path, default=Path("benchmarks/results/evidence_completeness_dev.json"))

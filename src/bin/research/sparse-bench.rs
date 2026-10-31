@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! Learned sparse retrieval benchmark: serves encoded BEIR corpora with the HMS impact index
+//! Learned sparse retrieval benchmark: serves encoded BEIR corpora with the WARM impact index
 //! and reports nDCG@10, R@100, single-thread QPS, serving RSS and index bytes; evaluates a
 //! TREC run file (an external system's output) with the same metric code; tunes and reports
 //! a min-max blend of the sparse scores with exact dense (MiniLM) scores.
@@ -15,8 +15,8 @@ use std::time::Instant;
 
 use anyhow::{bail, ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::sparse::{ImpactIndex, SparseVector};
 use serde_json::json;
+use writerslogic_warm::core::sparse::{ImpactIndex, SparseVector};
 
 #[derive(Parser)]
 struct Args {
@@ -312,7 +312,7 @@ fn main() -> Result<()> {
         );
     }
     let mut report = json!({
-        "schema_version": 1, "system": "hms_impact_index", "model": meta["model"], "license": meta["license"],
+        "schema_version": 1, "system": "warm_impact_index", "model": meta["model"], "license": meta["license"],
         "model_url": meta["url"], "dataset": meta["dataset"], "documents": index.documents(), "queries": n,
         "vocab": vocab, "postings": index.postings(), "corpus_nonzeros": docs_nnz,
         "index_bytes": index.bytes(), "bytes_per_posting": index.bytes() as f64 / index.postings().max(1) as f64,

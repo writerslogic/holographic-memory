@@ -67,7 +67,7 @@ def check(startup_path, preregistration_path, spend_path, gates_path):
             'timing lock ownership record inconsistent')
     require(startup['paid_spend_usd'] == 0 and startup['existing_uncommitted_work_preserved'] is True,
             'startup spend or work preservation record differs')
-    cache = Path.home() / '.cache/hms-bench'
+    cache = Path.home() / '.cache/warm-bench'
     expected = {(cache / item).resolve() for item in INPUTS}
     records = startup['inputs']
     require(len(records) == len(INPUTS) and {Path(record['path']).resolve() for record in records} == expected,

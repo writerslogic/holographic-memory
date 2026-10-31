@@ -5,7 +5,7 @@
 //! (`gen_v061.rs`) and of the current tree (`tests/format_golden.rs`).
 
 use anyhow::Result;
-use holographic_memory::{DocumentInput, EntangledHVec, HmsCore};
+use writerslogic_warm::{DocumentInput, EntangledHVec, WarmCore};
 
 /// Parses a corpus file: a JSON array of `DocumentInput`.
 pub fn load_corpus(path: &std::path::Path) -> Result<Vec<DocumentInput>> {
@@ -16,7 +16,7 @@ pub fn load_corpus(path: &std::path::Path) -> Result<Vec<DocumentInput>> {
 /// With `extras`, then writes three vectors and a relation and deletes a document and a
 /// vector, so the journal holds every mutation kind a plain store produces.
 pub fn populate(
-    core: &HmsCore,
+    core: &WarmCore,
     corpus: Vec<DocumentInput>,
     dim: usize,
     extras: bool,

@@ -6,7 +6,7 @@
 //! DID strings and DID documents arrive from signed statements and remote documents. Every
 //! parser must reject malformed input; whatever key a DID yields must survive a round trip.
 
-use holographic_memory::core::provenance::did;
+use writerslogic_warm::core::provenance::did;
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

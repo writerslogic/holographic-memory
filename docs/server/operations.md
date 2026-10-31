@@ -1,4 +1,4 @@
-# Operating hms-server
+# Operating warm-server
 
 Reference for running the server in production. Settings are in [`configuration.md`](configuration.md); the API is [`openapi.json`](openapi.json).
 
@@ -8,8 +8,8 @@ Reference for running the server in production. Settings are in [`configuration.
 |---|---|---|
 | Container | `deploy/docker/Dockerfile` | Static musl binary on `gcr.io/distroless/static-debian12:nonroot`, uid 65532, `/data` volume, self-probing `HEALTHCHECK`. |
 | Compose | `deploy/compose/compose.yaml` | One service, read-only root, all capabilities dropped, `127.0.0.1` published, key required. |
-| Kubernetes | `deploy/helm/hms-server` | Single-replica StatefulSet with a PVC, probes on `/healthz` and `/readyz`, restricted pod security context, optional Ingress, NetworkPolicy and ServiceMonitor. `helm lint` and `kubeconform -strict` clean. |
-| systemd | `deploy/systemd/hms-server.service` | `DynamicUser`, `StateDirectory`, strict filesystem and syscall sandbox, `ExecReload` sends SIGHUP. |
+| Kubernetes | `deploy/helm/warm-server` | Single-replica StatefulSet with a PVC, probes on `/healthz` and `/readyz`, restricted pod security context, optional Ingress, NetworkPolicy and ServiceMonitor. `helm lint` and `kubeconform -strict` clean. |
+| systemd | `deploy/systemd/warm-server.service` | `DynamicUser`, `StateDirectory`, strict filesystem and syscall sandbox, `ExecReload` sends SIGHUP. |
 | Benchmarks | `deploy/bench/server_bench.py` | The comparison and soak harness behind `benchmarks/results/server_v1.json` and `server_soak_v1.json`. |
 
 One replica per data directory: a tenant store is owned by a single process through an exclusive file lock. Scale a deployment by giving the pod more CPU and memory, or by running several independent servers for disjoint tenant sets.
@@ -26,19 +26,19 @@ One replica per data directory: a tenant store is owned by a single process thro
 
 ## Metrics
 
-`GET /metrics` (admin scope, or public with `--metrics-public`) is Prometheus text format 0.0.4. For a key limited to some tenants, the per-tenant series and `hms_tenants_open` cover only those tenants:
+`GET /metrics` (admin scope, or public with `--metrics-public`) is Prometheus text format 0.0.4. For a key limited to some tenants, the per-tenant series and `warm_tenants_open` cover only those tenants:
 
 | Series | Meaning |
 |---|---|
-| `hms_http_request_duration_seconds` (histogram, `route`) | Latency by route template, buckets 1 ms to 30 s. |
-| `hms_http_requests_total{route,method,status}` | Requests; routes are templates (`/api/v1/documents/{id}`), so cardinality is bounded. |
-| `hms_http_in_flight_requests`, `hms_connections_open`, `hms_connections_total` | Load. |
-| `hms_work_slots_in_use`, `hms_work_slots_capacity`, `hms_queue_depth` | Admission saturation; sustained `in_use == capacity` with a growing queue means raise `--max-concurrent-work` or add capacity. |
+| `warm_http_request_duration_seconds` (histogram, `route`) | Latency by route template, buckets 1 ms to 30 s. |
+| `warm_http_requests_total{route,method,status}` | Requests; routes are templates (`/api/v1/documents/{id}`), so cardinality is bounded. |
+| `warm_http_in_flight_requests`, `warm_connections_open`, `warm_connections_total` | Load. |
+| `warm_work_slots_in_use`, `warm_work_slots_capacity`, `warm_queue_depth` | Admission saturation; sustained `in_use == capacity` with a growing queue means raise `--max-concurrent-work` or add capacity. |
 | `process_resident_memory_bytes` | RSS (Linux `/proc`, macOS `proc_pidinfo`). |
-| `hms_tenants_open`, `hms_tenant_documents{tenant}`, `hms_tenant_vectors{tenant}`, `hms_tenant_index_bytes{tenant}`, `hms_tenant_document_index_trained{tenant}` | Per-tenant size; a tenant that is mid-snapshot is skipped for that scrape. |
-| `hms_tenant_compactions_total`, `_failures_total`, `_seconds_total` | Compaction. |
-| `hms_auth_failures_total`, `hms_rate_limited_total`, `hms_quota_rejections_total`, `hms_busy_rejections_total`, `hms_idempotent_replays_total`, `hms_tenant_evictions_total`, `hms_tls_handshake_failures_total`, `hms_ingest_documents_total` | Policy outcomes. |
-| `hms_ready`, `hms_up`, `hms_uptime_seconds`, `hms_build_info{version}` | State. |
+| `warm_tenants_open`, `warm_tenant_documents{tenant}`, `warm_tenant_vectors{tenant}`, `warm_tenant_index_bytes{tenant}`, `warm_tenant_document_index_trained{tenant}` | Per-tenant size; a tenant that is mid-snapshot is skipped for that scrape. |
+| `warm_tenant_compactions_total`, `_failures_total`, `_seconds_total` | Compaction. |
+| `warm_auth_failures_total`, `warm_rate_limited_total`, `warm_quota_rejections_total`, `warm_busy_rejections_total`, `warm_idempotent_replays_total`, `warm_tenant_evictions_total`, `warm_tls_handshake_failures_total`, `warm_ingest_documents_total` | Policy outcomes. |
+| `warm_ready`, `warm_up`, `warm_uptime_seconds`, `warm_build_info{version}` | State. |
 
 Per-tenant series are bounded by `--max-tenants` (only open stores report).
 
@@ -59,7 +59,7 @@ One JSON object per line on stderr (`--log-format text` for key=value). Every re
 
 ## Capacity planning
 
-- Memory is dominated by open stores. `--tenant-idle-seconds` closes idle ones; `hms_tenant_index_bytes` and `process_resident_memory_bytes` show the effect.
+- Memory is dominated by open stores. `--tenant-idle-seconds` closes idle ones; `warm_tenant_index_bytes` and `process_resident_memory_bytes` show the effect.
 - `--max-concurrent-work` is the number of requests the engine runs at once; ingest and search are CPU-bound, so set it near the number of cores and use `--max-queue` for bursts.
 - Rate limits and quotas are per tenant and off by default; enable them when tenants are mutually untrusted.
 
@@ -69,13 +69,13 @@ All numbers come from `benchmarks/results/server_v1.json`, `server_soak_v1.json`
 
 **Query throughput (QPS at 1 / 4 / 16 clients, and p50 at 16)**
 
-| N | hms-server (exact) | Qdrant HNSW | Qdrant exact | SQLite + FastAPI |
+| N | warm-server (exact) | Qdrant HNSW | Qdrant exact | SQLite + FastAPI |
 |---|---|---|---|---|
 | 1,000 | 829 / 2538 / **7781**, 1.2 ms | 599 / 1654 / 3499, 1.2 ms | 517 / 1980 / 3329, 1.1 ms | 381 / 476 / 911, 14.5 ms |
 | 10,000 | 135 / 487 / 895, 13 ms | **451 / 1572 / 2442**, 3.1 ms | 452 / 1550 / 2500, 3.0 ms | 300 / 538 / 818, 17 ms |
 | 50,000 | 22 / 92 / 178, 85 ms | **621 / 1561 / 1867**, 5.0 ms | 247 / 573 / 646, 20 ms | 172 / 176 / 167, 93 ms |
 
-Recall at 10 was 1.0 for every system and size. hms-server wins at 1,000 documents and loses at 10,000 and 50,000: its vector query is an exact scan inside the engine (about 6.9 of 7.2 ms at 10,000 documents is spent in the engine search), slower than a numpy scan from 10,000 up, and the optional document index (`/index/maintain`) did not help in these runs. This is an engine cost, not server overhead, and it is the largest open performance item. Ingest was 2.1k to 2.9k documents/s for hms-server against 3.1k to 4.7k for the others (batches of 500, durable commit per batch).
+Recall at 10 was 1.0 for every system and size. warm-server wins at 1,000 documents and loses at 10,000 and 50,000: its vector query is an exact scan inside the engine (about 6.9 of 7.2 ms at 10,000 documents is spent in the engine search), slower than a numpy scan from 10,000 up, and the optional document index (`/index/maintain`) did not help in these runs. This is an engine cost, not server overhead, and it is the largest open performance item. Ingest was 2.1k to 2.9k documents/s for warm-server against 3.1k to 4.7k for the others (batches of 500, durable commit per batch).
 
 **Soak** (4 minutes, 16 clients, 137,634 successful mixed requests, tenants rotating through 12 ids with at most 6 open): no errors other than 27 expected `tenant_limit` refusals, open file descriptors 26 to 35, work slots idle at the end, every tenant's contents matched the client's model both before and after a SIGTERM restart, SIGTERM exit code 0. RSS moved between 55 and 270 MB following tenant open and eviction cycles and ended at 144 MB from 139 MB at the start; the second-half linear fit reads +4.4 MB/min over that oscillation, so a longer run is needed to call it flat.
 

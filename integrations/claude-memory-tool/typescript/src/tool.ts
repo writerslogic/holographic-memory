@@ -18,7 +18,7 @@ import {
   ConflictError,
   type FileEntry,
   type FileStore,
-  HmsToolError,
+  WarmToolError,
   McpFileStore,
   type McpFileStoreOptions,
 } from "./store.js";
@@ -27,7 +27,7 @@ const LINE_NUMBER_WIDTH = 6;
 const MAX_LINES = 999_999;
 const LISTING_DEPTH = 2;
 
-export interface HolographicMemoryToolOptions {
+export interface WarmMemoryToolOptions {
   /** Longest `view` result in characters; longer files are cut at a line and paged with `view_range`. */
   maxViewChars?: number;
   /** Times an edit is retried when another writer changed the file in between. */
@@ -54,25 +54,25 @@ function splitLines(text: string): string[] {
 }
 
 function describe(e: unknown): Error {
-  if (e instanceof HmsToolError) return new Error(`${e.message} (${e.code})`);
+  if (e instanceof WarmToolError) return new Error(`${e.message} (${e.code})`);
   return e instanceof Error ? e : new Error(String(e));
 }
 
-export class HolographicMemoryTool implements MemoryToolHandlers {
+export class WarmMemoryTool implements MemoryToolHandlers {
   private readonly maxViewChars: number;
   private readonly editRetries: number;
 
   constructor(
     readonly store: FileStore,
-    options: HolographicMemoryToolOptions = {},
+    options: WarmMemoryToolOptions = {},
   ) {
     this.maxViewChars = options.maxViewChars ?? 16_000;
     this.editRetries = options.editRetries ?? 25;
   }
 
-  /** Connects to hms-mcp (stdio or HTTP) and wraps it. */
-  static async connect(options: McpFileStoreOptions & HolographicMemoryToolOptions = {}): Promise<HolographicMemoryTool> {
-    return new HolographicMemoryTool(await McpFileStore.connect(options), options);
+  /** Connects to warm-mcp (stdio or HTTP) and wraps it. */
+  static async connect(options: McpFileStoreOptions & WarmMemoryToolOptions = {}): Promise<WarmMemoryTool> {
+    return new WarmMemoryTool(await McpFileStore.connect(options), options);
   }
 
   /** The runnable tool for `client.beta.messages.toolRunner({ tools: [...] })`. */

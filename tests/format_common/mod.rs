@@ -13,9 +13,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{ensure, Context, Result};
-use holographic_memory::core::{EmbeddingSpace, HmsConfig};
-use holographic_memory::{EntangledHVec, HmsCore, SearchOptions};
 use serde_json::{json, Value};
+use writerslogic_warm::core::{EmbeddingSpace, WarmConfig};
+use writerslogic_warm::{EntangledHVec, SearchOptions, WarmCore};
 
 pub const PASSPHRASE: &str = "golden-passphrase-1";
 
@@ -88,8 +88,8 @@ impl Golden {
     }
 
     /// The configuration the golden was written with.
-    pub fn config(&self) -> Result<HmsConfig> {
-        let mut config = HmsConfig::default();
+    pub fn config(&self) -> Result<WarmConfig> {
+        let mut config = WarmConfig::default();
         if let Some(name) = self.str("textEncoder") {
             config.text_encoder = name.parse()?;
         }
@@ -205,7 +205,7 @@ pub fn file_fingerprints(dir: &Path) -> Result<BTreeMap<String, (u64, u32)>> {
 }
 
 /// Checks a store opened by the current code against a golden's `expect` object.
-pub fn check_expectations(core: &HmsCore, expect: &Value, dimensions: u32) -> Result<()> {
+pub fn check_expectations(core: &WarmCore, expect: &Value, dimensions: u32) -> Result<()> {
     if let Some(meaning) = expect.get("meaning") {
         ensure!(
             core.meaning_atom_count() as u64 == meaning["atoms"].as_u64().unwrap(),

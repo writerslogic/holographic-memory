@@ -4,8 +4,8 @@
 
   uv run python benchmarks/public/platform_paired.py \
       --arm base=/path/public-bench-base --arm new=/path/public-bench-new \
-      (an arm may add environment: --arm vnni=/path/public-bench@HMS_QGRAPH_KERNEL=vnni) \
-      --data ~/.cache/hms-bench/glove-100-angular --cache /path/glove.graph \
+      (an arm may add environment: --arm vnni=/path/public-bench@WARM_QGRAPH_KERNEL=vnni) \
+      --data ~/.cache/warm-bench/glove-100-angular --cache /path/glove.graph \
       --threads 1,4 --ef 256,768 --repeats 7 --out benchmarks/results/platform_aarch64_glove_v1.json
 
 Each arm is one `ann-qgraph` process per search thread (the harness times one query at a time on

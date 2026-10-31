@@ -248,7 +248,7 @@ mod tests {
     /// gather estimate, same method as `raw_screen_microbenchmark` (300k rows, dim 256,
     /// 20k expansions of 32 neighbours, best of 5). Kill rule: block scan < 0.25 of est.
     /// `cargo test --release block_scan_microbenchmark -- --ignored --nocapture`; writes
-    /// JSON to `$HMS_BLOCK_BENCH_OUT` when set.
+    /// JSON to `$WARM_BLOCK_BENCH_OUT` when set.
     #[test]
     #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn block_scan_microbenchmark() {
@@ -333,7 +333,7 @@ mod tests {
         }
         report.push_str("]}");
         println!("{report}");
-        if let Ok(path) = std::env::var("HMS_BLOCK_BENCH_OUT") {
+        if let Ok(path) = crate::compatibility::var("WARM_BLOCK_BENCH_OUT") {
             std::fs::write(path, format!("{report}\n")).unwrap();
         }
     }

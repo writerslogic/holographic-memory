@@ -5,8 +5,8 @@ use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
 use std::time::Instant;
 
-use holographic_memory::core::format::scan;
-use holographic_memory::{core::HmsConfig, HmsCore};
+use writerslogic_warm::core::format::scan;
+use writerslogic_warm::{core::WarmConfig, WarmCore};
 
 struct Counted;
 thread_local! {
@@ -59,12 +59,12 @@ fn malformed_identity_files_do_not_allocate_their_declared_length() {
     let mut baseline = None;
     for size in [31, 33, 128 << 20] {
         std::fs::File::create(&path).unwrap().set_len(size).unwrap();
-        let mut config = HmsConfig::default();
+        let mut config = WarmConfig::default();
         config.security.signing_enabled = true;
         config.security.key_path = Some(path.display().to_string());
         let store = directory.path().join(format!("store-{size}"));
         let (result, bytes, _, _) =
-            measured(|| HmsCore::new(256, Some(store.display().to_string()), Some(config)));
+            measured(|| WarmCore::new(256, Some(store.display().to_string()), Some(config)));
         assert!(result.is_err());
         let baseline = *baseline.get_or_insert(bytes);
         assert!(
@@ -79,9 +79,9 @@ fn malformed_identity_files_do_not_allocate_their_declared_length() {
 fn extreme_privacy_scale_fails_before_store_creation() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("must-not-create");
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.privacy.epsilon = 1e-308;
-    let error = HmsCore::new(256, Some(path.display().to_string()), Some(config))
+    let error = WarmCore::new(256, Some(path.display().to_string()), Some(config))
         .err()
         .unwrap();
     assert!(error.to_string().contains("privacy epsilon"));
@@ -110,9 +110,9 @@ fn scanner_reuses_a_single_raw_buffer() {
 #[test]
 fn recent_audit_query_uses_bounded_scratch() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.security.audit_enabled = true;
-    let core = HmsCore::new(256, Some(dir.path().display().to_string()), Some(config)).unwrap();
+    let core = WarmCore::new(256, Some(dir.path().display().to_string()), Some(config)).unwrap();
     let mut entry = [0u8; 105];
     entry[8] = 1;
     for count in [10_000, 100_000, 200_000] {
@@ -127,9 +127,9 @@ fn recent_audit_query_uses_bounded_scratch() {
 #[test]
 fn audit_entries_match_across_read_buffer_boundaries() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.security.audit_enabled = true;
-    let core = HmsCore::new(256, Some(dir.path().display().to_string()), Some(config)).unwrap();
+    let core = WarmCore::new(256, Some(dir.path().display().to_string()), Some(config)).unwrap();
     for count in [623u64, 624, 625] {
         let mut bytes = Vec::new();
         for timestamp in 0..count {
@@ -149,8 +149,8 @@ fn audit_entries_match_across_read_buffer_boundaries() {
 
 #[test]
 fn goal_relevance_matches_sorted_lookup_without_allocating() {
-    use holographic_memory::core::agency::goals::{Goal, GoalStore};
-    use holographic_memory::EntangledHVec;
+    use writerslogic_warm::core::agency::goals::{Goal, GoalStore};
+    use writerslogic_warm::EntangledHVec;
     let store = GoalStore::new();
     let query = EntangledHVec::new_deterministic(16384, 7);
     for i in 0..1000 {

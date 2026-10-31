@@ -1,6 +1,6 @@
 # Concepts
 
-HMS has two layers that share one store and one persistence format.
+WARM has two layers that share one store and one persistence format.
 
 | Layer | What it does | Built on |
 |-------|--------------|----------|

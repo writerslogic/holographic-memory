@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! UniFFI surface of the Holographic Memory System document store, for Swift and Kotlin.
+//! UniFFI surface of the WritersLogic Adaptive Retention & Memory document store, for Swift and Kotlin.
 //!
 //! The capability set matches the Node binding: ingest (single and batch, with chunking,
 //! caller embeddings and `titleWeight`), search (BM25 options, filters, hybrid fusion),
@@ -17,10 +17,10 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use holographic_memory::HmsCore;
+use writerslogic_warm::WarmCore;
 use parking_lot::RwLock;
 
-pub use error::HmsError;
+pub use error::WarmError;
 pub use types::{
     DocumentChunk, DocumentInput, Fusion, SearchHit, SearchOptions, SnapshotInfo, StoreOptions,
     StoreStats,
@@ -36,15 +36,15 @@ pub fn binding_version() -> String {
 
 /// Splits a document into the chunks the store would index, without storing anything.
 #[uniffi::export]
-pub fn chunk_document(input: DocumentInput) -> Result<Vec<DocumentChunk>, HmsError> {
+pub fn chunk_document(input: DocumentInput) -> Result<Vec<DocumentChunk>, WarmError> {
     guarded(|| {
-        let chunks = holographic_memory::chunk_document(&input.into_core()?)?;
+        let chunks = writerslogic_warm::chunk_document(&input.into_core()?)?;
         Ok(chunks.into_iter().map(DocumentChunk::from).collect())
     })
 }
 
 struct Inner {
-    core: RwLock<Option<Arc<HmsCore>>>,
+    core: RwLock<Option<Arc<WarmCore>>>,
     /// Mutations hold this shared; a snapshot holds it exclusively while it copies files.
     gate: RwLock<()>,
     path: PathBuf,
@@ -55,18 +55,18 @@ struct Inner {
 /// An open document store. Thread-safe: share one handle across threads and coroutines. A
 /// directory can be open once per process; opening it again fails with `StoreLocked`.
 #[derive(uniffi::Object)]
-pub struct HmsStore {
+pub struct WarmStore {
     inner: Arc<Inner>,
 }
 
 impl Inner {
-    fn open(path: &str, options: StoreOptions) -> Result<Arc<Self>, HmsError> {
+    fn open(path: &str, options: StoreOptions) -> Result<Arc<Self>, WarmError> {
         if path.is_empty() {
-            return Err(HmsError::invalid("path must not be empty"));
+            return Err(WarmError::invalid("path must not be empty"));
         }
         let config = options.to_config()?;
         let core = guarded(|| {
-            Ok(HmsCore::new(
+            Ok(WarmCore::new(
                 options.dimensions,
                 Some(path.to_owned()),
                 Some(config),
@@ -81,18 +81,18 @@ impl Inner {
         }))
     }
 
-    fn core(&self) -> Result<Arc<HmsCore>, HmsError> {
-        self.core.read().clone().ok_or(HmsError::Closed)
+    fn core(&self) -> Result<Arc<WarmCore>, WarmError> {
+        self.core.read().clone().ok_or(WarmError::Closed)
     }
 
-    fn ingest(&self, input: DocumentInput) -> Result<u32, HmsError> {
+    fn ingest(&self, input: DocumentInput) -> Result<u32, WarmError> {
         let input = input.into_core()?;
         let core = self.core()?;
         let _writer = self.gate.read();
         guarded(|| Ok(core.memorize_document(input)?))
     }
 
-    fn ingest_batch(&self, inputs: Vec<DocumentInput>) -> Result<Vec<u32>, HmsError> {
+    fn ingest_batch(&self, inputs: Vec<DocumentInput>) -> Result<Vec<u32>, WarmError> {
         let inputs = inputs
             .into_iter()
             .map(DocumentInput::into_core)
@@ -106,7 +106,7 @@ impl Inner {
         &self,
         query: &str,
         options: Option<SearchOptions>,
-    ) -> Result<Vec<SearchHit>, HmsError> {
+    ) -> Result<Vec<SearchHit>, WarmError> {
         let options = options.unwrap_or_default().into_core()?;
         let core = self.core()?;
         guarded(|| {
@@ -118,25 +118,25 @@ impl Inner {
         })
     }
 
-    fn delete_document(&self, id: &str) -> Result<bool, HmsError> {
+    fn delete_document(&self, id: &str) -> Result<bool, WarmError> {
         let core = self.core()?;
         let _writer = self.gate.read();
         guarded(|| Ok(core.delete_document(id)?))
     }
 
-    fn compact(&self) -> Result<(), HmsError> {
+    fn compact(&self) -> Result<(), WarmError> {
         let core = self.core()?;
         let _writer = self.gate.read();
         guarded(|| Ok(core.compact()?))
     }
 
-    fn train_index(&self) -> Result<(), HmsError> {
+    fn train_index(&self) -> Result<(), WarmError> {
         let core = self.core()?;
         let _writer = self.gate.read();
         guarded(|| Ok(core.train_document_index()?))
     }
 
-    fn stats(&self) -> Result<StoreStats, HmsError> {
+    fn stats(&self) -> Result<StoreStats, WarmError> {
         let core = self.core()?;
         let health = core.storage_health();
         let disk = directory_bytes(&self.path)?;
@@ -154,14 +154,14 @@ impl Inner {
         })
     }
 
-    fn snapshot(&self, destination: &str) -> Result<SnapshotInfo, HmsError> {
+    fn snapshot(&self, destination: &str) -> Result<SnapshotInfo, WarmError> {
         if destination.is_empty() {
-            return Err(HmsError::invalid("destination must not be empty"));
+            return Err(WarmError::invalid("destination must not be empty"));
         }
         let destination = Path::new(destination);
         let name = destination
             .file_name()
-            .ok_or_else(|| HmsError::invalid("destination has no file name"))?;
+            .ok_or_else(|| WarmError::invalid("destination has no file name"))?;
         let parent = destination
             .parent()
             .filter(|path| !path.as_os_str().is_empty())
@@ -169,7 +169,7 @@ impl Inner {
         std::fs::create_dir_all(parent)?;
         let destination = parent.canonicalize()?.join(name);
         if destination.starts_with(&self.path) {
-            return Err(HmsError::invalid(
+            return Err(WarmError::invalid(
                 "the snapshot cannot live inside the store",
             ));
         }
@@ -197,11 +197,11 @@ impl Inner {
 }
 
 #[uniffi::export(async_runtime = "tokio")]
-impl HmsStore {
+impl WarmStore {
     /// Opens or creates the store in the directory `path`. Replaying a large store takes
     /// time, so prefer this async form on a UI thread.
     #[uniffi::constructor(default(options = None))]
-    pub async fn open(path: String, options: Option<StoreOptions>) -> Result<Arc<Self>, HmsError> {
+    pub async fn open(path: String, options: Option<StoreOptions>) -> Result<Arc<Self>, WarmError> {
         offload(move || Self::open_blocking(path, options)).await
     }
 
@@ -210,7 +210,7 @@ impl HmsStore {
     pub fn open_blocking(
         path: String,
         options: Option<StoreOptions>,
-    ) -> Result<Arc<Self>, HmsError> {
+    ) -> Result<Arc<Self>, WarmError> {
         let inner = Inner::open(&path, options.unwrap_or_default())?;
         Ok(Arc::new(Self { inner }))
     }
@@ -223,7 +223,7 @@ impl HmsStore {
         snapshot_path: String,
         path: String,
         options: Option<StoreOptions>,
-    ) -> Result<Arc<Self>, HmsError> {
+    ) -> Result<Arc<Self>, WarmError> {
         offload(move || Self::restore_blocking(snapshot_path, path, options)).await
     }
 
@@ -233,9 +233,9 @@ impl HmsStore {
         snapshot_path: String,
         path: String,
         options: Option<StoreOptions>,
-    ) -> Result<Arc<Self>, HmsError> {
+    ) -> Result<Arc<Self>, WarmError> {
         if path.is_empty() || snapshot_path.is_empty() {
-            return Err(HmsError::invalid("paths must not be empty"));
+            return Err(WarmError::invalid("paths must not be empty"));
         }
         snapshot::restore(Path::new(&snapshot_path), Path::new(&path))?;
         match Inner::open(&path, options.unwrap_or_default()) {
@@ -249,12 +249,12 @@ impl HmsStore {
     }
 
     /// Stores a document, replacing any document with the same id. Returns its chunk count.
-    pub async fn ingest(self: Arc<Self>, input: DocumentInput) -> Result<u32, HmsError> {
+    pub async fn ingest(self: Arc<Self>, input: DocumentInput) -> Result<u32, WarmError> {
         offload(move || self.inner.ingest(input)).await
     }
 
     /// Blocking form of `ingest`.
-    pub fn ingest_blocking(&self, input: DocumentInput) -> Result<u32, HmsError> {
+    pub fn ingest_blocking(&self, input: DocumentInput) -> Result<u32, WarmError> {
         self.inner.ingest(input)
     }
 
@@ -262,12 +262,12 @@ impl HmsStore {
     pub async fn ingest_batch(
         self: Arc<Self>,
         inputs: Vec<DocumentInput>,
-    ) -> Result<Vec<u32>, HmsError> {
+    ) -> Result<Vec<u32>, WarmError> {
         offload(move || self.inner.ingest_batch(inputs)).await
     }
 
     /// Blocking form of `ingest_batch`.
-    pub fn ingest_batch_blocking(&self, inputs: Vec<DocumentInput>) -> Result<Vec<u32>, HmsError> {
+    pub fn ingest_batch_blocking(&self, inputs: Vec<DocumentInput>) -> Result<Vec<u32>, WarmError> {
         self.inner.ingest_batch(inputs)
     }
 
@@ -277,7 +277,7 @@ impl HmsStore {
         self: Arc<Self>,
         query: String,
         options: Option<SearchOptions>,
-    ) -> Result<Vec<SearchHit>, HmsError> {
+    ) -> Result<Vec<SearchHit>, WarmError> {
         offload(move || self.inner.search(&query, options)).await
     }
 
@@ -287,58 +287,58 @@ impl HmsStore {
         &self,
         query: String,
         options: Option<SearchOptions>,
-    ) -> Result<Vec<SearchHit>, HmsError> {
+    ) -> Result<Vec<SearchHit>, WarmError> {
         self.inner.search(&query, options)
     }
 
     /// Removes a document. Returns whether it existed.
-    pub async fn delete_document(self: Arc<Self>, id: String) -> Result<bool, HmsError> {
+    pub async fn delete_document(self: Arc<Self>, id: String) -> Result<bool, WarmError> {
         offload(move || self.inner.delete_document(&id)).await
     }
 
     /// Blocking form of `delete_document`.
-    pub fn delete_document_blocking(&self, id: String) -> Result<bool, HmsError> {
+    pub fn delete_document_blocking(&self, id: String) -> Result<bool, WarmError> {
         self.inner.delete_document(&id)
     }
 
     /// Whether a document with this id is stored.
-    pub fn has_document(&self, id: String) -> Result<bool, HmsError> {
+    pub fn has_document(&self, id: String) -> Result<bool, WarmError> {
         Ok(self.inner.core()?.has_document(&id))
     }
 
     /// Counts and sizes of the open store.
-    pub fn stats(&self) -> Result<StoreStats, HmsError> {
+    pub fn stats(&self) -> Result<StoreStats, WarmError> {
         self.inner.stats()
     }
 
     /// Rewrites the journal to its live content. Optional: the store stays correct without it.
-    pub async fn compact(self: Arc<Self>) -> Result<(), HmsError> {
+    pub async fn compact(self: Arc<Self>) -> Result<(), WarmError> {
         offload(move || self.inner.compact()).await
     }
 
     /// Blocking form of `compact`.
-    pub fn compact_blocking(&self) -> Result<(), HmsError> {
+    pub fn compact_blocking(&self) -> Result<(), WarmError> {
         self.inner.compact()
     }
 
     /// Trains the dense index over caller embeddings, when the store has enough of them.
-    pub async fn train_index(self: Arc<Self>) -> Result<(), HmsError> {
+    pub async fn train_index(self: Arc<Self>) -> Result<(), WarmError> {
         offload(move || self.inner.train_index()).await
     }
 
     /// Blocking form of `train_index`.
-    pub fn train_index_blocking(&self) -> Result<(), HmsError> {
+    pub fn train_index_blocking(&self) -> Result<(), WarmError> {
         self.inner.train_index()
     }
 
     /// Writes a verified copy of the store into the new directory `destination`. Searches
     /// continue during the copy; ingests and deletes wait for it.
-    pub async fn snapshot(self: Arc<Self>, destination: String) -> Result<SnapshotInfo, HmsError> {
+    pub async fn snapshot(self: Arc<Self>, destination: String) -> Result<SnapshotInfo, WarmError> {
         offload(move || self.inner.snapshot(&destination)).await
     }
 
     /// Blocking form of `snapshot`.
-    pub fn snapshot_blocking(&self, destination: String) -> Result<SnapshotInfo, HmsError> {
+    pub fn snapshot_blocking(&self, destination: String) -> Result<SnapshotInfo, WarmError> {
         self.inner.snapshot(&destination)
     }
 
@@ -352,32 +352,32 @@ impl HmsStore {
 }
 
 /// Runs blocking engine work off the caller's thread.
-async fn offload<T, F>(work: F) -> Result<T, HmsError>
+async fn offload<T, F>(work: F) -> Result<T, WarmError>
 where
     T: Send + 'static,
-    F: FnOnce() -> Result<T, HmsError> + Send + 'static,
+    F: FnOnce() -> Result<T, WarmError> + Send + 'static,
 {
     tokio::task::spawn_blocking(work)
         .await
-        .map_err(|e| HmsError::Internal {
+        .map_err(|e| WarmError::Internal {
             details: e.to_string(),
         })?
 }
 
-/// Converts an engine panic into `HmsError::Internal` instead of unwinding into foreign code.
-fn guarded<T>(work: impl FnOnce() -> Result<T, HmsError>) -> Result<T, HmsError> {
+/// Converts an engine panic into `WarmError::Internal` instead of unwinding into foreign code.
+fn guarded<T>(work: impl FnOnce() -> Result<T, WarmError>) -> Result<T, WarmError> {
     catch_unwind(AssertUnwindSafe(work)).unwrap_or_else(|payload| {
         let details = payload
             .downcast_ref::<&str>()
             .map(|s| (*s).to_owned())
             .or_else(|| payload.downcast_ref::<String>().cloned())
             .unwrap_or_else(|| "engine panic".to_owned());
-        Err(HmsError::Internal { details })
+        Err(WarmError::Internal { details })
     })
 }
 
 /// Logical and allocated bytes of every file under `path`.
-fn directory_bytes(path: &Path) -> Result<(u64, u64), HmsError> {
+fn directory_bytes(path: &Path) -> Result<(u64, u64), WarmError> {
     let (mut logical, mut allocated) = (0, 0);
     for entry in std::fs::read_dir(path)? {
         let entry = entry?;

@@ -17,39 +17,39 @@ questions in `examples/quickstart/queries.json`, each with the article that answ
 === "Rust"
 
     ```sh
-    git clone https://github.com/writerslogic/holographic-memory
-    cd holographic-memory
+    git clone https://github.com/writerslogic/warm
+    cd warm
     cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml
     ```
 
     The example crate depends on the library by path, with the `security` feature, plus
     `rusqlite` (bundled SQLite) for the comparison. In your own project:
-    `cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory --features security`.
+    `cargo add writerslogic-warm --git https://github.com/writerslogic/warm --features security`.
 
 === "Python"
 
-    The Python package is an HTTP client for `hms-server`, which stores vectors you supply.
+    The Python package is an HTTP client for `warm-server`, which stores vectors you supply.
     Start the server, then run the script:
 
     ```sh
-    git clone https://github.com/writerslogic/holographic-memory
-    cd holographic-memory
-    cargo build --release --features server --bin hms-server
-    HMS_API_KEY=quickstart target/release/hms-server --input-dim 384 &
-    HMS_API_KEY=quickstart uv run --with bindings/python/holographic-sdk \
+    git clone https://github.com/writerslogic/warm
+    cd warm
+    cargo build --release --features server --bin warm-server
+    WARM_API_KEY=quickstart target/release/warm-server --input-dim 384 &
+    WARM_API_KEY=quickstart uv run --with bindings/python/warm-sdk \
         python examples/quickstart/python/quickstart.py
     ```
 
     The script embeds text with `toy_embed`, a small hashed bag of words so it needs no model
     download. It is lexical and only a stand-in: use a real embedding model for semantic
-    search. The `holographic-memory-py` wheel provides native vector search and phase vectors;
+    search. The `writerslogic-warm-py` wheel provides native vector search and phase vectors;
     it does not include document search.
 
 === "Node"
 
     ```sh
-    git clone https://github.com/writerslogic/holographic-memory
-    cd holographic-memory
+    git clone https://github.com/writerslogic/warm
+    cd warm
     npm ci --omit=optional && npm run build
     node examples/quickstart/node/quickstart.mjs
     ```
@@ -119,11 +119,11 @@ analysis are not the same thing:
 ```
 
 Read this honestly. Eight hand-written questions on 30 short passages show how the API behaves.
-They are not a benchmark and say nothing about relevance at scale. HMS's default text search is
-stemmed BM25, the same family as FTS5, so on keyword-style queries they largely agree. Supply embeddings (see below) and HMS fuses exact
+They are not a benchmark and say nothing about relevance at scale. WARM's default text search is
+stemmed BM25, the same family as FTS5, so on keyword-style queries they largely agree. Supply embeddings (see below) and WARM fuses exact
 cosine with BM25, which is where it can beat a lexical engine on paraphrases. Measured retrieval
 results on public datasets are on the [benchmarks](../PUBLIC-BENCHMARKS.md) page, including where
-HMS loses.
+WARM loses.
 
 Each hit also carries the passage text, its byte range in the source and the score, so you can
 show a snippet and link back to the source:
@@ -175,7 +175,7 @@ The script also scans every file in the encrypted store for a known passage and 
 contains it, the text segment included. Read the [privacy limits](../concepts/privacy-limits.md)
 for what encryption does not cover (file names, sizes, access patterns).
 
-The Python client cannot encrypt, because `hms-server` has no encryption at rest. It offers
+The Python client cannot encrypt, because `warm-server` has no encryption at rest. It offers
 client-side vector masking with `zero_trust_key`, which is obfuscation: the server still learns
 every pairwise similarity and stores text and metadata in plaintext
 ([server limits](../SERVER.md)).

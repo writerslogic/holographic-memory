@@ -12,11 +12,11 @@ use super::did::did_key_from_ed25519;
 use super::hex_encode;
 use super::vc::iso8601_now;
 
-/// HMS knowledge store manifest using C2PA assertion labels for semantic interop.
+/// WARM knowledge store manifest using C2PA assertion labels for semantic interop.
 /// Signed via COSE Sign1 and also encoded as JUMBF (ISO 19566-5) in StoreManifest.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HmsManifest {
+pub struct WarmManifest {
     pub claim_generator: String,
     pub claim_generator_info: Vec<ClaimGeneratorInfo>,
     pub title: String,
@@ -63,7 +63,7 @@ pub struct Ingredient {
     pub hash: Option<String>,
 }
 
-/// Parameters for creating an HMS store manifest.
+/// Parameters for creating an WARM store manifest.
 pub struct ManifestParams<'a> {
     pub store_id: &'a str,
     pub fact_count: usize,
@@ -73,11 +73,11 @@ pub struct ManifestParams<'a> {
     pub ingredients: Vec<Ingredient>,
 }
 
-/// Create an HMS manifest with C2PA-style assertions.
+/// Create an WARM manifest with C2PA-style assertions.
 pub fn create_manifest(
     signing_key: &SigningKey,
     params: &ManifestParams<'_>,
-) -> Result<HmsManifest> {
+) -> Result<WarmManifest> {
     let did = did_key_from_ed25519(&signing_key.verifying_key().to_bytes());
     let timestamp = iso8601_now();
     let hash_hex = hex_encode(params.store_hash);
@@ -99,7 +99,7 @@ pub fn create_manifest(
                 "actions": [{
                     "action": "c2pa.created",
                     "softwareAgent": {
-                        "name": "holographic-memory",
+                        "name": "writerslogic-warm",
                         "version": env!("CARGO_PKG_VERSION"),
                     },
                     "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/algorithmicMedia",
@@ -129,7 +129,7 @@ pub fn create_manifest(
             label: "c2pa.ai".to_string(),
             data: serde_json::json!({
                 "model": {
-                    "name": "holographic-memory",
+                    "name": "writerslogic-warm",
                     "version": env!("CARGO_PKG_VERSION"),
                 },
                 "description": "Content encoded into hyperdimensional vectors via algebraic operations (FFT-based circular convolution). Original content cannot be reconstructed from stored vectors.",
@@ -137,14 +137,14 @@ pub fn create_manifest(
         },
     ];
 
-    Ok(HmsManifest {
-        claim_generator: format!("holographic-memory/{}", env!("CARGO_PKG_VERSION")),
+    Ok(WarmManifest {
+        claim_generator: format!("writerslogic-warm/{}", env!("CARGO_PKG_VERSION")),
         claim_generator_info: vec![ClaimGeneratorInfo {
-            name: "holographic-memory".to_string(),
+            name: "writerslogic-warm".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
             icon: None,
         }],
-        title: params.title.unwrap_or("HMS Knowledge Store").to_string(),
+        title: params.title.unwrap_or("WARM Knowledge Store").to_string(),
         format: "application/x-hms-store".to_string(),
         instance_id: format!("urn:hms:store:{}", params.store_id),
         assertions,
@@ -158,7 +158,7 @@ pub fn create_manifest(
 }
 
 /// Serialize manifest to crJSON sidecar format and sign it.
-pub fn sign_manifest(signing_key: &SigningKey, manifest: &HmsManifest) -> Result<Vec<u8>> {
+pub fn sign_manifest(signing_key: &SigningKey, manifest: &WarmManifest) -> Result<Vec<u8>> {
     let json_bytes =
         serde_json::to_vec(manifest).map_err(|e| anyhow!("manifest serialization failed: {e}"))?;
 
@@ -169,13 +169,13 @@ pub fn sign_manifest(signing_key: &SigningKey, manifest: &HmsManifest) -> Result
 pub fn verify_manifest(
     verifying_key: &ed25519_dalek::VerifyingKey,
     signed_bytes: &[u8],
-) -> Result<HmsManifest> {
+) -> Result<WarmManifest> {
     let payload = super::cose::verify_and_extract(verifying_key, signed_bytes)?;
     serde_json::from_slice(&payload).map_err(|e| anyhow!("manifest deserialization failed: {e}"))
 }
 
 /// Validate that a manifest's store hash matches the actual store contents.
-pub fn validate_store_hash(manifest: &HmsManifest, store_data: &[u8]) -> Result<bool> {
+pub fn validate_store_hash(manifest: &WarmManifest, store_data: &[u8]) -> Result<bool> {
     let expected_hex = signed_store_hash(manifest)?;
     let actual_hash = Sha256::digest(store_data);
     let actual_hex = hex_encode(&actual_hash);
@@ -184,7 +184,7 @@ pub fn validate_store_hash(manifest: &HmsManifest, store_data: &[u8]) -> Result<
 }
 
 /// The store hash, in hex, that the manifest's `c2pa.hash.data` assertion carries.
-pub(crate) fn signed_store_hash(manifest: &HmsManifest) -> Result<&str> {
+pub(crate) fn signed_store_hash(manifest: &WarmManifest) -> Result<&str> {
     let hash_assertion = manifest
         .assertions
         .iter()
@@ -317,14 +317,14 @@ fn validate_agent_credential(
     super::vc::verify_credential_json(std::str::from_utf8(&serialized.0)?)
 }
 
-/// Create an HMS agent-provenance sidecar after authenticating a current agent
+/// Create an WARM agent-provenance sidecar after authenticating a current agent
 /// credential issued by the claim key. This admission check does not establish
 /// external issuer authority or full CAWG conformance.
 pub fn create_agent_provenance_manifest(
     claim_key: &SigningKey,
     agent_key: &SigningKey,
     params: &AgentProvenanceParams<'_>,
-) -> Result<(HmsManifest, Vec<u8>)> {
+) -> Result<(WarmManifest, Vec<u8>)> {
     validate_agent_credential(claim_key, agent_key, params.agent_credential)?;
     let store_hash: [u8; 32] = Sha256::digest(params.asset).into();
     let mp = ManifestParams {
@@ -463,12 +463,12 @@ fn validate_training_policy(policy: &serde_json::Value) -> Result<()> {
     Ok(())
 }
 
-/// Verify the signed HMS sidecar and bind every ICA reference to an assertion in it.
+/// Verify the signed WARM sidecar and bind every ICA reference to an assertion in it.
 /// Asset content and issuer trust require separate checks by the caller.
 pub fn verify_agent_provenance_manifest(
     claim_vk: &ed25519_dalek::VerifyingKey,
     signed_bytes: &[u8],
-) -> Result<HmsManifest> {
+) -> Result<WarmManifest> {
     let manifest = verify_manifest(claim_vk, signed_bytes)?;
     let mut assertions = HashMap::new();
     for assertion in &manifest.assertions {
@@ -513,7 +513,7 @@ pub fn verify_agent_provenance_manifest(
         ] {
             anyhow::ensure!(
                 asset.get(field).is_none(),
-                "CAWG {field} needs C2PA claim context unavailable in the HMS sidecar"
+                "CAWG {field} needs C2PA claim context unavailable in the WARM sidecar"
             );
         }
         anyhow::ensure!(
@@ -829,7 +829,7 @@ mod tests {
         };
         let (mut other, _) =
             create_agent_provenance_manifest(&claim_key, &other_key, &other_params).unwrap();
-        let identity = |m: &HmsManifest| {
+        let identity = |m: &WarmManifest| {
             m.assertions
                 .iter()
                 .position(|a| a.label == "cawg.identity")

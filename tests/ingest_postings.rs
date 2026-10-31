@@ -7,9 +7,9 @@
 //! posting list), replacements and a deferred encoding catch-up reach the results of a fresh
 //! store holding the same documents.
 
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde_json::{json, Value};
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 const VOCABULARY: [&str; 64] = [
     "memory",
@@ -150,8 +150,8 @@ fn queries() -> Vec<String> {
         .collect()
 }
 
-fn open(dir: &tempfile::TempDir) -> anyhow::Result<HmsCore> {
-    HmsCore::new(1024, Some(dir.path().display().to_string()), None)
+fn open(dir: &tempfile::TempDir) -> anyhow::Result<WarmCore> {
+    WarmCore::new(1024, Some(dir.path().display().to_string()), None)
 }
 
 /// Unfiltered rankings (the posting-list path) with a deep candidate pool, plus a shallower
@@ -192,7 +192,7 @@ fn all_options() -> Vec<SearchOptions> {
 }
 
 /// Every result list, serialized: id, document id, offsets, text, scores.
-fn results(core: &HmsCore, options: &[SearchOptions]) -> anyhow::Result<Vec<Value>> {
+fn results(core: &WarmCore, options: &[SearchOptions]) -> anyhow::Result<Vec<Value>> {
     let mut all = Vec::new();
     for query in queries() {
         for options in options {

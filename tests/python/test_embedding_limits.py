@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-import holographic_memory as hm
+import writerslogic_warm as hm
 
 
 @pytest.fixture

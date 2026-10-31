@@ -1,14 +1,14 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Encode a cached BEIR dataset into learned sparse vectors for the HMS sparse engine.
+"""Encode a cached BEIR dataset into learned sparse vectors for the WARM sparse engine.
 
 Usage: learned_sparse_encode.py --dataset {nfcorpus,scifact} --model {splade-v3,splade-pp-ed,os-doc-v2-distill}
-                                [--cache ~/.cache/hms-bench] [--device mps|cpu] [--batch 32]
+                                [--cache ~/.cache/warm-bench] [--device mps|cpu] [--batch 32]
 
 Reads the cached corpus and test queries, plus the tuning split from the BEIR zip in
 <cache>/downloads (NFCorpus dev, SciFact train), and writes under
 <cache>/sparse/<dataset>/<model>/: corpus.sparse, queries_test.sparse, queries_tune.sparse (the
-binary format `sparse-bench` reads: magic HMSSPRS1, u32 vocab, u32 n, then per record u32 len,
+binary format `sparse-bench` reads: magic WARMSPRS1, u32 vocab, u32 n, then per record u32 len,
 u32 ids ascending, f32 weights), the matching *_ids.json, qrels_test.tsv, qrels_tune.tsv, and the
 Anserini JsonVectorCollection and JsonIntVector topics with weights quantized by 100.
 
@@ -91,7 +91,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--dataset", choices=sorted(TUNE_SPLIT), required=True)
     p.add_argument("--model", choices=sorted(MODELS), required=True)
-    p.add_argument("--cache", default=os.path.expanduser("~/.cache/hms-bench"))
+    p.add_argument("--cache", default=os.path.expanduser("~/.cache/warm-bench"))
     p.add_argument("--device", default="mps")
     p.add_argument("--batch", type=int, default=32)
     a = p.parse_args()

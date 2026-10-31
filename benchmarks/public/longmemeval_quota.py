@@ -8,7 +8,7 @@
 
 Leaf M1 of the 2026-10 ideas tree: the dense-only proxy passed its rule by one question,
 so the policy is re-measured on the full tuned pipeline (longmemeval_config.json) using the
-cached scores of a Modal dev run (`modal volume get hms-lme runs/<tag>`; no compute). The turn
+cached scores of a Modal dev run (`modal volume get warm-lme runs/<tag>`; no compute). The turn
 ranking is post-processed: at most c turns per session before any session's (c+1)-th; the rest
 of the order is unchanged. Writes benchmarks/results/longmemeval_dev_quota.json. Decision rule
 (stated before the run): adopt only if multi-session turn recall_all@5 rises >= 0.04 with overall

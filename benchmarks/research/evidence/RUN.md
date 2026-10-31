@@ -1,7 +1,7 @@
 # Local evidence research prototype
 
 This standalone, unpublished crate exercises source-checked assertions, bounded
-event aggregation, source repair and proof-cut planning through HMS storage. The
+event aggregation, source repair and proof-cut planning through WARM storage. The
 fixtures contain generated local data. Supplied entity IDs, predicates, event
 alternatives, amounts and times are an **oracle-extraction control**: the program
 does not extract these annotations or call a model, API or cloud service. This

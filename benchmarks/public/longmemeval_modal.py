@@ -3,12 +3,12 @@
   uvx modal run benchmarks/public/longmemeval_modal.py --dataset s --part dev --models small --cap 5
   uvx modal run benchmarks/public/longmemeval_modal.py --dataset m --part all --models large --cap <USD>
 
-Stages (each cached in the Modal Volume `hms-lme`, keyed by sha256 of model@revision + prompt +
+Stages (each cached in the Modal Volume `warm-lme`, keyed by sha256 of model@revision + prompt +
 text, written shard by shard with a volume commit, so an interrupted run resumes where it stopped):
   facts    LLM user-fact extraction per session (vLLM)            only if a fact key kind is used
   queries  LLM rewrite / sub-queries / time range per question     only if used by the config
   embed    Qwen3-Embedding keys and query variants (sentence-transformers, model-card prompt)
-  scores   HMS document API BM25 + exact cosine per question (public-bench lme-scores, built here)
+  scores   WARM document API BM25 + exact cosine per question (public-bench lme-scores, built here)
   rerank   Qwen3-Reranker yes/no probability for the top candidates (model-card prompt)
   rank     fusion config from --config, official eval_utils.py metrics per split part
 
@@ -32,7 +32,7 @@ import modal
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))  # longmemeval_pipeline ships with the images
 REPO = HERE.parents[1] if len(HERE.parents) > 1 else HERE  # containers import this file from /root
-VOL = modal.Volume.from_name("hms-lme", create_if_missing=True)
+VOL = modal.Volume.from_name("warm-lme", create_if_missing=True)
 V = Path("/vol")
 HF = {"HF_HOME": "/vol/hf", "TOKENIZERS_PARALLELISM": "false"}
 
@@ -83,8 +83,8 @@ cpu_image = (
 )
 
 
-def _hms_image(cap: str) -> modal.Image:
-    """public-bench with HMS's own model stages (candle, CUDA); `cap` is the CUDA compute capability."""
+def _warm_image(cap: str) -> modal.Image:
+    """public-bench with WARM's own model stages (candle, CUDA); `cap` is the CUDA compute capability."""
     return (
         modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.12")
         .apt_install("curl", "build-essential", "pkg-config")
@@ -97,7 +97,7 @@ def _hms_image(cap: str) -> modal.Image:
             ignore=["target", "**/target", ".git", ".venv", "**/.venv", ".claude", "**/node_modules", "figures",
                     "benchmarks/results"],
         )
-        .env({"CUDA_COMPUTE_CAP": cap, "RUSTFLAGS": "--cfg hms_cuda"})
+        .env({"CUDA_COMPUTE_CAP": cap, "RUSTFLAGS": "--cfg warm_cuda"})
         .run_commands("cd /src && /root/.cargo/bin/cargo build --release --locked --features local-models,cli,mimalloc --bin public-bench")
         .env(HF)
         .add_local_python_source("longmemeval_pipeline")
@@ -106,10 +106,10 @@ def _hms_image(cap: str) -> modal.Image:
 
 # One image for compute capability 8.9 (L4). candle-kernels 0.11 does not compile for sm_75 (T4) on
 # CUDA 12.4: its compatibility.cuh redefines __hmax_nan/__hmin_nan below __CUDA_ARCH__ 800, which
-# cuda_fp16.h already provides. The HMS engine therefore runs every stage on L4.
-hms_l4_image = _hms_image("89")
-ENGINE = "python"  # "hms": the model stages run in HMS (public-bench lme-model) instead of Python
-app = modal.App("hms-longmemeval")
+# cuda_fp16.h already provides. The WARM engine therefore runs every stage on L4.
+warm_l4_image = _warm_image("89")
+ENGINE = "python"  # "warm": the model stages run in WARM (public-bench lme-model) instead of Python
+app = modal.App("warm-longmemeval")
 
 
 def _gpu(kind: str, models: str) -> str:
@@ -212,8 +212,8 @@ def _rerank(model: str, rev: str, gpu: str, pairs: list[tuple[str, str]]) -> tup
     return scores, time.time() - t
 
 
-def _hms(stage: str, model: str, rev: str, payload, query: bool = False) -> tuple[bytes, float]:
-    """One HMS model stage. The harness fetches the pinned snapshot; HMS checks the revision it records."""
+def _warm(stage: str, model: str, rev: str, payload, query: bool = False) -> tuple[bytes, float]:
+    """One WARM model stage. The harness fetches the pinned snapshot; WARM checks the revision it records."""
     import subprocess
     import tempfile
 
@@ -233,40 +233,40 @@ def _hms(stage: str, model: str, rev: str, payload, query: bool = False) -> tupl
         return dst.read_bytes(), time.time() - t
 
 
-def _embed_hms(model, rev, gpu, texts, is_query):
+def _embed_warm(model, rev, gpu, texts, is_query):
     import numpy as np
 
-    data, secs = _hms("embed", model, rev, texts, is_query)
+    data, secs = _warm("embed", model, rev, texts, is_query)
     return np.frombuffer(data, dtype="<f4").astype(np.float16).tobytes(), secs
 
 
-def _llm_hms(model, rev, gpu, prompts):
-    data, secs = _hms("chat", model, rev, prompts)
+def _llm_warm(model, rev, gpu, prompts):
+    data, secs = _warm("chat", model, rev, prompts)
     return json.loads(data), secs
 
 
-def _rerank_hms(model, rev, gpu, pairs):
-    data, secs = _hms("rerank", model, rev, [list(p) for p in pairs])
+def _rerank_warm(model, rev, gpu, pairs):
+    data, secs = _warm("rerank", model, rev, [list(p) for p in pairs])
     return json.loads(data), secs
 
 
 _gpu_kw = dict(image=gpu_image, volumes={"/vol": VOL}, timeout=6 * 3600, max_containers=4)
-_hms_kw = dict(volumes={"/vol": VOL}, timeout=6 * 3600, max_containers=4)
+_warm_kw = dict(volumes={"/vol": VOL}, timeout=6 * 3600, max_containers=4)
 
 
-@app.function(gpu="L4", image=hms_l4_image, **_hms_kw)
-def embed_hms_l4(*a):
-    return _embed_hms(*a)
+@app.function(gpu="L4", image=warm_l4_image, **_warm_kw)
+def embed_warm_l4(*a):
+    return _embed_warm(*a)
 
 
-@app.function(gpu="L4", image=hms_l4_image, **_hms_kw)
-def llm_hms_l4(*a):
-    return _llm_hms(*a)
+@app.function(gpu="L4", image=warm_l4_image, **_warm_kw)
+def llm_warm_l4(*a):
+    return _llm_warm(*a)
 
 
-@app.function(gpu="L4", image=hms_l4_image, **_hms_kw)
-def rerank_hms_l4(*a):
-    return _rerank_hms(*a)
+@app.function(gpu="L4", image=warm_l4_image, **_warm_kw)
+def rerank_warm_l4(*a):
+    return _rerank_warm(*a)
 
 
 
@@ -303,7 +303,7 @@ def rerank_h100(*a):
 
 FN = {("embed", "T4"): embed_t4, ("embed", "H100"): embed_h100, ("llm", "L4"): llm_l4,
       ("llm", "H100"): llm_h100, ("rerank", "T4"): rerank_t4, ("rerank", "H100"): rerank_h100}
-FN_HMS = {("embed", "L4"): embed_hms_l4, ("llm", "L4"): llm_hms_l4, ("rerank", "L4"): rerank_hms_l4}
+FN_WARM = {("embed", "L4"): embed_warm_l4, ("llm", "L4"): llm_warm_l4, ("rerank", "L4"): rerank_warm_l4}
 
 
 # ----------------------------------------------------------------------------------- driver
@@ -360,8 +360,8 @@ CACHE = V / "cache"  # the driver points this at /vol/<namespace>/cache for an i
 
 
 def _cache_dir(stage: str, model: str, rev: str) -> Path:
-    # HMS-stage outputs never share a cache entry with the Python stages' outputs.
-    return CACHE / stage / (f"{model.replace('/', '__')}@{rev[:12]}" + ("+hms" if ENGINE == "hms" else ""))
+    # WARM-stage outputs never share a cache entry with the Python stages' outputs.
+    return CACHE / stage / (f"{model.replace('/', '__')}@{rev[:12]}" + ("+warm" if ENGINE == "warm" else ""))
 
 
 def _load_json_cache(d: Path) -> dict:
@@ -374,9 +374,9 @@ def _load_json_cache(d: Path) -> dict:
 def _waves(stage, kind, models, items, shard, budget, call, store):
     """Run `call(chunk)` over shards of the missing items in waves of 4 containers, storing each shard."""
     gpu = _gpu(kind, models)
-    if ENGINE == "hms" and gpu == "T4":
-        gpu = "L4"  # see hms_l4_image; the budget is charged at the L4 rate
-    fn = (FN_HMS if ENGINE == "hms" else FN)[(kind, gpu)]
+    if ENGINE == "warm" and gpu == "T4":
+        gpu = "L4"  # see warm_l4_image; the budget is charged at the L4 rate
+    fn = (FN_WARM if ENGINE == "warm" else FN)[(kind, gpu)]
     # Throughput is unknown until measured, so the first wave is a small probe priced at a
     # pessimistic PROBE_SECS_PER_ITEM; later waves are priced from the measured rate.
     shards = [items[:PROBE_ITEMS]] + [items[i:i + shard] for i in range(PROBE_ITEMS, len(items), shard)]
@@ -655,7 +655,7 @@ def driver(dataset: str, part: str, models: str, cap: float, config: dict, tag: 
         "dataset": {"name": f"longmemeval_{dataset}", "release_revision": LME_REVISION, "sha256": DATA_SHA256[dataset],
                     "part": part, "n_questions": len(qs), "n_scored": sum(q.scored for q in qs)},
         "models": {k: {"id": v[0], "revision": v[1], "gpu": v[2]} for k, v in MODELS[models].items()},
-        "engine": "HMS local-models stages (candle, CUDA)" if engine == "hms" else "Python (vLLM, sentence-transformers, transformers)",
+        "engine": "WARM local-models stages (candle, CUDA)" if engine == "warm" else "Python (vLLM, sentence-transformers, transformers)",
         "config": {"turn": cfg_t, "session": cfg_s, "kinds_indexed": kinds},
         "evaluation": {"code": "xiaowu0162/LongMemEval src/retrieval/eval_utils.py", "commit": EVAL_COMMIT,
                        "sha256": ev_sha},
@@ -675,8 +675,8 @@ def main(dataset: str = "s", part: str = "dev", models: str = "small", cap: floa
          out: str = "", cache_ns: str = "", engine: str = "python"):
     if dataset not in ("s", "m") or part not in ("dev", "heldout", "all") or models not in MODELS:
         sys.exit("bad --dataset / --part / --models")
-    if engine not in ("python", "hms") or (engine == "hms" and models != "small"):
-        sys.exit("--engine is python or hms; the HMS stages are wired for the small models")
+    if engine not in ("python", "warm") or (engine == "warm" and models != "small"):
+        sys.exit("--engine is python or warm; the WARM stages are wired for the small models")
     if dataset == "s" and part != "dev":
         sys.exit("on S only dev is run; held-out questions are scored only in the final M run")
     cfg = json.loads(Path(config).read_text())

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Global UniFFI config for the Android flavor: same API, Android-safe cleaner.
-[crates.hms_mobile.bindings.kotlin]
-package_name = "com.writerslogic.holographicmemory"
-cdylib_name = "hms_mobile"
+[crates.warm_mobile.bindings.kotlin]
+package_name = "com.writerslogic.warm"
+cdylib_name = "warm_mobile"
 android = true

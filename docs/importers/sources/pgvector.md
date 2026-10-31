@@ -1,6 +1,6 @@
 # pgvector (PostgreSQL and Supabase)
 
-`hms-import pgvector --dsn ... --table docs --key-column id --map text=content --map vector=embedding --map metadata=meta --map namespace=tenant --map created_at=created_at`
+`warm-import pgvector --dsn ... --table docs --key-column id --map text=content --map vector=embedding --map metadata=meta --map namespace=tenant --map created_at=created_at`
 
 - Connection: `--dsn`, else `$DATABASE_URL`, else libpq `PG*` variables. A Supabase project is a Postgres DSN (use the direct or pooler connection string). The password is registered as a secret and never printed, stored or reported.
 - `--table` pages by `--key-column` (unique, sortable; keyset `WHERE key > last`), so runs resume from a cursor. `--query` streams a server-side cursor and resumes by skipping a verified prefix; give it a stable `ORDER BY`.

@@ -1,10 +1,10 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""A DSPy RAG program whose retriever is Holographic Memory.
+"""A DSPy RAG program whose retriever is WARM.
 
-Start a service first:  HMS_API_KEY=dev hms-server --input-dim 384
-Then:                   HMS_URL=http://127.0.0.1:8080 HMS_API_KEY=dev python dspy_rag.py
+Start a service first:  WARM_API_KEY=dev warm-server --input-dim 384
+Then:                   WARM_URL=http://127.0.0.1:8080 WARM_API_KEY=dev python dspy_rag.py
 
 The language model is DSPy's DummyLM so the example runs offline; replace it with
 `dspy.LM("openai/gpt-4o-mini")` (or any LiteLLM model) to answer for real.
@@ -15,22 +15,22 @@ import os
 import dspy
 from dspy.utils import DummyLM
 
-from holographic_integrations.dspy import HolographicRetriever
+from writerslogic_warm_integrations.dspy import WarmRetriever
 
-retriever = HolographicRetriever(
+retriever = WarmRetriever(
     k=2,
-    url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"),
-    api_key=os.environ.get("HMS_API_KEY"),
-    tenant_id=os.environ.get("HMS_TENANT", "dspy-example"),
-    input_dim=int(os.environ.get("HMS_INPUT_DIM", "384")),
+    url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"),
+    api_key=os.environ.get("WARM_API_KEY"),
+    tenant_id=os.environ.get("WARM_TENANT", "dspy-example"),
+    input_dim=int(os.environ.get("WARM_INPUT_DIM", "384")),
 )
 retriever.add(
     [
-        "Holographic Memory runs on your machine and makes no service calls.",
+        "WARM runs on your machine and makes no service calls.",
         "DSPy compiles declarative programs into prompts and weights.",
         "Pasta needs ripe tomato and basil.",
     ],
-    ids=["hms", "dspy", "pasta"],
+    ids=["warm", "dspy", "pasta"],
 )
 
 
@@ -45,7 +45,7 @@ class RAG(dspy.Module):
 
 
 with dspy.context(lm=DummyLM([{"reasoning": "the first passage says so", "answer": "on your machine"}])):
-    out = RAG()("Where does Holographic Memory run?")
+    out = RAG()("Where does WARM run?")
 print(out.answer)
-print(retriever("Where does Holographic Memory run?").ids)
-retriever.delete(["hms", "dspy", "pasta"])
+print(retriever("Where does WARM run?").ids)
+retriever.delete(["warm", "dspy", "pasta"])

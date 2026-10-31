@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { embed, embedMany, rerank, tool, type EmbeddingModel, type LanguageModelMiddleware, type RerankingModel, type Tool } from 'ai'
 import { z } from 'zod'
-import type { Embedder, FilterLike, Hit, HmsStore, Metadata, Reranker } from '@holographic-memory/core'
+import type { Embedder, FilterLike, Hit, WarmStore, Metadata, Reranker } from '@writerslogic/warm-core'
 
 type Params = Parameters<NonNullable<LanguageModelMiddleware['transformParams']>>[0]['params']
 
@@ -53,7 +53,7 @@ function publicHit(h: Hit) {
  * Memory tools for `generateText`, `streamText` and `ToolLoopAgent`: spread the result into `tools`.
  * Inputs are validated by zod; `execute` returns plain JSON.
  */
-export function memoryTools(store: HmsStore, options: MemoryToolsOptions = {}): MemoryTools {
+export function memoryTools(store: WarmStore, options: MemoryToolsOptions = {}): MemoryTools {
   const names = { remember: 'remember', recall: 'recall', forget: 'forget', ...options.names }
   const defaultK = options.k ?? 4
   const remember = tool({
@@ -124,7 +124,7 @@ function defaultFormat(hits: Hit[]): string {
  * Use with `wrapLanguageModel({ model, middleware: memoryMiddleware(store) })`. The model call gets the
  * recalled text; stored conversation history is untouched.
  */
-export function memoryMiddleware(store: HmsStore, options: MemoryMiddlewareOptions = {}): LanguageModelMiddleware {
+export function memoryMiddleware(store: WarmStore, options: MemoryMiddlewareOptions = {}): LanguageModelMiddleware {
   const maxChars = options.maxChars ?? 4000
   const format = options.format ?? defaultFormat
   return {

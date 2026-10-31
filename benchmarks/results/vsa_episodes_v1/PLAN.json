@@ -1,0 +1,29 @@
+{
+  "status": "frozen_before_implementation_and_execution",
+  "source_commit": "2e4c91d475adeef28200c66c12955f059db338bd",
+  "hypothesis": "Role-bound episode signatures provide retrieval quality or complete retained-state/latency advantage over exact structural indexing with the same supplied annotations.",
+  "scope": "Synthetic structured admission experiment; no learned extraction, natural-language entailment or production engine integration claim.",
+  "development_seed": 11,
+  "evaluation_seeds": [101, 211, 307],
+  "documents": [256, 1024],
+  "facts_per_document": [2, 8, 32],
+  "queries_per_case": 96,
+  "query_classes": ["full_triple", "subject_predicate", "predicate_object", "two_clauses", "role_reversal", "absent"],
+  "dimensions": 2048,
+  "phase_resolution": 2,
+  "encoding": "Production PhaseHVec role-qualified atoms, binding and bundling; seven nonempty role projections per episode; pack binary phases into existing research BitVec/popcount scorer. One fixed configuration; no evaluation tuning.",
+  "methods": ["exact_role_postings", "bm25_verified", "vsa_verified_32", "vsa_verified_128", "vsa_verified_32_fallback"],
+  "candidate_limits": [32, 128],
+  "k": 5,
+  "timing": {"warmup": 1, "repeats": 3, "order": "alternating method order per repeat", "execution_timeout_seconds": 600},
+  "lifecycle": {"replacements": 16, "deletions": 16, "phases": ["initial", "mutated", "snapshot_reopen"]},
+  "validation": ["independent exhaustive relational oracle", "source quote and version fidelity", "namespace and validity filtering", "no deleted results", "index rebuild parity", "update/delete query agreement", "packed scorer parity with native phase similarity"],
+  "promotion": {
+    "safety": "zero unsupported, wrong-source, wrong-version, wrong-namespace, invalid-time or deleted outputs",
+    "quality": "recall at least 0.99 and no more than 0.01 below exact baseline in every case",
+    "advantage": "At matched quality, at least 20 percent lower end-to-end median query latency OR total retained allocation including canonical records and codebook; no more than 10 percent query/ingest/update/reopen regression in any case for the selected arm",
+    "consistency": "one unchanged arm must satisfy the gates across all seeds, corpus sizes and interference levels",
+    "stop": "No production promotion if no arm passes. No post-evaluation parameter tuning or more expensive learned evaluation to rescue a failure."
+  },
+  "limits": ["All canonical facts supplied equally to every method; this is an oracle-extraction control.", "BM25 is the existing research implementation over shared roleless token IDs, not a measurement of native HMS hybrid search.", "Exact role postings plus source verification is the decisive baseline; existing failed surface-order contrast results are retained, not rerun.", "Allocation accounting is not RSS; process peak RSS will be reported separately.", "Only local/free resources; no API calls, cloud work, model downloads or production changes."]
+}

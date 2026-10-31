@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{ensure, Context, Result};
-use holographic_memory::{chunk_document, DocumentInput, HmsCore, SearchOptions};
 use serde_json::{json, Value};
 use std::io::Read;
+use writerslogic_warm::{chunk_document, DocumentInput, SearchOptions, WarmCore};
 
 const MAX_INPUT_BYTES: u64 = 8 * 1024 * 1024;
 
@@ -104,14 +104,14 @@ fn main() -> Result<()> {
         "import" if args.len() == 4 => {
             // Validate before opening a store: malformed input must not create one.
             let input = adapt(namespace, read_document(&args[3])?)?;
-            let hms = HmsCore::new(4096, Some(args[1].clone()), None)?;
-            let count = hms.memorize_document(input)?;
-            hms.flush()?;
+            let warm = WarmCore::new(4096, Some(args[1].clone()), None)?;
+            let count = warm.memorize_document(input)?;
+            warm.flush()?;
             println!("Imported {count} chunks");
         }
         "search" if args.len() == 4 => {
-            let hms = HmsCore::new(4096, Some(args[1].clone()), None)?;
-            let hits = hms.search_documents(
+            let warm = WarmCore::new(4096, Some(args[1].clone()), None)?;
+            let hits = warm.search_documents(
                 &args[3],
                 &SearchOptions {
                     filter: Some(json!({"hms_namespace": namespace})),
@@ -125,9 +125,9 @@ fn main() -> Result<()> {
             if args.len() == 5 {
                 println!("Dry run: would remove document {id}; pass --apply to execute");
             } else {
-                let hms = HmsCore::new(4096, Some(args[1].clone()), None)?;
-                let removed = hms.delete_document(&id)?;
-                hms.flush()?;
+                let warm = WarmCore::new(4096, Some(args[1].clone()), None)?;
+                let removed = warm.delete_document(&id)?;
+                warm.flush()?;
                 println!("Removed: {removed}");
             }
         }
@@ -152,7 +152,7 @@ mod tests {
     fn sources_versions_offsets_and_forgetting_survive_restart() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let path = dir.path().display().to_string();
-        let hms = HmsCore::new(4096, Some(path.clone()), None)?;
+        let warm = WarmCore::new(4096, Some(path.clone()), None)?;
         let original = format!(
             " \nCafé: {}\nzebraquartz provenance decision.  ",
             "naïve ".repeat(500)
@@ -160,12 +160,12 @@ mod tests {
         let mut expected_metadata = source("Zoom", &original, "revision-1");
         let zoom = adapt("toip", expected_metadata.clone())?;
         let id = zoom.id.clone();
-        hms.memorize_document(zoom)?;
-        hms.memorize_document(adapt(
+        warm.memorize_document(zoom)?;
+        warm.memorize_document(adapt(
             "toip",
             source("Confluence", "zebraquartz policy", "revision-1"),
         )?)?;
-        hms.memorize_document(adapt(
+        warm.memorize_document(adapt(
             "other",
             source("Zoom", "zebraquartz private", "revision-1"),
         )?)?;
@@ -173,7 +173,7 @@ mod tests {
             filter: Some(json!({"hms_namespace":"toip"})),
             ..Default::default()
         };
-        let hits = hms.search_documents("zebraquartz", &options)?;
+        let hits = warm.search_documents("zebraquartz", &options)?;
         assert_eq!(hits.len(), 2);
         let hit = hits.iter().find(|h| h.document_id == id).unwrap();
         assert!(hit.start_byte > 0);
@@ -188,25 +188,25 @@ mod tests {
             hit.source_uri.as_deref(),
             Some("https://example.org/source")
         );
-        hms.memorize_document(adapt(
+        warm.memorize_document(adapt(
             "toip",
             source("Zoom", "amberquartz updated decision", "revision-2"),
         )?)?;
-        assert_eq!(hms.search_documents("zebraquartz", &options)?.len(), 1);
-        hms.flush()?;
-        drop(hms);
-        let hms = HmsCore::new(4096, Some(path.clone()), None)?;
+        assert_eq!(warm.search_documents("zebraquartz", &options)?.len(), 1);
+        warm.flush()?;
+        drop(warm);
+        let warm = WarmCore::new(4096, Some(path.clone()), None)?;
         assert_eq!(
-            hms.search_documents("amberquartz", &options)?[0].version,
+            warm.search_documents("amberquartz", &options)?[0].version,
             "revision-2"
         );
-        assert!(hms.delete_document(&id)?);
-        assert!(!hms.delete_document(&id)?);
-        hms.flush()?;
-        drop(hms);
-        let hms = HmsCore::new(4096, Some(path), None)?;
-        assert!(hms.search_documents("amberquartz", &options)?.is_empty());
-        assert_eq!(hms.search_documents("zebraquartz", &options)?.len(), 1);
+        assert!(warm.delete_document(&id)?);
+        assert!(!warm.delete_document(&id)?);
+        warm.flush()?;
+        drop(warm);
+        let warm = WarmCore::new(4096, Some(path), None)?;
+        assert!(warm.search_documents("amberquartz", &options)?.is_empty());
+        assert_eq!(warm.search_documents("zebraquartz", &options)?.len(), 1);
         Ok(())
     }
 

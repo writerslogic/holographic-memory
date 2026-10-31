@@ -7,22 +7,22 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-use holographic_memory::{core::HmsConfig, DocumentInput, DocumentResult, HmsCore, SearchOptions};
 use serde_json::json;
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::{core::WarmConfig, DocumentInput, DocumentResult, SearchOptions, WarmCore};
 
 const DIM: u32 = 256;
 const CHECKPOINT: &str = "documents.ckpt";
 
-fn config(checkpoints: bool) -> HmsConfig {
-    let mut config = HmsConfig::default();
+fn config(checkpoints: bool) -> WarmConfig {
+    let mut config = WarmConfig::default();
     config.document_checkpoint.enabled = checkpoints;
     config.document_checkpoint.min_journal_bytes = 0;
     config
 }
 
-fn open(path: &Path, config: HmsConfig) -> Result<HmsCore> {
-    HmsCore::new(DIM, Some(path.display().to_string()), Some(config))
+fn open(path: &Path, config: WarmConfig) -> Result<WarmCore> {
+    WarmCore::new(DIM, Some(path.display().to_string()), Some(config))
 }
 
 fn next(state: &mut u64) -> u64 {
@@ -65,7 +65,7 @@ fn lexical() -> IngestOptions {
 
 /// Multi-chunk documents with metadata, stored and unstored text, a chunk without terms, replaced and
 /// deleted documents (so free and reused slots), written in several batches.
-fn build(core: &HmsCore, seed: u64, batches: usize) -> Result<()> {
+fn build(core: &WarmCore, seed: u64, batches: usize) -> Result<()> {
     let mut state = seed;
     for batch in 0..batches {
         let inputs = (0..60)
@@ -97,7 +97,7 @@ fn build(core: &HmsCore, seed: u64, batches: usize) -> Result<()> {
 }
 
 /// One replace, one delete and one new document, as the ops benchmark does.
-fn write_some(core: &HmsCore, round: usize) -> Result<()> {
+fn write_some(core: &WarmCore, round: usize) -> Result<()> {
     let mut state = 0xC0FFEE + round as u64;
     core.memorize_documents_with(
         vec![serde_json::from_value(json!({
@@ -147,7 +147,7 @@ fn queries() -> Vec<(String, SearchOptions)> {
 }
 
 /// Every field of every hit (scores as bits), then every stored record.
-fn answers(core: &HmsCore) -> Result<Vec<String>> {
+fn answers(core: &WarmCore) -> Result<Vec<String>> {
     let render = |r: &DocumentResult| {
         format!(
             "{}|{}|{:?}|{}|{}|{:?}|{}..{}|{:x}|{:x}|{:?}",
@@ -172,7 +172,7 @@ fn answers(core: &HmsCore) -> Result<Vec<String>> {
     Ok(out)
 }
 
-fn records(core: &HmsCore) -> Vec<String> {
+fn records(core: &WarmCore) -> Vec<String> {
     core.list_documents(None, 10_000)
         .iter()
         .map(|record| format!("{record:?}"))
@@ -270,7 +270,7 @@ fn checkpointed_store_answers_exactly_as_full_replay_through_writes_and_reopens(
     Ok(())
 }
 
-fn ids(core: &HmsCore) -> Vec<String> {
+fn ids(core: &WarmCore) -> Vec<String> {
     core.list_documents(None, 10_000)
         .into_iter()
         .map(|record| record.id)
@@ -356,12 +356,12 @@ fn writes_over_a_checkpoint_score_exactly_as_the_store_without_one() -> Result<(
 /// A checkpoint is the store's data: a damaged one fails the open instead of being skipped.
 const EMBED: usize = 8;
 
-fn embedded(checkpoints: bool, keep_tail: bool) -> HmsConfig {
+fn embedded(checkpoints: bool, keep_tail: bool) -> WarmConfig {
     let mut config = config(checkpoints);
     if keep_tail {
         config.document_checkpoint.min_journal_bytes = usize::MAX;
     }
-    config.embedding_space = Some(holographic_memory::EmbeddingSpace {
+    config.embedding_space = Some(writerslogic_warm::EmbeddingSpace {
         model: "fixture".into(),
         revision: "1".into(),
         dimensions: EMBED,
@@ -377,9 +377,9 @@ fn embedding(seed: u64) -> Vec<f64> {
         .collect()
 }
 
-/// Chunk-vector hits (`HmsCore::query`) of a few probes: ids and similarity bits, in a
+/// Chunk-vector hits (`WarmCore::query`) of a few probes: ids and similarity bits, in a
 /// canonical order.
-fn vector_hits(core: &HmsCore) -> Vec<String> {
+fn vector_hits(core: &WarmCore) -> Vec<String> {
     let mut state = 11u64;
     let mut out = Vec::new();
     for _ in 0..4 {
@@ -397,8 +397,8 @@ fn vector_hits(core: &HmsCore) -> Vec<String> {
 }
 
 /// Hybrid (BM25 plus query embedding) and exact embedding-only answers, scores as bits.
-fn embedding_answers(core: &HmsCore) -> Result<Vec<String>> {
-    use holographic_memory::core::documents::{VectorIndexMode, VectorQueryOptions};
+fn embedding_answers(core: &WarmCore) -> Result<Vec<String>> {
+    use writerslogic_warm::core::documents::{VectorIndexMode, VectorQueryOptions};
     let render = |r: &DocumentResult| {
         format!(
             "{}|{:x}|{:x}|{:?}",

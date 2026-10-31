@@ -108,7 +108,7 @@ doc = {
     "description": "Batched Qwen3 decoding (vendored Qwen3 forward with per-row positions and a "
                    "left-padding mask, continuous batching) and right-padded encoder batches, "
                    "local-models feature on Apple M4 Metal. Parity runs were untimed. Timed runs are "
-                   "paired: one ./.hms-target/timed.sh invocation per plan, arms "
+                   "paired: one ./.warm-target/timed.sh invocation per plan, arms "
                    "alternating in plan order for 2 rounds, gate 1-minute load < 8 with one 900 s "
                    "wait budget shared by the whole invocation (batching_timing.py); once it is "
                    "spent, runs start regardless and carry load_gate_met false. Arms named "

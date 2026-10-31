@@ -5,9 +5,9 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "holographic-memory-claude-tool"
+name = "writerslogic-warm-claude-tool"
 version = "0.1.0"
-description = "Backend for Anthropic's client-side memory tool (memory_20250818) on Holographic Memory: a /memories virtual filesystem with semantic recall."
+description = "Backend for Anthropic's client-side memory tool (memory_20250818) on WARM: a /memories virtual filesystem with semantic recall."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -16,14 +16,14 @@ keywords = ["anthropic", "claude", "memory-tool", "mcp", "agent-memory", "local-
 dependencies = ["anthropic>=1.16", "mcp>=2.3,<3"]
 
 [project.urls]
-Homepage = "https://github.com/writerslogic/holographic-memory/tree/main/docs/integrations/claude-memory-tool"
-Repository = "https://github.com/writerslogic/holographic-memory"
+Homepage = "https://github.com/writerslogic/warm/tree/main/docs/integrations/claude-memory-tool"
+Repository = "https://github.com/writerslogic/warm"
 
 [dependency-groups]
 dev = ["pytest>=8", "anyio[trio]>=4"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/hms_memory_tool"]
+packages = ["src/warm_memory_tool"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

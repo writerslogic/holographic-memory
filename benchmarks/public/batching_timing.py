@@ -1,4 +1,4 @@
-"""Usage: ./.hms-target/timed.sh uv run python -I benchmarks/public/batching_timing.py <plan.json> <out.json>
+"""Usage: ./.warm-target/timed.sh uv run python -I benchmarks/public/batching_timing.py <plan.json> <out.json>
 
 Paired A/B timing of `public-bench lme-model` arms inside one timing lock: every round runs each
 arm once, in plan order, so arms alternate. Before each run the 1-minute load average must drop

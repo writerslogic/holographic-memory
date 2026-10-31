@@ -4,7 +4,7 @@
 # requires-python = "==3.13.9"
 # dependencies = []
 # ///
-"""Compare HMS with SQLite's documented native top-k rank path on the same indexes."""
+"""Compare WARM with SQLite's documented native top-k rank path on the same indexes."""
 
 import argparse
 import fcntl
@@ -78,7 +78,7 @@ def main():
                 "candidate_binary_sha256": sha(campaign / "candidate-probe")}
     write(folder / "protocol.json", protocol)
     records, summary = [], {}
-    with Path("./.hms-target/timing.lock").open("a") as lock:
+    with Path("./.warm-target/timing.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         started = time.monotonic()
         for dataset, split in [("scifact", "train"), ("nfcorpus", "dev")]:

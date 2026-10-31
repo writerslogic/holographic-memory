@@ -87,7 +87,7 @@ def render(header: Path, version: str = "") -> str:
     items = parse(header.read_text(encoding="utf-8"))
     out = [
         "---",
-        'description: "The C ABI of Holographic Memory, rendered from the shipped header."',
+        'description: "The C ABI of WARM, rendered from the shipped header."',
         "---",
         "",
         "# C API reference",

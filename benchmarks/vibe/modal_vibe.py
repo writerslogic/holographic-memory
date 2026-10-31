@@ -1,27 +1,27 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Run the VIBE benchmark (HMS plus the published CPU leaders) on Modal, one container per dataset.
+"""Run the VIBE benchmark (WARM plus the published CPU leaders) on Modal, one container per dataset.
 
   uv run --with modal modal run --detach benchmarks/vibe/modal_vibe.py --resume
   uv run --with modal modal run benchmarks/vibe/modal_vibe.py --status
-  uv run --with modal modal run --detach benchmarks/vibe/modal_vibe.py --resume --hms-only --hms-rev <sha>
+  uv run --with modal modal run --detach benchmarks/vibe/modal_vibe.py --resume --warm-only --warm-rev <sha>
   uv run --with modal modal run --detach benchmarks/vibe/modal_vibe.py --resume --retry-failed
 
-VIBE is the dcondrey/vibe fork at VIBE_REV (upstream 7ac76c1 plus vibe/algorithms/hms). Every job is
+VIBE is the dcondrey/vibe fork at VIBE_REV (upstream 7ac76c1 plus vibe/algorithms/warm). Every job is
 `run.py --dataset D --algorithm A --local --parallelism 1` with VIBE's defaults (k=100, 5 runs, 24 h
-per-run timeout) and single-threaded math libraries. HMS and the competitors are compiled in the
+per-run timeout) and single-threaded math libraries. WARM and the competitors are compiled in the
 container that runs them (target-cpu=native / the image.def flags), because Modal containers land on
 different CPUs; the CPU model and AVX-512 status go into every ledger and result record.
 
-State lives on the "hms-bench-run" Volume under /vibe/<ns>/ (ns = LIVE_NS, or "test" with --test):
+State lives on the "warm-bench-run" Volume under /vibe/<ns>/ (ns = LIVE_NS, or "test" with --test):
   data/<name>.hdf5 (+ .sha256)          dataset, verified against the Hugging Face LFS sha256
-  ledger/<dataset>/<job>.json           one record per job; job = "hms@<rev>" or the competitor name
+  ledger/<dataset>/<job>.json           one record per job; job = "warm@<rev>" or the competitor name
   results/<dataset>/<job>/results/...   VIBE's result tree for that job, synced every minute
   logs/, cpu/, standings/<dataset>@<rev>.json, plan.json, stop.json
 A job is done only when every expected (index, query-args) group has its completion marker, opens,
 and holds one row per test query. A retry keeps the complete groups and deletes everything else.
 Spend is estimated from container wall time at Modal's published CPU and memory rates (the
-"hms-vibe-spend" Dict, mirrored to the Volume): no job starts at --cap-usd, running jobs stop at
+"warm-vibe-spend" Dict, mirrored to the Volume): no job starts at --cap-usd, running jobs stop at
 --hard-cap-usd.
 """
 from __future__ import annotations
@@ -43,13 +43,13 @@ import modal
 
 VIBE_REPO = "https://github.com/dcondrey/vibe.git"
 VIBE_REV = "60625ecd00c639ebe1b6ce19434e89dae7fedff0"
-HMS_REPO = "https://github.com/writerslogic/holographic-memory.git"
+WARM_REPO = "https://github.com/writerslogic/warm.git"
 HF = "https://huggingface.co/datasets/vector-index-bench/vibe/resolve/main/{}.hdf5"
 HF_TREE = "https://huggingface.co/api/datasets/vector-index-bench/vibe/tree/main"
 PUBLISHED = "https://raw.githubusercontent.com/vector-index-bench/vector-index-bench.github.io/HEAD/{}"
 
-# Float datasets this runner owns. Quantized and chamfer variants are out of scope because HMS indexes
-# float vectors only. llama-128-ip and yi-128-ip joined later with their own HMS rev (--datasets).
+# Float datasets this runner owns. Quantized and chamfer variants are out of scope because WARM indexes
+# float vectors only. llama-128-ip and yi-128-ip joined later with their own WARM rev (--datasets).
 DATASETS = [
     "agnews-mxbai-1024-euclidean", "arxiv-nomic-768-normalized", "ccnews-nomic-768-normalized",
     "celeba-resnet-2048-cosine", "coco-nomic-768-normalized", "codesearchnet-jina-768-cosine",
@@ -100,10 +100,10 @@ THREAD_ENV = {k: "1" for k in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_N
                                "NUMBA_NUM_THREADS", "JULIA_NUM_THREADS", "RAYON_NUM_THREADS")}
 THREAD_ENV |= {"OMP_DYNAMIC": "false", "MKL_DYNAMIC": "false", "HDF5_USE_FILE_LOCKING": "FALSE"}
 
-VOL = modal.Volume.from_name("hms-bench-run", create_if_missing=True)
-SPEND = modal.Dict.from_name("hms-vibe-spend", create_if_missing=True)
-LEASE = modal.Dict.from_name("hms-vibe-lease", create_if_missing=True)
-app = modal.App("hms-vibe")
+VOL = modal.Volume.from_name("warm-bench-run", create_if_missing=True)
+SPEND = modal.Dict.from_name("warm-vibe-spend", create_if_missing=True)
+LEASE = modal.Dict.from_name("warm-vibe-lease", create_if_missing=True)
+app = modal.App("warm-vibe")
 
 image = (
     modal.Image.from_registry("ubuntu:24.04", add_python="3.12")
@@ -165,27 +165,27 @@ rabitq() {
   git clone -q --depth 1 --branch v0.3.7 https://github.com/VectorDB-NTU/RaBitQ-Library.git && cd RaBitQ-Library
   pip install --no-cache-dir --no-build-isolation --no-deps .
 }
-hms() {
-  git clone -q "$HMS_REPO" hms && cd hms && git checkout -q "$HMS_REV"
-  RUSTFLAGS="-C target-cpu=native" CARGO_BUILD_JOBS="$(nproc)" maturin build --release --locked --out /work/hms-dist
-  pip install --no-cache-dir --force-reinstall --no-deps /work/hms-dist/*.whl
-  cd / && python -c 'from holographic_memory import VectorIndex; print(VectorIndex)'
+warm() {
+  git clone -q "$WARM_REPO" warm && cd warm && git checkout -q "$WARM_REV"
+  RUSTFLAGS="-C target-cpu=native" CARGO_BUILD_JOBS="$(nproc)" maturin build --release --locked --out /work/warm-dist
+  pip install --no-cache-dir --force-reinstall --no-deps /work/warm-dist/*.whl
+  cd / && python -c 'from writerslogic_warm import VectorIndex; print(VectorIndex)'
   python - <<'PY'
 import datetime, hashlib, json, os, subprocess
 from pathlib import Path
-import holographic_memory
-source = subprocess.run(['git', '-C', '/work/build/hms', 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
-assert source == os.environ['HMS_REV']
-module = Path(holographic_memory.__file__)
+import writerslogic_warm
+source = subprocess.run(['git', '-C', '/work/build/warm', 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
+assert source == os.environ['WARM_REV']
+module = Path(writerslogic_warm.__file__)
 native = [module] if module.suffix == '.so' else list(module.parent.glob('*.so'))
-wheels = list(Path('/work/hms-dist').glob('*.whl'))
+wheels = list(Path('/work/warm-dist').glob('*.whl'))
 assert native and len(wheels) == 1
 files = {str(path): {'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'bytes': path.stat().st_size} for path in native + wheels}
-receipt = {'container_id': os.environ['MODAL_TASK_ID'], 'dataset': os.environ['HMS_DATASET'], 'hms_commit': source,
+receipt = {'container_id': os.environ['MODAL_TASK_ID'], 'dataset': os.environ['WARM_DATASET'], 'warm_commit': source,
            'observed_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'files': files,
            'observation_scope': 'Pinned source, installed native module and wheel verified before benchmark data access',
            'build_flags': 'RUSTFLAGS=-C target-cpu=native; maturin --release --locked'}
-path = Path(os.environ['HMS_RUN_ROOT']) / 'cpu' / ('native-' + os.environ['MODAL_TASK_ID'] + '.json')
+path = Path(os.environ['WARM_RUN_ROOT']) / 'cpu' / ('native-' + os.environ['MODAL_TASK_ID'] + '.json')
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text(json.dumps(receipt, indent=2) + '\n')
 PY
@@ -241,8 +241,8 @@ else:
     with h5py.File(os.path.join("data", ds + ".hdf5"), "r") as f:
         n_test = int(f["test"].shape[0])
         has_learn = "learn" in f and "learn_neighbors" in f
-    # An OOD-capable HMS entry must have trained on the learn split; learn_queries=0 means VIBE called fit().
-    need_learn = {id(d) for d in defs if algo.startswith("hms") and has_learn and d.ood}
+    # An OOD-capable WARM entry must have trained on the learn split; learn_queries=0 means VIBE called fit().
+    need_learn = {id(d) for d in defs if algo.startswith("warm") and has_learn and d.ood}
     valid, problems = 0, []
     for (path, sp), d in zip(expected, [d for d in defs for q in (d.query_argument_groups or [[]])]):
         try:
@@ -353,12 +353,12 @@ with h5py.File(sys.argv[1], "w") as f:
 # --test definitions, one config.yml per algorithm folder: short grids (minutes) and, for the cosine
 # smoke, a config whose constructor does not exist.
 SMOKE_DEFS = {}
-SMOKE_DEFS["hms"] = """float:
+SMOKE_DEFS["warm"] = """float:
   ip:
-  - name: hms
-    module: vibe.algorithms.hms
-    constructor: HMS
-    singularity_image: hms
+  - name: warm
+    module: vibe.algorithms.warm
+    constructor: WARM
+    singularity_image: warm
     disabled: false
     ood: true
     base_args: ['@metric']
@@ -367,10 +367,10 @@ SMOKE_DEFS["hms"] = """float:
         args: {degree: [32], build_ef: [200], code_bits: [8], learn_queries: [2000]}
         query_args: {ef: [100, 200], rerank: [400], reservoir: [0, 400], patience: [0, 8]}
   cosine:
-  - name: hms
-    module: vibe.algorithms.hms
-    constructor: HMS
-    singularity_image: hms
+  - name: warm
+    module: vibe.algorithms.warm
+    constructor: WARM
+    singularity_image: warm
     disabled: false
     ood: true
     base_args: ['@metric']
@@ -378,10 +378,10 @@ SMOKE_DEFS["hms"] = """float:
       base:
         args: {degree: [16, 24, 32, 48, 64, 96], build_ef: [400], code_bits: [4], learn_queries: [2000]}
         query_args: {ef: [100, 200, 400], rerank: [100, 200]}
-  - name: hms-broken
-    module: vibe.algorithms.hms
-    constructor: HMSMissing
-    singularity_image: hms
+  - name: warm-broken
+    module: vibe.algorithms.warm
+    constructor: WARMMissing
+    singularity_image: warm
     disabled: false
     base_args: ['@metric']
     run_groups:
@@ -624,18 +624,18 @@ def choose(leaders: dict, avx512: bool, named: list[str] = ()) -> tuple[list[str
 
 
 class Runner:
-    def __init__(self, ns: str, dataset: str, hms_rev: str, test: bool, cap: float, hard_cap: float, hms_only: bool = False):
-        self.ns, self.ds, self.rev, self.test, self.cap, self.hard_cap = ns, dataset, hms_rev, test, cap, hard_cap
-        # An --hms-only container takes its own lease so it can run next to a container still working
+    def __init__(self, ns: str, dataset: str, warm_rev: str, test: bool, cap: float, hard_cap: float, warm_only: bool = False):
+        self.ns, self.ds, self.rev, self.test, self.cap, self.hard_cap = ns, dataset, warm_rev, test, cap, hard_cap
+        # An --warm-only container takes its own lease so it can run next to a container still working
         # through the dataset's competitors; run_job refuses a job another live container is running.
-        self.lease_key = f"{ns}:{dataset}" + (":hms-only" if hms_only else "")
+        self.lease_key = f"{ns}:{dataset}" + (":warm-only" if warm_only else "")
         self.baseline = set(proc_table())  # processes that belong to the container, not to a job
         self.root = Path("/vol/vibe") / ns
         self.cid = os.environ.get("MODAL_TASK_ID", f"local-{os.getpid()}")
         self.started = now()
         self.phase_cores = CPU_LIMIT
         self.price_multiplier = 1
-        self.hms_only = hms_only
+        self.warm_only = warm_only
         self.mem_gib = 8
         self.main_beat = now()  # the main thread's last sign of life; the lease lapses without it
         self.long_phase = False  # builds and the export may block the main thread for hours
@@ -697,8 +697,8 @@ class Runner:
     # ---- setup ----
     def sh(self, script: str, env_name: str, log: Path, extra: dict | None = None, timeout: int = 7200) -> int:
         env = {**os.environ, "PATH": f"{ENV_BIN[env_name]}:/root/.cargo/bin:{os.environ['PATH']}",
-               "HMS_REPO": HMS_REPO, "HMS_REV": self.rev, "HMS_RUN_ROOT": str(self.root),
-               "HMS_DATASET": self.ds, **(extra or {})}
+               "WARM_REPO": WARM_REPO, "WARM_REV": self.rev, "WARM_RUN_ROOT": str(self.root),
+               "WARM_DATASET": self.ds, **(extra or {})}
         with log.open("a") as fh:
             return subprocess.run(["bash", "-c", INSTALL_SH + "\n" + script], env=env, stdout=fh, stderr=subprocess.STDOUT,
                                   timeout=timeout).returncode
@@ -793,9 +793,9 @@ class Runner:
     def run_job(self, job: str, algo: str, env_name: str, why) -> str:
         """Returns 'done', 'failed', 'stopped' (spend), 'handover' (container budget) or 'busy'."""
         rec = read_json(self.ledger_path(job)) or {
-            "job": job, "dataset": self.ds, "algorithm": algo, "hms_rev": self.rev, "vibe_rev": VIBE_REV,
+            "job": job, "dataset": self.ds, "algorithm": algo, "warm_rev": self.rev, "vibe_rev": VIBE_REV,
             "state": "pending", "attempts": 0, "failures": 0, "history": []}
-        rec |= {"chosen_why": why, "hms_rev": self.rev}
+        rec |= {"chosen_why": why, "warm_rev": self.rev}
         if rec["state"] == "done":
             print(f"{self.ds}/{job}: done, skipped", flush=True)
             return "done"
@@ -854,8 +854,8 @@ class Runner:
             rec |= {"state": "running", "start": iso(), "container_id": self.cid, "heartbeat": now(), "cleaned": cleaned,
                     "markers_at_start": status.get("markers", 0), "expected": status.get("expected"), **self.cpu,
                     "nonpreemptible": self.price_multiplier == 3, "price_multiplier": self.price_multiplier,
-                    "hms_only": self.hms_only,
-                    "native_build_receipt": str(self.root / "cpu" / f"native-{self.cid}.json") if algo == "hms" else None,
+                    "warm_only": self.warm_only,
+                    "native_build_receipt": str(self.root / "cpu" / f"native-{self.cid}.json") if algo == "warm" else None,
                     "result_path": str(self.vol_results(job) / "results"), "log_path": str(log_vol)}
             self.save(rec)
             outcome = self.attempt(job, algo, env_name, rec, log_vol)
@@ -947,7 +947,7 @@ class Runner:
         return outcome or f"exit {proc.returncode}"
 
     def standing(self, jobs: list[tuple[str, str]]) -> None:
-        """Export VIBE's summary for this dataset (current HMS rev plus competitors) and keep the best QPS per threshold."""
+        """Export VIBE's summary for this dataset (current WARM rev plus competitors) and keep the best QPS per threshold."""
         m = Path("/work/merged")
         shutil.rmtree(m, ignore_errors=True)
         (m / "data").mkdir(parents=True)
@@ -969,18 +969,18 @@ class Runner:
                               capture_output=True, text=True, check=True).stdout
         shutil.copy(m / "out" / "summary.parquet", self.root / "standings" / f"{self.ds}@{self.rev[:12]}.summary.parquet")
         write_json(self.root / "standings" / f"{self.ds}@{self.rev[:12]}.json", {
-            "dataset": self.ds, "hms_commit": self.rev, "vibe_commit": VIBE_REV, "k": 100, "generated": iso(),
+            "dataset": self.ds, "warm_commit": self.rev, "vibe_commit": VIBE_REV, "k": 100, "generated": iso(),
             "container": self.cid, **self.cpu, "best_qps_at_recall": json.loads(best)})
         VOL.commit()
 
 
 @app.function(image=image, volumes={"/vol": VOL}, cpu=(CPU_REQ, CPU_LIMIT), memory=8 * 1024, timeout=FN_TIMEOUT_S,
               retries=modal.Retries(max_retries=3, backoff_coefficient=2.0, initial_delay=60.0))
-def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bool, cap: float, hard_cap: float) -> dict:
-    """All jobs of one dataset, HMS first. Memory is set per call through with_options."""
+def run_dataset(dataset: str, meta: dict, warm_rev: str, warm_only: bool, test: bool, cap: float, hard_cap: float) -> dict:
+    """All jobs of one dataset, WARM first. Memory is set per call through with_options."""
     ns = "test" if test else LIVE_NS
     VOL.reload()
-    r = Runner(ns, dataset, hms_rev, test, cap, hard_cap, hms_only)
+    r = Runner(ns, dataset, warm_rev, test, cap, hard_cap, warm_only)
     r.mem_gib = meta.get("mem_gib", 8)
     r.price_multiplier = 3 if meta.get("nonpreemptible") else 1
     r.retry_failed = bool(meta.get("retry_failed"))
@@ -1012,14 +1012,14 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
             Path("/work/testdefs", folder).mkdir(parents=True, exist_ok=True)
             Path("/work/testdefs", folder, "config.yml").write_text(text)
 
-    hms_job = f"hms@{hms_rev[:12]}"
-    jobs = [(hms_job, "hms", "base", ["--test: short HMS grid" if test else "HMS runs on every dataset"])]
+    warm_job = f"warm@{warm_rev[:12]}"
+    jobs = [(warm_job, "warm", "base", ["--test: short WARM grid" if test else "WARM runs on every dataset"])]
     if test:
         if dataset == SMOKE:
-            jobs.append(("hms-broken", "hms-broken", "base", ["--test: forced failure"]))
+            jobs.append(("warm-broken", "warm-broken", "base", ["--test: forced failure"]))
         else:
             jobs += [(a, a, INSTALLABLE[a][1], ["--test: short grid"]) for a in ("roargraph", "mlann-rf")]
-    elif not hms_only:
+    elif not warm_only:
         chosen, why = choose(meta["leaders"], r.cpu["avx512"], NAMED.get(dataset, []))
         jobs += [(a, a, INSTALLABLE[a][1], why[a]) for a in chosen]
     # Build what this container's pending jobs need, for this CPU. A competitor whose installer fails is
@@ -1033,7 +1033,7 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
         if rec.get("state") == "done" or (rec.get("state") == "failed" and not r.retry_failed):
             results[job] = rec["state"]
             continue
-        installer = "hms" if algo.startswith("hms") else INSTALLABLE[algo][0]
+        installer = "warm" if algo.startswith("warm") else INSTALLABLE[algo][0]
         if installer in broken:
             results[job] = "install failed earlier"
             continue
@@ -1048,13 +1048,13 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
             if rc != 0:
                 rec = read_json(r.ledger_path(job)) or {"job": job, "dataset": dataset, "algorithm": algo, "attempts": 0,
                                                         "failures": 0, "history": []}
-                rec |= {"failures": rec.get("failures", 0) + 1, "hms_rev": hms_rev, "chosen_why": why, **r.cpu,
+                rec |= {"failures": rec.get("failures", 0) + 1, "warm_rev": warm_rev, "chosen_why": why, **r.cpu,
                         "error_tail": f"install {installer} exit {rc}\n" + log.read_text(errors="replace")[-4000:]}
                 rec["state"] = "failed" if rec["failures"] >= MAX_FAILURES else "pending"
                 r.save(rec)
                 results[job] = f"install failed ({rec['state']})"
                 broken.add(installer)
-                if not test and not algo.startswith("hms"):
+                if not test and not algo.startswith("warm"):
                     taken = {a for _, a, _, _ in jobs} | {a for a, spec in INSTALLABLE.items() if spec[0] in broken}
                     if sub := substitute(meta["leaders"], r.cpu["avx512"], taken):
                         jobs.append((sub, sub, INSTALLABLE[sub][1], [f"substitute for {algo}: its installer failed here"]))
@@ -1067,9 +1067,9 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
     if any(v == "handover" for v in results.values()):
         r.release()
         runner = run_dataset_nonpreemptible if meta.get("nonpreemptible") else run_dataset
-        call = runner.with_options(memory=r.mem_gib * 1024).spawn(dataset, meta, hms_rev, hms_only, test, cap, hard_cap)
+        call = runner.with_options(memory=r.mem_gib * 1024).spawn(dataset, meta, warm_rev, warm_only, test, cap, hard_cap)
         return {"dataset": dataset, "container": r.cid, "jobs": results, "handed_over_to": call.object_id}
-    if not test or results.get(hms_job) == "done":
+    if not test or results.get(warm_job) == "done":
         r.long_phase = True
         r.standing([(j, a) for j, a, _, _ in jobs if (read_json(r.ledger_path(j)) or {}).get("state") == "done"])
         r.long_phase = False
@@ -1080,9 +1080,9 @@ def run_dataset(dataset: str, meta: dict, hms_rev: str, hms_only: bool, test: bo
 
 @app.function(image=image, volumes={"/vol": VOL}, cpu=(CPU_REQ, CPU_LIMIT), memory=8 * 1024,
               timeout=FN_TIMEOUT_S, nonpreemptible=True, retries=1)
-def run_dataset_nonpreemptible(dataset: str, meta: dict, hms_rev: str, hms_only: bool,
+def run_dataset_nonpreemptible(dataset: str, meta: dict, warm_rev: str, warm_only: bool,
                               test: bool, cap: float, hard_cap: float) -> dict:
-    return run_dataset.local(dataset, meta | {"nonpreemptible": True}, hms_rev, hms_only, test, cap, hard_cap)
+    return run_dataset.local(dataset, meta | {"nonpreemptible": True}, warm_rev, warm_only, test, cap, hard_cap)
 
 
 def status_report(ns: str) -> None:
@@ -1131,7 +1131,7 @@ def measurement_containers(record: dict) -> list[str]:
     return sorted(containers)
 
 
-def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
+def snapshot_report(ns: str, out: Path, warm_rev: str) -> None:
     root = f"/vibe/{ns}"
     result_dir = Path(__file__).resolve().parents[2] / "benchmarks/results/vibe_live_s_20261023"
     manifest = read_json(result_dir / "manifest.json", {})
@@ -1152,9 +1152,9 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     standings = {}
     with suppress(FileNotFoundError, modal.exception.NotFoundError):
         for entry in VOL.iterdir(f"{root}/standings", recursive=False):
-            if entry.path.endswith(f"@{hms_rev[:12]}.json"):
+            if entry.path.endswith(f"@{warm_rev[:12]}.json"):
                 rec = remote_json(entry.path)
-                if rec.get("hms_commit") == hms_rev:
+                if rec.get("warm_commit") == warm_rev:
                     standings[rec["dataset"]] = rec
     spend_by_container = {}
     with suppress(FileNotFoundError, modal.exception.NotFoundError):
@@ -1172,40 +1172,40 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
     rows = []
     for ds, meta in plan_data["datasets"].items():
         records = ledgers.get(ds, {})
-        hms = records.get(f"hms@{hms_rev[:12]}", {})
+        warm = records.get(f"warm@{warm_rev[:12]}", {})
         download = records.get("_download", {})
-        selected, _ = (choose(meta.get("leaders", {}), hms["avx512"], NAMED.get(ds, []))
-                       if "avx512" in hms else ([], {}))
-        actual_competitors = sorted(job for job in records if job != "_download" and not job.startswith("hms@"))
+        selected, _ = (choose(meta.get("leaders", {}), warm["avx512"], NAMED.get(ds, []))
+                       if "avx512" in warm else ([], {}))
+        actual_competitors = sorted(job for job in records if job != "_download" and not job.startswith("warm@"))
         if actual_competitors:
             selected = actual_competitors
         standing = standings.get(ds, {})
         measured = standing.get("best_qps_at_recall", {})
-        hms_containers = measurement_containers(hms)
+        warm_containers = measurement_containers(warm)
         competitors = {}
         for algo, record in records.items():
-            if algo in ("_download", f"hms@{hms_rev[:12]}"):
+            if algo in ("_download", f"warm@{warm_rev[:12]}"):
                 continue
-            same_container = bool(hms.get("container_id")) and record.get("container_id") == hms.get("container_id")
-            provenance_matches = (hms_containers == measurement_containers(record) == [hms.get("container_id")])
+            same_container = bool(warm.get("container_id")) and record.get("container_id") == warm.get("container_id")
+            provenance_matches = (warm_containers == measurement_containers(record) == [warm.get("container_id")])
             competitors[algo] = {
                 "state": record.get("state"), "cpu_model": record.get("cpu_model"),
-                "container_id": record.get("container_id"), "same_container_as_hms": same_container,
+                "container_id": record.get("container_id"), "same_container_as_warm": same_container,
                 "measurement_containers": measurement_containers(record),
-                "fair_comparison": bool(hms.get("state") == "done" and record.get("state") == "done"
+                "fair_comparison": bool(warm.get("state") == "done" and record.get("state") == "done"
                                         and same_container and provenance_matches),
                 "metrics": measured.get(algo), "error": record.get("error_tail") or record.get("error"),
             }
         comparison_status = ("comparable" if any(r["fair_comparison"] for r in competitors.values()) else
-                             "noncomparable" if hms.get("state") == "done" and any(
+                             "noncomparable" if warm.get("state") == "done" and any(
                                  r["state"] == "done" for r in competitors.values()) else "pending")
-        if download.get("state") == "failed" or hms.get("state") == "failed":
+        if download.get("state") == "failed" or warm.get("state") == "failed":
             run_state = "failed"
-        elif hms.get("state") == "done" and all(records.get(algo, {}).get("state") == "done" for algo in selected):
+        elif warm.get("state") == "done" and all(records.get(algo, {}).get("state") == "done" for algo in selected):
             run_state = "complete"
         elif any(records.get(algo, {}).get("state") == "failed" for algo in selected):
             run_state = "failed_partial"
-        elif hms or download:
+        elif warm or download:
             run_state = "running"
         else:
             run_state = "pending"
@@ -1213,32 +1213,32 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
             "dataset": ds, "deprecated": ds in DEPRECATED, "ood": ds in OOD,
             "dataset_sha256": meta.get("sha256"), "dataset_bytes": meta.get("size_bytes"),
             "requested_memory_gib": meta.get("mem_gib"), "download_state": download.get("state", "pending"),
-            "state": run_state, "hms_state": hms.get("state", "pending"),
-            "attempts": hms.get("attempts", 0),
-            "failures": hms.get("failures", 0), "hms_commit": hms_rev,
-            "cumulative_failures": hms.get("failures", 0) + sum(event["previous_failures"] for event in hms.get("retry_resets", [])),
-            "retry_resets": hms.get("retry_resets", []),
+            "state": run_state, "warm_state": warm.get("state", "pending"),
+            "attempts": warm.get("attempts", 0),
+            "failures": warm.get("failures", 0), "warm_commit": warm_rev,
+            "cumulative_failures": warm.get("failures", 0) + sum(event["previous_failures"] for event in warm.get("retry_resets", [])),
+            "retry_resets": warm.get("retry_resets", []),
             "vibe_fork_commit": VIBE_REV, "source_sha256": manifest.get("source_sha256"),
-            "nonpreemptible": hms.get("nonpreemptible", False), "price_multiplier": hms.get("price_multiplier", 1),
-            "native_build_receipt": hms.get("native_build_receipt"),
-            "query_threads": 1, "cpu_model": hms.get("cpu_model"), "avx512": hms.get("avx512"),
-            "nproc": hms.get("nproc"), "container_id": hms.get("container_id"),
-            "measurement_containers": hms_containers,
-            "hardware_cpu_record": (f"hms-bench-run:{root}/cpu/{hms['container_id']}.json"
-                                    if hms.get("container_id") else None),
-            "validation": hms.get("validation"), "metrics": measured.get("hms"),
+            "nonpreemptible": warm.get("nonpreemptible", False), "price_multiplier": warm.get("price_multiplier", 1),
+            "native_build_receipt": warm.get("native_build_receipt"),
+            "query_threads": 1, "cpu_model": warm.get("cpu_model"), "avx512": warm.get("avx512"),
+            "nproc": warm.get("nproc"), "container_id": warm.get("container_id"),
+            "measurement_containers": warm_containers,
+            "hardware_cpu_record": (f"warm-bench-run:{root}/cpu/{warm['container_id']}.json"
+                                    if warm.get("container_id") else None),
+            "validation": warm.get("validation"), "metrics": measured.get("warm"),
             "peak_rss_bytes": None, "peak_rss_note": "VIBE exporter records index-size delta, not peak process RSS",
-            "memory_observation": matching_memory_observation(memory_rows.get(ds), hms.get("container_id")),
+            "memory_observation": matching_memory_observation(memory_rows.get(ds), warm.get("container_id")),
             "selected_competitors": selected, "competitors": competitors, "comparison_status": comparison_status,
             "published_leaders_diagnostic": meta.get("leaders"),
             "estimated_cost_usd": round(spent.get(ds, 0.0), 4),
-            "ledger_prefix": f"hms-bench-run:{root}/ledger/{ds}",
-            "results_prefix": f"hms-bench-run:{root}/results/{ds}",
-            "log_prefix": f"hms-bench-run:{root}/logs/{ds}",
-            "error": hms.get("error_tail") or download.get("error"),
+            "ledger_prefix": f"warm-bench-run:{root}/ledger/{ds}",
+            "results_prefix": f"warm-bench-run:{root}/results/{ds}",
+            "log_prefix": f"warm-bench-run:{root}/logs/{ds}",
+            "error": warm.get("error_tail") or download.get("error"),
         })
     out.parent.mkdir(parents=True, exist_ok=True)
-    write_json(out, {"generated": iso(), "namespace": ns, "hms_commit": hms_rev,
+    write_json(out, {"generated": iso(), "namespace": ns, "warm_commit": warm_rev,
                      "vibe_commit": VIBE_REV, "estimated_cost_usd": round(sum(spent.values()), 4),
                      "cost_scope": "estimated CPU and memory list price; excludes Volume, network, credits, discounts",
                      "rows": rows})
@@ -1246,16 +1246,16 @@ def snapshot_report(ns: str, out: Path, hms_rev: str) -> None:
 
 
 @app.function(image=plan_image, volumes={"/vol": VOL}, cpu=2, memory=4096, timeout=3600)
-def audit_dataset_artifacts(dataset: str, hms_rev: str) -> dict:
-    if dataset not in DATASETS or len(hms_rev) != 40 or any(c not in "0123456789abcdef" for c in hms_rev):
+def audit_dataset_artifacts(dataset: str, warm_rev: str) -> dict:
+    if dataset not in DATASETS or len(warm_rev) != 40 or any(c not in "0123456789abcdef" for c in warm_rev):
         raise ValueError("a configured dataset and full lowercase source commit are required")
     started = now()
     root = Path("/vol/vibe") / LIVE_NS
     records = [read_json(path) for path in (root / "ledger" / dataset).glob("*.json")]
     if not records or any(record.get("state") not in ("done", "failed") for record in records):
         raise ValueError("artifact export requires final arm states")
-    hms = next((record for record in records if record.get("job") == f"hms@{hms_rev[:12]}"), None)
-    if not hms or hms.get("hms_rev") != hms_rev:
+    warm = next((record for record in records if record.get("job") == f"warm@{warm_rev[:12]}"), None)
+    if not warm or warm.get("warm_rev") != warm_rev:
         raise ValueError("artifact source does not match the requested commit")
     hashes = {}
     for path in sorted((root / "results" / dataset).rglob("*.hdf5")):
@@ -1264,12 +1264,12 @@ def audit_dataset_artifacts(dataset: str, hms_rev: str) -> dict:
             for block in iter(lambda: source.read(16 << 20), b""):
                 digest.update(block)
         hashes[str(path.relative_to(root))] = {"sha256": digest.hexdigest(), "bytes": path.stat().st_size}
-    artifact = root / "artifacts" / f"{dataset}@{hms_rev[:12]}"
+    artifact = root / "artifacts" / f"{dataset}@{warm_rev[:12]}"
     write_json(artifact / "raw-results.sha256.json", hashes)
-    receipt = {"dataset": dataset, "hms_commit": hms_rev, "purpose": "artifact hashing only; no benchmark rerun",
+    receipt = {"dataset": dataset, "warm_commit": warm_rev, "purpose": "artifact hashing only; no benchmark rerun",
                "started": iso(started), "ended": iso(), "raw_hdf5_files": len(hashes),
                "raw_hdf5_bytes": sum(row["bytes"] for row in hashes.values()), "ledgers": records,
-               "query_threads": 1, "measurement_containers": measurement_containers(hms),
+               "query_threads": 1, "measurement_containers": measurement_containers(warm),
                "hashing_container": os.environ.get("MODAL_TASK_ID"), "hashing_cpus": 2, "hashing_memory_gib": 4,
                "estimated_hashing_usd": (now() - started) / 3600 * (2 * USD_CORE_H + 4 * USD_GIB_H),
                "cost_scope": "requested CPU/memory estimate for this artifact export only; excludes image and storage",
@@ -1280,14 +1280,14 @@ def audit_dataset_artifacts(dataset: str, hms_rev: str) -> dict:
 
 
 @app.local_entrypoint()
-def main(resume: bool = False, status: bool = False, hms_rev: str = "", hms_only: bool = False, retry_failed: bool = False,
+def main(resume: bool = False, status: bool = False, warm_rev: str = "", warm_only: bool = False, retry_failed: bool = False,
          datasets: str = "", test: bool = False, replan: bool = False, cap_usd: float = 140.0, hard_cap_usd: float = 150.0,
          snapshot: str = "", nonpreemptible: bool = False):
     ns = "test" if test else LIVE_NS
     if snapshot:
-        if not hms_rev:
-            raise ValueError("--snapshot requires --hms-rev")
-        snapshot_report(ns, Path(snapshot), hms_rev)
+        if not warm_rev:
+            raise ValueError("--snapshot requires --warm-rev")
+        snapshot_report(ns, Path(snapshot), warm_rev)
         return
     if status:
         status_report(ns)
@@ -1295,9 +1295,9 @@ def main(resume: bool = False, status: bool = False, hms_rev: str = "", hms_only
     if not resume:
         print("pass --resume to launch or resume, --status for the ledger summary")
         return
-    if not hms_rev:
-        out = subprocess.run(["git", "ls-remote", HMS_REPO, "refs/heads/main"], capture_output=True, text=True, check=True).stdout
-        hms_rev = out.split()[0]
+    if not warm_rev:
+        out = subprocess.run(["git", "ls-remote", WARM_REPO, "refs/heads/main"], capture_output=True, text=True, check=True).stdout
+        warm_rev = out.split()[0]
     if test:
         targets = datasets.split(",") if datasets else [SMOKE]
         meta_all = {t: {"mem_gib": 8, "leaders": {}} for t in targets}
@@ -1313,7 +1313,7 @@ def main(resume: bool = False, status: bool = False, hms_rev: str = "", hms_only
     if spent >= cap_usd:
         print(f"spend estimate ${spent:.2f} >= ${cap_usd}; nothing launched")
         return
-    print(f"hms_rev {hms_rev}; launching {len(targets)} datasets; spend so far ${spent:.2f}")
+    print(f"warm_rev {warm_rev}; launching {len(targets)} datasets; spend so far ${spent:.2f}")
     calls = []
     for d in targets:
         meta = meta_all[d] | ({"retry_failed": True} if retry_failed else {})

@@ -1,12 +1,12 @@
-# hms-research-witness: occupancy-balanced rare-witness decoding kill test
+# warm-research-witness: occupancy-balanced rare-witness decoding kill test
 
-Package: `benchmarks/research/witness/` (standalone crate `hms-research-witness`,
+Package: `benchmarks/research/witness/` (standalone crate `warm-research-witness`,
 not a workspace member, own `[workspace]` table). Layout mirrors
 `benchmarks/research/scan/` (patterns copied, no dependency on it).
 
 Dependencies, all at the root crate's versions: `anyhow 1.0`, `clap 4.4
 (derive)`, `rayon 1.8`, `serde 1.0 (derive)`, `serde_json 1.0
-(float_roundtrip)`. No new third-party crates. The `holographic-memory` path
+(float_roundtrip)`. No new third-party crates. The `writerslogic-warm` path
 dependency is intentionally omitted (no root-crate API is called; see the
 header of `Cargo.toml`). `Cargo.lock`, `target/` and `out/*.json` are
 git-ignored inside the package.
@@ -57,11 +57,11 @@ Module heads carry the full description and invariants (`src/lib.rs`,
 
 ## Data found on this machine
 
-* `~/.cache/hms-bench/glove-100-angular/`: `meta.json` (n_train 1,183,514,
+* `~/.cache/warm-bench/glove-100-angular/`: `meta.json` (n_train 1,183,514,
   n_test 10,000, dim 100, n_neighbors 100), `train.f32` 473,405,600 B
   (= 1,183,514 x 100 x 4), `test.f32` 4,000,000 B, `neighbors.i32`
   4,000,000 B (10,000 x 100 x 4).
-* `~/.cache/hms-bench/nytimes-256-angular/`: same layout: `meta.json`
+* `~/.cache/warm-bench/nytimes-256-angular/`: same layout: `meta.json`
   (n_train 290,000, n_test 10,000, dim 256, n_neighbors 100), `train.f32`
   296,960,000 B (= 290,000 x 256 x 4), `test.f32` 10,240,000 B,
   `neighbors.i32` 4,000,000 B, plus an `extra_work/` directory of other
@@ -99,8 +99,8 @@ cargo run --release --manifest-path $M -- --dataset glove --config 32768,16,32,2
 cargo run --release --manifest-path $M -- --dataset glove --build-threads 1 --config 32768,16,32,2
 ```
 
-Dataset directories default to `~/.cache/hms-bench/glove-100-angular` and
-`~/.cache/hms-bench/nytimes-256-angular` (`--data-dir` overrides). `--n`
+Dataset directories default to `~/.cache/warm-bench/glove-100-angular` and
+`~/.cache/warm-bench/nytimes-256-angular` (`--data-dir` overrides). `--n`
 truncates the corpus to a prefix (smoke runs only; the shipped ground truth
 cross-check is then skipped). Other knobs: `--sample 50000` (raise to 200000
 for M=32768 if the `[warn]` line about thin quantile ranks appears; at the
@@ -176,7 +176,7 @@ Per-query projection cost: `M/2 log2(Dp)` add/subs = 115k (glove, M=32768) or
 
 ## Output JSON
 
-Schemas (`hms-research-witness/stage1/v1`, `hms-research-witness/stage2/v1`)
+Schemas (`warm-research-witness/stage1/v1`, `warm-research-witness/stage2/v1`)
 are spelled out in `out/SCHEMA.md`. Top level, stage 1:
 
 ```text

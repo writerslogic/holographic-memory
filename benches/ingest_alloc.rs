@@ -6,20 +6,20 @@
 //! plus the first query), compaction, replace and delete. A counting global allocator wraps
 //! the system one in this bench binary only.
 //!
-//! `cargo bench --bench ingest_alloc` runs a synthetic corpus; `HMS_ALLOC_INPUT=<input.json>`
+//! `cargo bench --bench ingest_alloc` runs a synthetic corpus; `WARM_ALLOC_INPUT=<input.json>`
 //! (the competitive text harness's `{documents, queries}` file) runs a real one, and
-//! `HMS_ALLOC_DOCS=<n>` caps or sizes it. `HMS_ALLOC_POSITIONS=1` ingests whole-document
+//! `WARM_ALLOC_DOCS=<n>` caps or sizes it. `WARM_ALLOC_POSITIONS=1` ingests whole-document
 //! positional chunks (the phrase-query index). Run with `RAYON_NUM_THREADS=1` for counts that
 //! do not depend on the thread count.
 
-use holographic_memory::core::documents::{
-    BatchTooLarge, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
-};
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering::Relaxed};
 use std::time::Instant;
+use writerslogic_warm::core::documents::{
+    BatchTooLarge, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
+};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 struct Counting;
 
@@ -154,11 +154,11 @@ fn load(path: &str) -> Vec<DocumentInput> {
 }
 
 fn main() {
-    let positions = std::env::var("HMS_ALLOC_POSITIONS").is_ok_and(|v| v == "1");
-    let cap: Option<usize> = std::env::var("HMS_ALLOC_DOCS")
+    let positions = std::env::var("WARM_ALLOC_POSITIONS").is_ok_and(|v| v == "1");
+    let cap: Option<usize> = std::env::var("WARM_ALLOC_DOCS")
         .ok()
         .and_then(|v| v.parse().ok());
-    let mut documents = match std::env::var("HMS_ALLOC_INPUT") {
+    let mut documents = match std::env::var("WARM_ALLOC_INPUT") {
         Ok(path) => load(&path),
         Err(_) => synthetic(cap.unwrap_or(20_000)),
     };
@@ -174,7 +174,7 @@ fn main() {
         }
     }
     let n = documents.len();
-    let batch_size: usize = std::env::var("HMS_ALLOC_BATCH")
+    let batch_size: usize = std::env::var("WARM_ALLOC_BATCH")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(1024)
@@ -213,7 +213,7 @@ fn main() {
     {
         let plan = tempfile::tempdir().expect("temp dir");
         let core =
-            HmsCore::new(1024, Some(plan.path().display().to_string()), None).expect("plan store");
+            WarmCore::new(1024, Some(plan.path().display().to_string()), None).expect("plan store");
         let (mut at, mut size) = (0, batch_size);
         while at < n {
             let end = (at + size).min(n);
@@ -244,7 +244,7 @@ fn main() {
     println!("|---|---|---|---|---|---|---|---|");
 
     let phase = begin();
-    let core = HmsCore::new(1024, Some(store.clone()), None).expect("create store");
+    let core = WarmCore::new(1024, Some(store.clone()), None).expect("create store");
     for batch in batches {
         core.memorize_documents_with(batch, &options)
             .expect("ingest");
@@ -256,7 +256,7 @@ fn main() {
     end("close (checkpoint)", phase, n);
 
     let phase = begin();
-    let core = HmsCore::new(1024, Some(store.clone()), None).expect("open");
+    let core = WarmCore::new(1024, Some(store.clone()), None).expect("open");
     end("open", phase, n);
     let phase = begin();
     core.search_documents("system study effect", &query)
@@ -283,17 +283,17 @@ fn main() {
 
     // The same corpus in a store that never checkpoints: closing leaves the journal frames
     // and opening replays them.
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.document_checkpoint.enabled = false;
     let store = dir.path().join("replay").display().to_string();
-    let core = HmsCore::new(1024, Some(store.clone()), Some(config.clone())).expect("create");
+    let core = WarmCore::new(1024, Some(store.clone()), Some(config.clone())).expect("create");
     for batch in replay_batches {
         core.memorize_documents_with(batch, &options)
             .expect("ingest");
     }
     drop(core);
     let phase = begin();
-    let core = HmsCore::new(1024, Some(store), Some(config)).expect("open");
+    let core = WarmCore::new(1024, Some(store), Some(config)).expect("open");
     end("open (journal replay)", phase, n);
     let phase = begin();
     core.search_documents("system study effect", &query)

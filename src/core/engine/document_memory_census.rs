@@ -1,18 +1,19 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use super::HmsCore;
+use super::WarmCore;
 use crate::core::documents::{LexicalExecution, LexicalOptions, LexicalQuery};
 use anyhow::{Context, Result};
 use std::time::Instant;
 
 #[test]
-#[ignore = "opens the diagnostic index supplied by HMS_MEMORY_INDEX"]
+#[ignore = "opens the diagnostic index supplied by WARM_MEMORY_INDEX"]
 fn reopened_index_memory_census() -> Result<()> {
-    let path = std::env::var("HMS_MEMORY_INDEX").context("set HMS_MEMORY_INDEX")?;
-    let output = std::env::var("HMS_MEMORY_CENSUS_OUT").context("set HMS_MEMORY_CENSUS_OUT")?;
+    let path = crate::compatibility::var("WARM_MEMORY_INDEX").context("set WARM_MEMORY_INDEX")?;
+    let output = crate::compatibility::var("WARM_MEMORY_CENSUS_OUT")
+        .context("set WARM_MEMORY_CENSUS_OUT")?;
     let opened = Instant::now();
-    let core = HmsCore::new(1024, Some(path.clone()), None)?;
+    let core = WarmCore::new(1024, Some(path.clone()), None)?;
     let open_seconds = opened.elapsed().as_secs_f64();
     let status = if cfg!(target_os = "linux") {
         Some(std::fs::read_to_string("/proc/self/status")?)
@@ -21,7 +22,7 @@ fn reopened_index_memory_census() -> Result<()> {
     };
     let census = core.documents.read().memory_census().report();
     let mut ranked_checks = Vec::new();
-    if let Some(queries) = std::env::var_os("HMS_MEMORY_QUERIES") {
+    if let Some(queries) = crate::compatibility::var_os("WARM_MEMORY_QUERIES") {
         let queries: Vec<String> = serde_json::from_slice(&std::fs::read(queries)?)?;
         for text in queries {
             let query = LexicalQuery::parse(&text)?;

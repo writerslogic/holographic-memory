@@ -1,16 +1,16 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::config::HmsConfig;
-use crate::core::engine::HmsCore;
+use crate::core::config::WarmConfig;
+use crate::core::engine::WarmCore;
 
-fn meaning_hms(dim: u32) -> HmsCore {
+fn meaning_warm(dim: u32) -> WarmCore {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.meaning.enabled = true;
     config.meaning.auto_decompose = true;
     config.meaning.beta = 24.0;
-    HmsCore::new(
+    WarmCore::new(
         dim,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -20,10 +20,10 @@ fn meaning_hms(dim: u32) -> HmsCore {
 
 #[test]
 fn test_basin_certification() {
-    let hms = meaning_hms(16384);
+    let warm = meaning_warm(16384);
     for i in 0..1000u64 {
         let v = crate::core::entangled::EntangledHVec::new_deterministic(16384, i);
-        hms.memorize(format!("atom_{}", i), v).unwrap();
+        warm.memorize(format!("atom_{}", i), v).unwrap();
     }
 
     let mut recovered = 0;
@@ -39,7 +39,7 @@ fn test_basin_certification() {
         noisy_indices.dedup();
         let noisy = crate::core::entangled::EntangledHVec::from_indices(noisy_indices, 16384);
 
-        if let Some((id, _conf)) = hms.meaning_cleanup(&noisy) {
+        if let Some((id, _conf)) = warm.meaning_cleanup(&noisy) {
             if id == format!("atom_{}", probe_seed) {
                 recovered += 1;
             }
@@ -54,45 +54,45 @@ fn test_basin_certification() {
 
 #[test]
 fn test_structural_query_e2e() {
-    let hms = meaning_hms(16384);
-    hms.memorize_meaning("doc1", "Paris is a city").unwrap();
-    let s = hms.encode_text("Paris");
-    let r = hms.encode_text("is_a");
-    let results = hms.structural_query(&[("subject", &s), ("relation", &r)], "object");
+    let warm = meaning_warm(16384);
+    warm.memorize_meaning("doc1", "Paris is a city").unwrap();
+    let s = warm.encode_text("Paris");
+    let r = warm.encode_text("is_a");
+    let results = warm.structural_query(&[("subject", &s), ("relation", &r)], "object");
     assert_eq!(results.first().map(|r| r.entity_id.as_str()), Some("city"));
 }
 
 #[test]
 fn test_multi_hop_chained() {
-    let hms = meaning_hms(16384);
-    hms.memorize_triplet("t1".into(), "john".into(), "father".into(), "mark".into())
+    let warm = meaning_warm(16384);
+    warm.memorize_triplet("t1".into(), "john".into(), "father".into(), "mark".into())
         .unwrap();
-    hms.memorize_triplet("t2".into(), "mark".into(), "father".into(), "bob".into())
+    warm.memorize_triplet("t2".into(), "mark".into(), "father".into(), "bob".into())
         .unwrap();
     assert_eq!(
-        hms.multi_hop("john", &["father", "father"])[0].entity_id,
+        warm.multi_hop("john", &["father", "father"])[0].entity_id,
         "bob"
     );
 }
 
 #[test]
 fn test_meaning_decompose_e2e() {
-    let hms = meaning_hms(16384);
-    hms.memorize_meaning("doc1", "Paris is a city").unwrap();
-    assert_eq!(hms.meaning_triple_count(), 1);
-    assert_eq!(hms.meaning_composite_count(), 1);
+    let warm = meaning_warm(16384);
+    warm.memorize_meaning("doc1", "Paris is a city").unwrap();
+    assert_eq!(warm.meaning_triple_count(), 1);
+    assert_eq!(warm.meaning_composite_count(), 1);
 }
 
 #[test]
 fn test_backward_compat_meaning_disabled() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
-    assert!(!hms.meaning_enabled());
-    let v = hms.encode_text("test");
-    hms.memorize("t1".to_string(), v).unwrap();
-    assert_eq!(hms.vector_count(), 1);
-    assert!(hms.structural_query(&[], "object").is_empty());
-    assert!(hms.multi_hop("t1", &["r"]).is_empty());
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    assert!(!warm.meaning_enabled());
+    let v = warm.encode_text("test");
+    warm.memorize("t1".to_string(), v).unwrap();
+    assert_eq!(warm.vector_count(), 1);
+    assert!(warm.structural_query(&[], "object").is_empty());
+    assert!(warm.multi_hop("t1", &["r"]).is_empty());
 }
 
 #[test]
@@ -282,13 +282,13 @@ fn test_concurrent_access() {
     use std::thread;
 
     let dim = 16384;
-    let hms = Arc::new(meaning_hms(dim as u32));
+    let warm = Arc::new(meaning_warm(dim as u32));
 
     let mut handles = Vec::new();
 
     // 4 writer threads
     for t in 0..4 {
-        let hms = Arc::clone(&hms);
+        let warm = Arc::clone(&warm);
         handles.push(thread::spawn(move || {
             for i in 0..100 {
                 let id = format!("w{}_{}", t, i);
@@ -296,18 +296,18 @@ fn test_concurrent_access() {
                     dim,
                     (t * 1000 + i) as u64,
                 );
-                hms.memorize(id, v).unwrap();
+                warm.memorize(id, v).unwrap();
             }
         }));
     }
 
     // 2 reader threads
     for _ in 0..2 {
-        let hms = Arc::clone(&hms);
+        let warm = Arc::clone(&warm);
         handles.push(thread::spawn(move || {
             for i in 0..100 {
                 let probe = crate::core::entangled::EntangledHVec::new_deterministic(dim, i as u64);
-                let _ = hms.meaning_cleanup(&probe);
+                let _ = warm.meaning_cleanup(&probe);
             }
         }));
     }
@@ -317,7 +317,7 @@ fn test_concurrent_access() {
         h.join().expect("Thread panicked");
     }
 
-    assert!(hms.vector_count() >= 400, "All writes should complete");
+    assert!(warm.vector_count() >= 400, "All writes should complete");
 }
 
 #[test]
@@ -335,52 +335,52 @@ fn test_persistence_round_trip() {
     let triple_count;
     let vector_count;
     {
-        let hms = meaning_hms_at(&path, 16384);
+        let warm = meaning_warm_at(&path, 16384);
         // Use sentences the decomposer can parse: "X is Y" pattern
-        hms.memorize_meaning("d1", "Alpha is a concept").unwrap();
-        hms.memorize_meaning("d2", "Beta is a concept").unwrap();
-        hms.memorize_meaning("d3", "Gamma is a concept").unwrap();
+        warm.memorize_meaning("d1", "Alpha is a concept").unwrap();
+        warm.memorize_meaning("d2", "Beta is a concept").unwrap();
+        warm.memorize_meaning("d3", "Gamma is a concept").unwrap();
 
-        atom_count = hms.meaning_atom_count();
-        triple_count = hms.meaning_triple_count();
-        vector_count = hms.vector_count();
+        atom_count = warm.meaning_atom_count();
+        triple_count = warm.meaning_triple_count();
+        vector_count = warm.vector_count();
         assert!(atom_count > 0, "Should have atoms");
         assert!(triple_count > 0, "Should have triples");
 
         original_vecs = atoms
             .iter()
             .map(|a| {
-                let v = hms.encode_text(a);
+                let v = warm.encode_text(a);
                 (a.to_string(), v)
             })
             .collect();
     }
-    // HmsCore dropped, all in-memory state gone
+    // WarmCore dropped, all in-memory state gone
 
     // Phase 2: reload from arena
     {
-        let hms = meaning_hms_at(&path, 16384);
+        let warm = meaning_warm_at(&path, 16384);
         assert!(
-            hms.meaning_atom_count() >= atom_count,
+            warm.meaning_atom_count() >= atom_count,
             "Atom count should survive reload: before={}, after={}",
             atom_count,
-            hms.meaning_atom_count()
+            warm.meaning_atom_count()
         );
         assert!(
-            hms.meaning_triple_count() >= triple_count,
+            warm.meaning_triple_count() >= triple_count,
             "Triple count should survive reload: before={}, after={}",
             triple_count,
-            hms.meaning_triple_count()
+            warm.meaning_triple_count()
         );
         assert_eq!(
-            hms.vector_count(),
+            warm.vector_count(),
             vector_count,
             "Vector count should survive reload"
         );
 
         // Verify encoding is deterministic
         for (name, original) in &original_vecs {
-            let reloaded = hms.encode_text(name);
+            let reloaded = warm.encode_text(name);
             assert_eq!(
                 reloaded.indices(),
                 original.indices(),
@@ -391,10 +391,10 @@ fn test_persistence_round_trip() {
     }
 }
 
-fn meaning_hms_at(path: &str, dim: u32) -> HmsCore {
-    let mut config = HmsConfig::default();
+fn meaning_warm_at(path: &str, dim: u32) -> WarmCore {
+    let mut config = WarmConfig::default();
     config.meaning.enabled = true;
     config.meaning.auto_decompose = true;
     config.meaning.beta = 24.0;
-    HmsCore::new(dim, Some(path.to_string()), Some(config)).unwrap()
+    WarmCore::new(dim, Some(path.to_string()), Some(config)).unwrap()
 }

@@ -59,7 +59,7 @@ class SqliteFts5:
 
     def open(self):
         self.db = sqlite3.connect(self.store / "fts.db")
-        # macOS fsync leaves writes in the drive cache. Every durable replace/delete of HMS ends in
+        # macOS fsync leaves writes in the drive cache. Every durable replace/delete of WARM ends in
         # fcntl(F_FULLFSYNC) on macOS, as do tantivy (Rust std sync_all/sync_data) and Lucene
         # (JDK FileChannel.force); fullfsync holds SQLite to the same standard.
         self.db.execute("PRAGMA fullfsync = ON")

@@ -36,11 +36,11 @@ Validation: the complete local fmt/clippy/default test gate passed on Apple M4 /
 
 The 600k corpus passed 962 queries × 3 optimized commands against the independent exhaustive evaluator, with zero mismatches. All 962 full-corpus COUNT answers also matched saved Tantivy counts. The full check ran untimed on Apple M4/arm64 with four threads and nice19 after all ten copied index files and the query/reference files matched their source SHA256 values; source commit remained 7e216c6a. Peak RSS was 12.7 GiB and opening took 272.6 seconds, recorded only for resource accounting. The x86 protocol and exhaustive checks remain separate receipts. The efficient verifier computes one exhaustive top100+count reference per query and derives its top10 prefix and count; all 2,886 optimized results are compared. Exhaustive sorts the full result before truncation, so reference reuse does not remove a comparison.
 
-Raw receipts, scripts, adapter snapshot, source hashes, and summaries are in [the development artifact directory](../../benchmarks/results/sbg_positions_development/). Extract `timing-evidence.tar.gz` there to inspect every original and confirmation round. `setup.sh`, `paired.py`, `paired_ingest.py`, `persistent.py`, and `correctness.py` reproduce the work in `~/hms-sbg-positions` using separate parent/candidate source archives and copied indexes.
+Raw receipts, scripts, adapter snapshot, source hashes, and summaries are in [the development artifact directory](../../benchmarks/results/sbg_positions_development/). Extract `timing-evidence.tar.gz` there to inspect every original and confirmation round. `setup.sh`, `paired.py`, `paired_ingest.py`, `persistent.py`, and `correctness.py` reproduce the work in `~/warm-sbg-positions` using separate parent/candidate source archives and copied indexes.
 
-Unmeasured: full-corpus x86 latency and memory, full indexing cost, other CPUs beyond the reported checks, and interaction with SIMD posting decode. This revision establishes no new leaderboard standing. After the freeze, repin and rebuild the HMS adapter at the merged commit, then run the standard harness:
+Unmeasured: full-corpus x86 latency and memory, full indexing cost, other CPUs beyond the reported checks, and interaction with SIMD posting decode. This revision establishes no new leaderboard standing. After the freeze, repin and rebuild the WARM adapter at the merged commit, then run the standard harness:
 
 ```sh
-cd ~/sbg-hms/sbg
-flock ~/hms-timing.lock make bench ENGINES='hms-main tantivy-0.26 lucene-10.4.0 pisa-0.8.2 iresearch-26.03.1' COMMANDS='TOP_10 TOP_100 TOP_1000 TOP_100_COUNT COUNT' QUERIES=queries.txt
+cd ~/sbg-warm/sbg
+flock ~/warm-timing.lock make bench ENGINES='warm-main tantivy-0.26 lucene-10.4.0 pisa-0.8.2 iresearch-26.03.1' COMMANDS='TOP_10 TOP_100 TOP_1000 TOP_100_COUNT COUNT' QUERIES=queries.txt
 ```

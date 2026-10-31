@@ -7,13 +7,13 @@
 use std::sync::Arc;
 
 use anyhow::{ensure, Result};
-use holographic_memory::core::memory_api::{Memory, RecallOptions, RememberInput};
-use holographic_memory::HmsCore;
+use writerslogic_warm::core::memory_api::{Memory, RecallOptions, RememberInput};
+use writerslogic_warm::WarmCore;
 
 fn main() -> Result<()> {
     // --8<-- [start:memory]
     let dir = tempfile::tempdir()?;
-    let core = Arc::new(HmsCore::new(
+    let core = Arc::new(WarmCore::new(
         4096,
         Some(dir.path().display().to_string()),
         None,

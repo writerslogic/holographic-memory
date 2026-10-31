@@ -73,7 +73,7 @@ jobs:
       - name: Package and verify the crate builds from its own tarball
         run: |
           cargo package --locked --no-default-features
-          bytes=$(stat -c%s target/package/holographic-memory-*.crate)
+          bytes=$(stat -c%s target/package/writerslogic-warm-*.crate)
           if (( bytes >= 9500000 )); then
             echo "::error::Crate archive is ${bytes} bytes; crates.io uploads are limited to 10 MiB"
             exit 1
@@ -84,10 +84,10 @@ jobs:
       - name: CycloneDX SBOM
         run: |
           set -euo pipefail
-          cargo cyclonedx --format json --spec-version 1.5 --no-default-features --override-filename holographic-memory-crate.cdx
+          cargo cyclonedx --format json --spec-version 1.5 --no-default-features --override-filename writerslogic-warm-crate.cdx
           mkdir -p dist
           cp target/package/*.crate dist/
-          mv holographic-memory-crate.cdx.json dist/
+          mv writerslogic-warm-crate.cdx.json dist/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: crate
@@ -250,21 +250,21 @@ jobs:
         run: |
           set -euo pipefail
           cargo package --locked --no-default-features
-          bytes=$(stat -c%s target/package/holographic-memory-*.crate)
+          bytes=$(stat -c%s target/package/writerslogic-warm-*.crate)
           if (( bytes >= 9500000 )); then
             echo "::error::Crate archive is ${bytes} bytes; crates.io uploads are limited to 10 MiB"
             exit 1
           fi
-          echo "crate_name=$(basename target/package/holographic-memory-*.crate)" >> "$GITHUB_OUTPUT"
+          echo "crate_name=$(basename target/package/writerslogic-warm-*.crate)" >> "$GITHUB_OUTPUT"
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
           tool: cargo-cyclonedx
       - name: CycloneDX SBOM
         run: |
-          cargo cyclonedx --format json --spec-version 1.5 --no-default-features --override-filename holographic-memory-crate.cdx
+          cargo cyclonedx --format json --spec-version 1.5 --no-default-features --override-filename writerslogic-warm-crate.cdx
           mkdir -p dist
           cp target/package/*.crate dist/
-          mv holographic-memory-crate.cdx.json "dist/${{ steps.package.outputs.crate_name }}.cdx.json"
+          mv writerslogic-warm-crate.cdx.json "dist/${{ steps.package.outputs.crate_name }}.cdx.json"
       - name: Attest crate and SBOM provenance
         id: provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
@@ -319,10 +319,10 @@ jobs:
         run: |
           set -euo pipefail
           cd tarballs
-          for tarball in holographic-memory-*-*.tgz; do
+          for tarball in writerslogic-warm-*-*.tgz; do
             npm publish "$tarball" --provenance --access public
           done
-          root=$(ls holographic-memory-[0-9]*.tgz)
+          root=$(ls writerslogic-warm-[0-9]*.tgz)
           npm publish "$root" --provenance --access public
 
   correct-npm-deprecation:
@@ -345,7 +345,7 @@ jobs:
           VERSION: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          npm deprecate 'holographic-memory@0.3.0' "0.3.0 is unmaintained; upgrade to ${VERSION#v}."
+          npm deprecate 'writerslogic-warm@0.3.0' "0.3.0 is unmaintained; upgrade to ${VERSION#v}."
 
   verify-published:
     name: install the published packages and search
@@ -374,7 +374,7 @@ jobs:
           npm init -y > /dev/null
           for attempt in {1..20}; do
             ready=1
-            for package in holographic-memory "${platform_packages[@]}"; do
+            for package in writerslogic-warm "${platform_packages[@]}"; do
               if ! npm_config_cache="$RUNNER_TEMP/npm-release-$attempt" npm view "${package}@${version}" version > /dev/null 2>&1; then
                 echo "${package}@${version} is not available yet (attempt $attempt/20)"
                 ready=0
@@ -384,14 +384,14 @@ jobs:
             [ "$attempt" = 20 ] && { echo "Published npm packages did not all become available" >&2; exit 1; }
             sleep 30
           done
-          npm_config_cache="$RUNNER_TEMP/npm-release-install" npm install --ignore-scripts --save-exact --no-audit --no-fund "holographic-memory@${version}"
+          npm_config_cache="$RUNNER_TEMP/npm-release-install" npm install --ignore-scripts --save-exact --no-audit --no-fund "writerslogic-warm@${version}"
           npm audit signatures
           node -e "
             const assert = require('node:assert/strict');
             (async () => {
-              const { HolographicMemorySystem } = require('holographic-memory');
-              const { DocumentMemory } = await import('holographic-memory/semantic');
-              const memory = new DocumentMemory(new HolographicMemorySystem(4096, './store'));
+              const { WarmMemorySystem } = require('writerslogic-warm');
+              const { DocumentMemory } = await import('writerslogic-warm/semantic');
+              const memory = new DocumentMemory(new WarmMemorySystem(4096, './store'));
               await memory.memorize({ id: 'a', text: 'Backups protect stored documents.', sourceUri: 'a.md' });
               assert.equal((await memory.search('backups'))[0].sourceUri, 'a.md');
               await memory.flush();

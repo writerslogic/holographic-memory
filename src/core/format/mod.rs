@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! The persisted format of an HMS store: its version constants, an offline verifier and the
-//! migration framework behind `hms-format`.
+//! The persisted format of an WARM store: its version constants, an offline verifier and the
+//! migration framework behind `warm-format`.
 //!
 //! The byte-level specification is `docs/file-format/`; this module is its executable form.
 //! Everything that has a version number is defined here once ([`FormatVersions`]), and
@@ -128,7 +128,7 @@ pub struct Finding {
     pub message: String,
 }
 
-/// Overall verdict of a verification, and the exit code of `hms-format verify`.
+/// Overall verdict of a verification, and the exit code of `warm-format verify`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Verdict {

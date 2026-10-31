@@ -5,14 +5,14 @@
 //! engine for BERT-family sentence encoders with int8 or f16 weights.
 //!
 //! * No network at inference. Weights come from a sha256-verified *pack* file that is found by
-//!   path, by `HMS_EMBED_PACK` / `HMS_EMBED_MODEL_DIR`, in the cache, or (feature
+//!   path, by `WARM_EMBED_PACK` / `WARM_EMBED_MODEL_DIR`, in the cache, or (feature
 //!   `local-embed-download`, never when offline) fetched once from the pinned upstream files.
 //! * Outputs are bit-identical for any thread count and any batch composition.
 //! * Forward passes use a soft token budget, with one full sequence always admitted. Hard
 //!   per-call input/token/output and concurrent-call limits apply independently.
 //!
 //! ```no_run
-//! use holographic_memory::core::embed::{EmbedOptions, Embedder};
+//! use writerslogic_warm::core::embed::{EmbedOptions, Embedder};
 //! let embedder = Embedder::new(&EmbedOptions::default())?;
 //! let q = embedder.embed_query(&["what is the capital of France?"])?;
 //! let d = embedder.embed_passages(&["Paris is the capital of France."])?;
@@ -105,11 +105,11 @@ pub struct EmbedOptions {
     pub limits: EmbedLimits,
     /// Worker threads of the embedder's private pool; 0 uses the available parallelism.
     pub threads: usize,
-    /// Never touch the network. `None` follows `HMS_EMBED_OFFLINE`.
+    /// Never touch the network. `None` follows `WARM_EMBED_OFFLINE`.
     pub offline: Option<bool>,
-    /// Directory of ready packs searched before the cache. `None` follows `HMS_EMBED_MODEL_DIR`.
+    /// Directory of ready packs searched before the cache. `None` follows `WARM_EMBED_MODEL_DIR`.
     pub model_dir: Option<PathBuf>,
-    /// Cache directory for downloaded packs. `None` follows `HMS_EMBED_CACHE`, then the
+    /// Cache directory for downloaded packs. `None` follows `WARM_EMBED_CACHE`, then the
     /// platform cache directory.
     pub cache_dir: Option<PathBuf>,
 }
@@ -249,7 +249,7 @@ impl Embedder {
         };
         let pool = rayon::ThreadPoolBuilder::new()
             .num_threads(threads)
-            .thread_name(|i| format!("hms-embed-{i}"))
+            .thread_name(|i| format!("warm-embed-{i}"))
             .build()
             .context("build the embedder thread pool")?;
         let pooling = options.pooling.unwrap_or(loaded.meta.pooling);

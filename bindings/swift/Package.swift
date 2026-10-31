@@ -4,9 +4,9 @@
 
 import PackageDescription
 
-// Build Frameworks/hms_mobileFFI.xcframework first: scripts/build-xcframework.sh
+// Build Frameworks/warm_mobileFFI.xcframework first: scripts/build-xcframework.sh
 let package = Package(
-    name: "HolographicMemory",
+    name: "WarmMemory",
     platforms: [
         .iOS(.v15),
         .macOS(.v12),
@@ -14,22 +14,22 @@ let package = Package(
         .visionOS(.v1),
     ],
     products: [
-        .library(name: "HolographicMemory", targets: ["HolographicMemory"]),
+        .library(name: "WarmMemory", targets: ["WarmMemory"]),
     ],
     targets: [
         .binaryTarget(
-            name: "hms_mobileFFI",
-            path: "Frameworks/hms_mobileFFI.xcframework"
+            name: "warm_mobileFFI",
+            path: "Frameworks/warm_mobileFFI.xcframework"
         ),
         .target(
-            name: "HolographicMemory",
-            dependencies: ["hms_mobileFFI"],
-            path: "Sources/HolographicMemory"
+            name: "WarmMemory",
+            dependencies: ["warm_mobileFFI"],
+            path: "Sources/WarmMemory"
         ),
         .testTarget(
-            name: "HolographicMemoryTests",
-            dependencies: ["HolographicMemory"],
-            path: "Tests/HolographicMemoryTests"
+            name: "WarmMemoryTests",
+            dependencies: ["WarmMemory"],
+            path: "Tests/WarmMemoryTests"
         ),
     ]
 )

@@ -12,7 +12,7 @@ use super::super::{
     BuildParams, GraphStructure, Rows, VGraph, BUILD_CODES_MIN_DIM, FIRST_PASS_EF, LAYER_RATIO,
     NONE,
 };
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 
 /// Where each row of the merged generation comes from.
 pub(super) struct MergePlan<'a> {
@@ -42,7 +42,7 @@ pub(super) fn merge_structure(
     dim: usize,
     params: &BuildParams,
     plan: &MergePlan<'_>,
-) -> Result<GraphStructure, HmsError> {
+) -> Result<GraphStructure, WarmError> {
     let n = vectors.len() / dim;
     let r = params.degree;
     if let Some(at) = norms.iter().position(|v| !v.is_finite()) {
@@ -206,7 +206,7 @@ fn replacement_entry(
     rows: &Rows<'_>,
     live: &[u32],
     metric: super::super::Metric,
-) -> Result<u32, HmsError> {
+) -> Result<u32, WarmError> {
     let entry = super::super::medoid_by(rows, live.len(), |i| live[i as usize], metric);
     live.get(entry as usize)
         .copied()
@@ -218,7 +218,7 @@ mod tests {
     use super::super::super::{kernels::dot, Metric};
     use super::*;
 
-    fn copied_entry(rows: &Rows<'_>, live: &[u32], metric: Metric) -> Result<u32, HmsError> {
+    fn copied_entry(rows: &Rows<'_>, live: &[u32], metric: Metric) -> Result<u32, WarmError> {
         let sub: Vec<f32> = live
             .iter()
             .flat_map(|&s| rows.row(s).iter().copied())

@@ -358,7 +358,7 @@ def check_work(work):
              'v1': results / 'longmemeval_dev_answers_v1.json', 'history': results / 'evidence_completeness_dev.json',
              'official': public / 'reader_protocol_v1.json', 'preregistration': results / 'preregistration_2026-10.json',
              'manifest': ROOT / 'target/conversation-geometry-validation/models/manifest.json',
-             'export': artifact_path('~/.cache/hms-bench/holo_dev/export_dev.json')}
+             'export': artifact_path('~/.cache/warm-bench/holo_dev/export_dev.json')}
     required = list(paths.values()) + [public / name for name in
                                       ('longmemeval_user_first.py', 'longmemeval_reader_budget.py', 'longmemeval_dev_sources.py')]
     recorded = verify_artifacts(report, work, required)

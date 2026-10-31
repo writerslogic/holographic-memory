@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""VIBE worker adapter for paired HMS encodings and permitted-query CPU indexes."""
+"""VIBE worker adapter for paired WARM encodings and permitted-query CPU indexes."""
 
 import importlib.machinery
 import importlib.util
@@ -35,9 +35,9 @@ def _extension_path(variable):
 
 
 def _load_extension(path, package_name):
-    # The final component selects PyInit_holographic_memory; distinct parent packages keep
+    # The final component selects PyInit_writerslogic_warm; distinct parent packages keep
     # both shared libraries registered without replacing the installed package.
-    name = f"{package_name}.holographic_memory"
+    name = f"{package_name}.writerslogic_warm"
     if name in sys.modules:
         module = sys.modules[name]
         if Path(module.__file__).resolve() != path:
@@ -53,7 +53,7 @@ def _load_extension(path, package_name):
         module = importlib.util.module_from_spec(spec)
         sys.modules[name] = module
         spec.loader.exec_module(module)
-        setattr(package, "holographic_memory", module)
+        setattr(package, "writerslogic_warm", module)
         return module
     except BaseException:
         sys.modules.pop(name, None)
@@ -84,14 +84,14 @@ def _aligned_f32_matrix(values, name):
 
 
 def _training_query_file(dim, max_rows):
-    value = os.environ.get("HMS_QAG_TRAINING_QUERIES")
-    expected = os.environ.get("HMS_QAG_TRAINING_QUERIES_SHA256")
+    value = os.environ.get("WARM_QAG_TRAINING_QUERIES")
+    expected = os.environ.get("WARM_QAG_TRAINING_QUERIES_SHA256")
     if value is None:
         if expected is not None:
-            raise ValueError("a training-query SHA256 requires HMS_QAG_TRAINING_QUERIES")
+            raise ValueError("a training-query SHA256 requires WARM_QAG_TRAINING_QUERIES")
         return None, None, None
     if not value:
-        raise ValueError("HMS_QAG_TRAINING_QUERIES must name a native float32 file")
+        raise ValueError("WARM_QAG_TRAINING_QUERIES must name a native float32 file")
     path = Path(value).expanduser().resolve(strict=True)
     size = path.stat().st_size
     row_bytes = dim * np.dtype("<f4").itemsize
@@ -118,13 +118,13 @@ class QAGPair(BaseANN):
         if candidate_code_bits not in (4, 8):
             raise ValueError("candidate_code_bits must be 4 or 8")
         self._candidate_code_bits = candidate_code_bits
-        baseline = _extension_path("HMS_QAG_BASELINE_SO")
-        candidate = _extension_path("HMS_QAG_CANDIDATE_SO")
+        baseline = _extension_path("WARM_QAG_BASELINE_SO")
+        candidate = _extension_path("WARM_QAG_CANDIDATE_SO")
         if os.path.samefile(baseline, candidate):
             raise ValueError("baseline and candidate must be distinct extension files")
         self._modules = (
-            _load_extension(baseline, "_hms_qag_baseline"),
-            _load_extension(candidate, "_hms_qag_candidate"),
+            _load_extension(baseline, "_warm_qag_baseline"),
+            _load_extension(candidate, "_warm_qag_candidate"),
         )
         self.metric = metric
         self.degree = degree
@@ -153,9 +153,9 @@ class QAGPair(BaseANN):
 
     def fit(self, X):
         rows = _matrix(X, "base vectors")
-        self._fit_hms(rows)
+        self._fit_warm(rows)
 
-    def _fit_hms(self, rows, training_queries=None):
+    def _fit_warm(self, rows, training_queries=None):
         self._indexes.clear()
         self._candidate_patience = 0
         self._build_seconds.clear()
@@ -193,9 +193,9 @@ class QAGPair(BaseANN):
             raise ValueError("learn neighbors must have one nonempty row per learn query")
         if neighbors.dtype.kind not in "iu" or np.any(neighbors < 0) or np.any(neighbors >= len(rows)):
             raise ValueError("learn neighbors must contain integer base IDs in range")
-        value = os.environ.get("HMS_QAG_VALIDATION_IDS")
+        value = os.environ.get("WARM_QAG_VALIDATION_IDS")
         if not value:
-            raise ValueError("HMS_QAG_VALIDATION_IDS must name the reserved learn-row IDs")
+            raise ValueError("WARM_QAG_VALIDATION_IDS must name the reserved learn-row IDs")
         path = Path(value).expanduser().resolve(strict=True)
         size = path.stat().st_size
         if not path.is_file() or size % 4 or size > len(learn) * 4:
@@ -216,7 +216,7 @@ class QAGPair(BaseANN):
         training_queries, training_path, training_sha256 = _training_query_file(
             rows.shape[1], len(construction_queries)
         )
-        self._fit_hms(rows, training_queries)
+        self._fit_warm(rows, training_queries)
         self._validation_count = len(reserved)
         self._construction_count = len(construction_queries)
         self._training_path = training_path

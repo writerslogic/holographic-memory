@@ -1,12 +1,12 @@
 <!-- Copyright 2024-2026 WritersLogic Contributors -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# HMS persisted format
+# WARM persisted format
 
-This is the specification of everything an HMS store writes to disk. It is derived from the
+This is the specification of everything an WARM store writes to disk. It is derived from the
 code at `main` and checked against real stores: `tests/golden/` holds committed stores for
 every format that has existed, and `tests/format_*.rs` reads them. A statement here that no
-test or hexdump supports is marked **(unverified)**. The tests and `hms-format` named in these
+test or hexdump supports is marked **(unverified)**. The tests and `warm-format` named in these
 pages arrive in the follow-up pull requests (golden stores and tests, then the verifier).
 
 "Must", "may" and "never" are normative for writers; readers follow the recovery rules in
@@ -25,7 +25,7 @@ polynomial (the `crc32fast` / zlib CRC).
 | [ANCILLARY.md](ANCILLARY.md) | `audit.bin`, keys, provenance files, standalone qgraph/IVF files, memory-API stamps |
 | [CRASH-CONSISTENCY.md](CRASH-CONSISTENCY.md) | what survives a crash, per file, and the test that shows it |
 | [ENCODERS.md](ENCODERS.md) | text encoder names, determinism contract, embedding spaces |
-| [VERIFY.md](VERIFY.md) | `hms-format verify` / `upgrade`, finding codes, exit codes |
+| [VERIFY.md](VERIFY.md) | `warm-format verify` / `upgrade`, finding codes, exit codes |
 
 Compatibility promises are in [../STABILITY.md](../STABILITY.md).
 
@@ -37,10 +37,10 @@ Each artefact has its own version; a store is the combination.
 |---|---|---|---|
 | Arena manifest | `vectors_data.bin/format.json` `version` | 4 | 2, 3, 4 (no manifest = 1, read as 2) |
 | Store schema | `store.json` `version` | 5 | 2, 3, 4, 5 |
-| Document checkpoint | `documents.ckpt` magic `HMSCKP\0\x01` (`HMSCKPE\x01` sealed) | 1 | 1, schemas 4–5 |
+| Document checkpoint | `documents.ckpt` magic `WARMCKP\0\x01` (`WARMCKPE\x01` sealed) | 1 | 1, schemas 4–5 |
 | Journal payload | magic `HMS-TXN-3\0` | 3 | 2, 3 |
 | Text segment | `documents.text` header byte 4 | 2 | cache: any value is discarded and rebuilt |
-| Vector updates | `HMSVUP01`, `HMSVRW01`, `HMSVLG01` | 1 | 1 |
+| Vector updates | `WARMVUP01`, `WARMVRW01`, `WARMVLG01` | 1 | 1 |
 | Memory stamp | `mem1:` / `_mem.v` | 1 | 1 |
 
 The same numbers are constants in `src/core/format/mod.rs`; `tests/format_golden.rs` fails if one
@@ -49,7 +49,7 @@ moves without a golden store for the new value.
 The current development writer creates schema 5 stores. Schema 5 adds scoped meaning
 maintenance mutations without changing the binary journal encoding. Existing schemas
 2–4 keep their writer format; enabling the new mutations requires an explicit
-`hms-format upgrade` into a new destination.
+`warm-format upgrade` into a new destination.
 
 ## History
 
@@ -61,8 +61,8 @@ maintenance mutations without changing the binary journal encoding. Existing sch
 | Arena 3 | development only | 64 MiB fixed segments; never on `main` as a written default; the reader still accepts it |
 | Arena 4 | commit fd5adf3 | 1 GiB declared segment, file grows in 64 MiB steps; `CURRENT` generations from compaction |
 | Text segment 1 | fd5adf3 | headerless plaintext cache |
-| Text segment 2 | #111 | `HMST` header; encrypted records |
-| Stores without `store.json` | before the schema | refused; rebuild with `hms-admin reencode` |
+| Text segment 2 | #111 | `WARMT` header; encrypted records |
+| Stores without `store.json` | before the schema | refused; rebuild with `warm-admin reencode` |
 
 Golden stores: `v061-*` (real v0.6.1 build), `v1-premanifest`, `rejected-pre-schema` (derived
 from v0.6.1), `v2-marker`, `v3-fixed64` (synthesized with the current writer and a seeded

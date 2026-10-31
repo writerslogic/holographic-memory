@@ -4,7 +4,7 @@
 // Runs the Rust wasm-bindgen-test suite (bindings/wasm/tests) in headless browsers.
 //   node scripts/wasm-test.mjs [chrome] [firefox]
 // Needs chromedriver / geckodriver on PATH or downloadable by wasm-pack, and the browsers
-// themselves (Firefox: set MOZ_FIREFOX_BINARY-style path via HMS_FIREFOX_DIR on PATH).
+// themselves (Firefox: set MOZ_FIREFOX_BINARY-style path via WARM_FIREFOX_DIR on PATH).
 
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
@@ -14,7 +14,7 @@ const crate = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const browsers = process.argv.slice(2).length ? process.argv.slice(2) : ["chrome", "firefox"];
 const env = {
   ...process.env,
-  CARGO_TARGET_DIR: process.env.HMS_WASM_TARGET_DIR ? `${process.env.HMS_WASM_TARGET_DIR}-test` : "./.hms-target-wasm-test",
+  CARGO_TARGET_DIR: process.env.WARM_WASM_TARGET_DIR ? `${process.env.WARM_WASM_TARGET_DIR}-test` : "./.warm-target-wasm-test",
   RUSTFLAGS: '--cfg getrandom_backend="wasm_js"',
 };
 let failed = false;

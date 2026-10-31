@@ -3,7 +3,7 @@
 """Aggregate repeated `dot_kernel_microbench` runs into one results file (platform area).
 
   cargo test --release --lib dot_kernel_microbench --no-run   # note the test binary
-  for i in 1 2 3 4 5 6; do HMS_PLATFORM_BENCH_OUT=run$i.json <test-binary> dot_kernel_microbench --ignored; done
+  for i in 1 2 3 4 5 6; do WARM_PLATFORM_BENCH_OUT=run$i.json <test-binary> dot_kernel_microbench --ignored; done
   uv run python benchmarks/public/platform_microbench_aggregate.py run*.json \
       --host "Apple M4, macOS" --out benchmarks/results/platform_aarch64_microbench_v1.json
 

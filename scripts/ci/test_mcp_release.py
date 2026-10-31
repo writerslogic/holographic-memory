@@ -21,7 +21,7 @@ class ChecksumsTests(unittest.TestCase):
             assets = pathlib.Path(directory)
             for triple in MODULE.TRIPLES:
                 suffix = ".exe" if "windows" in triple else ""
-                (assets / f"hms-mcp-{triple}{suffix}").write_bytes(triple.encode())
+                (assets / f"warm-mcp-{triple}{suffix}").write_bytes(triple.encode())
             table = MODULE.checksums(assets)
             self.assertEqual(set(table), set(MODULE.TRIPLES))
             for triple, digest in table.items():
@@ -32,8 +32,8 @@ class ChecksumsTests(unittest.TestCase):
             assets = pathlib.Path(directory)
             for triple in MODULE.TRIPLES:
                 suffix = ".exe" if "windows" in triple else ""
-                (assets / f"hms-mcp-{triple}{suffix}").write_bytes(b"binary")
-            expected = assets / f"hms-mcp-{MODULE.TRIPLES[0]}"
+                (assets / f"warm-mcp-{triple}{suffix}").write_bytes(b"binary")
+            expected = assets / f"warm-mcp-{MODULE.TRIPLES[0]}"
             expected.unlink()
             with self.assertRaisesRegex(ValueError, "missing="):
                 MODULE.checksums(assets)

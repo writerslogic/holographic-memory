@@ -9,10 +9,10 @@
 
 use std::sync::OnceLock;
 
-use holographic_memory::core::private_query::{
+use writerslogic_warm::core::private_query::{
     Answer, Client, Hint, Params, PublicMatrix, Query, Server,
 };
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::EntangledHVec;
 use libfuzzer_sys::fuzz_target;
 
 const DIM: usize = 256;

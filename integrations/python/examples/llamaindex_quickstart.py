@@ -1,13 +1,13 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""LlamaIndex on Holographic Memory: index, filtered retrieval, reload from storage, memory block.
+"""LlamaIndex on WARM: index, filtered retrieval, reload from storage, memory block.
 
 Start a server first (dimension must match the embedder; MockEmbedding is used so no model or
 API key is needed):
 
-    HMS_API_KEY= hms-server --input-dim 8 --data-dir ./hms-data
-    HMS_URL=http://127.0.0.1:8080 python examples/llamaindex_quickstart.py
+    WARM_API_KEY= warm-server --input-dim 8 --data-dir ./hms-data
+    WARM_URL=http://127.0.0.1:8080 python examples/llamaindex_quickstart.py
 """
 
 import asyncio
@@ -19,25 +19,25 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.embeddings import MockEmbedding
 from llama_index.core.vector_stores.types import FilterOperator, MetadataFilter, MetadataFilters
 
-from holographic_integrations.llamaindex import (
-    HolographicDocumentStore,
-    HolographicIndexStore,
-    HolographicMemoryBlock,
-    HolographicVectorStore,
+from writerslogic_warm_integrations.llamaindex import (
+    WarmDocumentStore,
+    WarmIndexStore,
+    WarmMemoryBlock,
+    WarmVectorStore,
 )
 
-URL = os.environ.get("HMS_URL", "http://127.0.0.1:8080")
+URL = os.environ.get("WARM_URL", "http://127.0.0.1:8080")
 DIM = 8
 tenant = f"example-{uuid.uuid4().hex[:8]}"  # isolated store per run
-hms = dict(url=URL, tenant_id=tenant, input_dim=DIM)
+warm = dict(url=URL, tenant_id=tenant, input_dim=DIM)
 
 
 def main() -> None:
     embed = MockEmbedding(embed_dim=DIM)
     ctx = StorageContext.from_defaults(
-        vector_store=HolographicVectorStore(**hms, collection="vectors"),
-        docstore=HolographicDocumentStore(**hms, collection="docs"),
-        index_store=HolographicIndexStore(**hms, collection="indexes"),
+        vector_store=WarmVectorStore(**warm, collection="vectors"),
+        docstore=WarmDocumentStore(**warm, collection="docs"),
+        index_store=WarmIndexStore(**warm, collection="indexes"),
     )
     docs = [Document(text=f"note {i}", doc_id=f"doc{i}", metadata={"team": "red" if i % 2 else "blue", "n": i}) for i in range(6)]
     index = VectorStoreIndex.from_documents(docs, storage_context=ctx, embed_model=embed)
@@ -51,9 +51,9 @@ def main() -> None:
 
     reopened = load_index_from_storage(
         StorageContext.from_defaults(
-            vector_store=HolographicVectorStore(**hms, collection="vectors"),
-            docstore=HolographicDocumentStore(**hms, collection="docs"),
-            index_store=HolographicIndexStore(**hms, collection="indexes"),
+            vector_store=WarmVectorStore(**warm, collection="vectors"),
+            docstore=WarmDocumentStore(**warm, collection="docs"),
+            index_store=WarmIndexStore(**warm, collection="indexes"),
         ),
         index_id=index.index_id,
         embed_model=embed,
@@ -62,7 +62,7 @@ def main() -> None:
 
 
 async def memory_demo() -> None:
-    block = HolographicMemoryBlock(**{**hms, "input_dim": DIM}, retrieval_context_window=1)
+    block = WarmMemoryBlock(**{**warm, "input_dim": DIM}, retrieval_context_window=1)
     await block.aput([ChatMessage(role="user", content="my cat is called Miso")], session_id="chat-1")
     print("recalled:", await block.aget([ChatMessage(role="user", content="cat called Miso")], session_id="chat-1"))
     await block.aclose()

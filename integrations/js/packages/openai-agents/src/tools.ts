@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { tool } from '@openai/agents'
 import { z } from 'zod'
-import type { HmsStore } from '@holographic-memory/core'
+import type { WarmStore } from '@writerslogic/warm-core'
 
 export interface MemoryToolOptions {
   /** Tool name prefix; default `memory_` gives memory_remember, memory_recall, memory_forget. */
@@ -21,7 +21,7 @@ const scalar = z.union([z.string(), z.number(), z.boolean()])
  * Three function tools for an `Agent`: remember a note, recall notes relevant to a query, and
  * forget a note by id. `scope` partitions memory per user or agent without separate stores.
  */
-export function createMemoryTools(store: HmsStore, options: MemoryToolOptions = {}) {
+export function createMemoryTools(store: WarmStore, options: MemoryToolOptions = {}) {
   const prefix = options.prefix ?? 'memory_'
   const defaultK = options.k ?? 4
   const maxK = options.maxK ?? 20

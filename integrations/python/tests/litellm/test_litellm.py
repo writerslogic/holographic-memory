@@ -7,12 +7,12 @@ import pytest
 
 litellm = pytest.importorskip("litellm")
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.litellm import MemoryTools
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.litellm import MemoryTools
 
 
 def cfg(server):
-    return HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
+    return WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
 
 
 def tc(name, args, i=1):

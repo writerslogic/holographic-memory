@@ -31,14 +31,14 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
-use holographic_memory::core::qgraph::{
+use rayon::prelude::*;
+use serde_json::{json, Value};
+use writerslogic_warm::core::qgraph::{
     BuildParams, Graph, Metric, QGraph, Residency, SearchParams, UpdatableVGraph, VGraph,
     VSearchParams,
 };
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, EmbeddingSpace, EntangledHVec, HmsCore, SearchOptions};
-use rayon::prelude::*;
-use serde_json::{json, Value};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, EmbeddingSpace, EntangledHVec, SearchOptions, WarmCore};
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -259,7 +259,7 @@ enum Mode {
         #[arg(long)]
         out: PathBuf,
     },
-    /// HMS's on-device model stages for the LongMemEval job (feature `local-models`).
+    /// WARM's on-device model stages for the LongMemEval job (feature `local-models`).
     #[cfg(feature = "local-models")]
     LmeModel {
         /// `embed` (JSON list of texts -> little-endian f32 rows), `rerank` (list of
@@ -359,7 +359,8 @@ fn meta(dir: &Path) -> Result<Value> {
 struct TempStore(PathBuf);
 impl TempStore {
     fn new(tag: &str) -> Result<Self> {
-        let p = std::env::temp_dir().join(format!("hms-public-bench-{tag}-{}", std::process::id()));
+        let p =
+            std::env::temp_dir().join(format!("warm-public-bench-{tag}-{}", std::process::id()));
         if p.exists() {
             fs::remove_dir_all(&p)?;
         }
@@ -526,7 +527,7 @@ fn environment() -> Value {
         "arch": std::env::consts::ARCH,
         "os": std::env::consts::OS,
         "load_average": cmd("sysctl", &["-n", "vm.loadavg"]),
-        "hms_version": env!("CARGO_PKG_VERSION"),
+        "warm_version": env!("CARGO_PKG_VERSION"),
         "rayon_threads": rayon::current_num_threads(),
     })
 }
@@ -553,7 +554,7 @@ fn ann(data: &Path, dim: u32, queries: Option<usize>, out: &Path) -> Result<()> 
     drop(train);
 
     let store = TempStore::new("ann")?;
-    let core = HmsCore::new(dim, Some(store.0.display().to_string()), None)?;
+    let core = WarmCore::new(dim, Some(store.0.display().to_string()), None)?;
     let t = Instant::now();
     for (i, code) in codes.into_iter().enumerate() {
         core.memorize(i.to_string(), code)?;
@@ -583,7 +584,7 @@ fn ann(data: &Path, dim: u32, queries: Option<usize>, out: &Path) -> Result<()> 
     let report = json!({
         "dataset": m,
         "environment": environment(),
-        "path": "raw sparse vector: EntangledHVec::from_dense + HmsCore::query (inverted index)",
+        "path": "raw sparse vector: EntangledHVec::from_dense + WarmCore::query (inverted index)",
         "sparse_dim": dim,
         "k": K,
         "n_queries": n,
@@ -1148,8 +1149,8 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
     }
     let report = json!({
         "system": match a.index.as_str() {
-            "edge" => "hms qgraph",
-            _ => "hms qgraph-vertex",
+            "edge" => "warm qgraph",
+            _ => "warm qgraph-vertex",
         },
         "dataset": m,
         "environment": environment(),
@@ -1167,7 +1168,7 @@ fn ann_qgraph_count<const K: usize>(a: &QgraphArgs) -> Result<()> {
                   "load_1m_after_build": load_after_build, "load_gate_met": build_gate,
                   "threads": rayon::current_num_threads()},
         "index_bytes": index_bytes,
-        "huge_pages": {"process": holographic_memory::core::qgraph::huge_page_status(),
+        "huge_pages": {"process": writerslogic_warm::core::qgraph::huge_page_status(),
                        "code_rows_huge_bytes": code_rows_huge_bytes},
         "residual_bytes": residual_bytes,
         "rss_bytes": {"after_build": rss_after_build, "end": rss_end},
@@ -1223,7 +1224,7 @@ fn beir(data: &Path, dim: u32, out: &Path) -> Result<()> {
     const K: u32 = 100;
 
     let doc_store = TempStore::new("beir-doc")?;
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: m["model"].as_str().unwrap_or("unknown").into(),
             revision: m["model_revision"].as_str().unwrap_or("unknown").into(),
@@ -1231,11 +1232,11 @@ fn beir(data: &Path, dim: u32, out: &Path) -> Result<()> {
             normalization: "l2".into(),
             metric: "cosine".into(),
         }),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     };
-    let docs = HmsCore::new(dim, Some(doc_store.0.display().to_string()), Some(config))?;
+    let docs = WarmCore::new(dim, Some(doc_store.0.display().to_string()), Some(config))?;
     let sparse_store = TempStore::new("beir-sparse")?;
-    let sparse = HmsCore::new(dim, Some(sparse_store.0.display().to_string()), None)?;
+    let sparse = WarmCore::new(dim, Some(sparse_store.0.display().to_string()), None)?;
 
     let t = Instant::now();
     for ((id, text), emb) in corpus.iter().zip(&corpus_emb) {
@@ -1268,9 +1269,9 @@ fn beir(data: &Path, dim: u32, out: &Path) -> Result<()> {
     for ((qid, text), emb) in queries.iter().zip(&query_emb) {
         let emb64: Vec<f64> = emb.iter().map(|&x| f64::from(x)).collect();
         for (name, query_text, embedding, lexical, semantic) in [
-            ("hms_lexical", text.as_str(), None, 1.0, 0.0),
-            ("hms_dense_exact", "", Some(emb64.clone()), 0.0, 1.0),
-            ("hms_hybrid", text.as_str(), Some(emb64.clone()), 1.0, 1.0),
+            ("warm_lexical", text.as_str(), None, 1.0, 0.0),
+            ("warm_dense_exact", "", Some(emb64.clone()), 0.0, 1.0),
+            ("warm_hybrid", text.as_str(), Some(emb64.clone()), 1.0, 1.0),
         ] {
             let options = SearchOptions {
                 k: Some(K),
@@ -1296,10 +1297,10 @@ fn beir(data: &Path, dim: u32, out: &Path) -> Result<()> {
         let code = EntangledHVec::from_dense(emb, dim as usize);
         let hits = sparse.query(&code, K);
         latency
-            .entry("hms_sparse")
+            .entry("warm_sparse")
             .or_default()
             .push(t0.elapsed().as_secs_f64() * 1e6);
-        runs.entry("hms_sparse").or_default().insert(
+        runs.entry("warm_sparse").or_default().insert(
             qid.clone(),
             hits.into_iter()
                 .map(|h| h.id.trim_start_matches("d:").to_string())
@@ -1342,7 +1343,7 @@ fn lme_question(
     model: &Value,
 ) -> Result<LmeQuestion> {
     let store = TempStore::new(&format!("lme-{gran}-{qi}"))?;
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: model["model"].as_str().unwrap_or("unknown").into(),
             revision: model["model_revision"].as_str().unwrap_or("unknown").into(),
@@ -1350,9 +1351,9 @@ fn lme_question(
             normalization: "l2".into(),
             metric: "cosine".into(),
         }),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     };
-    let core = HmsCore::new(dim, Some(store.0.display().to_string()), Some(config))?;
+    let core = WarmCore::new(dim, Some(store.0.display().to_string()), Some(config))?;
     let t = Instant::now();
     for item in items {
         core.memorize_document(DocumentInput {
@@ -1537,7 +1538,7 @@ fn lme_scores(
         .enumerate()
         .map(|(n, (qid, items))| {
             let store = TempStore::new(&format!("lme-scores-{n}"))?;
-            let config = HmsConfig {
+            let config = WarmConfig {
                 embedding_space: Some(EmbeddingSpace {
                     model: "external".into(),
                     revision: "see benchmarks/public/longmemeval_modal.py".into(),
@@ -1545,9 +1546,9 @@ fn lme_scores(
                     normalization: "l2".into(),
                     metric: "cosine".into(),
                 }),
-                ..HmsConfig::default()
+                ..WarmConfig::default()
             };
-            let core = HmsCore::new(dim, Some(store.0.display().to_string()), Some(config))?;
+            let core = WarmCore::new(dim, Some(store.0.display().to_string()), Some(config))?;
             for item in items {
                 core.memorize_document(DocumentInput {
                     id: item.id.clone(),
@@ -1940,7 +1941,7 @@ fn lme_model(
     batch: Option<usize>,
     gate: Option<(f64, u64)>,
 ) -> Result<()> {
-    use holographic_memory::core::models::{
+    use writerslogic_warm::core::models::{
         default_device, Embedder, Generator, ModelSource, QueryRewriter, Reranker,
     };
     if stage == "device" {
@@ -2000,7 +2001,7 @@ fn lme_model(
                     let sessions: Vec<Vec<String>> = serde_json::from_slice(&raw)?;
                     sessions
                         .iter()
-                        .map(|s| holographic_memory::core::models::prompts::fact_prompt(s))
+                        .map(|s| writerslogic_warm::core::models::prompts::fact_prompt(s))
                         .collect()
                 };
                 let done = generator.generate(&prompts)?;
@@ -2049,10 +2050,10 @@ fn load_avgs() -> Option<Vec<f64>> {
 /// On-device cost through the document API with every stage on: each LongMemEval_S session
 /// (its user turns) is ingested as one document (fact extraction + embedding), then questions
 /// are searched (rewrite + query embeddings + hybrid search + re-rank). Sizes from
-/// `HMS_DEVICE_SESSIONS` (default 20) and `HMS_DEVICE_QUERIES` (default 20).
+/// `WARM_DEVICE_SESSIONS` (default 20) and `WARM_DEVICE_QUERIES` (default 20).
 #[cfg(feature = "local-models")]
 fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
-    use holographic_memory::core::models::{
+    use writerslogic_warm::core::models::{
         default_device, Embedder, Generator, ModelSource, ModelStages, Reranker, PINNED,
     };
     let env_n = |k: &str, d: usize| {
@@ -2062,8 +2063,8 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
             .unwrap_or(d)
     };
     let (n_sessions, n_queries) = (
-        env_n("HMS_DEVICE_SESSIONS", 20),
-        env_n("HMS_DEVICE_QUERIES", 20),
+        env_n("WARM_DEVICE_SESSIONS", 20),
+        env_n("WARM_DEVICE_QUERIES", 20),
     );
     let source = |id: &str| {
         let rev = PINNED
@@ -2119,7 +2120,7 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
         })
         .collect::<Result<_>>()?;
     let store = TempStore::new("lme-device")?;
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(
             stages
                 .embedder
@@ -2127,9 +2128,9 @@ fn lme_device(data: &Path, models: &Path, out: &Path) -> Result<()> {
                 .context("missing local embedder")?
                 .space(),
         ),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     };
-    let core = HmsCore::new(16384, Some(store.0.display().to_string()), Some(config))?;
+    let core = WarmCore::new(16384, Some(store.0.display().to_string()), Some(config))?;
     core.set_model_stages(Some(std::sync::Arc::new(stages)))?;
     let mut ingest = Vec::new();
     for (sid, turns) in &sessions {

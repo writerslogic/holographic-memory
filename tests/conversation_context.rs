@@ -3,18 +3,18 @@
 
 #![cfg(feature = "conversation-memory")]
 
-use holographic_memory::core::memory_api::{
+use serde_json::{json, Value};
+use writerslogic_warm::core::memory_api::{
     ConversationContext, ConversationContextLimits, ConversationEvidence, ConversationInput,
     ConversationMemory, ConversationRecallOptions, ConversationRole, ConversationTurn,
     MAX_CONVERSATION_BYTES, MAX_CONVERSATION_METADATA_BYTES, MAX_CONVERSATION_RECORDS,
 };
-use holographic_memory::HmsCore;
-use serde_json::{json, Value};
+use writerslogic_warm::WarmCore;
 
 fn evidence() -> ConversationEvidence {
     let dir = tempfile::tempdir().unwrap();
     let memory = ConversationMemory::new(
-        HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
+        WarmCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
     )
     .unwrap();
     for (session_id, version, suffix) in [("trip", "v1", "open"), ("trip", "v2", "cancelled")] {
@@ -51,7 +51,7 @@ fn decode(value: &Value) -> anyhow::Result<ConversationContext> {
 fn episode_fixture() -> (tempfile::TempDir, ConversationMemory, ConversationEvidence) {
     let dir = tempfile::tempdir().unwrap();
     let memory = ConversationMemory::new(
-        HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
+        WarmCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
     )
     .unwrap();
     for (session_id, version, marker, cue) in [
@@ -213,7 +213,7 @@ fn transitive_expansion_is_atomic_at_source_round_and_byte_boundaries() {
 fn immediate_candidate_breadth_precedes_enrichment_and_long_sessions_keep_local_context() {
     let dir = tempfile::tempdir().unwrap();
     let memory = ConversationMemory::new(
-        HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
+        WarmCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
     )
     .unwrap();
     for (session_id, count) in [("early-priority", 9), ("long-session", 69)] {
@@ -293,8 +293,8 @@ fn immediate_candidate_breadth_precedes_enrichment_and_long_sessions_keep_local_
 
 #[test]
 fn transitive_expansion_rejects_deleted_premises_and_forged_dependency_cycles() {
-    use holographic_memory::core::memory_api::{ForgetOptions, ForgetScope, Memory};
     use std::sync::Arc;
+    use writerslogic_warm::core::memory_api::{ForgetOptions, ForgetScope, Memory};
 
     let (dir, memory, seed) = episode_fixture();
     let limits = ConversationContextLimits {
@@ -318,7 +318,7 @@ fn transitive_expansion_rejects_deleted_premises_and_forged_dependency_cycles() 
         .iter()
         .any(|source| source.record_id == missing_id));
     drop(memory);
-    let core = Arc::new(HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(4096, Some(dir.path().display().to_string()), None).unwrap());
     let memory = Memory::new(core.clone());
     let report = memory
         .forget(
@@ -512,7 +512,7 @@ fn census_fixture() -> (
 ) {
     let dir = tempfile::tempdir().unwrap();
     let memory = ConversationMemory::new(
-        HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
+        WarmCore::new(4096, Some(dir.path().display().to_string()), None).unwrap(),
     )
     .unwrap();
     for (index, text) in [

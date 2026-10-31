@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::Result;
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
 use serde_json::{json, Value};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, EmbeddingSpace, SearchOptions, WarmCore};
 
-fn config(dimensions: usize) -> HmsConfig {
-    HmsConfig {
+fn config(dimensions: usize) -> WarmConfig {
+    WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "fixture".into(),
             revision: "1".into(),
@@ -26,7 +26,7 @@ fn document(id: usize, dimensions: usize) -> DocumentInput {
     serde_json::from_value(json!({"id": format!("d{id:04}"), "version": "old", "text": format!("running common topic{} rare{id}", id % 7), "sourceUri": format!("source{}", id % 3), "metadata": {"group": id % 2, "precision": ((id + 1) as f64 * 0.3).sin()}, "storeText": !id.is_multiple_of(13), "embeddings": [vector]})).unwrap()
 }
 
-fn queries(core: &HmsCore) -> Result<Vec<Value>> {
+fn queries(core: &WarmCore) -> Result<Vec<Value>> {
     let mut results = Vec::new();
     for filter in [None, Some(json!({"group": 1})), Some(json!({"group": 99}))] {
         for fusion in ["blend", "rrf"] {
@@ -56,7 +56,7 @@ fn queries(core: &HmsCore) -> Result<Vec<Value>> {
 #[test]
 fn trained_document_backend_preserves_hybrid_fields_and_filtered_results() -> Result<()> {
     let directory = tempfile::tempdir()?;
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         1024,
         Some(directory.path().display().to_string()),
         Some(config(8)),
@@ -76,7 +76,7 @@ fn trained_document_backend_preserves_hybrid_fields_and_filtered_results() -> Re
 fn mutation_deltas_and_restart_preserve_results_before_and_after_explicit_rebuild() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
-    let core = HmsCore::new(1024, Some(path.clone()), Some(config(8)))?;
+    let core = WarmCore::new(1024, Some(path.clone()), Some(config(8)))?;
     core.memorize_documents((0..256).map(|id| document(id, 8)).collect())?;
     core.train_document_index()?;
     let mut replacement = document(3, 8);
@@ -97,7 +97,7 @@ fn mutation_deltas_and_restart_preserve_results_before_and_after_explicit_rebuil
     core.compact()?;
     assert_eq!(queries(&core)?, expected);
     drop(core);
-    let core = HmsCore::new(1024, Some(path), Some(config(8)))?;
+    let core = WarmCore::new(1024, Some(path), Some(config(8)))?;
     assert!(!core.document_index_trained());
     assert_eq!(queries(&core)?, expected);
     core.train_document_index()?;
@@ -109,7 +109,7 @@ fn mutation_deltas_and_restart_preserve_results_before_and_after_explicit_rebuil
 fn document_index_threshold_and_dimension_limits_have_exact_fallbacks() -> Result<()> {
     for count in [127, 128, 129] {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             256,
             Some(directory.path().display().to_string()),
             Some(config(8)),
@@ -130,7 +130,7 @@ fn document_index_threshold_and_dimension_limits_have_exact_fallbacks() -> Resul
     }
     for dimensions in [4095, 4096, 4097] {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             256,
             Some(directory.path().display().to_string()),
             Some(config(dimensions)),

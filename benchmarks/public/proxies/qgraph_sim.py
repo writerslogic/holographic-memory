@@ -1,5 +1,5 @@
 """numpy model of the VGraph search (`src/core/qgraph/vertex.rs`) over a graph read from the
-HMSGRF02 cache, for 10-minute proxies on held-out train vectors. It reproduces the encoding
+WARMGRF02 cache, for 10-minute proxies on held-out train vectors. It reproduces the encoding
 (mean-centred 8-bit symmetric codes, one scale per vertex, 8-bit residual), the quantized query,
 the upper-layer descent and the best-first loop with the ef-pool termination rule, and records
 every expansion so that oracle questions (when were the true neighbours found?) can be asked.
@@ -15,7 +15,7 @@ NONE = np.uint32(0xFFFF_FFFF)
 HOLDOUT = 2000
 
 
-def load_dataset(name: str, holdout: int = HOLDOUT, cache=Path.home() / ".cache/hms-bench"):
+def load_dataset(name: str, holdout: int = HOLDOUT, cache=Path.home() / ".cache/warm-bench"):
     """Held-out split exactly as `public-bench ann-qgraph --holdout N` makes it (every
     (n // N)-th train row is a query, the rest are the index; rows L2-normalized). Returns the
     normalized index rows, the normalized queries and the exact top-100 ids by inner product."""
@@ -54,7 +54,7 @@ def exact_topk(keep: np.ndarray, queries: np.ndarray, k: int, block: int = 256) 
 class Graph:
     def __init__(self, path: Path):
         data = np.fromfile(path, dtype=np.uint8)
-        assert data[:8].tobytes() == b"HMSGRF02", "not an HMSGRF02 cache"
+        assert data[:8].tobytes() == b"HMSGRF02", "not an WARMGRF02 cache"
         hdr = np.frombuffer(data[8:72].tobytes(), dtype="<u8")
         self.n, self.dim, self.degree = int(hdr[0]), int(hdr[1]), int(hdr[2])
         self.build_ef, self.alpha = int(hdr[3]), float(np.frombuffer(np.uint32(hdr[4]).tobytes(), "<f4")[0])

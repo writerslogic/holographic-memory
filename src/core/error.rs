@@ -27,7 +27,7 @@ pub(crate) fn after_commit<T>(
 )]
 #[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(tag = "type", content = "message")]
-pub enum HmsError {
+pub enum WarmError {
     #[error("Invalid parameter: {details}")]
     InvalidParam { details: String },
 

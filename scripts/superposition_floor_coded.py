@@ -26,7 +26,7 @@
 #
 # HONEST SCOPE. The crossing is a CLEAN-SIGNAL phenomenon: under a corrupted/noisy query
 # the SC advantage collapses back to the dense floor (the wave needs a clean seed). So it
-# raises CLEAN capacity, not the NOISY-QUERY capacity that is HMS's robustness value.
+# raises CLEAN capacity, not the NOISY-QUERY capacity that is WARM's robustness value.
 #
 # Self-contained (numpy). Deterministic. Run: uv run python scripts/superposition_floor_coded.py
 

@@ -3,7 +3,7 @@
 """One pinned virtual environment per comparator, plus its install footprint.
 
 `requirements/<name>.in` holds the pinned top-level packages; `requirements/<name>.txt` is the
-fully resolved universal lock (`hms-bench lock`). The footprint (bytes and distribution count)
+fully resolved universal lock (`warm-bench lock`). The footprint (bytes and distribution count)
 is measured by installing the lock alone into an empty target, so it is what a user adds, not
 what the benchmark runtime (which also needs numpy) holds.
 """
@@ -21,7 +21,7 @@ from .common import CACHE, ROOT, dir_bytes, log
 REQUIREMENTS = ROOT / "benchmarks/competitive/requirements"
 # Source-built packages (hnswlib) compile with -march=native, so an environment is only valid on
 # the CPU that built it; a fleet with mixed CPUs points this at machine-local storage.
-ENV_ROOT = Path(os.environ["HMS_BENCH_ENVS"]) if os.environ.get("HMS_BENCH_ENVS") else CACHE / "competitive" / "envs"
+ENV_ROOT = Path(os.environ["WARM_BENCH_ENVS"]) if os.environ.get("WARM_BENCH_ENVS") else CACHE / "competitive" / "envs"
 PYTHON = "3.13"
 # A package whose wheels do not cover CPython 3.13 gets its own interpreter; the version is
 # recorded in every results file next to the package versions.

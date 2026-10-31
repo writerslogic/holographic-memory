@@ -3,15 +3,15 @@
 
 import pytest
 
-from holographic_integrations.core import HmsBackend, HmsConfig
-from holographic_integrations.core.paged import PagedLog
+from writerslogic_warm_integrations.core import WarmBackend, WarmConfig
+from writerslogic_warm_integrations.core.paged import PagedLog
 
 
 @pytest.mark.parametrize("n", [9, 10, 11, 29, 30, 31])
 def test_log_across_page_boundaries(server_factory, n):
     srv = server_factory(64, max_top_k=10)
-    cfg = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
-    with HmsBackend(cfg) as b:
+    cfg = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    with WarmBackend(cfg) as b:
         log = PagedLog(b, "k", page_size=10)
         items = [f"item {i:03d}" for i in range(n)]
         log.append(items[:4])
@@ -31,8 +31,8 @@ def test_log_across_page_boundaries(server_factory, n):
 
 
 def test_logs_with_different_keys_or_namespaces_do_not_mix(server):
-    cfg = HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
-    with HmsBackend(cfg) as b:
+    cfg = WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
+    with WarmBackend(cfg) as b:
         a, c, d = PagedLog(b, "x"), PagedLog(b, "y"), PagedLog(b, "x", namespace="other")
         a.append(["a1"]), c.append(["c1"]), d.append(["d1"])
         assert a.read() == ["a1"] and c.read() == ["c1"] and d.read() == ["d1"]
@@ -41,8 +41,8 @@ def test_logs_with_different_keys_or_namespaces_do_not_mix(server):
 
 
 def test_parts_limit_and_option_validation(server):
-    cfg = HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, max_fetch=20)
-    with HmsBackend(cfg) as b:
+    cfg = WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, max_fetch=20)
+    with WarmBackend(cfg) as b:
         log = PagedLog(b, "p", chunk_chars=100, max_parts=3)
         for size in (299, 300):  # exactly max_parts chunks fits, one more character does not
             log.append(["z" * size])
@@ -58,8 +58,8 @@ def test_parts_limit_and_option_validation(server):
 
 @pytest.mark.parametrize("size", [99, 100, 101])
 def test_log_preserves_whitespace_and_blank_chunks_at_boundaries(server, size):
-    config = HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
-    with HmsBackend(config) as backend:
+    config = WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim)
+    with WarmBackend(config) as backend:
         log = PagedLog(backend, "exact", chunk_chars=100, max_parts=4)
         items = ["", " \t\n", " " * size + "alpha\t beta\n" + " " * size,
                  "é" * size + " \t " + "日本語 " * 5 + "\n"]

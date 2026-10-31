@@ -8,9 +8,9 @@ use std::path::{Path, PathBuf};
 
 pub(crate) const LOCK_FILE: &str = ".hms.lock";
 
-/// Process-scoped exclusive ownership of a writable HMS store.
+/// Process-scoped exclusive ownership of a writable WARM store.
 ///
-/// HMS does not currently expose a read-only mode, so every engine instance is
+/// WARM does not currently expose a read-only mode, so every engine instance is
 /// a potential writer. Holding this lock for the engine lifetime prevents two
 /// processes (or two instances in one process) from mutating the same store.
 pub(crate) struct StoreLock {
@@ -34,7 +34,7 @@ impl StoreLock {
         match file.try_lock() {
             Ok(()) => {}
             Err(TryLockError::WouldBlock) => bail!(
-                "HMS store {} is already open by another engine; concurrent writers are not supported",
+                "WARM store {} is already open by another engine; concurrent writers are not supported",
                 store_path.display()
             ),
             Err(TryLockError::Error(error)) => {
@@ -56,7 +56,7 @@ impl StoreLock {
 impl Drop for StoreLock {
     fn drop(&mut self) {
         if let Err(error) = self.file.unlock() {
-            tracing::warn!(path = %self.path.display(), %error, "failed to release HMS store lock");
+            tracing::warn!(path = %self.path.display(), %error, "failed to release WARM store lock");
         }
     }
 }

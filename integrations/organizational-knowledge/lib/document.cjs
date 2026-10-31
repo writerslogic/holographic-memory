@@ -47,7 +47,7 @@ function checkIdentityPart(value, field, fail) {
 }
 
 /**
- * The HMS document ID for a stable source identity: a compact JSON tuple, so no delimiter
+ * The WARM document ID for a stable source identity: a compact JSON tuple, so no delimiter
  * can make two different identities collide. Independent of content revision.
  */
 function documentId(namespace, sourceSystem, id, fail = requestFailure, names = {}) {
@@ -113,7 +113,7 @@ function checkSourceUrl(value, fail) {
 
 /**
  * Validates one flat curated document (the `data/curated/*.json` shape of the ToIP EGWG
- * prototype) and maps it to an HMS `DocumentInput` without touching storage.
+ * prototype) and maps it to an WARM `DocumentInput` without touching storage.
  * The document's own `identifier` (SAID) is kept verbatim as the version; it is not verified.
  */
 function adaptDocument(namespace, document, source) {

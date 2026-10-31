@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Graph-parameter sweep for the vertex index on glove-100-angular, on one Modal x86 container.
 
-  modal volume put hms-ann-confirm ~/.cache/hms-bench/glove-100-angular /glove-100-angular   # once
+  modal volume put warm-ann-confirm ~/.cache/warm-bench/glove-100-angular /glove-100-angular   # once
   uv run --with modal modal run --detach benchmarks/public/ann_modal_graph.py --rev HEAD --cap-usd 5
 
 Every arm is the same `public-bench` binary (built from `git archive <rev>`) with the accepted
@@ -39,8 +39,8 @@ ARMS = {
     "d64e500": {"args": ["--degree", "64", "--build-ef", "500"]},
 }
 
-VOL = modal.Volume.from_name("hms-ann-confirm", create_if_missing=True)
-app = modal.App("hms-ann-graph")
+VOL = modal.Volume.from_name("warm-ann-confirm", create_if_missing=True)
+app = modal.App("warm-ann-graph")
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("curl", "build-essential", "pkg-config", "time")

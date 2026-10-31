@@ -69,7 +69,7 @@ jobs:
         working-directory: bindings/go
         run: |
           mkdir -p "lib/$(go env GOOS)_$(go env GOARCH)"
-          cp "$CARGO_TARGET_DIR/release/libholographic_memory_c.a" "lib/$(go env GOOS)_$(go env GOARCH)/"
+          cp "$CARGO_TARGET_DIR/release/libwriterslogic_warm_c.a" "lib/$(go env GOOS)_$(go env GOARCH)/"
           go vet ./...
           go test -race ./...
 
@@ -81,5 +81,5 @@ jobs:
       - name: .NET
         shell: bash
         env:
-          HMS_LIBRARY_PATH: ${{ github.workspace }}/target-bindings/release
-        run: dotnet test bindings/dotnet/tests/HolographicMemory.Tests
+          WARM_LIBRARY_PATH: ${{ github.workspace }}/target-bindings/release
+        run: dotnet test bindings/dotnet/tests/WarmMemory.Tests

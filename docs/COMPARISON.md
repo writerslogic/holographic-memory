@@ -1,10 +1,10 @@
-# Holographic Memory vs. Alternatives
+# WARM vs. Alternatives
 
 **Hybrid search, graph indexing, and vector-symbolic memory.**
 
-Holographic Memory (HMS) combines several retrieval and memory paths in one local Rust engine. The paths have different roles; the vector-symbolic layer does not rank ordinary document-search results.
+WARM (WARM) combines several retrieval and memory paths in one local Rust engine. The paths have different roles; the vector-symbolic layer does not rank ordinary document-search results.
 
-| Need | HMS path | Useful comparison |
+| Need | WARM path | Useful comparison |
 |------|----------|-------------------|
 | Search exact words and phrases | Stemmed BM25 with Boolean and phrase queries | Full-text search engines |
 | Search by meaning | Exact cosine over embeddings you supply, fused with lexical results for hybrid search | Embedding-based retrieval systems |

@@ -1,10 +1,10 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""CrewAI crew whose memory lives in Holographic Memory.
+"""CrewAI crew whose memory lives in WARM.
 
 Start the service with the dimension of the embedder below:
-    HMS_API_KEY=demo hms-server --input-dim 64 --dim 1024
+    WARM_API_KEY=demo warm-server --input-dim 64 --dim 1024
 
 Runs offline: the LLM is a scripted stand-in that reports what it saw in its prompt, and the
 embedder is the dependency-free HashingEmbedder. Swap in a real `llm=` and `embedder=` (and
@@ -18,10 +18,10 @@ from crewai import Agent, Crew, Task
 from crewai.llms.base_llm import BaseLLM
 from crewai.memory.unified_memory import Memory
 
-from holographic_integrations.core import HashingEmbedder, HmsConfig
-from holographic_integrations.crewai import HolographicMemoryStorage
+from writerslogic_warm_integrations.core import HashingEmbedder, WarmConfig
+from writerslogic_warm_integrations.crewai import WarmMemoryStorage
 
-URL = os.environ.get("HMS_URL", "http://127.0.0.1:8080")
+URL = os.environ.get("WARM_URL", "http://127.0.0.1:8080")
 EMBED = HashingEmbedder(64)
 
 
@@ -40,8 +40,8 @@ class ScriptedLLM(BaseLLM):
 
 
 def main() -> None:
-    config = HmsConfig(url=URL, api_key=os.environ.get("HMS_API_KEY"), tenant_id="crewai_demo", input_dim=64)
-    storage = HolographicMemoryStorage(config)
+    config = WarmConfig(url=URL, api_key=os.environ.get("WARM_API_KEY"), tenant_id="crewai_demo", input_dim=64)
+    storage = WarmMemoryStorage(config)
     llm = ScriptedLLM(model="scripted")
     memory = Memory(storage=storage, embedder=EMBED.embed_documents, llm=llm, consolidation_threshold=1.0)
     storage.reset()

@@ -56,7 +56,7 @@ cost per item does not apply to this path.
 ## Host-layer changes considered and not kept
 
 - **Reusing searchers.** `VGraph::searcher()` allocates visited marks of one word per vector.
-  Reusing them in Python `batch_query` (four searchers per thread per call) or in hms-server
+  Reusing them in Python `batch_query` (four searchers per thread per call) or in warm-server
   `vindex::search` (one per request) saves at most the first-touch page faults of those marks.
   That is a few percent of one query at 100,000 rows, and well under 1% of a 10,000-query batch.
   Pooled searchers would also keep n words each alive after the call.

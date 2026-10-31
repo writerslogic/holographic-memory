@@ -1,16 +1,16 @@
 {
-  "name": "@holographic-memory/wasm",
+  "name": "@writerslogic/warm-wasm",
   "version": "0.1.0",
   "description": "Local-first document search in WebAssembly: BM25 passages, metadata filters, optional dense embeddings, encrypted persistence. Runs in browsers, Node, Deno and Bun with no service calls.",
   "license": "Apache-2.0",
   "author": "WritersLogic Contributors",
-  "homepage": "https://github.com/writerslogic/holographic-memory/tree/main/docs/runtimes/wasm",
+  "homepage": "https://github.com/writerslogic/warm/tree/main/docs/runtimes/wasm",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/writerslogic/holographic-memory.git",
+    "url": "git+https://github.com/writerslogic/warm.git",
     "directory": "bindings/wasm/npm"
   },
-  "bugs": "https://github.com/writerslogic/holographic-memory/issues",
+  "bugs": "https://github.com/writerslogic/warm/issues",
   "keywords": ["wasm", "webassembly", "search", "bm25", "local-first", "offline", "vector", "memory", "indexeddb", "opfs"],
   "type": "module",
   "sideEffects": false,

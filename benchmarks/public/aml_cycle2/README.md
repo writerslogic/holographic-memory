@@ -11,13 +11,13 @@ the checkout from which it is invoked, so running it directly from a newer
 `main` builds a different native engine. Verify the native `src/`, `Cargo.toml`,
 and `Cargo.lock` against that commit before reproducing the deployment. The
 query repair's reviewed source hashes, test log, and live deployment record are
-in `/Volumes/A/hms-coordination/reports/aml/` on the development host.
+in `/Volumes/A/warm-coordination/reports/aml/` on the development host.
 
 Run the focused local contract checks with:
 
 ```sh
 cd benchmarks/public/aml_cycle2
-HMS_BIN=/path/to/exact-s/hms-server HMS_QUERY_TEST_BINARY=/path/to/exact-s/hms-server \
+WARM_BIN=/path/to/exact-s/warm-server WARM_QUERY_TEST_BINARY=/path/to/exact-s/warm-server \
   uv run --no-project --python 3.12 \
   --with fastapi==0.162.0 --with httpx==0.28.1 --with uvicorn==0.54.0 \
   python -m unittest -v test_adapter test_query test_local_host experimental.test_evidence_selection
@@ -25,7 +25,7 @@ HMS_BIN=/path/to/exact-s/hms-server HMS_QUERY_TEST_BINARY=/path/to/exact-s/hms-s
 
 Keep the evaluation key and endpoint authentication token out of Git. The
 adapter takes the token from `AML_TOKEN`; the Modal deployment obtains it from
-the existing `hms-aml-cycle2-token` Secret. Health is unauthenticated. Add
+the existing `warm-aml-cycle2-token` Secret. Health is unauthenticated. Add
 returns only after the native write and Volume commit complete.
 
 For a host with a persistent local filesystem, `local_host.py` starts the
@@ -39,12 +39,12 @@ native server port.
 
 ```sh
 uv run --script benchmarks/public/aml_cycle2/local_host.py \
-  --binary /path/to/pinned/hms-server --binary-sha256 SHA256 \
+  --binary /path/to/pinned/warm-server --binary-sha256 SHA256 \
   --data-dir /private/persistent/stores --token-file /private/aml-token.env
 ```
 
 The local lifecycle test uses synthetic data and checks Add, shutdown, reopen,
-Search, authentication, and user isolation. Pass `HMS_QUERY_TEST_BINARY` to run
+Search, authentication, and user isolation. Pass `WARM_QUERY_TEST_BINARY` to run
 it against the pinned binary.
 
 `gce_install.sh` installs this same local host on a dedicated Ubuntu 24.04
@@ -106,7 +106,7 @@ minimality, contextual validity and coverage. The selector does not infer them.
 for actor binding, relative dates, redundant evidence, event status, missing
 identity bridges and later corrections. These cases are expectations for future
 semantic checks; passing the structural selector tests does not establish that
-HMS or a model solves them.
+WARM or a model solves them.
 
 `experimental/findings.json` preserves the controlled experiment's aggregate
 results, source-archive hashes and interpretation limits; `citation_matches.csv`

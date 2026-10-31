@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package hms_test
+package warm_test
 
 import (
 	"context"
@@ -10,17 +10,17 @@ import (
 	"os"
 	"path/filepath"
 
-	hms "github.com/writerslogic/holographic-memory/bindings/go"
+	warm "github.com/writerslogic/warm/bindings/go"
 )
 
 func Example() {
-	dir, err := os.MkdirTemp("", "hms-example-")
+	dir, err := os.MkdirTemp("", "warm-example-")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 
-	store, err := hms.Open(filepath.Join(dir, "store"), 2048)
+	store, err := warm.Open(filepath.Join(dir, "store"), 2048)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,14 +28,14 @@ func Example() {
 
 	ctx := context.Background()
 	if _, err := store.Ingest(ctx,
-		hms.Document{ID: "rust", Text: "Rust is a systems programming language focused on memory safety."},
-		hms.Document{ID: "rivers", Text: "Rivers carry water from mountains to the sea."},
+		warm.Document{ID: "rust", Text: "Rust is a systems programming language focused on memory safety."},
+		warm.Document{ID: "rivers", Text: "Rivers carry water from mountains to the sea."},
 	); err != nil {
 		log.Fatal(err)
 	}
 
 	k1, b := 1.2, 0.75
-	hits, err := store.Search(ctx, "memory safety language", &hms.SearchOptions{K: 1, BM25K1: &k1, BM25B: &b})
+	hits, err := store.Search(ctx, "memory safety language", &warm.SearchOptions{K: 1, BM25K1: &k1, BM25B: &b})
 	if err != nil {
 		log.Fatal(err)
 	}

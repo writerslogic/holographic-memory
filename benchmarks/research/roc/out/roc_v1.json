@@ -1,5 +1,5 @@
 {
- "schema": "hms.research.roc/1",
+ "schema": "warm.research.roc/1",
  "generated_at": "2026-10-21T02:58:57+00:00",
  "protocol": {
   "bm25": "k1=1.2, b=0.75, idf=ln(1+(N-df+0.5)/(df+0.5)), tf*(k1+1)/(tf+k1*(1-b+b*dl/avgdl)); tokenizer: lowercase, split on runs outside [0-9A-Za-z\\u00C0-\\uFFFF], no stemming, no stop list; unique query terms; field = corpus.jsonl text (title already joined by newline)",
@@ -89,7 +89,7 @@
   "tie_eps": 0.0
  },
  "data": {
-  "cache": "~/.cache/hms-bench/nfcorpus",
+  "cache": "~/.cache/warm-bench/nfcorpus",
   "meta": {
    "kind": "beir",
    "name": "nfcorpus",
@@ -149,7 +149,7 @@
   "cosine_ndcg10_odd": 0.320122,
   "cosine_ndcg10_even": 0.313245,
   "reference_points_dev_split": {
-   "bm25_hms": 0.2916,
+   "bm25_warm": 0.2916,
    "minilm_l6": 0.3024,
    "gte_small": 0.3398
   }

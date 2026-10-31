@@ -47,7 +47,7 @@ def main():
         completed = subprocess.run(command, cwd=root, env=os.environ | environment, stdout=log, stderr=subprocess.STDOUT)
     after = sources(root)
     binary = target / "release" / ("libhms_native_bridge.dylib" if platform.system() == "Darwin" else "libhms_native_bridge.so")
-    generated = [artifact(p) for p in sorted(target.joinpath("release/build").glob("hms-native-bridge-*/out/qgraph/*.rs"))]
+    generated = [artifact(p) for p in sorted(target.joinpath("release/build").glob("warm-native-bridge-*/out/qgraph/*.rs"))]
     linked = []
     if completed.returncode == 0 and platform.system() == "Darwin":
         output = subprocess.check_output(["otool", "-L", str(binary)], text=True)

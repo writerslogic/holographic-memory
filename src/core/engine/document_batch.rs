@@ -7,7 +7,7 @@ use anyhow::{ensure, Result};
 use rayon::prelude::*;
 
 use super::mutation::{Mutation, TRANSACTION_MAGIC};
-use super::HmsCore;
+use super::WarmCore;
 use crate::core::documents::{
     chunk_spans_with, serialized_size, BatchTooLarge, DocumentInput, IngestOptions,
     MAX_BATCH_ITEMS as MAX_ITEMS, MAX_DOCUMENT_BYTES,
@@ -142,8 +142,8 @@ fn validate_inputs(
 }
 
 /// The journal payload of a prepared document batch in the store's format, serialized once
-/// and checked against the transaction limit; `HmsCore::commit_serialized` appends it as is.
-pub(super) fn serialize_transaction(core: &HmsCore, mutations: &[Mutation]) -> Result<Vec<u8>> {
+/// and checked against the transaction limit; `WarmCore::commit_serialized` appends it as is.
+pub(super) fn serialize_transaction(core: &WarmCore, mutations: &[Mutation]) -> Result<Vec<u8>> {
     let payload = core.transaction_payload(mutations)?;
     // Both magics are the same length.
     if payload.len() - TRANSACTION_MAGIC.len() > MAX_TRANSACTION_BYTES {
@@ -263,7 +263,7 @@ mod tests {
         let directory = tempfile::tempdir()?;
         let path = directory.path().display().to_string();
         let config = super::super::fixture_config(3);
-        let core = super::super::HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+        let core = super::super::WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
         let mut first = input("a");
         first.embeddings = Some(vec![vec![1.0, 0.0, 0.0]]);
         core.memorize_document(first.clone())?;
@@ -301,7 +301,7 @@ mod tests {
         assert_eq!(core.vector_count(), 4);
         core.compact()?;
         drop(core);
-        let core = super::super::HmsCore::new(1024, Some(path), Some(config))?;
+        let core = super::super::WarmCore::new(1024, Some(path), Some(config))?;
         assert_eq!(core.vector_count(), 4);
         assert_eq!(
             serde_json::to_value(core.search_documents("needle", &Default::default())?)?,
@@ -319,7 +319,7 @@ mod tests {
             Arc,
         };
         let directory = tempfile::tempdir()?;
-        let core = Arc::new(super::super::HmsCore::new(
+        let core = Arc::new(super::super::WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             None,
@@ -456,7 +456,7 @@ mod tests {
         };
         let payloads = |threads: usize, keep: bool| -> Result<Vec<Vec<u8>>> {
             let directory = tempfile::tempdir()?;
-            let core = HmsCore::new(1024, Some(directory.path().display().to_string()), None)?;
+            let core = WarmCore::new(1024, Some(directory.path().display().to_string()), None)?;
             core.set_keep_ingest_interner(keep);
             let pool = rayon::ThreadPoolBuilder::new()
                 .num_threads(threads)

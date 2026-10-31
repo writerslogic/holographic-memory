@@ -43,7 +43,7 @@ sys.path.insert(0, str(HERE))
 import longmemeval_pipeline as P  # noqa: E402
 
 ROOT = HERE.parents[1]
-CACHE = Path.home() / ".cache/hms-bench"
+CACHE = Path.home() / ".cache/warm-bench"
 SOURCE = CACHE / "downloads/longmemeval_s_cleaned.json"
 SOURCE_SHA256 = "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442"
 SPLIT = HERE / "longmemeval_split.json"
@@ -462,7 +462,7 @@ def stage_check(args):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("stage", choices=("candidates", "budget", "check"))
-    p.add_argument("--binary", type=Path, default=Path("./.hms-target-1b/release/operand-retriever"))
+    p.add_argument("--binary", type=Path, default=Path("./.warm-target-1b/release/operand-retriever"))
     p.add_argument("--variant", choices=tuple(VARIANTS), default="v2")
     args = p.parse_args()
     global variant

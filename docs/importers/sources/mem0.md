@@ -2,12 +2,12 @@
 
 ```sh
 # open-source library: point at the same config the application used
-hms-import mem0 --config mem0-config.json --with-vectors --hms-url http://127.0.0.1:8080
+warm-import mem0 --config mem0-config.json --with-vectors --warm-url http://127.0.0.1:8080
 # hosted platform
-MEM0_API_KEY=... hms-import mem0-platform --hms-url http://127.0.0.1:8080 --embedder mypkg.enc:embed
+MEM0_API_KEY=... warm-import mem0-platform --warm-url http://127.0.0.1:8080 --embedder mypkg.enc:embed
 ```
 
-Requires `uv add 'holographic-memory-sdk[import-mem0]'`. mem0 memories are text, so unless `--with-vectors`
+Requires `uv add 'writerslogic-warm-sdk[import-mem0]'`. mem0 memories are text, so unless `--with-vectors`
 carries the stored embeddings (OSS only), the server must embed text or you pass `--embedder`
 (see the vectors section of the main importer docs). With `--vectors auto` a source is carried or re-encoded as a whole, never mixed.
 
@@ -26,13 +26,13 @@ needs a scope id.
 For the other stores a scope that returns `--scope-limit` (default 100000) or more memories fails the
 import instead of truncating.
 
-Field mapping (mem0 payload to HMS):
+Field mapping (mem0 payload to WARM):
 
-| mem0 | HMS |
+| mem0 | WARM |
 |---|---|
 | point id | document id (`<namespace>::<id>` for a non-empty namespace) |
 | `data` | `text` |
-| `created_at`, `updated_at` | `hms_created_at`, `hms_updated_at` (UTC ISO 8601; unparsable values kept raw in `hms_*_raw`) |
+| `created_at`, `updated_at` | `warm_created_at`, `warm_updated_at` (UTC ISO 8601; unparsable values kept raw in `warm_*_raw`) |
 | `user_id` / `agent_id` / `run_id` | namespace `alice`, `agent:a1`, `run:r7` (first present of user, agent, run); the raw ids stay in metadata |
 | `hash`, `actor_id`, `role` and every custom metadata key | metadata, flat, so filters work |
 | stored embedding | `vector`, only with `--with-vectors` |
@@ -49,11 +49,11 @@ memories are listed with `POST /v2/memories/` (`filters={<scope>: <id>}`, `page`
 A memory with several scopes (for example a user and an agent) is returned by several queries; it is
 imported once, under the first scope present in the order user, agent, app, run. The v2 listing reports the run as `session_id`.
 
-| Platform field | HMS |
+| Platform field | WARM |
 |---|---|
 | `id` | document id |
 | `memory` | `text` |
-| `created_at`, `updated_at` | `hms_created_at`, `hms_updated_at` (ISO strings and epoch seconds both handled) |
+| `created_at`, `updated_at` | `warm_created_at`, `warm_updated_at` (ISO strings and epoch seconds both handled) |
 | `user_id`, `agent_id`, `app_id`, `session_id` | namespace as above; also kept in metadata |
 | `metadata` | flattened into metadata and kept whole as `mem0_metadata` |
 | `categories`, `immutable`, `expiration_date`, `hash`, `structured_attributes`, `replaced_by`, `synthesized` | metadata, as returned |
@@ -62,7 +62,7 @@ imported once, under the first scope present in the order user, agent, app, run.
 
 | What | Verified against |
 |---|---|
-| `mem0` with a local qdrant store | REAL: mem0ai 0.1.115 `Memory` populated with `add(infer=False)` (embedder stubbed, no network), then imported and checked against a real hms-server, including carried-vector recall 1.0 and mid-page resume |
+| `mem0` with a local qdrant store | REAL: mem0ai 0.1.115 `Memory` populated with `add(infer=False)` (embedder stubbed, no network), then imported and checked against a real warm-server, including carried-vector recall 1.0 and mid-page resume |
 | `mem0` with a chroma store | REAL: mem0ai with chromadb |
 | `mem0-platform` | MOCK: a stateful HTTP mock of the documented API driven by the real `MemoryClient` (pagination, entity paging, auth header, scope dedupe). Not run against api.mem0.ai |
 
@@ -77,4 +77,4 @@ v3 needs `version="v3"` in `Mem0PlatformSource.records` and a re-check of the mo
 - Platform memories deleted or expired (`show_expired` false) after the run started may or may not appear.
 - mem0 graph-store relations (`enable_graph`) are not exported.
 - mem0's history table (change log) is not imported.
-- Re-running replaces owned documents by id; memories deleted at the source stay in HMS. The importer does not mirror source deletions.
+- Re-running replaces owned documents by id; memories deleted at the source stay in WARM. The importer does not mirror source deletions.

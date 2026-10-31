@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use super::did::did_key_from_ed25519;
 use super::hex_encode;
 
-/// A W3C Verifiable Credential Data Model 2.0 credential wrapping an HMS fact.
+/// A W3C Verifiable Credential Data Model 2.0 credential wrapping an WARM fact.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FactCredential {
@@ -364,7 +364,7 @@ pub(crate) fn validate_fact_credential(credential: &FactCredential) -> Result<()
                 .credential_type
                 .iter()
                 .any(|t| t == "HMSFactCredential"),
-        "credential has no VC or HMS fact type"
+        "credential has no VC or WARM fact type"
     );
     ensure!(
         !credential.id.is_empty() && credential.issuer.starts_with("did:key:"),
@@ -394,7 +394,7 @@ pub(crate) fn validate_fact_credential(credential: &FactCredential) -> Result<()
             && subject.content_hash.len() == 64
             && subject.content_hash.bytes().all(|b| b.is_ascii_hexdigit())
             && subject.encoding_method == "holographic-reduced-representation",
-        "invalid HMS fact subject"
+        "invalid WARM fact subject"
     );
     let triple_count = [
         subject.subject_id.as_ref(),

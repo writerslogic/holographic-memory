@@ -11,7 +11,7 @@
 //! rebuilds that dead set. A checkpoint holds no vector state, so chunk-vector queries and
 //! deferred encoding read the store over it as they are. The first access of any other kind,
 //! and any other write, rebuilds the live store from the checkpoint and the store over it
-//! ([`HmsCore::documents`]).
+//! ([`WarmCore::documents`]).
 
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
@@ -21,7 +21,7 @@ use std::sync::Arc;
 use crate::core::sync::{Mutex, RwLock, RwLockReadGuard};
 use anyhow::{bail, ensure, Context, Result};
 
-use super::HmsCore;
+use super::WarmCore;
 use crate::core::documents::{
     self, Backing, CheckpointBase, DocumentStore, ServingImage, TextSegment,
 };
@@ -33,7 +33,7 @@ pub(super) const FILE: &str = "documents.ckpt";
 const SEALED_MAGIC: &[u8; 8] = b"HMSCKPE\x01";
 const SEALED_HEADER: usize = 40;
 
-/// How [`HmsCore::open_checkpoint`] left the document store.
+/// How [`WarmCore::open_checkpoint`] left the document store.
 pub(super) enum Opened {
     /// No checkpoint: the caller attaches a text segment and replays the journal.
     Absent,
@@ -61,7 +61,7 @@ fn word(header: &[u8], index: usize) -> u64 {
     u64::from_le_bytes(header[at..at + 8].try_into().expect("eight bytes"))
 }
 
-impl HmsCore {
+impl WarmCore {
     /// The document store, rebuilt from the checkpoint first if it is being served from one.
     /// The open checked the checkpoint whole, so the rebuild fails only on an I/O error;
     /// accessors that cannot return an error stop there (writes return it).

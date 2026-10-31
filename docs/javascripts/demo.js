@@ -117,8 +117,8 @@
 
     var rows = SYMBOLS.map(function (name) {
       var li = document.createElement("li")
-      li.innerHTML = '<span class="hms-bars__name"></span><span class="hms-bars__track"><span class="hms-bars__fill"></span><span class="hms-bars__chance"></span></span><span class="hms-bars__val"></span>'
-      li.querySelector(".hms-bars__name").textContent = name
+      li.innerHTML = '<span class="warm-bars__name"></span><span class="warm-bars__track"><span class="warm-bars__fill"></span><span class="warm-bars__chance"></span></span><span class="warm-bars__val"></span>'
+      li.querySelector(".warm-bars__name").textContent = name
       bars.appendChild(li)
       return li
     })
@@ -140,10 +140,10 @@
       var ctx = canvas.getContext("2d")
       var cell = canvas.width / 64
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = css("--hms-sunken", "#eee")
+      ctx.fillStyle = css("--warm-sunken", "#eee")
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-      var on = css("--hms-demo-on", "#7a8394")
-      var flip = css("--hms-accent", "#0a7b8c")
+      var on = css("--warm-demo-on", "#7a8394")
+      var flip = css("--warm-accent", "#0a7b8c")
       for (var i = 0; i < D; i++) {
         var x = (i % 64) * cell
         var y = Math.floor(i / 64) * cell
@@ -182,8 +182,8 @@
       var sigma = 0.5 / Math.sqrt(D)
       rows.forEach(function (li, idx) {
         var frac = Math.max(0, Math.min(1, (sims[idx] - 0.5) / 0.5))
-        li.querySelector(".hms-bars__fill").style.width = (frac * 100).toFixed(1) + "%"
-        li.querySelector(".hms-bars__val").textContent = sims[idx].toFixed(3)
+        li.querySelector(".warm-bars__fill").style.width = (frac * 100).toFixed(1) + "%"
+        li.querySelector(".warm-bars__val").textContent = sims[idx].toFixed(3)
         li.classList.toggle("is-best", idx === best)
         li.classList.toggle("is-truth", idx === truth)
       })
@@ -193,7 +193,7 @@
         " (" + z.toFixed(1) + " standard deviations above chance, runner-up " + sims[runnerUp].toFixed(3) + "). "
       text += ok ? "Correct." : "Wrong: the stored value was “" + SYMBOLS[truth] + "”. The signal is lost in the noise."
       verdict.textContent = text
-      verdict.className = "hms-demo__verdict " + (ok ? "is-ok" : "is-bad")
+      verdict.className = "warm-demo__verdict " + (ok ? "is-ok" : "is-bad")
     }
 
     inK.addEventListener("input", render)
@@ -210,7 +210,7 @@
   }
 
   function boot() {
-    document.querySelectorAll("[data-hms-demo]").forEach(init)
+    document.querySelectorAll("[data-warm-demo]").forEach(init)
   }
 
   if (typeof document$ !== "undefined") document$.subscribe(boot)

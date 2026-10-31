@@ -198,7 +198,7 @@ Scope this claim does **not** exceed:
   capacity and numerical validation. Integer substrate tests do not validate that
   unimplemented algorithm.
 - **Capacity is per-composite factorization, not superposition storage.** This does
-  not change HMS's bundle-capacity story (sharding); it is about decoding a single
+  not change WARM's bundle-capacity story (sharding); it is about decoding a single
   bound tuple.
 
 ## Reproduction
@@ -217,9 +217,9 @@ cargo test --test phase_resonator_regression
 cargo test --doc phase_resonator   # runs the PhaseResonator doctest
 ```
 
-Public API: `holographic_memory::core::PhaseResonator` (reusable index over fixed
-codebooks) and `holographic_memory::core::phase_resonator_factorize` (one-shot),
-over the `holographic_memory::core::PhaseHVec` substrate.
+Public API: `writerslogic_warm::core::PhaseResonator` (reusable index over fixed
+codebooks) and `writerslogic_warm::core::phase_resonator_factorize` (one-shot),
+over the `writerslogic_warm::core::PhaseHVec` substrate.
 
 ## References
 

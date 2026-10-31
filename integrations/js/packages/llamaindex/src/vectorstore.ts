@@ -10,10 +10,10 @@ import {
   type VectorStoreQuery,
   type VectorStoreQueryResult,
 } from '@llamaindex/core/vector-store'
-import { HashingEmbedder, HmsError, HmsStore, type Embedder, type Filter, type Hit, type HmsStoreOptions } from '@holographic-memory/core'
+import { HashingEmbedder, WarmError, WarmStore, type Embedder, type Filter, type Hit, type WarmStoreOptions } from '@writerslogic/warm-core'
 import { toFilter } from './filters.js'
 
-export interface HmsVectorStoreOptions extends Omit<HmsStoreOptions, 'embedder'> {
+export interface WarmVectorStoreOptions extends Omit<WarmStoreOptions, 'embedder'> {
   /** Embedding model of the index. Used for hybrid queries without a query embedding and for MMR. */
   embedModel?: BaseEmbedding
   /** Identity of the embedding space; set both whenever you persist to `path` (default `llamaindex-embeddings` / `unversioned`). */
@@ -38,7 +38,7 @@ function asEmbedder(model: BaseEmbedding, dimensions: number, space: { model: st
 }
 
 /**
- * LlamaIndex.TS vector store (`BaseVectorStore`) over Holographic Memory. It stores node text, so
+ * LlamaIndex.TS vector store (`BaseVectorStore`) over WARM. It stores node text, so
  * `VectorStoreIndex.fromVectorStore(store)` works without a docstore.
  *
  * Query modes: `default` ranks by cosine of `queryEmbedding` (similarities are cosine scores);
@@ -47,19 +47,19 @@ function asEmbedder(model: BaseEmbedding, dimensions: number, space: { model: st
  * the store); `mmr` re-ranks the top `similarityTopK * mmrPrefetchFactor` for diversity using
  * `mmrThreshold` as lambda. `sparse`, `svm` and the regression modes throw.
  */
-export class HmsVectorStore extends BaseVectorStore<HmsStore> {
+export class WarmVectorStore extends BaseVectorStore<WarmStore> {
   storesText = true
-  readonly store: HmsStore
+  readonly store: WarmStore
   private readonly mmrPrefetchFactor: number
 
-  constructor(args: { store: HmsStore; embedModel?: BaseEmbedding; mmrPrefetchFactor?: number }) {
+  constructor(args: { store: WarmStore; embedModel?: BaseEmbedding; mmrPrefetchFactor?: number }) {
     super(args.embedModel ? { embeddingModel: args.embedModel } : {})
     this.store = args.store
     this.mmrPrefetchFactor = args.mmrPrefetchFactor ?? 4
   }
 
   /** Build the store, probing the embedding dimension from `embedModel` (or `embeddingDimensions` hashing dimensions without one). */
-  static async create(options: HmsVectorStoreOptions = {}): Promise<HmsVectorStore> {
+  static async create(options: WarmVectorStoreOptions = {}): Promise<WarmVectorStore> {
     const { embedModel, embeddingSpace, embeddingDimensions, mmrPrefetchFactor, ...rest } = options
     let embedder: Embedder | undefined
     if (embedModel) {
@@ -67,11 +67,11 @@ export class HmsVectorStore extends BaseVectorStore<HmsStore> {
       embedder = asEmbedder(embedModel, probe.length, embeddingSpace ?? { model: 'llamaindex-embeddings', revision: 'unversioned' })
     }
     else if (embeddingDimensions !== undefined) embedder = new HashingEmbedder(embeddingDimensions)
-    const store = new HmsStore({ ...rest, ...(embedder ? { embedder } : {}) })
-    return new HmsVectorStore({ store, ...(embedModel ? { embedModel } : {}), ...(mmrPrefetchFactor !== undefined ? { mmrPrefetchFactor } : {}) })
+    const store = new WarmStore({ ...rest, ...(embedder ? { embedder } : {}) })
+    return new WarmVectorStore({ store, ...(embedModel ? { embedModel } : {}), ...(mmrPrefetchFactor !== undefined ? { mmrPrefetchFactor } : {}) })
   }
 
-  client(): HmsStore {
+  client(): WarmStore {
     return this.store
   }
 
@@ -133,13 +133,13 @@ export class HmsVectorStore extends BaseVectorStore<HmsStore> {
     let cosine = false
     switch (query.mode) {
       case VectorStoreQueryMode.DEFAULT:
-        if (!vector) throw new HmsError('default mode needs queryEmbedding', 'invalid_argument')
+        if (!vector) throw new WarmError('default mode needs queryEmbedding', 'invalid_argument')
         hits = await this.store.recall('', { k, vector, ...base })
         cosine = true
         break
       case VectorStoreQueryMode.HYBRID:
       case VectorStoreQueryMode.SEMANTIC_HYBRID:
-        if (!query.queryStr) throw new HmsError('hybrid mode needs queryStr', 'invalid_argument')
+        if (!query.queryStr) throw new WarmError('hybrid mode needs queryStr', 'invalid_argument')
         hits = await this.store.recall(query.queryStr, { k, ...(vector ? { vector } : {}), ...base })
         break
       case VectorStoreQueryMode.MMR:
@@ -147,7 +147,7 @@ export class HmsVectorStore extends BaseVectorStore<HmsStore> {
         cosine = true
         break
       default:
-        throw new HmsError(`query mode "${query.mode}" is not supported; use default, hybrid, semantic_hybrid or mmr`, 'invalid_argument')
+        throw new WarmError(`query mode "${query.mode}" is not supported; use default, hybrid, semantic_hybrid or mmr`, 'invalid_argument')
     }
     return {
       nodes: hits.map((h) => this.node(h)),
@@ -158,10 +158,10 @@ export class HmsVectorStore extends BaseVectorStore<HmsStore> {
 
   private async mmr(query: VectorStoreQuery, k: number, base: { filter?: Filter }): Promise<Hit[]> {
     const vector = query.queryEmbedding
-    if (!vector) throw new HmsError('mmr mode needs queryEmbedding', 'invalid_argument')
+    if (!vector) throw new WarmError('mmr mode needs queryEmbedding', 'invalid_argument')
     const embedder = this.store.embedder
     if (embedder.space.dimensions !== vector.length) {
-      throw new HmsError('mmr re-embeds hit text; build the store with HmsVectorStore.create({ embedModel }) so the embedder matches queryEmbedding', 'invalid_argument')
+      throw new WarmError('mmr re-embeds hit text; build the store with WarmVectorStore.create({ embedModel }) so the embedder matches queryEmbedding', 'invalid_argument')
     }
     const pool = await this.store.recall('', { k: Math.max(k, k * this.mmrPrefetchFactor), vector, ...base })
     if (pool.length <= 1) return pool

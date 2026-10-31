@@ -16,7 +16,7 @@ from pathlib import Path
 from longmemeval_answer_evidence import _groups_for_question
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE = ROOT / "bindings/python/holographic-sdk/holographic_sdk/evidence.py"
+MODULE = ROOT / "bindings/python/warm-sdk/writerslogic_warm_sdk/evidence.py"
 SOURCE_SHA256 = "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442"
 
 
@@ -25,7 +25,7 @@ def sha(path):
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location("hms_source_evidence", MODULE)
+    spec = importlib.util.spec_from_file_location("warm_source_evidence", MODULE)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -34,7 +34,7 @@ def load_module():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json")
+    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json")
     parser.add_argument("--output", type=Path, default=ROOT / "benchmarks/results/memory_competition_v1/report.json")
     args = parser.parse_args()
     work = args.output.parent

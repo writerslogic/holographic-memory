@@ -26,7 +26,7 @@ requires explicitly selecting `multiscale-words-v2`; the default remains V1. Exi
 reject a V2 configuration. Reencode original sources into a new destination:
 
 ```sh
-hms-admin reencode original.jsonl new-store --text-encoder multiscale-words-v2
+warm-admin reencode original.jsonl new-store --text-encoder multiscale-words-v2
 ```
 
 `vector_encoder` is `signed-projection-v2` and `metric` is `jaccard`.

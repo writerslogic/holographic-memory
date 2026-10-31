@@ -21,7 +21,7 @@ import tiktoken
 import longmemeval_retrieval as R
 from proxies.beir_proxies import BM25
 
-CACHE = Path.home() / ".cache/hms-bench/longmemeval_sota_dev_v1"
+CACHE = Path.home() / ".cache/warm-bench/longmemeval_sota_dev_v1"
 DEPTHS = (1, 5, 10, 20, 50, 100)
 FOCUS_STOP = set("many much times total number count list all every ever have had been any about tell me recall remember previously earlier before after during last first latest current currently month months week weeks year years day days conversation conversations chat chats discuss discussed mention mentioned ask asked".split())
 

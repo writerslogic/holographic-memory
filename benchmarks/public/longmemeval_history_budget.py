@@ -158,7 +158,7 @@ def measure(source, split, protocol_path, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json")
+    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json")
     parser.add_argument("--split", type=Path, default=ROOT / "benchmarks/public/longmemeval_split.json")
     parser.add_argument("--protocol", type=Path, default=ROOT / "benchmarks/results/longmemeval_full_history_v1/protocol.json")
     parser.add_argument("--output", type=Path, default=ROOT / "benchmarks/results/longmemeval_history_budget_dev_v1.json")

@@ -1,8 +1,4 @@
 use anyhow::{ensure, Context, Result};
-use holographic_memory::core::qgraph::{
-    diagnostics::TraversalDiagnostic, BuildParams, Graph, Metric, Residency, SearchKnobs, VGraph,
-    VSearchParams,
-};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
@@ -10,6 +6,10 @@ use std::{
     fs,
     io::{BufWriter, Read, Write},
     path::{Path, PathBuf},
+};
+use writerslogic_warm::core::qgraph::{
+    diagnostics::TraversalDiagnostic, BuildParams, Graph, Metric, Residency, SearchKnobs, VGraph,
+    VSearchParams,
 };
 
 const MAX_ROWS: usize = 65536;
@@ -397,7 +397,7 @@ fn run(input: Input, output: &Path) -> Result<()> {
         "diagnosis changed index geometry"
     );
     let result = json!({
-        "schema": "hms-vector-discovery-diagnosis-v1", "diagnostic_only": true,
+        "schema": "warm-vector-discovery-diagnosis-v1", "diagnostic_only": true,
         "input_bindings": input.bindings, "construction_count": n, "query_count": q,
         "dim": input.dim, "k": k, "graph_hash": format!("{:016x}", graph.structure_hash()),
         "logical_index_bytes": before_bytes, "settings": settings,

@@ -66,7 +66,7 @@
    "dim": 384,
    "encode": "lexical",
    "env": {
-    "HMS_RELEASE_JOURNAL_PAGES": "0"
+    "WARM_RELEASE_JOURNAL_PAGES": "0"
    },
    "graph_min_rows": null,
    "ingest_seconds": 9.256484031677246,
@@ -112,7 +112,7 @@
    "vectors": 50000
   }
  },
- "binary": "/Volumes/A/.hms-target-r3/release/hms-server",
+ "binary": "/Volumes/A/.warm-target-r3/release/warm-server",
  "components": {
   "arithmetic": {
    "bbox_nodes_f32_mb": 4.5791015625,
@@ -156,5 +156,5 @@
   "text_bytes": 12
  },
  "platform": "darwin",
- "schema": "hms-rss-breakdown/1"
+ "schema": "warm-rss-breakdown/1"
 }

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:hms:provenance:v1:fact-subject",
+  "title": "HMS fact credential subject v1",
+  "type": "object",
+  "required": ["id", "contentHash", "encodingMethod", "dimensions"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^urn:hms:fact:"},
+    "sourceUri": {"type": "string"},
+    "contentHash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "encodingMethod": {"const": "holographic-reduced-representation"},
+    "dimensions": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+    "subjectId": {"type": "string"},
+    "relationId": {"type": "string"},
+    "objectId": {"type": "string"}
+  },
+  "additionalProperties": false
+}

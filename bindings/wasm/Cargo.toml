@@ -1,9 +1,9 @@
 [package]
-name = "hms-wasm"
+name = "warm-wasm"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "WebAssembly build of the Holographic Memory System document store for browsers, Node, Deno and Bun."
+description = "WebAssembly build of the WritersLogic Adaptive Retention & Memory document store for browsers, Node, Deno and Bun."
 publish = false
 
 [lib]
@@ -16,7 +16,7 @@ default = []
 inwasm-aes = ["dep:aes-gcm"]
 
 [dependencies]
-holographic-memory = { path = "../..", default-features = false }
+writerslogic-warm = { path = "../..", default-features = false }
 wasm-bindgen = "0.2"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 rand = { version = "0.10", default-features = false }

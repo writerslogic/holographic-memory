@@ -1,6 +1,6 @@
 # Privacy limits
 
-HMS processes everything locally: the core engine makes no network calls, and the model
+WARM processes everything locally: the core engine makes no network calls, and the model
 adapters only read local directories. That removes the cloud as a threat. It does not make the
 stored representation private. This page summarises the limits; [Privacy and security
 boundaries](../PRIVACY.md) is the complete statement and wins on any difference.
@@ -37,7 +37,7 @@ What it does not cover:
 `documents.text` is a file-backed cache of chunk text. It is rebuilt from the journal when the
 store opens, so it is never the only copy of a passage.
 
-- Header: magic `HMST`, version `2`, and a flags byte. Bit 0 set means the records are encrypted.
+- Header: magic `WARMT`, version `2`, and a flags byte. Bit 0 set means the records are encrypted.
 - Unencrypted store: each record is the raw UTF-8 text.
 - Encrypted store: each record is `[nonce: 12 bytes][ciphertext + tag: 16 bytes after the ciphertext]`
   (AES-256-GCM). The additional authenticated data is the record's offset in the segment as a
@@ -54,7 +54,7 @@ similarity graph, and known plaintext-and-masked pairs reveal the permutation pr
 
 Differential privacy applies only to the configured **bundle** operation, not to ingestion,
 retrieval, metadata or passages. The mechanism has not been audited as a finite-precision
-implementation, and HMS keeps no persistent budget accountant.
+implementation, and WARM keeps no persistent budget accountant.
 
 ## Not implemented
 

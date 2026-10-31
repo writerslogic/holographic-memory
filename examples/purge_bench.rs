@@ -6,7 +6,7 @@
 
 use std::time::Instant;
 
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 fn percentile(sorted: &[f64], p: f64) -> f64 {
     sorted[((sorted.len() - 1) as f64 * p).round() as usize]
@@ -33,7 +33,7 @@ fn main() -> anyhow::Result<()> {
         args.get(2).copied().unwrap_or(500),
     );
     let dir = tempfile::tempdir()?;
-    let core = HmsCore::new(4096, Some(dir.path().display().to_string()), None)?;
+    let core = WarmCore::new(4096, Some(dir.path().display().to_string()), None)?;
     let words = [
         "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india",
         "juliet", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo",

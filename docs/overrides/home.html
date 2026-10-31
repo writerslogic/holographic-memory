@@ -1,53 +1,53 @@
 {#- Copyright 2024-2026 WritersLogic Contributors
     SPDX-License-Identifier: Apache-2.0
-    The landing page. Every runtime, feature and number comes from config.extra.hms, which
+    The landing page. Every runtime, feature and number comes from config.extra.warm, which
     scripts/docs_site.py builds from docs/_data/site.yml and benchmarks/results/. -#}
 {% extends "main.html" %}
-{% set hms = config.extra.hms %}
+{% set warm = config.extra.warm %}
 
 {% block site_nav %}{% endblock %}
 
 {% block container %}
-<div class="md-content hms-home" data-md-component="content">
+<div class="md-content warm-home" data-md-component="content">
   <article class="md-content__inner md-typeset">
 
-    <section class="hms-hero" aria-labelledby="hms-hero-title">
-      <div class="hms-hero__text">
-        <p class="hms-chip"><span class="hms-dot" aria-hidden="true"></span>{{ hms.license }} &middot; {{ hms.crate_version and ('v' ~ hms.crate_version) or 'open source' }} &middot; runs on your machine</p>
-        <h1 id="hms-hero-title">Holographic Memory</h1>
-        <p class="hms-technical-line">{{ hms.technical_line }}</p>
-        <p class="hms-tagline">{{ hms.tagline }}</p>
-        <p class="hms-lede">{{ hms.lede }}</p>
-        <div class="hms-cta">
-          <a class="hms-btn hms-btn--primary" href="{{ 'quickstart/' | url }}">Get started</a>
-          <a class="hms-btn" href="{{ 'concepts/holographic/' | url }}">What &ldquo;holographic&rdquo; means</a>
-          <a class="hms-btn hms-btn--ghost" href="{{ config.repo_url }}">GitHub</a>
+    <section class="warm-hero" aria-labelledby="warm-hero-title">
+      <div class="warm-hero__text">
+        <p class="warm-chip"><span class="warm-dot" aria-hidden="true"></span>{{ warm.license }} &middot; {{ warm.crate_version and ('v' ~ warm.crate_version) or 'open source' }} &middot; runs on your machine</p>
+        <h1 id="warm-hero-title">WARM</h1>
+        <p class="warm-technical-line">{{ warm.technical_line }}</p>
+        <p class="warm-tagline">{{ warm.tagline }}</p>
+        <p class="warm-lede">{{ warm.lede }}</p>
+        <div class="warm-cta">
+          <a class="warm-btn warm-btn--primary" href="{{ 'quickstart/' | url }}">Get started</a>
+          <a class="warm-btn" href="{{ 'concepts/holographic/' | url }}">What &ldquo;holographic&rdquo; means</a>
+          <a class="warm-btn warm-btn--ghost" href="{{ config.repo_url }}">GitHub</a>
         </div>
-        <ul class="hms-runtimes" aria-label="Runtimes">
-          {% for rt in hms.runtimes %}<li class="{{ 'is-preview' if rt.status == 'preview' }}">{{ rt.name }}{% if rt.status == 'preview' %} <small>preview</small>{% endif %}</li>{% endfor %}
+        <ul class="warm-runtimes" aria-label="Runtimes">
+          {% for rt in warm.runtimes %}<li class="{{ 'is-preview' if rt.status == 'preview' }}">{{ rt.name }}{% if rt.status == 'preview' %} <small>preview</small>{% endif %}</li>{% endfor %}
         </ul>
       </div>
-      <div class="hms-hero__art" aria-hidden="true">
-        <img src="{{ config.theme.logo }}" width="520" height="520" alt="" class="hms-crystal" fetchpriority="high">
+      <div class="warm-hero__art" aria-hidden="true">
+        <img src="{{ config.theme.logo }}" width="520" height="520" alt="" class="warm-crystal" fetchpriority="high">
       </div>
     </section>
 
-    <section class="hms-section" aria-labelledby="start-title">
+    <section class="warm-section" aria-labelledby="start-title">
       <h2 id="start-title">What are you building?</h2>
-      <p class="hms-sub">Choose a path, run an example, then inspect the evidence it returns.</p>
-      <div class="hms-grid">
-        <a class="hms-card hms-feature" href="{{ 'integrations/editors/' | url }}"><h3>Memory for an editor</h3><p>Connect an MCP host to a local store. Remember, recall and inspect memories across sessions.</p></a>
-        <a class="hms-card hms-feature" href="{{ 'get-started/choose/' | url }}"><h3>Search inside an app</h3><p>Choose Rust, Node or a Python HTTP client, with clear package and storage boundaries.</p></a>
-        <a class="hms-card hms-feature" href="{{ 'guides/evaluate-search/' | url }}"><h3>Evaluate your results</h3><p>Check known answers, inspect source passages and compare retrieval on your own questions.</p></a>
+      <p class="warm-sub">Choose a path, run an example, then inspect the evidence it returns.</p>
+      <div class="warm-grid">
+        <a class="warm-card warm-feature" href="{{ 'integrations/editors/' | url }}"><h3>Memory for an editor</h3><p>Connect an MCP host to a local store. Remember, recall and inspect memories across sessions.</p></a>
+        <a class="warm-card warm-feature" href="{{ 'get-started/choose/' | url }}"><h3>Search inside an app</h3><p>Choose Rust, Node or a Python HTTP client, with clear package and storage boundaries.</p></a>
+        <a class="warm-card warm-feature" href="{{ 'guides/evaluate-search/' | url }}"><h3>Evaluate your results</h3><p>Check known answers, inspect source passages and compare retrieval on your own questions.</p></a>
       </div>
-      <p class="hms-fine">Already installing? <a href="{{ 'get-started/troubleshooting/' | url }}">Troubleshoot setup and retrieval</a>.</p>
+      <p class="warm-fine">Already installing? <a href="{{ 'get-started/troubleshooting/' | url }}">Troubleshoot setup and retrieval</a>.</p>
     </section>
 
-    <section class="hms-section" id="install" aria-labelledby="install-title">
+    <section class="warm-section" id="install" aria-labelledby="install-title">
       <h2 id="install-title">Install, ingest, search</h2>
-      <p class="hms-sub">The code below is read from the quickstart examples that CI runs on every pull request.</p>
-      {% set rts = hms.runtimes | selectattr("status", "equalto", "available") | list %}
-      <div class="tabbed-set tabbed-alternate hms-install" data-tabs="1:{{ rts | length }}">
+      <p class="warm-sub">The code below is read from the quickstart examples that CI runs on every pull request.</p>
+      {% set rts = warm.runtimes | selectattr("status", "equalto", "available") | list %}
+      <div class="tabbed-set tabbed-alternate warm-install" data-tabs="1:{{ rts | length }}">
         {% for rt in rts %}<input {{ 'checked="checked"' if loop.first }} id="__tabbed_1_{{ loop.index }}" name="__tabbed_1" type="radio">{% endfor %}
         <div class="tabbed-labels">
           {% for rt in rts %}<label for="__tabbed_1_{{ loop.index }}">{{ rt.name }}</label>{% endfor %}
@@ -57,83 +57,83 @@
           <div class="tabbed-block">
             {{ rt.install_html }}
             {{ rt.code_html }}
-            <p class="hms-note">{{ rt.note }}</p>
+            <p class="warm-note">{{ rt.note }}</p>
           </div>
           {% endfor %}
         </div>
       </div>
-      <p class="hms-more"><a href="{{ 'quickstart/' | url }}">Full quickstart with the SQLite comparison and encryption &rarr;</a></p>
+      <p class="warm-more"><a href="{{ 'quickstart/' | url }}">Full quickstart with the SQLite comparison and encryption &rarr;</a></p>
     </section>
 
-    <section class="hms-section hms-band" id="results" aria-labelledby="results-title">
+    <section class="warm-section warm-band" id="results" aria-labelledby="results-title">
       <h2 id="results-title">Measured, and traceable</h2>
-      <p class="hms-sub">Both results are read from committed files under <code>benchmarks/results/</code> each time the site is built.</p>
-      <div class="hms-results">
-        <figure class="hms-card hms-result">
+      <p class="warm-sub">Both results are read from committed files under <code>benchmarks/results/</code> each time the site is built.</p>
+      <div class="warm-results">
+        <figure class="warm-card warm-result">
           <figcaption>
-            <span class="hms-kicker">{{ hms.headline.title }}</span>
-            <span class="hms-big">{{ '%.3f' | format(hms.headline.value) }}</span>
-            <span class="hms-metric">{{ hms.headline.metric_label }}, HMS hybrid search</span>
+            <span class="warm-kicker">{{ warm.headline.title }}</span>
+            <span class="warm-big">{{ '%.3f' | format(warm.headline.value) }}</span>
+            <span class="warm-metric">{{ warm.headline.metric_label }}, WARM hybrid search</span>
           </figcaption>
-          {{ hms.headline.svg }}
-          <p class="hms-fine">{{ hms.headline.context }} {{ hms.headline.caveat }}</p>
-          <p class="hms-prov">Source: <a href="{{ hms.repo }}/blob/{{ hms.repo_ref }}/{{ hms.headline.file }}"><code>{{ hms.headline.file }}</code></a>{% if hms.headline.machine %} &middot; {{ hms.headline.machine }}{% endif %} &middot; <a href="{{ hms.headline.link | url }}">benchmark page</a></p>
+          {{ warm.headline.svg }}
+          <p class="warm-fine">{{ warm.headline.context }} {{ warm.headline.caveat }}</p>
+          <p class="warm-prov">Source: <a href="{{ warm.repo }}/blob/{{ warm.repo_ref }}/{{ warm.headline.file }}"><code>{{ warm.headline.file }}</code></a>{% if warm.headline.machine %} &middot; {{ warm.headline.machine }}{% endif %} &middot; <a href="{{ warm.headline.link | url }}">benchmark page</a></p>
         </figure>
-        <figure class="hms-card hms-result">
+        <figure class="warm-card warm-result">
           <figcaption>
-            <span class="hms-kicker">{{ hms.chart.title }}</span>
-            <span class="hms-metric hms-metric--lead">Queries per second at fixed recall, one thread</span>
+            <span class="warm-kicker">{{ warm.chart.title }}</span>
+            <span class="warm-metric warm-metric--lead">Queries per second at fixed recall, one thread</span>
           </figcaption>
-          {{ hms.chart.svg }}
-          <ul class="hms-fine hms-summary">{% for line in hms.chart.summary %}<li>{{ line }}</li>{% endfor %}</ul>
-          <p class="hms-prov">Source: <a href="{{ hms.repo }}/blob/{{ hms.repo_ref }}/{{ hms.chart.file }}"><code>{{ hms.chart.file }}</code></a> &middot; {{ hms.chart.machine }} &middot; load gate met by {{ hms.chart.gate_met }} of {{ hms.chart.gate_total }} configurations (limit {{ hms.chart.max_load }}), so throughput is indicative &middot; <a href="{{ hms.chart.link | url }}">benchmark page</a></p>
+          {{ warm.chart.svg }}
+          <ul class="warm-fine warm-summary">{% for line in warm.chart.summary %}<li>{{ line }}</li>{% endfor %}</ul>
+          <p class="warm-prov">Source: <a href="{{ warm.repo }}/blob/{{ warm.repo_ref }}/{{ warm.chart.file }}"><code>{{ warm.chart.file }}</code></a> &middot; {{ warm.chart.machine }} &middot; load gate met by {{ warm.chart.gate_met }} of {{ warm.chart.gate_total }} configurations (limit {{ warm.chart.max_load }}), so throughput is indicative &middot; <a href="{{ warm.chart.link | url }}">benchmark page</a></p>
         </figure>
       </div>
     </section>
 
-    <section class="hms-section" id="architecture" aria-labelledby="arch-title">
+    <section class="warm-section" id="architecture" aria-labelledby="arch-title">
       <h2 id="arch-title">One engine, two layers</h2>
-      <p class="hms-sub">Document search is a conventional hybrid retriever. The vector-symbolic layer is the associative memory. Both sit on one crash-safe store. <a href="{{ 'ARCHITECTURE/' | url }}">Module map &rarr;</a></p>
-      <div class="hms-diagram" tabindex="0" role="region" aria-label="Architecture diagram">{% include "partials/architecture.html" %}</div>
+      <p class="warm-sub">Document search is a conventional hybrid retriever. The vector-symbolic layer is the associative memory. Both sit on one crash-safe store. <a href="{{ 'ARCHITECTURE/' | url }}">Module map &rarr;</a></p>
+      <div class="warm-diagram" tabindex="0" role="region" aria-label="Architecture diagram">{% include "partials/architecture.html" %}</div>
     </section>
 
-    <section class="hms-section hms-band" id="why" aria-labelledby="why-title">
+    <section class="warm-section warm-band" id="why" aria-labelledby="why-title">
       <h2 id="why-title">Why holographic</h2>
-      <div class="hms-why">
-        <div class="hms-why__text">
+      <div class="warm-why">
+        <div class="warm-why__text">
           <p>A hologram stores the whole picture in every fragment. A hypervector memory does the same: many facts are superposed into one long vector, no single bit holds any one fact, and damage is spread thinly over all of them.</p>
-          <ol class="hms-steps">
+          <ol class="warm-steps">
             <li><strong>Bind</strong> a key to a value with XOR. The result looks like neither, and binding again with the key gives the value back.</li>
             <li><strong>Bundle</strong> many bound pairs by majority vote into one vector that stays a little similar to each of them.</li>
             <li><strong>Resonate</strong>: unbind with a key and compare against known values. The right one stands out from the noise, even after you corrupt the memory.</li>
           </ol>
-          <p class="hms-fine">The demo uses dense binary vectors so the algebra is easy to see. The engine uses sparse binary vectors, and its document search does not rank with hypervectors; <a href="{{ 'concepts/holographic/' | url }}">the concepts page</a> says exactly which parts do.</p>
+          <p class="warm-fine">The demo uses dense binary vectors so the algebra is easy to see. The engine uses sparse binary vectors, and its document search does not rank with hypervectors; <a href="{{ 'concepts/holographic/' | url }}">the concepts page</a> says exactly which parts do.</p>
         </div>
         {% include "partials/demo.html" %}
       </div>
     </section>
 
-    <section class="hms-section" id="compare" aria-labelledby="compare-title">
-      <h2 id="compare-title">{{ hms.comparison.title }}</h2>
+    <section class="warm-section" id="compare" aria-labelledby="compare-title">
+      <h2 id="compare-title">{{ warm.comparison.title }}</h2>
       {# Comparison slot: docs/_data/comparison.json, written by the benchmark generator, replaces the derived table. #}
-      <div class="hms-tablewrap" tabindex="0" role="region" aria-label="Comparison table">
-        <table class="hms-compare">
-          <thead><tr><th scope="col">System</th>{% for col in hms.comparison.columns %}<th scope="col" class="num">{{ col }}</th>{% endfor %}</tr></thead>
+      <div class="warm-tablewrap" tabindex="0" role="region" aria-label="Comparison table">
+        <table class="warm-compare">
+          <thead><tr><th scope="col">System</th>{% for col in warm.comparison.columns %}<th scope="col" class="num">{{ col }}</th>{% endfor %}</tr></thead>
           <tbody>
-            {% for row in hms.comparison.rows %}
-            <tr class="{{ 'is-hms' if row.hms }}"><th scope="row">{{ row.system }}</th>{% for v in row['values'] %}<td class="num">{{ v }}</td>{% endfor %}</tr>
+            {% for row in warm.comparison.rows %}
+            <tr class="{{ 'is-warm' if row.warm }}"><th scope="row">{{ row.system }}</th>{% for v in row['values'] %}<td class="num">{{ v }}</td>{% endfor %}</tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-      <p class="hms-fine">{{ hms.comparison.note }} {% if hms.comparison.source %}Source: <a href="{{ hms.repo }}/blob/{{ hms.repo_ref }}/{{ hms.comparison.source }}"><code>{{ hms.comparison.source }}</code></a>.{% endif %}</p>
+      <p class="warm-fine">{{ warm.comparison.note }} {% if warm.comparison.source %}Source: <a href="{{ warm.repo }}/blob/{{ warm.repo_ref }}/{{ warm.comparison.source }}"><code>{{ warm.comparison.source }}</code></a>.{% endif %}</p>
     </section>
 
-    <section class="hms-section" id="features" aria-labelledby="features-title">
+    <section class="warm-section" id="features" aria-labelledby="features-title">
       <h2 id="features-title">What is in the box</h2>
-      <div class="hms-grid">
-        {% for f in hms.features %}
-        <a class="hms-card hms-feature" href="{{ f.href | url }}">
+      <div class="warm-grid">
+        {% for f in warm.features %}
+        <a class="warm-card warm-feature" href="{{ f.href | url }}">
           <h3>{{ f.title }}</h3>
           <p>{{ f.body }}</p>
         </a>
@@ -141,7 +141,7 @@
       </div>
     </section>
 
-    <section class="hms-section hms-prose" aria-label="About this site">
+    <section class="warm-section warm-prose" aria-label="About this site">
       {{ page.content }}
     </section>
 

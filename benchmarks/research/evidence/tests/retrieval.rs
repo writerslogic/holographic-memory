@@ -1,14 +1,14 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use hms_research_evidence::contract::{
+use warm_research_evidence::contract::{
     validate_claims, Amount, AnswerStatus, Claim, Gap, Interval, Modality, Operation, Query,
     Selection, Source, Span, MAX_SOURCES, MAX_TOTAL_BYTES, MAX_WORLDS,
 };
-use hms_research_evidence::retrieval::{
+use warm_research_evidence::retrieval::{
     answer_with_repair, RetrievalLimits, RetrievalReport, EMPTY_PACKET_BYTES,
 };
-use hms_research_evidence::store::EvidenceStore;
+use warm_research_evidence::store::EvidenceStore;
 use std::collections::BTreeSet;
 
 fn source(id: &str, text: &str) -> Source {

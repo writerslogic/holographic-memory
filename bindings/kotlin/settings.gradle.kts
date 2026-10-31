@@ -16,5 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "holographic-memory-kotlin"
+rootProject.name = "writerslogic-warm-kotlin"
 include(":jvm", ":android", ":sample-compose")

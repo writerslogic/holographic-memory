@@ -9,15 +9,15 @@
 use anyhow::{ensure, Result};
 use std::sync::Arc;
 
-use super::HmsCore;
-use crate::core::config::HmsConfig;
+use super::WarmCore;
+use crate::core::config::WarmConfig;
 use crate::core::documents::{self, DocumentInput, SearchOptions};
 use crate::core::embed::Embedder;
 use crate::core::encoding::TextEncoder;
 use crate::core::entangled::EntangledHVec;
 
 /// Builds the embedder `TextEncoder::LocalEmbedV1` needs and fills in the store embedding space.
-pub(super) fn prepare(mut config: HmsConfig) -> Result<(HmsConfig, Option<Arc<Embedder>>)> {
+pub(super) fn prepare(mut config: WarmConfig) -> Result<(WarmConfig, Option<Arc<Embedder>>)> {
     if config.text_encoder != TextEncoder::LocalEmbedV1 {
         return Ok((config, None));
     }
@@ -45,7 +45,7 @@ fn check_space(space: &crate::core::EmbeddingSpace, embedder: &Embedder) -> Resu
     Ok(())
 }
 
-impl HmsCore {
+impl WarmCore {
     /// Installs (or with `None` removes) the embedder used by the document API. The store's
     /// embedding space must be the embedder's own (`Embedder::space`).
     pub fn set_text_embedder(&self, embedder: Option<Arc<Embedder>>) -> Result<()> {

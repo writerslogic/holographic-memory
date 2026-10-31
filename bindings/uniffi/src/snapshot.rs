@@ -12,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::error::HmsError;
+use crate::error::WarmError;
 
 pub(crate) const MANIFEST: &str = "hms-snapshot.json";
 const LOCK_FILE: &str = ".hms.lock";
@@ -47,13 +47,13 @@ pub(crate) fn write(
     dest: &Path,
     dimensions: u32,
     document_count: u64,
-) -> Result<Written, HmsError> {
+) -> Result<Written, WarmError> {
     let staging = Staging::create(dest)?;
     let mut files = Vec::new();
     copy_tree(store, staging.path(), Path::new(""), true, &mut files)?;
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let total_bytes = files.iter().map(|f| f.bytes).sum();
-    let file_count = u32::try_from(files.len()).map_err(|_| HmsError::corrupt("too many files"))?;
+    let file_count = u32::try_from(files.len()).map_err(|_| WarmError::corrupt("too many files"))?;
     let manifest = Manifest {
         format: FORMAT,
         created_unix_seconds: SystemTime::now()
@@ -65,7 +65,7 @@ pub(crate) fn write(
     };
     let mut file = File::create(staging.path().join(MANIFEST))?;
     file.write_all(
-        &serde_json::to_vec_pretty(&manifest).map_err(|e| HmsError::corrupt(e.to_string()))?,
+        &serde_json::to_vec_pretty(&manifest).map_err(|e| WarmError::corrupt(e.to_string()))?,
     )?;
     file.sync_all()?;
     staging.publish()?;
@@ -77,18 +77,18 @@ pub(crate) fn write(
 }
 
 /// Verifies `snapshot` against its manifest while copying it into the new directory `dest`.
-pub(crate) fn restore(snapshot: &Path, dest: &Path) -> Result<(), HmsError> {
+pub(crate) fn restore(snapshot: &Path, dest: &Path) -> Result<(), WarmError> {
     let manifest_path = snapshot.join(MANIFEST);
     let bytes = fs::read(&manifest_path).map_err(|e| match e.kind() {
-        std::io::ErrorKind::NotFound => HmsError::NotFound {
+        std::io::ErrorKind::NotFound => WarmError::NotFound {
             details: format!("{} has no {MANIFEST}", snapshot.display()),
         },
-        _ => HmsError::from(e),
+        _ => WarmError::from(e),
     })?;
     let manifest: Manifest = serde_json::from_slice(&bytes)
-        .map_err(|e| HmsError::corrupt(format!("unreadable snapshot manifest: {e}")))?;
+        .map_err(|e| WarmError::corrupt(format!("unreadable snapshot manifest: {e}")))?;
     if manifest.format != FORMAT {
-        return Err(HmsError::corrupt(format!(
+        return Err(WarmError::corrupt(format!(
             "unsupported snapshot format {}",
             manifest.format
         )));
@@ -102,7 +102,7 @@ pub(crate) fn restore(snapshot: &Path, dest: &Path) -> Result<(), HmsError> {
         }
         let (bytes, digest) = copy_file(&snapshot.join(&relative), &target)?;
         if bytes != entry.bytes || digest != entry.sha256 {
-            return Err(HmsError::corrupt(format!(
+            return Err(WarmError::corrupt(format!(
                 "{} does not match the snapshot manifest",
                 entry.path
             )));
@@ -120,18 +120,18 @@ struct Staging {
 }
 
 impl Staging {
-    fn create(dest: &Path) -> Result<Self, HmsError> {
+    fn create(dest: &Path) -> Result<Self, WarmError> {
         if dest.exists() {
             let empty = dest.is_dir() && fs::read_dir(dest)?.next().is_none();
             if !empty {
-                return Err(HmsError::AlreadyExists {
+                return Err(WarmError::AlreadyExists {
                     details: format!("{} exists and is not an empty directory", dest.display()),
                 });
             }
         }
         let name = dest
             .file_name()
-            .ok_or_else(|| HmsError::invalid("destination has no file name"))?
+            .ok_or_else(|| WarmError::invalid("destination has no file name"))?
             .to_string_lossy()
             .into_owned();
         let parent = match dest.parent() {
@@ -155,7 +155,7 @@ impl Staging {
         &self.dir
     }
 
-    fn publish(mut self) -> Result<(), HmsError> {
+    fn publish(mut self) -> Result<(), WarmError> {
         if self.dest.is_dir() {
             fs::remove_dir(&self.dest)?;
         }
@@ -202,7 +202,7 @@ fn copy_tree(
     relative: &Path,
     top: bool,
     files: &mut Vec<Entry>,
-) -> Result<(), HmsError> {
+) -> Result<(), WarmError> {
     for entry in fs::read_dir(root.join(relative))? {
         let entry = entry?;
         let name = entry.file_name();
@@ -234,7 +234,7 @@ fn copy_tree(
 /// Copies one file, returning its length and SHA-256 hex digest, and syncs the copy. Blocks of
 /// zeros become holes, so the store's preallocated log segment costs only its used bytes on
 /// file systems with sparse files; the digest still covers the full logical content.
-fn copy_file(from: &Path, to: &Path) -> Result<(u64, String), HmsError> {
+fn copy_file(from: &Path, to: &Path) -> Result<(u64, String), WarmError> {
     let mut input = File::open(from)?;
     let mut output = OpenOptions::new().write(true).create_new(true).open(to)?;
     let mut hasher = Sha256::new();
@@ -261,14 +261,14 @@ fn copy_file(from: &Path, to: &Path) -> Result<(u64, String), HmsError> {
 
 /// A manifest path is relative and stays inside the snapshot; anything else is a tampered
 /// manifest.
-fn checked_relative(path: &str) -> Result<PathBuf, HmsError> {
+fn checked_relative(path: &str) -> Result<PathBuf, WarmError> {
     let relative = PathBuf::from(path);
     let clean = !path.is_empty()
         && relative
             .components()
             .all(|c| matches!(c, Component::Normal(_)));
     if !clean || path == MANIFEST {
-        return Err(HmsError::corrupt(format!(
+        return Err(WarmError::corrupt(format!(
             "snapshot manifest names an unsafe path: {path}"
         )));
     }

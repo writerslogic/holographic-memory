@@ -3,7 +3,6 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde_json::{json, Value};
 use std::{
     path::PathBuf,
@@ -13,6 +12,7 @@ use std::{
     },
     time::Instant,
 };
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -32,7 +32,7 @@ fn input(id: usize, version: usize) -> Result<DocumentInput> {
     }))?)
 }
 
-fn query(hms: &HmsCore, origin: Instant, reader: usize, sequence: usize) -> Result<Value> {
+fn query(hms: &WarmCore, origin: Instant, reader: usize, sequence: usize) -> Result<Value> {
     let group = (reader + sequence) % 8;
     let options = SearchOptions {
         filter: Some(json!({"group":group})),
@@ -40,13 +40,13 @@ fn query(hms: &HmsCore, origin: Instant, reader: usize, sequence: usize) -> Resu
         ..Default::default()
     };
     let start = origin.elapsed().as_nanos();
-    let results = hms.search_documents("common", &options)?;
+    let results = warm.search_documents("common", &options)?;
     let end = origin.elapsed().as_nanos();
     Ok(json!({"reader":reader,"sequence":sequence,"group":group,
         "start_ns":start,"end_ns":end,"results":results}))
 }
 
-fn phase(hms: &HmsCore, origin: Instant, args: &Args, name: &str) -> Result<Value> {
+fn phase(hms: &WarmCore, origin: Instant, args: &Args, name: &str) -> Result<Value> {
     let barrier = Barrier::new(args.readers + 1);
     let done = AtomicBool::new(false);
     std::thread::scope(|scope| -> Result<Value> {
@@ -59,7 +59,7 @@ fn phase(hms: &HmsCore, origin: Instant, args: &Args, name: &str) -> Result<Valu
                 let mut rows = Vec::new();
                 let budget = if name == "compact" { 512 } else { 10000 };
                 for sequence in 0..budget {
-                    rows.push(query(hms, origin, reader, sequence)?);
+                    rows.push(query(warm, origin, reader, sequence)?);
                     if (name == "compact" && sequence + 1 == budget)
                         || (name != "compact" && sequence >= 127 && done.load(Ordering::Acquire))
                     {
@@ -82,15 +82,15 @@ fn phase(hms: &HmsCore, origin: Instant, args: &Args, name: &str) -> Result<Valu
                 let start = origin.elapsed().as_nanos();
                 match name {
                     "replace" => {
-                        hms.memorize_document(input(id, 2)?)?;
+                        warm.memorize_document(input(id, 2)?)?;
                     }
                     "delete" => {
                         ensure!(
-                            hms.delete_document(&format!("d{id:08}"))?,
+                            warm.delete_document(&format!("d{id:08}"))?,
                             "missing delete target"
                         );
                     }
-                    "compact" => hms.compact()?,
+                    "compact" => warm.compact()?,
                     _ => unreachable!(),
                 }
                 rows.push(json!({"id":id,"start_ns":start,"end_ns":origin.elapsed().as_nanos()}));
@@ -106,14 +106,14 @@ fn phase(hms: &HmsCore, origin: Instant, args: &Args, name: &str) -> Result<Valu
     })
 }
 
-fn snapshot(hms: &HmsCore, n: usize) -> Result<Vec<Value>> {
+fn snapshot(hms: &WarmCore, n: usize) -> Result<Vec<Value>> {
     (0..n)
         .map(|id| {
             let options = SearchOptions {
                 document_ids: Some(vec![format!("d{id:08}")]),
                 ..Default::default()
             };
-            Ok(json!({"id":id,"results":hms.search_documents("common", &options)?}))
+            Ok(json!({"id":id,"results":warm.search_documents("common", &options)?}))
         })
         .collect()
 }
@@ -128,30 +128,30 @@ fn main() -> Result<()> {
     ensure!(!args.out.exists(), "refusing to overwrite evidence");
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
-    let hms = HmsCore::new(1024, Some(path.clone()), None)?;
+    let warm = WarmCore::new(1024, Some(path.clone()), None)?;
     let origin = Instant::now();
     for id in 0..args.documents {
-        hms.memorize_document(input(id, 1)?)?;
+        warm.memorize_document(input(id, 1)?)?;
     }
     let ingest_ns = origin.elapsed().as_nanos();
     let mut static_queries = Vec::new();
     for sequence in 0..512 {
-        static_queries.push(query(&hms, origin, 0, sequence)?);
+        static_queries.push(query(&warm, origin, 0, sequence)?);
     }
     let mut phases = Vec::new();
     for name in ["replace", "delete", "compact"] {
-        phases.push(phase(&hms, origin, &args, name)?);
+        phases.push(phase(&warm, origin, &args, name)?);
     }
-    let before_restart = snapshot(&hms, args.documents)?;
+    let before_restart = snapshot(&warm, args.documents)?;
     let mut repeat_compactions_ns = Vec::new();
     for _ in 0..2 {
         let start = Instant::now();
-        hms.compact()?;
+        warm.compact()?;
         repeat_compactions_ns.push(start.elapsed().as_nanos());
     }
-    drop(hms);
+    drop(warm);
     let start = Instant::now();
-    let restored = HmsCore::new(1024, Some(path), None)?;
+    let restored = WarmCore::new(1024, Some(path), None)?;
     let restart_ns = start.elapsed().as_nanos();
     let after_restart = snapshot(&restored, args.documents)?;
     ensure!(

@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 
-from holographic_memory import VectorIndex
+from writerslogic_warm import VectorIndex
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
                                 code_bits=8, residual_bits=residual_bits)
             index.fit(rows)
             index.set_query_arguments(ef=64, rerank=64)
-            path = Path(directory) / f"residual-{residual_bits}.hms"
+            path = Path(directory) / f"residual-{residual_bits}.warm"
             index.save(path)
             reopened = VectorIndex("euclidean", threads=1)
             reopened.load(path)

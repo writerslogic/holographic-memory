@@ -1,10 +1,10 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use holographic_memory as hms;
 use serde_json::Value;
+use writerslogic_warm as warm;
 
-use crate::error::HmsError;
+use crate::error::WarmError;
 
 /// How a store is opened. Every field but `path` has a default.
 #[derive(Clone, Debug, uniffi::Record)]
@@ -41,11 +41,11 @@ impl Default for StoreOptions {
 }
 
 impl StoreOptions {
-    pub(crate) fn to_config(&self) -> Result<hms::core::HmsConfig, HmsError> {
-        let mut config = hms::core::HmsConfig::default();
+    pub(crate) fn to_config(&self) -> Result<warm::core::WarmConfig, WarmError> {
+        let mut config = warm::core::WarmConfig::default();
         if let Some(key) = &self.encryption_key {
             if key.is_empty() {
-                return Err(HmsError::invalid("encryption key must not be empty"));
+                return Err(WarmError::invalid("encryption key must not be empty"));
             }
             config.security.encryption_enabled = true;
             config.security.encryption_passphrase = Some(key.clone());
@@ -55,9 +55,9 @@ impl StoreOptions {
             || self.embedding_dimensions.is_some()
         {
             let dimensions = self.embedding_dimensions.ok_or_else(|| {
-                HmsError::invalid("embeddingDimensions is required with an embedding model")
+                WarmError::invalid("embeddingDimensions is required with an embedding model")
             })?;
-            config.embedding_space = Some(hms::EmbeddingSpace {
+            config.embedding_space = Some(warm::EmbeddingSpace {
                 model: self.embedding_model.clone().unwrap_or_default(),
                 revision: self.embedding_revision.clone().unwrap_or_default(),
                 dimensions: dimensions as usize,
@@ -99,8 +99,8 @@ pub struct DocumentInput {
 }
 
 impl DocumentInput {
-    pub(crate) fn into_core(self) -> Result<hms::DocumentInput, HmsError> {
-        Ok(hms::DocumentInput {
+    pub(crate) fn into_core(self) -> Result<warm::DocumentInput, WarmError> {
+        Ok(warm::DocumentInput {
             id: self.id,
             text: self.text,
             source_uri: self.source_uri,
@@ -124,8 +124,8 @@ pub struct DocumentChunk {
     pub end_byte: u32,
 }
 
-impl From<hms::DocumentChunk> for DocumentChunk {
-    fn from(chunk: hms::DocumentChunk) -> Self {
+impl From<warm::DocumentChunk> for DocumentChunk {
+    fn from(chunk: warm::DocumentChunk) -> Self {
         Self {
             id: chunk.id,
             text: chunk.text,
@@ -180,8 +180,8 @@ pub struct SearchOptions {
 }
 
 impl SearchOptions {
-    pub(crate) fn into_core(self) -> Result<hms::SearchOptions, HmsError> {
-        Ok(hms::SearchOptions {
+    pub(crate) fn into_core(self) -> Result<warm::SearchOptions, WarmError> {
+        Ok(warm::SearchOptions {
             k: self.k,
             candidate_limit: self.candidate_limit,
             filter: parse_json("filterJson", self.filter_json)?,
@@ -219,8 +219,8 @@ pub struct SearchHit {
     pub semantic_score: Option<f64>,
 }
 
-impl From<hms::DocumentResult> for SearchHit {
-    fn from(result: hms::DocumentResult) -> Self {
+impl From<warm::DocumentResult> for SearchHit {
+    fn from(result: warm::DocumentResult) -> Self {
         Self {
             id: result.id,
             document_id: result.document_id,
@@ -267,14 +267,14 @@ pub struct SnapshotInfo {
     pub document_count: u64,
 }
 
-fn parse_json(name: &str, text: Option<String>) -> Result<Option<Value>, HmsError> {
+fn parse_json(name: &str, text: Option<String>) -> Result<Option<Value>, WarmError> {
     let Some(text) = text else {
         return Ok(None);
     };
     let value: Value = serde_json::from_str(&text)
-        .map_err(|e| HmsError::invalid(format!("{name} is not valid JSON: {e}")))?;
+        .map_err(|e| WarmError::invalid(format!("{name} is not valid JSON: {e}")))?;
     if !value.is_object() {
-        return Err(HmsError::invalid(format!("{name} must be a JSON object")));
+        return Err(WarmError::invalid(format!("{name} must be a JSON object")));
     }
     Ok(Some(value))
 }

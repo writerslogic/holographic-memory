@@ -3,15 +3,15 @@
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::algebraic_codebook::{
-    PackedPhaseCodes, ValueCodeKind, ValueCodebook, MAX_DIM,
-};
-use holographic_memory::core::entangled::hash_u64;
 use nalgebra::Complex;
 use serde::Serialize;
 use std::mem::size_of;
 use std::path::PathBuf;
 use std::time::Instant;
+use writerslogic_warm::core::algebraic_codebook::{
+    PackedPhaseCodes, ValueCodeKind, ValueCodebook, MAX_DIM,
+};
+use writerslogic_warm::core::entangled::hash_u64;
 
 const KINDS: [ValueCodeKind; 4] = [
     ValueCodeKind::UnpackedRandom,

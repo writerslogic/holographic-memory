@@ -9,7 +9,7 @@
 
 use std::time::Instant;
 
-use holographic_memory::core::sparse_impact::{
+use writerslogic_warm::core::sparse_impact::{
     CsrView, SparseBuildParams, SparseImpactIndex, SparseSearchParams,
 };
 

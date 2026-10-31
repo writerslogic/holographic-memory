@@ -1,11 +1,11 @@
 # Output JSON schemas
 
-Files in this directory are written by `hms-research-witness` (see `../RUN.md`
+Files in this directory are written by `warm-research-witness` (see `../RUN.md`
 for the commands). JSON results are git-ignored; this file documents their
 shape. All byte counts are bytes, times are milliseconds unless the field name
 ends in `_us` (microseconds), fractions are in `[0, 1]`.
 
-## `stage1_<dataset>_<n>.json` (`schema = "hms-research-witness/stage1/v1"`)
+## `stage1_<dataset>_<n>.json` (`schema = "warm-research-witness/stage1/v1"`)
 
 ```text
 {
@@ -60,7 +60,7 @@ CurvePoint = { m, b, q, t, median_posting_bytes, p95_posting_bytes, median_candi
                candidate_recall_at_top, rank10_survival, pass }
 ```
 
-## `stage2_<dataset>_<n>_m<M>_b<B>_q<Q>_t<t>.json` (`schema = "hms-research-witness/stage2/v1"`)
+## `stage2_<dataset>_<n>_m<M>_b<B>_q<Q>_t<t>.json` (`schema = "warm-research-witness/stage2/v1"`)
 
 ```text
 {

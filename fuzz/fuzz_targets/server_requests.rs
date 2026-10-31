@@ -4,46 +4,46 @@
 #![no_main]
 #![allow(dead_code, unused_imports)]
 
-//! hms-server request surface, through the server's own parsing and validation: the single,
+//! warm-server request surface, through the server's own parsing and validation: the single,
 //! batch, NDJSON and query bodies, the tenant, idempotency and content-type headers, and
 //! snapshot ids. The first input byte picks the surface. The server modules are compiled into
-//! this crate from `src/bin/hms-server/`, so the code under test is the shipped code.
+//! this crate from `src/bin/warm-server/`, so the code under test is the shipped code.
 
-#[path = "../../src/bin/hms-server/admin.rs"]
+#[path = "../../src/bin/warm-server/admin.rs"]
 mod admin;
-#[path = "../../src/bin/hms-server/auth.rs"]
+#[path = "../../src/bin/warm-server/auth.rs"]
 mod auth;
-#[path = "../../src/bin/hms-server/config.rs"]
+#[path = "../../src/bin/warm-server/config.rs"]
 mod config;
-#[path = "../../src/bin/hms-server/documents.rs"]
+#[path = "../../src/bin/warm-server/documents.rs"]
 mod documents;
-#[path = "../../src/bin/hms-server/error.rs"]
+#[path = "../../src/bin/warm-server/error.rs"]
 mod error;
-#[path = "../../src/bin/hms-server/limits.rs"]
+#[path = "../../src/bin/warm-server/limits.rs"]
 mod limits;
-#[path = "../../src/bin/hms-server/log.rs"]
+#[path = "../../src/bin/warm-server/log.rs"]
 mod log;
-#[path = "../../src/bin/hms-server/memory.rs"]
+#[path = "../../src/bin/warm-server/memory.rs"]
 mod memory;
-#[path = "../../src/bin/hms-server/metrics.rs"]
+#[path = "../../src/bin/warm-server/metrics.rs"]
 mod metrics;
-#[path = "../../src/bin/hms-server/middleware.rs"]
+#[path = "../../src/bin/warm-server/middleware.rs"]
 mod middleware;
-#[path = "../../src/bin/hms-server/ops.rs"]
+#[path = "../../src/bin/warm-server/ops.rs"]
 mod ops;
-#[path = "../../src/bin/hms-server/request.rs"]
+#[path = "../../src/bin/warm-server/request.rs"]
 mod request;
-#[path = "../../src/bin/hms-server/restore.rs"]
+#[path = "../../src/bin/warm-server/restore.rs"]
 mod restore;
-#[path = "../../src/bin/hms-server/routes.rs"]
+#[path = "../../src/bin/warm-server/routes.rs"]
 mod routes;
-#[path = "../../src/bin/hms-server/serve.rs"]
+#[path = "../../src/bin/warm-server/serve.rs"]
 mod serve;
-#[path = "../../src/bin/hms-server/tenants.rs"]
+#[path = "../../src/bin/warm-server/tenants.rs"]
 mod tenants;
-#[path = "../../src/bin/hms-server/vindex.rs"]
+#[path = "../../src/bin/warm-server/vindex.rs"]
 mod vindex;
-#[path = "../../src/bin/hms-server/types.rs"]
+#[path = "../../src/bin/warm-server/types.rs"]
 mod types;
 
 use std::collections::HashSet;
@@ -64,7 +64,7 @@ struct Args {
 
 fn config() -> &'static config::Config {
     static CONFIG: OnceLock<config::Config> = OnceLock::new();
-    CONFIG.get_or_init(|| Args::parse_from(["hms-server"]).config)
+    CONFIG.get_or_init(|| Args::parse_from(["warm-server"]).config)
 }
 
 fn principal(tenants: TenantAccess) -> Principal {

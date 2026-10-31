@@ -8,15 +8,15 @@ import { join } from 'node:path'
 import { Document } from '@langchain/core/documents'
 import { FakeListChatModel } from '@langchain/core/utils/testing'
 import { RunnableWithMessageHistory } from '@langchain/core/runnables'
-import { HashingEmbedder, HmsChatMessageHistory, HmsStore, HmsVectorStore } from '@holographic-memory/langchain'
+import { HashingEmbedder, WarmChatMessageHistory, WarmStore, WarmVectorStore } from '@writerslogic/warm-langchain'
 
 // Any LangChain Embeddings works. This one is the dependency-free hashing embedder (lexical, not semantic);
 // swap in OpenAIEmbeddings, OllamaEmbeddings, HuggingFaceTransformersEmbeddings, ...
 const hashing = new HashingEmbedder(384)
 const embeddings = { embedDocuments: (t) => hashing.encodeDocuments(t), embedQuery: (t) => hashing.encodeQuery(t) }
 
-const path = mkdtempSync(join(tmpdir(), 'hms-langchain-example-'))
-const vectorStore = await HmsVectorStore.create(embeddings, {
+const path = mkdtempSync(join(tmpdir(), 'warm-langchain-example-'))
+const vectorStore = await WarmVectorStore.create(embeddings, {
   path,
   dimensions: 4096,
   embeddingSpace: { model: 'hashing', revision: 'v1' }, // identity of the embedding space, recorded in the store
@@ -40,13 +40,13 @@ const retriever = vectorStore.asRetriever({ k: 2, filter: { topic: 'code' } })
 console.log('retriever :', (await retriever.invoke('compile time rules')).map((d) => d.id))
 
 // Chat memory: RunnableWithMessageHistory with a store-backed history per session.
-const historyStore = new HmsStore({ path: mkdtempSync(join(tmpdir(), 'hms-langchain-history-')), dimensions: 1024 })
+const historyStore = new WarmStore({ path: mkdtempSync(join(tmpdir(), 'warm-langchain-history-')), dimensions: 1024 })
 const chain = new RunnableWithMessageHistory({
   runnable: new FakeListChatModel({ responses: ['Nice to meet you, Ada.', 'You told me your name is Ada.'] }),
-  getMessageHistory: (sessionId) => new HmsChatMessageHistory({ store: historyStore, sessionId }),
+  getMessageHistory: (sessionId) => new WarmChatMessageHistory({ store: historyStore, sessionId }),
 })
 const config = { configurable: { sessionId: 'demo' } }
 await chain.invoke([{ role: 'user', content: 'Hi, I am Ada.' }], config)
 await chain.invoke([{ role: 'user', content: 'What is my name?' }], config)
-const history = new HmsChatMessageHistory({ store: historyStore, sessionId: 'demo' })
+const history = new WarmChatMessageHistory({ store: historyStore, sessionId: 'demo' })
 console.log('history   :', (await history.getMessages()).map((m) => `${m.getType()}: ${m.content}`))

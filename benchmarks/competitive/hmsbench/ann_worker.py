@@ -117,18 +117,18 @@ class Adapter:
         return {}
 
 
-class Hms(Adapter):
+class Warm(Adapter):
     BUILDS = {"persisted": {}}
     SWEEPS = {"persisted": [{"ef": 64}]}
     PERSISTENT_FLUSH = True
 
     def open(self, params, n):
         import subprocess
-        binary = os.environ["HMS_PUBLIC_BENCH"]
+        binary = os.environ["WARM_PUBLIC_BENCH"]
         self.process = subprocess.Popen([binary, "ann-updates", "--action", "session", "--index", str(self.workdir / "index.updates")],
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
         if json.loads(self.process.stdout.readline()) != {"ready": True}:
-            raise RuntimeError("HMS update session failed to open")
+            raise RuntimeError("WARM update session failed to open")
 
     def _request(self, request):
         self.process.stdin.write(json.dumps(request) + "\n")
@@ -149,11 +149,11 @@ class Hms(Adapter):
     def close(self):
         self.process.stdin.close()
         if self.process.wait(timeout=30) != 0:
-            raise RuntimeError("HMS update session exited unsuccessfully")
+            raise RuntimeError("WARM update session exited unsuccessfully")
 
 
 class Hnswlib(Adapter):
-    # m32e500 and m48e500 match the build effort of the HMS graph (degree 64 at level 0 for
+    # m32e500 and m48e500 match the build effort of the WARM graph (degree 64 at level 0 for
     # M=32, construction ef 500); analysis reports the best build per target recall.
     BUILDS = {"m16": {"M": 16, "ef_construction": 200}, "m32": {"M": 32, "ef_construction": 200},
               "m32e500": {"M": 32, "ef_construction": 500}, "m48e500": {"M": 48, "ef_construction": 500}}
@@ -571,11 +571,11 @@ class Duckdb(Adapter):
                 hi = min(lo + 20000, len(train))
                 vec = pa.FixedSizeListArray.from_arrays(pa.array(train[lo:hi].reshape(-1), type=pa.float32()), self.dim)
                 batch = pa.table({"id": pa.array(np.arange(lo, hi), type=pa.int32()), "v": vec})
-                con.register("hms_ingest_batch", batch)
+                con.register("warm_ingest_batch", batch)
                 try:
-                    con.execute("INSERT INTO t SELECT * FROM hms_ingest_batch")
+                    con.execute("INSERT INTO t SELECT * FROM warm_ingest_batch")
                 finally:
-                    con.unregister("hms_ingest_batch")
+                    con.unregister("warm_ingest_batch")
             con.execute(f"CREATE INDEX idx ON t USING HNSW (v) WITH (metric='{'cosine' if self.angular else 'l2sq'}', M={params['M']}, ef_construction={params['ef_construction']})")
         finally:
             con.close()
@@ -604,7 +604,7 @@ class Duckdb(Adapter):
 
 
 SYSTEMS = {
-    "hms": Hms,
+    "warm": Warm,
     "hnswlib": Hnswlib, "faiss-hnsw": FaissHnsw, "faiss-flat": FaissFlat, "faiss-ivfpq": FaissIvfpq,
     "usearch": Usearch, "annoy": Annoy, "sqlite-vec": SqliteVec, "lancedb": Lancedb, "chroma": Chroma,
     "qdrant-local": Qdrant, "milvus-lite": Milvus, "duckdb-vss": Duckdb,
@@ -616,7 +616,7 @@ class Ngt(Adapter):
     pruning). The Python binding exposes no QG builder (QuantizedIndex only opens a `qg` directory
     written by the NGT command-line tool), so ONNG is the strongest graph the binding can build."""
     # onng_default: creation edges 10, outgoing 10, incoming 120 (the NGT README ONNG example).
-    # onng_d64: creation edges 64 and 16+48 optimised edges, matching the degree-64 build effort of HMS.
+    # onng_d64: creation edges 64 and 16+48 optimised edges, matching the degree-64 build effort of WARM.
     BUILDS = {"onng_default": {"creation": 10, "out": 10, "inn": 120}, "onng_d64": {"creation": 64, "out": 16, "inn": 48}}
     SWEEPS = {k: [{"epsilon": e} for e in (0.0, 0.02, 0.05, 0.08, 0.1, 0.15, 0.2, 0.3, 0.5, 1.0)] for k in BUILDS}
     PERSISTENT_FLUSH = True
@@ -746,7 +746,7 @@ class Pynndescent(Adapter):
 class Voyager(Adapter):
     """Spotify Voyager: an hnswlib-derived graph (own file format, auto-growing, optional float8/E4M3
     storage left at float32 here). m16e500 is the ann-benchmarks efConstruction; m32e500 and m48e500
-    match the HMS build effort like the hnswlib rows. Cosine space normalises on insert."""
+    match the WARM build effort like the hnswlib rows. Cosine space normalises on insert."""
     BUILDS = {"m16": {"M": 16, "ef_construction": 200}, "m16e500": {"M": 16, "ef_construction": 500},
               "m32e500": {"M": 32, "ef_construction": 500}, "m48e500": {"M": 48, "ef_construction": 500}}
     SWEEPS = {k: [{"ef": e} for e in EF_SWEEP] for k in BUILDS}
@@ -916,7 +916,7 @@ def run_ops(a, adapter, meta):
                          "flush_required": adapter.PERSISTENT_FLUSH, "operations_per_flush": 1}
         except Unsupported as e:
             out[name] = {"supported": False, "reason": str(e)}
-    if isinstance(adapter, Hms):
+    if isinstance(adapter, Warm):
         adapter.close()
     return out
 

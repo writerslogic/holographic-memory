@@ -3,15 +3,15 @@ search:
   boost: 1.6
 ---
 
-# hms-server
+# warm-server
 
-`hms-server` is the HTTP service for Holographic Memory. It implements the endpoints used by the `holographic-memory-sdk` Python client (`bindings/python/holographic-sdk`) and any other HTTP client, wrapping one `HmsCore` store per tenant, and adds what a service needs: scoped per-tenant authentication, limits and backpressure, observability, TLS and unix sockets, snapshots, compaction and graceful shutdown.
+`warm-server` is the HTTP service for WARM. It implements the endpoints used by the `writerslogic-warm-sdk` Python client (`bindings/python/warm-sdk`) and any other HTTP client, wrapping one `WarmCore` store per tenant, and adds what a service needs: scoped per-tenant authentication, limits and backpressure, observability, TLS and unix sockets, snapshots, compaction and graceful shutdown.
 
 | Document | Contents |
 |---|---|
 | this page | Run it, the API at a glance, behavior and limits |
 | [`server/openapi.json`](server/openapi.json) | The OpenAPI 3.1 contract, generated from the server (also served at `/openapi.json`) |
-| [`server/configuration.md`](server/configuration.md) | Every flag and `HMS_*` variable, defaults, meaning |
+| [`server/configuration.md`](server/configuration.md) | Every flag and `WARM_*` variable, defaults, meaning |
 | [`server/auth.md`](server/auth.md) | Keys, scopes, tenant binding, rotation |
 | [`server/errors.md`](server/errors.md) | The RFC 9457 error model and every error code |
 | [`server/versioning.md`](server/versioning.md) | What may change within `/api/v1` and how breaking changes ship |
@@ -21,29 +21,29 @@ search:
 ## Build and run
 
 ```sh
-cargo build --release --features server --bin hms-server
+cargo build --release --features server --bin warm-server
 
 # One key valid for every tenant (the original setup):
-HMS_API_KEY="$(openssl rand -hex 32)" ./target/release/hms-server --input-dim 384
+WARM_API_KEY="$(openssl rand -hex 32)" ./target/release/warm-server --input-dim 384
 
 # Per-tenant keys with scopes (docs/server/auth.md):
-./target/release/hms-server keygen --id acme-rw --tenants acme --scopes read,write --keys-file keys.json
-./target/release/hms-server --keys-file keys.json --input-dim 384
+./target/release/warm-server keygen --id acme-rw --tenants acme --scopes read,write --keys-file keys.json
+./target/release/warm-server --keys-file keys.json --input-dim 384
 
 # Local development without credentials (loopback or a unix socket only):
-./target/release/hms-server --no-auth --input-dim 384
+./target/release/warm-server --no-auth --input-dim 384
 ```
 
-The server refuses to start without credentials unless `--no-auth` is given, and refuses `--no-auth` on a non-loopback address. It prints `hms-server listening on <addr>` on stdout once bound; everything else goes to stderr as JSON log lines.
+The server refuses to start without credentials unless `--no-auth` is given, and refuses `--no-auth` on a non-loopback address. It prints `warm-server listening on <addr>` on stdout once bound; everything else goes to stderr as JSON log lines.
 
 ```python
-from holographic_sdk import HolographicClient
-client = HolographicClient(url="http://127.0.0.1:8080", api_key="<token>", tenant_id="acme")
+from writerslogic_warm_sdk import WarmClient
+client = WarmClient(url="http://127.0.0.1:8080", api_key="<token>", tenant_id="acme")
 ```
 
 ## API keys
 
-Every request carries an API key. `HMS_API_KEY` sets one key valid for every tenant; `--keys-file` loads per-tenant API keys with read, write or admin scopes, created with `hms-server keygen`. Key format, scopes and rotation are in [server/auth.md](server/auth.md).
+Every request carries an API key. `WARM_API_KEY` sets one key valid for every tenant; `--keys-file` loads per-tenant API keys with read, write or admin scopes, created with `warm-server keygen`. Key format, scopes and rotation are in [server/auth.md](server/auth.md).
 
 ## API at a glance
 
@@ -98,7 +98,7 @@ Stores open on first use. Simultaneous first requests share one initialization; 
 
 ## Limits and backpressure
 
-- `--max-concurrent-work` bounds admitted requests reading bodies or running engine work. When full, a request is answered 503 `server_busy` with `Retry-After` immediately, or, with `--max-queue` above zero, waits in a bounded queue for up to `--queue-timeout-ms` first. `hms_queue_depth` and `hms_work_slots_in_use` expose the saturation.
+- `--max-concurrent-work` bounds admitted requests reading bodies or running engine work. When full, a request is answered 503 `server_busy` with `Retry-After` immediately, or, with `--max-queue` above zero, waits in a bounded queue for up to `--queue-timeout-ms` first. `warm_queue_depth` and `warm_work_slots_in_use` expose the saturation.
 - `--rate-limit-rps`/`--rate-limit-burst` is a per-tenant token bucket (429 `rate_limited`, `Retry-After`). `--max-documents-per-tenant` is a per-tenant document quota (429 `quota_exceeded`). Both are off by default.
 - `--max-connections` caps simultaneous connections; `--header-read-timeout-seconds` drops clients that dribble headers; `--body-timeout-seconds` bounds body reads. A disconnected client releases body admission immediately, but a running blocking operation keeps its work slot until it finishes.
 - Parsing, validation, store initialization, ingest, search and maintenance run on blocking workers; the async runtime only moves bytes.
@@ -118,15 +118,15 @@ Built with `--features server,local-models`, the server can run the model stages
 
 | Flag | Environment | Stage |
 |---|---|---|
-| `--embed-model DIR --embed-revision SHA` | `HMS_EMBED_MODEL`, `HMS_EMBED_REVISION` | Qwen3-Embedding. Documents may omit `vector` (the text is embedded); `--input-dim` must equal the model's hidden size (1024 for 0.6B). |
-| `--rerank-model DIR --rerank-revision SHA` | `HMS_RERANK_MODEL`, `HMS_RERANK_REVISION` | Qwen3-Reranker over the fused top 20 of a text query. |
-| `--llm-model DIR --llm-revision SHA` | `HMS_LLM_MODEL`, `HMS_LLM_REVISION` | Qwen3 instruct LLM (greedy decoding). |
-| `--extract-facts` | `HMS_EXTRACT_FACTS` | At ingest, the LLM lists the personal facts in each document; they are indexed with it (lexical and embedding key), the stored text is unchanged. |
-| `--rewrite-queries` | `HMS_REWRITE_QUERIES` | The LLM rewrites each text query; the original and the rewrite are searched and merged by RRF. |
+| `--embed-model DIR --embed-revision SHA` | `WARM_EMBED_MODEL`, `WARM_EMBED_REVISION` | Qwen3-Embedding. Documents may omit `vector` (the text is embedded); `--input-dim` must equal the model's hidden size (1024 for 0.6B). |
+| `--rerank-model DIR --rerank-revision SHA` | `WARM_RERANK_MODEL`, `WARM_RERANK_REVISION` | Qwen3-Reranker over the fused top 20 of a text query. |
+| `--llm-model DIR --llm-revision SHA` | `WARM_LLM_MODEL`, `WARM_LLM_REVISION` | Qwen3 instruct LLM (greedy decoding). |
+| `--extract-facts` | `WARM_EXTRACT_FACTS` | At ingest, the LLM lists the personal facts in each document; they are indexed with it (lexical and embedding key), the stored text is unchanged. |
+| `--rewrite-queries` | `WARM_REWRITE_QUERIES` | The LLM rewrites each text query; the original and the rewrite are searched and merged by RRF. |
 
 A query may then be `{"query": str, "today"?: str, "top_k"?, "filter"?, "query_vector"?}`: hybrid BM25 + cosine per query form, weighted RRF across forms, then the re-rank, with the tuned LongMemEval parameters. `score` is then the fused rank score, not a cosine. Vector-only queries keep the cosine path.
 
-**What runs where.** Every stage runs in the server process: candle on the CPU, on the GPU through Metal on macOS, or through CUDA in builds made with `RUSTFLAGS="--cfg hms_cuda"`. Weights are read from the given local directories, which must record the given revision (a `REVISION` file or the metadata `hf download --revision <sha> --local-dir <dir>` writes); the server never downloads a model and makes no network calls, so no document or query text leaves the machine. Fact extraction adds one LLM generation per document and query rewriting one per text query; see `docs/PUBLIC-BENCHMARKS.md` for measured on-device costs.
+**What runs where.** Every stage runs in the server process: candle on the CPU, on the GPU through Metal on macOS, or through CUDA in builds made with `RUSTFLAGS="--cfg warm_cuda"`. Weights are read from the given local directories, which must record the given revision (a `REVISION` file or the metadata `hf download --revision <sha> --local-dir <dir>` writes); the server never downloads a model and makes no network calls, so no document or query text leaves the machine. Fact extraction adds one LLM generation per document and query rewriting one per text query; see `docs/PUBLIC-BENCHMARKS.md` for measured on-device costs.
 
 ## Storage
 

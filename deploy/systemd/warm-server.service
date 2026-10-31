@@ -1,0 +1,64 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Install:
+#   install -m 0755 warm-server /usr/local/bin/warm-server
+#   install -d -m 0750 /etc/warm-server
+#   install -m 0640 warm-server.env /etc/warm-server/warm-server.env   # WARM_API_KEY=..., WARM_KEYS_FILE=...
+#   install -m 0644 warm-server.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now warm-server
+#
+# Reload keys and the TLS certificate without a restart: systemctl reload warm-server
+
+[Unit]
+Description=WARM HTTP server
+Documentation=https://github.com/writerslogic/warm/blob/main/docs/SERVER.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/warm-server
+ExecReload=/bin/kill -HUP $MAINPID
+EnvironmentFile=/etc/warm-server/warm-server.env
+Environment=WARM_DATA_DIR=/var/lib/warm-server
+Environment=WARM_BIND=127.0.0.1:8080
+Restart=on-failure
+RestartSec=2s
+# SIGTERM drains in-flight requests and flushes every store; give it the grace period plus margin.
+KillSignal=SIGTERM
+TimeoutStopSec=60s
+LimitNOFILE=65536
+
+DynamicUser=yes
+StateDirectory=warm-server
+StateDirectoryMode=0700
+UMask=0077
+
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+
+[Install]
+WantedBy=multi-user.target

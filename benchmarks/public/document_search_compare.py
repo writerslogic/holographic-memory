@@ -80,7 +80,7 @@ def main():
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--rounds", type=int, default=11)
     parser.add_argument("--out", type=Path, default=OUT / "document_paired")
-    parser.add_argument("--lock-path", type=Path, default=Path("./.hms-target/timing.lock"))
+    parser.add_argument("--lock-path", type=Path, default=Path("./.warm-target/timing.lock"))
     args = parser.parse_args()
     if not 1 <= args.rounds <= 11:
         raise ValueError("rounds outside budget")

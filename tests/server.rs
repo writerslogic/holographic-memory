@@ -39,7 +39,7 @@ impl Server {
     fn start_in(dir: &std::path::Path, extra: &[&str], api_key: Option<&str>) -> Self {
         let mut args = extra.to_vec();
         let envs: Vec<(&str, &str)> = match api_key {
-            Some(key) => vec![("HMS_API_KEY", key)],
+            Some(key) => vec![("WARM_API_KEY", key)],
             None => {
                 args.push("--no-auth");
                 Vec::new()
@@ -722,9 +722,9 @@ fn configured_work_and_batch_limits_reject_native_limit_overflow_at_startup() {
         ("--body-timeout-seconds", "0"),
         ("--body-timeout-seconds", "301"),
     ] {
-        let output = Command::new(env!("CARGO_BIN_EXE_hms-server"))
+        let output = Command::new(env!("CARGO_BIN_EXE_warm-server"))
             .args(["--no-auth", flag, invalid])
-            .env_remove("HMS_API_KEY")
+            .env_remove("WARM_API_KEY")
             .output()
             .unwrap();
         assert!(!output.status.success());

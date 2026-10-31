@@ -193,7 +193,7 @@ def calibrate(args):
         best = min(eligible, key=lambda config: (-config["recall_at_10"], config["median_ns"], config["config_id"]))
         anchors.append({"row_id": row_id, "config_id": best["config_id"],
                         "purpose": "all-probe maximum calibration quality" if "nprobe" in best["search"] else "maximum graph search beam"})
-        if info["database_rows"] >= 100000 and row["system"] == "hms_ivf":
+        if info["database_rows"] >= 100000 and row["system"] == "warm_ivf":
             capacity = [config for config in row["configs"] if config["search"] == {"nprobe": nlist, "rerank": 1024}]
             if len(capacity) != 1:
                 raise ValueError("missing preregistered maximum-capacity anchor")
@@ -203,7 +203,7 @@ def calibrate(args):
     write(path / "calibration-check.json", {"schema_version": 1, "inputs_sha256": sha(path / "inputs.json"),
           "checker_sha256": sha(Path(__file__)), "oracle": "float64 exact cosine of original raw train rows, score ties by database id",
           "selection": "fastest descriptive calibration median meeting strict recall target; bytes break timing ties; no validation results opened",
-          "timing_claim_eligible": False, "timing_limit": "HMS native query-loop versus competitor Python binding call overhead is not matched",
+          "timing_claim_eligible": False, "timing_limit": "WARM native query-loop versus competitor Python binding call overhead is not matched",
           "rows": rows, "selections": selections, "quality_anchors": anchors})
     print(json.dumps(selections, indent=2), flush=True)
 
@@ -248,12 +248,12 @@ def validate_selected(args, runner):
             if receipt["exit_code"] != 0 or completed["build"] != row["build"] or completed["system"] != row["system"] or completed["index_sha256"] != row["index_sha256"] or sha(index_path) != row["index_sha256"] or any(search not in actual_searches for search in searches):
                 raise ValueError("completed validation worker differs from frozen selection")
             continue
-        if row["system"] == "hms_ivf":
-            if args.hms_binary is None:
-                raise ValueError("selected HMS validation requires --hms-binary")
+        if row["system"] == "warm_ivf":
+            if args.warm_binary is None:
+                raise ValueError("selected WARM validation requires --warm-binary")
             probes = sorted({p["nprobe"] for p in searches})
             reranks = sorted({p["rerank"] for p in searches})
-            command = [args.hms_binary, "--train", str(path / "train.f32"), "--queries", str(path / "validation.f32"),
+            command = [args.warm_binary, "--train", str(path / "train.f32"), "--queries", str(path / "validation.f32"),
                        "--centroids", str(path / "centroids.f32"), "--assignments", str(path / "assignments.u32"),
                        "--dim", str(info["dim"]), "--bits", str(row["build"]["bits"]), "--residual-bits", str(row["build"]["residual_bits"]),
                        "--nprobe", ",".join(map(str, probes)), "--rerank", ",".join(map(str, reranks)),
@@ -264,14 +264,14 @@ def validate_selected(args, runner):
                       "--phase", "validation", "--build", json.dumps(row["build"]), "--search", json.dumps(searches),
                       "--index", original["index_path"], "--repeats", args.repeats, "--out", path / f"{name}-validation.json")
         receipt = runner.execute(command, path / f"{name}-validation-execution.json")
-        if row["system"] == "hms_ivf":
+        if row["system"] == "warm_ivf":
             result_path = path / f"{name}-validation.json"
             candidate = json.loads(result_path.read_text())
             index_path = path / f"{name}-validation.index"
-            candidate.update({"system": "hms_ivf", "phase": "validation", "build": row["build"],
+            candidate.update({"system": "warm_ivf", "phase": "validation", "build": row["build"],
                               "index_path": str(index_path), "index_sha256": sha(index_path),
                               "peak_rss_bytes": receipt["external_peak_rss_bytes"],
-                              "binary_sha256": runner.sha(Path(args.hms_binary)),
+                              "binary_sha256": runner.sha(Path(args.warm_binary)),
                               "measurement": original["measurement"]})
             runner.write(result_path, candidate, exclusive=False)
         if sha(frozen_path) != frozen_hash:
@@ -335,7 +335,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("calibrate", "validate", "report"))
     parser.add_argument("--input", required=True)
-    parser.add_argument("--hms-binary")
+    parser.add_argument("--warm-binary")
     parser.add_argument("--repeats", type=int, choices=(1, 3, 5), default=3)
     args = parser.parse_args()
     {"calibrate": calibrate, "validate": validate, "report": report}[args.command](args)

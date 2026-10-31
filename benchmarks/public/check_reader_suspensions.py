@@ -17,8 +17,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ISOLATED = Path("./hms-metal-sdpa")
-BINARY = Path("./.hms-target-gpubatch/release/public-bench")
+ISOLATED = Path("./warm-metal-sdpa")
+BINARY = Path("./.warm-target-gpubatch/release/public-bench")
 BINARY_SHA256 = "d7cb53d980ea567c1f14ff48a8239b1e372bc6992aa43d4e5fa2b21bf20631ec"
 PROTOCOL = ROOT / "benchmarks/public/reader_protocol_v1.json"
 PROTOCOL_SHA256 = "66a5d33412117c4ef5c6d0a89b0a26d0194103dc515d5a891a2593b2afcc566d"
@@ -70,7 +70,7 @@ class Archive:
             self.mapping[key] = path
         for record in manifest["external_resources"]:
             path = Path(record["path"]).resolve()
-            require(path.parent in (BINARY.parent.resolve(), Path("./.hms-target-metal-sdpa/release"))
+            require(path.parent in (BINARY.parent.resolve(), Path("./.warm-target-metal-sdpa/release"))
                     and record["archived"] is False and record["timing_claim"] is False,
                     "unexpected external archive resource")
             require(path.stat().st_size == record["bytes"] and file_sha256(path) == record["sha256"],

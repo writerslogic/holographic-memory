@@ -2,15 +2,15 @@
 
 ## Rust
 
-Use `HmsCore` for vectors, documents, and structural knowledge. The default feature set is
+Use `WarmCore` for vectors, documents, and structural knowledge. The default feature set is
 empty; enable `security` for encryption/signing and `provenance` for provenance APIs. Optional
 experimental modules have separate compatibility guarantees. Rust 1.89 or newer is required.
 
 ```rust
-use holographic_memory::HmsCore;
+use writerslogic_warm::WarmCore;
 
 fn main() -> anyhow::Result<()> {
-    let memory = HmsCore::new(16384, Some("./memory".into()), None)?;
+    let memory = WarmCore::new(16384, Some("./memory".into()), None)?;
     memory.memorize("greeting".into(), memory.encode_text("hello world"))?;
     memory.flush()?;
     Ok(())
@@ -19,9 +19,9 @@ fn main() -> anyhow::Result<()> {
 
 ## Node.js
 
-CommonJS and ESM both export `HolographicMemorySystem`. Native operations return promises when
+CommonJS and ESM both export `WarmMemorySystem`. Native operations return promises when
 work is scheduled off the event loop. For documents, import `DocumentMemory` from
-`holographic-memory/semantic`; it serializes model work, bounds its queue, and supports async
+`writerslogic-warm/semantic`; it serializes model work, bounds its queue, and supports async
 iterable ingestion. The default document search is lexical BM25. Add an embedder for cosine
 semantic candidates and optional reranking. See [the example](../examples/local-documents.mjs)
 and the README for the complete setup.
@@ -41,7 +41,7 @@ The Python wheel exposes `PhaseHVec` and `PhaseResonator`, not the persistent do
 engine. Build with `maturin develop --features python`:
 
 ```python
-from holographic_memory import PhaseHVec
+from writerslogic_warm import PhaseHVec
 
 a = PhaseHVec.random(1024, 8, 1)
 b = PhaseHVec.random(1024, 8, 2)

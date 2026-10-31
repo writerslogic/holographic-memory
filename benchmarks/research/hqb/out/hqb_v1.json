@@ -28,7 +28,7 @@
       "spectrum_alpha": 0.5
     },
     "nfcorpus": {
-      "dir": "/Users/davidcondrey/.cache/hms-bench/nfcorpus",
+      "dir": "/Users/davidcondrey/.cache/warm-bench/nfcorpus",
       "distractor_noise": 0.6
     },
     "quick": false,

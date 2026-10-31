@@ -3,4 +3,4 @@
 export * from './vectorstore.js'
 export * from './kv.js'
 export { toFilter } from './filters.js'
-export { HmsStore, HashingEmbedder, HmsError, type FilterLike, type HmsStoreOptions } from '@holographic-memory/core'
+export { WarmStore, HashingEmbedder, WarmError, type FilterLike, type WarmStoreOptions } from '@writerslogic/warm-core'

@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 """Server-mode invariants: server files never displace or mix with embedded files in the table,
-their verdicts are drawn against hms-server, and a server's whole process tree is stopped."""
+their verdicts are drawn against warm-server, and a server's whole process tree is stopped."""
 
 import os
 import sys
@@ -58,8 +58,8 @@ def results_file(mode, reference, other, ref_qps, other_qps):
 
 
 def test_server_and_embedded_files_render_in_separate_sections(monkeypatch):
-    embedded = (Path("embedded.json"), results_file("embedded", registry.HMS, "hnswlib", 2000, 1000))
-    server = (Path("server.json"), results_file("server", "hms-server", "qdrant-server", 1000, 2000))
+    embedded = (Path("embedded.json"), results_file("embedded", registry.WARM, "hnswlib", 2000, 1000))
+    server = (Path("server.json"), results_file("server", "warm-server", "qdrant-server", 1000, 2000))
     # Same (kind, dataset, n_train, hardware, suite): the server file must not replace the embedded one.
     monkeypatch.setattr(table, "RESULTS", Path("/nonexistent"))
     found = {}
@@ -73,15 +73,15 @@ def test_server_and_embedded_files_render_in_separate_sections(monkeypatch):
     embedded_title, server_title = markdown.index("### d (1 vectors, 1 queries)\n"), markdown.index("### d (1 vectors, 1 queries), server mode")
     assert results_at < embedded_title < server_at < server_title
     verdicts = {Path(c["file"]).name: c for c in cells if c.get("derived") and c["metric"] == "qps@recall0.95"}
-    assert verdicts["embedded.json"]["hms"] == registry.HMS and verdicts["embedded.json"]["verdict"] == "WIN"
-    assert verdicts["server.json"]["hms"] == "hms-server" and verdicts["server.json"]["other"] == "qdrant-server"
+    assert verdicts["embedded.json"]["warm"] == registry.WARM and verdicts["embedded.json"]["verdict"] == "WIN"
+    assert verdicts["server.json"]["warm"] == "warm-server" and verdicts["server.json"]["other"] == "qdrant-server"
     assert verdicts["server.json"]["verdict"] == "LOSS"
 
 
 def test_load_results_keeps_server_and_embedded_files_with_the_same_key(tmp_path, monkeypatch):
     import json
     for name, mode in (("a.json", "embedded"), ("b.json", "server")):
-        data = results_file(mode, registry.HMS if mode == "embedded" else "hms-server", "hnswlib" if mode == "embedded" else "pgvector", 1, 1)
+        data = results_file(mode, registry.WARM if mode == "embedded" else "warm-server", "hnswlib" if mode == "embedded" else "pgvector", 1, 1)
         (tmp_path / name).write_text(json.dumps(data))
     monkeypatch.setattr(table, "RESULTS", tmp_path)
     assert sorted(p.name for p, _ in table.load_results()) == ["a.json", "b.json"]

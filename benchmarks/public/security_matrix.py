@@ -99,10 +99,10 @@ def store_files(root):
     return sorted(p for p in root.rglob("*") if p.is_file() and p.stat().st_size > 0)
 
 
-def tamper_hms(probe, seed_dir, expected_path, flips, encrypted, rng):
+def tamper_warm(probe, seed_dir, expected_path, flips, encrypted, rng):
     counts = {"detected": 0, "served_different": 0, "served_identical": 0, "crashed": 0}
     per_file = {}
-    with tempfile.TemporaryDirectory(prefix="hms-tamper-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="warm-tamper-") as tmp:
         for _ in range(flips):
             work = Path(tmp) / "store"
             clone_tree(seed_dir, work)
@@ -215,7 +215,7 @@ def tamper_lucene(core_jar, index_dir, flips, rng):
 def egress(probe, docs, queries):
     """Per-process network bytes of a full probe workload (macOS nettop, plus the process's
     open network sockets from lsof); Linux uses /proc/net/dev deltas."""
-    with tempfile.TemporaryDirectory(prefix="hms-egress-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="warm-egress-") as tmp:
         # Ten times the query count so the workload outlives several nettop samples.
         cmd = [probe, "bench", "--store", str(Path(tmp) / "store"), "--docs", str(docs), "--queries", str(queries * 10)]
         if sys.platform == "darwin" and shutil.which("nettop"):
@@ -246,7 +246,7 @@ def overhead(probe, docs, queries, repeats):
     rows = []
     for r in range(repeats):
         for encrypted in (False, True):
-            with tempfile.TemporaryDirectory(prefix="hms-ovh-") as tmp:
+            with tempfile.TemporaryDirectory(prefix="warm-ovh-") as tmp:
                 cmd = [probe, "bench", "--store", str(Path(tmp) / "store"), "--docs", str(docs), "--queries", str(queries)]
                 if encrypted:
                     cmd.append("--encrypted")
@@ -262,7 +262,7 @@ def overhead(probe, docs, queries, repeats):
 
 
 def audit_cell(probe, docs, rng):
-    with tempfile.TemporaryDirectory(prefix="hms-audit-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="warm-audit-") as tmp:
         store = Path(tmp) / "store"
         rc, out, err, _ = run([probe, "seed", "--store", str(store), "--docs", str(docs), "--audit"], timeout=600)
         if rc != 0:
@@ -297,8 +297,8 @@ def main():
     ap.add_argument("--docs", type=int, default=2000)
     ap.add_argument("--queries", type=int, default=2000)
     ap.add_argument("--repeats", type=int, default=3)
-    ap.add_argument("--lucene-jar", default=str(Path.home() / ".cache/hms-bench/jars/anserini-2.3.0-fatjar.jar"))
-    ap.add_argument("--lucene-core", default=str(Path.home() / ".cache/hms-bench/jars/lucene-core-9.12.3.jar"))
+    ap.add_argument("--lucene-jar", default=str(Path.home() / ".cache/warm-bench/jars/anserini-2.3.0-fatjar.jar"))
+    ap.add_argument("--lucene-core", default=str(Path.home() / ".cache/warm-bench/jars/lucene-core-9.12.3.jar"))
     ap.add_argument("--merge", help="JSON written by this script on another host; its memscan and ct cells are merged")
     ap.add_argument("--update", help="existing output JSON whose cells not run this time are kept")
     ap.add_argument("--cells", default="egress,overhead,tamper,audit,memscan,ct,deny")
@@ -316,14 +316,14 @@ def main():
         if line not in result["exclusions"]:
             result["exclusions"].append(line)
     if "egress" in cells:
-        result["cells"]["egress"] = {"hms": egress(probe, a.docs, a.queries)}
-        exclude("managed Mem0 and Zep egress: no mem0ai or zep SDK and no API key is installed in this environment; HMS measured alone")
+        result["cells"]["egress"] = {"warm": egress(probe, a.docs, a.queries)}
+        exclude("managed Mem0 and Zep egress: no mem0ai or zep SDK and no API key is installed in this environment; WARM measured alone")
     if "overhead" in cells:
-        result["cells"]["encryption_overhead"] = {"hms": overhead(probe, a.docs, a.queries, a.repeats)}
+        result["cells"]["encryption_overhead"] = {"warm": overhead(probe, a.docs, a.queries, a.repeats)}
         exclude("SQLite with SQLCipher: sqlcipher is not installed on this host")
-        exclude("Lucene on an encrypted filesystem: no query driver with the pinned jars; encryption overhead measured for HMS only")
+        exclude("Lucene on an encrypted filesystem: no query driver with the pinned jars; encryption overhead measured for WARM only")
     if "tamper" in cells:
-        with tempfile.TemporaryDirectory(prefix="hms-seed-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="warm-seed-") as tmp:
             seeds = {}
             for encrypted in (False, True):
                 store = Path(tmp) / ("enc" if encrypted else "plain")
@@ -338,7 +338,7 @@ def main():
             tamper = {}
             for encrypted in (False, True):
                 store, expected, files, size = seeds[encrypted]
-                tamper["hms_encrypted" if encrypted else "hms_plain"] = {"files": files, "store_bytes": size, **tamper_hms(probe, store, expected, a.flips, encrypted, rng)}
+                tamper["warm_encrypted" if encrypted else "warm_plain"] = {"files": files, "store_bytes": size, **tamper_warm(probe, store, expected, a.flips, encrypted, rng)}
             db = Path(tmp) / "control.db"
             build_sqlite(db, min(a.docs, 400))
             tamper["sqlite"] = tamper_sqlite(db, a.flips, rng)
@@ -353,19 +353,19 @@ def main():
                 exclude("Lucene tamper cell: anserini or lucene-core jar or java missing")
             result["cells"]["tamper"] = tamper
     if "audit" in cells:
-        result["cells"]["audit"] = {"hms": audit_cell(probe, 200, rng)}
+        result["cells"]["audit"] = {"warm": audit_cell(probe, 200, rng)}
     if "memscan" in cells:
         if sys.platform.startswith("linux"):
-            with tempfile.TemporaryDirectory(prefix="hms-memscan-") as tmp:
+            with tempfile.TemporaryDirectory(prefix="warm-memscan-") as tmp:
                 store = Path(tmp) / "store"
                 run([probe, "seed", "--store", str(store), "--docs", "200", "--encrypted"], stdin=PASSPHRASE + "\n", timeout=600)
                 rc, out, err, _ = run([probe, "memscan", "--store", str(store)], stdin=PASSPHRASE + "\n", timeout=600)
-                result["cells"]["memscan"] = {"hms": json.loads(out.strip().splitlines()[-1]) if out.strip() else {"error": err[-300:]}}
+                result["cells"]["memscan"] = {"warm": json.loads(out.strip().splitlines()[-1]) if out.strip() else {"error": err[-300:]}}
         else:
             exclude("key zeroization scan: /proc/self/mem is Linux only; run on a Linux host and merged")
     if "ct" in cells:
         rc, out, err, _ = run([probe, "ct", "--iters", "300000"], timeout=600)
-        result["cells"]["constant_time"] = {"hms_server_ct_eq": json.loads(out.strip().splitlines()[-1]) if out.strip() else {"error": err[-300:]}}
+        result["cells"]["constant_time"] = {"warm_server_ct_eq": json.loads(out.strip().splitlines()[-1]) if out.strip() else {"error": err[-300:]}}
     if "deny" in cells:
         result["cells"]["cargo_deny"] = cargo_deny()
     if a.merge:

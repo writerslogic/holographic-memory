@@ -25,21 +25,21 @@ metadata, checks decoded postings, and writes JSONL receipts. It only changes in
 doc comments to regular comments to permit `include!`.
 
 The ignored library test `reopened_index_memory_census` opens an existing index
-through `HmsCore`, walks the retained owners, and emits a joint histogram of posting
+through `WarmCore`, walks the retained owners, and emits a joint histogram of posting
 count, block length and block capacity. It counts shared dictionaries once and
 reports all posting-data and block spare capacity. The census is test-only and does
 not change the public API or production allocation path.
 
 ```sh
-HMS_MEMORY_INDEX=/absolute/path/to/index \
-HMS_MEMORY_CENSUS_OUT=/absolute/path/to/census.json \
+WARM_MEMORY_INDEX=/absolute/path/to/index \
+WARM_MEMORY_CENSUS_OUT=/absolute/path/to/census.json \
 RAYON_NUM_THREADS=4 cargo test --locked --release --lib \
   reopened_index_memory_census -- --ignored --nocapture --test-threads=1
 ```
 
 For process RSS, build first and invoke the resulting test executable directly
 under `/usr/bin/time`; including Cargo would include build memory. Supply
-`HMS_MEMORY_QUERIES=/absolute/path/to/queries.json` to compare complete DAAT and WAND
+`WARM_MEMORY_QUERIES=/absolute/path/to/queries.json` to compare complete DAAT and WAND
 results against the exhaustive evaluator at k=0/10/1000. This JSON file contains an
 array of query strings. Equality checks include counts, IDs, scores and ordering.
 

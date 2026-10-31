@@ -8,12 +8,12 @@ plugins {
 }
 
 android {
-    namespace = "com.writerslogic.holographicmemory.sample"
+    namespace = "com.writerslogic.warm.sample"
     compileSdk = 35
     ndkVersion = "27.3.13750724"
 
     defaultConfig {
-        applicationId = "com.writerslogic.holographicmemory.sample"
+        applicationId = "com.writerslogic.warm.sample"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

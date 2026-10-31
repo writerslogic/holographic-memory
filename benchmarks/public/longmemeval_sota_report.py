@@ -273,7 +273,7 @@ def main():
               "reproduction": {"command": "uv run --script benchmarks/public/longmemeval_sota_report.py --fresh",
                                "native_receipts": str(N.DEFAULT.relative_to(R.ROOT)),
                                "data": "Pinned public LongMemEval-S cleaned release; guarded binary-framed loader decodes exactly dev100.",
-                               "reference_cache": "~/.cache/hms-bench/longmemeval_s/runs/s-dev-small-all2; all four file digests checked. Not newly inferred or distributed with this PR.",
+                               "reference_cache": "~/.cache/warm-bench/longmemeval_s/runs/s-dev-small-all2; all four file digests checked. Not newly inferred or distributed with this PR.",
                                "gate": "uv run --no-project --offline --python 3.13.9 --with numpy==2.2.6 --with tiktoken==0.14.0 --with openai==3.27.0 --with python-dotenv==1.2.4 --with tokenizers==0.23.3 python -m unittest discover -s benchmarks/public -p 'test_*longmemeval*.py'"},
               "highest_value_next_experiment": "Run a locally scored, event/entity-linked candidate expansion on the frozen dev count failures, preserving literal spans and unknown event identity; compare to existing matched native candidates under equal raw rounds and reader-format tokens before funding new QA."}
     result["retained"]["general_expansion"] = {
@@ -347,7 +347,7 @@ def main():
     result["continuation"] = {
         "objective": "Improve evidence sufficiency toward matched full-500 end-to-end SOTA; no comparable win established.",
         "worktree": "/Volumes/A/.sol-wt-mem-sota", "branch": "feat/memory-sota-evidence-assembly",
-        "draft_pr": "https://github.com/writerslogic/holographic-memory/pull/203", "base_pr": 202,
+        "draft_pr": "https://github.com/writerslogic/warm/pull/203", "base_pr": 202,
         "next": ["Inspect remaining ranking misses, unresolved premise links and event identities using these pinned dev-only receipts.",
                  "Measure the new native acquisition/assembly path only when an additional build/run is authorized; CI proves compilation/tests, not native dev quality.",
                  "Use a funded, matched reader/judge protocol before promoting either expansion option or making accuracy/context claims."],

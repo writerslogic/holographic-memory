@@ -3,7 +3,7 @@
 
 #![no_main]
 
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::EntangledHVec;
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

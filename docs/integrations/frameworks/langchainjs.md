@@ -1,18 +1,18 @@
-# LangChain.js (`@holographic-memory/langchain`)
+# LangChain.js (`@writerslogic/warm-langchain`)
 
-A `VectorStore`, retriever support, and a chat message history for LangChain.js, running the native engine in process through [`@holographic-memory/core`](js-core.md). ESM and CJS, typed.
+A `VectorStore`, retriever support, and a chat message history for LangChain.js, running the native engine in process through [`@writerslogic/warm-core`](js-core.md). ESM and CJS, typed.
 
 ```sh
-npm install @holographic-memory/langchain @langchain/core holographic-memory
+npm install @writerslogic/warm-langchain @langchain/core writerslogic-warm
 ```
 
 ## Quickstart
 
 ```ts
 import { Document } from '@langchain/core/documents'
-import { HmsVectorStore } from '@holographic-memory/langchain'
+import { WarmVectorStore } from '@writerslogic/warm-langchain'
 
-const store = await HmsVectorStore.create(embeddings, {   // any LangChain Embeddings
+const store = await WarmVectorStore.create(embeddings, {   // any LangChain Embeddings
   path: './memory',
   embeddingSpace: { model: 'text-embedding-3-small', revision: '2024-01' },
 })
@@ -23,20 +23,20 @@ const retriever = store.asRetriever({ k: 4, filter: { topic: 'code' } })
 
 A runnable version with chat history is `integrations/js/packages/langchain/examples/quickstart.mjs` (no API key or model: it uses the dependency-free hashing embedder and a fake chat model).
 
-`HmsVectorStore.fromTexts`, `fromDocuments`, `addVectors`, `similaritySearchVectorWithScore`, `similaritySearchWithScore`, `maxMarginalRelevanceSearch`, `delete`, and `asRetriever` (similarity and `mmr`) are all implemented. Extra: `getByIds(ids)`.
+`WarmVectorStore.fromTexts`, `fromDocuments`, `addVectors`, `similaritySearchVectorWithScore`, `similaritySearchWithScore`, `maxMarginalRelevanceSearch`, `delete`, and `asRetriever` (similarity and `mmr`) are all implemented. Extra: `getByIds(ids)`.
 
 Chat history:
 
 ```ts
-import { HmsChatMessageHistory } from '@holographic-memory/langchain'
-const history = new HmsChatMessageHistory({ store: hmsStore, sessionId: 'user-1' })   // an HmsStore
+import { WarmChatMessageHistory } from '@writerslogic/warm-langchain'
+const history = new WarmChatMessageHistory({ store: warmStore, sessionId: 'user-1' })   // an WarmStore
 ```
 
 Works with `RunnableWithMessageHistory`. `history.search(query, k)` returns the session's most relevant messages.
 
-## Configuration (HMS knobs)
+## Configuration (WARM knobs)
 
-`HmsVectorStore.create(embeddings, options)` takes every `HmsStoreOptions` field of the core plus `embeddingSpace`. The encoder is the `embeddings` object you pass.
+`WarmVectorStore.create(embeddings, options)` takes every `WarmStoreOptions` field of the core plus `embeddingSpace`. The encoder is the `embeddings` object you pass.
 
 | Knob | Option |
 |---|---|
@@ -45,10 +45,10 @@ Works with `RunnableWithMessageHistory`. `history.search(query, k)` returns the 
 | Title weight | `titleWeight` (counts the first line of each document that many times) |
 | Hybrid fusion | `lexicalWeight`, `semanticWeight`, `fusion: 'blend' \| 'rrf'` |
 | Chunking | `chunkWords`, `overlapWords` |
-| Encryption at rest | `hmsConfig: { encryptionEnabled: true, encryptionPassphraseEnv: 'HMS_PASSPHRASE' }` |
+| Encryption at rest | `warmConfig: { encryptionEnabled: true, encryptionPassphraseEnv: 'WARM_PASSPHRASE' }` |
 | Scope | `collection` (namespaces ids and queries inside one store) |
 | Limits | `overfetch` (default 5), `maxFetch` (default and ceiling 1000 passages per query) |
-| Existing native memory | `new HmsVectorStore(embeddings, { store })` with your own `HmsStore` |
+| Existing native memory | `new WarmVectorStore(embeddings, { store })` with your own `WarmStore` |
 
 ## Search behavior
 
@@ -63,7 +63,7 @@ Works with `RunnableWithMessageHistory`. `history.search(query, k)` returns the 
 | `{ key: scalar }` (top level, ANDed) | by the engine, before ranking |
 | `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$contains`, `$or`, `$not`, nested `$and`, dotted keys, array or object equality | in JS on `overfetch * k` candidates (at most `maxFetch`) |
 
-A filter with client-side terms can return fewer than `k` documents even when more matches exist deeper in the ranking. `k` above `maxFetch` throws `HmsError` with code `limit_exceeded`. LangChain's function-style filters are not supported. Metadata keys may not start with `_hms_`; metadata must be JSON.
+A filter with client-side terms can return fewer than `k` documents even when more matches exist deeper in the ranking. `k` above `maxFetch` throws `WarmError` with code `limit_exceeded`. LangChain's function-style filters are not supported. Metadata keys may not start with `_warm_`; metadata must be JSON.
 
 `delete` takes exactly one of `{ ids }`, `{ filter }`, `{ deleteAll: true }`.
 
@@ -80,4 +80,4 @@ Messages are an ordered log inside the store (record `chat:<session>#<n>`), foun
 
 ## Tested against
 
-`@langchain/core` 1.2.19, `holographic-memory` 0.6.0 (native build from this repository), Node 26.8, TypeScript 5.9. `npm test --workspace packages/langchain` in `integrations/js` builds and runs 23 tests against the real native addon, one temp directory per test.
+`@langchain/core` 1.2.19, `writerslogic-warm` 0.6.0 (native build from this repository), Node 26.8, TypeScript 5.9. `npm test --workspace packages/langchain` in `integrations/js` builds and runs 23 tests against the real native addon, one temp directory per test.

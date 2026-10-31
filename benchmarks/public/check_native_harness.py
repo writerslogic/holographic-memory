@@ -26,17 +26,17 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 DATASETS = {'nytimes-256-angular', 'glove-100-angular'}
-SYSTEMS = {'hms', 'faiss_hnsw', 'faiss_ivfpq', 'hnswlib'}
+SYSTEMS = {'warm', 'faiss_hnsw', 'faiss_ivfpq', 'hnswlib'}
 COMMITS = {'faiss_hnsw': '7ea7339886edf8b4d9e719f593a5dfccff158274',
            'faiss_ivfpq': '7ea7339886edf8b4d9e719f593a5dfccff158274',
            'hnswlib': '3f3429661187e4c24a490a0f148fc6bc89042b3d'}
 MODES = {'single_query_loop', 'batch_throughput', 'one_query_latency'}
-ALLOWED_EXTERNAL = [Path.home() / '.cache/hms-bench',
+ALLOWED_EXTERNAL = [Path.home() / '.cache/warm-bench',
                     Path.home() / '.cache/uv',
                     Path.home() / 'Library/Caches/uv',
                     Path('/usr/lib'), Path('/System/Library'),
-                    Path('./.hms-target-native-harness'),
-                    Path('./hms-native-harness')]
+                    Path('./.warm-target-native-harness'),
+                    Path('./warm-native-harness')]
 
 
 def require(condition, message):
@@ -255,19 +255,19 @@ def frontiers(observations, resources, curve):
                                           'serving_file_bytes': resource['serving_file_bytes']}
                     else:
                         chosen[system] = None
-                for system in sorted(SYSTEMS - {'hms'}):
-                    hms, competitor = chosen['hms'], chosen[system]
+                for system in sorted(SYSTEMS - {'warm'}):
+                    warm, competitor = chosen['warm'], chosen[system]
                     row = {'dataset': dataset, 'mode': mode, 'target': target,
-                           'competitor': system, 'hms': hms, 'them': competitor,
+                           'competitor': system, 'warm': warm, 'them': competitor,
                            'margin_fraction': None, 'paired_ratio': None,
                            'paired_ratio_ci95': None, 'status': 'target_not_reached'}
-                    if hms and competitor:
-                        ratios = np.asarray(hms['round_qps']) / np.asarray(competitor['round_qps'])
+                    if warm and competitor:
+                        ratios = np.asarray(warm['round_qps']) / np.asarray(competitor['round_qps'])
                         logs = np.log(ratios)
                         rng = np.random.default_rng(20261009)
                         indices = rng.integers(0, 11, size=(10000, 11))
                         interval = np.quantile(np.exp(logs[indices].mean(axis=1)), [0.025, 0.975]).tolist()
-                        margin = hms['median_qps'] / competitor['median_qps'] - 1
+                        margin = warm['median_qps'] / competitor['median_qps'] - 1
                         row.update(margin_fraction=margin, paired_ratio=float(np.exp(logs.mean())),
                                    paired_ratio_ci95=interval,
                                    status='ahead' if interval[0] > 1 else ('behind' if interval[1] < 1 else 'tied'))
@@ -471,11 +471,11 @@ def check(report, files, overrides=None, allow_incomplete=False):
     for name, data in original.items():
         expected_source = data + b'\n' + helper if name == 'vertex.rs' else data
         require(generated[name] == expected_source, 'compiled bridge changes qgraph implementation')
-        commit = prereg['hms_source_commit']
-        require(re.fullmatch('[0-9a-f]{40}', commit), 'frozen HMS commit missing')
+        commit = prereg['warm_source_commit']
+        require(re.fullmatch('[0-9a-f]{40}', commit), 'frozen WARM commit missing')
         source = subprocess.run(['git', 'show', f'{commit}:src/core/qgraph/{name}'],
                                 cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-        require(source.stdout == data, 'compiled qgraph source differs from frozen HMS commit')
+        require(source.stdout == data, 'compiled qgraph source differs from frozen WARM commit')
     tuning = json.loads(files.verify(report['tuning'], overrides, read=True))
     curve = json.loads(files.verify(report['frozen_curve'], overrides, read=True))
     require(tuning['test_opened'] is False and tuning['complete'] is True and curve['round_count'] == 11
@@ -514,7 +514,7 @@ def check(report, files, overrides=None, allow_incomplete=False):
         for field in ('n_train', 'n_test', 'dim'):
             integer(dataset[field], f'{name} {field}', 1)
         source = files.verify(dataset['hdf5'], overrides)
-        require(source == (Path.home() / '.cache/hms-bench/downloads' / f'{name}.hdf5').resolve(),
+        require(source == (Path.home() / '.cache/warm-bench/downloads' / f'{name}.hdf5').resolve(),
                 'dataset source differs from pinned HDF5')
     for name, system in report['systems'].items():
         require(system['architecture'] == prereg['machine']['architecture'] and system['thread_environment']
@@ -522,9 +522,9 @@ def check(report, files, overrides=None, allow_incomplete=False):
                 f'{name}: architecture or thread settings differ')
         require(re.fullmatch('[0-9a-f]{40}', system['source_commit']), 'system source pin absent')
         require(name not in COMMITS or system['source_commit'] == COMMITS[name], 'competitor commit differs')
-        require(name != 'hms' or (system['source_commit'] == prereg['hms_source_commit']
+        require(name != 'warm' or (system['source_commit'] == prereg['warm_source_commit']
                                  and system['compile_options'] == '-C target-cpu=native'),
-                'HMS source commit or compile options differ')
+                'WARM source commit or compile options differ')
         for item in system['module_artifacts']:
             files.verify(item, overrides)
     resources = {r['resource_id']: r for r in report['resources']}
@@ -573,7 +573,7 @@ def check(report, files, overrides=None, allow_incomplete=False):
                 'timing lock incomplete or duration differs')
         require(lock['exit_code'] != 124 or lock.get('timeout') is True,
                 'timing timeout lacks supervisor evidence')
-        require(lock['path'] == './.hms-target/timing.lock' and lock['pid'] > 0,
+        require(lock['path'] == './.warm-target/timing.lock' and lock['pid'] > 0,
                 'timing lock identity differs')
     chronological_locks = sorted(locks.values(), key=lambda item: item['timer']['start_ns'])
     require(all(a['timer']['end_ns'] <= b['timer']['start_ns']
@@ -699,8 +699,8 @@ def main():
         damaged['rows'][0]['predictions']['sha256'] = '0' * 64
         mutations.append(('fingerprint', damaged, {}))
         damaged = copy.deepcopy(report)
-        damaged['systems']['hms']['architecture'] = (
-            'arm64' if damaged['systems']['hms']['architecture'] == 'x86_64' else 'x86_64')
+        damaged['systems']['warm']['architecture'] = (
+            'arm64' if damaged['systems']['warm']['architecture'] == 'x86_64' else 'x86_64')
         mutations.append(('architecture', damaged, {}))
         artifact = report['rows'][0]['predictions']
         raw = bytearray(path(artifact['path']).read_bytes())

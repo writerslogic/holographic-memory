@@ -33,17 +33,17 @@ def main(expected):
         "tests": ["cargo", "test", "--offline", "--locked", "--lib", "--features", "experimental", "core::qgraph", "--", "--test-threads=1"],
         "clippy": ["cargo", "clippy", "--offline", "--locked", "--lib", "--features", "experimental", "--", "-D", "warnings"],
     }
-    base.save(ROOT / "plan.json", {"scope": "Focused vector candidate regression and lint checks; no benchmark result", "base": base.SOURCE, "candidate_vertex_sha256": expected, "commands": commands, "limits": {"per_command_s": 600, "overall_s": 900, "sampled_process_tree_rss_gib": 4, "build_jobs": 1, "test_threads": 1}, "memory_scope": "Compiler/test combined child-tree RSS sampled approximately200ms; not strict peak or unique memory", "environment": {k: v for k, v in env.items() if k.startswith(("CARGO_", "RAYON_"))}, "lock": str(Path.home() / "hms-timing.lock")})
+    base.save(ROOT / "plan.json", {"scope": "Focused vector candidate regression and lint checks; no benchmark result", "base": base.SOURCE, "candidate_vertex_sha256": expected, "commands": commands, "limits": {"per_command_s": 600, "overall_s": 900, "sampled_process_tree_rss_gib": 4, "build_jobs": 1, "test_threads": 1}, "memory_scope": "Compiler/test combined child-tree RSS sampled approximately200ms; not strict peak or unique memory", "environment": {k: v for k, v in env.items() if k.startswith(("CARGO_", "RAYON_"))}, "lock": str(Path.home() / "warm-timing.lock")})
     for name in [NATIVE, "Cargo.toml", "Cargo.lock", "benchmarks/public/run_glove_candidate_checks.py", "benchmarks/public/run_glove_prepared_diagnosis.py"]:
         destination = ROOT / "source" / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(base.TREE / name, destination)
     (ROOT / "candidate.patch").write_bytes(subprocess.check_output(["git", "diff", "--", NATIVE], cwd=base.TREE))
-    lock = (Path.home() / "hms-timing.lock").open("a+")
+    lock = (Path.home() / "warm-timing.lock").open("a+")
     base.fcntl.flock(lock, base.fcntl.LOCK_EX | base.fcntl.LOCK_NB)
     try:
         deadline = time.monotonic() + 900
-        with Path("/Volumes/A/hms-coordination/RUN-ALL.md").open("a") as coordination:
+        with Path("/Volumes/A/warm-coordination/RUN-ALL.md").open("a") as coordination:
             coordination.write(f"\n{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} Vector parent acquired local timing flock for opt-in batch-pool candidate focused qgraph regression/lint; plan {ROOT / 'plan.json'},4GiB sampled child-tree RSS/600s command/900s total,one buildjob/testthread/Rayonthread. No competitor/final evaluation or remote action.\n")
         for name, command in commands.items():
             monitor.run(name, command, env, 600, deadline, 4)

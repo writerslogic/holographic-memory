@@ -1,6 +1,6 @@
 # Redis Stack / RediSearch
 
-`hms-import redis --url redis://host:6379 --index idx` or `--prefix doc: --text-field content --vector-field embedding`
+`warm-import redis --url redis://host:6379 --index idx` or `--prefix doc: --text-field content --vector-field embedding`
 
 - Reads documents by `SCAN` over the key prefix (hashes via `HGETALL`, JSON via `JSON.GET key $`), pipelined per page. `--index` runs `FT.INFO` to discover the prefix, key type and vector attribute; without RediSearch use `--prefix`.
 - Hash vector fields are raw little-endian float32 bytes (kept as bytes, never UTF-8 decoded); JSON vectors are arrays. Other binary hash values are stored base64 in metadata. Hash values are strings in Redis, so numeric metadata arrives as strings.

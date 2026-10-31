@@ -5,7 +5,7 @@
         "name": "mlann-rf80-depth13",
         "module": "vibe.algorithms.mlann_pair",
         "constructor": "MLANNPair",
-        "singularity_image": "hms",
+        "singularity_image": "warm",
         "disabled": false,
         "ood": true,
         "base_args": ["@metric"],

@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "hms-quickstart"
+name = "warm-quickstart"
 version = "0.0.0"
 edition = "2021"
 publish = false
-default-run = "hms-quickstart"
+default-run = "warm-quickstart"
 
 # Detached from the library workspace on purpose: it depends on the library by path, exactly as
 # a downstream crate would depend on it, and pulls in SQLite for the FTS5 comparison.
 [workspace]
 
 [dependencies]
-holographic-memory = { path = "../../..", features = ["security"] }
+writerslogic-warm = { path = "../../..", features = ["security"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 serde_json = "1"
 anyhow = "1"

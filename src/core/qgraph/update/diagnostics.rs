@@ -18,7 +18,8 @@ pub(super) struct Diagnostics {
 impl Diagnostics {
     pub(super) fn from_env() -> Self {
         Self {
-            enabled: std::env::var_os("HMS_STREAM_DIAGNOSTICS").is_some_and(|v| v == "1"),
+            enabled: crate::compatibility::var_os("WARM_STREAM_DIAGNOSTICS")
+                .is_some_and(|v| v == "1"),
             ..Self::default()
         }
     }

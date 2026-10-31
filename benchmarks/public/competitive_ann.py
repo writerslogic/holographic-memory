@@ -33,7 +33,7 @@ ENV = {name: "1" for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NU
 DATASETS = {"glove-100-angular": 100, "nytimes-256-angular": 256}
 SCALES = {10000: 128, 100000: 512, 250000: 1024}
 SYSTEMS = ("faiss_hnsw", "hnswlib", "rabitq_ivf", "symphonyqg", "faiss_ivfsq", "rabitq_ivf_current")
-LOCK_PATH = Path("./.hms-target/timing.lock")
+LOCK_PATH = Path("./.warm-target/timing.lock")
 _CAMPAIGN = {"lock": None}
 
 
@@ -131,7 +131,7 @@ def execute(command, receipt_path, timeout=1800):
 def prepare(args):
     destination = Path(args.out) / args.dataset / str(args.rows)
     destination.mkdir(parents=True, exist_ok=False)
-    source = Path.home() / ".cache/hms-bench" / args.dataset / "train.f32"
+    source = Path.home() / ".cache/warm-bench" / args.dataset / "train.f32"
     dim = DATASETS[args.dataset]
     data = np.memmap(source, dtype="<f4", mode="r").reshape(-1, dim)
     chosen = np.random.default_rng(SEED).choice(len(data), size=250200, replace=False)
@@ -378,12 +378,12 @@ def run_baseline_arms(args):
             execute(command, path / f"{name}-calibration-execution.json", timeout=min(1800, remaining))
 
 
-def run_hms(args):
+def run_warm(args):
     with timing_lock():
-        run_hms_arms(args)
+        run_warm_arms(args)
 
 
-def run_hms_arms(args):
+def run_warm_arms(args):
     info = load_input(args.input)
     path = Path(args.input)
     binary = Path(args.binary).resolve(strict=True)
@@ -393,7 +393,7 @@ def run_hms_arms(args):
     if any(build not in ((4, 4), (8, 0), (8, 4), (4, 5)) for build in requested) or len(set(requested)) != len(requested):
         raise ValueError("unregistered candidate build")
     for bits, residual_bits in requested:
-        prefix = f"hms_ivf-{args.label}" if args.label else "hms_ivf"
+        prefix = f"warm_ivf-{args.label}" if args.label else "warm_ivf"
         name = f"{prefix}-{bits}-{residual_bits}"
         output = path / f"{name}-calibration.json"
         index = path / f"{name}.index"
@@ -410,12 +410,12 @@ def run_hms_arms(args):
             continue
         remaining = deadline - time.monotonic()
         if remaining <= 0:
-            raise TimeoutError("bounded HMS campaign budget expired")
+            raise TimeoutError("bounded WARM campaign budget expired")
         receipt = execute(command, path / f"{name}-calibration-execution.json", timeout=min(1800, remaining))
         if sha(binary) != binary_sha:
             raise ValueError("candidate binary changed during campaign")
         result = json.loads(output.read_text())
-        result.update({"system": "hms_ivf", "phase": "calibration", "build": {"bits": bits, "residual_bits": residual_bits},
+        result.update({"system": "warm_ivf", "phase": "calibration", "build": {"bits": bits, "residual_bits": residual_bits},
                        "index_path": str(index), "index_sha256": sha(index), "binary_sha256": binary_sha,
                        "peak_rss_bytes": receipt["external_peak_rss_bytes"],
                        "measurement": "batch1, one thread, native Rust query loop; mismatched Python competitor overhead precludes timing superiority"})
@@ -437,13 +437,13 @@ def parser():
     run_parser.add_argument("--systems", default=",".join(SYSTEMS))
     run_parser.add_argument("--repeats", type=int, choices=(1, 3, 5), default=3)
     run_parser.add_argument("--timeout", type=int, default=1800)
-    hms_parser = sub.add_parser("hms")
-    hms_parser.add_argument("--input", required=True)
-    hms_parser.add_argument("--binary", required=True)
-    hms_parser.add_argument("--repeats", type=int, choices=(1, 3, 5), default=3)
-    hms_parser.add_argument("--timeout", type=int, default=1800)
-    hms_parser.add_argument("--builds", default="4/4,8/0,8/4")
-    hms_parser.add_argument("--label", choices=("", "v2"), default="")
+    warm_parser = sub.add_parser("warm")
+    warm_parser.add_argument("--input", required=True)
+    warm_parser.add_argument("--binary", required=True)
+    warm_parser.add_argument("--repeats", type=int, choices=(1, 3, 5), default=3)
+    warm_parser.add_argument("--timeout", type=int, default=1800)
+    warm_parser.add_argument("--builds", default="4/4,8/0,8/4")
+    warm_parser.add_argument("--label", choices=("", "v2"), default="")
     worker_parser = sub.add_parser("worker")
     worker_parser.add_argument("--input", required=True)
     worker_parser.add_argument("--system", choices=SYSTEMS, required=True)
@@ -458,4 +458,4 @@ def parser():
 
 if __name__ == "__main__":
     args = parser().parse_args()
-    {"prepare": prepare, "cluster": cluster, "worker": worker, "baselines": run_baselines, "hms": run_hms}[args.command](args)
+    {"prepare": prepare, "cluster": cluster, "worker": worker, "baselines": run_baselines, "warm": run_warm}[args.command](args)

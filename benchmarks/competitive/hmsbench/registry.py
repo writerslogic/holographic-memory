@@ -9,18 +9,18 @@ carries a claim that has no source in the results directory.
 
 import platform
 
-HMS = "hms"
-# The HMS text arm runs twice: `hms` ingests with `--encode lexical` (BM25 index only, the
-# like-for-like row against the lexical comparators) and `hms-eager` with the default eager
+WARM = "warm"
+# The WARM text arm runs twice: `warm` ingests with `--encode lexical` (BM25 index only, the
+# like-for-like row against the lexical comparators) and `warm-eager` with the default eager
 # encoding (chunk hypervectors built at ingest as well). Each build repeat is its own cold
-# process in both rows. `hms-eager` is never a comparator in a verdict (same family).
-HMS_EAGER = "hms-eager"
-HMS_TEXT_ENCODE = {HMS: "lexical", HMS_EAGER: "eager"}
+# process in both rows. `warm-eager` is never a comparator in a verdict (same family).
+WARM_EAGER = "warm-eager"
+WARM_TEXT_ENCODE = {WARM: "lexical", WARM_EAGER: "eager"}
 
 # kind: ann | text.  env: pinned environment (envs.PINS key).  worker: key inside the worker module.
 SYSTEMS = {
-    HMS: {"display": "HMS", "kind": "both", "env": None, "package": "holographic-memory", "family": "hms"},
-    HMS_EAGER: {"display": "HMS (eager hypervectors)", "kind": "text", "env": None, "package": "holographic-memory", "family": "hms"},
+    WARM: {"display": "WARM", "kind": "both", "env": None, "package": "writerslogic-warm", "family": "warm"},
+    WARM_EAGER: {"display": "WARM (eager hypervectors)", "kind": "text", "env": None, "package": "writerslogic-warm", "family": "warm"},
     "hnswlib": {"display": "hnswlib", "kind": "ann", "env": "hnswlib", "package": "hnswlib", "family": "hnsw"},
     "faiss-hnsw": {"display": "FAISS HNSW", "kind": "ann", "env": "faiss", "package": "faiss-cpu", "family": "hnsw"},
     "faiss-flat": {"display": "FAISS Flat (exact)", "kind": "ann", "env": "faiss", "package": "faiss-cpu", "family": "exact"},
@@ -43,8 +43,8 @@ SYSTEMS = {
 # Where each system's query is timed. Binding overhead is part of what a user of that package
 # pays, but it differs by language, so it is printed next to every timing row.
 TIMING_BOUNDARY = {
-    HMS: "native Rust API call in the engine process (no language binding); text: BM25 index only (`--encode lexical`); ANN: public-bench loop",
-    HMS_EAGER: "native Rust API call in the engine process (no language binding); text: BM25 index plus chunk hypervectors at ingest (`--encode eager`)",
+    WARM: "native Rust API call in the engine process (no language binding); text: BM25 index only (`--encode lexical`); ANN: public-bench loop",
+    WARM_EAGER: "native Rust API call in the engine process (no language binding); text: BM25 index plus chunk hypervectors at ingest (`--encode eager`)",
     "hnswlib": "CPython binding call per query", "faiss-hnsw": "CPython (SWIG) call per query", "faiss-flat": "CPython (SWIG) call per query",
     "faiss-ivfpq": "CPython (SWIG) call per query", "usearch": "CPython binding call per query", "annoy": "CPython binding call per query",
     "sqlite-vec": "CPython sqlite3 call per query", "lancedb": "CPython + Arrow call per query (multi-threaded Rust runtime inside)",
@@ -57,7 +57,7 @@ TIMING_BOUNDARY = {
 _DOC = "documentation, not exercised here"
 
 FACTS = {
-    HMS: {
+    WARM: {
         "service_needed": {"value": "no", "basis": "measured", "source": "benchmarks/results/security_matrix_v2.json",
                            "note": "in-process library; 0 egress sockets in the security matrix"},
         "encrypted_at_rest": {"value": "yes", "basis": "measured", "source": "benchmarks/results/security_matrix_v2.json",
@@ -92,7 +92,7 @@ NOT_RUN = {
     "langmem": "agent-memory systems belong to the next harness stage",
 }
 
-FACTS[HMS_EAGER] = FACTS[HMS]
+FACTS[WARM_EAGER] = FACTS[WARM]
 
 SYSTEMS.update({
     "ngt": {"display": "NGT (ONNG)", "kind": "ann", "env": "ngt", "package": "ngt", "family": "graph"},
@@ -115,7 +115,7 @@ NOT_RUN.update({k: v[platform.system()] for k, v in _PLATFORM_NOT_RUN.items() if
 ANN_SYSTEMS = [k for k, v in SYSTEMS.items() if v["kind"] == "ann"]
 TEXT_SYSTEMS = [k for k, v in SYSTEMS.items() if v["kind"] == "text"]
 
-# Server-mode systems (own table sections, measured against hms-server): server_registry.py.
+# Server-mode systems (own table sections, measured against warm-server): server_registry.py.
 from .server_registry import SERVER_FACTS, SERVER_NOT_RUN, SERVER_SYSTEMS, SERVER_TIMING_BOUNDARY  # noqa: E402
 
 SYSTEMS.update(SERVER_SYSTEMS)

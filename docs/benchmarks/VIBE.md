@@ -2,7 +2,7 @@
 
 The target is the CPU overview on VIBE's modern embeddings, using its published
 default dataset selection and recall@100. SIFT and GloVe results do not establish
-that HMS is competitive here. Report the complete recall/throughput curve,
+that WARM is competitive here. Report the complete recall/throughput curve,
 per-dataset results and target coverage alongside the overview score.
 
 ## Published comparison, 2026-10-21
@@ -70,7 +70,7 @@ encoding change; the initial deficit is not an established 4-bit ceiling.
 
 | LAION adapter configuration | Maximum VIBE recall@100 | Reaches 0.95 |
 |---|---:|---|
-| HMS, current 4-bit query grid | 0.931680 | No |
+| WARM, current 4-bit query grid | 0.931680 | No |
 | Glass, SQ4U search / FP32 refinement | 0.366328 | No |
 | Glass, SQ8U search / FP32 refinement | 0.999102 | Yes |
 | SymphonyQG, raw refinement | 0.956055 | Yes |
@@ -205,7 +205,7 @@ configuration reaching the target; a missing target stays missing. Timing
 comparisons remain exploratory: methods are not interleaved and this machine
 differs from VIBE's hardware. Do not compare these QPS directly with public QPS.
 
-The accepted HMS implementation is commit
+The accepted WARM implementation is commit
 `28a0a5b1bc6e84037fed51fdba8c6b508f821502`: 4-bit mean-centered traversal codes,
 8-bit residual reranking, aligned rows, BFS order, 3-byte IDs and quantized graph
 construction. The default wrapper does **not** rotate traversal vectors; the
@@ -215,7 +215,7 @@ separate experiment and must be identified as such.
 The benchmark host is an Intel Core Ultra 9 185H under WSL2 with AVX2 and no AVX-512.
 PAG's pinned release `ee34ed78b7a28225b2db6210ad942152e1cd540d`
 [requires its AVX-512 backend](https://github.com/KejingLu-810/PAG/blob/ee34ed78b7a28225b2db6210ad942152e1cd540d/cmake/PAGCompilerOptions.cmake).
-An AVX-512 host is required for an honest direct PAG comparison. The HMS Python
+An AVX-512 host is required for an honest direct PAG comparison. The WARM Python
 adapter serves all four VIBE float distances: cosine and normalized by angle,
 euclidean directly, and ip through the exact inner-product-to-Euclidean reduction
 (one appended coordinate per row).
@@ -257,7 +257,7 @@ retains its three explicitly ignored experiments.
 
 ## Contribution
 
-The [HMS adapter](../../benchmarks/vibe/hms/)
+The [WARM adapter](../../benchmarks/vibe/warm/)
 follows VIBE's [new-method guide](https://github.com/vector-index-bench/vibe/blob/main/docs/NEW_METHOD.md):
 one-thread builds, unique original row IDs, separate build/query parameters,
 four build combinations and 45 query combinations per metric, with a pinned
@@ -276,8 +276,8 @@ uv run --no-project --with numpy==2.2.6 --with h5py==3.15.1 \
   --with pytest python -m pytest -q benchmarks/vibe/test_measurement.py
 ```
 
-For the diagnostic, install the pinned HMS wheel and comparator dependencies in
-an isolated environment, copy `benchmarks/vibe/hms` to `vibe/algorithms/hms` in
+For the diagnostic, install the pinned WARM wheel and comparator dependencies in
+an isolated environment, copy `benchmarks/vibe/warm` to `vibe/algorithms/warm` in
 VIBE revision `7ac76c1f8320a411ce7c9cb3791bdd7f2349b30c`, then run:
 
 ```sh
@@ -286,11 +286,11 @@ uv run --no-project python benchmarks/vibe/prepare.py laion-clip-512-normalized 
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMBA_NUM_THREADS=1 \
   uv run --no-project python benchmarks/vibe/run.py --vibe /path/to/vibe \
   --data /path/to/data/laion-clip-512-normalized-n100000.hdf5 \
-  --method hms --out /path/to/laion-hms.json
+  --method warm --out /path/to/laion-warm.json
 ```
 
-An upstream contribution also needs the HMS row in VIBE's algorithm table and
-a Linux image build through `./install.sh --algorithm hms`. The
+An upstream contribution also needs the WARM row in VIBE's algorithm table and
+a Linux image build through `./install.sh --algorithm warm`. The
 [prepared upstream patch](../../benchmarks/vibe/upstream.patch) includes the
 README row and all three adapter files; it passes the reverse-apply check on the
 pinned checkout (VIBE 7ac76c1). The image has not been built: this host has no Apptainer, so the
@@ -326,7 +326,7 @@ chosen because it faults on run hosts without AVX-512. The Modal runner
 that runs the job.
 
 PGO development verification, 2026-10-24 UTC: Intel Core Ultra 9 185H (no AVX-512),
-older HMS source `99e84d92f72a42e6f54b2cc48fb30fc86cdfa99c`, three existing binaries
+older WARM source `99e84d92f72a42e6f54b2cc48fb30fc86cdfa99c`, three existing binaries
 (`x86-64-v3`, `native`, and `x86-64-v3` + PGO), and the same saved indexes for all arms.
 The profile used nytimes-256-angular training data (2,000 holdout queries requested,
 1,997 evaluated); glove and sift were evaluation datasets. The fixed protocol used
@@ -357,7 +357,7 @@ adopt PGO. This result does not establish VIBE k=100 performance or a leaderboar
 
 ## Pre-registered OOD grid, 2026-10-23
 
-Fixed in `benchmarks/vibe/hms/config.yml` before any run of this grid. Build arguments
+Fixed in `benchmarks/vibe/warm/config.yml` before any run of this grid. Build arguments
 `degree x build_ef x code_bits x query_aware`, query arguments `ef x rerank`:
 
 | Metric section | degree | build_ef | code_bits | query_aware | ef | rerank | build / query combos |

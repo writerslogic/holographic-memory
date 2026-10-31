@@ -5,7 +5,7 @@
 
 #![cfg(target_arch = "wasm32")]
 
-use hms_wasm::{argon2id_key, HmsStore};
+use warm_wasm::{argon2id_key, WarmStore};
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_test::*;
@@ -46,7 +46,7 @@ fn runs_in_a_browser_window() {
 
 #[wasm_bindgen_test]
 fn ingest_search_delete_and_round_trip() {
-    let mut store = HmsStore::new(object(&[("dimensions", 2048.into())])).unwrap();
+    let mut store = WarmStore::new(object(&[("dimensions", 2048.into())])).unwrap();
     store
         .memorize_document(doc(
             "a",
@@ -73,7 +73,7 @@ fn ingest_search_delete_and_round_trip() {
     assert!(store.search_documents("frost", bad).is_err());
 
     let bytes = store.export_bytes().unwrap();
-    let restored = HmsStore::import_bytes(&bytes).unwrap();
+    let restored = WarmStore::import_bytes(&bytes).unwrap();
     let again = Array::from(
         &restored
             .search_documents("holographic", JsValue::UNDEFINED)
@@ -85,7 +85,7 @@ fn ingest_search_delete_and_round_trip() {
     let mut tampered = bytes.clone();
     let last = tampered.len() - 1;
     tampered[last] ^= 1;
-    assert!(HmsStore::import_bytes(&tampered).is_err());
+    assert!(WarmStore::import_bytes(&tampered).is_err());
 
     assert!(store.delete_document("a"));
     assert!(!store.delete_document("a"));

@@ -73,24 +73,24 @@ jobs:
           set -euo pipefail
           host=$(rustc -vV | sed -n 's/^host: //p')
           test "$host" = "$TARGET"
-          binary=target/release/hms-mcp
+          binary=target/release/warm-mcp
           if [[ "$TARGET" == *linux* ]]; then
-            cargo zigbuild --release --locked --target "${TARGET}.2.17" --features mcp,security --bin hms-mcp
-            binary="target/${TARGET}/release/hms-mcp"
+            cargo zigbuild --release --locked --target "${TARGET}.2.17" --features mcp,security --bin warm-mcp
+            binary="target/${TARGET}/release/warm-mcp"
             newer=$(readelf -W --version-info "$binary" | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | cut -d_ -f2 | sort -Vu | awk -F. '$1 > 2 || ($1 == 2 && $2 > 17)' | head -1)
             test -z "$newer"
           else
-            cargo build --release --locked --features mcp,security --bin hms-mcp
+            cargo build --release --locked --features mcp,security --bin warm-mcp
           fi
           extension=""
           if [[ "$TARGET" == *windows* ]]; then extension=".exe"; fi
           "${binary}${extension}" --version
           mkdir -p assets
-          cp "${binary}${extension}" "assets/hms-mcp-${TARGET}${extension}"
+          cp "${binary}${extension}" "assets/warm-mcp-${TARGET}${extension}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mcp-binary-${{ matrix.target }}
-          path: assets/hms-mcp-*
+          path: assets/warm-mcp-*
           if-no-files-found: error
           compression-level: 0
 
@@ -126,25 +126,25 @@ jobs:
           test "$(find dist/pypi -name '*.whl' | wc -l | tr -d ' ')" = 1
           test "$(find dist/pypi -name '*.tar.gz' | wc -l | tr -d ' ')" = 1
           tar -xOf dist/npm/*.tgz package/checksums.json | cmp - integrations/mcp/npm/checksums.json
-          unzip -p dist/pypi/*.whl holographic_memory_mcp/checksums.json | cmp - integrations/mcp/npm/checksums.json
+          unzip -p dist/pypi/*.whl writerslogic_warm_mcp/checksums.json | cmp - integrations/mcp/npm/checksums.json
       - name: Test both launchers against a local release asset
         shell: bash
         run: |
           set -euo pipefail
-          chmod +x mcp-release-assets/hms-mcp-x86_64-unknown-linux-gnu
+          chmod +x mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu
           npm ci --prefix integrations/mcp/tests --ignore-scripts
-          HMS_MCP_BIN="$PWD/mcp-release-assets/hms-mcp-x86_64-unknown-linux-gnu" node --test --test-concurrency=1 integrations/mcp/tests/launchers.test.mjs
-          HMS_MCP_BIN="$PWD/mcp-release-assets/hms-mcp-x86_64-unknown-linux-gnu" HMS_MCP_SECURITY=1 npm test --prefix integrations/mcp/tests
+          WARM_MCP_BIN="$PWD/mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu" node --test --test-concurrency=1 integrations/mcp/tests/launchers.test.mjs
+          WARM_MCP_BIN="$PWD/mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu" WARM_MCP_SECURITY=1 npm test --prefix integrations/mcp/tests
       - name: Smoke test installed packages
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/mcp-npm"
           npm install --prefix "$RUNNER_TEMP/mcp-npm" --ignore-scripts --offline --no-audit --no-fund dist/npm/*.tgz
-          HMS_MCP_BINARY="$PWD/mcp-release-assets/hms-mcp-x86_64-unknown-linux-gnu" node "$RUNNER_TEMP/mcp-npm/node_modules/holographic-memory-mcp/bin/cli.js" --version
+          WARM_MCP_BINARY="$PWD/mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu" node "$RUNNER_TEMP/mcp-npm/node_modules/writerslogic-warm-mcp/bin/cli.js" --version
           uv venv "$RUNNER_TEMP/mcp-venv"
           uv pip install --python "$RUNNER_TEMP/mcp-venv/bin/python" dist/pypi/*.whl
-          HMS_MCP_BINARY="$PWD/mcp-release-assets/hms-mcp-x86_64-unknown-linux-gnu" "$RUNNER_TEMP/mcp-venv/bin/holographic-memory-mcp" --version
+          WARM_MCP_BINARY="$PWD/mcp-release-assets/warm-mcp-x86_64-unknown-linux-gnu" "$RUNNER_TEMP/mcp-venv/bin/writerslogic-warm-mcp" --version
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mcp-packages
@@ -173,7 +173,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" mcp-release-assets/* dist/npm/* dist/pypi/* \
             --repo "$GITHUB_REPOSITORY" --verify-tag \
-            --title "Holographic Memory MCP $GITHUB_REF_NAME" \
+            --title "WARM MCP $GITHUB_REF_NAME" \
             --notes "MCP binaries and checksum-verified npm and PyPI launchers."
 
   npm-publish:
@@ -249,10 +249,10 @@ jobs:
           version="${GITHUB_REF_NAME#mcp-v}"
           for attempt in {1..30}; do
             if curl --fail --location --silent --show-error --max-time 15 \
-              https://registry.npmjs.org/holographic-memory-mcp \
+              https://registry.npmjs.org/writerslogic-warm-mcp \
               | jq --exit-status --arg version "$version" '.versions[$version] != null' >/dev/null \
               && curl --fail --location --silent --show-error --max-time 15 \
-                "https://pypi.org/pypi/holographic-memory-mcp/$version/json" \
+                "https://pypi.org/pypi/writerslogic-warm-mcp/$version/json" \
                 | jq --exit-status --arg version "$version" '.info.version == $version' >/dev/null; then
               exit 0
             fi

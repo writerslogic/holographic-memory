@@ -4,12 +4,12 @@
 //! Ingest timing of the three `IngestOptions::encode` modes, with search parity against a
 //! store that encoded at ingest.
 //!
-//! Input: the `{documents, queries}` JSON `hms-bench` writes (the file
+//! Input: the `{documents, queries}` JSON `warm-bench` writes (the file
 //! `examples/competitive_text.rs build` reads): `documents` are `DocumentInput`s, `queries`
 //! are `{id, text, options}` with `SearchOptions`.
 //!
 //! Mechanism: after `--warmups` discarded runs (default none), each of `--repeats` runs
-//! (default one) opens a fresh store in a temporary directory (`HmsCore::new(dim, path,
+//! (default one) opens a fresh store in a temporary directory (`WarmCore::new(dim, path,
 //! None)`, the harness configuration) and ingests the corpus in batches of `--batch`
 //! documents with `memorize_documents_with`, timing the wall clock from before the open to
 //! after the last commit, as the harness does. The encoder's memo tables are per-thread and
@@ -41,13 +41,13 @@ use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::{DocumentInput, WarmCore, SearchOptions};
 use serde::{Deserialize, Serialize};
 
 #[derive(Parser)]
 struct Args {
-    /// The hms-bench `{documents, queries}` JSON.
+    /// The warm-bench `{documents, queries}` JSON.
     #[arg(long)]
     input: PathBuf,
     /// eager | deferred | lexical
@@ -128,7 +128,7 @@ struct Report {
 
 struct Built {
     _dir: tempfile::TempDir,
-    core: HmsCore,
+    core: WarmCore,
     ingest_s: f64,
     chunks: u64,
 }
@@ -150,7 +150,7 @@ fn median(values: &[f64]) -> Option<f64> {
 fn build(documents: &[DocumentInput], dim: usize, batch: usize, options: &IngestOptions) -> Result<Built> {
     let dir = tempfile::tempdir().context("temporary store directory")?;
     let start = Instant::now();
-    let core = HmsCore::new(dim as u32, Some(dir.path().display().to_string()), None)?;
+    let core = WarmCore::new(dim as u32, Some(dir.path().display().to_string()), None)?;
     let mut chunks = 0u64;
     for group in documents.chunks(batch) {
         let counts = core.memorize_documents_with(group.to_vec(), options)?;
@@ -165,7 +165,7 @@ fn build(documents: &[DocumentInput], dim: usize, batch: usize, options: &Ingest
     })
 }
 
-fn vector_hits(core: &HmsCore, text: &str) -> BTreeSet<(String, u64)> {
+fn vector_hits(core: &WarmCore, text: &str) -> BTreeSet<(String, u64)> {
     core.query(&core.encode_text(text), 4096)
         .into_iter()
         .map(|hit| (hit.id, hit.similarity.to_bits()))

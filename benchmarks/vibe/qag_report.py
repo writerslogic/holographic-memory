@@ -263,6 +263,6 @@ if __name__ == "__main__":
     parser.add_argument("--results", type=Path, required=True)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--receipt", type=Path, default=os.environ.get("HMS_QAG_RUN_RECEIPT"))
+    parser.add_argument("--receipt", type=Path, default=os.environ.get("WARM_QAG_RUN_RECEIPT"))
     args = parser.parse_args()
     write_report(args.results, args.data, args.out, args.receipt)

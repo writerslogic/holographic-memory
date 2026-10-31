@@ -1,16 +1,16 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""LongMemEval dev questions through the HMS memory API, retrieval only (no model calls).
+"""LongMemEval dev questions through the WARM memory API, retrieval only (no model calls).
 
-One hms-server tenant per question holds every embedded (user) haystack turn as a fact `"{role}: {content}"` with
+One warm-server tenant per question holds every embedded (user) haystack turn as a fact `"{role}: {content}"` with
 the session date as event time and the cached all-MiniLM-L6-v2 turn embedding. Recall uses the
 cached question embedding. Reported: answer-session recall@k (any / all answer sessions reached by
 at least one of the top-k facts), per question type and overall. Dev questions only.
 
 Usage:
   uv run --no-project --with openai==1.109.1 --with nltk==3.9.1 --with tiktoken==0.12.0 --with jinja2==3.1.6 \
-    python benchmarks/public/longmemeval_memory_recall.py --server-bin target/release/hms-server \
-    --cache-dir ~/.cache/hms-bench --out OUT.json [--order cosine]
+    python benchmarks/public/longmemeval_memory_recall.py --server-bin target/release/warm-server \
+    --cache-dir ~/.cache/warm-bench --out OUT.json [--order cosine]
 """
 
 import argparse

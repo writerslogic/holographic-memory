@@ -6,9 +6,9 @@ import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { HashingEmbedder, HmsError, HmsStore, parseFilter, splitFilter } from '../dist/index.js'
+import { HashingEmbedder, WarmError, WarmStore, parseFilter, splitFilter } from '../dist/index.js'
 
-const store = (opts = {}) => new HmsStore({ path: mkdtempSync(join(tmpdir(), 'hms-js-')), dimensions: 1024, ...opts })
+const store = (opts = {}) => new WarmStore({ path: mkdtempSync(join(tmpdir(), 'warm-js-')), dimensions: 1024, ...opts })
 const recs = (n, meta = {}) =>
   Array.from({ length: n }, (_, i) => ({ id: `d${i}`, text: `alpha beta gamma number${i} topic${i % 3}`, metadata: { n: i, parity: i % 2, ...meta } }))
 
@@ -17,8 +17,8 @@ for (const [field, value] of Object.entries({
   embeddingNormalization: 'none', embeddingMetric: 'dot',
 })) {
   test(`conflicting ${field} is rejected before creating storage`, () => {
-    const path = join(mkdtempSync(join(tmpdir(), 'hms-identity-')), 'store')
-    assert.throws(() => new HmsStore({ path, hmsConfig: { [field]: value } }), (error) => error.code === 'invalid_argument')
+    const path = join(mkdtempSync(join(tmpdir(), 'warm-identity-')), 'store')
+    assert.throws(() => new WarmStore({ path, warmConfig: { [field]: value } }), (error) => error.code === 'invalid_argument')
     assert.equal(existsSync(path), false)
   })
 }
@@ -27,25 +27,25 @@ for (const [field, value] of Object.entries({ model: '', revision: '', dimension
   test(`invalid embedder ${field} is rejected before creating storage`, () => {
     const embedder = new HashingEmbedder()
     embedder.space[field] = value
-    const path = join(mkdtempSync(join(tmpdir(), 'hms-identity-')), 'store')
-    assert.throws(() => new HmsStore({ path, embedder }), (error) => error.code === 'invalid_argument')
+    const path = join(mkdtempSync(join(tmpdir(), 'warm-identity-')), 'store')
+    assert.throws(() => new WarmStore({ path, embedder }), (error) => error.code === 'invalid_argument')
     assert.equal(existsSync(path), false)
   })
 }
 
 test('persistent identity follows the embedder and cannot be relabeled on reopen', async () => {
-  const path = mkdtempSync(join(tmpdir(), 'hms-identity-'))
+  const path = mkdtempSync(join(tmpdir(), 'warm-identity-'))
   execFileSync(process.execPath, ['--input-type=module', '-e', `
-    import { HmsStore } from ${JSON.stringify(new URL('../dist/index.js', import.meta.url).href)}
-    const store = new HmsStore({ path: ${JSON.stringify(path)}, dimensions: 1024,
-      hmsConfig: { embeddingModel: 'hms-hashing', embeddingRevision: 'uni-bi-v1', embeddingDimensions: 384 } })
+    import { WarmStore } from ${JSON.stringify(new URL('../dist/index.js', import.meta.url).href)}
+    const store = new WarmStore({ path: ${JSON.stringify(path)}, dimensions: 1024,
+      warmConfig: { embeddingModel: 'warm-hashing', embeddingRevision: 'uni-bi-v1', embeddingDimensions: 384 } })
     await store.remember([{ id: 'one', text: 'original alpha' }])
     await store.close()
   `])
   const schema = readFileSync(join(path, 'store.json'))
   const other = new HashingEmbedder(384, false)
-  assert.throws(() => new HmsStore({ path, dimensions: 1024, embedder: other,
-    hmsConfig: { embeddingRevision: 'uni-bi-v1' } }), (error) => error.code === 'invalid_argument')
+  assert.throws(() => new WarmStore({ path, dimensions: 1024, embedder: other,
+    warmConfig: { embeddingRevision: 'uni-bi-v1' } }), (error) => error.code === 'invalid_argument')
   assert.deepEqual(readFileSync(join(path, 'store.json')), schema)
   const reopened = store({ path })
   assert.deepEqual(reopened.memory.securityStatus().embeddingSpace, reopened.embedder.space)
@@ -56,7 +56,7 @@ test('persistent identity follows the embedder and cannot be relabeled on reopen
 test('older native bindings fail before a partial framework workflow', () => {
   const embedder = new HashingEmbedder(384)
   const memory = { securityStatus: () => ({ embeddingSpace: embedder.space }) }
-  assert.throws(() => new HmsStore({ memory, embedder }), (error) => error.code === 'backend' && /current native binding/.test(error.message))
+  assert.throws(() => new WarmStore({ memory, embedder }), (error) => error.code === 'backend' && /current native binding/.test(error.message))
 })
 
 test('round trip: remember, recall, get, list, forget', async () => {
@@ -112,7 +112,7 @@ test('filters: pushed equality and client-side residual', async () => {
 
 test('collections isolate ids and queries inside one store', async () => {
   const plain = store()
-  const a = new HmsStore({ memory: plain.memory, collection: 'A' })
+  const a = new WarmStore({ memory: plain.memory, collection: 'A' })
   await plain.remember([{ id: 'same', text: 'plain doc' }])
   await a.remember([{ id: 'same', text: 'collection doc' }])
   assert.equal((await plain.get(['same']))[0].text, 'plain doc')
@@ -124,7 +124,7 @@ test('collections isolate ids and queries inside one store', async () => {
 
 test('collection id collisions cannot overwrite or delete legacy mapped records', async () => {
   const plain = store()
-  const a = new HmsStore({ memory: plain.memory, collection: 'A' })
+  const a = new WarmStore({ memory: plain.memory, collection: 'A' })
   await a.remember([{ id: 'x', text: 'owned by A' }])
   await assert.rejects(plain.remember([{ id: 'A/x', text: 'foreign' }]), /another collection/)
   await assert.rejects(plain.forget(['A/x']), /another collection/)
@@ -142,7 +142,7 @@ test('collection id collisions cannot overwrite or delete legacy mapped records'
 
 test('colliding writes on stores sharing a native handle are serialized', async () => {
   const plain = store()
-  const a = new HmsStore({ memory: plain.memory, collection: 'A' })
+  const a = new WarmStore({ memory: plain.memory, collection: 'A' })
   const results = await Promise.allSettled([
     plain.remember([{ id: 'A/x', text: 'default' }]),
     a.remember([{ id: 'x', text: 'A' }]),
@@ -154,10 +154,10 @@ test('colliding writes on stores sharing a native handle are serialized', async 
 
 test('reserved metadata, bad ids and bad vectors are rejected', async () => {
   const s = store()
-  await assert.rejects(s.remember([{ id: 'a', text: 't', metadata: { _hms_x: 1 } }]), HmsError)
-  await assert.rejects(s.remember([{ id: 'hms:a', text: 't' }]), HmsError)
-  await assert.rejects(s.remember([{ id: 'é'.repeat(129), text: 't' }]), HmsError)
-  await assert.rejects(s.remember([{ id: 'a', text: 't', vector: [1, 2] }]), HmsError)
+  await assert.rejects(s.remember([{ id: 'a', text: 't', metadata: { _warm_x: 1 } }]), WarmError)
+  await assert.rejects(s.remember([{ id: 'hms:a', text: 't' }]), WarmError)
+  await assert.rejects(s.remember([{ id: 'é'.repeat(129), text: 't' }]), WarmError)
+  await assert.rejects(s.remember([{ id: 'a', text: 't', vector: [1, 2] }]), WarmError)
 })
 
 for (const delta of [-1, 0, 1]) {
@@ -244,7 +244,7 @@ test('titleWeight and BM25 knobs reach the engine', async () => {
 })
 
 test('encryption config is accepted and the store still works', async () => {
-  const s = store({ hmsConfig: { encryptionEnabled: true, encryptionPassphrase: 'correct horse battery staple' } })
+  const s = store({ warmConfig: { encryptionEnabled: true, encryptionPassphrase: 'correct horse battery staple' } })
   assert.equal(s.memory.securityStatus().encryptionActive, true)
   await s.remember(recs(3))
   assert.equal((await s.recall('alpha beta gamma number2 topic2', { k: 1 }))[0].id, 'd2')
@@ -276,5 +276,5 @@ test('filter parsing', () => {
 test('operations after close fail with a typed error', async () => {
   const s = store()
   await s.close()
-  await assert.rejects(s.recall('x'), (e) => e instanceof HmsError && e.code === 'closed')
+  await assert.rejects(s.recall('x'), (e) => e instanceof WarmError && e.code === 'closed')
 })

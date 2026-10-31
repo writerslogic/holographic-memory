@@ -449,18 +449,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "hms-quickstart"
+name = "warm-quickstart"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "holographic-memory",
+ "writerslogic-warm",
  "rusqlite",
  "serde_json",
  "tempfile",
 ]
 
 [[package]]
-name = "holographic-memory"
+name = "writerslogic-warm"
 version = "0.6.1"
 dependencies = [
  "aes-gcm",

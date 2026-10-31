@@ -2,7 +2,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
-# Builds Frameworks/hms_mobileFFI.xcframework and regenerates Sources/HolographicMemory.
+# Builds Frameworks/warm_mobileFFI.xcframework and regenerates Sources/WarmMemory.
 #
 # Requires macOS with Xcode (command line tools alone cannot build the iOS slices) and rustup.
 # Rust targets are added with `rustup target add` (user-level). Slices:
@@ -72,7 +72,7 @@ fi
 # Bindings come from a library built from this exact source.
 if [ "${#tier2[@]}" -gt 0 ]; then
   host="$(rustc -vV | sed -n 's/^host: //p')"
-  library="$target/$host/release/libhms_mobile.dylib"
+  library="$target/$host/release/libwarm_mobile.dylib"
   [ -f "$library" ] || { cargo build --release --lib --target "$host"; }
   LIBRARY="$library" "$crate/scripts/generate-bindings.sh" swift "$work/generated"
 else
@@ -81,14 +81,14 @@ fi
 
 headers="$work/headers"
 rm -rf "$headers"
-mkdir -p "$headers" "$swift_dir/Sources/HolographicMemory"
-cp "$work/generated/hms_mobileFFI.h" "$headers/"
-cp "$work/generated/hms_mobileFFI.modulemap" "$headers/module.modulemap"
-cp "$work/generated/hms_mobile.swift" "$swift_dir/Sources/HolographicMemory/HmsMobile.swift"
+mkdir -p "$headers" "$swift_dir/Sources/WarmMemory"
+cp "$work/generated/warm_mobileFFI.h" "$headers/"
+cp "$work/generated/warm_mobileFFI.modulemap" "$headers/module.modulemap"
+cp "$work/generated/warm_mobile.swift" "$swift_dir/Sources/WarmMemory/WarmMobile.swift"
 
-lib() { echo "$target/$1/release/libhms_mobile.a"; }
+lib() { echo "$target/$1/release/libwarm_mobile.a"; }
 fat() { # fat <slice> <triple>...  -> prints the merged library path
-  local out="$work/libs/$1/libhms_mobile.a"
+  local out="$work/libs/$1/libwarm_mobile.a"
   shift
   mkdir -p "$(dirname "$out")"
   if [ "$#" -eq 1 ]; then cp "$(lib "$1")" "$out"; else
@@ -103,7 +103,7 @@ for slice in $slices; do
   xc+=(-library "$merged" -headers "$headers")
 done
 
-out="$swift_dir/Frameworks/hms_mobileFFI.xcframework"
+out="$swift_dir/Frameworks/warm_mobileFFI.xcframework"
 rm -rf "$out"
 mkdir -p "$swift_dir/Frameworks"
 xcodebuild -create-xcframework "${xc[@]}" -output "$out"

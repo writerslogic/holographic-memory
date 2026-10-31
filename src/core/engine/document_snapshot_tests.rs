@@ -7,7 +7,7 @@ use std::time::Duration;
 use anyhow::{bail, Result};
 use serde_json::json;
 
-use super::HmsCore;
+use super::WarmCore;
 use crate::core::documents::{self, DocumentInput, SearchOptions};
 
 fn input(id: &str, version: &str, text: &str, group: &str) -> Result<DocumentInput> {
@@ -23,7 +23,7 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
     let config = super::fixture_config(2);
-    let core = Arc::new(HmsCore::new(
+    let core = Arc::new(WarmCore::new(
         1024,
         Some(path.clone()),
         Some(config.clone()),
@@ -76,7 +76,7 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
     assert_eq!(second[0].document_id, "b");
     // The delete zeroed the text on disk, so a query captured before it reads none.
     assert_eq!(second[0].text.as_deref(), Some(""));
-    let restored = HmsCore::new(1024, Some(path), Some(config))?;
+    let restored = WarmCore::new(1024, Some(path), Some(config))?;
     let current = restored.search_documents("needleold", &options)?;
     assert_eq!(current.len(), 1);
     assert_eq!(current[0].document_id, "c");
@@ -92,7 +92,7 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
 #[test]
 fn ranked_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()> {
     let directory = tempfile::tempdir()?;
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         1024,
         Some(directory.path().display().to_string()),
         Some(super::fixture_config(2)),
@@ -124,7 +124,7 @@ fn ranked_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()
 #[test]
 fn vector_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()> {
     let directory = tempfile::tempdir()?;
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         1024,
         Some(directory.path().display().to_string()),
         Some(super::fixture_config(2)),
@@ -160,7 +160,7 @@ fn vector_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()
 fn stale_document_training_cannot_publish_after_a_durable_replacement() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let config = super::fixture_config(2);
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         1024,
         Some(directory.path().display().to_string()),
         Some(config),
@@ -196,7 +196,7 @@ fn filtered_hybrid_delta_survives_compaction_and_reopen() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
     let config = super::fixture_config(2);
-    let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+    let core = WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
     core.memorize_documents(
         (0..256)
             .map(|id| {
@@ -242,7 +242,7 @@ fn filtered_hybrid_delta_survives_compaction_and_reopen() -> Result<()> {
         expected
     );
     drop(core);
-    let reopened = HmsCore::new(1024, Some(path), Some(config))?;
+    let reopened = WarmCore::new(1024, Some(path), Some(config))?;
     assert_eq!(
         serde_json::to_value(reopened.search_documents("needle fresh", &options)?)?,
         expected
@@ -258,7 +258,7 @@ fn filtered_hybrid_delta_survives_compaction_and_reopen() -> Result<()> {
 #[test]
 fn dense_training_reports_busy_and_releases_build_capacity() -> Result<()> {
     let directory = tempfile::tempdir()?;
-    let core = Arc::new(HmsCore::new(
+    let core = Arc::new(WarmCore::new(
         1024,
         Some(directory.path().display().to_string()),
         Some(super::fixture_config(2)),
@@ -297,7 +297,7 @@ fn dense_training_reports_busy_and_releases_build_capacity() -> Result<()> {
 fn failed_canonical_rebuild_keeps_the_live_text_segment() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
-    let core = HmsCore::new(1024, Some(path), Some(super::fixture_config(2)))?;
+    let core = WarmCore::new(1024, Some(path), Some(super::fixture_config(2)))?;
     core.memorize_document(input("a", "v1", "kept alpha text", "g")?)?;
     core.memorize_document(input("b", "v1", "purged beta text", "g")?)?;
     core.delete_document("b")?;

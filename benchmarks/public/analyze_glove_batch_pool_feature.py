@@ -83,7 +83,7 @@ def collapse(raw, cells, ef):
 def analyze(root):
     plan = json.loads((root / "plan.json").read_text())
     bindings = json.loads((root / "execution-manifest.json").read_text())
-    common.require(plan["schema"] == "hms-glove-batch-pool-ablation-plan-v3" and plan["candidate_vertex_sha256"] == runner.CANDIDATE_SHA and plan["candidate_cargo_sha256"] == runner.CARGO_SHA, "feature-v3 source/plan mismatch")
+    common.require(plan["schema"] == "warm-glove-batch-pool-ablation-plan-v3" and plan["candidate_vertex_sha256"] == runner.CANDIDATE_SHA and plan["candidate_cargo_sha256"] == runner.CARGO_SHA, "feature-v3 source/plan mismatch")
     common.require(plan["compile_order"] == ["disabled", "enabled"], "compile order changed")
     common.require(plan["default_control_gate"] == DEFAULT_GATE and plan["secondary_default_control_gate"] == SECONDARY_GATE, "default-control gate changed")
     common.require(plan["limits"] == {"per_compile_s": 600, "native_s": 180, "overall_s": 1200, "compile_sampled_tree_rss_gib": 4, "native_sampled_tree_rss_gib": 2}, "resource bounds changed")
@@ -125,7 +125,7 @@ def analyze(root):
             common.require(receipt["command"] == expected["command"], "command mismatch")
             binary = plan["arms"][arm]["binary"]
             common.require(expected["binary_sha256"] == bindings["frozen_files"][binary] and receipt["command"][0] == str(root / binary), "binary binding mismatch")
-            common.require("HMS_QGRAPH_BATCH_POOL" not in expected["environment"] and expected["environment"] == plan["environment"], "runtime switch or unmatched environment")
+            common.require("WARM_QGRAPH_BATCH_POOL" not in expected["environment"] and expected["environment"] == plan["environment"], "runtime switch or unmatched environment")
             common.require(expected["compile_features"] == runner.FEATURES[arm], "feature-mode binding mismatch")
             raw, cells, details = common.load(path)
             common.require(raw["efs"] == EFS and raw["repeats"] == 7 and raw["knob_mode"] == "env", "raw configuration mismatch")
@@ -160,7 +160,7 @@ def analyze(root):
     controls = control_gates(curves)
     numeric_pass = semantic_pass and recall_pass and speed_pass and controls["primary"]["pass"] and controls["secondary"]["pass"]
     return {
-        "schema": "hms-glove-batch-pool-feature-analysis-v3", "development_only": True,
+        "schema": "warm-glove-batch-pool-feature-analysis-v3", "development_only": True,
         "plan_sha256": bindings["plan_sha256"], "execution_manifest_sha256": common.fingerprints(root / "execution-manifest.json")["sha256"],
         "analyzer_sha256": common.fingerprints(Path(__file__))["sha256"], "shared_analyzer_sha256": common.fingerprints(Path(common.__file__))["sha256"],
         "runner_and_manifest_validator_sha256": common.fingerprints(Path(runner.__file__))["sha256"],

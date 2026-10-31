@@ -20,11 +20,11 @@ use std::time::Instant;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use holographic_memory::core::embed::EmbedOptions;
-use holographic_memory::core::encoding::TextEncoder;
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde_json::{json, Value};
+use writerslogic_warm::core::embed::EmbedOptions;
+use writerslogic_warm::core::encoding::TextEncoder;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -77,7 +77,7 @@ fn main() -> Result<()> {
     for store in task["stores"].as_array().context("stores")? {
         let dir = tempfile::tempdir()?;
         let config = if local {
-            HmsConfig {
+            WarmConfig {
                 text_encoder: TextEncoder::LocalEmbedV1,
                 local_embed: Some(EmbedOptions {
                     model: args.model.clone(),
@@ -85,12 +85,12 @@ fn main() -> Result<()> {
                     batch_size: args.batch_size,
                     ..EmbedOptions::default()
                 }),
-                ..HmsConfig::default()
+                ..WarmConfig::default()
             }
         } else {
-            HmsConfig::default()
+            WarmConfig::default()
         };
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             args.dimensions,
             Some(dir.path().to_string_lossy().into_owned()),
             Some(config),

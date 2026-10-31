@@ -19,7 +19,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-CACHE = Path(os.environ.get("HMS_BENCH_DATA", Path.home() / ".cache" / "hms-bench"))
+CACHE = Path(os.environ.get("WARM_BENCH_DATA", Path.home() / ".cache" / "warm-bench"))
 SERVER_ROOT = CACHE / "competitive" / "servers"
 PLATFORM = (platform.system(), platform.machine().replace("aarch64", "arm64").replace("amd64", "x86_64"))
 MAC_ARM = ("Darwin", "arm64")
@@ -72,8 +72,8 @@ ARTIFACTS = {
                    LINUX_X86: ("usr/share/postgresql/18", "usr/lib/postgresql/18/lib")}},
 }
 
-# Package-manager installs. Paths are the defaults; HMS_BENCH_PG_BIN, HMS_BENCH_PGVECTOR_SHARE,
-# HMS_BENCH_PGVECTOR_LIB, HMS_BENCH_REDIS_BIN and HMS_BENCH_REDIS_MODULE override them.
+# Package-manager installs. Paths are the defaults; WARM_BENCH_PG_BIN, WARM_BENCH_PGVECTOR_SHARE,
+# WARM_BENCH_PGVECTOR_LIB, WARM_BENCH_REDIS_BIN and WARM_BENCH_REDIS_MODULE override them.
 SYSTEM_PACKAGES = {
     "postgres": {
         "Darwin": {"install": "PostgreSQL: the pinned zonky artifact; pgvector: brew install pgvector (0.8.7 when pinned)",
@@ -105,7 +105,7 @@ def artifact_dir(name):
 def artifact_binary(name):
     path = artifact_dir(name) / ARTIFACTS[name]["binary"]
     if not path.exists():
-        raise NotAvailable(f"{name} {ARTIFACTS[name]['version']} is not installed; run `hms-bench install-servers {name}`")
+        raise NotAvailable(f"{name} {ARTIFACTS[name]['version']} is not installed; run `warm-bench install-servers {name}`")
     return path
 
 
@@ -183,16 +183,16 @@ def system_package(name):
     if name == "postgres":
         if spec["bin"] is None and PLATFORM in ARTIFACTS["postgres"]["files"]:
             spec["bin"] = str(artifact_dir("postgres") / "bin")
-        spec["bin"] = os.environ.get("HMS_BENCH_PG_BIN", spec["bin"])
-        spec["pgvector_share"] = os.environ.get("HMS_BENCH_PGVECTOR_SHARE", spec["pgvector_share"])
-        spec["pgvector_lib"] = os.environ.get("HMS_BENCH_PGVECTOR_LIB", spec["pgvector_lib"])
+        spec["bin"] = os.environ.get("WARM_BENCH_PG_BIN", spec["bin"])
+        spec["pgvector_share"] = os.environ.get("WARM_BENCH_PGVECTOR_SHARE", spec["pgvector_share"])
+        spec["pgvector_lib"] = os.environ.get("WARM_BENCH_PGVECTOR_LIB", spec["pgvector_lib"])
         if not (Path(spec["bin"]) / "postgres").exists():
             raise NotAvailable(f"postgres not found in {spec['bin']} (install: {spec['install']})")
         if spec["pgvector_lib"] and not any(Path(spec["pgvector_lib"]).glob("vector.*")):
             raise NotAvailable(f"pgvector not found in {spec['pgvector_lib']} (install: {spec['install']})")
     else:
-        spec["bin"] = os.environ.get("HMS_BENCH_REDIS_BIN", spec["bin"])
-        spec["module"] = os.environ.get("HMS_BENCH_REDIS_MODULE", spec["module"])
+        spec["bin"] = os.environ.get("WARM_BENCH_REDIS_BIN", spec["bin"])
+        spec["module"] = os.environ.get("WARM_BENCH_REDIS_MODULE", spec["module"])
         if not (Path(spec["bin"]) / "redis-server").exists() or not Path(spec["module"]).exists():
             raise NotAvailable(f"redis-server or {spec['module']} not found (install: {spec['install']})")
     return spec

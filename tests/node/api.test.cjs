@@ -11,33 +11,33 @@ function run(source, directory) {
 }
 
 test('governance preserves independently owned triples through async maintenance and restart', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'hms-node-governance-'))
+  const directory = mkdtempSync(join(tmpdir(), 'warm-node-governance-'))
   try {
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
+      const { WarmMemorySystem } = require('./index.js');
       (async () => {
-        const hms = new HolographicMemorySystem(4096, process.argv[1], { meaningEnabled: true });
-        await hms.memorizeTriplet('owner-a', 'mira', 'works_at', 'acme');
-        await hms.memorizeTriplet('owner-b', 'mira', 'works_at', 'acme');
-        const report = await hms.governMemoryAsync();
+        const warm = new WarmMemorySystem(4096, process.argv[1], { meaningEnabled: true });
+        await warm.memorizeTriplet('owner-a', 'mira', 'works_at', 'acme');
+        await warm.memorizeTriplet('owner-b', 'mira', 'works_at', 'acme');
+        const report = await warm.governMemoryAsync();
         assert.equal(report.compositesMerged, 0);
         assert.equal(report.idfRefreshed, true);
-        assert.equal(hms.vectorCount, 2);
-        assert.ok((await hms.multiHopQuery('mira', ['works_at'])).some(hit => hit.entityId === 'acme'));
-        await hms.compact();
-        await hms.flush();
+        assert.equal(warm.vectorCount, 2);
+        assert.ok((await warm.multiHopQuery('mira', ['works_at'])).some(hit => hit.entityId === 'acme'));
+        await warm.compact();
+        await warm.flush();
       })().catch(error => { console.error(error); process.exit(1); });
     `, directory)
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
+      const { WarmMemorySystem } = require('./index.js');
       (async () => {
-        const hms = new HolographicMemorySystem(4096, process.argv[1], { meaningEnabled: true });
-        assert.equal(hms.vectorCount, 2);
-        assert.equal(hms.governMemory().compositesMerged, 0);
-        assert.ok((await hms.multiHopQuery('mira', ['works_at'])).some(hit => hit.entityId === 'acme'));
-        await hms.flush();
+        const warm = new WarmMemorySystem(4096, process.argv[1], { meaningEnabled: true });
+        assert.equal(warm.vectorCount, 2);
+        assert.equal(warm.governMemory().compositesMerged, 0);
+        assert.ok((await warm.multiHopQuery('mira', ['works_at'])).some(hit => hit.entityId === 'acme'));
+        await warm.flush();
       })().catch(error => { console.error(error); process.exit(1); });
     `, directory)
   } finally {
@@ -46,21 +46,21 @@ test('governance preserves independently owned triples through async maintenance
 })
 
 test('published APIs preserve structured knowledge and document state across processes', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'hms-node-'))
+  const directory = mkdtempSync(join(tmpdir(), 'warm-node-'))
   try {
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
+      const { WarmMemorySystem } = require('./index.js');
       const { DocumentMemory } = require('./semantic.js');
       (async () => {
-        const hms = new HolographicMemorySystem(4096, process.argv[1], { meaningEnabled: true });
-        assert.equal(hms.securityStatus().encryptionActive, false);
-        await hms.memorizeTriplet('t1', 'paris', 'capital_of', 'france');
-        await hms.memorizeTriplet('t2', 'john', 'father', 'mark');
-        await hms.memorizeTriplet('t3', 'mark', 'father', 'bob');
-        assert.equal((await hms.structuralQuery(['paris'], ['capital_of'], 'object'))[0].entityId, 'france');
-        assert.equal((await hms.multiHopQuery('john', ['father', 'father']))[0].entityId, 'bob');
-        const docs = new DocumentMemory(hms);
+        const warm = new WarmMemorySystem(4096, process.argv[1], { meaningEnabled: true });
+        assert.equal(warm.securityStatus().encryptionActive, false);
+        await warm.memorizeTriplet('t1', 'paris', 'capital_of', 'france');
+        await warm.memorizeTriplet('t2', 'john', 'father', 'mark');
+        await warm.memorizeTriplet('t3', 'mark', 'father', 'bob');
+        assert.equal((await warm.structuralQuery(['paris'], ['capital_of'], 'object'))[0].entityId, 'france');
+        assert.equal((await warm.multiHopQuery('john', ['father', 'father']))[0].entityId, 'bob');
+        const docs = new DocumentMemory(warm);
         await docs.ingest([
           { id: 'guide', text: 'Restore backups from verified snapshots.', sourceUri: 'guide.md', metadata: { project: 'alpha' } },
           { id: 'temporary', text: 'Temporary indexing advice.' },
@@ -72,26 +72,26 @@ test('published APIs preserve structured knowledge and document state across pro
         await docs.delete('temporary');
         const file = require('node:path').join(process.argv[1], 'input.txt');
         require('node:fs').writeFileSync(file, 'File ingestion keeps source offsets. '.repeat(100));
-        await hms.memorizeFile('file', file);
-        const passages = await hms.searchDocuments('ingestion offsets', { documentIds: ['file'] });
+        await warm.memorizeFile('file', file);
+        const passages = await warm.searchDocuments('ingestion offsets', { documentIds: ['file'] });
         assert.ok(passages.length > 1);
         assert.equal(passages[0].sourceUri, file);
-        await hms.deleteDocument('file');
-        await hms.compact();
+        await warm.deleteDocument('file');
+        await warm.compact();
         await docs.flush();
-        await assert.rejects(hms.memorizeVector('bad', new Float32Array([NaN])));
+        await assert.rejects(warm.memorizeVector('bad', new Float32Array([NaN])));
       })().catch(e => { console.error(e); process.exitCode = 1; });
     `, directory)
     run(`
       const assert = require('node:assert/strict');
       (async () => {
-        const { HolographicMemorySystem } = await import('./index.mjs');
+        const { WarmMemorySystem } = await import('./index.mjs');
         const { DocumentMemory } = await import('./semantic.js');
-        const hms = new HolographicMemorySystem(4096, process.argv[1], { meaningEnabled: true });
-        const docs = new DocumentMemory(hms);
+        const warm = new WarmMemorySystem(4096, process.argv[1], { meaningEnabled: true });
+        const docs = new DocumentMemory(warm);
         assert.equal((await docs.search('backups'))[0].documentId, 'guide');
         assert.equal((await docs.search('temporary')).length, 0);
-        assert.equal((await hms.structuralQuery(['paris'], ['capital_of'], 'object'))[0].entityId, 'france');
+        assert.equal((await warm.structuralQuery(['paris'], ['capital_of'], 'object'))[0].entityId, 'france');
       })().catch(e => { console.error(e); process.exitCode = 1; });
     `, directory)
   } finally { rmSync(directory, { recursive: true, force: true }) }
@@ -113,66 +113,66 @@ test('document queue bounds work and recovers after a rejected operation', async
 })
 
 test('native document batches and exact index survive invalid updates and restart', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'hms-document-index-'))
+  const directory = mkdtempSync(join(tmpdir(), 'warm-document-index-'))
   const setup = `
     const assert = require('node:assert/strict');
-    const { HolographicMemorySystem } = require('./index.js');
+    const { WarmMemorySystem } = require('./index.js');
     const config = { embeddingModel: 'fixture', embeddingRevision: '1', embeddingDimensions: 2 };
     const options = { embedding: [1, 0], k: 5, candidateLimit: 16 };
   `
   try {
     run(`${setup}
       (async () => {
-        const hms = new HolographicMemorySystem(1024, process.argv[1], config);
+        const warm = new WarmMemorySystem(1024, process.argv[1], config);
         const inputs = Array.from({ length: 128 }, (_, i) => ({ id: 'doc-' + i, text: 'needle ' + i, embeddings: [[Math.cos(i / 100), Math.sin(i / 100)]] }));
-        assert.deepEqual(await hms.memorizeDocuments(inputs), Array(128).fill(1));
-        const expected = await hms.searchDocuments('', options);
-        await hms.trainDocumentIndex();
-        assert.equal(hms.documentIndexTrained, true);
-        assert.deepEqual(await hms.searchDocuments('', options), expected);
-        await assert.rejects(hms.memorizeDocuments([{ ...inputs[0], text: 'uncommitted' }, { id: 'bad', text: 'invalid', embeddings: [[0, 0]] }]));
-        assert.deepEqual(await hms.searchDocuments('', options), expected);
-        await hms.deleteDocument('doc-0');
-        assert.equal(hms.documentIndexTrained, false);
-        await hms.compact();
-        await hms.flush();
+        assert.deepEqual(await warm.memorizeDocuments(inputs), Array(128).fill(1));
+        const expected = await warm.searchDocuments('', options);
+        await warm.trainDocumentIndex();
+        assert.equal(warm.documentIndexTrained, true);
+        assert.deepEqual(await warm.searchDocuments('', options), expected);
+        await assert.rejects(warm.memorizeDocuments([{ ...inputs[0], text: 'uncommitted' }, { id: 'bad', text: 'invalid', embeddings: [[0, 0]] }]));
+        assert.deepEqual(await warm.searchDocuments('', options), expected);
+        await warm.deleteDocument('doc-0');
+        assert.equal(warm.documentIndexTrained, false);
+        await warm.compact();
+        await warm.flush();
       })().catch(e => { console.error(e); process.exitCode = 1; });
     `, directory)
     run(`${setup}
       (async () => {
-        const hms = new HolographicMemorySystem(1024, process.argv[1], config);
-        assert.equal(hms.documentIndexTrained, false);
-        const expected = await hms.searchDocuments('', options);
+        const warm = new WarmMemorySystem(1024, process.argv[1], config);
+        assert.equal(warm.documentIndexTrained, false);
+        const expected = await warm.searchDocuments('', options);
         assert.equal(expected[0].documentId, 'doc-1');
         assert.ok(expected.every(hit => hit.documentId !== 'doc-0'));
-        await hms.trainDocumentIndex();
-        assert.equal(hms.documentIndexTrained, false);
-        assert.deepEqual(await hms.searchDocuments('', options), expected);
+        await warm.trainDocumentIndex();
+        assert.equal(warm.documentIndexTrained, false);
+        assert.deepEqual(await warm.searchDocuments('', options), expected);
       })().catch(e => { console.error(e); process.exitCode = 1; });
     `, directory)
   } finally { rmSync(directory, { recursive: true, force: true }) }
 })
 
 test('a requested security capability is active or construction fails', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'hms-security-'))
+  const directory = mkdtempSync(join(tmpdir(), 'warm-security-'))
   try {
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
+      const { WarmMemorySystem } = require('./index.js');
       (async () => {
-        const hms = new HolographicMemorySystem(4096, process.argv[1], {
+        const warm = new WarmMemorySystem(4096, process.argv[1], {
           encryptionEnabled: true, encryptionPassphrase: 'test-only-passphrase',
         });
-        assert.equal(hms.securityStatus().encryptionActive, true);
-        await hms.memorizeDocument({ id: 'private', text: 'Private source document.' });
-        await hms.flush();
+        assert.equal(warm.securityStatus().encryptionActive, true);
+        await warm.memorizeDocument({ id: 'private', text: 'Private source document.' });
+        await warm.flush();
       })().catch(e => { console.error(e); process.exitCode = 1; });
     `, directory)
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
-      assert.throws(() => new HolographicMemorySystem(4096, process.argv[1]));
-      assert.throws(() => new HolographicMemorySystem(4096, process.argv[1], {
+      const { WarmMemorySystem } = require('./index.js');
+      assert.throws(() => new WarmMemorySystem(4096, process.argv[1]));
+      assert.throws(() => new WarmMemorySystem(4096, process.argv[1], {
         encryptionEnabled: true, encryptionPassphrase: 'wrong-passphrase',
       }));
     `, directory)

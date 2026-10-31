@@ -7,10 +7,10 @@
 
 use std::collections::BTreeSet;
 
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-use holographic_memory::core::encoding::TextEncoder;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde_json::json;
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::core::encoding::TextEncoder;
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 const PARAGRAPHS: [&str; 6] = [
     "Café records explain backups. Restore deleted documents from verified snapshots safely.",
@@ -135,20 +135,20 @@ fn document(i: usize, text: &str) -> DocumentInput {
     .expect("document input")
 }
 
-fn open(dir: &tempfile::TempDir) -> anyhow::Result<HmsCore> {
-    HmsCore::new(1024, Some(dir.path().display().to_string()), None)
+fn open(dir: &tempfile::TempDir) -> anyhow::Result<WarmCore> {
+    WarmCore::new(1024, Some(dir.path().display().to_string()), None)
 }
 
 /// Every chunk the vector index returns for `text`, as a set: slot order differs between a
 /// store that encoded at ingest and one that encoded later, and ties are ordered by slot.
-fn vector_hits(core: &HmsCore, text: &str) -> BTreeSet<(String, u64)> {
+fn vector_hits(core: &WarmCore, text: &str) -> BTreeSet<(String, u64)> {
     core.query(&core.encode_text(text), 4096)
         .into_iter()
         .map(|hit| (hit.id, hit.similarity.to_bits()))
         .collect()
 }
 
-fn lexical_hits(core: &HmsCore, text: &str) -> anyhow::Result<serde_json::Value> {
+fn lexical_hits(core: &WarmCore, text: &str) -> anyhow::Result<serde_json::Value> {
     let options = SearchOptions {
         k: Some(20),
         ..Default::default()

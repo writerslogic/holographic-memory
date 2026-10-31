@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use ed25519_dalek::SigningKey;
-use holographic_memory::core::provenance::{did, status_list, vc};
+use writerslogic_warm::core::provenance::{did, status_list, vc};
 
 fn main() -> anyhow::Result<()> {
     let key = SigningKey::from_bytes(&rand::random());

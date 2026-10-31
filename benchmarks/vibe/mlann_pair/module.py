@@ -37,7 +37,7 @@ class MLANNPair(QAGPair):
         ordered = np.sort(neighbors, axis=1)
         if np.any(ordered[:, 1:] == ordered[:, :-1]):
             raise ValueError("construction neighbor IDs must be unique per row")
-        reserved_value = os.environ.get("HMS_QAG_VALIDATION_IDS")
+        reserved_value = os.environ.get("WARM_QAG_VALIDATION_IDS")
         if not reserved_value:
             raise ValueError("requires an explicit empty reserved-ID file for the separated learn pool")
         reserved = Path(reserved_value).expanduser().resolve(strict=True)
@@ -91,8 +91,8 @@ class MLANNPair(QAGPair):
                 attrs["qag_mlann_rf80_depth13_index_bytes"] = int(self._indexes[4].index_bytes)
         attrs.update(
             qag_mlann_construction="RF, n_trees=80, depth=13; same already-separated32768 construction queries",
-            qag_resource_scope="only MLANN built; VIBE USS delta is per-arm; process peak RSS includes input buffers and loaded HMS libraries",
-            qag_hms_indexes_built=0,
+            qag_resource_scope="only MLANN built; VIBE USS delta is per-arm; process peak RSS includes input buffers and loaded WARM libraries",
+            qag_warm_indexes_built=0,
         )
         if self._training_sha256 is not None:
             attrs["qag_construction_query_sha256"] = self._training_sha256

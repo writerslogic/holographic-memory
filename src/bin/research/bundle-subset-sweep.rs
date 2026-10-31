@@ -6,9 +6,9 @@
 //! active indices (density denominator dim/64), so k'=64 is the full-item
 //! baseline at every D. Writes benchmarks/results/bundle_subset_sweep.json.
 
-use holographic_memory::core::bundle_subset::{bundle_subset, contains_subset, subset_indices};
-use holographic_memory::core::entangled::EntangledHVec;
 use serde_json::{json, Value};
+use writerslogic_warm::core::bundle_subset::{bundle_subset, contains_subset, subset_indices};
+use writerslogic_warm::core::entangled::EntangledHVec;
 
 const DIMS: [usize; 2] = [16384, 65536];
 const SUBSETS: [usize; 6] = [4, 8, 11, 16, 32, 64];

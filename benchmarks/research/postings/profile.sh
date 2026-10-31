@@ -19,7 +19,7 @@ cp "$repo_dir/src/core/documents/postings.rs" "$output_dir/candidate.rs"
 for variant in baseline candidate; do
     # include! cannot expand module-level inner doc comments.
     sed 's@^//!@//@' "$output_dir/$variant.rs" > "$output_dir/$variant-include.rs"
-    HMS_POSTINGS_SOURCE="$output_dir/$variant-include.rs" rustc --edition=2021 -C opt-level=3 -C lto=thin \
+    WARM_POSTINGS_SOURCE="$output_dir/$variant-include.rs" rustc --edition=2021 -C opt-level=3 -C lto=thin \
         -L "dependency=$deps_dir" --extern "fxhash=$fxhash" --extern "rayon=$rayon" \
         "$repo_dir/benchmarks/research/postings/profile.rs" -o "$output_dir/$variant-profile"
     "$output_dir/$variant-profile" > "$output_dir/$variant.jsonl"

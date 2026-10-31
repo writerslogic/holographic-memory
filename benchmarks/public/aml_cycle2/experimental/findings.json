@@ -192,7 +192,7 @@
     "tests": "Adapted structural boundary and exhaustive-oracle tests; original capsule-only comparison removed, redundant-witness limitation retained as a regression.",
     "guarantee": "Exact within unions of at most one witness per claim followed by baseline fill, under the declared state/transition caps. Not arbitrary-subset global optimization or a semantic guarantee."
   },
-  "semantic_fixture_scope": "semantic_cases.json contains synthetic known regression specifications. The structural tests do not establish that HMS or any model solves them.",
+  "semantic_fixture_scope": "semantic_cases.json contains synthetic known regression specifications. The structural tests do not establish that WARM or any model solves them.",
   "source_archive_sha256": {
     "answer-eval-directed-evidence-followup-v21-20261027.json": "401d16745b6ca4ff82d69ff19af4308e9b1321df65ac0718aac542940e9d6d7f",
     "answer-eval-directed-evidence-v19-20261027-protocol.json": "050298067c6ed3ae16102578e9adf49705a582bae93a881beda2a492b2b798d7",

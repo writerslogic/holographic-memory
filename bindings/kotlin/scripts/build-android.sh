@@ -2,7 +2,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
-# Builds libhms_mobile.so for the four Android ABIs into android/src/main/jniLibs with cargo-ndk.
+# Builds libwarm_mobile.so for the four Android ABIs into android/src/main/jniLibs with cargo-ndk.
 #
 # Requires: rustup, `cargo install cargo-ndk`, and the Android NDK (r26+; r27.3 tested):
 # ANDROID_NDK_HOME, or ANDROID_HOME/ndk/<version> (the highest version is used).
@@ -40,4 +40,4 @@ rustup target add "${triples[@]}"
 
 cd "$crate"
 cargo ndk "${args[@]}" --platform "$platform" -o "$kotlin_dir/android/src/main/jniLibs" build --release --lib
-ls -l "$kotlin_dir"/android/src/main/jniLibs/*/libhms_mobile.so
+ls -l "$kotlin_dir"/android/src/main/jniLibs/*/libwarm_mobile.so

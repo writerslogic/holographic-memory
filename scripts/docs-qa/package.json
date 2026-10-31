@@ -1,5 +1,5 @@
 {
-  "name": "hms-docs-qa",
+  "name": "warm-docs-qa",
   "private": true,
   "version": "0.0.0",
   "description": "Browser checks for the documentation site: screenshots, axe and Lighthouse.",

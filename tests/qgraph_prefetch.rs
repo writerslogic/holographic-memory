@@ -12,7 +12,7 @@
 
 use std::sync::OnceLock;
 
-use holographic_memory::core::qgraph::{BuildParams, Graph, SearchKnobs, VGraph, VSearchParams};
+use writerslogic_warm::core::qgraph::{BuildParams, Graph, SearchKnobs, VGraph, VSearchParams};
 
 const DIM: usize = 100;
 const N: usize = if cfg!(debug_assertions) {

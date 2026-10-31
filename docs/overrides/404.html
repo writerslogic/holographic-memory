@@ -4,8 +4,8 @@
 {% block site_nav %}{% endblock %}
 {% block container %}
 <div class="md-content" data-md-component="content">
-  <article class="md-content__inner md-typeset hms-404">
-    <p class="hms-404__code" aria-hidden="true">404</p>
+  <article class="md-content__inner md-typeset warm-404">
+    <p class="warm-404__code" aria-hidden="true">404</p>
     <h1>This page is not here</h1>
     <p>It may have moved between versions, or the link may be wrong. Try search, or start from one of these.</p>
     <ul>
@@ -14,7 +14,7 @@
       <li><a href="{{ 'concepts/' | url }}">Concepts</a></li>
       <li><a href="{{ 'reference/faq/' | url }}">FAQ</a></li>
     </ul>
-    <p class="hms-fine">If a link on this site led here, please <a href="{{ config.repo_url }}/issues/new/choose">open an issue</a>.</p>
+    <p class="warm-fine">If a link on this site led here, please <a href="{{ config.repo_url }}/issues/new/choose">open an issue</a>.</p>
   </article>
 </div>
 {% endblock %}

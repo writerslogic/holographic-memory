@@ -14,8 +14,8 @@ import time
 
 SOURCE = "12c80decb094d57ee13ba187a01bf1de8788ca2f"
 TREE = Path(__file__).resolve().parents[2]
-ROOT = Path("/Volumes/A/hms-coordination/benchmark-improvement-20261024/vector-glove-local-diagnosis")
-CACHE = Path("/Volumes/A/.hms-bench-cache/glove-100-angular")
+ROOT = Path("/Volumes/A/warm-coordination/benchmark-improvement-20261024/vector-glove-local-diagnosis")
+CACHE = Path("/Volumes/A/.warm-bench-cache/glove-100-angular")
 
 
 def sha(path):
@@ -111,7 +111,7 @@ def main():
         "rayon_threads": 1, "build_jobs": 2,
         "order": ["plain", "profiled"], "cpu_sample": "one 5-second 1ms sample during profiled construction",
         "limits": {"compile_s": 600, "native_per_process_s": 180, "overall_s": 900, "sampled_tree_rss_gib": 2},
-        "lock": str(Path.home() / "hms-timing.lock"),
+        "lock": str(Path.home() / "warm-timing.lock"),
         "official_test_arrays_read": False,
         "provenance_limit": "Cached train export is newly SHA-bound; meta names official HDF5 but raw export equality to its train array has not been independently verified here",
         "hypothesis": "Construction greedy search remains dominant; profiler must distinguish pool maintenance, distance kernels and adjacency/visited work before a native change",
@@ -119,10 +119,10 @@ def main():
         "final_evaluation_authorized": False,
     }
     save(ROOT / "plan.json", plan)
-    lock = (Path.home() / "hms-timing.lock").open("a+")
+    lock = (Path.home() / "warm-timing.lock").open("a+")
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     try:
-        with Path("/Volumes/A/hms-coordination/RUN-ALL.md").open("a") as coordination:
+        with Path("/Volumes/A/warm-coordination/RUN-ALL.md").open("a") as coordination:
             coordination.write(f"\n{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} Vector-only owner: local native timing lock acquired for train-only GloVe baseline diagnosis in {TREE}; exact S production sources, 65536 construction/256 disjoint development rows, 2 compile jobs then 1 Rayon thread serially, 900s overall/2GiB sampled process-tree RSS guard. Plan {ROOT / 'plan.json'}. No official test access, candidate, remote host action or suspended-service launch. Lexical/text ownership remains external.\n")
         if subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=TREE, text=True).strip() != SOURCE:
             raise RuntimeError("wrong baseline")
@@ -168,10 +168,10 @@ def main():
         for mode in ["plain", "profiled"]:
             child_env = dict(env)
             if mode == "profiled":
-                child_env["HMS_QGRAPH_BUILD_PROFILE"] = "1"
+                child_env["WARM_QGRAPH_BUILD_PROFILE"] = "1"
             run(mode, [str(binary), str(data), str(ROOT / f"{mode}.json"), mode], child_env, 180, deadline, sampling=mode == "profiled")
         a, b = [json.loads((ROOT / f"{mode}.json").read_text()) for mode in ["plain", "profiled"]]
-        if a["graph_hash"] != b["graph_hash"] or sha(ROOT / "plain.hms") != sha(ROOT / "profiled.hms"):
+        if a["graph_hash"] != b["graph_hash"] or sha(ROOT / "plain.warm") != sha(ROOT / "profiled.warm"):
             raise ValueError("graph/index changed under profiling")
         if [(r["ef"], r["ids"]) for r in a["settings"]] != [(r["ef"], r["ids"]) for r in b["settings"]]:
             raise ValueError("ordered query IDs changed under profiling")

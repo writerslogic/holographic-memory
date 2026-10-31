@@ -1,8 +1,8 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""LoCoMo through the HMS memory API, scored with Mem0's published protocol.
+"""LoCoMo through the WARM memory API, scored with Mem0's published protocol.
 
-Ingest: one hms-server tenant per (conversation, speaker); every turn the speaker said is one fact
+Ingest: one warm-server tenant per (conversation, speaker); every turn the speaker said is one fact
 `"{speaker}: {text}"` with the session date as event time and the original date string as
 metadata. Retrieval: one recall per speaker with k=30, rendered `"{timestamp}: {text}"` as Mem0's
 harness renders its memories. Reader, judge, F1 and BLEU-1 follow mem0ai/mem0 evaluation/ at
@@ -10,8 +10,8 @@ harness renders its memories. Reader, judge, F1 and BLEU-1 follow mem0ai/mem0 ev
 
 Usage:
   uv run --no-project --with openai==1.109.1 --with nltk==3.9.1 --with tiktoken==0.12.0 --with jinja2==3.1.6 \
-    python benchmarks/public/locomo/locomo_bench.py --server-bin target/release/hms-server \
-    --data ~/.cache/hms-bench/locomo/locomo10.json --convs conv-26,conv-30,conv-41 --out OUT
+    python benchmarks/public/locomo/locomo_bench.py --server-bin target/release/warm-server \
+    --data ~/.cache/warm-bench/locomo/locomo10.json --convs conv-26,conv-30,conv-41 --out OUT
 """
 
 import argparse
@@ -154,7 +154,7 @@ class Llm:
 
 class Server:
     def __init__(self, binary, dim, config):
-        self.dir = tempfile.mkdtemp(prefix='locomo-hms-')
+        self.dir = tempfile.mkdtemp(prefix='locomo-warm-')
         self.log = open(os.path.join(self.dir, 'server.log'), 'wb')
         cmd = [binary, '--no-auth', '--bind', '127.0.0.1:0', '--data-dir', os.path.join(self.dir, 'data'),
                '--input-dim', str(dim)]
@@ -164,7 +164,7 @@ class Server:
         line = self.proc.stdout.readline().decode()
         m = re.search(r'listening on (\S+)', line)
         if not m:
-            raise RuntimeError(f'hms-server did not start: {line!r}')
+            raise RuntimeError(f'warm-server did not start: {line!r}')
         self.base = f'http://{m.group(1)}'
 
     def memory(self, tenant, op, body):
@@ -397,7 +397,7 @@ def main():
     ap.add_argument('--data', required=True)
     ap.add_argument('--convs', required=True, help="comma-separated sample ids, or 'all'")
     ap.add_argument('--out', required=True)
-    ap.add_argument('--cache', default=os.path.expanduser('~/.cache/hms-bench/locomo/llm-cache.sqlite'))
+    ap.add_argument('--cache', default=os.path.expanduser('~/.cache/warm-bench/locomo/llm-cache.sqlite'))
     ap.add_argument('--k', type=int, default=30)
     ap.add_argument('--embed', action='store_true', help=f'hybrid recall with {EMBED_MODEL} embeddings')
     ap.add_argument('--memory-config', default=None)
@@ -414,14 +414,14 @@ def main():
     ap.add_argument('--captions', action='store_true',
                     help='append image captions to turn text as mem0ai/memory-benchmarks does (not the paper-era protocol)')
     ap.add_argument('--workers', type=int, default=16)
-    ap.add_argument('--hms-sha', default='')
+    ap.add_argument('--warm-sha', default='')
     ap.add_argument('--dry-run', action='store_true',
                     help='make no chat calls: count reader cache hits/misses and miss input tokens, skip the judge')
     ap.add_argument('--prior-spend', type=float, default=0.0, help='USD already spent by earlier runs of this campaign')
     ap.add_argument('--max-spend', type=float, default=0.0, help='refuse new API calls once prior + this run reach it')
     args = ap.parse_args()
 
-    nltk_dir = os.path.expanduser('~/.cache/hms-bench/nltk')
+    nltk_dir = os.path.expanduser('~/.cache/warm-bench/nltk')
     nltk.data.path.insert(0, nltk_dir)
     for pkg in ('punkt', 'punkt_tab'):
         nltk.download(pkg, download_dir=nltk_dir, quiet=True)
@@ -483,12 +483,12 @@ def main():
     summary = {
         'benchmark': 'LoCoMo (locomo10.json), categories 1-4', 'protocol': 'mem0ai/mem0 evaluation@393a4fd5',
         'reader_model': READER_MODEL, 'judge_model': JUDGE_MODEL,
-        'arm': 'full-context' if args.full_context else 'hms-memory-api',
+        'arm': 'full-context' if args.full_context else 'warm-memory-api',
         'embedding_model': EMBED_MODEL if args.embed else None, 'k_per_speaker': args.k,
         'recall_options': json.loads(args.recall_options), 'token_budget': args.token_budget or None,
         'pack': args.pack if args.token_budget else None, 'captions': args.captions,
         'memory_config': json.loads(Path(args.memory_config).read_text()) if args.memory_config else None,
-        'runs': 0 if args.retrieval_only else args.runs, 'conversations': sorted(ran), 'split': SPLIT, 'hms_sha': args.hms_sha,
+        'runs': 0 if args.retrieval_only else args.runs, 'conversations': sorted(ran), 'split': SPLIT, 'warm_sha': args.warm_sha,
         'new_api_tokens': {m: list(t) for m, t in usage.tokens.items()}, 'new_api_spend_usd': usage.usd(),
         'wall_seconds': round(time.time() - t0, 1),
         'results': {name: summarize(rs, 0 if args.retrieval_only else args.runs) for name, rs in groups.items()},

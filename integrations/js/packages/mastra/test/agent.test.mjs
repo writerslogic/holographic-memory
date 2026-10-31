@@ -59,8 +59,8 @@ const model = {
 }
 
 test('semantic recall retrieves an old message through HolographicVector', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'hms-mastra-agent-'))
-  const vector = new HolographicVector({ id: 'hms-vector', dimension: DIM, path: join(dir, 'hms'), hypervectorDimensions: 1024 })
+  const dir = mkdtempSync(join(tmpdir(), 'warm-mastra-agent-'))
+  const vector = new HolographicVector({ id: 'warm-vector', dimension: DIM, path: join(dir, 'warm'), hypervectorDimensions: 1024 })
   const memory = new Memory({
     storage: new LibSQLStore({ id: 'store', url: `file:${join(dir, 'mastra.db')}` }),
     vector,

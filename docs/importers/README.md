@@ -1,20 +1,20 @@
-# hms-import: migrate into Holographic Memory
+# warm-import: migrate into WARM
 
-`hms-import` copies memories from another vector store or memory system into an `hms-server`. It streams, resumes from a checkpoint, is idempotent, and ends with a fidelity report so nothing is lost silently.
+`warm-import` copies memories from another vector store or memory system into an `warm-server`. It streams, resumes from a checkpoint, is idempotent, and ends with a fidelity report so nothing is lost silently.
 
 ```sh
-uv add 'holographic-memory-sdk[import-chroma]'          # one extra per source, see the table
-export HMS_API_KEY=...                                  # destination credential (env, never logged)
-hms-import chroma --path ./chroma-db --hms-url http://127.0.0.1:8080 --tenant acme \
+uv add 'writerslogic-warm-sdk[import-chroma]'          # one extra per source, see the table
+export WARM_API_KEY=...                                  # destination credential (env, never logged)
+warm-import chroma --path ./chroma-db --warm-url http://127.0.0.1:8080 --tenant acme \
   --report migration.json                               # dry run first: add --dry-run
 ```
 
-`hms-import list` prints the sources; `hms-import <source> --help` lists each source's options and the environment variable holding its credential. The same pipeline is a library: `from holographic_sdk.importers import HmsSink, ImportOptions, run_import, source_class`.
+`warm-import list` prints the sources; `warm-import <source> --help` lists each source's options and the environment variable holding its credential. The same pipeline is a library: `from writerslogic_warm_sdk.importers import WarmSink, ImportOptions, run_import, source_class`.
 
 ## What a run does
 
-1. Probes the server for its input dimension and whether it embeds text (`hms-server --features local-models`).
-2. Streams records from the source in deterministic order, maps each to HMS documents, sends batches (`--batch-size`, default 256, clamped to the server's batch and body limits) and advances the checkpoint after each acknowledged batch.
+1. Probes the server for its input dimension and whether it embeds text (`warm-server --features local-models`).
+2. Streams records from the source in deterministic order, maps each to WARM documents, sends batches (`--batch-size`, default 256, clamped to the server's batch and body limits) and advances the checkpoint after each acknowledged batch.
 3. Builds the document index (`/api/v1/index/maintain`) unless `--no-maintain-index`.
 4. Runs the fidelity check on a sample of queries and writes the report.
 
@@ -43,7 +43,7 @@ interrupted, rerun with the same options to finish; already absent parts are har
 
 ## Vectors: carry, project or re-encode
 
-HMS stores one embedding space per store, and the server refuses to mix models. The importer therefore decides the space once per run (`--vectors`):
+WARM stores one embedding space per store, and the server refuses to mix models. The importer therefore decides the space once per run (`--vectors`):
 
 | Mode | Behavior |
 |---|---|
@@ -57,14 +57,14 @@ Vectors with NaN, infinity or all zeros are unusable; they are counted (`vectors
 
 ## What is preserved
 
-| Source datum | HMS |
+| Source datum | WARM |
 |---|---|
-| id | v1 preserves `id` (or its namespace prefix); original kept in `metadata.hms_source_id`. Invalid v1 ids become `h:<sha256>` deterministically (`ids_rewritten`). v2 uses typed `h2:<sha256>` identities. Every mode checks ownership before replacement. |
-| text | `text`. A text over 4000 words or 60 KiB is split at whitespace into parts `id#part-N` (`hms_parent_id`, `hms_part`, `hms_parts` in metadata); with carried vectors every part gets the record's vector. The server trims whitespace around each stored text, so whitespace at part boundaries is not retained. |
-| metadata | Stored flat under the same keys (filterable with `/query` `filter`). Non-JSON values are converted reversibly (bytes as `base64:...`, non-finite floats as strings) and counted under `metadata_coercions`. Keys starting `hms_` are reserved; a colliding source key moves into `hms_orig_meta`. |
-| namespace | `--namespace-mode metadata` (default): `metadata.hms_namespace` and the id becomes `<namespace>::<id>` (`--id-prefix-namespace`). `tenant`: one HMS tenant per namespace (`--tenant-prefix`; names are sanitized and hashed when needed; the server allows 64 tenants by default). |
-| timestamps | `metadata.hms_created_at` / `hms_updated_at` as ISO-8601 UTC (seconds, milliseconds, microseconds, ISO strings and datetimes are recognized). An unparseable value is kept verbatim in `hms_created_at_raw` / `hms_updated_at_raw`. |
-| oversize metadata (over 60 KiB) | rejected by default; `--oversize-metadata truncate` drops the largest keys and lists them in `hms_dropped_keys`. |
+| id | v1 preserves `id` (or its namespace prefix); original kept in `metadata.warm_source_id`. Invalid v1 ids become `h:<sha256>` deterministically (`ids_rewritten`). v2 uses typed `h2:<sha256>` identities. Every mode checks ownership before replacement. |
+| text | `text`. A text over 4000 words or 60 KiB is split at whitespace into parts `id#part-N` (`warm_parent_id`, `warm_part`, `warm_parts` in metadata); with carried vectors every part gets the record's vector. The server trims whitespace around each stored text, so whitespace at part boundaries is not retained. |
+| metadata | Stored flat under the same keys (filterable with `/query` `filter`). Non-JSON values are converted reversibly (bytes as `base64:...`, non-finite floats as strings) and counted under `metadata_coercions`. Keys starting `warm_` are reserved; a colliding source key moves into `warm_orig_meta`. |
+| namespace | `--namespace-mode metadata` (default): `metadata.hms_namespace` and the id becomes `<namespace>::<id>` (`--id-prefix-namespace`). `tenant`: one WARM tenant per namespace (`--tenant-prefix`; names are sanitized and hashed when needed; the server allows 64 tenants by default). |
+| timestamps | `metadata.warm_created_at` / `warm_updated_at` as ISO-8601 UTC (seconds, milliseconds, microseconds, ISO strings and datetimes are recognized). An unparseable value is kept verbatim in `warm_created_at_raw` / `warm_updated_at_raw`. |
+| oversize metadata (over 60 KiB) | rejected by default; `--oversize-metadata truncate` drops the largest keys and lists them in `warm_dropped_keys`. |
 
 Every record that cannot be imported is rejected with a reason, listed in `<checkpoint>.rejects.jsonl` (ids and reasons only, never content), and the exit code is 3 unless `--allow-rejects`. Records with neither text nor vector are skipped and counted (`--keep-empty` rejects them instead).
 
@@ -76,8 +76,8 @@ The recall check samples `--verify-sample` records (default 50). Ground truth is
 
 ## Checkpoints and resuming
 
-`--checkpoint` defaults to a source/target/mapping-derived path under `$HMS_IMPORT_STATE_DIR`
-or `~/.cache/hms-import`. Checkpoint format 2 hashes each committed record's identity, text,
+`--checkpoint` defaults to a source/target/mapping-derived path under `$WARM_IMPORT_STATE_DIR`
+or `~/.cache/warm-import`. Checkpoint format 2 hashes each committed record's identity, text,
 vector, metadata and timestamps. Resume re-reads and verifies the committed prefix, including
 for sources with cursors: a cursor alone cannot prove the source stayed unchanged. A mismatch
 restarts from record zero and sets `resume_prefix_mismatch`. Prefix verification is streaming
@@ -93,7 +93,7 @@ records. A completed rerun updates encountered records; it does not mirror delet
 
 ## Credentials
 
-Only from the environment or arguments (`HMS_API_KEY`, `HMS_ZERO_TRUST_KEY`, and each source's variable). They are never written to logs, reports, checkpoints or error output: known secrets and connection-string passwords are masked, and unexpected library errors print as a scrubbed one-line message, not a traceback.
+Only from the environment or arguments (`WARM_API_KEY`, `WARM_ZERO_TRUST_KEY`, and each source's variable). They are never written to logs, reports, checkpoints or error output: known secrets and connection-string passwords are masked, and unexpected library errors print as a scrubbed one-line message, not a traceback.
 
 ## Limits
 
@@ -122,7 +122,7 @@ R = verified against a real instance in this repository's tests; M = faithful mo
 | Redis Stack / RediSearch | `redis` | `import-redis` | R hash and SCAN path; M `FT.INFO` and JSON |
 | MongoDB Atlas | `mongodb` | `import-mongodb` | M |
 | Elasticsearch, OpenSearch | `elasticsearch` `opensearch` | none (httpx) | M |
-| Weaviate | `weaviate` | none (httpx) | M; R with embedded Weaviate when `HMS_TEST_WEAVIATE_EMBEDDED=1` |
+| Weaviate | `weaviate` | none (httpx) | M; R with embedded Weaviate when `WARM_TEST_WEAVIATE_EMBEDDED=1` |
 | Vespa | `vespa` | none (httpx) | M |
 | Pinecone (namespaces) | `pinecone` | `import-pinecone` | M (real client, mock data plane) |
 | OpenAI vector stores | `openai-vector-store` | `import-openai` | M (real SDK, mock API) |

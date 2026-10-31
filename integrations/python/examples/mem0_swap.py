@@ -1,28 +1,28 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Swap mem0 for Holographic Memory with one import change.
+"""Swap mem0 for WARM with one import change.
 
-    hms-server --input-dim 384 &            # the default embedder is a 384-dim hashing embedder
+    warm-server --input-dim 384 &            # the default embedder is a 384-dim hashing embedder
     python mem0_swap.py
 
-Environment: HMS_URL (default http://127.0.0.1:8080), HMS_API_KEY, HMS_TENANT_ID, HMS_INPUT_DIM (default 384).
+Environment: WARM_URL (default http://127.0.0.1:8080), WARM_API_KEY, WARM_TENANT_ID, WARM_INPUT_DIM (default 384).
 """
 
 import os
 import warnings
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.mem0 import LLMExtractor, Memory  # was: from mem0 import Memory
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.mem0 import LLMExtractor, Memory  # was: from mem0 import Memory
 
 warnings.simplefilter("ignore", UserWarning)  # silences the "stored verbatim" notice for the infer=False style adds below
 
-dim = int(os.environ.get("HMS_INPUT_DIM", "384"))
+dim = int(os.environ.get("WARM_INPUT_DIM", "384"))
 memory = Memory(
-    hms=HmsConfig(
-        url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"),
-        api_key=os.environ.get("HMS_API_KEY"),
-        tenant_id=os.environ.get("HMS_TENANT_ID"),
+    warm=WarmConfig(
+        url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"),
+        api_key=os.environ.get("WARM_API_KEY"),
+        tenant_id=os.environ.get("WARM_TENANT_ID"),
         input_dim=dim,
     )
 )
@@ -41,7 +41,7 @@ print(memory.get_all(filters={"user_id": "alice"}))
 
 # Fact extraction needs a chat function of your choice (any provider, or a local model); this one is a stand-in.
 extracting = Memory(
-    hms=memory.settings.hms,
+    warm=memory.settings.warm,
     extractor=LLMExtractor(lambda messages: '{"memory": [{"text": "Alice is vegetarian"}]}'),
 )
 print(extracting.add("I only eat vegetables", user_id="alice")["results"])

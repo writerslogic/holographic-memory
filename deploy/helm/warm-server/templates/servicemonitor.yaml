@@ -1,0 +1,30 @@
+{{- /* Copyright 2024-2026 WritersLogic Contributors */ -}}
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "warm-server.fullname" . }}
+  labels:
+    {{- include "warm-server.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "warm-server.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.metrics.serviceMonitor.interval }}
+      {{- if .Values.tls.existingSecret }}
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+      {{- end }}
+      {{- with .Values.metrics.serviceMonitor.tokenSecret.name }}
+      authorization:
+        type: Bearer
+        credentials:
+          name: {{ . }}
+          key: {{ $.Values.metrics.serviceMonitor.tokenSecret.key }}
+      {{- end }}
+{{- end }}

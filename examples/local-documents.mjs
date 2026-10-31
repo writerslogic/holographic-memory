@@ -1,22 +1,22 @@
-import { HolographicMemorySystem } from '../index.mjs'
+import { WarmMemorySystem } from '../index.mjs'
 import { DocumentMemory, createLocalEmbedder, createLocalReranker } from '../semantic.js'
 
-const embedder = process.env.HMS_EMBEDDING_DIR ? await createLocalEmbedder({
-  modelPath: process.env.HMS_EMBEDDING_DIR,
-  modelId: process.env.HMS_EMBEDDING_MODEL ?? 'Xenova/all-MiniLM-L6-v2',
-  revision: process.env.HMS_EMBEDDING_REVISION,
+const embedder = process.env.WARM_EMBEDDING_DIR ? await createLocalEmbedder({
+  modelPath: process.env.WARM_EMBEDDING_DIR,
+  modelId: process.env.WARM_EMBEDDING_MODEL ?? 'Xenova/all-MiniLM-L6-v2',
+  revision: process.env.WARM_EMBEDDING_REVISION,
   dtype: 'q8',
 }) : undefined
 let rerank
 try {
-  if (process.env.HMS_RERANKER_DIR) rerank = await createLocalReranker({ modelPath: process.env.HMS_RERANKER_DIR, dtype: 'q8' })
+  if (process.env.WARM_RERANKER_DIR) rerank = await createLocalReranker({ modelPath: process.env.WARM_RERANKER_DIR, dtype: 'q8' })
   const config = embedder ? {
     embeddingModel: embedder.space.model,
     embeddingRevision: embedder.space.revision,
     embeddingDimensions: embedder.space.dimensions,
   } : undefined
-  const hms = new HolographicMemorySystem(16384, process.argv[2] ?? './example-documents-v2', config)
-  const memory = new DocumentMemory(hms, { embedder, rerank })
+  const warm = new WarmMemorySystem(16384, process.argv[2] ?? './example-documents-v2', config)
+  const memory = new DocumentMemory(warm, { embedder, rerank })
   await memory.ingest([
     { id: 'backups', text: 'Restore deleted documents from verified backups.', sourceUri: 'operations.md', metadata: { project: 'alpha' } },
     { id: 'indexing', text: 'Train search indices after large ingestion batches.', sourceUri: 'search.md', metadata: { project: 'alpha' } },

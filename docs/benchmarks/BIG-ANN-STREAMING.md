@@ -3,7 +3,7 @@
 The streaming track replays a runbook of inserts, deletes and searches from an empty index
 (`neurips23/runbooks/delete_runbook.yaml` on msturing-10M-clustered: 100-d float32, L2,
 at most 6M live rows, 33 search checkpoints of 10,000 public queries) and scores the mean
-recall@10 over the checkpoints, under 8 GiB of DRAM and one hour. HMS enters it with
+recall@10 over the checkpoints, under 8 GiB of DRAM and one hour. WARM enters it with
 `UpdatableIndex` (`src/bindings/python/vector_index.rs` over `core::qgraph::UpdatableVGraph`): a
 memory-mapped base graph, an in-memory delta graph of the rows inserted since the last
 consolidation, and a rebuild of the base over the live rows when the delta or the deleted
@@ -11,7 +11,7 @@ share passes the adapter's thresholds (delta 1.0x the base, 30% deleted, 100k ro
 
 Every number below traces to `benchmarks/results/bigann_streaming_delete_runbook_v1.json`
 or, from "Operating point" on, `benchmarks/results/bigann_streaming_delete_runbook_v2.json`;
-both record the HMS commit, the harness commit (`89a3aba`), the machine and the parameters.
+both record the WARM commit, the harness commit (`89a3aba`), the machine and the parameters.
 
 ## Where the recall went
 
@@ -65,7 +65,7 @@ Per search step of the official runbook (harness ground truth, same wheel, R32 L
 
 ## Official runs (delete runbook, `run.py --nodocker`, 8 CPUs, 8 GiB)
 
-| HMS | build | ef | recall@10 | wall | peak RSS | host |
+| WARM | build | ef | recall@10 | wall | peak RSS | host |
 |---|---|---|---|---|---|---|
 | ff70f3e | R32 L64 alpha 1.2 | 64 | 0.6814 | about 18 min per ef | 7.78 GB (both) | Modal 8 vCPU |
 | ff70f3e | R32 L64 alpha 1.2 | 128 | 0.7755 | | | Modal 8 vCPU |
@@ -171,7 +171,7 @@ build's first insertion pass, and runs the build's second pass over the delta, t
 links to and the rows that lost a deleted neighbour (`docs/file-format/VECTOR-UPDATES.md`). The
 fork adapter turns it on with `"merge": true`. Each Modal row below is one round (`run.py
 --nodocker`, harness 89a3aba, `cpu=8.0`, 8 GiB, non-preemptible, R32 L64 alpha 1.0 T8, ef 512,
-HMS 9b26418, which is c1ec45d before its rebase onto main); the control is the same image
+WARM 9b26418, which is c1ec45d before its rebase onto main); the control is the same image
 without merging, run in the same hour, since step sums vary by about a third between containers.
 
 | delete_runbook | delta / deleted ratio | recall@10 | wall | runbook steps: insert / search / delete s | peak RSS |
@@ -204,7 +204,7 @@ These are development measurements, not streaming standings or full-consolidatio
 To reproduce the parent arm, check out the recorded parent commit and apply
 `benchmarks/results/streaming_entry_memory_v1/baseline.patch` from this revision. Build
 both arms separately with `cargo test --release --lib replacement_entry_large_live_set
---no-run`. Under one `flock ~/hms-timing.lock`, run their test executables in A/B, B/A,
+--no-run`. Under one `flock ~/warm-timing.lock`, run their test executables in A/B, B/A,
 A/B order with `RAYON_NUM_THREADS=8 /usr/bin/time -v taskset -c 0-7 <test-executable>
 replacement_entry_large_live_set --ignored --nocapture --test-threads=1`.
 
@@ -214,10 +214,10 @@ to the tested revision with R32/L64/alpha 1.0/T8, merge enabled, delta/deleted r
 1.0/0.3 and ef256, then run in the harness checkout with its dataset and ground truth:
 
 ```sh
-flock ~/hms-timing.lock systemd-run --user --scope -q \
+flock ~/warm-timing.lock systemd-run --user --scope -q \
   -p MemoryMax=8G -p MemorySwapMax=0 taskset -c 0-7 \
   /usr/bin/time -v timeout 3600 uv run python run.py --nodocker \
-  --neurips23track streaming --algorithm hms --dataset msturing-30M-clustered \
+  --neurips23track streaming --algorithm warm --dataset msturing-30M-clustered \
   --runbook_path neurips23/runbooks/final_runbook.yaml
 ```
 
@@ -243,7 +243,7 @@ times varied 19.86–27.29 s versus 19.79–22.32 s; no reliable speedup is esta
 Apply its sibling directory's `baseline.patch` to the recorded parent to add the same
 fixture and generation test. Build both test executables with
 `cargo test --release --lib consolidation_live_set_peak --no-run`. Hold the timing lock,
-set `RAYON_NUM_THREADS=8 HMS_CONSOLIDATION_ROWS=500000`, and run A/B, B/A, A/B with
+set `RAYON_NUM_THREADS=8 WARM_CONSOLIDATION_ROWS=500000`, and run A/B, B/A, A/B with
 `/usr/bin/time -v taskset -c 0-7 <test-executable> consolidation_live_set_peak --ignored
 --nocapture --test-threads=1`. Phase instrumentation is enabled identically in both arms.
 
@@ -253,10 +253,10 @@ to this revision with R32/L64/alpha1.0/T8, merge enabled, delta/deleted ratios 1
 ef256, and run in the prepared harness checkout:
 
 ```sh
-flock ~/hms-timing.lock systemd-run --user --scope -q \
+flock ~/warm-timing.lock systemd-run --user --scope -q \
   -p MemoryMax=8G -p MemorySwapMax=0 taskset -c 0-7 \
   /usr/bin/time -v timeout 3600 uv run python run.py --nodocker \
-  --neurips23track streaming --algorithm hms --dataset msturing-30M-clustered \
+  --neurips23track streaming --algorithm warm --dataset msturing-30M-clustered \
   --runbook_path neurips23/runbooks/final_runbook.yaml
 ```
 
@@ -287,7 +287,7 @@ Local formatting, clippy, tests, byte-output and interrupted-consolidation recov
 passed. The master session owns the incremental comparison against the current PR parent.
 Build both arms with `cargo test --release --lib --no-run`, adding the candidate's ignored
 measurement fixtures to the parent without its production changes. Under the timing lock,
-run A/B, B/A, A/B with `RAYON_NUM_THREADS=8 HMS_CONSOLIDATION_ROWS=500000`, an 8-GiB
+run A/B, B/A, A/B with `RAYON_NUM_THREADS=8 WARM_CONSOLIDATION_ROWS=500000`, an 8-GiB
 cgroup and `taskset -c 0-7 <test-executable> consolidation_live_set_peak --ignored
 --nocapture --test-threads=1`; also run `delta_search_live_set` in both arms.
 
@@ -296,10 +296,10 @@ and recall remain unmeasured. After the freeze is lifted, pin the tested revisio
 the R32/L64/alpha1.0/T8 merge configuration, ratios1.0/0.3, ef256:
 
 ```sh
-flock ~/hms-timing.lock systemd-run --user --scope -q \
+flock ~/warm-timing.lock systemd-run --user --scope -q \
   -p MemoryMax=8G -p MemorySwapMax=0 taskset -c 0-7 \
   /usr/bin/time -v timeout 3600 uv run python run.py --nodocker \
-  --neurips23track streaming --algorithm hms --dataset msturing-30M-clustered \
+  --neurips23track streaming --algorithm warm --dataset msturing-30M-clustered \
   --runbook_path neurips23/runbooks/final_runbook.yaml
 ```
 

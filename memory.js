@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use strict'
 
-/** Agent memory over a HolographicMemorySystem: remember, recall, forget, explain. See docs/memory-api. */
+/** Agent memory over a WarmMemorySystem: remember, recall, forget, explain. See docs/memory-api. */
 
 class MemoryError extends Error {
   constructor(message, code, cause) {
@@ -57,11 +57,11 @@ function scope(input) {
 
 class Memory {
   /**
-   * @param {import('./index').HolographicMemorySystem} system
+   * @param {import('./index').WarmMemorySystem} system
    * @param {object} [config] policies and defaults; omitted fields keep their do-nothing defaults.
    */
   constructor(system, config) {
-    if (!system || typeof system.memoryCall !== 'function') throw new TypeError('a HolographicMemorySystem is required')
+    if (!system || typeof system.memoryCall !== 'function') throw new TypeError('a WarmMemorySystem is required')
     this.system = system
     system.configureMemory(config ?? null)
   }

@@ -11,15 +11,15 @@ from autogen_core.model_context import BufferedChatCompletionContext  # noqa: E4
 from autogen_core.models import UserMessage  # noqa: E402
 from autogen_ext.models.replay import ReplayChatCompletionClient  # noqa: E402
 
-from holographic_integrations.autogen import HolographicMemory  # noqa: E402
-from holographic_integrations.core import HashingEmbedder, HmsConfig  # noqa: E402
+from writerslogic_warm_integrations.autogen import WarmMemory  # noqa: E402
+from writerslogic_warm_integrations.core import HashingEmbedder, WarmConfig  # noqa: E402
 
 DIM = 64
 
 
 def make(server, name="mem", **kw):
-    hms = HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM))
-    return HolographicMemory(name, hms=hms, **kw)
+    warm = WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM))
+    return WarmMemory(name, warm=warm, **kw)
 
 
 def text(s, **meta):
@@ -55,8 +55,8 @@ async def test_filter_threshold_and_json_content(server):
 
 async def test_names_isolate_and_clear(server):
     tenant = server.tenant()
-    c1 = HolographicMemory("one", hms=HmsConfig(url=server.url, tenant_id=tenant, input_dim=DIM))
-    c2 = HolographicMemory("two", hms=HmsConfig(url=server.url, tenant_id=tenant, input_dim=DIM))
+    c1 = WarmMemory("one", warm=WarmConfig(url=server.url, tenant_id=tenant, input_dim=DIM))
+    c2 = WarmMemory("two", warm=WarmConfig(url=server.url, tenant_id=tenant, input_dim=DIM))
     await c1.add(text("only in one"))
     await c2.add(text("only in two"))
     assert [r.content for r in (await c2.query("only in one")).results] == ["only in two"]
@@ -95,5 +95,5 @@ async def test_component_config_roundtrip(server):
     dumped = mem.dump_component()
     cfg = dumped.config
     assert cfg["name"] == "cfg" and cfg["k"] == 2 and "api_key" not in cfg
-    loaded = HolographicMemory.load_component(dumped)
-    assert isinstance(loaded, HolographicMemory) and loaded.name == "cfg"
+    loaded = WarmMemory.load_component(dumped)
+    assert isinstance(loaded, WarmMemory) and loaded.name == "cfg"

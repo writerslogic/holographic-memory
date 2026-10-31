@@ -468,7 +468,7 @@ mod neon {
     }
 }
 
-/// The x86 kernel tier, detected once. `HMS_QGRAPH_KERNEL=scalar|avx2|avxvnni|vnni` (read
+/// The x86 kernel tier, detected once. `WARM_QGRAPH_KERNEL=scalar|avx2|avxvnni|vnni` (read
 /// once, at the first distance call) pins a lower tier than the CPU supports, so every tier can
 /// be run and compared on one machine; `auto` or unset takes the best detected tier, and a tier
 /// the CPU does not support falls back to the best detected one below it. `avxvnni` is the
@@ -520,7 +520,7 @@ mod tier {
             .into_iter()
             .find(|&t| supported(t))
             .unwrap_or(SCALAR);
-        let want = match std::env::var("HMS_QGRAPH_KERNEL").as_deref() {
+        let want = match crate::compatibility::var("WARM_QGRAPH_KERNEL").as_deref() {
             Ok("scalar") => SCALAR,
             Ok("avx2") => AVX2,
             Ok("avxvnni") => AVXVNNI,
@@ -528,7 +528,7 @@ mod tier {
             Ok("auto") | Err(_) => best,
             Ok(other) => {
                 eprintln!(
-                    "HMS_QGRAPH_KERNEL={other:?} is not scalar|avx2|avxvnni|vnni|auto; using auto"
+                    "WARM_QGRAPH_KERNEL={other:?} is not scalar|avx2|avxvnni|vnni|auto; using auto"
                 );
                 best
             }
@@ -1286,7 +1286,7 @@ mod tests {
             && is_x86_feature_detected!("avx512vl")
             && is_x86_feature_detected!("avx512vnni");
         let vex = avx2 && is_x86_feature_detected!("avxvnni");
-        let pin = match std::env::var("HMS_QGRAPH_KERNEL").as_deref() {
+        let pin = match crate::compatibility::var("WARM_QGRAPH_KERNEL").as_deref() {
             Ok("scalar") => tier::SCALAR,
             Ok("avx2") => tier::AVX2,
             Ok("avxvnni") => tier::AVXVNNI,
@@ -1308,7 +1308,7 @@ mod tests {
         assert_eq!(got, want);
     }
 
-    /// The four-row i8 entry point on the tier this process runs (`HMS_QGRAPH_KERNEL` pins it)
+    /// The four-row i8 entry point on the tier this process runs (`WARM_QGRAPH_KERNEL` pins it)
     /// against the scalar sums: every width up to 800 and the extremes of the i8 range.
     #[test]
     fn dispatched_i8_x4_matches_scalar() {
@@ -1458,7 +1458,7 @@ mod tests {
     /// (300k rows, 256 dims: 256-byte code rows, 40-byte screen rows) with the search loop's
     /// access pattern (64 random fresh neighbours per expansion, prefetched, then estimated).
     /// `cargo test --release raw_screen_microbenchmark -- --ignored --nocapture`; writes JSON
-    /// to `$HMS_SCREEN_BENCH_OUT` when set.
+    /// to `$WARM_SCREEN_BENCH_OUT` when set.
     #[test]
     #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn raw_screen_microbenchmark() {
@@ -1598,7 +1598,7 @@ mod tests {
             t_batch / t_est
         );
         println!("{report}");
-        if let Ok(path) = std::env::var("HMS_SCREEN_BENCH_OUT") {
+        if let Ok(path) = crate::compatibility::var("WARM_SCREEN_BENCH_OUT") {
             std::fs::write(path, format!("{report}\n")).unwrap();
         }
     }
@@ -1710,7 +1710,7 @@ mod tests {
     /// than cache (`cold`), and over rows that stay in L1 (`hot`, the compute bound), for
     /// the row widths the indexes use. A kernel that does not beat the incumbent is dropped.
     /// `cargo test --release dot_kernel_microbench -- --ignored --nocapture`; writes JSON to
-    /// `$HMS_PLATFORM_BENCH_OUT` when set.
+    /// `$WARM_PLATFORM_BENCH_OUT` when set.
     #[test]
     #[ignore = "microbenchmark: run in release with --ignored --nocapture"]
     fn dot_kernel_microbench() {
@@ -1781,7 +1781,7 @@ mod tests {
             report.join(",\n  ").replace("NaN", "null")
         );
         println!("{json}");
-        if let Ok(path) = std::env::var("HMS_PLATFORM_BENCH_OUT") {
+        if let Ok(path) = crate::compatibility::var("WARM_PLATFORM_BENCH_OUT") {
             std::fs::write(path, json).unwrap();
         }
     }

@@ -114,7 +114,7 @@ export interface OpenOptions {
   embeddingDimensions?: number;
   /** Where to load from and save to. Without one the store lives only in memory. */
   storage?: StorageAdapter;
-  /** The storage key (default `"hms-store"`). */
+  /** The storage key (default `"warm-store"`). */
   key?: string;
   /** Encrypt snapshots at rest. */
   encryption?: EncryptionOptions;
@@ -144,7 +144,7 @@ export interface WasmStore {
 }
 
 export interface WasmApi {
-  HmsStore: {
+  WarmStore: {
     new (options?: { dimensions?: number; embeddingDimensions?: number }): WasmStore;
     importBytes(bytes: Uint8Array): WasmStore;
   };

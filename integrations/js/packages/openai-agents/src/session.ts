@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { randomUUID } from 'node:crypto'
 import type { AgentInputItem, Session } from '@openai/agents'
-import type { HmsStore } from '@holographic-memory/core'
+import type { WarmStore } from '@writerslogic/warm-core'
 import { OrderedLog, packPayload, unpackPayload } from './log.js'
 
-export interface HmsSessionOptions {
-  store: HmsStore
+export interface WarmSessionOptions {
+  store: WarmStore
   /** Defaults to a random UUID. */
   sessionId?: string
 }
@@ -41,16 +41,16 @@ export function itemText(item: AgentInputItem): string {
 }
 
 /**
- * OpenAI Agents SDK `Session` stored in Holographic Memory: pass it to `run(agent, input, { session })`.
+ * OpenAI Agents SDK `Session` stored in WARM: pass it to `run(agent, input, { session })`.
  * History is ordered and unbounded; `getItems(limit)` returns the latest `limit` items oldest first,
  * the same contract as the SDK's `MemorySession`. Use one writer per session id.
  */
-export class HmsSession implements Session {
+export class WarmSession implements Session {
   readonly sessionId: string
-  private readonly store: HmsStore
+  private readonly store: WarmStore
   private readonly log: OrderedLog
 
-  constructor(options: HmsSessionOptions) {
+  constructor(options: WarmSessionOptions) {
     this.store = options.store
     this.sessionId = options.sessionId ?? randomUUID()
     this.log = new OrderedLog(options.store, `session:${this.sessionId}`)

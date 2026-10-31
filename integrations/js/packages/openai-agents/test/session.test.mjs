@@ -9,18 +9,18 @@ import { execFileSync } from 'node:child_process'
 import { test } from 'node:test'
 import { pathToFileURL } from 'node:url'
 import { Agent, MemorySession, run, setTracingDisabled, user, assistant } from '@openai/agents'
-import { HmsSession, HmsStore, createMemoryTools, itemText } from '../dist/index.js'
+import { WarmSession, WarmStore, createMemoryTools, itemText } from '../dist/index.js'
 
 setTracingDisabled(true)
-const tmp = () => mkdtempSync(join(tmpdir(), 'hms-oa-'))
-const store = (path = tmp()) => new HmsStore({ path, dimensions: 1024 })
+const tmp = () => mkdtempSync(join(tmpdir(), 'warm-oa-'))
+const store = (path = tmp()) => new WarmStore({ path, dimensions: 1024 })
 /** JSON round trips drop `undefined` fields such as providerData; compare modulo that. */
 const norm = (x) => JSON.parse(JSON.stringify(x))
 const msg = (role, text) => norm(role === 'user' ? user(text) : assistant(text))
 
 /** Same sequence of operations on the SDK's own MemorySession and ours must give identical results. */
 test('Session contract matches MemorySession: getItems(limit), popItem, clearSession', async () => {
-  for (const make of [() => new MemorySession({ sessionId: 'ref' }), () => new HmsSession({ store: store(), sessionId: 'ref' })]) {
+  for (const make of [() => new MemorySession({ sessionId: 'ref' }), () => new WarmSession({ store: store(), sessionId: 'ref' })]) {
     const s = make()
     assert.equal(await s.getSessionId(), 'ref')
     assert.deepEqual(await s.getItems(), [])
@@ -46,7 +46,7 @@ test('Session contract matches MemorySession: getItems(limit), popItem, clearSes
 
 for (const n of [99, 100, 101, 205]) {
   test(`${n} items round trip in order across the 100-item read batch`, async () => {
-    const s = new HmsSession({ store: store(), sessionId: `n${n}` })
+    const s = new WarmSession({ store: store(), sessionId: `n${n}` })
     const items = Array.from({ length: n }, (_, i) => msg(i % 2 ? 'assistant' : 'user', `turn ${i}`))
     await s.addItems(items.slice(0, 60))
     await s.addItems(items.slice(60))
@@ -68,25 +68,25 @@ test('sessions persist across a process restart and stay isolated', async () => 
       '-e',
       `
     import { user } from '@openai/agents'
-    import { HmsSession, HmsStore } from ${JSON.stringify(dist)}
-    const s = new HmsStore({ path: ${JSON.stringify(path)}, dimensions: 1024 })
-    await new HmsSession({ store: s, sessionId: 'a' }).addItems([user('alpha')])
-    await new HmsSession({ store: s, sessionId: 'b' }).addItems([user('beta')])
+    import { WarmSession, WarmStore } from ${JSON.stringify(dist)}
+    const s = new WarmStore({ path: ${JSON.stringify(path)}, dimensions: 1024 })
+    await new WarmSession({ store: s, sessionId: 'a' }).addItems([user('alpha')])
+    await new WarmSession({ store: s, sessionId: 'b' }).addItems([user('beta')])
     await s.close()
   `,
     ],
     { cwd: new URL('..', import.meta.url).pathname },
   )
   const s2 = store(path)
-  const a = new HmsSession({ store: s2, sessionId: 'a' })
+  const a = new WarmSession({ store: s2, sessionId: 'a' })
   assert.deepEqual((await a.getItems()).map(itemText), ['alpha'])
   await a.clearSession()
-  assert.deepEqual((await new HmsSession({ store: s2, sessionId: 'b' }).getItems()).map(itemText), ['beta'])
+  assert.deepEqual((await new WarmSession({ store: s2, sessionId: 'b' }).getItems()).map(itemText), ['beta'])
   assert.equal((await a.getItems()).length, 0)
 })
 
 test('an item larger than the 64 KiB metadata cap round trips byte-exactly', async () => {
-  const s = new HmsSession({ store: new HmsStore({ path: tmp(), dimensions: 1024, chunkWords: 50, overlapWords: 5 }), sessionId: 'big' })
+  const s = new WarmSession({ store: new WarmStore({ path: tmp(), dimensions: 1024, chunkWords: 50, overlapWords: 5 }), sessionId: 'big' })
   const big = Array.from({ length: 20000 }, (_, i) => `wörd${i}`).join(' ')
   await s.addItems([msg('user', big), msg('assistant', 'small')])
   const [a, b] = await s.getItems()
@@ -96,14 +96,14 @@ test('an item larger than the 64 KiB metadata cap round trips byte-exactly', asy
 
 historyRecovery({
   name: 'OpenAI Agents', store,
-  create: (store) => new HmsSession({ store, sessionId: 'recovery' }),
+  create: (store) => new WarmSession({ store, sessionId: 'recovery' }),
   append: (session, texts) => session.addItems(texts.map((text) => msg('user', text))),
   read: async (session) => (await session.getItems()).map(itemText),
   clear: (session) => session.clearSession(),
 })
 
 test('tool call items are stored and searchable by their name and result', async () => {
-  const s = new HmsSession({ store: store(), sessionId: 't' })
+  const s = new WarmSession({ store: store(), sessionId: 't' })
   const call = { type: 'function_call', callId: 'c1', name: 'get_weather', arguments: '{"city":"Oslo"}', status: 'completed' }
   const result = { type: 'function_call_result', callId: 'c1', name: 'get_weather', status: 'completed', output: { type: 'text', text: 'rainy in Oslo' } }
   await s.addItems([user('weather please'), call, result, assistant('It is rainy.')])
@@ -134,7 +134,7 @@ function scriptedModel(log) {
 test('a real Runner threads the session history through consecutive runs', async () => {
   const seen = []
   const agent = new Agent({ name: 'echo', instructions: 'echo', model: scriptedModel(seen) })
-  const session = new HmsSession({ store: store(), sessionId: 'run' })
+  const session = new WarmSession({ store: store(), sessionId: 'run' })
   const first = await run(agent, 'my name is Ada', { session })
   assert.match(first.finalOutput, /my name is Ada/)
   const second = await run(agent, 'what is my name?', { session })

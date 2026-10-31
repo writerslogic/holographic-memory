@@ -19,10 +19,10 @@
     "src/lib.rs": "6f0c994fcaab0f69efe482402c88f64399db9daa2f5d7617e404241c95e86e19",
     ".github/workflows/standards-interop.yml": "f85ba6fee63f1d2be01ddbff73a8adf8c2f6a70dbd5a40a6dd58da21e5a56e7c",
     "docs/reference/fixtures/c2pa-asset-manifest.json": "8d7f9d9eeea8799cab14340fbd40309b21a89041377be181b60d1db0618d6f64",
-    "docs/reference/fixtures/hms-c2pa-assertion-v1.schema.json": "44f17e83a1ae5d55b1f514ae69f4d1798bc5eebc18a3a9425e17c7ecddbe3b1a",
-    "docs/reference/fixtures/hms-c2pa-assertion-v2.schema.json": "eeed27a3d47ba3b7d00807257cee61bd2cb57d24fd4fb78cbb79373a12f40100",
-    "docs/reference/fixtures/hms-fact-subject-v1.schema.json": "5dc4d096b9f3227fe2c87c416939131a4d45917f566a738156a9154192ca0538",
-    "docs/reference/fixtures/hms-v1-context.jsonld": "ec2dbc721f02dc1f06a7d03f589c5a7e43b5fa0ff8184d6a384516b774790b45",
+    "docs/reference/fixtures/warm-c2pa-assertion-v1.schema.json": "44f17e83a1ae5d55b1f514ae69f4d1798bc5eebc18a3a9425e17c7ecddbe3b1a",
+    "docs/reference/fixtures/warm-c2pa-assertion-v2.schema.json": "eeed27a3d47ba3b7d00807257cee61bd2cb57d24fd4fb78cbb79373a12f40100",
+    "docs/reference/fixtures/warm-fact-subject-v1.schema.json": "5dc4d096b9f3227fe2c87c416939131a4d45917f566a738156a9154192ca0538",
+    "docs/reference/fixtures/warm-v1-context.jsonld": "ec2dbc721f02dc1f06a7d03f589c5a7e43b5fa0ff8184d6a384516b774790b45",
     "docs/reference/fixtures/w3c-sample.json": "1147f53c90aac588ad4ae5bc1ea47f33cefc58e53819514fe3b88bbf03fdee79",
     "docs/reference/provenance-profile-v1.md": "327bba0063afd9a527f9cf41a04955c91a300937c5c9b807ff2072a7d983a581",
     "docs/reference/standards.md": "86d7174e002f90ef710638d8a20a9695198257ef27f7de69d10792adc953b1b8",
@@ -40,7 +40,7 @@
       "tests": 121,
       "report": "integration-core-tests-20261028.txt",
       "report_sha256": "537c3aabc8bed0e1e4153e25b5477517a6cb127917c11799270d07b7bc714918",
-      "raw_log": "/Volumes/A/hms-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-tests.log",
+      "raw_log": "/Volumes/A/warm-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-tests.log",
       "raw_sha256": "2cec6c0d261d8e206ff2767b6fcade6e13a371cd4cd3ed262406bef518ed76bf",
       "normalization": "Trailing report whitespace only"
     },
@@ -50,7 +50,7 @@
       "tests": null,
       "report": "integration-core-clippy-20261028.txt",
       "report_sha256": "47bcc6418a8e3be29a20655f3ecc53df49306f96f22c76026ed98a1358eed1df",
-      "raw_log": "/Volumes/A/hms-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-clippy.log",
+      "raw_log": "/Volumes/A/warm-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-clippy.log",
       "raw_sha256": "47bcc6418a8e3be29a20655f3ecc53df49306f96f22c76026ed98a1358eed1df",
       "normalization": "Trailing report whitespace only"
     },
@@ -60,7 +60,7 @@
       "tests": null,
       "report": "integration-core-w3c-20261028.txt",
       "report_sha256": "5a06feb25f8eafbfef0ab4c6493b3d847dc73e2165f7aa8f12ff26178e4ffe6c",
-      "raw_log": "/Volumes/A/hms-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-w3c.log",
+      "raw_log": "/Volumes/A/warm-coordination/reports/coordinated-integration-20261028/standards-core-updated-lock-w3c.log",
       "raw_sha256": "5a06feb25f8eafbfef0ab4c6493b3d847dc73e2165f7aa8f12ff26178e4ffe6c",
       "normalization": "Trailing report whitespace only"
     }

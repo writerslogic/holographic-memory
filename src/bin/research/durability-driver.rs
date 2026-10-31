@@ -5,14 +5,14 @@
 //! store after a crash, and exercises readers during compaction.
 use anyhow::{ensure, Result};
 use clap::{Parser, Subcommand};
-use holographic_memory::{
-    core::{EmbeddingSpace, HmsConfig},
-    DocumentInput, HmsCore, SearchOptions,
-};
 use serde_json::json;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Instant;
+use writerslogic_warm::{
+    core::{EmbeddingSpace, WarmConfig},
+    DocumentInput, SearchOptions, WarmCore,
+};
 
 const DIM: usize = 128;
 
@@ -66,8 +66,8 @@ enum Mode {
     },
 }
 
-fn config() -> HmsConfig {
-    HmsConfig {
+fn config() -> WarmConfig {
+    WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "synthetic-one-hot-control".into(),
             revision: "1".into(),
@@ -107,7 +107,7 @@ fn input(n: usize, revision: usize) -> DocumentInput {
 }
 
 /// True when document `n` is served with its exact payload of `revision`.
-fn present(core: &HmsCore, n: usize, revision: usize) -> Result<bool> {
+fn present(core: &WarmCore, n: usize, revision: usize) -> Result<bool> {
     let options = SearchOptions {
         k: Some(1),
         candidate_limit: Some(1),
@@ -129,7 +129,7 @@ fn main() -> Result<()> {
             compact_every,
             revision,
         } => {
-            let core = HmsCore::new(1024, Some(store), Some(config()))?;
+            let core = WarmCore::new(1024, Some(store), Some(config()))?;
             let mut out = std::io::stdout().lock();
             for (b, first) in (0..docs).step_by(batch).enumerate() {
                 let inputs: Vec<DocumentInput> = (first..(first + batch).min(docs))
@@ -160,7 +160,7 @@ fn main() -> Result<()> {
             revision,
         } => {
             let t = Instant::now();
-            let opened = HmsCore::new(1024, Some(store.clone()), Some(config()));
+            let opened = WarmCore::new(1024, Some(store.clone()), Some(config()));
             let recovery_ms = t.elapsed().as_secs_f64() * 1e3;
             let mut out = std::io::stdout().lock();
             let core = match opened {
@@ -229,7 +229,7 @@ fn main() -> Result<()> {
             batch,
             readers,
         } => {
-            let core = HmsCore::new(1024, Some(store), Some(config()))?;
+            let core = WarmCore::new(1024, Some(store), Some(config()))?;
             let stop = AtomicBool::new(false);
             let checks = AtomicUsize::new(0);
             let bad = AtomicUsize::new(0);

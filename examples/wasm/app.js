@@ -30,8 +30,8 @@ async function refreshStats() {
 }
 
 function makeStorage(kind) {
-  if (kind === "opfs") return new OpfsStorage({ directory: "hms-demo" });
-  if (kind === "indexeddb") return new IndexedDbStorage({ database: "hms-demo" });
+  if (kind === "opfs") return new OpfsStorage({ directory: "warm-demo" });
+  if (kind === "indexeddb") return new IndexedDbStorage({ database: "warm-demo" });
   return undefined;
 }
 
@@ -122,7 +122,7 @@ $("download").addEventListener("click", async () => {
   const bytes = await store.exportSnapshot();
   const link = Object.assign(document.createElement("a"), {
     href: URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" })),
-    download: "holographic-memory.hms",
+    download: "writerslogic-warm.warm",
   });
   link.click();
   URL.revokeObjectURL(link.href);

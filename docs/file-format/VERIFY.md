@@ -1,12 +1,12 @@
 <!-- Copyright 2024-2026 WritersLogic Contributors -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# hms-format
+# warm-format
 
 ```
-hms-format verify <store-or-data-dir> [--passphrase-env VAR] [--deep] [--json]
-hms-format plan <store>            hms-format upgrade <src> <dst> [--dry-run]
-hms-format versions                hms-format dump <store> [--frame N]
+warm-format verify <store-or-data-dir> [--passphrase-env VAR] [--deep] [--json]
+warm-format plan <store>            warm-format upgrade <src> <dst> [--dry-run]
+warm-format versions                warm-format dump <store> [--frame N]
 ```
 
 `verify` never modifies the store. `--deep` opens a private copy with the engine and compares
@@ -50,6 +50,6 @@ Unsupported: `storage-format-newer`, `storage-format-unknown`, `schema-newer`, `
 
 The result is verified, its frame list (length and CRC32) must equal the source's, and it is
 published with one rename. A store with no `store.json`, or a damaged or newer store, is refused
-(use `hms-admin reencode`, restore a snapshot, or the newer release). A store already at format 4
+(use `warm-admin reencode`, restore a snapshot, or the newer release). A store already at format 4
 needs nothing. Adding a format version means adding a registry entry in `src/core/format/upgrade.rs`
 and a golden store.

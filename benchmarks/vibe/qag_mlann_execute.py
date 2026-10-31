@@ -27,11 +27,11 @@ def main():
     for name in ("view", "training-queries", "baseline", "candidate", "config", "freeze", "out"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--run-id", required=True)
-    parser.add_argument("--vibe", type=Path, default=Path.home() / "vibe-hms/vibe")
-    parser.add_argument("--bench", type=Path, default=Path.home() / "vibe-hms/bench.sh")
+    parser.add_argument("--vibe", type=Path, default=Path.home() / "vibe-warm/vibe")
+    parser.add_argument("--bench", type=Path, default=Path.home() / "vibe-warm/bench.sh")
     args = parser.parse_args()
     if (sys.platform != "linux" or socket.gethostname().split(".")[0] != "writerslogic-02"
-            or os.environ.get("HMS_QAG_OUTER_LOCK") != "1"
+            or os.environ.get("WARM_QAG_OUTER_LOCK") != "1"
             or any(os.environ.get(name) != "1" for name in THREADS)):
         parser.error("run on writerslogic-02 through qag_mlann_execute.sh and its outer flock")
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", args.run_id):
@@ -121,23 +121,23 @@ def main():
             pass
         reserved.chmod(0o444)
         environment = {name: value for name, value in os.environ.items()
-                       if not name.startswith(("HMS_QGRAPH_", "HMS_QAG_"))}
+                       if not name.startswith(("WARM_QGRAPH_", "WARM_QAG_"))}
         environment.update({name: "1" for name in THREADS})
-        environment.update(HMS_QAG_BASELINE_SO=str(resolved(args.baseline)),
-                           HMS_QAG_CANDIDATE_SO=str(resolved(args.candidate)),
-                           HMS_QAG_VALIDATION_IDS=str(reserved),
-                           HMS_QAG_TRAINING_QUERIES=str(training),
-                           HMS_QAG_TRAINING_QUERIES_SHA256=digest(training))
+        environment.update(WARM_QAG_BASELINE_SO=str(resolved(args.baseline)),
+                           WARM_QAG_CANDIDATE_SO=str(resolved(args.candidate)),
+                           WARM_QAG_VALIDATION_IDS=str(reserved),
+                           WARM_QAG_TRAINING_QUERIES=str(training),
+                           WARM_QAG_TRAINING_QUERIES_SHA256=digest(training))
         command = [str(bench), alias, "1", "vibe", str(definitions.parent), "nolock"]
         before = {"schema_version": 1, "created_utc": now(), "phase": "official_mlann_rf80",
                   "local_freeze": record(local_freeze), "host": host(), "bench": record(bench),
                   "harness_sha256": digest(vibe / "vibe/runner.py"), "command": command,
                   "source": record(view), "original_source": record(original), "inputs": inputs,
                   "source_snapshots": archived, "query_schedule": SCHEDULE,
-                  "outer_flock": str(Path.home() / "hms-timing.lock"),
+                  "outer_flock": str(Path.home() / "warm-timing.lock"),
                   "construction_query_sha256": digest(training),
                   "environment": {name: environment[name] for name in environment
-                                  if name in THREADS or name.startswith("HMS_QAG_")},
+                                  if name in THREADS or name.startswith("WARM_QAG_")},
                   "policy": "same official view, construction pool, affinity policy and five-pass cache protocol; fixed RF80/depth13 comparator only"}
         write_new(directory / "before.json", before)
         verify_inputs(before)
@@ -157,10 +157,10 @@ def main():
                 attrs = group.attrs
                 affinities.add(tuple(int(cpu) for cpu in attrs.get("qag_cpu_affinity", ())))
                 if (attrs.get("run_count") != 5 or attrs.get("qag_arm") != 4
-                        or attrs.get("qag_hms_indexes_built") != 0
+                        or attrs.get("qag_warm_indexes_built") != 0
                         or attrs.get("qag_construction_queries") != 32768
                         or attrs.get("qag_reserved_validation_queries") != 0
-                        or attrs.get("qag_candidate_training_query_sha256") != environment["HMS_QAG_TRAINING_QUERIES_SHA256"]
+                        or attrs.get("qag_candidate_training_query_sha256") != environment["WARM_QAG_TRAINING_QUERIES_SHA256"]
                         or "n_trees=80, depth=13" not in str(attrs.get("qag_mlann_construction", ""))):
                     raise ValueError("MLANN raw metadata differs from the frozen comparator")
                 if not {name + "=1" for name in THREADS} <= set(str(attrs.get("qag_thread_environment", "")).split(",")):
@@ -172,7 +172,7 @@ def main():
         with raw.open("rb") as source, saved_raw.open("xb") as target:
             shutil.copyfileobj(source, target)
         saved_raw.chmod(0o444)
-        log = Path.home() / "vibe-hms/logs" / (alias + "-definitions.log")
+        log = Path.home() / "vibe-warm/logs" / (alias + "-definitions.log")
         if log.exists():
             with log.open("rb") as source, (directory / "bench.log").open("xb") as target:
                 shutil.copyfileobj(source, target)

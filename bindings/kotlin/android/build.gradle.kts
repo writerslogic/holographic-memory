@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.writerslogic.holographicmemory"
+    namespace = "com.writerslogic.warm"
     compileSdk = 35
     ndkVersion = "27.3.13750724"
 

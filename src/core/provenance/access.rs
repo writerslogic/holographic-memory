@@ -10,7 +10,7 @@
 //! to an issuer the host has explicitly trusted.
 //!
 //! The registry decides; it does not authenticate the caller. A host exposing
-//! HMS to remote agents must separately prove that the party presenting a DID
+//! WARM to remote agents must separately prove that the party presenting a DID
 //! controls its key (for example a signed challenge) before calling
 //! [`AgentRegistry::authorize`].
 
@@ -25,7 +25,7 @@ use super::did::{did_key_from_ed25519, ed25519_from_did_key};
 use super::trust::TrustStore;
 use super::vc::{self, DataIntegrityProof};
 
-pub const ACCESS_CREDENTIAL_TYPE: &str = "HmsAccessCredential";
+pub const ACCESS_CREDENTIAL_TYPE: &str = "WarmAccessCredential";
 const VC_TYPE: &str = "VerifiableCredential";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]

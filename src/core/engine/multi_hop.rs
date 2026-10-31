@@ -88,7 +88,7 @@ pub fn multi_hop_query_with_limits(
     chained_lookup(start_entity, relations, ctx.triple_store, &mut budget)
 }
 
-impl super::HmsCore {
+impl super::WarmCore {
     /// Runs the same multi-hop query with explicit work, frontier and byte limits. Budget
     /// exhaustion is an error; distinct paths to an endpoint remain distinct results.
     pub fn multi_hop_with_limits(

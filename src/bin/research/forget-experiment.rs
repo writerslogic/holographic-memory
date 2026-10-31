@@ -33,14 +33,14 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use anyhow::{bail, ensure, Context, Result};
-use holographic_memory::core::documents::{
+use serde_json::{json, Value};
+use writerslogic_warm::core::documents::{
     EncodeMode, IngestOptions, VectorIndexMode, VectorQueryOptions,
 };
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{
-    DocumentInput, DocumentResult, EmbeddingSpace, HmsCore, MemorizeBatchItem, SearchOptions,
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{
+    DocumentInput, DocumentResult, EmbeddingSpace, MemorizeBatchItem, SearchOptions, WarmCore,
 };
-use serde_json::{json, Value};
 
 struct Rng(u64);
 
@@ -241,8 +241,8 @@ fn load(args: &Args, rng: &mut Rng) -> Result<Dataset> {
     }
 }
 
-fn config(ds: &Dataset) -> HmsConfig {
-    HmsConfig {
+fn config(ds: &Dataset) -> WarmConfig {
+    WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: ds.name.clone(),
             revision: "1".into(),
@@ -264,11 +264,11 @@ fn input(doc: &Doc) -> Result<DocumentInput> {
     }))?)
 }
 
-fn open(dir: &Path, ds: &Dataset) -> Result<HmsCore> {
-    HmsCore::new(ds.hv_dim, Some(dir.display().to_string()), Some(config(ds)))
+fn open(dir: &Path, ds: &Dataset) -> Result<WarmCore> {
+    WarmCore::new(ds.hv_dim, Some(dir.display().to_string()), Some(config(ds)))
 }
 
-fn ingest(core: &HmsCore, ds: &Dataset, docs: &[Doc]) -> Result<()> {
+fn ingest(core: &WarmCore, ds: &Dataset, docs: &[Doc]) -> Result<()> {
     let inputs = docs.iter().map(input).collect::<Result<Vec<_>>>()?;
     core.memorize_documents_with(
         inputs,
@@ -280,14 +280,14 @@ fn ingest(core: &HmsCore, ds: &Dataset, docs: &[Doc]) -> Result<()> {
     Ok(())
 }
 
-fn maintain(core: &HmsCore, ds: &Dataset) -> Result<()> {
+fn maintain(core: &WarmCore, ds: &Dataset) -> Result<()> {
     core.rebuild_vector_index(ds.graph_min_rows)?;
     core.train_document_index()?;
     Ok(())
 }
 
 /// Ingests the base corpus in batches, with `insert = (X, j)` committed before batch `j`.
-fn build(dir: &Path, ds: &Dataset, insert: Option<(&Doc, usize)>) -> Result<HmsCore> {
+fn build(dir: &Path, ds: &Dataset, insert: Option<(&Doc, usize)>) -> Result<WarmCore> {
     let core = open(dir, ds)?;
     if ds.raw_vectors > 0 {
         let items: Vec<MemorizeBatchItem> = (0..ds.raw_vectors)
@@ -434,7 +434,7 @@ const FEATURES: [&str; 7] = [
     "graph_hits_k100_x",
 ];
 
-fn observe(core: &HmsCore, ds: &Dataset, p: &Probe) -> Result<Obs> {
+fn observe(core: &WarmCore, ds: &Dataset, p: &Probe) -> Result<Obs> {
     let mut obs = Obs::default();
     let mut put = |name: String, value: &Value| {
         obs.api.insert(name, hash_value(value));

@@ -15,7 +15,7 @@
 
 use std::collections::BinaryHeap;
 
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 
 /// Postings per block.
 pub const BLOCK: usize = 128;
@@ -113,30 +113,30 @@ impl ImpactIndex {
     /// Builds the index over `docs` (document id = position) with a vocabulary of `vocab`
     /// terms. Weights are quantized to impacts `1..=255` with `scale = max weight / 255`;
     /// weights that round to zero are dropped.
-    pub fn build(docs: &[SparseVector], vocab: u32) -> Result<Self, HmsError> {
+    pub fn build(docs: &[SparseVector], vocab: u32) -> Result<Self, WarmError> {
         if docs.len() >= u32::MAX as usize {
-            return Err(HmsError::InvalidParam {
+            return Err(WarmError::InvalidParam {
                 details: "too many documents for u32 ids".into(),
             });
         }
         let mut max_w = 0f32;
         for d in docs {
             if d.ids.len() != d.weights.len() || d.ids.windows(2).any(|p| p[0] >= p[1]) {
-                return Err(HmsError::InvalidParam {
+                return Err(WarmError::InvalidParam {
                     details: "sparse vector ids must be strictly ascending with one weight each"
                         .into(),
                 });
             }
             if let Some(&last) = d.ids.last() {
                 if last >= vocab {
-                    return Err(HmsError::InvalidParam {
+                    return Err(WarmError::InvalidParam {
                         details: format!("term id {last} outside the vocabulary of {vocab}"),
                     });
                 }
             }
             for &w in &d.weights {
                 if !w.is_finite() || w < 0.0 {
-                    return Err(HmsError::InvalidParam {
+                    return Err(WarmError::InvalidParam {
                         details: "sparse weights must be finite and non-negative".into(),
                     });
                 }

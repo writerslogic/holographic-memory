@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scratch = resolve(process.argv[2] ?? "scratch-crypto");
 mkdirSync(scratch, { recursive: true });
-const targetDir = `${process.env.HMS_WASM_TARGET_DIR ?? "./.hms-target-wasm"}-aes`;
+const targetDir = `${process.env.WARM_WASM_TARGET_DIR ?? "./.warm-target-wasm"}-aes`;
 const env = { ...process.env, CARGO_TARGET_DIR: targetDir, RUSTFLAGS: '--cfg getrandom_backend="wasm_js" -C target-feature=+simd128' };
 const sh = (cmd, args) => {
   const r = spawnSync(cmd, args, { env, stdio: ["ignore", "ignore", "inherit"] });
@@ -23,8 +23,8 @@ const sh = (cmd, args) => {
 sh("cargo", ["build", "--release", "--target", "wasm32-unknown-unknown", "--features", "inwasm-aes", "--manifest-path", join(root, "Cargo.toml")]);
 const version = /name = "wasm-bindgen"\nversion = "([^"]+)"/.exec((await import("node:fs")).readFileSync(join(root, "Cargo.lock"), "utf8"))[1];
 const bindgen = join(process.env.HOME, "Library/Caches/.wasm-pack", `wasm-bindgen-cargo-install-${version}`, "wasm-bindgen");
-sh(bindgen, ["--target", "nodejs", "--out-dir", scratch, "--out-name", "hms_aes", join(targetDir, "wasm32-unknown-unknown/release/hms_wasm.wasm")]);
-const wasm = createRequire(import.meta.url)(join(scratch, "hms_aes.js"));
+sh(bindgen, ["--target", "nodejs", "--out-dir", scratch, "--out-name", "warm_aes", join(targetDir, "wasm32-unknown-unknown/release/warm_wasm.wasm")]);
+const wasm = createRequire(import.meta.url)(join(scratch, "warm_aes.js"));
 
 const subtle = globalThis.crypto.subtle;
 const key = crypto.getRandomValues(new Uint8Array(32));

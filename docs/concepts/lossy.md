@@ -1,6 +1,6 @@
 # What is lossy
 
-Some parts of HMS keep exactly what you gave them; others keep a lossy sketch. Knowing which is
+Some parts of WARM keep exactly what you gave them; others keep a lossy sketch. Knowing which is
 which decides whether you can rebuild the original and what a leaked store would reveal.
 
 ## Kept exactly
@@ -24,7 +24,7 @@ which decides whether you can rebuild the original and what a leaked store would
 - **Sparse codes of dense vectors.** `memorize_vector` converts a dense embedding to a sparse
   code (`from_dense`, a ternary sketch that keeps the top indices). Nearest-neighbour recall drops
   against the dense original; the committed
-  [glove-100-angular run](https://github.com/writerslogic/holographic-memory/blob/main/benchmarks/results/public_glove-100-angular.json)
+  [glove-100-angular run](https://github.com/writerslogic/warm/blob/main/benchmarks/results/public_glove-100-angular.json)
   measured recall@10 of 0.252 for this path, against 0.832 for FAISS HNSW (M=16, efSearch=128)
   and 1.0 for exact search on the same corpus. The document API does not use this path for dense embeddings.
 - **Unbinding.** `bind(bind(a, b), a)` returns a noisy copy of `b`, cleaned up by nearest-atom

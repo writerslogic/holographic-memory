@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! `hms-research-forget`: exact deletion from a superposition memory with a
+//! `warm-research-forget`: exact deletion from a superposition memory with a
 //! verifiable certificate.
 //!
 //! # Mechanism

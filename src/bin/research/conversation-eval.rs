@@ -8,14 +8,14 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use clap::Parser;
-use holographic_memory::core::memory_api::{
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use writerslogic_warm::core::memory_api::{
     ConversationContextLimits, ConversationInput, ConversationMemory, ConversationRecallOptions,
     MemoryError,
 };
-use holographic_memory::core::HmsConfig;
-use holographic_memory::HmsCore;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::WarmCore;
 
 #[cfg(feature = "local-models")]
 use std::sync::Arc;
@@ -113,16 +113,16 @@ struct History {
 }
 
 struct Backend {
-    config: HmsConfig,
+    config: WarmConfig,
     profile: Value,
     #[cfg(feature = "local-models")]
-    stages: Option<Arc<holographic_memory::core::models::ModelStages>>,
+    stages: Option<Arc<writerslogic_warm::core::models::ModelStages>>,
 }
 
 impl Backend {
     fn lexical() -> Self {
         Self {
-            config: HmsConfig::default(),
+            config: WarmConfig::default(),
             profile: json!({"mode": "lexical", "models": [], "extractFacts": false,
                             "rewriteQueries": false, "embeddingQueryTask": null, "stageParams": null}),
             #[cfg(feature = "local-models")]
@@ -137,7 +137,7 @@ impl Backend {
 
     #[cfg(feature = "local-models")]
     fn models(root: PathBuf, subquery_weight: f64) -> anyhow::Result<Self> {
-        use holographic_memory::core::models::{
+        use writerslogic_warm::core::models::{
             default_device, Embedder, EmbeddingQueryTask, Generator, ModelSource, ModelStages,
             Reranker, StageParams, PINNED,
         };
@@ -157,7 +157,7 @@ impl Backend {
                 .map(|(_, revision)| *revision)
                 .ok_or_else(|| anyhow::anyhow!("pinned model is unavailable"))?;
             let source = ModelSource::new(root.join(directory), revision);
-            holographic_memory::core::models::check_revision(&source)?;
+            writerslogic_warm::core::models::check_revision(&source)?;
             receipts.push(json!({"model": name, "revision": revision,
                                  "files": model_files(&source.dir, directory)?}));
             sources.push(source);
@@ -192,9 +192,9 @@ impl Backend {
             params,
         };
         Ok(Self {
-            config: HmsConfig {
+            config: WarmConfig {
                 embedding_space: Some(embedding_space),
-                ..HmsConfig::default()
+                ..WarmConfig::default()
             },
             profile,
             stages: Some(Arc::new(stages)),
@@ -203,7 +203,7 @@ impl Backend {
 
     fn history(&self) -> anyhow::Result<History> {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             DIMENSIONS,
             Some(directory.path().display().to_string()),
             Some(self.config.clone()),
@@ -690,7 +690,7 @@ mod tests {
             context_expansion: None,
         });
         assert_eq!(before["evidence"]["sources"].as_array().unwrap().len(), 1);
-        let context: holographic_memory::core::memory_api::ConversationContext =
+        let context: writerslogic_warm::core::memory_api::ConversationContext =
             serde_json::from_value(before["context"].clone()).unwrap();
         assert_eq!(
             serde_json::to_value(context.sources().unwrap()).unwrap(),

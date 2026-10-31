@@ -22,11 +22,11 @@ from check_longmemeval_user_first import (
 )
 from longmemeval_answer_evidence import reader_payload
 from longmemeval_dev_conversations import _validate_dev_record, load_dev_conversations
-from proxies.beir_proxies import BM25, STOP, tok_hms
+from proxies.beir_proxies import BM25, STOP, tok_warm
 
 SYSTEM, ARM = 'matched_gpt54', 'full_history'
 DEFAULT_WORK = ROOT / 'benchmarks/results/longmemeval_role_retrieval_v1'
-SOURCE = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
+SOURCE = Path.home() / '.cache/warm-bench/downloads/longmemeval_s_cleaned.json'
 ROLE_POLICY = 'cached user hybrid ranking fused with assistant-only lexical ranking; complete original exchanges'
 FULL_POLICY = 'all complete dev user observations and all available saved v1/v3 assistant turns'
 RETRIEVAL_POLICY = {'rrf_k0': 60, 'user_prior_weight': 1, 'assistant_weight': 1,
@@ -82,7 +82,7 @@ def original_groups(raw, historical_ids):
 def replay_retrieval(question, groups, prior):
     require(prior and len(set(prior)) == len(prior) and all(type(index) is int and 0 <= index < len(groups) for index in prior),
             'invalid historical prior')
-    tokens = lambda text: [token for token in tok_hms(text) if token not in STOP]
+    tokens = lambda text: [token for token in tok_warm(text) if token not in STOP]
     documents = ['\n'.join(source['text'] for source in group['sources'] if source['role'] == 'assistant') for group in groups]
     scores = [float(value) for value in BM25(documents, tokens).score(question)] if any(tokens(document) for document in documents) else [0.0] * len(groups)
     position = {index: rank for rank, index in enumerate(prior)}
@@ -216,7 +216,7 @@ def check_work(work):
     paths = {'split': public / 'longmemeval_split.json', 'baseline': results / 'longmemeval_dev_answers_v3.json',
              'v1': results / 'longmemeval_dev_answers_v1.json', 'history': results / 'evidence_completeness_dev.json',
              'official': public / 'reader_protocol_v1.json', 'preregistration': results / 'preregistration_2026-10.json',
-             'export': artifact_path('~/.cache/hms-bench/holo_dev/export_dev.json')}
+             'export': artifact_path('~/.cache/warm-bench/holo_dev/export_dev.json')}
     required = list(paths.values()) + [SOURCE] + [public / name for name in (
         'longmemeval_role_reader.py', 'longmemeval_full_history.py', 'longmemeval_user_first.py',
         'longmemeval_reader_api.py', 'longmemeval_role_retrieval.py', 'longmemeval_dev_conversations.py',

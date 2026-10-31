@@ -1,6 +1,6 @@
 # Source: hnswlib
 
-`hms-import hnswlib --index FILE --dim D --space {l2,ip,cosine} [--id-map F] [--texts F] [--metadata F] [--namespace NS]`
+`warm-import hnswlib --index FILE --dim D --space {l2,ip,cosine} [--id-map F] [--texts F] [--metadata F] [--namespace NS]`
 
 Reads an hnswlib index saved with `Index.save_index`. Verified against real `hnswlib` 0.8; no mocks.
 

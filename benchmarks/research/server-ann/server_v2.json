@@ -1,5 +1,5 @@
 {
-  "schema": "hms-server-bench/1",
+  "schema": "warm-server-bench/1",
   "environment": {
     "date_utc": "2026-10-21T03:26:01Z",
     "machine": {
@@ -15,7 +15,7 @@
     ],
     "git_commit": "9c3e4521321c3f2c1a968dc1d0c5c025bf322b8d",
     "git_dirty": false,
-    "hms_server_version": "hms-server 0.6.1",
+    "warm_server_version": "warm-server 0.6.1",
     "qdrant_version": "qdrant 1.19.2",
     "python": "3.13.9",
     "client": "aiohttp, closed loop, same machine as the servers"
@@ -24,14 +24,14 @@
     "corpus": "synthetic Gaussian clusters, dim 384, sizes [1000, 10000, 50000]; 600 queries = documents plus noise; top_k 10",
     "recall": "recall@10 over 200 queries against an exact numpy cosine scan",
     "load": "closed loop, concurrency [1, 4, 16], 6.0s per level after a 2s warmup, client processes <= 4, a fresh server per (system, size)",
-    "hms_flags": "--no-auth --max-concurrent-work 10 --max-queue 4096 --queue-timeout-ms 60000 (defaults otherwise)",
+    "warm_flags": "--no-auth --max-concurrent-work 10 --max-queue 4096 --queue-timeout-ms 60000 (defaults otherwise)",
     "qdrant": "single node, default storage config, HNSW m=16 ef_construct=100 with hnsw_ef=128, and exact=true",
     "sqlite_fastapi": "SQLite WAL + in-memory numpy matrix, exact scan, one uvicorn worker (deploy/bench/baseline_sqlite_fastapi.py)",
     "caveat": "client and servers share one machine whose load average is recorded per run; absolute numbers are indicative"
   },
   "results": [
     {
-      "system": "hms-server",
+      "system": "warm-server",
       "variant": "exact",
       "n": 1000,
       "ingest_seconds": 0.2479538917541504,
@@ -84,7 +84,7 @@
       ]
     },
     {
-      "system": "hms-server",
+      "system": "warm-server",
       "variant": "exact+index",
       "n": 1000,
       "ingest_seconds": 0.25301194190979004,
@@ -304,7 +304,7 @@
       ]
     },
     {
-      "system": "hms-server",
+      "system": "warm-server",
       "variant": "exact",
       "n": 10000,
       "ingest_seconds": 2.044646978378296,
@@ -357,7 +357,7 @@
       ]
     },
     {
-      "system": "hms-server",
+      "system": "warm-server",
       "variant": "exact+index",
       "n": 10000,
       "ingest_seconds": 2.5552279949188232,
@@ -577,7 +577,7 @@
       ]
     },
     {
-      "system": "hms-server",
+      "system": "warm-server",
       "variant": "exact",
       "n": 50000,
       "ingest_seconds": 11.662606000900269,
@@ -630,7 +630,7 @@
       ]
     },
     {
-      "system": "hms-server",
+      "system": "warm-server",
       "variant": "exact+index",
       "n": 50000,
       "ingest_seconds": 14.982998132705688,

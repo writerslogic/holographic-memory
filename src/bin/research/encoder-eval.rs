@@ -8,10 +8,10 @@
 //! time per (embedding dim, D) and writes nothing.
 
 use anyhow::{Context, Result};
-use holographic_memory::EntangledHVec;
 use rayon::prelude::*;
 use serde::Serialize;
 use std::time::Instant;
+use writerslogic_warm::EntangledHVec;
 
 const SEED: u64 = 0x5EED_E0C0_DE01;
 const EMB_DIM: usize = 384;

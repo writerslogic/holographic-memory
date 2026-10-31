@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Black-box harness for the `hms-server` integration tests: starts the real binary, talks
+//! Black-box harness for the `warm-server` integration tests: starts the real binary, talks
 //! HTTP/1.1 over TCP, a unix socket or TLS, and reads its structured log.
 
 #![allow(dead_code)]
@@ -16,7 +16,7 @@ use std::time::Duration;
 use serde_json::{json, Value};
 
 pub const DIM: usize = 16;
-pub const BIN: &str = env!("CARGO_BIN_EXE_hms-server");
+pub const BIN: &str = env!("CARGO_BIN_EXE_warm-server");
 
 pub enum Endpoint {
     Tcp(SocketAddr),
@@ -191,7 +191,7 @@ impl Server {
     }
 
     pub fn with_key(key: &str, extra: &[&str]) -> Self {
-        Self::start(extra, &[("HMS_API_KEY", key)])
+        Self::start(extra, &[("WARM_API_KEY", key)])
     }
 
     pub fn start_in(dir: &Path, extra: &[&str], envs: &[(&str, &str)]) -> Self {
@@ -207,7 +207,7 @@ impl Server {
             .args(["--dim", "2048", "--data-dir"])
             .arg(dir)
             .args(extra)
-            .env_remove("HMS_API_KEY")
+            .env_remove("WARM_API_KEY")
             .stdout(Stdio::piped())
             .stderr(stderr);
         for (k, v) in envs {
@@ -250,7 +250,7 @@ impl Server {
         cmd.args(["--data-dir"])
             .arg(scratch.path())
             .args(extra)
-            .env_remove("HMS_API_KEY");
+            .env_remove("WARM_API_KEY");
         for (k, v) in envs {
             cmd.env(k, v);
         }

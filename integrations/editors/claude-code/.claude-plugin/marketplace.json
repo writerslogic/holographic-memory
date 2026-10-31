@@ -1,13 +1,13 @@
 {
-  "name": "holographic-memory",
-  "description": "Private, on-device persistent memory for Claude Code, backed by Holographic Memory",
+  "name": "writerslogic-warm",
+  "description": "Private, on-device persistent memory for Claude Code, backed by WARM",
   "owner": {
     "name": "WritersLogic, Inc.",
     "email": "david@writerslogic.com"
   },
   "plugins": [
     {
-      "name": "holographic-memory",
+      "name": "writerslogic-warm",
       "source": "./plugin",
       "description": "Persistent memory over MCP: remember, recall, search, list, forget, export. Per-project stores by default, optional encryption at rest."
     }

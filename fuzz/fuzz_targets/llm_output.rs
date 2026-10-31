@@ -6,7 +6,7 @@
 //! Text produced by an on-device language model is untrusted input to the fact-extraction
 //! and query-rewriting stages. The parsers must tolerate any string.
 
-use holographic_memory::core::models::prompts::{
+use writerslogic_warm::core::models::prompts::{
     parse_date, parse_facts, parse_json, parse_query_plan,
 };
 use libfuzzer_sys::fuzz_target;

@@ -85,7 +85,7 @@ def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path)
             "a": {"sha256": "a-hash", "size_bytes": 100, "mem_gib": 8, "leaders": {}},
             "b": {"sha256": "b-hash", "size_bytes": 200, "mem_gib": 16, "leaders": {}},
         }},
-        f"{root}/ledger/a/hms@{rev[:12]}.json": {"dataset": "a", "job": f"hms@{rev[:12]}",
+        f"{root}/ledger/a/warm@{rev[:12]}.json": {"dataset": "a", "job": f"warm@{rev[:12]}",
                                                      "state": "done", "container_id": "c1", "cpu_model": "CPU A"},
         f"{root}/ledger/a/same.json": {"dataset": "a", "job": "same", "state": "done",
                                          "container_id": "c1", "cpu_model": "CPU A"},
@@ -96,8 +96,8 @@ def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path)
                                           "history": [{"container": "c0", "markers": 1}]},
         f"{root}/ledger/b/_download.json": {"dataset": "b", "job": "_download", "state": "failed",
                                               "error": "download failed"},
-        f"{root}/standings/a@{rev[:12]}.json": {"dataset": "a", "hms_commit": rev,
-                                                 "best_qps_at_recall": {"hms": {"0.95": {"qps": 42}}}},
+        f"{root}/standings/a@{rev[:12]}.json": {"dataset": "a", "warm_commit": rev,
+                                                 "best_qps_at_recall": {"warm": {"0.95": {"qps": 42}}}},
         f"{root}/spend/c1.json": {"dataset": "a", "last": 1, "usd": 1.0},
     }
 
@@ -122,6 +122,6 @@ def test_snapshot_marks_only_same_container_completed_comparisons_fair(tmp_path)
     assert a["metrics"]["0.95"]["qps"] == 42
     assert a["estimated_cost_usd"] == 2.0
     assert a["peak_rss_bytes"] is None
-    assert a["state"] == "complete" and a["hms_state"] == "done"
+    assert a["state"] == "complete" and a["warm_state"] == "done"
     assert b["state"] == "failed" and b["download_state"] == "failed"
     assert b["comparison_status"] == "pending"

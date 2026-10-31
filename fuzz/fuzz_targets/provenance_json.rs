@@ -9,9 +9,9 @@
 
 use std::sync::OnceLock;
 
-use holographic_memory::core::provenance::keri::KeyEventLog;
-use holographic_memory::core::provenance::sigstore::{verify_bundle, SigstoreBundle};
-use holographic_memory::core::provenance::vc::{verify_credential, FactCredential};
+use writerslogic_warm::core::provenance::keri::KeyEventLog;
+use writerslogic_warm::core::provenance::sigstore::{verify_bundle, SigstoreBundle};
+use writerslogic_warm::core::provenance::vc::{verify_credential, FactCredential};
 use libfuzzer_sys::fuzz_target;
 
 fn log_path() -> &'static std::path::Path {

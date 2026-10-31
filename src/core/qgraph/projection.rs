@@ -4,7 +4,7 @@
 //! (Chen et al., 2024, <https://arxiv.org/abs/2408.08933>).
 
 use super::{invalid, Adjacency, BuildParams, Graph, Metric, Rows};
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 use nalgebra::DMatrix;
 use rayon::prelude::*;
 use std::cmp::Ordering;
@@ -28,7 +28,7 @@ pub struct ProjectionStats {
     pub degree_capacity: usize,
 }
 
-fn allocation<T>(count: usize) -> Result<(), HmsError> {
+fn allocation<T>(count: usize) -> Result<(), WarmError> {
     if count
         .checked_mul(std::mem::size_of::<T>())
         .is_none_or(|bytes| bytes > isize::MAX as usize)
@@ -38,7 +38,7 @@ fn allocation<T>(count: usize) -> Result<(), HmsError> {
     Ok(())
 }
 
-fn reserved<T>(count: usize) -> Result<Vec<T>, HmsError> {
+fn reserved<T>(count: usize) -> Result<Vec<T>, WarmError> {
     allocation::<T>(count)?;
     let mut values = Vec::new();
     values
@@ -47,13 +47,13 @@ fn reserved<T>(count: usize) -> Result<Vec<T>, HmsError> {
     Ok(values)
 }
 
-fn lists(count: usize) -> Result<Vec<Vec<u32>>, HmsError> {
+fn lists(count: usize) -> Result<Vec<Vec<u32>>, WarmError> {
     let mut values = reserved(count)?;
     values.resize_with(count, Vec::new);
     Ok(values)
 }
 
-fn add_edges(total: usize, edges: usize) -> Result<usize, HmsError> {
+fn add_edges(total: usize, edges: usize) -> Result<usize, WarmError> {
     total
         .checked_add(edges)
         .ok_or_else(|| invalid("projection edge count overflows".into()))
@@ -67,7 +67,7 @@ fn select(
     additional: &[u32],
     degree: usize,
     alpha: f32,
-) -> Result<Vec<u32>, HmsError> {
+) -> Result<Vec<u32>, WarmError> {
     candidates.sort_unstable();
     candidates.dedup();
     candidates.retain(|&id| id != vertex && !existing.contains(&id) && !additional.contains(&id));
@@ -99,7 +99,7 @@ pub(super) fn validate_queries(
     queries: &[f32],
     dim: usize,
     metric: Metric,
-) -> Result<(), HmsError> {
+) -> Result<(), WarmError> {
     if dim == 0 || queries.is_empty() || !queries.len().is_multiple_of(dim) {
         return Err(invalid(
             "training queries must be nonempty rows of graph dimension".into(),
@@ -151,7 +151,7 @@ impl Graph {
         dim: usize,
         params: &BuildParams,
         training_queries: Option<&[f32]>,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         let Some(queries) = training_queries else {
             return Self::build(data, dim, params);
         };
@@ -167,7 +167,7 @@ impl Graph {
         dim: usize,
         params: &BuildParams,
         training_queries: Option<&[f32]>,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         let Some(queries) = training_queries else {
             return Self::build_owned(data, dim, params);
         };
@@ -177,7 +177,7 @@ impl Graph {
         Ok(graph)
     }
 
-    pub(super) fn apply_training_queries(&mut self, queries: &[f32]) -> Result<(), HmsError> {
+    pub(super) fn apply_training_queries(&mut self, queries: &[f32]) -> Result<(), WarmError> {
         self.apply_training_queries_with(queries, TRAINING_LIMIT, 100, 32)
             .map(|_| ())
     }
@@ -192,7 +192,7 @@ impl Graph {
         limit: usize,
         neighbors: usize,
         projected_degree: usize,
-    ) -> Result<ProjectionStats, HmsError> {
+    ) -> Result<ProjectionStats, WarmError> {
         validate_queries(queries, self.dim, self.metric)?;
         if self.n == 1 {
             return self.project_neighborhoods(None, &[], 0, 0);
@@ -219,7 +219,7 @@ impl Graph {
         query_neighbor_ids: &[u32],
         neighbors_per_query: usize,
         projected_degree: usize,
-    ) -> Result<ProjectionStats, HmsError> {
+    ) -> Result<ProjectionStats, WarmError> {
         validate_queries(queries, self.dim, self.metric)?;
         self.project_neighborhoods(
             Some(queries),
@@ -229,7 +229,7 @@ impl Graph {
         )
     }
 
-    fn training_neighbors(&self, queries: &[f32], neighbors: usize) -> Result<Vec<u32>, HmsError> {
+    fn training_neighbors(&self, queries: &[f32], neighbors: usize) -> Result<Vec<u32>, WarmError> {
         let count = queries.len() / self.dim;
         let base_len = self
             .n
@@ -321,7 +321,7 @@ impl Graph {
         query_neighbor_ids: &[u32],
         neighbors_per_query: usize,
         projected_degree: usize,
-    ) -> Result<ProjectionStats, HmsError> {
+    ) -> Result<ProjectionStats, WarmError> {
         let original_edges = self
             .adj
             .iter()
@@ -419,7 +419,7 @@ impl Graph {
                     alpha,
                 )
             })
-            .collect::<Result<Vec<_>, HmsError>>()?;
+            .collect::<Result<Vec<_>, WarmError>>()?;
         let mut reverse_candidates = lists(self.n)?;
         for (vertex, outgoing) in forward.iter().enumerate() {
             stats.forward_edges = add_edges(stats.forward_edges, outgoing.len())?;
@@ -447,7 +447,7 @@ impl Graph {
                     alpha,
                 )
             })
-            .collect::<Result<Vec<_>, HmsError>>()?;
+            .collect::<Result<Vec<_>, WarmError>>()?;
         drop(reverse_candidates);
         let mut replacement = Adjacency::new(self.n, degree_capacity);
         let mut combined = reserved(degree_capacity)?;
@@ -625,7 +625,7 @@ mod tests {
         ids: &[u32],
         neighbors: usize,
         degree: usize,
-    ) -> Result<ProjectionStats, HmsError> {
+    ) -> Result<ProjectionStats, WarmError> {
         let (hash, before) = (graph.structure_hash(), graph.degree);
         let result = graph.project_neighborhoods(Some(queries), ids, neighbors, degree);
         if result.is_err() {
@@ -658,7 +658,7 @@ mod tests {
         for &(name, queries, ids, neighbors, degree) in cases {
             let result = project(&mut graph(), queries, ids, neighbors, degree);
             assert!(
-                matches!(result, Err(HmsError::InvalidParam { .. })),
+                matches!(result, Err(WarmError::InvalidParam { .. })),
                 "{name}: {result:?}"
             );
         }
@@ -692,7 +692,7 @@ mod tests {
                 assert_eq!(stats.degree_capacity, graph.degree, "{name}");
             } else {
                 assert!(
-                    matches!(result, Err(HmsError::InvalidParam { .. })),
+                    matches!(result, Err(WarmError::InvalidParam { .. })),
                     "{name}: {result:?}"
                 );
             }
@@ -701,7 +701,7 @@ mod tests {
         graph.degree = usize::MAX - 1;
         let result = graph.project_neighborhoods(Some(&[0.0, 0.0]), &[0, 3], 2, 1);
         assert!(
-            matches!(result, Err(HmsError::InvalidParam { .. })),
+            matches!(result, Err(WarmError::InvalidParam { .. })),
             "degree capacity overflow: {result:?}"
         );
     }
@@ -865,7 +865,7 @@ mod tests {
                     .err()
                     .expect("invalid training query");
                 assert!(
-                    matches!(error, HmsError::InvalidParam { .. })
+                    matches!(error, WarmError::InvalidParam { .. })
                         && error.to_string().contains("training"),
                     "{metric:?} {queries:?}: {error}"
                 );
@@ -877,7 +877,7 @@ mod tests {
                 )
                 .err();
                 assert!(
-                    matches!(owned, Some(HmsError::InvalidParam { .. })),
+                    matches!(owned, Some(WarmError::InvalidParam { .. })),
                     "{metric:?} {queries:?}: {owned:?}"
                 );
             }
@@ -886,14 +886,14 @@ mod tests {
             let unused_row =
                 Graph::build_with_training_queries(&data, 2, &params, Some(&queries)).err();
             assert!(
-                matches!(unused_row, Some(HmsError::InvalidParam { .. })),
+                matches!(unused_row, Some(WarmError::InvalidParam { .. })),
                 "{metric:?}: NaN past the training limit: {unused_row:?}"
             );
             if metric == Metric::Angular {
                 let zero =
                     Graph::build_with_training_queries(&data, 2, &params, Some(&[0.0, 0.0])).err();
                 assert!(
-                    matches!(zero, Some(HmsError::InvalidParam { .. })),
+                    matches!(zero, Some(WarmError::InvalidParam { .. })),
                     "zero angular query: {zero:?}"
                 );
             }

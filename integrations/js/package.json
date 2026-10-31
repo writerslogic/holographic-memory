@@ -1,5 +1,5 @@
 {
-  "name": "holographic-memory-integrations",
+  "name": "writerslogic-warm-integrations",
   "private": true,
   "license": "Apache-2.0",
   "workspaces": ["packages/*"],
@@ -8,7 +8,7 @@
     "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
-    "holographic-memory": "file:../..",
+    "writerslogic-warm": "file:../..",
     "@types/node": "^22.20.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"

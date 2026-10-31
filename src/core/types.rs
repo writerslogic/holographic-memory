@@ -36,7 +36,7 @@ pub struct RetrievalResult {
     pub similarity: f64,
 }
 
-/// Explains which retrieval strategy HMS would use for a query.
+/// Explains which retrieval strategy WARM would use for a query.
 #[cfg_attr(feature = "node-api", napi(object))]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[cfg_attr(

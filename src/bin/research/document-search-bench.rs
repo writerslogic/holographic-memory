@@ -3,9 +3,9 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::{core::HmsConfig, DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
 use serde_json::json;
 use std::{path::PathBuf, time::Instant};
+use writerslogic_warm::{core::WarmConfig, DocumentInput, EmbeddingSpace, SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -28,7 +28,7 @@ fn main() -> Result<()> {
         "documents outside 100..=100000"
     );
     let directory = tempfile::tempdir()?;
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "synthetic-sine".into(),
             revision: "1".into(),
@@ -38,7 +38,7 @@ fn main() -> Result<()> {
         }),
         ..Default::default()
     };
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         1024,
         Some(directory.path().to_string_lossy().into_owned()),
         Some(config),
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
         let input: DocumentInput = serde_json::from_value(json!({"id":format!("d{id:08}"),
             "text":format!("common text running topic{} rare{id} alpha beta gamma delta epsilon",id%100),
             "metadata":{"group":id%100}, "version":"1", "embeddings":[vector(id)]}))?;
-        hms.memorize_document(input)?;
+        warm.memorize_document(input)?;
     }
     let ingest_seconds = start.elapsed().as_secs_f64();
     let mut rows = Vec::new();
@@ -68,7 +68,7 @@ fn main() -> Result<()> {
                         ..Default::default()
                     };
                     let start = Instant::now();
-                    let found = hms.search_documents(&query, &options)?;
+                    let found = warm.search_documents(&query, &options)?;
                     rows.push(json!({"repetition":repetition,"query":query_id,"filtered":filtered,"mode":mode,
                         "elapsed_ns":start.elapsed().as_nanos(),"results":found}));
                 }

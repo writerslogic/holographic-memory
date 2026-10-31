@@ -3,7 +3,6 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde_json::{json, Value};
 use std::{
     fs::{File, OpenOptions},
@@ -12,6 +11,7 @@ use std::{
     sync::{mpsc, Barrier},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 const PAIRS: usize = 16;
 const READERS: usize = 4;
@@ -66,7 +66,7 @@ fn changed(original: &DocumentInput, revision: usize) -> DocumentInput {
     input
 }
 
-fn query(core: &HmsCore, ids: Vec<String>, origin: Instant) -> Result<Value> {
+fn query(core: &WarmCore, ids: Vec<String>, origin: Instant) -> Result<Value> {
     let start = origin.elapsed().as_nanos();
     let results = core.search_documents(
         "hmsprobe",
@@ -82,7 +82,7 @@ fn query(core: &HmsCore, ids: Vec<String>, origin: Instant) -> Result<Value> {
 }
 
 fn queries(
-    core: &HmsCore,
+    core: &WarmCore,
     origin: Instant,
     reader: usize,
     count: usize,
@@ -109,7 +109,7 @@ fn queries(
     Ok(())
 }
 
-fn snapshot(core: &HmsCore, n: usize, origin: Instant, out: &Path) -> Result<()> {
+fn snapshot(core: &WarmCore, n: usize, origin: Instant, out: &Path) -> Result<()> {
     let mut output = create(out)?;
     for id in 0..n {
         let mut row = query(core, vec![format!("d{id:08}")], origin)?;
@@ -130,7 +130,7 @@ fn main() -> Result<()> {
     if args.seed {
         ensure!(n == documents.len(), "seed corpus size mismatch");
         ensure!(!args.store.exists(), "refusing to overwrite store");
-        let core = HmsCore::new(1024, Some(args.store.display().to_string()), None)?;
+        let core = WarmCore::new(1024, Some(args.store.display().to_string()), None)?;
         for batch in documents.chunks(64) {
             core.memorize_documents(batch.to_vec())?;
         }
@@ -145,7 +145,7 @@ fn main() -> Result<()> {
     documents.truncate(PAIRS * 2);
     documents.shrink_to_fit();
     let origin = Instant::now();
-    let core = HmsCore::new(1024, Some(args.store.display().to_string()), None)?;
+    let core = WarmCore::new(1024, Some(args.store.display().to_string()), None)?;
     for pair in 0..PAIRS {
         query(&core, vec![format!("d{:08}", pair * 2)], origin)?;
     }
@@ -246,7 +246,7 @@ fn main() -> Result<()> {
     core.flush()?;
     drop(core);
     let start = origin.elapsed().as_nanos();
-    let core = HmsCore::new(1024, Some(args.store.display().to_string()), None)?;
+    let core = WarmCore::new(1024, Some(args.store.display().to_string()), None)?;
     let restart_ns = origin.elapsed().as_nanos() - start;
     snapshot(&core, n, origin, &args.out.join("after-restart.jsonl"))?;
     let mut output = create(&args.out.join("report.json"))?;

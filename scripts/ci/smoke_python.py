@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Install-time smoke test for the holographic-memory-py wheel: run an associative search.
+"""Install-time smoke test for the writerslogic-warm-py wheel: run an associative search.
 
 Run it with the interpreter of a clean virtualenv that has only the wheel installed:
     python scripts/ci/smoke_python.py [--expect-version X.Y.Z]
@@ -13,7 +13,7 @@ import argparse
 import importlib.metadata
 import sys
 
-import holographic_memory as hm
+import writerslogic_warm as hm
 
 DIM = 2048
 LEVELS = 64
@@ -32,9 +32,9 @@ def main() -> int:
     parser.add_argument("--expect-version")
     args = parser.parse_args()
 
-    version = importlib.metadata.version("holographic-memory-py")
+    version = importlib.metadata.version("writerslogic-warm-py")
     if args.expect_version and version != args.expect_version:
-        print(f"installed holographic-memory-py {version}, expected {args.expect_version}", file=sys.stderr)
+        print(f"installed writerslogic-warm-py {version}, expected {args.expect_version}", file=sys.stderr)
         return 1
 
     keys = [hm.PhaseHVec.random(DIM, LEVELS, 1000 + i) for i in range(PAIRS)]
@@ -54,7 +54,7 @@ def main() -> int:
         print(f"resonator factorized to {factors}, expected [3, 5]", file=sys.stderr)
         return 1
 
-    print(f"holographic-memory-py {version}: {PAIRS}/{PAIRS} searches and resonator factorization ok")
+    print(f"writerslogic-warm-py {version}: {PAIRS}/{PAIRS} searches and resonator factorization ok")
     return 0
 
 

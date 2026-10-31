@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "hms-uniffi-bindgen"
+name = "warm-uniffi-bindgen"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "Runs the UniFFI binding generator for hms-mobile on the build host."
+description = "Runs the UniFFI binding generator for warm-mobile on the build host."
 publish = false
 
 [workspace]

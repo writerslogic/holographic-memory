@@ -5,11 +5,11 @@
 # docs/<area>/ folder lists itself, so a PR that adds a page under its own area never edits this file.
 # Landing-page copy and the capability list live in docs/_data/site.yml (scripts/docs_site.py).
 
-site_name: Holographic Memory
+site_name: WARM
 site_description: Hybrid search, graph indexing, and vector-symbolic memory. Runs on your machine, no service calls.
-site_url: !ENV [HMS_SITE_URL, "https://docs.holographic-memory.com/dev/"]
-repo_url: https://github.com/writerslogic/holographic-memory
-repo_name: writerslogic/holographic-memory
+site_url: !ENV [WARM_SITE_URL, "https://writerslogic.com/warm/docs/dev/"]
+repo_url: https://github.com/writerslogic/warm
+repo_name: writerslogic/warm
 edit_uri: edit/main/docs/
 copyright: Copyright 2024-2026 WritersLogic Contributors. Apache-2.0.
 
@@ -70,7 +70,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [bindings/python/holographic-sdk, .docs-gen/pyi]
+          paths: [bindings/python/warm-sdk, .docs-gen/pyi]
           options:
             docstring_style: google
             show_root_heading: true
@@ -93,20 +93,21 @@ plugins:
       minify_html: true
       minify_css: true
       minify_js: true
-      js_files: [javascripts/hms.js, javascripts/demo.js]
+      js_files: [javascripts/warm.js, javascripts/demo.js]
 
 hooks:
   - scripts/docs_hooks.py
   - scripts/docs_site.py
 
 extra_javascript:
-  - javascripts/hms.js
+  - javascripts/warm.js
   - javascripts/demo.js
 
 # Pages that are session logs or experiment protocols. They stay in the repository; links to them
 # from the site resolve to the file on GitHub (scripts/docs_hooks.py). _data and overrides are
 # build inputs, not pages.
 exclude_docs: |
+  migrations/
   PREREGISTRATION-*.md
   research/
   requirements.txt
@@ -148,11 +149,11 @@ extra:
     default: latest
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/writerslogic/holographic-memory
+      link: https://github.com/writerslogic/warm
       name: GitHub
     - icon: fontawesome/brands/rust
-      link: https://crates.io/crates/holographic-memory
+      link: https://crates.io/crates/writerslogic-warm
       name: crates.io
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/holographic-memory-sdk/
+      link: https://pypi.org/project/writerslogic-warm-sdk/
       name: PyPI

@@ -53,7 +53,7 @@ use std::cell::RefCell;
 
 use rayon::prelude::*;
 
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 use adjacency::Adjacency;
 
 use kernels::{
@@ -72,8 +72,8 @@ pub const DEFAULT_DEGREE: usize = 32;
 const NONE: u32 = u32::MAX;
 
 /// Every failure of a build or search names its cause as an invalid parameter.
-fn invalid(details: String) -> HmsError {
-    HmsError::InvalidParam { details }
+fn invalid(details: String) -> WarmError {
+    WarmError::InvalidParam { details }
 }
 const UPPER_DEGREE: usize = 16;
 const LAYER_RATIO: usize = 16;
@@ -277,7 +277,7 @@ pub fn set_build_phase_hook(hook: fn(&str)) -> bool {
     prof::HOOK.set(hook).is_ok()
 }
 
-/// Opt-in construction profile (`HMS_QGRAPH_BUILD_PROFILE` set): per-phase wall and CPU
+/// Opt-in construction profile (`WARM_QGRAPH_BUILD_PROFILE` set): per-phase wall and CPU
 /// seconds, construction-search filter counts and a hash of the built graph, on stderr.
 mod prof {
     use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
@@ -295,7 +295,8 @@ mod prof {
     pub(super) fn on() -> bool {
         static ON: OnceLock<bool> = OnceLock::new();
         *ON.get_or_init(|| {
-            HOOK.get().is_some() || std::env::var_os("HMS_QGRAPH_BUILD_PROFILE").is_some()
+            HOOK.get().is_some()
+                || crate::compatibility::var_os("WARM_QGRAPH_BUILD_PROFILE").is_some()
         })
     }
 
@@ -1090,12 +1091,12 @@ fn edge_factors(pv: &[f32], pu: &[f32], code: &mut [u64]) -> (f32, f32, f32) {
 impl QGraph {
     /// Build over `data` (row-major, `dim` floats per vector). Rows are normalized; zero rows
     /// stay zero. Uses the rayon pool; the result depends only on the data and `params`.
-    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, HmsError> {
+    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, WarmError> {
         Self::from_graph(&Graph::build(data, dim, params)?, params)
     }
 
     /// Encodes a built graph; `params` must be the ones the graph was built with.
-    pub fn from_graph(g: &Graph, params: &BuildParams) -> Result<Self, HmsError> {
+    pub fn from_graph(g: &Graph, params: &BuildParams) -> Result<Self, WarmError> {
         let (n, dim, r) = (g.n, g.dim, g.degree);
         if r != params.degree {
             return Err(invalid(format!(
@@ -1279,7 +1280,7 @@ impl PreparedRows {
         Ok(())
     }
 
-    pub(crate) fn build(self, params: &BuildParams) -> Result<PreparedGraph, HmsError> {
+    pub(crate) fn build(self, params: &BuildParams) -> Result<PreparedGraph, WarmError> {
         let dim = self.dim;
         self.build_with(params, |data, norms| {
             build_structure(data, norms, dim, params)
@@ -1291,9 +1292,9 @@ impl PreparedRows {
     fn build_with(
         self,
         params: &BuildParams,
-        structure: impl FnOnce(&[f32], &[f32]) -> Result<GraphStructure, HmsError>,
-    ) -> Result<PreparedGraph, HmsError> {
-        let io = |error: std::io::Error| HmsError::StorageFailure {
+        structure: impl FnOnce(&[f32], &[f32]) -> Result<GraphStructure, WarmError>,
+    ) -> Result<PreparedGraph, WarmError> {
+        let io = |error: std::io::Error| WarmError::StorageFailure {
             context: format!("prepared graph rows: {error}"),
         };
         if self.values != self.expected || self.values == 0 {
@@ -1448,7 +1449,7 @@ impl Graph {
     /// Build over `data` (row-major, `dim` floats per vector). Angular rows are normalized;
     /// zero rows stay zero. Uses the rayon pool; the result depends only on the data and
     /// `params` (`code_bits` is not used).
-    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, HmsError> {
+    pub fn build(data: &[f32], dim: usize, params: &BuildParams) -> Result<Self, WarmError> {
         Self::build_owned(data.to_vec(), dim, params)
     }
 
@@ -1459,7 +1460,7 @@ impl Graph {
         mut data: Vec<f32>,
         dim: usize,
         params: &BuildParams,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         validate_build(&data, dim, params)?;
         let norms = prepare_rows(&mut data, dim, params.metric);
         let structure = build_structure(&data, &norms, dim, params)?;
@@ -1479,7 +1480,7 @@ impl Graph {
     }
 }
 
-fn validate_build(data: &[f32], dim: usize, params: &BuildParams) -> Result<(), HmsError> {
+fn validate_build(data: &[f32], dim: usize, params: &BuildParams) -> Result<(), WarmError> {
     if dim == 0 || !data.len().is_multiple_of(dim) {
         return Err(invalid(format!(
             "ragged data: {} values are not a multiple of dimension {dim}",
@@ -1520,7 +1521,7 @@ fn build_structure(
     norms: &[f32],
     dim: usize,
     params: &BuildParams,
-) -> Result<GraphStructure, HmsError> {
+) -> Result<GraphStructure, WarmError> {
     let tsetup = prof::start();
     let n = vectors.len() / dim;
     let r = params.degree;

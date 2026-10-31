@@ -1,5 +1,5 @@
 ---
-description: The terms Holographic Memory uses, defined as this code uses them, with a pointer to where each is explained or measured.
+description: The terms WARM uses, defined as this code uses them, with a pointer to where each is explained or measured.
 ---
 
 # Glossary
@@ -11,7 +11,7 @@ points at the page and the committed results file.
 
 Hypervector
 :   A very long vector, thousands of dimensions, used as a code for a thing. Unrelated
-    hypervectors are nearly orthogonal, so random ones almost never collide. HMS uses sparse
+    hypervectors are nearly orthogonal, so random ones almost never collide. WARM uses sparse
     binary hypervectors (`EntangledHVec`): `D` dimensions with about `D/256` bits set. See
     [What "holographic" means here](../concepts/holographic.md).
 
@@ -43,7 +43,7 @@ Resonance
     dense binary vectors.
 
 Cleanup
-:   Snapping a noisy vector back to the nearest stored atom. HMS uses a modern Hopfield network
+:   Snapping a noisy vector back to the nearest stored atom. WARM uses a modern Hopfield network
     (sparse softmax attention over the stored atoms) for it.
 
 Resonator network
@@ -74,7 +74,7 @@ Byte-offset hit
     the source document, so a UI can highlight it.
 
 BM25
-:   The lexical ranking function HMS uses over stemmed terms (Porter/Snowball English).
+:   The lexical ranking function WARM uses over stemmed terms (Porter/Snowball English).
 
 Exact cosine
 :   Dense similarity computed against every stored embedding, with no approximation.
@@ -98,7 +98,7 @@ Arena
     [Production readiness](../production-readiness.md).
 
 Tenant
-:   One isolated store inside `hms-server`. A client names its tenant on every request.
+:   One isolated store inside `warm-server`. A client names its tenant on every request.
 
 ## Measurement
 
@@ -111,7 +111,7 @@ Recall@k
     results.
 
 QPS
-:   Queries per second. HMS benchmarks report single-threaded QPS, one query at a time.
+:   Queries per second. WARM benchmarks report single-threaded QPS, one query at a time.
 
 ANN
 :   Approximate nearest neighbour search: a faster index that may miss true neighbours.
@@ -121,7 +121,7 @@ HNSW
     the comparison baselines.
 
 VGraph
-:   HMS's quantized graph index in `core::qgraph::vertex`: a Vamana-style graph with one
+:   WARM's quantized graph index in `core::qgraph::vertex`: a Vamana-style graph with one
     low-bit code per vertex and a residual code for the re-rank. See the
     [benchmarks](../PUBLIC-BENCHMARKS.md).
 

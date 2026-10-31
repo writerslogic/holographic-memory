@@ -25,7 +25,7 @@ def version() -> str:
     pyproject = tomllib.loads((ROOT / "integrations/mcp/pypi/pyproject.toml").read_text())
     pypi = pyproject["project"]["version"]
     server = json.loads((ROOT / "integrations/mcp/server.json").read_text())
-    source = (ROOT / "integrations/mcp/pypi/src/holographic_memory_mcp/__init__.py").read_text()
+    source = (ROOT / "integrations/mcp/pypi/src/writerslogic_warm_mcp/__init__.py").read_text()
     match = re.search(r'^__version__ = "([^"]+)"$', source, re.MULTILINE)
     if not match or not (npm == pypi == match.group(1) == server["version"]):
         raise ValueError(f"launcher versions disagree: npm={npm}, PyPI={pypi}, source={match.group(1) if match else 'missing'}")
@@ -40,7 +40,7 @@ def version() -> str:
 
 
 def checksums(assets: pathlib.Path) -> dict[str, str]:
-    expected = {f"hms-mcp-{triple}{'.exe' if 'windows' in triple else ''}": triple for triple in TRIPLES}
+    expected = {f"warm-mcp-{triple}{'.exe' if 'windows' in triple else ''}": triple for triple in TRIPLES}
     actual = {entry.name for entry in assets.iterdir() if entry.is_file()}
     if actual != set(expected):
         raise ValueError(f"MCP assets differ: missing={sorted(set(expected) - actual)}, unexpected={sorted(actual - set(expected))}")
@@ -64,7 +64,7 @@ def main() -> None:
     encoded = json.dumps(table, indent=2) + "\n"
     for target in (
         ROOT / "integrations/mcp/npm/checksums.json",
-        ROOT / "integrations/mcp/pypi/src/holographic_memory_mcp/checksums.json",
+        ROOT / "integrations/mcp/pypi/src/writerslogic_warm_mcp/checksums.json",
     ):
         target.write_text(encoded)
 

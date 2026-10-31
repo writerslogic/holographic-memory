@@ -3,12 +3,12 @@
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::qgraph::{
+use serde_json::{json, Value};
+use std::{fs, path::PathBuf, time::Instant};
+use writerslogic_warm::core::qgraph::{
     diagnostics::{residual_feedback, ExactSearcher},
     BuildParams, Graph, VGraph, VSearchParams,
 };
-use serde_json::{json, Value};
-use std::{fs, path::PathBuf, time::Instant};
 
 #[derive(Parser)]
 struct Args {

@@ -76,7 +76,7 @@ def main():
     args = p.parse_args()
     report = json.loads(args.report.read_text())
     repeat = json.loads(args.reproduction.read_text())
-    source_file = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
+    source_file = Path.home() / '.cache/warm-bench/downloads/longmemeval_s_cleaned.json'
     input_file = Path('benchmarks/results/evidence_completeness_dev.json')
     validated = Path('benchmarks/results/evidence_completeness_summary.json')
     split_file = Path('benchmarks/public/longmemeval_split.json')

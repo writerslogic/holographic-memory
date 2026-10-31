@@ -10,8 +10,8 @@ on:
       - .github/workflows/mcp-container.yml
       - Cargo.toml
       - Cargo.lock
-      - src/bin/hms-mcp.rs
-      - src/bin/hms-mcp/**
+      - src/bin/warm-mcp.rs
+      - src/bin/warm-mcp/**
       - scripts/ci/mcp_container_smoke.py
   push:
     branches: [main]
@@ -21,8 +21,8 @@ on:
       - .github/workflows/mcp-container.yml
       - Cargo.toml
       - Cargo.lock
-      - src/bin/hms-mcp.rs
-      - src/bin/hms-mcp/**
+      - src/bin/warm-mcp.rs
+      - src/bin/warm-mcp/**
       - scripts/ci/mcp_container_smoke.py
 
 permissions:
@@ -36,6 +36,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Build MCP container
-        run: docker build --progress=plain --tag hms-mcp:ci .
+        run: docker build --progress=plain --tag warm-mcp:ci .
       - name: Inspect MCP tools over stdio
-        run: python3 scripts/ci/mcp_container_smoke.py docker run --rm -i hms-mcp:ci
+        run: python3 scripts/ci/mcp_container_smoke.py docker run --rm -i warm-mcp:ci

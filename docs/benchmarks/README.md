@@ -1,4 +1,4 @@
-# Comparative benchmark (hms-bench)
+# Comparative benchmark (warm-bench)
 
 The modern embedding benchmark and upstream contribution work is tracked in
 [VIBE](VIBE.md), single-core results on the ann-benchmarks runner in
@@ -7,11 +7,11 @@ deletes and searches under an 8 GiB cap) in [BIG-ANN-STREAMING](BIG-ANN-STREAMIN
 and conversational memory QA against the published Mem0 and Zep LoCoMo results in
 [LOCOMO](LOCOMO.md), separately from the SIFT/GloVe comparison below.
 
-One command reproduces the HMS comparison against the vector, text and embedded-search systems
+One command reproduces the WARM comparison against the vector, text and embedded-search systems
 people actually use. The generated results are in [COMPARISON.md](COMPARISON.md); the rule that
 governs everything below is that **every number in that file traces to a committed results file
-under `benchmarks/results/competitive/`, and a comparator that beats HMS is reported as beating
-HMS.**
+under `benchmarks/results/competitive/`, and a comparator that beats WARM is reported as beating
+WARM.**
 
 Historical source snapshots and large raw output caches are indexed in the
 [evidence archive guide](../../benchmarks/evidence/README.md). Restore their pinned
@@ -19,15 +19,15 @@ bytes before replaying an older experiment. The retained summaries describe thei
 recorded revisions; no benchmark was rerun as part of source cleanup.
 
 ```sh
-./benchmarks/competitive/hms-bench list                    # systems, suites, what was not run
-./benchmarks/competitive/hms-bench run --suite light       # the hosted-runner subset (about an hour)
-./benchmarks/competitive/hms-bench run --suite standard    # a local workstation
-./benchmarks/competitive/hms-bench table                   # regenerate COMPARISON.md from committed results
-./benchmarks/competitive/hms-bench table --check           # fail if the committed table is stale
+./benchmarks/competitive/warm-bench list                    # systems, suites, what was not run
+./benchmarks/competitive/warm-bench run --suite light       # the hosted-runner subset (about an hour)
+./benchmarks/competitive/warm-bench run --suite standard    # a local workstation
+./benchmarks/competitive/warm-bench table                   # regenerate COMPARISON.md from committed results
+./benchmarks/competitive/warm-bench table --check           # fail if the committed table is stale
 uv run --no-project --python 3.13 --with pytest --with numpy==2.5.4 pytest benchmarks/competitive/tests
 ```
 
-`hms-bench run` builds nothing itself: it needs `public-bench` and the `competitive_text` example
+`warm-bench run` builds nothing itself: it needs `public-bench` and the `competitive_text` example
 (`cargo build --profile dist --features cli,mimalloc --bin public-bench --example competitive_text`, with
 `CARGO_TARGET_DIR` if you use a private target directory; `dist` is the release build without the
 symbol table, the binary the install-size row measures), `uv`, a JVM (17+) for the Lucene row,
@@ -42,7 +42,7 @@ and network access for the first run (datasets, pinned wheels, two Lucene jars w
 | Agent-memory systems | Mem0, Zep, Letta, LangMem: not run here; see "Plugging in more systems" |
 | Not run, with reasons | pgvector (needs a PostgreSQL server; not installable from pip/cargo/npm) |
 
-HMS is measured through its own binaries: `public-bench ann-qgraph` (the vertex graph with the
+WARM is measured through its own binaries: `public-bench ann-qgraph` (the vertex graph with the
 accepted configuration recorded in `benchmarks/results/qgraph_pool_paired_x86_glove_v4.json`,
 tuned on a train holdout, never on the benchmark queries) and `examples/competitive_text.rs`
 (the document API, lexical only, one chunk per document).
@@ -51,10 +51,10 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
 
 * **glove-100-angular** (1.18M x 100, ann-benchmarks): `light` uses the first 100,000 vectors and
   1,000 queries, `standard` 250,000 and 2,000, `heavy` all 1,183,514 and 10,000. For every subset
-  the exact top-100 truth is recomputed (`hmsbench/data.py`); the files HMS and every comparator
+  the exact top-100 truth is recomputed (`hmsbench/data.py`); the files WARM and every comparator
   read are byte-identical, and their sha256 are recorded.
 * **sift-128-euclidean** (1M x 128, ann-benchmarks): `standard` uses the first 250,000 vectors
-  and 2,000 queries, `heavy` all 1,000,000 and 10,000. HMS runs `public-bench ann-qgraph
+  and 2,000 queries, `heavy` all 1,000,000 and 10,000. WARM runs `public-bench ann-qgraph
   --metric euclidean` (vertex index on the vectors as given, Euclidean truth).
 * **BEIR SciFact (train qrels) and NFCorpus (dev qrels)**, the existing document-competition
   protocol: lexical only, top 100, one chunk per document, test qrels never read.
@@ -68,11 +68,11 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
 
 * Single client thread, one query at a time, per-query `perf_counter_ns` (or the Rust/JVM
   equivalent) around the search call. Builds may use `threads` cores (4 light/standard, 8 heavy)
-  for every system that can; HMS builds with the same count.
+  for every system that can; WARM builds with the same count.
 * Every system runs each phase (build, serve, ops) in a fresh process; the orchestrator reads the
   child's peak RSS from `wait4`. Cold start is the wall time from spawning the serving process to
   the first answered query (interpreter, imports, open, first query; the file cache is warm).
-* Serve rounds are interleaved: each round runs HMS and every comparator once, in rotated order,
+* Serve rounds are interleaved: each round runs WARM and every comparator once, in rotated order,
   so a load spike lands on all systems. Each phase takes a timing lock while it runs, never across a whole suite; the lock is a
   no-op on CI. Load averages are recorded per configuration; a load gate is not enforced on
   shared machines (`load_gate_met` is `null`, not `true`).
@@ -85,14 +85,14 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
   Comparators are never tuned below their documented defaults.
 * **Intervals and verdicts.** 95% bootstrap intervals over rounds (or queries, for quality),
   Bonferroni-adjusted over the family of verdict metrics of the file ("family guard", as in the
-  superiority ledger). The advantage factor is oriented so that above 1 means HMS is better; WIN or
+  superiority ledger). The advantage factor is oriented so that above 1 means WARM is better; WIN or
   LOSS needs the interval of the factor to exclude 1; deterministic byte counts use a 5% band;
   everything else is TIE. `index size` and `install distributions` are printed without a verdict
-  because the two sides measure different things (HMS reports its in-memory index, comparators the
+  because the two sides measure different things (WARM reports its in-memory index, comparators the
   persisted directory; Python wheels versus statically linked crates).
 * **Durability rows.** Replace/delete cost is one durable commit per operation on a persisted store
   (on macOS every system's commit ends in `fcntl(F_FULLFSYNC)`, which flushes the drive cache:
-  HMS after each journal frame, tantivy through Rust's `sync_all`/`sync_data`, Lucene through the
+  WARM after each journal frame, tantivy through Rust's `sync_all`/`sync_data`, Lucene through the
   JDK's `FileChannel.force`, and SQLite because it runs with `fullfsync`; libraries that need an
   explicit save to be durable include that save in the figure).
 * **Hardware classes.** Each file records its class (`hardware.class`) and the table has one
@@ -118,17 +118,17 @@ existing bytes and do not claim a fresh performance measurement.
 
 ## Known measurement boundaries (read before quoting a ratio)
 
-* HMS is timed through its Rust API; Python comparators through their bindings; Lucene through the
+* WARM is timed through its Rust API; Python comparators through their bindings; Lucene through the
   JVM after a full untimed warm-up pass. Each section prints the boundary per system. The existing
   accepted serving rows (`benchmarks/results/serving_memory_v40.json`) drive both arms from Node,
-  which narrows HMS's lead against SQLite; the two protocols are not interchangeable.
+  which narrows WARM's lead against SQLite; the two protocols are not interchangeable.
 * Comparator query preparation (word splitting, SQL expression building) is done outside the timer
   to favour the comparators; each engine's own parsing stays inside it.
 * LanceDB, Chroma and Milvus Lite run Rust or C++ runtimes with their own threads; QPS is still one
   client at a time.
 * Qdrant's embedded local mode is an exact scan (its documentation points to a server for indexed
   search); it is included because it is the only Qdrant that needs no service.
-* HMS builds its ANN index in a build process that saves it (`public-bench ann-qgraph
+* WARM builds its ANN index in a build process that saves it (`public-bench ann-qgraph
   --save-index`, the vertex index file of `VGraph::save`); each serve round is a fresh process that
   opens that file (`--load-index`) memory-mapped and prefaulted before the timer, as every comparator
   opens its persisted index in a fresh serve process. Build time and build peak RSS come from the
@@ -143,32 +143,32 @@ existing bytes and do not claim a fresh performance measurement.
 main-branch changes and manual dispatch. Performance comparisons run locally; scheduled remote
 benchmark execution and automatic result publication are disabled. Use the local commands above,
 retain the raw results with their hardware class, then run
-`./benchmarks/competitive/hms-bench table` and submit the generated table and source results for review.
+`./benchmarks/competitive/warm-bench table` and submit the generated table and source results for review.
 
 ## Heavy suite
 
 Full GloVe-100 and SIFT-1M do not fit a hosted runner. Two supported ways to run them:
 
-* Self-hosted or workstation: `./benchmarks/competitive/hms-bench run --suite heavy --only ann`.
-  Set `HMS_BENCH_HW_CLASS` if the derived class is not descriptive. Commit the resulting `heavy-*.json` files.
+* Self-hosted or workstation: `./benchmarks/competitive/warm-bench run --suite heavy --only ann`.
+  Set `WARM_BENCH_HW_CLASS` if the derived class is not descriptive. Commit the resulting `heavy-*.json` files.
 * Modal: `uv run --with modal modal run --detach benchmarks/competitive/modal_run.py --suite heavy --cap-usd 12`
-  ships the working tree to one 8 vCPU / 32 GiB container, builds HMS there, runs the suite and
+  ships the working tree to one 8 vCPU / 32 GiB container, builds WARM there, runs the suite and
   writes the results back with hardware class `modal-x86_64-8vcpu-32g`. The cap kills the run before
   the published rate would exceed it.
 
 ## Server mode
 
-Server systems are compared with `hms-server` (feature `server`), never with the embedded rows;
+Server systems are compared with `warm-server` (feature `server`), never with the embedded rows;
 their files carry `mode: "server"` and render under "Server mode results".
 
 | Kind | Systems | Source |
 |---|---|---|
-| ANN | `hms-server`, Qdrant, Weaviate, OpenSearch k-NN, PostgreSQL + pgvector (HNSW, IVFFlat), Redis 8 query engine (HNSW, FLAT) | `hmsbench/servers.py` |
+| ANN | `warm-server`, Qdrant, Weaviate, OpenSearch k-NN, PostgreSQL + pgvector (HNSW, IVFFlat), Redis 8 query engine (HNSW, FLAT) | `hmsbench/servers.py` |
 | Text | OpenSearch BM25, Meilisearch, Typesense, PostgreSQL tsvector/ts_rank, ParadeDB pg_search | `hmsbench/servers.py` |
 
 ```sh
-./benchmarks/competitive/hms-bench install-servers            # downloads, sha256/sha512 checks, client env
-./benchmarks/competitive/hms-bench run --suite smoke --mode server
+./benchmarks/competitive/warm-bench install-servers            # downloads, sha256/sha512 checks, client env
+./benchmarks/competitive/warm-bench run --suite smoke --mode server
 ```
 
 * Downloaded servers are pinned per platform with a digest; PostgreSQL's pgvector (macOS: Homebrew
@@ -183,18 +183,18 @@ their files carry `mode: "server"` and render under "Server mode results".
 * The protocol (one client, one persistent connection, sequential queries, client-side timing;
   build until queryable; cold start from process start to first answer; durable replace/delete
   semantics per system) is written into every results file under `protocol`.
-* `hms-server`'s text row ingests through the memory API (`remember`) and queries through
+* `warm-server`'s text row ingests through the memory API (`remember`) and queries through
   `recall` with lexical weight 1 and semantic weight 0, the same document-search options as the
-  embedded `hms` row. Its ANN graph is persisted with the tenant store and opened at start; the
+  embedded `warm` row. Its ANN graph is persisted with the tenant store and opened at start; the
   harness still sends index maintenance after every restart (a no-op when nothing changed), so
   cold start covers that check.
 
 ### Server mode results (`benchmarks/results/server_v2.json`)
 
-Paired run on one Apple M4 (macOS, Darwin arm64): the `before` arm is `hms-server` at `791749b`
+Paired run on one Apple M4 (macOS, Darwin arm64): the `before` arm is `warm-server` at `791749b`
 (graph rebuilt by maintenance after every restart) with every comparator, the `after` arm is
-`hms-server` at `feae232` (persisted graph opened at start) alone, set against the comparator rows
-of the before arm. Comparators run the build matching HMS's build effort (m32e500 variants); one
+`warm-server` at `feae232` (persisted graph opened at start) alone, set against the comparator rows
+of the before arm. Comparators run the build matching WARM's build effort (m32e500 variants); one
 build, three interleaved serve rounds; verdicts are ratios of round medians with a 5% band, without
 bootstrap intervals. The host carried other work during the before arm (load recorded per round in
 the file); Qdrant's second-round cold start (8.9 s) is kept as measured. Server data directories
@@ -206,25 +206,25 @@ ANN (glove-100-angular, 20,000 vectors, 600 queries, k=10; QPS and p50 at the sw
 
 | System | Arm | Build s | Cold start s (rounds) | QPS @0.95 | p50 us | Recall | Replace ms/op | Delete ms/op | Serving RSS MB |
 |---|---|---|---|---|---|---|---|---|---|
-| hms-server (HTTP) (graph) | before | 2.0 | 1.32 (1.11, 1.48, 1.32) | 6826 | 128 | 0.955 | 3.20 | 9.22 | 52 |
+| warm-server (HTTP) (graph) | before | 2.0 | 1.32 (1.11, 1.48, 1.32) | 6826 | 128 | 0.955 | 3.20 | 9.22 | 52 |
 | Qdrant server (m32e500) | comparator | 21.7 | 0.35 (0.35, 8.89, 0.13) | 4445 | 206 | 0.964 | 1.41 | 1.25 | 103 |
 | Weaviate (m32e500) | comparator | 15.7 | 0.78 (0.85, 0.62, 0.78) | 1049 | 867 | 0.986 | 13.30 | 0.10 | 169 |
 | PostgreSQL + pgvector (hnsw_m32e500) | comparator | 12.9 | 0.15 (0.13, 0.15, 0.30) | 1382 | 686 | 0.950 | 17.82 | 4.10 | 27 |
 | Redis 8 query engine (hnsw_m32e500) | comparator | 7.5 | 3.47 (3.47, 3.67, 2.94) | 4654 | 200 | 0.975 | 4.93 | 4.33 | 47 |
-| hms-server (HTTP) (graph) | after | 2.4 | 0.07 (0.34, 0.07, 0.07) | 7762 | 128 | 0.954 | 3.83 | 3.95 | 50 |
+| warm-server (HTTP) (graph) | after | 2.4 | 0.07 (0.34, 0.07, 0.07) | 7762 | 128 | 0.954 | 3.83 | 3.95 | 50 |
 
 Text (BEIR nfcorpus, 3,633 documents, 323 queries, k=100, 3 passes per round; medians over 3 rounds):
 
 | System | Arm | Ingest s | Cold start s (rounds) | QPS | p50 us | nDCG@10 | Replace ms/op | Delete ms/op |
 |---|---|---|---|---|---|---|---|---|
-| hms-server (HTTP) | before | 1.45 | 0.13 (0.20, 0.13, 0.12) | 3300 | 380 | 0.292 | 6.04 | 9.10 |
+| warm-server (HTTP) | before | 1.45 | 0.13 (0.20, 0.13, 0.12) | 3300 | 380 | 0.292 | 6.04 | 9.10 |
 | Meilisearch | comparator | 1.80 | 0.33 (0.43, 0.23, 0.33) | 956 | 850 | 0.226 | 60.52 | 261.20 |
 | Typesense | comparator | 2.60 | 3.27 (3.28, 3.25, 3.27) | 166 | 3845 | 0.208 | 1.40 | 0.57 |
 | PostgreSQL tsvector (ts_rank) | comparator | 1.01 | 0.28 (1.15, 0.18, 0.28) | 1500 | 288 | 0.275 | 3.83 | 3.98 |
 | ParadeDB pg_search (BM25) | comparator | 2.56 | 0.44 (0.44, 0.32, 0.52) | 2616 | 237 | 0.290 | 3.20 | 3.99 |
-| hms-server (HTTP) | after | 1.32 | 0.13 (0.16, 0.13, 0.12) | 3412 | 372 | 0.292 | 5.97 | 9.16 |
+| warm-server (HTTP) | after | 1.32 | 0.13 (0.16, 0.13, 0.12) | 3412 | 372 | 0.292 | 5.97 | 9.16 |
 
-Verdicts, hms-server against each comparator (ratio of medians, 5% band), before -> after:
+Verdicts, warm-server against each comparator (ratio of medians, 5% band), before -> after:
 
 - qdrant-server:m32e500: cold_start LOSS 3.80x -> WIN 4.80x; build WIN 10.61x -> WIN 9.09x; qps_at_0.95 WIN 1.54x -> WIN 1.75x; p50_at_0.95 WIN 1.61x -> WIN 1.62x; replace LOSS 2.27x -> LOSS 2.71x; delete LOSS 7.38x -> LOSS 3.16x; serve_rss WIN 1.99x -> WIN 2.07x
 - weaviate:m32e500: cold_start LOSS 1.69x -> WIN 10.77x; build WIN 7.68x -> WIN 6.58x; qps_at_0.95 WIN 6.50x -> WIN 7.40x; p50_at_0.95 WIN 6.78x -> WIN 6.79x; replace WIN 4.15x -> WIN 3.48x; delete LOSS 96.30x -> LOSS 41.25x; serve_rss WIN 3.29x -> WIN 3.42x
@@ -240,20 +240,20 @@ Verdicts, hms-server against each comparator (ratio of medians, 5% band), before
 * **ANN or vector store:** add an `Adapter` subclass in `hmsbench/ann_worker.py` (`build`, `open`,
   `configure`, `query`, optional `replace`/`delete`/`flush`), register it in `ann_worker.SYSTEMS`
   and `hmsbench/registry.py`, add its pinned requirement to `hmsbench/envs.py` (`PINS`) and run
-  `./benchmarks/competitive/hms-bench lock`.
+  `./benchmarks/competitive/warm-bench lock`.
 * **Text or memory retrieval:** add a class with `build(documents)`, `open()`, `prepare(text)`,
   `search(prepared)`, `replace(doc)`, `delete(doc)` in `hmsbench/text_worker.py`. The `memory`
   dataset already has the agent-memory shape (sessions as documents, answer sessions as relevant),
   so Mem0, Zep, Letta and LangMem plug in as text systems with their own pinned environment; the
   stage that runs them is a separate piece of work and none of them is run here.
 * Facts that are not measurements (service needed, encryption at rest) live in
-  `registry.FACTS` with their basis; only HMS's carries a measured source.
+  `registry.FACTS` with their basis; only WARM's carries a measured source.
 
 ## Files
 
 | Path | Purpose |
 |---|---|
-| `benchmarks/competitive/hms-bench` | entry point |
+| `benchmarks/competitive/warm-bench` | entry point |
 | `benchmarks/competitive/hmsbench/` | runner, workers, analysis, table generator |
 | `benchmarks/competitive/lucene/LuceneBm25.java` | Lucene BM25 comparator |
 | `benchmarks/competitive/requirements/` | pinned, locked comparator environments |

@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! HMS side of the competitive text benchmark (benchmarks/competitive). The input file is the
-//! `{documents, queries}` JSON written by `hms-bench`; every phase is its own process so the
+//! WARM side of the competitive text benchmark (benchmarks/competitive). The input file is the
+//! `{documents, queries}` JSON written by `warm-bench`; every phase is its own process so the
 //! orchestrator can read the child's peak RSS and cold-start time.
 //!
 //! `build`  bulk-ingests the corpus into `--store` with the batch API.
@@ -11,23 +11,23 @@
 //! `ops`    replaces `--ops` documents and then deletes `--ops` others, one durable commit each.
 
 use anyhow::{bail, ensure, Context, Result};
-use holographic_memory::core::documents::{
-    BatchTooLarge, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
-};
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     path::PathBuf,
     time::{Instant, SystemTime, UNIX_EPOCH},
 };
+use writerslogic_warm::core::documents::{
+    BatchTooLarge, EncodeMode, IngestOptions, MAX_BATCH_ITEMS,
+};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 const USAGE: &str =
     "usage: competitive_text <build|serve|ops> --input FILE --store DIR --out FILE \
     [--passes N (3)] [--ops N (100)] [--t0-ns NS (0)] [--encode eager|deferred|lexical (eager)] \
     [--batch N (0)]";
 
-/// Command line, parsed by hand: this binary is what the harness measures as HMS's install
+/// Command line, parsed by hand: this binary is what the harness measures as WARM's install
 /// footprint, and an argument-parsing framework would be most of it.
 struct Args {
     /// build | serve | ops
@@ -154,7 +154,7 @@ fn epoch_ns() -> u128 {
 /// rejects an oversized batch before writing anything; so start at `MAX_BATCH_ITEMS` documents and
 /// halve on a batch-limit error, keeping the size that worked. A fixed size takes `fixed`.
 fn ingest(
-    core: &HmsCore,
+    core: &WarmCore,
     documents: &[DocumentInput],
     options: &IngestOptions,
     fixed: usize,
@@ -186,7 +186,7 @@ fn main() -> Result<()> {
             };
             let count = input.documents.len();
             let start = Instant::now();
-            let core = HmsCore::new(1024, Some(store), None)?;
+            let core = WarmCore::new(1024, Some(store), None)?;
             ingest(&core, &input.documents, &options, args.batch)?;
             json!({"documents": count, "ingest_s": start.elapsed().as_secs_f64(),
                 "encode": mode.name()})
@@ -197,7 +197,7 @@ fn main() -> Result<()> {
                 "nothing to time"
             );
             let start = Instant::now();
-            let core = HmsCore::new(1024, Some(store), None)?;
+            let core = WarmCore::new(1024, Some(store), None)?;
             let open_s = start.elapsed().as_secs_f64();
             let first = &input.queries[0];
             core.search_documents(&first.text, &first.options)?;
@@ -248,7 +248,7 @@ fn main() -> Result<()> {
                 input.documents.len() >= 2 * args.ops,
                 "corpus too small for the ops count"
             );
-            let core = HmsCore::new(1024, Some(store), None)?;
+            let core = WarmCore::new(1024, Some(store), None)?;
             let t = Instant::now();
             for document in input.documents.iter().take(args.ops) {
                 let mut changed = document.clone();

@@ -19,8 +19,8 @@ from semantic_kernel.data.vector import (  # noqa: E402
 from semantic_kernel.exceptions import VectorStoreModelValidationError  # noqa: E402
 from semantic_kernel.exceptions.vector_store_exceptions import VectorStoreOperationException  # noqa: E402
 
-from holographic_integrations.core import HashingEmbedder, HmsConfig  # noqa: E402
-from holographic_integrations.semantic_kernel import HolographicCollection, HolographicStore  # noqa: E402
+from writerslogic_warm_integrations.core import HashingEmbedder, WarmConfig  # noqa: E402
+from writerslogic_warm_integrations.semantic_kernel import WarmCollection, WarmStore  # noqa: E402
 
 DIM = 64
 
@@ -54,7 +54,7 @@ class SkEmbedder(EmbeddingGeneratorBase):
 
 
 def store(server, **kw):
-    return HolographicStore(HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM), **kw))
+    return WarmStore(WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM), **kw))
 
 
 def docs(n=6):
@@ -140,8 +140,8 @@ async def test_filter_errors(server):
 
 async def test_filter_applies_before_ranking_past_the_cap(server_factory):
     srv = server_factory(DIM, max_top_k=5)
-    cfg = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM), max_fetch=5)
-    col = HolographicStore(cfg).get_collection(Doc, collection_name="docs")
+    cfg = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM), max_fetch=5)
+    col = WarmStore(cfg).get_collection(Doc, collection_name="docs")
     await col.upsert([Doc(id=f"n{i}", text=f"alpha match {i}", team="no", rank=i) for i in range(12)])
     await col.upsert([Doc(id="needle", text="zzz rare needle", team="yes", rank=99)])
     res = await collect(await col.search(values="alpha match", top=3, filter="lambda x: x.team == 'yes'"))
@@ -163,7 +163,7 @@ async def test_collections_are_isolated_in_a_tenant(server):
 
 
 async def test_sk_embedding_generator_and_vector_values(server):
-    st = HolographicStore(
+    st = WarmStore(
         HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM)),
         embedding_generator=SkEmbedder(service_id="e", ai_model_id="hash"),
     )
@@ -221,4 +221,4 @@ async def test_isinstance_of_sk_types(server):
     st = store(server)
     col = st.get_collection(Doc, collection_name="p")
     assert isinstance(st, VectorStore) and isinstance(col, VectorStoreCollection)
-    assert isinstance(col, HolographicCollection) and isinstance(col, VectorSearchProtocol)
+    assert isinstance(col, WarmCollection) and isinstance(col, VectorSearchProtocol)

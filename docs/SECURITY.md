@@ -69,7 +69,7 @@
 
 `local-models` pulls Candle 0.11 and its transitive `zip` 8.6 dependency. That
 version is affected by [GHSA-m665-v7pm-7grj](https://github.com/zip-rs/zip2/security/advisories/GHSA-m665-v7pm-7grj).
-HMS loads these models through `VarBuilder::from_mmaped_safetensors` in
+WARM loads these models through `VarBuilder::from_mmaped_safetensors` in
 `src/core/models/mod.rs`; it does not call Candle's PyTorch ZIP reader, ZIP
 streaming, or filesystem extraction. The advisory's inspection/extraction
 chain is therefore not reachable through this integration. This disposition
@@ -131,31 +131,31 @@ Lower values provide stronger poisoning resistance at the cost of reduced discri
 ```rust
 // In Cargo.toml
 [dependencies]
-holographic-memory = { version = "0.6", features = ["security"] }
+writerslogic-warm = { version = "0.6", features = ["security"] }
 ```
 
 ```rust
-let mut config = HmsConfig::default();
+let mut config = WarmConfig::default();
 config.security.signing_enabled = true;
 config.security.encryption_enabled = true;
 config.security.encryption_passphrase = Some("your-passphrase".to_string());
 config.security.audit_enabled = true;
 
-let hms = HmsCore::new(16384, Some("./storage".to_string()), Some(config))?;
+let warm = WarmCore::new(16384, Some("./storage".to_string()), Some(config))?;
 ```
 
 ### Node.js (N-API)
 
 ```javascript
-const hms = new HolographicMemorySystem(16384, './storage', {
+const warm = new WarmMemorySystem(16384, './storage', {
   signingEnabled: true,
   encryptionEnabled: true,
-  encryptionPassphraseEnv: 'HMS_PASSPHRASE',
+  encryptionPassphraseEnv: 'WARM_PASSPHRASE',
   auditEnabled: true,
 });
 
 // Query audit trail
-const entries = await hms.auditSince(Date.now() - 86400000); // last 24h
+const entries = await warm.auditSince(Date.now() - 86400000); // last 24h
 ```
 
 Custom builds fail if requested encryption/signing support is unavailable. The standard npm build includes `security`; use `securityStatus()` to confirm active configuration. Audit/provenance sidecar failures can occur after the main arena mutation commits. See [production-readiness.md](production-readiness.md) for transaction and failure boundaries.

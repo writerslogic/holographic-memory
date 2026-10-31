@@ -1,11 +1,11 @@
 {
   "mcpServers": {
-    "holographic-memory": {
+    "writerslogic-warm": {
       "command": "npx",
-      "args": ["-y", "holographic-memory-mcp"],
+      "args": ["-y", "writerslogic-warm-mcp"],
       "env": {
-        "HMS_MCP_NAMESPACE_STRATEGY": "${user_config.namespace_strategy}",
-        "HMS_MCP_PROJECT": "${CLAUDE_PROJECT_DIR}"
+        "WARM_MCP_NAMESPACE_STRATEGY": "${user_config.namespace_strategy}",
+        "WARM_MCP_PROJECT": "${CLAUDE_PROJECT_DIR}"
       }
     }
   }

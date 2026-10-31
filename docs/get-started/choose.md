@@ -10,19 +10,19 @@ Start with where your application runs and who should own the store.
 
 | Your task | Start here | Where the engine runs |
 |---|---|---|
-| Give an editor or coding agent persistent memory | [MCP and editor setup](../integrations/editors/README.md) | A local `hms-mcp` process, or a shared MCP HTTP server |
+| Give an editor or coding agent persistent memory | [MCP and editor setup](../integrations/editors/README.md) | A local `warm-mcp` process, or a shared MCP HTTP server |
 | Embed document search in a Rust application | [Rust quickstart](../quickstart/index.md) | Inside your application |
 | Add search to a Node application | [Node installation](install.md) | A native Rust module inside Node |
 | Access a store from Python or several processes | [Python SDK and HTTP server](../SERVER.md) | A server you run; Python is the client |
-| Search vectors or experiment with phase hypervectors in Python | [Python runtime](../api/python/vsa.md) | The `holographic-memory-py` extension |
+| Search vectors or experiment with phase hypervectors in Python | [Python runtime](../api/python/vsa.md) | The `writerslogic-warm-py` extension |
 
 ## Which Python package?
 
-`holographic-memory-sdk` imports as `holographic_sdk`. It is an HTTP client for `hms-server`.
+`writerslogic-warm-sdk` imports as `writerslogic_warm_sdk`. It is an HTTP client for `warm-server`.
 The server must be running, and client and server must use the same API key, tenant and
 embedding dimensions. Installing the SDK does not start a server or download an embedding model.
 
-`holographic-memory-py` imports as `holographic_memory`. It exposes native vector search and
+`writerslogic-warm-py` imports as `writerslogic_warm`. It exposes native vector search and
 phase-vector algebra. Choose it when you need those APIs in-process.
 
 ## Which retrieval path?

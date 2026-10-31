@@ -31,7 +31,7 @@ segment (u64 LE) as associated data, so a record cannot be moved. Header flag bi
 
 ## Document checkpoint
 
-`documents.ckpt` (CHECKPOINT.md) is `"HMSCKPE\x01"`, the plaintext checkpoint's CRC word zeroed
+`documents.ckpt` (CHECKPOINT.md) is `"WARMCKPE\x01"`, the plaintext checkpoint's CRC word zeroed
 and its two binding words in the clear (generation-name CRC32, vector dimensions), then
 `[nonce][ct||tag]` of the whole plaintext checkpoint with those 40 bytes as associated data. The
 plaintext buffer is zeroized after sealing; no plaintext checkpoint is written, and a plaintext

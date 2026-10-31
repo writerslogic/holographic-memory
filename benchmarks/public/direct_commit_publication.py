@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("folder", type=Path)
     parser.add_argument("--arm", choices=["baseline", "candidate"])
     args = parser.parse_args()
-    env = os.environ | {"RUSTUP_TOOLCHAIN": "1.96.0", "CARGO_TARGET_DIR": "./.hms-target",
+    env = os.environ | {"RUSTUP_TOOLCHAIN": "1.96.0", "CARGO_TARGET_DIR": "./.warm-target",
                         "CARGO_BUILD_JOBS": "3", "RAYON_NUM_THREADS": "4"}
     folder = args.folder.resolve()
     if args.action == "prepare":

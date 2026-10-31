@@ -124,7 +124,7 @@ impl CognitionLoop {
         state.running.store(true, Ordering::SeqCst);
 
         let handle = std::thread::Builder::new()
-            .name("hms-cognition".to_string())
+            .name("warm-cognition".to_string())
             .spawn(move || {
                 cognition_thread(&thread_state, &atom_memory, &triple_store, &config);
             })

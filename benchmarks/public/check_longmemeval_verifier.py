@@ -30,7 +30,7 @@ from longmemeval_dev_conversations import load_dev_conversations
 
 SYSTEM, ARM = 'sol61_reader', 'citation_union'
 DEFAULT_WORK = ROOT / 'benchmarks/results/longmemeval_verifier_v1'
-SOURCE = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
+SOURCE = Path.home() / '.cache/warm-bench/downloads/longmemeval_s_cleaned.json'
 PRIOR_NAMES = ('v3_operand', 'full_history', 'role_retrieval', 'complete_history')
 RATES = {'reader': {'input': 2.0, 'cached_input': 0.1, 'cache_write_30m': 2.5, 'cache_write_12h': 5.0, 'output': 10.0},
          'judge': {'input': 2.5, 'cached_input': 0.25, 'output': 15.0}}
@@ -582,7 +582,7 @@ def check_work(work, inputs_only=False):
     paths = {'split': public / 'longmemeval_split.json', 'baseline': results / 'longmemeval_dev_answers_v3.json',
              'history': results / 'evidence_completeness_dev.json', 'official': public / 'reader_protocol_v1.json',
              'preregistration': results / 'preregistration_2026-10.json',
-             'export': artifact_path('~/.cache/hms-bench/holo_dev/export_dev.json')}
+             'export': artifact_path('~/.cache/warm-bench/holo_dev/export_dev.json')}
     required = list(paths.values()) + [SOURCE, work / 'priors/manifest.json'] + [public / name for name in (
         'longmemeval_verifier.py', 'longmemeval_verifier_sources.py', 'longmemeval_role_reader.py',
         'longmemeval_reader_api.py', 'longmemeval_user_first.py', 'longmemeval_role_retrieval.py',

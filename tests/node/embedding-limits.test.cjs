@@ -4,7 +4,7 @@
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const { join } = require('node:path')
-const binding = require(process.env.HMS_EMBED_ADDON || '../../index.js')
+const binding = require(process.env.WARM_EMBED_ADDON || '../../index.js')
 const { LocalEmbedder } = binding
 const metadata = require('../fixtures/tiny-embed-int8.json')
 const model = join(__dirname, '../fixtures/tiny-embed-int8.hmsemb')

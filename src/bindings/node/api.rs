@@ -17,22 +17,22 @@ fn governance_report(report: core::cognition::governor::GovernanceReport) -> Gov
 
 #[napi]
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
-pub struct HolographicMemorySystem {
-    core: Arc<HmsCore>,
+pub struct WarmMemorySystem {
+    core: Arc<WarmCore>,
     memory: crate::core::sync::RwLock<Arc<crate::core::memory_api::Memory>>,
 }
 
 #[napi]
 // codeql[rust/access-invalid-pointer] False positive: NAPI macro generated FFI bindings
-impl HolographicMemorySystem {
+impl WarmMemorySystem {
     #[napi(constructor)]
     pub fn new(
         dimensions: u32,
         storage_path: Option<String>,
-        config: Option<HmsConfigJs>,
+        config: Option<WarmConfigJs>,
     ) -> Result<Self> {
         let cfg = config.map(|c| c.into_config());
-        let core = HmsCore::new(dimensions, storage_path, cfg).map_err(napi_err)?;
+        let core = WarmCore::new(dimensions, storage_path, cfg).map_err(napi_err)?;
         let core = Arc::new(core);
         Ok(Self {
             memory: crate::core::sync::RwLock::new(Arc::new(crate::core::memory_api::Memory::new(

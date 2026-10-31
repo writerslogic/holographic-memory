@@ -1,4 +1,4 @@
 .build/
 .swiftpm/
 Frameworks/
-Examples/HmsSample/.build/
+Examples/WarmSample/.build/

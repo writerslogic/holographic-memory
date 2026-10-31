@@ -73,7 +73,7 @@ def test_default_recall10_and_empty_query_rejection(tmp_path):
 @pytest.mark.parametrize("n", [99, 100, 101])
 def test_count100_saved_index_boundary_without_resident_training_vectors(tmp_path, n):
     data = fixture(tmp_path / "data", n)
-    index = data / "index.hms"
+    index = data / "index.warm"
     built = execute(data, "--save-index", str(index))
     assert built.returncode == 0, built.stderr
     (data / "train.f32").unlink()

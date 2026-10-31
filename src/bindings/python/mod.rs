@@ -9,7 +9,7 @@
 //! the initial, curated surface (the phase substrate, qFHRR arXiv 2604.25939, and the
 //! `VectorIndex` nearest-neighbour index); it will grow as the public API stabilises.
 //! See `pyproject.toml` and `.github/workflows/python-native-release.yml`. The module is named
-//! `holographic_memory`.
+//! `writerslogic_warm`.
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -196,7 +196,7 @@ fn resonator_factorize(
 }
 
 #[pymodule]
-fn holographic_memory(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn writerslogic_warm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add(
         "__doc__",
         "Deterministic, verifiable vector-symbolic (VSA) memory on a quantized-phase substrate.",

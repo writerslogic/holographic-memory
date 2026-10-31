@@ -10,7 +10,7 @@ import { BaseEmbedding } from '@llamaindex/core/embeddings'
 import { MockLLM } from '@llamaindex/core/llms/mock'
 import { TextNode, Document, MetadataMode } from '@llamaindex/core/schema'
 import { VectorStoreQueryMode } from '@llamaindex/core/vector-store'
-import { HashingEmbedder, HmsError, HmsVectorStore } from '../dist/index.js'
+import { HashingEmbedder, WarmError, WarmVectorStore } from '../dist/index.js'
 
 const hashing = new HashingEmbedder(256)
 class HashEmbed extends BaseEmbedding {
@@ -25,8 +25,8 @@ const embedModel = new HashEmbed()
 Settings.embedModel = embedModel
 Settings.llm = new MockLLM({ responseMessage: 'mock answer' })
 
-const tmp = () => mkdtempSync(join(tmpdir(), 'hms-li-'))
-const make = (opts = {}) => HmsVectorStore.create({ path: tmp(), dimensions: 1024, embedModel, ...opts })
+const tmp = () => mkdtempSync(join(tmpdir(), 'warm-li-'))
+const make = (opts = {}) => WarmVectorStore.create({ path: tmp(), dimensions: 1024, embedModel, ...opts })
 
 async function embeddedNodes(specs) {
   const nodes = specs.map(([id, text, metadata]) => new TextNode({ id_: id, text, metadata }))
@@ -104,7 +104,7 @@ test('every FilterOperator maps to the right documents', async () => {
   assert.deepEqual(await ids([f('tags', 'is_empty')]), ['n4'])
   assert.deepEqual(await ids([f('lang', '==', 'en'), f('year', '>', 2020)]), ['n3'])
   assert.deepEqual(await ids([f('lang', '==', 'de'), f('year', '>', 2022)], 'or'), ['n2', 'n3'])
-  await assert.rejects(ids([f('lang', 'in', 'notarray')]), (e) => e instanceof HmsError)
+  await assert.rejects(ids([f('lang', 'in', 'notarray')]), (e) => e instanceof WarmError)
 })
 
 test('docIds restricts to the listed node ids', async () => {
@@ -119,7 +119,7 @@ test('hybrid mode fuses BM25 with cosine: a rare exact term outranks a closer pa
   await vs.add(await embeddedNodes([['rare', 'invoice ZX-4471 was refunded in March', {}], ['other', 'the customer asked about refunds and billing in general', {}]]))
   const res = await vs.query(await q('ZX-4471', { mode: VectorStoreQueryMode.HYBRID }))
   assert.equal(res.ids[0], 'rare')
-  await assert.rejects(vs.query({ ...(await q('x')), queryStr: undefined, mode: VectorStoreQueryMode.HYBRID }), HmsError)
+  await assert.rejects(vs.query({ ...(await q('x')), queryStr: undefined, mode: VectorStoreQueryMode.HYBRID }), WarmError)
 })
 
 test('mmr mode returns a more diverse set than plain similarity', async () => {
@@ -180,7 +180,7 @@ test('similarityTopK boundary against maxFetch: limit-1, limit, limit+1', async 
   const vs = await make({ maxFetch: 10 })
   await vs.add(await embeddedNodes(Array.from({ length: 12 }, (_, i) => [`n${i}`, `alpha beta number${i}`, {}])))
   for (const k of [9, 10]) assert.equal((await vs.query(await q('alpha beta', { similarityTopK: k }))).ids.length, k)
-  await assert.rejects(vs.query(await q('alpha beta', { similarityTopK: 11 })), (e) => e instanceof HmsError && e.code === 'limit_exceeded')
+  await assert.rejects(vs.query(await q('alpha beta', { similarityTopK: 11 })), (e) => e instanceof WarmError && e.code === 'limit_exceeded')
 })
 
 test('nodes added without an embedding are embedded by the store embedder', async () => {

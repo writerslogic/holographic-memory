@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "QueryExplanation",
-  "description": "Explains which retrieval strategy HMS would use for a query.",
+  "description": "Explains which retrieval strategy WARM would use for a query.",
   "type": "object",
   "properties": {
     "efSearch": {

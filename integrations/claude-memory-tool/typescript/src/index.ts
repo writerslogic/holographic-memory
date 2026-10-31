@@ -1,9 +1,9 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-export { HolographicMemoryTool, type HolographicMemoryToolOptions } from "./tool.js";
+export { WarmMemoryTool, type WarmMemoryToolOptions } from "./tool.js";
 export {
   ConflictError,
-  HmsToolError,
+  WarmToolError,
   McpFileStore,
   type FileEntry,
   type FileStore,

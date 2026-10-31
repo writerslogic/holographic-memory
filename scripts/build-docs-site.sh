@@ -13,14 +13,14 @@
 # versions.json uses the format the Material version selector reads, so no mike is needed.
 #
 # Usage: scripts/build-docs-site.sh [out-dir]     (needs mkdocs and the packages in docs/requirements.txt)
-# Environment: HMS_SITE_BASE (public base URL), MKDOCS and PYTHON (executables), HMS_DOCS_TAGS
+# Environment: WARM_SITE_BASE (public base URL), MKDOCS and PYTHON (executables), WARM_DOCS_TAGS
 # (space-separated tag list that replaces `git tag --list 'v*'`, used to test the tag path).
 set -euo pipefail
 export DISABLE_MKDOCS_2_WARNING=true
-export HMS_DOCS_API_TOOLS="${HMS_DOCS_API_TOOLS:-$(git rev-parse --show-toplevel)/scripts/docs-api}"
+export WARM_DOCS_API_TOOLS="${WARM_DOCS_API_TOOLS:-$(git rev-parse --show-toplevel)/scripts/docs-api}"
 
 out="${1:-_site}"
-base="${HMS_SITE_BASE:-https://docs.holographic-memory.com}"
+base="${WARM_SITE_BASE:-https://writerslogic.com/warm/docs}"
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 case "$out" in /*) ;; *) out="$repo_root/$out" ;; esac
@@ -30,16 +30,16 @@ scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
 # rustdoc for one source tree, built once and shared with the `latest` build of the same tree.
-# HMS_BUILD_RUSTDOC=1 (CI) enables it; the API reference page needs it, so CI also sets
-# HMS_DOCS_REQUIRE_API=1.
+# WARM_BUILD_RUSTDOC=1 (CI) enables it; the API reference page needs it, so CI also sets
+# WARM_DOCS_REQUIRE_API=1.
 rustdoc() { # key source-dir
-  [ "${HMS_BUILD_RUSTDOC:-0}" = 1 ] || return 0
+  [ "${WARM_BUILD_RUSTDOC:-0}" = 1 ] || return 0
   [ -d "$scratch/rustdoc/$1" ] || "$repo_root/scripts/build-rustdoc.sh" "$2" "$scratch/rustdoc/$1"
 }
 
 build() { # name ref source-dir is-latest rustdoc-key
-  HMS_SITE_URL="$base/$1/" HMS_DOCS_REF="$2" HMS_CANONICAL_BASE="$base/latest/" HMS_IS_LATEST="${4:-0}" \
-    HMS_RUSTDOC_DIR="$scratch/rustdoc/${5:-$1}" \
+  WARM_SITE_URL="$base/$1/" WARM_DOCS_REF="$2" WARM_CANONICAL_BASE="$base/latest/" WARM_IS_LATEST="${4:-0}" \
+    WARM_RUSTDOC_DIR="$scratch/rustdoc/${5:-$1}" \
     "${MKDOCS:-mkdocs}" build --quiet --site-dir "$out/$1" --config-file "$3/mkdocs.yml"
 }
 
@@ -49,18 +49,22 @@ build dev main "$repo_root" 0 dev
 
 # Release tags, newest first. A tag cut before the docs site existed has no mkdocs.yml and is skipped.
 # A tag whose own docs no longer build is reported and left out so it cannot block every later deploy.
-if [ -n "${HMS_DOCS_TAGS:-}" ]; then
-  tags="$(printf '%s\n' $HMS_DOCS_TAGS)"
+if [ -n "${WARM_DOCS_TAGS:-}" ]; then
+  tags="$(printf '%s\n' $WARM_DOCS_TAGS)"
 else
   tags="$(git tag --list 'v*' --sort=-v:refname)"
 fi
 versions=()
 while IFS= read -r entry; do
   [ -n "$entry" ] || continue
-  tag="${entry%%=*}" # the version name; HMS_DOCS_TAGS may say name=rev to build any revision as a version
+  tag="${entry%%=*}" # the version name; WARM_DOCS_TAGS may say name=rev to build any revision as a version
   rev="${entry#*=}"
   if ! git cat-file -e "$rev:mkdocs.yml" 2>/dev/null; then
     echo "skip $tag: no mkdocs.yml at that tag"
+    continue
+  fi
+  if ! git show "$rev:Cargo.toml" | grep -q '^name = "writerslogic-warm"$'; then
+    echo "skip $tag: legacy HMS documentation redirects to latest; tagged source is preserved"
     continue
   fi
   src="$scratch/$tag"
@@ -99,6 +103,8 @@ fi
 } > "$out/versions.json"
 
 touch "$out/.nojekyll"
+mkdir -p "$out/ns/warm"
+cp "$repo_root/docs/reference/fixtures/warm-v1-context.jsonld" "$out/ns/warm/v1.jsonld"
 mkdir -p "$out/ns/hms"
 cp "$repo_root/docs/reference/fixtures/hms-v1-context.jsonld" "$out/ns/hms/v1.jsonld"
 "${PYTHON:-python3}" "$repo_root/scripts/docs_finalize.py" "$out" "$base"

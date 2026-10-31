@@ -4,7 +4,7 @@
 # requires-python = ">=3.12"
 # dependencies = ["fastapi==0.162.0", "httpx==0.28.1", "uvicorn==0.54.0"]
 # ///
-"""AML Cycle 2 Add/Search contract over a private hms-server instance."""
+"""AML Cycle 2 Add/Search contract over a private warm-server instance."""
 
 from __future__ import annotations
 
@@ -253,12 +253,12 @@ def _token(request: Request) -> str | None:
     return request.headers.get("x-api-key")
 
 
-def create_app(hms_url: str, token: str, commit: Any = None, *, source_provenance: bool = False) -> FastAPI:
+def create_app(warm_url: str, token: str, commit: Any = None, *, source_provenance: bool = False) -> FastAPI:
     if type(source_provenance) is not bool:
         raise ValueError("source_provenance must be a boolean")
     if not token:
         raise ValueError("AML_TOKEN is required")
-    client = httpx.AsyncClient(base_url=hms_url, timeout=httpx.Timeout(1800))
+    client = httpx.AsyncClient(base_url=warm_url, timeout=httpx.Timeout(1800))
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -274,7 +274,7 @@ def create_app(hms_url: str, token: str, commit: Any = None, *, source_provenanc
         if supplied is None or not hmac.compare_digest(supplied, token):
             raise HTTPException(status_code=401, detail="invalid API key")
 
-    async def hms(op: str, tenant: str, body: dict[str, Any]) -> dict[str, Any]:
+    async def warm(op: str, tenant: str, body: dict[str, Any]) -> dict[str, Any]:
         try:
             result = await client.post(f"/api/v1/memory/{op}", json=body, headers={"X-Tenant-ID": tenant})
         except httpx.RequestError as exc:
@@ -312,7 +312,7 @@ def create_app(hms_url: str, token: str, commit: Any = None, *, source_provenanc
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         tenant = tenant_for(user_id)
         for start in range(0, len(facts), 100):
-            await hms("remember", tenant, {"facts": facts[start : start + 100]})
+            await warm("remember", tenant, {"facts": facts[start : start + 100]})
         if commit is not None:
             await asyncio.to_thread(commit)
         return {"success": True, "request_id": request_id, "user_id": user_id, "session_id": session_id}
@@ -332,11 +332,11 @@ def create_app(hms_url: str, token: str, commit: Any = None, *, source_provenanc
         except (ValueError, UnicodeDecodeError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         if len(query.encode()) <= NATIVE_QUERY_BYTES:
-            result = await hms("recall", tenant_for(user_id), {"query": query, "k": top_k})
+            result = await warm("recall", tenant_for(user_id), {"query": query, "k": top_k})
             hits = result.get("results")
         else:
             async def recall(part: str) -> dict[str, Any]:
-                return await hms('recall', tenant_for(user_id), {'query': part, 'k': top_k})
+                return await warm('recall', tenant_for(user_id), {'query': part, 'k': top_k})
             hits = await fused_recall(query, top_k, recall)
         if not isinstance(hits, list) or len(hits) > top_k:
             raise HTTPException(status_code=503, detail="invalid memory engine result count")
@@ -380,4 +380,4 @@ def create_app(hms_url: str, token: str, commit: Any = None, *, source_provenanc
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(create_app(os.environ["HMS_URL"], os.environ["AML_TOKEN"]), host="127.0.0.1", port=8000)
+    uvicorn.run(create_app(os.environ["WARM_URL"], os.environ["AML_TOKEN"]), host="127.0.0.1", port=8000)

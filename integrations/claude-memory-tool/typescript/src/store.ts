@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 // Storage behind the memory tool: files addressed by path. `McpFileStore` keeps them in
-// Holographic Memory through the hms-mcp server, so every file is also searchable.
+// WARM through the warm-mcp server, so every file is also searchable.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -52,15 +52,15 @@ export interface FileStore {
 
 export type McpConnection =
   | {
-      /** Spawn hms-mcp over stdio. Default `{ command: "hms-mcp" }`. */
+      /** Spawn warm-mcp over stdio. Default `{ command: "warm-mcp" }`. */
       command?: string;
       args?: string[];
       env?: Record<string, string>;
     }
   | {
-      /** Connect to a running `hms-mcp --transport http`. */
+      /** Connect to a running `warm-mcp --transport http`. */
       url: string;
-      /** Sent as `Authorization: Bearer`; defaults to the HMS_MCP_TOKEN environment variable. */
+      /** Sent as `Authorization: Bearer`; defaults to the WARM_MCP_TOKEN environment variable. */
       token?: string;
     };
 
@@ -90,15 +90,15 @@ export class McpFileStore implements FileStore {
 
   static async connect(options: McpFileStoreOptions = {}): Promise<McpFileStore> {
     const connection = options.connection ?? {};
-    const client = new Client({ name: "holographic-memory-claude-tool", version: "0.1.0" });
+    const client = new Client({ name: "writerslogic-warm-claude-tool", version: "0.1.0" });
     if ("url" in connection) {
-      const token = connection.token ?? process.env["HMS_MCP_TOKEN"];
+      const token = connection.token ?? process.env["WARM_MCP_TOKEN"];
       const requestInit = token ? { headers: { authorization: `Bearer ${token}` } } : undefined;
       await client.connect(new StreamableHTTPClientTransport(new URL(connection.url), requestInit ? { requestInit } : {}));
     } else {
       await client.connect(
         new StdioClientTransport({
-          command: connection.command ?? "hms-mcp",
+          command: connection.command ?? "warm-mcp",
           args: connection.args ?? [],
           ...(connection.env ? { env: { ...(process.env as Record<string, string>), ...connection.env } } : {}),
           stderr: "inherit",
@@ -117,7 +117,7 @@ export class McpFileStore implements FileStore {
     const result = await this.client.callTool({ name, arguments: full });
     if (result.isError) {
       const failure = (result.structuredContent as { error?: ToolFailure } | undefined)?.error;
-      throw new HmsToolError(failure?.code ?? "unknown", failure?.message ?? "tool call failed", failure?.details);
+      throw new WarmToolError(failure?.code ?? "unknown", failure?.message ?? "tool call failed", failure?.details);
     }
     return result.structuredContent;
   }
@@ -127,7 +127,7 @@ export class McpFileStore implements FileStore {
       const out = (await this.call("get", { id: path })) as { memory: { text: string; version: string } };
       return { path, text: out.memory.text, version: out.memory.version };
     } catch (e) {
-      if (e instanceof HmsToolError && e.code === "not_found") return undefined;
+      if (e instanceof WarmToolError && e.code === "not_found") return undefined;
       throw e;
     }
   }
@@ -144,8 +144,8 @@ export class McpFileStore implements FileStore {
       })) as { version: string };
       return out.version;
     } catch (e) {
-      if (e instanceof HmsToolError && e.code === "already_exists") throw new ConflictError("exists", e.message);
-      if (e instanceof HmsToolError && e.code === "version_conflict") throw new ConflictError("version", e.message);
+      if (e instanceof WarmToolError && e.code === "already_exists") throw new ConflictError("exists", e.message);
+      if (e instanceof WarmToolError && e.code === "version_conflict") throw new ConflictError("version", e.message);
       throw e;
     }
   }
@@ -190,7 +190,7 @@ export class McpFileStore implements FileStore {
   }
 }
 
-export class HmsToolError extends Error {
+export class WarmToolError extends Error {
   constructor(
     readonly code: string,
     message: string,

@@ -154,7 +154,7 @@ fn manifest_geometry_boundaries_fail_before_segment_mutation() -> Result<()> {
 fn legacy_plain_and_encrypted_engine_recovery_preserves_queries_and_geometry() -> Result<()> {
     use crate::core::{
         documents::{DocumentInput, SearchOptions},
-        HmsConfig, HmsCore,
+        WarmConfig, WarmCore,
     };
     for version in [1, 2] {
         for encrypted in [false, true]
@@ -162,7 +162,7 @@ fn legacy_plain_and_encrypted_engine_recovery_preserves_queries_and_geometry() -
             .filter(|value| !value || cfg!(feature = "security"))
         {
             let root = tempdir()?;
-            let mut config = HmsConfig::default();
+            let mut config = WarmConfig::default();
             config.security.encryption_enabled = encrypted;
             if encrypted {
                 config.security.encryption_passphrase = Some("legacy-layout-fixture".into());
@@ -170,7 +170,7 @@ fn legacy_plain_and_encrypted_engine_recovery_preserves_queries_and_geometry() -
             crate::core::schema::validate_store(root.path(), 1024, &config)?;
             legacy(&root.path().join("vectors_data.bin"), version)?;
             let path = root.path().display().to_string();
-            let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
             let document: DocumentInput = serde_json::from_value(serde_json::json!({
                 "id":"legacy", "text":"needle durable legacy document", "metadata":{"unicode":"文書"}
             }))?;
@@ -179,7 +179,7 @@ fn legacy_plain_and_encrypted_engine_recovery_preserves_queries_and_geometry() -
                 serde_json::to_value(core.search_documents("needle", &SearchOptions::default())?)?;
             assert!(!before.as_array().unwrap().is_empty());
             drop(core);
-            let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
             assert_eq!(
                 serde_json::to_value(core.search_documents("needle", &SearchOptions::default())?)?,
                 before
@@ -188,7 +188,7 @@ fn legacy_plain_and_encrypted_engine_recovery_preserves_queries_and_geometry() -
             assert_eq!(core.storage_health().format_version, 2);
             assert_eq!(core.arena.stats().capacity_bytes, LEGACY_SEGMENT_SIZE);
             drop(core);
-            let core = HmsCore::new(1024, Some(path), Some(config))?;
+            let core = WarmCore::new(1024, Some(path), Some(config))?;
             assert_eq!(
                 serde_json::to_value(core.search_documents("needle", &SearchOptions::default())?)?,
                 before
@@ -231,7 +231,7 @@ fn compacted_store_without_root_manifest_keeps_published_generation_geometry() -
 #[test]
 fn legacy_compaction_tail_survives_each_plain_and_encrypted_publication_interruption() -> Result<()>
 {
-    use crate::core::{documents::SearchOptions, HmsCore};
+    use crate::core::{documents::SearchOptions, WarmCore};
     for version in [1, 2, 3] {
         for encrypted in [false, true]
             .into_iter()
@@ -251,16 +251,16 @@ fn legacy_compaction_tail_survives_each_plain_and_encrypted_publication_interrup
                         "--exact",
                         "core::engine::compaction::tests::compaction_replay_crash_child",
                     ])
-                    .env("HMS_TEST_CORE_REPLAY_ROOT", root.path())
-                    .env("HMS_TEST_CORE_REPLAY_ENCRYPTED", encrypted.to_string())
-                    .env("HMS_TEST_COMPACTION_PHASE", phase)
+                    .env("WARM_TEST_CORE_REPLAY_ROOT", root.path())
+                    .env("WARM_TEST_CORE_REPLAY_ENCRYPTED", encrypted.to_string())
+                    .env("WARM_TEST_COMPACTION_PHASE", phase)
                     .output()?;
                 assert_eq!(
                     output.status.code(),
                     Some(73),
                     "{version}/{encrypted}/{phase}: {output:?}"
                 );
-                let core = HmsCore::new(
+                let core = WarmCore::new(
                     1024,
                     Some(root.path().display().to_string()),
                     Some(config.clone()),

@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Server-mode runs: hms-server against server comparators, written as results files with
-`mode: "server"` and `reference: "hms-server"` so the table keeps them in their own sections.
+"""Server-mode runs: warm-server against server comparators, written as results files with
+`mode: "server"` and `reference: "warm-server"` so the table keeps them in their own sections.
 
 Results use the same shape as the embedded runs (analyze.py reads both unchanged). Every phase
 is one server_worker process that starts and stops the server tree itself; server memory is the
@@ -19,7 +19,7 @@ from pathlib import Path
 from . import SCHEMA_VERSION, data, envs, registry, server_proc, servers, textdata
 from .common import CACHE, RESULTS, ROOT, commit, dir_bytes, hardware, log, run_measured, write_json
 from .runner import WORK, _parse_result, _quality, _rotate
-from .server_registry import DURABILITY, DURABILITY_CLASS, ENV, HMS_SERVER
+from .server_registry import DURABILITY, DURABILITY_CLASS, ENV, WARM_SERVER
 
 WORKER = Path(__file__).resolve().parent / "server_worker.py"
 
@@ -37,7 +37,7 @@ PROTOCOL = {
     "ops": "100 replacements then 100 deletions on a copy of the built data directory, one request each, each acknowledged per `durability`",
     "durability": DURABILITY,
     "durability_class": DURABILITY_CLASS,
-    "hms_server": "ANN: the graph is persisted with the tenant store (vindex/) and opened at start; POST /api/v1/index/maintain is still "
+    "warm_server": "ANN: the graph is persisted with the tenant store (vindex/) and opened at start; POST /api/v1/index/maintain is still "
                   "sent after every restart (a no-op when nothing changed since the snapshot) and counts into cold start. Text: documents "
                   "enter through the memory API (remember) and queries through POST /api/v1/search (document search's BM25 ranking; ids "
                   "and scores only)",
@@ -46,12 +46,12 @@ PROTOCOL = {
 }
 
 
-def hms_server_binary():
+def warm_server_binary():
     target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target"))
-    path = target / "release" / "hms-server"
+    path = target / "release" / "warm-server"
     if not path.exists():
-        log("building hms-server")
-        subprocess.run(["cargo", "build", "--release", "--features", "server", "--bin", "hms-server"], check=True, cwd=ROOT)
+        log("building warm-server")
+        subprocess.run(["cargo", "build", "--release", "--features", "server", "--bin", "warm-server"], check=True, cwd=ROOT)
     return path
 
 
@@ -63,8 +63,8 @@ def install(systems):
     for system in systems:
         engine = registry.SYSTEMS[system]["engine"]
         try:
-            if engine == "hms-server":
-                hms_server_binary()
+            if engine == "warm-server":
+                warm_server_binary()
             else:
                 servers.prepare(engine)
         except servers.NotAvailable as error:
@@ -74,7 +74,7 @@ def install(systems):
 
 def _worker(args, threads, timeout):
     python = envs.ensure(ENV)
-    env = {"RAYON_NUM_THREADS": str(threads), "CARGO_TARGET_DIR": str(hms_server_binary().parents[1])}
+    env = {"RAYON_NUM_THREADS": str(threads), "CARGO_TARGET_DIR": str(warm_server_binary().parents[1])}
     workdir = Path(args[args.index("--workdir") + 1])
     try:
         stdout, stderr, wall, client_peak = run_measured([str(python), "-I", str(WORKER), *args], env=env, timeout=timeout)
@@ -90,12 +90,12 @@ def _worker(args, threads, timeout):
 def _provenance(results):
     for system, entry in results["systems"].items():
         engine = registry.SYSTEMS[system]["engine"]
-        if engine == "hms-server":
+        if engine == "warm-server":
             text = (ROOT / "Cargo.toml").read_text()
             version = next((line.split('"')[1] for line in text.splitlines() if line.startswith("version")), "unknown")
-            binary = hms_server_binary()
-            entry["version"] = {"holographic-memory": version, "commit": commit(), "features": "server"}
-            entry["install"] = {"bytes": binary.stat().st_size, "distributions": 1, "note": "hms-server binary (release, feature `server`)"}
+            binary = warm_server_binary()
+            entry["version"] = {"writerslogic-warm": version, "commit": commit(), "features": "server"}
+            entry["install"] = {"bytes": binary.stat().st_size, "distributions": 1, "note": "warm-server binary (release, feature `server`)"}
             continue
         prov = servers.provenance(engine)
         entry["provenance"] = prov
@@ -107,7 +107,7 @@ def _provenance(results):
 
 
 def _base(kind, spec, hw, dataset_meta):
-    return {"schema_version": SCHEMA_VERSION, "kind": kind, "mode": "server", "reference": HMS_SERVER, "suite": spec["name"], "commit": commit(),
+    return {"schema_version": SCHEMA_VERSION, "kind": kind, "mode": "server", "reference": WARM_SERVER, "suite": spec["name"], "commit": commit(),
             "date": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "hardware": hw, "dataset": dataset_meta,
             "facts": registry.FACTS, "timing_boundary": registry.TIMING_BOUNDARY, "not_run": registry.NOT_RUN, "systems": {}, "skipped": {},
             "platform": f"{platform.system()} {platform.machine()}"}
@@ -127,9 +127,9 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None):
                            "search_threads": 1, "queries": meta["n_test"], "recall_targets": [0.9, 0.95, 0.99],
                            "selection": "pooled-median-QPS argmax over sweep rows with recall >= target"}
     from .server_worker import ANN
-    if meta["metric"] != "angular" and HMS_SERVER in systems:
-        results["skipped"][HMS_SERVER] = f"hms-server normalizes every vector (cosine only); dataset metric {meta['metric']}"
-        systems = [s for s in systems if s != HMS_SERVER]
+    if meta["metric"] != "angular" and WARM_SERVER in systems:
+        results["skipped"][WARM_SERVER] = f"warm-server normalizes every vector (cosine only); dataset metric {meta['metric']}"
+        systems = [s for s in systems if s != WARM_SERVER]
     results["skipped"].update(install(systems))
     plan = [(s, b) for s in systems if s not in results["skipped"] for b in ANN[s].BUILDS]
     state = {}
@@ -184,12 +184,12 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None):
 
 
 def run_cli(a, spec, wanted):
-    """`hms-bench run` in server mode: hms-server plus the requested (default: all) server systems."""
+    """`warm-bench run` in server mode: warm-server plus the requested (default: all) server systems."""
     from .server_registry import SERVER_ANN_SYSTEMS, SERVER_TEXT_SYSTEMS
     def pick(pool):
-        # hms-server always runs; a kind is skipped when systems were named and none is of it.
-        others = [s for s in pool if s != HMS_SERVER and (wanted is None or s in wanted)]
-        return [HMS_SERVER] + others if others or wanted is None or wanted == {HMS_SERVER} else []
+        # warm-server always runs; a kind is skipped when systems were named and none is of it.
+        others = [s for s in pool if s != WARM_SERVER and (wanted is None or s in wanted)]
+        return [WARM_SERVER] + others if others or wanted is None or wanted == {WARM_SERVER} else []
 
     if a.only in ("ann", "both") and (systems := pick(SERVER_ANN_SYSTEMS)):
         for dataset, n_train, n_test in spec["ann"]:

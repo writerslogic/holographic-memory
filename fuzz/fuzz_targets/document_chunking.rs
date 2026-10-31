@@ -7,7 +7,7 @@
 //! Python SDK and the server. Whatever it contains, chunking must not panic, and every chunk
 //! must be a valid slice of the source text on char boundaries.
 
-use holographic_memory::{chunk_document, DocumentInput};
+use writerslogic_warm::{chunk_document, DocumentInput};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

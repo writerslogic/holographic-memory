@@ -1,10 +1,10 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-import { HmsError, type Filter } from '@holographic-memory/core'
+import { WarmError, type Filter } from '@writerslogic/warm-core'
 import type { MetadataFilter, MetadataFilters } from '@llamaindex/core/vector-store'
 
 function list(f: MetadataFilter): unknown[] {
-  if (!Array.isArray(f.value)) throw new HmsError(`operator ${f.operator} on "${f.key}" needs an array value`, 'invalid_argument')
+  if (!Array.isArray(f.value)) throw new WarmError(`operator ${f.operator} on "${f.key}" needs an array value`, 'invalid_argument')
   return f.value
 }
 
@@ -46,7 +46,7 @@ function one(f: MetadataFilter): Filter {
         ],
       }
     default:
-      throw new HmsError(`unsupported metadata filter operator ${String(f.operator)}`, 'invalid_argument')
+      throw new WarmError(`unsupported metadata filter operator ${String(f.operator)}`, 'invalid_argument')
   }
 }
 

@@ -2,21 +2,21 @@
 
 Imports the flat curated documents produced by the ToIP EGWG prototype
 ([`mcp_data_generation`, step 4](https://github.com/trustoverip/egwg-reporting-tf-prototype-mcp))
-into an HMS store through the existing document APIs (`DocumentMemory`,
+into an WARM store through the existing document APIs (`DocumentMemory`,
 `memorizeDocument`, `searchDocuments`, `deleteDocument`). It adds no retrieval,
 chunking, embedding, or persistence code of its own. It is an adapter example, not
 an agreed ToIP contract, a connector, or an MCP backend. The nested model proposed
 in upstream issue #8 is rejected, not converted.
 
 Zero dependencies. Needs Node 20+ and the native binding of this checkout
-(`holographic-memory` resolves by package self-reference from inside the checkout;
+(`writerslogic-warm` resolves by package self-reference from inside the checkout;
 elsewhere, install it). It uses the same document ID, metadata, chunking, and dimensions
 as `examples/organizational_knowledge.rs`, so one store can be written by either tool
 (see Interoperability).
 
 ## Commands
 
-Run from the HMS checkout root. Use a dedicated store directory; it is created if missing.
+Run from the WARM checkout root. Use a dedicated store directory; it is created if missing.
 
 ```sh
 node integrations/organizational-knowledge/example/cli.cjs import ./toip-js-store toip integrations/organizational-knowledge/example/fixtures
@@ -36,11 +36,11 @@ and `forget --apply`, do not create a store: a path without a `store.json` is tr
 removes the rest of that source system's documents in the namespace; it refuses when PATH holds none.
 
 ```js
-const { HolographicMemorySystem } = require('holographic-memory')
+const { WarmMemorySystem } = require('writerslogic-warm')
 const { OrganizationalKnowledge, readCuratedFiles } = require('./integrations/organizational-knowledge/index.cjs')
 
 async function main() {
-  const knowledge = new OrganizationalKnowledge(new HolographicMemorySystem(4096, './toip-js-store'), { namespace: 'toip' })
+  const knowledge = new OrganizationalKnowledge(new WarmMemorySystem(4096, './toip-js-store'), { namespace: 'toip' })
   await knowledge.importDocuments(await readCuratedFiles(['/path/to/data/curated']))
   const hits = await knowledge.search('governance reporting', { k: 5, filter: { content_type: 'Transcript' } })
   await knowledge.forget([{ sourceSystem: 'Zoom', id: 'zoom-hiero-ai-summary-GMT20260407-135959' }], { apply: true })
@@ -56,18 +56,18 @@ dependency this checkout does not install, and a model directory holding `onnx/m
 the tokenizer files), the store must be created with the embedder's embedding space:
 
 ```js
-const { createLocalEmbedder } = require('holographic-memory/semantic')
+const { createLocalEmbedder } = require('writerslogic-warm/semantic')
 
 const embedder = await createLocalEmbedder({ modelPath: '/path/to/model-dir', modelId: 'BAAI/bge-small-en-v1.5', revision: 'local' })
 const { model, revision, dimensions } = embedder.space
-const memory = new HolographicMemorySystem(4096, './toip-js-store', { embeddingModel: model, embeddingRevision: revision, embeddingDimensions: dimensions })
+const memory = new WarmMemorySystem(4096, './toip-js-store', { embeddingModel: model, embeddingRevision: revision, embeddingDimensions: dimensions })
 const knowledge = new OrganizationalKnowledge(memory, { namespace: 'toip', embedder })
 const hits = await knowledge.search('governance reporting', { lexicalWeight: 0, semanticWeight: 1 })
 ```
 
 ## Mapping
 
-| Curated field | HMS |
+| Curated field | WARM |
 |---|---|
 | namespace (option) + `source_system` + `id` | Document ID `JSON.stringify([namespace, source_system, id])`, at most 1024 bytes |
 | `identifier` (SAID) | Document `version`, verbatim, 1 to 1024 bytes |
@@ -123,7 +123,7 @@ instead of accumulating. Hit offsets are UTF-8 byte offsets into the exact curat
 
 - Namespace filtering is a query filter, not authorization. Anyone who can open the store or
   call the engine API can read every namespace. Use separate stores or encryption for isolation.
-- Forget removes the document from HMS retrieval. It does not claim physical erasure of
+- Forget removes the document from WARM retrieval. It does not claim physical erasure of
   journals, page cache, backups, snapshots, or model inferences, and it does not remove
   anything upstream. Upstream deletion is not detected or propagated.
 - Namespace-wide forget and prune need the binding's `listDocuments`, added alongside this adapter
@@ -174,7 +174,7 @@ only, against the checkout's binding and a binding built from the 5ccca1e4 sourc
 `embedder.test.cjs` is skipped unless a local ONNX model directory is given:
 
 ```sh
-HMS_TEST_ONNX_MODEL_DIR=/path/to/model-dir node --test integrations/organizational-knowledge/test/embedder.test.cjs
+WARM_TEST_ONNX_MODEL_DIR=/path/to/model-dir node --test integrations/organizational-knowledge/test/embedder.test.cjs
 ```
 
 It checks only that a real embedder's vectors are stored and searched through the adapter

@@ -19,7 +19,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--dataset", required=True)
     p.add_argument("--model", required=True)
-    p.add_argument("--cache", default=os.path.expanduser("~/.cache/hms-bench"))
+    p.add_argument("--cache", default=os.path.expanduser("~/.cache/warm-bench"))
     a = p.parse_args()
     from sentence_transformers import SentenceTransformer
     cache = Path(a.cache)

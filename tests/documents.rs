@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, EmbeddingSpace, SearchOptions, WarmCore};
 
 fn input(id: &str, text: &str) -> DocumentInput {
     serde_json::from_value(serde_json::json!({
@@ -16,12 +16,12 @@ fn input(id: &str, text: &str) -> DocumentInput {
 fn document_lifecycle_preserves_sources_filters_and_versions() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
     let path = dir.path().display().to_string();
-    let hms = HmsCore::new(4096, Some(path.clone()), None)?;
+    let warm = WarmCore::new(4096, Some(path.clone()), None)?;
     let original = input(
         "manual",
         "Café records explain backups. Restore deleted documents from verified snapshots safely.",
     );
-    let chunks = holographic_memory::chunk_document(&original)?;
+    let chunks = writerslogic_warm::chunk_document(&original)?;
     assert!(chunks.len() > 1);
     for chunk in &chunks {
         assert_eq!(
@@ -29,8 +29,8 @@ fn document_lifecycle_preserves_sources_filters_and_versions() -> anyhow::Result
             chunk.text
         );
     }
-    hms.memorize_document(original)?;
-    let results = hms.search_documents("restore snapshots", &SearchOptions::default())?;
+    warm.memorize_document(original)?;
+    let results = warm.search_documents("restore snapshots", &SearchOptions::default())?;
     assert_eq!(results[0].document_id, "manual");
     assert_eq!(results[0].source_uri.as_deref(), Some("notes.md"));
     assert!(results[0].text.as_deref().unwrap().contains("snapshots"));
@@ -38,24 +38,24 @@ fn document_lifecycle_preserves_sources_filters_and_versions() -> anyhow::Result
         filter: Some(serde_json::json!({"project": "other"})),
         ..Default::default()
     };
-    assert!(hms.search_documents("restore", &filtered)?.is_empty());
+    assert!(warm.search_documents("restore", &filtered)?.is_empty());
     let mut replacement = input("manual", "Updated indexing instructions.");
     replacement.version = Some("2".into());
-    hms.memorize_document(replacement)?;
-    assert!(hms
+    warm.memorize_document(replacement)?;
+    assert!(warm
         .search_documents("snapshots", &SearchOptions::default())?
         .is_empty());
-    hms.compact()?;
-    drop(hms);
-    let hms = HmsCore::new(4096, Some(path.clone()), None)?;
-    let results = hms.search_documents("indexing", &SearchOptions::default())?;
+    warm.compact()?;
+    drop(warm);
+    let warm = WarmCore::new(4096, Some(path.clone()), None)?;
+    let results = warm.search_documents("indexing", &SearchOptions::default())?;
     assert_eq!(results[0].version, "2");
-    assert_eq!(hms.vector_count(), 1);
-    assert!(hms.delete_document("manual")?);
-    drop(hms);
-    let hms = HmsCore::new(4096, Some(path), None)?;
-    assert_eq!(hms.vector_count(), 0);
-    assert!(hms
+    assert_eq!(warm.vector_count(), 1);
+    assert!(warm.delete_document("manual")?);
+    drop(warm);
+    let warm = WarmCore::new(4096, Some(path), None)?;
+    assert_eq!(warm.vector_count(), 0);
+    assert!(warm
         .search_documents("indexing", &SearchOptions::default())?
         .is_empty());
     Ok(())
@@ -64,7 +64,7 @@ fn document_lifecycle_preserves_sources_filters_and_versions() -> anyhow::Result
 #[test]
 fn semantic_candidates_use_cosine_and_filter_before_ranking() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "fixture".into(),
             revision: "1".into(),
@@ -74,39 +74,39 @@ fn semantic_candidates_use_cosine_and_filter_before_ranking() -> anyhow::Result<
         }),
         ..Default::default()
     };
-    let hms = HmsCore::new(4096, Some(dir.path().display().to_string()), Some(config))?;
+    let warm = WarmCore::new(4096, Some(dir.path().display().to_string()), Some(config))?;
     let mut a = input("positive", "An automobile.");
     a.embeddings = Some(vec![vec![1.0, 0.1, 0.0]]);
-    hms.memorize_document(a)?;
+    warm.memorize_document(a)?;
     let mut b = input("opposite", "Something unrelated.");
     b.embeddings = Some(vec![vec![-1.0, -0.1, 0.0]]);
-    hms.memorize_document(b)?;
+    warm.memorize_document(b)?;
     let options = SearchOptions {
         embedding: Some(vec![1.0, 0.0, 0.0]),
         k: Some(1),
         ..Default::default()
     };
-    let results = hms.search_documents("car", &options)?;
+    let results = warm.search_documents("car", &options)?;
     assert_eq!(results[0].document_id, "positive");
     assert!(results[0].semantic_score.unwrap() > 0.99);
     let options = SearchOptions {
         filter: Some(serde_json::json!({"project": "missing"})),
         ..options
     };
-    assert!(hms.search_documents("car", &options)?.is_empty());
+    assert!(warm.search_documents("car", &options)?.is_empty());
     Ok(())
 }
 
 #[test]
 fn malformed_document_update_does_not_replace_existing_content() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let hms = HmsCore::new(4096, Some(dir.path().display().to_string()), None)?;
-    hms.memorize_document(input("d", "Keep this original."))?;
+    let warm = WarmCore::new(4096, Some(dir.path().display().to_string()), None)?;
+    warm.memorize_document(input("d", "Keep this original."))?;
     let mut invalid = input("d", "Invalid replacement.");
     invalid.overlap_words = Some(5);
-    assert!(hms.memorize_document(invalid).is_err());
+    assert!(warm.memorize_document(invalid).is_err());
     assert_eq!(
-        hms.search_documents("original", &SearchOptions::default())?[0].document_id,
+        warm.search_documents("original", &SearchOptions::default())?[0].document_id,
         "d"
     );
     Ok(())
@@ -114,21 +114,21 @@ fn malformed_document_update_does_not_replace_existing_content() -> anyhow::Resu
 
 #[test]
 fn reencoding_is_atomic_and_preserves_original_sources() -> anyhow::Result<()> {
-    use holographic_memory::core::admin::reencode_documents;
+    use writerslogic_warm::core::admin::reencode_documents;
     let dir = tempfile::tempdir()?;
     let source = dir.path().join("source.jsonl");
     let target = dir.path().join("new-store");
     let content = "{\"id\":\"manual\",\"text\":\"Restore a verified backup.\"}\n";
     std::fs::write(&source, format!("{content}{{invalid json}}\n"))?;
-    assert!(reencode_documents(&source, &target, 4096, HmsConfig::default()).is_err());
+    assert!(reencode_documents(&source, &target, 4096, WarmConfig::default()).is_err());
     assert!(!target.exists());
     assert!(std::fs::read_to_string(&source)?.contains("invalid json"));
     std::fs::write(&source, content)?;
-    reencode_documents(&source, &target, 4096, HmsConfig::default())?;
+    reencode_documents(&source, &target, 4096, WarmConfig::default())?;
     assert_eq!(std::fs::read_to_string(&source)?, content);
-    let hms = HmsCore::new(4096, Some(target.display().to_string()), None)?;
+    let warm = WarmCore::new(4096, Some(target.display().to_string()), None)?;
     assert_eq!(
-        hms.search_documents("backup", &SearchOptions::default())?[0].document_id,
+        warm.search_documents("backup", &SearchOptions::default())?[0].document_id,
         "manual"
     );
     Ok(())
@@ -137,14 +137,14 @@ fn reencoding_is_atomic_and_preserves_original_sources() -> anyhow::Result<()> {
 #[test]
 fn bounded_document_inputs_fail_without_committing() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let hms = HmsCore::new(4096, Some(dir.path().display().to_string()), None)?;
-    assert!(hms
+    let warm = WarmCore::new(4096, Some(dir.path().display().to_string()), None)?;
+    assert!(warm
         .memorize_document(input("long-token", &"x".repeat(65537)))
         .is_err());
     let mut document = input("metadata", "Short content.");
     document.metadata = Some(serde_json::json!({"oversized": "x".repeat(65536)}));
-    assert!(hms.memorize_document(document).is_err());
-    assert_eq!(hms.vector_count(), 0);
+    assert!(warm.memorize_document(document).is_err());
+    assert_eq!(warm.vector_count(), 0);
     Ok(())
 }
 
@@ -152,10 +152,10 @@ fn bounded_document_inputs_fail_without_committing() -> anyhow::Result<()> {
 fn document_readers_observe_atomic_versions_during_compaction() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
     let path = dir.path().display().to_string();
-    let hms = HmsCore::new(4096, Some(path.clone()), None)?;
+    let warm = WarmCore::new(4096, Some(path.clone()), None)?;
     let mut first = input("changing", "current revision1");
     first.version = Some("1".into());
-    hms.memorize_document(first)?;
+    warm.memorize_document(first)?;
     let barrier = std::sync::Barrier::new(2);
     std::thread::scope(|scope| -> anyhow::Result<()> {
         let reader = scope.spawn(|| {
@@ -163,7 +163,7 @@ fn document_readers_observe_atomic_versions_during_compaction() -> anyhow::Resul
             for _ in 0..20 {
                 barrier.wait();
                 observations.push(
-                    hms.search_documents("current revision1 revision2", &SearchOptions::default()),
+                    warm.search_documents("current revision1 revision2", &SearchOptions::default()),
                 );
                 barrier.wait();
             }
@@ -175,9 +175,9 @@ fn document_readers_observe_atomic_versions_during_compaction() -> anyhow::Resul
             let version = 1 + i % 2;
             let mut replacement = input("changing", &format!("current revision{version}"));
             replacement.version = Some(version.to_string());
-            updates.push(hms.memorize_document(replacement));
+            updates.push(warm.memorize_document(replacement));
             let compacted = if i.is_multiple_of(5) {
-                hms.compact()
+                warm.compact()
             } else {
                 Ok(())
             };
@@ -198,10 +198,10 @@ fn document_readers_observe_atomic_versions_during_compaction() -> anyhow::Resul
         }
         Ok(())
     })?;
-    assert!(hms.delete_document("changing")?);
-    hms.compact()?;
-    drop(hms);
-    let restored = HmsCore::new(4096, Some(path), None)?;
+    assert!(warm.delete_document("changing")?);
+    warm.compact()?;
+    drop(warm);
+    let restored = WarmCore::new(4096, Some(path), None)?;
     assert!(restored
         .search_documents("current revision2", &SearchOptions::default())?
         .is_empty());

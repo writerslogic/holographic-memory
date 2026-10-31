@@ -16,7 +16,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(here, "..");
 const crateRoot = resolve(pkgRoot, "..");
 const dist = join(pkgRoot, "dist");
-const targetBase = process.env.HMS_WASM_TARGET_DIR ?? "./.hms-target-wasm";
+const targetBase = process.env.WARM_WASM_TARGET_DIR ?? "./.warm-target-wasm";
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => {
@@ -58,7 +58,7 @@ function bindgenBinary() {
   const lock = readFileSync(join(crateRoot, "Cargo.lock"), "utf8");
   const version = /name = "wasm-bindgen"\nversion = "([^"]+)"/.exec(lock)?.[1];
   if (!version) throw new Error("wasm-bindgen is not in bindings/wasm/Cargo.lock");
-  const cache = process.env.HMS_WASM_PACK_CACHE ?? join(process.env.HOME, "Library/Caches/.wasm-pack");
+  const cache = process.env.WARM_WASM_PACK_CACHE ?? join(process.env.HOME, "Library/Caches/.wasm-pack");
   const found = join(cache, `wasm-bindgen-cargo-install-${version}`, "wasm-bindgen");
   if (!existsSync(found)) {
     throw new Error(`wasm-bindgen ${version} CLI not found; run: cargo install wasm-bindgen-cli --version ${version}`);
@@ -80,12 +80,12 @@ if (!skipWasm) {
     };
     // One cargo build per variant; wasm-bindgen then emits each target from the same module.
     run("cargo", ["build", "--release", "--target", "wasm32-unknown-unknown", "--manifest-path", join(crateRoot, "Cargo.toml")], { env });
-    const built = join(env.CARGO_TARGET_DIR, "wasm32-unknown-unknown", "release", "hms_wasm.wasm");
+    const built = join(env.CARGO_TARGET_DIR, "wasm32-unknown-unknown", "release", "warm_wasm.wasm");
     for (const target of targets) {
       const out = join(dist, "wasm", glueDirName(target), variant);
       mkdirSync(out, { recursive: true });
-      run(bindgenBinary(), ["--target", target, "--out-dir", out, "--out-name", "hms_wasm", built]);
-      const wasm = join(out, "hms_wasm_bg.wasm");
+      run(bindgenBinary(), ["--target", target, "--out-dir", out, "--out-name", "warm_wasm", built]);
+      const wasm = join(out, "warm_wasm_bg.wasm");
       const before = statSync(wasm).size;
       run(wasmOptBinary(), ["-Oz", ...BASE_FEATURES, ...(simd ? ["--enable-simd"] : []), "--strip-producers", wasm, "-o", wasm]);
       const bytes = readFileSync(wasm);
@@ -95,7 +95,7 @@ if (!skipWasm) {
         gzipBytes: gzipSync(bytes, { level: 9 }).length,
         brotliBytes: brotliCompressSync(bytes).length,
       };
-      if (target === "nodejs") renameSync(join(out, "hms_wasm.js"), join(out, "hms_wasm.cjs"));
+      if (target === "nodejs") renameSync(join(out, "warm_wasm.js"), join(out, "warm_wasm.cjs"));
     }
   }
   mkdirSync(dist, { recursive: true });

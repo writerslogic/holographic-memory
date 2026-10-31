@@ -18,8 +18,8 @@
 //! as wrong.
 
 use anyhow::{Context, Result};
-use holographic_memory::core::memory_api::{HistoryMode, Memory, RecallOptions};
-use holographic_memory::{HmsCore, SearchOptions};
+use writerslogic_warm::core::memory_api::{HistoryMode, Memory, RecallOptions};
+use writerslogic_warm::{WarmCore, SearchOptions};
 use serde::{Deserialize, Serialize};
 
 use crate::contract::{
@@ -101,7 +101,7 @@ impl Answer {
 }
 
 /// (a) Global BM25 top 4 over every record in the store.
-pub fn global_bm25(core: &HmsCore, query: &Query) -> Result<Answer> {
+pub fn global_bm25(core: &WarmCore, query: &Query) -> Result<Answer> {
     let options = SearchOptions {
         k: Some(EVIDENCE_BUDGET as u32),
         ..SearchOptions::default()

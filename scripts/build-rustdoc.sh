@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Builds the crate's rustdoc from one source tree and copies it to an output directory, which
-# scripts/docs_site.py embeds in the site under api/rust/doc/ (HMS_RUSTDOC_DIR).
+# scripts/docs_site.py embeds in the site under api/rust/doc/ (WARM_RUSTDOC_DIR).
 #
 # Usage: scripts/build-rustdoc.sh <source-dir> <out-dir>
 # The `provenance` feature pulls in `security`, so both appear. `experimental` is left out on
@@ -19,4 +19,4 @@ cargo doc --no-deps --lib --features provenance --locked --quiet --target-dir "$
 rm -rf "${out:?}"
 mkdir -p "$out"
 cp -R "$target/doc/." "$out/"
-test -f "$out/holographic_memory/index.html"
+test -f "$out/writerslogic_warm/index.html"

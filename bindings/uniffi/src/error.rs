@@ -6,7 +6,7 @@ use std::io::ErrorKind;
 /// Errors raised by the store. Every variant carries a details that is safe to log: none
 /// contains key material or document text.
 #[derive(Debug, thiserror::Error, uniffi::Error)]
-pub enum HmsError {
+pub enum WarmError {
     /// An argument failed validation (identifier, JSON, option range, embedding length).
     #[error("invalid input: {details}")]
     InvalidInput { details: String },
@@ -39,7 +39,7 @@ pub enum HmsError {
     Internal { details: String },
 }
 
-impl HmsError {
+impl WarmError {
     pub(crate) fn invalid(details: impl Into<String>) -> Self {
         Self::InvalidInput {
             details: details.into(),
@@ -100,7 +100,7 @@ impl HmsError {
     }
 }
 
-impl From<std::io::Error> for HmsError {
+impl From<std::io::Error> for WarmError {
     fn from(error: std::io::Error) -> Self {
         let details = error.to_string();
         match error.kind() {
@@ -111,7 +111,7 @@ impl From<std::io::Error> for HmsError {
     }
 }
 
-impl From<anyhow::Error> for HmsError {
+impl From<anyhow::Error> for WarmError {
     fn from(error: anyhow::Error) -> Self {
         Self::from_engine(&error)
     }

@@ -56,7 +56,7 @@ live candidate count. Use a compact label mapping for sparse external label iden
 ## Reasoning budgets
 
 Use `multi_hop_with_limits` and `synthesize_concepts_with_limits` with
-`holographic_memory::core::query_limits::QueryLimits` to handle resource limits explicitly.
+`writerslogic_warm::core::query_limits::QueryLimits` to handle resource limits explicitly.
 Their defaults are 10,000,000 work units, 16,384 frontier entries and 64 MiB of accounted
 bytes. Work includes scanned triples, candidate visits, sorting and comparisons. Byte
 accounting conservatively covers retained inputs, intermediate frontiers and working
@@ -76,7 +76,7 @@ companions in applications that must report or recover from an exhausted budget.
 
 ## Durable meaning governance
 
-`HmsCore::govern_memory` returns `Result<GovernanceReport>` and uses the default
+`WarmCore::govern_memory` returns `Result<GovernanceReport>` and uses the default
 `QueryLimits`; `govern_memory_with_limits` accepts explicit limits. It captures a coherent
 revision and bounded live snapshots, plans on isolated memories outside the mutation gate,
 and publishes one journal transaction only if the revision is still current.
@@ -90,9 +90,9 @@ atom/composite deletions preserve unrelated raw vectors with the same ID. Refine
 recomposes affected owned composites and their matching raw-vector mirrors; ambiguous or
 missing ownership fails explicitly. Reopen and compaction retain these changes. The
 standalone `MemoryGovernor` primitive operates only on the supplied in-memory stores;
-applications persisting an `HmsCore` use its durable governance methods.
+applications persisting an `WarmCore` use its durable governance methods.
 
 New stores use schema 5. Meaning-enabled stores with schemas 2–4 keep their writer format
-and must first be explicitly copied with `hms-format upgrade <source> <destination>` before
+and must first be explicitly copied with `warm-format upgrade <source> <destination>` before
 durable governance. The source remains unchanged, and current arenas/checkpoints are copied
 without re-encoding their existing journal frames.

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-HMS Benchmark Visualization
+WARM Benchmark Visualization
 ============================
-Generates publication-quality figures from HMS scaling and research benchmark data.
+Generates publication-quality figures from WARM scaling and research benchmark data.
 
 Usage:
     uv run python scripts/plot_benchmarks.py
@@ -489,7 +489,7 @@ def fig_compression():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    log.info("HMS Benchmark Visualization")
+    log.info("WARM Benchmark Visualization")
     log.info("  Scaling data: %d configurations", len(configs))
     log.info("  Output directory: %s", FIG_DIR)
 

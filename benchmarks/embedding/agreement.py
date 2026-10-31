@@ -4,7 +4,7 @@
 
   sample     write the fixed agreement sample (benchmarks/embedding/agreement_sample.json)
   reference  embed the sample with the PyTorch reference model -> <out>.json (base64 float32)
-  compare    run `hms-embed embed` on the sample and report min/mean cosine per kind
+  compare    run `warm-embed embed` on the sample and report min/mean cosine per kind
 
 The sample is chosen by sha256 order from SciFact documents, NFCorpus queries and LongMemEval
 dev turns, plus fixed edge cases (empty-ish text, CJK, emoji, accents, code, a text past every
@@ -24,7 +24,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-DL = Path.home() / ".cache/hms-bench/downloads"
+DL = Path.home() / ".cache/warm-bench/downloads"
 SAMPLE = HERE / "agreement_sample.json"
 
 EDGE = [

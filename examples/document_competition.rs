@@ -3,9 +3,9 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde::Deserialize;
 use std::{path::PathBuf, time::Instant};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 #[derive(Parser)]
 struct Args {
@@ -36,7 +36,7 @@ fn main() -> Result<()> {
     ensure!(input.documents.len() <= 10_000 && input.queries.len() <= 2_000);
     let ingest = !args.store.exists();
     let start = Instant::now();
-    let core = HmsCore::new(1024, Some(args.store.display().to_string()), None)?;
+    let core = WarmCore::new(1024, Some(args.store.display().to_string()), None)?;
     if ingest {
         for document in &input.documents {
             ensure!(core.memorize_document(document.clone())? == 1);

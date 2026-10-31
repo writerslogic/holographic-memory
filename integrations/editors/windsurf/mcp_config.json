@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "holographic-memory": {
+    "writerslogic-warm": {
       "command": "npx",
-      "args": ["-y", "holographic-memory-mcp"]
+      "args": ["-y", "writerslogic-warm-mcp"]
     }
   }
 }

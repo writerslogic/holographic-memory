@@ -6,7 +6,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
-const { HolographicMemorySystem } = require('holographic-memory')
+const { WarmMemorySystem } = require('writerslogic-warm')
 const { KnowledgeError, OrganizationalKnowledge, documentId, prepareImport, validateImport } = require('../index.cjs')
 
 const ADAPTER = path.resolve(__dirname, '..')
@@ -25,7 +25,7 @@ async function withStore(run) {
   }
 }
 
-const openMemory = directory => new HolographicMemorySystem(DIMENSIONS, directory)
+const openMemory = directory => new WarmMemorySystem(DIMENSIONS, directory)
 
 function curated(overrides = {}) {
   return {
@@ -327,12 +327,12 @@ test('invalid forget targets are rejected before anything is deleted', async t =
 
 function runChild(workdir, store, payload) {
   const script = `
-    const { HolographicMemorySystem } = require(${JSON.stringify(path.join(ROOT, 'index.js'))});
+    const { WarmMemorySystem } = require(${JSON.stringify(path.join(ROOT, 'index.js'))});
     const { OrganizationalKnowledge } = require(${JSON.stringify(path.join(ADAPTER, 'index.cjs'))});
     (async () => {
       const [store, payloadJson] = process.argv.slice(1);
       const { docs = [], forget = [], scope } = JSON.parse(payloadJson);
-      const knowledge = new OrganizationalKnowledge(new HolographicMemorySystem(${DIMENSIONS}, store), { namespace: 'org' });
+      const knowledge = new OrganizationalKnowledge(new WarmMemorySystem(${DIMENSIONS}, store), { namespace: 'org' });
       if (docs.length) await knowledge.importDocuments(docs.map(document => ({ document, source: document.id })));
       if (forget.length) await knowledge.forget(forget, { apply: true });
       if (scope) await knowledge.forgetScope(scope, { apply: true });
@@ -523,7 +523,7 @@ test('overlapping writes on one instance run in call order instead of failing as
 
 test('an embedder supplies chunk vectors, and the per-document embedding bound is checked before any write', async () => {
   await withStore(async workdir => {
-    const memory = new HolographicMemorySystem(DIMENSIONS, workdir, { embeddingModel: 'test-model', embeddingRevision: 'r1', embeddingDimensions: 8 })
+    const memory = new WarmMemorySystem(DIMENSIONS, workdir, { embeddingModel: 'test-model', embeddingRevision: 'r1', embeddingDimensions: 8 })
     const vector = text => Array.from({ length: 8 }, (_, index) => (index === (text.includes('alpha') ? 0 : text.includes('beta') ? 1 : 2) ? 1 : 0.01))
     const embedder = { space: memory.securityStatus().embeddingSpace, encodeDocuments: async texts => texts.map(vector), encodeQuery: async text => vector(text) }
     const knowledge = new OrganizationalKnowledge(memory, { namespace: 'org', embedder })
@@ -596,8 +596,8 @@ test('a failed delete reports what was removed, and repeating the forget finishe
   })
 })
 
-const hasListing = typeof HolographicMemorySystem.prototype.listDocuments === 'function'
-const needsListing = { skip: !hasListing && 'the loaded holographic-memory binding has no listDocuments; rebuild it' }
+const hasListing = typeof WarmMemorySystem.prototype.listDocuments === 'function'
+const needsListing = { skip: !hasListing && 'the loaded writerslogic-warm binding has no listDocuments; rebuild it' }
 const seedInputs = (namespace, sourceSystem, count, prefix = 'bulk') =>
   prepareImport(namespace, Array.from({ length: count }, (_, index) => entry(curated({ source_system: sourceSystem, id: `${prefix}-${String(index).padStart(5, '0')}`, content: 'zebraquartz bulk' }), `${prefix}-${index}`))).map(item => item.input)
 const idsIn = result => result.targets.map(target => target.id).sort()

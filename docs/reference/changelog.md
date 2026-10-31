@@ -1,7 +1,7 @@
 ---
 search:
   boost: 0.8
-description: Every notable change to Holographic Memory, generated from the commit history.
+description: Every notable change to WARM, generated from the commit history.
 ---
 
 These are the release notes for every version, newest first, generated from the commit history.

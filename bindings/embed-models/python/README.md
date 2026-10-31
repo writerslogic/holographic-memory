@@ -1,18 +1,18 @@
-<a href="https://holographic-memory.com/"><img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" alt="Holographic Memory logo" width="96" align="left"></a>
+<a href="https://writerslogic.com/warm/"><img src="https://raw.githubusercontent.com/writerslogic/warm/main/assets/crystal-halo/crystal-detailed-static.png" alt="WARM logo" width="96" align="left"></a>
 
-# Holographic Memory Models
+# WARM Models
 
 The default offline embedding model pack for
-[`holographic-memory-py`](https://pypi.org/project/holographic-memory-py/).
+[`writerslogic-warm-py`](https://pypi.org/project/writerslogic-warm-py/).
 
-[Website](https://holographic-memory.com/) · [Documentation](https://docs.holographic-memory.com/latest/embeddings/) · [Source](https://github.com/writerslogic/holographic-memory) · [License](https://github.com/writerslogic/holographic-memory/blob/main/LICENSE)
+[Website](https://writerslogic.com/warm/) · [Documentation](https://writerslogic.com/warm/docs/latest/embeddings/) · [Source](https://github.com/writerslogic/warm) · [License](https://github.com/writerslogic/warm/blob/main/LICENSE)
 
 <br clear="left">
 
 Install it through the native binding's `embed` extra:
 
 ```sh
-uv add "holographic-memory-py[embed]"
+uv add "writerslogic-warm-py[embed]"
 ```
 
 The wheel contains the pinned int8 pack for
@@ -22,13 +22,13 @@ SHA-256 before use.
 With `offline=True`, embedding does not make a first-use network request:
 
 ```python
-from holographic_memory import Embedder
+from writerslogic_warm import Embedder
 
 embedder = Embedder(offline=True)
 vector = embedder.embed_query("Where is my note?")
 ```
 
 Other registered models can be fetched into the cache on first use, or supplied through
-`HMS_EMBED_MODEL_DIR`. This wheel includes the default model only. See the
-[embedding guide](https://docs.holographic-memory.com/latest/embeddings/) for model selection and
+`WARM_EMBED_MODEL_DIR`. This wheel includes the default model only. See the
+[embedding guide](https://writerslogic.com/warm/docs/latest/embeddings/) for model selection and
 offline setup.

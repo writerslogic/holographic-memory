@@ -6,7 +6,7 @@ BM25, and by how much?
 Mechanism
 ---------
 Two exhaustive scorers over the 3633-document corpus for every query: BM25 (k1 1.2, b 0.75, the
-HMS tokenizer: lowercase, split on runs outside [0-9A-Za-z\\u00C0-\\uFFFF], no stemming, no stop
+WARM tokenizer: lowercase, split on runs outside [0-9A-Za-z\\u00C0-\\uFFFF], no stemming, no stop
 list, each unique query term counted once, idf ln(1 + (N - df + 0.5) / (df + 0.5))) and cosine of
 the cached l2-normalized MiniLM-L6 vectors. Four measurements follow, numpy only, deterministic:
 
@@ -65,7 +65,7 @@ from pathlib import Path
 
 import numpy as np
 
-SCHEMA = "hms.research.roc/1"
+SCHEMA = "warm.research.roc/1"
 K1 = 1.2
 B = 0.75
 TOKEN_SPLIT = re.compile(r"[^0-9A-Za-zÀ-￿]+")
@@ -89,7 +89,7 @@ AUC_MIN = 0.55
 GAIN_MIN = 0.02
 TIE_EPS = 1e-12
 DISCOUNT = 1.0 / np.log2(np.arange(2, NDCG_K + 2))
-REFERENCE_DEV = {"bm25_hms": 0.2916, "minilm_l6": 0.3024, "gte_small": 0.3398}
+REFERENCE_DEV = {"bm25_warm": 0.2916, "minilm_l6": 0.3024, "gte_small": 0.3398}
 
 
 # ----------------------------------------------------------------------------------------------
@@ -172,7 +172,7 @@ def sha256_file(path: Path) -> str:
 
 
 def tokenize(text: str) -> list[str]:
-    """HMS tokenizer: lowercase, split on runs outside [0-9A-Za-z\\u00C0-\\uFFFF]; no stemming."""
+    """WARM tokenizer: lowercase, split on runs outside [0-9A-Za-z\\u00C0-\\uFFFF]; no stemming."""
     return [t for t in TOKEN_SPLIT.split(text.lower()) if t]
 
 
@@ -901,7 +901,7 @@ def print_summary(doc: dict, out_path: Path) -> None:
     g = doc["gate_statistic_diagnostics"]
     lines = [
         f"=== dense-channel relevance gate: NFCorpus ({d['n_queries_scored']} q / {d['n_corpus']} d, MiniLM-L6 {d['meta']['dim']}-d) ===",
-        f"split: {d['split_identification']}; references (dev): bm25 {b['reference_points_dev_split']['bm25_hms']} minilm {b['reference_points_dev_split']['minilm_l6']}",
+        f"split: {d['split_identification']}; references (dev): bm25 {b['reference_points_dev_split']['bm25_warm']} minilm {b['reference_points_dev_split']['minilm_l6']}",
         f"nDCG@10 all q: BM25 {fmt(b['bm25_ndcg10'])}  cosine {fmt(b['cosine_ndcg10'])}  oracle best-channel {fmt(oc['best_channel'])} "
         f"(cos wins {oc['cosine_wins']}, bm25 wins {oc['bm25_wins']}, ties {oc['ties']})  oracle best-weight {fmt(oc['best_minmax_weight'])}",
         f"static curves all q (info): minmax w={s['minmax']['best_weight']} {fmt(s['minmax']['best_ndcg10'])} | z w={s['z']['best_weight']} {fmt(s['z']['best_ndcg10'])} "
@@ -933,7 +933,7 @@ def print_summary(doc: dict, out_path: Path) -> None:
 def main() -> None:
     """CLI entry: --cache <dir> --out <json>."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "hms-bench" / "nfcorpus", help="NFCorpus cache directory")
+    ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "warm-bench" / "nfcorpus", help="NFCorpus cache directory")
     ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parent / "out" / "roc_v1.json", help="result JSON path")
     args = ap.parse_args()
     for name in ("meta.json", "corpus.jsonl", "queries.jsonl", "qrels.tsv", "corpus.f32", "queries.f32"):

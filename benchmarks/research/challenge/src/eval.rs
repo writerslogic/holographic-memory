@@ -47,7 +47,7 @@ use crate::synth::{self, Dataset, GenConfig, Gold, Query};
 
 pub const REQUIRED_MARGIN_POINTS: f64 = 10.0;
 pub const MAX_P95_RATIO: f64 = 2.0;
-pub const SCHEMA: &str = "hms-research-challenge/results/v1";
+pub const SCHEMA: &str = "warm-research-challenge/results/v1";
 pub const SQLITE_BASELINE_NOTE: &str = "skipped: rusqlite is not a dependency of the root crate \
      (Cargo.toml [dependencies], lines 19-58 at the time of writing), and the round forbids new \
      third-party crates";

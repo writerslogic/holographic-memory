@@ -8,16 +8,16 @@ import warnings
 
 import pytest
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.mem0 import AsyncMemory, LLMExtractor, Memory
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.mem0 import AsyncMemory, LLMExtractor, Memory
 
 
 def make(server, **kw):
-    return Memory(hms=HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim), **kw)
+    return Memory(warm=WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim), **kw)
 
 
 def amake(server, **kw):
-    return AsyncMemory(hms=HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim), **kw)
+    return AsyncMemory(warm=WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim), **kw)
 
 
 def test_add_search_get_update_delete_history(server):
@@ -117,7 +117,7 @@ def test_expiration(server):
 
 def test_delete_all_pages_past_the_service_cap(server_factory):
     srv = server_factory(64, max_top_k=10)
-    m = Memory(hms=HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10), buckets=8)
+    m = Memory(warm=WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10), buckets=8)
     with m:
         for i in range(23):
             m.add(f"fact {i}", user_id="big", infer=False)
@@ -131,7 +131,7 @@ def test_delete_all_pages_past_the_service_cap(server_factory):
 def test_get_all_beyond_one_page(server_factory, total):
     """limit-1, limit, limit+1 and several pages for max_fetch=10."""
     srv = server_factory(64, max_top_k=10)
-    m = Memory(hms=HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10), buckets=8)
+    m = Memory(warm=WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10), buckets=8)
     with m:
         for i in range(total):
             m.add(f"fact {i}", user_id="u", infer=False)
@@ -190,13 +190,13 @@ def test_strict_infer_and_async_extractor_in_sync_memory(server):
 
 def test_from_config_mem0_dict(server):
     cfg = {
-        "vector_store": {"provider": "hms", "config": {"url": server.url, "tenant_id": server.tenant(), "collection_name": "c1", "embedding_model_dims": 64}},
+        "vector_store": {"provider": "warm", "config": {"url": server.url, "tenant_id": server.tenant(), "collection_name": "c1", "embedding_model_dims": 64}},
         "embedder": {"provider": "hashing", "config": {"embedding_dims": 64}},
         "llm": lambda messages: json.dumps({"memory": [{"text": "fact from llm"}]}),
     }
     with Memory.from_config(cfg) as m:
         assert m.add("hi", user_id="u")["results"][0]["memory"] == "fact from llm"
-        assert m.settings.hms.collection == "c1"
+        assert m.settings.warm.collection == "c1"
     with pytest.raises(ValueError, match="not supported here"):
         Memory.from_config({"vector_store": {"provider": "qdrant", "config": {}}})
     with pytest.raises(ValueError, match="not supported here"):
@@ -262,8 +262,8 @@ async def test_async_memory_end_to_end(server):
 
 async def test_async_get_all_buckets(server_factory):
     srv = server_factory(64, max_top_k=10)
-    cfg = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
-    async with AsyncMemory(hms=cfg, buckets=8) as m:
+    cfg = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    async with AsyncMemory(warm=cfg, buckets=8) as m:
         for i in range(25):
             await m.add(f"fact {i}", user_id="u", infer=False)
         got = (await m.get_all(filters={"user_id": "u"}, top_k=100))["results"]

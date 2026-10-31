@@ -15,7 +15,7 @@ const DIM = 8
 const unit = (i) => Array.from({ length: DIM }, (_, j) => (i === j ? 1 : 0))
 const mix = (i, j, w = 0.3) => unit(i).map((v, k) => v + (k === j ? w : 0))
 
-const make = (opts = {}) => new HolographicVector({ id: 'hms', dimension: DIM, path: mkdtempSync(join(tmpdir(), 'hms-mastra-')), hypervectorDimensions: 1024, ...opts })
+const make = (opts = {}) => new HolographicVector({ id: 'warm', dimension: DIM, path: mkdtempSync(join(tmpdir(), 'warm-mastra-')), hypervectorDimensions: 1024, ...opts })
 
 async function seeded() {
   const v = make()
@@ -67,7 +67,7 @@ test('upsert validation: dimension, NaN, lengths, sparse', async () => {
   await assert.rejects(v.upsert({ indexName: 'docs', vectors: [unit(0).map(() => NaN)] }), MastraError)
   await assert.rejects(v.upsert({ indexName: 'docs', vectors: [unit(0)], ids: ['a', 'b'] }), MastraError)
   await assert.rejects(v.upsert({ indexName: 'docs', vectors: [unit(0)], sparseVectors: [{ indices: [0], values: [1] }] }), MastraError)
-  await assert.rejects(v.upsert({ indexName: 'docs', vectors: [unit(0)], metadata: [{ _hms_x: 1 }] }), MastraError)
+  await assert.rejects(v.upsert({ indexName: 'docs', vectors: [unit(0)], metadata: [{ _warm_x: 1 }] }), MastraError)
 })
 
 test('query ranks by cosine and reports cosine scores', async () => {

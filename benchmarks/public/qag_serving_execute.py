@@ -84,8 +84,8 @@ def run(args):
                 dependencies.add((args.view.parent / link.filename).resolve())
             for filename, _, _ in source[name].external or []:
                 dependencies.add(Path(filename).resolve())
-    vibe = Path.home() / "vibe-hms/vibe"
-    bench = Path.home() / "vibe-hms/bench.sh"
+    vibe = Path.home() / "vibe-warm/vibe"
+    bench = Path.home() / "vibe-warm/bench.sh"
     module = vibe / "vibe/algorithms/qag_serving/module.py"
     module.parent.mkdir(exist_ok=True)
     adapter = Path(__file__).with_name("qag_serving_module.py")
@@ -100,7 +100,7 @@ def run(args):
     folder.mkdir(parents=True)
     config = folder / "config.yml"
     write_new(config, {"float": {"ip": [{"name": "qag-serving-v4", "module": "vibe.algorithms.qag_serving",
-        "constructor": "QAGServing", "singularity_image": "hms", "disabled": False,
+        "constructor": "QAGServing", "singularity_image": "warm", "disabled": False,
         "ood": True, "base_args": ["@metric"], "run_groups": {"fixed": {"args": [64, 500],
             "query_arg_groups": [schedule]}}}]}})
     sources = [Path(__file__), adapter, extractor, config, bench, vibe / "run.py", module,
@@ -111,10 +111,10 @@ def run(args):
     for i, path in enumerate(sources):
         shutil.copyfile(path, snapshots / f"{i:02d}-{path.name}")
     inputs = [record(p) for p in sources + sorted(dependencies)]
-    environment = {k: v for k, v in os.environ.items() if not k.startswith(("HMS_QGRAPH_", "HMS_QAG_"))}
+    environment = {k: v for k, v in os.environ.items() if not k.startswith(("WARM_QGRAPH_", "WARM_QAG_"))}
     environment.update({name: "1" for name in THREADS})
-    environment.update(HMS_QAG_CANDIDATE_SO=str(args.extension.resolve()),
-        HMS_QAG_TRAINING_QUERIES=str(args.training.resolve()), HMS_QAG_TRAINING_QUERIES_SHA256=digest(args.training))
+    environment.update(WARM_QAG_CANDIDATE_SO=str(args.extension.resolve()),
+        WARM_QAG_TRAINING_QUERIES=str(args.training.resolve()), WARM_QAG_TRAINING_QUERIES_SHA256=digest(args.training))
     alias = f"qag-serving-{args.run_id}-128-ip"
     link = vibe / "data" / f"{alias}.hdf5"
     if link.exists() or link.is_symlink() or (vibe / "results" / alias).exists():
@@ -123,7 +123,7 @@ def run(args):
     command = [str(bench), alias, "1", "vibe", str(folder.parent), "nolock"]
     frozen = {"scope": "reserved learn validation only; no untouched final test", "host": socket.gethostname(),
         "inputs": inputs, "schedule": schedule, "command": command, "harness_sha256": digest(vibe / "vibe/runner.py"),
-        "environment": {k: v for k, v in environment.items() if k in THREADS or k.startswith("HMS_QAG_")}}
+        "environment": {k: v for k, v in environment.items() if k in THREADS or k.startswith("WARM_QAG_")}}
     write_new(args.out / "frozen.json", frozen)
     process = subprocess.run(command, cwd=vibe, env=environment, capture_output=True, text=True)
     (args.out / "bench-stdout.txt").write_text(process.stdout + process.stderr)
@@ -134,7 +134,7 @@ def run(args):
         raise ValueError("expected one raw serving result")
     raw = args.out / "raw.hdf5"
     shutil.copyfile(raw_paths[0], raw)
-    shutil.copyfile(Path.home() / "vibe-hms/logs" / f"{alias}-definitions.log", args.out / "bench.log")
+    shutil.copyfile(Path.home() / "vibe-warm/logs" / f"{alias}-definitions.log", args.out / "bench.log")
     with h5py.File(raw, "r") as results:
         if set(results) != {"_".join(map(str, group)) for group in schedule}:
             raise ValueError("incomplete raw schedule")
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     args = parser.parse_args()
-    if (socket.gethostname() != "writerslogic-02" or os.environ.get("HMS_QAG_OUTER_LOCK") != "1"
+    if (socket.gethostname() != "writerslogic-02" or os.environ.get("WARM_QAG_OUTER_LOCK") != "1"
             or any(os.environ.get(name) != "1" for name in THREADS)):
         parser.error("use the shared outer timing lock and one-thread environment")
     args.out.mkdir(parents=True, exist_ok=False)

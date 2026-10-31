@@ -165,7 +165,7 @@ fn check_schema(store: &Path, report: &mut Report) -> Schema {
                 "store.json",
                 None,
                 "no store.json: written before stores recorded their embedding schema. The \
-                 engine refuses to open it; rebuild with `hms-admin reencode` from the source \
+                 engine refuses to open it; rebuild with `warm-admin reencode` from the source \
                  documents",
             );
         } else {
@@ -363,7 +363,7 @@ fn open_cipher(
     };
     #[cfg(feature = "security")]
     {
-        let Ok(passphrase) = std::env::var(variable) else {
+        let Ok(passphrase) = crate::compatibility::var(variable) else {
             report.add(
                 Severity::Info,
                 "payloads-not-authenticated",
@@ -913,7 +913,7 @@ fn check_text_segment(store: &Path, schema: &Schema, report: &mut Report) {
             "text-segment-cache",
             "documents.text",
             None,
-            "no HMST header (a format-1 text segment); the engine truncates it on open",
+            "no WARMT header (a format-1 text segment); the engine truncates it on open",
         ),
     }
 }
@@ -1146,7 +1146,7 @@ fn deep_check(
     report: &mut Report,
 ) -> Result<()> {
     let dimensions = u32::try_from(schema.dimensions.context("store.json lacks dimensions")?)?;
-    let mut config = crate::core::HmsConfig::default();
+    let mut config = crate::core::WarmConfig::default();
     if let Some(name) = schema.raw["text_encoder"].as_str() {
         config.text_encoder = name.parse().map_err(|e| anyhow::anyhow!("{e}"))?;
     }
@@ -1161,7 +1161,7 @@ fn deep_check(
     let copy = scratch.path().join("store");
     copy_store(store, &copy)?;
     let core =
-        crate::core::HmsCore::new(dimensions, Some(copy.display().to_string()), Some(config))?;
+        crate::core::WarmCore::new(dimensions, Some(copy.display().to_string()), Some(config))?;
     let missing: Vec<&String> = replay
         .documents
         .keys()

@@ -16,7 +16,7 @@ use super::storage::{
     LEGACY_SEGMENT_SIZE, MAX_RAW_FRAME_SIZE, SEGMENT_SIZE, STORAGE_FORMAT_VERSION,
 };
 use super::store_lock::{StoreLock, LOCK_FILE};
-use super::{HmsConfig, HmsCore};
+use super::{WarmConfig, WarmCore};
 
 const ARENA_DIRECTORY: &str = "vectors_data.bin";
 
@@ -52,7 +52,7 @@ pub struct DocumentCheck {
     pub missing: Vec<String>,
 }
 
-/// Inspect storage framing without opening or changing the HMS engine.
+/// Inspect storage framing without opening or changing the WARM engine.
 pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<StoreInspection> {
     let store_path = path.as_ref();
     let arena_path = store_path.join(ARENA_DIRECTORY);
@@ -161,7 +161,7 @@ pub fn verify_store(
             .as_u64()
             .context("store.json lacks dimensions")?,
     )?;
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     if let Some(name) = schema["text_encoder"].as_str() {
         config.text_encoder = name
             .parse()
@@ -191,7 +191,7 @@ pub fn verify_store(
     } else {
         Some(live_document_ids(&arena_path)?)
     };
-    let core = HmsCore::new(dimensions, Some(store.display().to_string()), Some(config))
+    let core = WarmCore::new(dimensions, Some(store.display().to_string()), Some(config))
         .context("opening the store for the document cross-check")?;
     inspection.documents = Some(match expected {
         Some(ids) => {
@@ -288,7 +288,7 @@ fn live_document_ids(arena_path: &Path) -> Result<BTreeSet<String>> {
     Ok(live)
 }
 
-fn missing_documents(expected: &BTreeSet<String>, core: &HmsCore) -> Vec<String> {
+fn missing_documents(expected: &BTreeSet<String>, core: &WarmCore) -> Vec<String> {
     expected
         .iter()
         .filter(|id| !core.has_document(id))
@@ -379,7 +379,7 @@ pub fn migrate_store(
     // the snapshot that passed integrity validation.
     inspect_store(source, true)?;
     let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
-    let temp = parent.join(format!(".hms-migrate-{}-{nonce}", std::process::id()));
+    let temp = parent.join(format!(".warm-migrate-{}-{nonce}", std::process::id()));
     let result = (|| -> Result<StoreInspection> {
         copy_tree(source, &temp)?;
         let inspection = inspect_store(&temp, true)?;
@@ -438,7 +438,7 @@ pub fn reencode_documents(
     input: impl AsRef<Path>,
     destination: impl AsRef<Path>,
     dimensions: u32,
-    config: super::HmsConfig,
+    config: super::WarmConfig,
 ) -> Result<StoreInspection> {
     use std::io::{BufRead, BufReader, Read};
     let destination = destination.as_ref();
@@ -451,11 +451,11 @@ pub fn reencode_documents(
         .unwrap_or_else(|| Path::new("."));
     std::fs::create_dir_all(parent)?;
     let temporary = tempfile::Builder::new()
-        .prefix(".hms-reencode-")
+        .prefix(".warm-reencode-")
         .tempdir_in(parent)?;
     let mut source = BufReader::new(File::open(input.as_ref())?);
     {
-        let hms = super::HmsCore::new(
+        let warm = super::WarmCore::new(
             dimensions,
             Some(temporary.path().display().to_string()),
             Some(config),
@@ -479,10 +479,10 @@ pub fn reencode_documents(
             }
             let document: super::documents::DocumentInput = serde_json::from_str(&line)
                 .with_context(|| format!("invalid source document on line {line_number}"))?;
-            hms.memorize_document(document)
+            warm.memorize_document(document)
                 .with_context(|| format!("cannot re-encode line {line_number}"))?;
         }
-        hms.flush()?;
+        warm.flush()?;
     }
     let inspection = inspect_store(temporary.path(), true)?;
     super::durable_file::sync_directory(temporary.path())?;
@@ -499,7 +499,7 @@ mod tests {
     use super::*;
     use crate::core::documents::DocumentInput;
     use crate::core::entangled::EntangledHVec;
-    use crate::core::HmsCore;
+    use crate::core::WarmCore;
 
     /// `verify` cross-checks the opened store against the log: a healthy store reports every
     /// live document present, and a logged document the store cannot resolve is named.
@@ -508,9 +508,9 @@ mod tests {
         let root = tempfile::tempdir()?;
         let store = root.path().join("store");
         {
-            let hms = HmsCore::new(256, Some(store.display().to_string()), None)?;
+            let warm = WarmCore::new(256, Some(store.display().to_string()), None)?;
             for n in 0..3 {
-                hms.memorize_document(DocumentInput {
+                warm.memorize_document(DocumentInput {
                     id: format!("doc{n}"),
                     text: format!("document {n} about harbors and ledgers"),
                     source_uri: None,
@@ -523,8 +523,8 @@ mod tests {
                     title_weight: None,
                 })?;
             }
-            assert!(hms.delete_document("doc1")?);
-            hms.flush()?;
+            assert!(warm.delete_document("doc1")?);
+            warm.flush()?;
         }
         let verified = verify_store(&store, None)?;
         assert!(verified
@@ -544,7 +544,7 @@ mod tests {
         );
         assert!(documents.missing.is_empty());
 
-        let core = HmsCore::new(256, Some(store.display().to_string()), None)?;
+        let core = WarmCore::new(256, Some(store.display().to_string()), None)?;
         let expected: BTreeSet<String> = ["doc0", "doc2", "doc9"]
             .into_iter()
             .map(String::from)
@@ -561,8 +561,8 @@ mod tests {
         let root = tempfile::tempdir()?;
         let source = root.path().join("source");
         {
-            let hms = HmsCore::new(256, Some(source.display().to_string()), None)?;
-            hms.memorize("one".into(), EntangledHVec::new_deterministic(256, 1))?;
+            let warm = WarmCore::new(256, Some(source.display().to_string()), None)?;
+            warm.memorize("one".into(), EntangledHVec::new_deterministic(256, 1))?;
         }
 
         let inspected = inspect_store(&source, false)?;
@@ -573,7 +573,7 @@ mod tests {
         let destination = root.path().join("destination");
         let migrated = migrate_store(&source, &destination)?;
         assert_eq!(migrated.frame_count, 1);
-        let reopened = HmsCore::new(256, Some(destination.display().to_string()), None)?;
+        let reopened = WarmCore::new(256, Some(destination.display().to_string()), None)?;
         assert_eq!(reopened.index_status().vector_count, 1);
         Ok(())
     }
@@ -585,8 +585,8 @@ mod tests {
         let root = tempfile::tempdir()?;
         let source = root.path().join("source");
         {
-            let hms = HmsCore::new(256, Some(source.display().to_string()), None)?;
-            hms.memorize("one".into(), EntangledHVec::new_deterministic(256, 1))?;
+            let warm = WarmCore::new(256, Some(source.display().to_string()), None)?;
+            warm.memorize("one".into(), EntangledHVec::new_deterministic(256, 1))?;
         }
         let segment = source.join(ARENA_DIRECTORY).join("seg_0.bin");
         let mut file = OpenOptions::new().write(true).open(segment)?;

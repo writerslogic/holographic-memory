@@ -1,15 +1,15 @@
-import { HolographicMemorySystem, type DocumentInput } from '../../index.js'
+import { WarmMemorySystem, type DocumentInput } from '../../index.js'
 import { DocumentMemory, createLocalEmbedder, type Embedder } from '../../semantic.js'
 
 const input: DocumentInput = {
   id: 'guide', text: 'Restore verified backups.', metadata: { project: 'alpha' },
 }
-const hms = new HolographicMemorySystem(16384, './types-only')
-const memory = new DocumentMemory(hms, { maxPending: 16 })
+const warm = new WarmMemorySystem(16384, './types-only')
+const memory = new DocumentMemory(warm, { maxPending: 16 })
 await memory.memorize(input)
-const chunks: number[] = await hms.memorizeDocuments([input])
-await hms.trainDocumentIndex()
-const documentIndexTrained: boolean = hms.documentIndexTrained
+const chunks: number[] = await warm.memorizeDocuments([input])
+await warm.trainDocumentIndex()
+const documentIndexTrained: boolean = warm.documentIndexTrained
 void chunks
 void documentIndexTrained
 const results = await memory.search('backups', { filter: { project: 'alpha' }, k: 3 })

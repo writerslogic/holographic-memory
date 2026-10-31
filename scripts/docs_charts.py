@@ -32,9 +32,9 @@ def headline_bars(rows, metric_label):
         parts.append(f'<text class="hc-tick" x="{x:.1f}" y="{height - 6}" text-anchor="middle">{tick:g}</text>')
     for i, row in enumerate(rows):
         y = 10 + i * row_h
-        cls = "hc-hms" if row["hms"] else "hc-other"
+        cls = "hc-warm" if row["warm"] else "hc-other"
         w = bar_w * row["value"]
-        parts.append(f'<text class="hc-label{" hc-strong" if row["hms"] else ""}" x="{label_w}" y="{y + 18}" text-anchor="end">{escape(row["label"])}</text>')
+        parts.append(f'<text class="hc-label{" hc-strong" if row["warm"] else ""}" x="{label_w}" y="{y + 18}" text-anchor="end">{escape(row["label"])}</text>')
         parts.append(f'<rect class="{cls}" x="{bar_x}" y="{y + 4}" width="{w:.1f}" height="22" rx="4"/>')
         parts.append(f'<text class="hc-value" x="{bar_x + w + 8:.1f}" y="{y + 20}">{row["value"]:.3f}</text>')
     parts.append("</svg>")
@@ -42,7 +42,7 @@ def headline_bars(rows, metric_label):
 
 
 def _clean(name):
-    return name.replace("(rabitqlib, ", "(").replace("faiss", "FAISS")
+    return name.replace("(rabitqlib, ", "(").replace("faiss", "FAISS").replace("HMS", "WARM")
 
 
 def vector_chart(root, spec):
@@ -56,13 +56,13 @@ def vector_chart(root, spec):
         for t in targets:
             cell = per.get(t, {})
             values.append(cell.get("qps"))
-        note = (spec.get("annotations") or {}).get(name)
-        systems.append({"name": _clean(name) + (" \u2020" if note else ""), "values": values, "hms": name.startswith(spec["hms_prefix"]), "note": note})
+        note = (spec.get("annotations") or {}).get(name, (spec.get("annotations") or {}).get(name.replace("HMS", "WARM")))
+        systems.append({"name": _clean(name) + (" \u2020" if note else ""), "values": values, "warm": name.startswith((spec["warm_prefix"], "WARM", "HMS")), "note": note})
     systems.sort(key=lambda s: (s["values"][0] is None, -(s["values"][0] or 0)))
     peak = max(v for s in systems for v in s["values"] if v) or 1
 
     configs = list(data.get("competitors", []))
-    for h in data.get("hms", []):
+    for h in data.get("warm", data.get("hms", [])):
         configs.extend(h.get("sweep", []))
     gate_total = len(configs)
     gate_met = sum(1 for c in configs if c.get("load_gate_met"))
@@ -80,32 +80,32 @@ def vector_chart(root, spec):
         parts.append(f'<text class="hc-head" x="{x0}" y="20">recall@10 &#8805; {escape(t)}</text>')
     for ri, s in enumerate(systems):
         y = 34 + ri * row_h
-        parts.append(f'<text class="hc-label{" hc-strong" if s["hms"] else ""}" x="{label_w}" y="{y + 17}" text-anchor="end">{escape(s["name"])}</text>')
+        parts.append(f'<text class="hc-label{" hc-strong" if s["warm"] else ""}" x="{label_w}" y="{y + 17}" text-anchor="end">{escape(s["name"])}</text>')
         for ci, v in enumerate(s["values"]):
             x0 = col_x + ci * (col_w + gap)
             if v is None:
                 parts.append(f'<text class="hc-miss" x="{x0}" y="{y + 17}">not reached</text>')
                 continue
             w = max(2.0, (col_w - 56) * v / peak)
-            parts.append(f'<rect class="{"hc-hms" if s["hms"] else "hc-other"}" x="{x0}" y="{y + 3}" width="{w:.1f}" height="18" rx="3"/>')
+            parts.append(f'<rect class="{"hc-warm" if s["warm"] else "hc-other"}" x="{x0}" y="{y + 3}" width="{w:.1f}" height="18" rx="3"/>')
             parts.append(f'<text class="hc-value" x="{x0 + w + 6:.1f}" y="{y + 17}">{_fmt_qps(v)}</text>')
     parts.append("</svg>")
     summary = []
     for ci, t in enumerate(targets):
-        mine = [(s["values"][ci], s["name"]) for s in systems if s["hms"] and not s["note"] and s["values"][ci]]
-        other = [(s["values"][ci], s["name"]) for s in systems if not s["hms"] and s["values"][ci]]
-        missed = [s["name"] for s in systems if not s["hms"] and not s["values"][ci]]
+        mine = [(s["values"][ci], s["name"]) for s in systems if s["warm"] and not s["note"] and s["values"][ci]]
+        other = [(s["values"][ci], s["name"]) for s in systems if not s["warm"] and s["values"][ci]]
+        missed = [s["name"] for s in systems if not s["warm"] and not s["values"][ci]]
         if mine and other:
             (mv, mn), (ov, on) = max(mine), max(other)
             verdict = "faster than" if mv > ov else "slower than"
             summary.append(
-                f"At recall@10 of {t}: the fastest HMS configuration ({mn}) ran at {_fmt_qps(mv)} QPS, "
+                f"At recall@10 of {t}: the fastest WARM configuration ({mn}) ran at {_fmt_qps(mv)} QPS, "
                 f"{verdict} the fastest other system ({on}, {_fmt_qps(ov)} QPS)."
             )
         elif other:
             names = ", ".join(sorted({n for _, n in other}))
             summary.append(
-                f"At recall@10 of {t}: no HMS configuration reached it. Reached by: {names}."
+                f"At recall@10 of {t}: no WARM configuration reached it. Reached by: {names}."
             )
         if missed and mine:
             summary.append(f"Not reached at {t} by: {', '.join(missed)}.")
@@ -127,11 +127,11 @@ def vector_chart(root, spec):
 
 
 METHODS = [
-    ("hms_hybrid", "HMS hybrid (BM25 + exact cosine)"),
-    ("hms_lexical", "HMS lexical (stemmed BM25)"),
-    ("hms_dense_exact", "HMS dense (exact cosine)"),
+    ("hms_hybrid", "WARM hybrid (BM25 + exact cosine)"),
+    ("hms_lexical", "WARM lexical (stemmed BM25)"),
+    ("hms_dense_exact", "WARM dense (exact cosine)"),
     ("numpy_dense_exact_reference", "NumPy exact cosine, same embeddings"),
-    ("hms_sparse", "HMS sparse vector path"),
+    ("hms_sparse", "WARM sparse vector path"),
 ]
 
 
@@ -145,10 +145,10 @@ def fallback_comparison(root, site):
         if key in metrics:
             m = metrics[key]
             rows.append({"system": label, "values": [f'{m["ndcg_at_10"]:.3f}', f'{m["recall_at_100"]:.3f}'],
-                         "hms": key.startswith("hms"), "source": rel})
+                         "warm": key.startswith("hms"), "source": rel})
     return {
         "title": "Retrieval quality on SciFact",
         "columns": ["nDCG@10", "Recall@100"],
         "rows": rows, "generated": False, "source": rel,
-        "note": "Same embeddings for every dense row. The benchmark pages carry the full comparison, including where HMS loses.",
+        "note": "Same embeddings for every dense row. The benchmark pages carry the full comparison, including where WARM loses.",
     }

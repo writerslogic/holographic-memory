@@ -5,14 +5,14 @@ import dataclasses
 
 import pytest
 
-from holographic_integrations.core import (
-    AsyncHmsBackend, HashingEmbedder, HmsBackend, HmsConfig, HmsError, Record, parse_filter,
+from writerslogic_warm_integrations.core import (
+    AsyncWarmBackend, HashingEmbedder, WarmBackend, WarmConfig, WarmError, Record, parse_filter,
 )
-from holographic_integrations.core.filters import Cmp, split
+from writerslogic_warm_integrations.core.filters import Cmp, split
 
 
 def cfg(server, **kw):
-    return HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
+    return WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
 
 
 def recs(n, **meta):
@@ -20,7 +20,7 @@ def recs(n, **meta):
 
 
 def test_roundtrip_get_list_forget(server):
-    with HmsBackend(cfg(server)) as b:
+    with WarmBackend(cfg(server)) as b:
         b.remember(recs(5))
         hits = b.recall("alpha beta gamma number3 topic0", k=2)
         assert hits[0].id == "d3" and hits[0].metadata == {"n": 3, "parity": 1}
@@ -32,7 +32,7 @@ def test_roundtrip_get_list_forget(server):
 
 
 def test_replace_same_id(server):
-    with HmsBackend(cfg(server)) as b:
+    with WarmBackend(cfg(server)) as b:
         b.remember([Record("x", "first text", {"v": 1})])
         b.remember([Record("x", "second text", {"v": 2})])
         got = b.get(["x"])[0]
@@ -41,7 +41,7 @@ def test_replace_same_id(server):
 
 
 def test_filters_pushed_and_residual(server):
-    with HmsBackend(cfg(server)) as b:
+    with WarmBackend(cfg(server)) as b:
         b.remember(recs(20))
         assert {h.metadata["parity"] for h in b.recall("alpha", k=5, filter={"parity": 1})} == {1}
         ids = {r.id for r in b.list(filter={"n": {"$gte": 15}}).records}
@@ -52,7 +52,7 @@ def test_filters_pushed_and_residual(server):
 
 def test_collections_isolated_in_one_tenant(server):
     c = cfg(server)
-    with HmsBackend(c) as plain, HmsBackend(dataclasses.replace(c, collection="A")) as a:
+    with WarmBackend(c) as plain, WarmBackend(dataclasses.replace(c, collection="A")) as a:
         plain.remember([Record("same", "plain doc")])
         a.remember([Record("same", "collection doc")])
         assert plain.get(["same"])[0].text == "plain doc"
@@ -62,14 +62,14 @@ def test_collections_isolated_in_one_tenant(server):
 
 
 def test_reserved_metadata_and_bad_ids_rejected(server):
-    with HmsBackend(cfg(server)) as b:
+    with WarmBackend(cfg(server)) as b:
         with pytest.raises(ValueError):
-            b.remember([Record("a", "t", {"_hms_id": "x"})])
+            b.remember([Record("a", "t", {"_warm_id": "x"})])
         with pytest.raises(ValueError):
             b.remember([Record("hms:a", "t")])
         with pytest.raises(ValueError):
             b.remember([Record("é" * 129, "t")])
-        with pytest.raises(HmsError) as e:
+        with pytest.raises(WarmError) as e:
             b.remember([Record("big", "w " * 40000)])
         assert e.value.status == 422
 
@@ -77,8 +77,8 @@ def test_reserved_metadata_and_bad_ids_rejected(server):
 @pytest.mark.parametrize("delta", [-1, 0, 1])
 def test_list_truncation_at_limit(server_factory, delta):
     srv = server_factory(64, max_top_k=10)
-    c = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
-    with HmsBackend(c) as b:
+    c = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    with WarmBackend(c) as b:
         b.remember(recs(10 + delta))
         page = b.list()
         assert len(page.records) == min(10, 10 + delta)
@@ -89,8 +89,8 @@ def test_list_truncation_at_limit(server_factory, delta):
 
 def test_forget_where_pages_past_the_cap(server_factory):
     srv = server_factory(64, max_top_k=10)
-    c = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
-    with HmsBackend(c) as b:
+    c = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    with WarmBackend(c) as b:
         b.remember(recs(25, kind="x") + [Record("keep", "keep me", {"kind": "y"})])
         assert b.forget_where({"kind": "x"}) == 25
         assert [r.id for r in b.list().records] == ["keep"]
@@ -99,8 +99,8 @@ def test_forget_where_pages_past_the_cap(server_factory):
 @pytest.mark.parametrize("delta", [-1, 0, 1])
 def test_residual_filters_find_matches_past_the_query_cap(server_factory, delta):
     srv = server_factory(64, max_top_k=10)
-    config = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
-    with HmsBackend(config) as backend:
+    config = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    with WarmBackend(config) as backend:
         backend.remember(recs(1000 + delta))
         filter = {"n": {"$gte": 995}}
         expected = {f"d{i}" for i in range(995, 1000 + delta)}
@@ -112,8 +112,8 @@ def test_residual_filters_find_matches_past_the_query_cap(server_factory, delta)
 
 def test_residual_vector_rank_merges_multiple_metadata_pages(server_factory):
     srv = server_factory(64, max_top_k=10)
-    config = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
-    with HmsBackend(config) as backend:
+    config = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    with WarmBackend(config) as backend:
         v = [1.0] + [0.0] * 63
         backend.remember([Record(f"id-{i:04}", "same", {"n": i}, vector=v) for i in range(1001)])
         hits = backend.recall(vector=v, k=10, filter={"n": {"$gte": 0}})
@@ -122,8 +122,8 @@ def test_residual_vector_rank_merges_multiple_metadata_pages(server_factory):
 
 async def test_async_residual_filters_page_and_delete_completely(server_factory):
     srv = server_factory(64, max_top_k=10)
-    config = HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
-    async with AsyncHmsBackend(config) as backend:
+    config = WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=64, max_fetch=10)
+    async with AsyncWarmBackend(config) as backend:
         await backend.remember(recs(31))
         filter = {"n": {"$gte": 25}}
         expected = {f"d{i}" for i in range(25, 31)}
@@ -134,24 +134,24 @@ async def test_async_residual_filters_page_and_delete_completely(server_factory)
 
 
 def test_masked_vectors_still_rank(server):
-    with HmsBackend(cfg(server, zero_trust_key="correct horse battery staple")) as b:
+    with WarmBackend(cfg(server, zero_trust_key="correct horse battery staple")) as b:
         b.remember(recs(6))
         assert b.recall("alpha beta gamma number4 topic1", k=1)[0].id == "d4"
         assert b.get(["d2"])[0].id == "d2"
 
 
 def test_custom_vectors_and_dim_mismatch(server):
-    with HmsBackend(cfg(server)) as b:
+    with WarmBackend(cfg(server)) as b:
         v = HashingEmbedder(64).embed_query("custom")
         b.remember([Record("v", "text", vector=v)])
         assert b.recall(vector=v, k=1)[0].id == "v"
-        with pytest.raises(HmsError) as e:
+        with pytest.raises(WarmError) as e:
             b.remember([Record("w", "text", vector=[1.0, 2.0])])
         assert e.value.status == 422
 
 
 async def test_async_matches_sync(server):
-    async with AsyncHmsBackend(cfg(server)) as b:
+    async with AsyncWarmBackend(cfg(server)) as b:
         await b.remember(recs(8))
         assert (await b.recall("alpha beta gamma number5 topic2", k=1))[0].id == "d5"
         assert [r.id for r in await b.get(["d2", "d7", "zz"]) if r] == ["d2", "d7"]

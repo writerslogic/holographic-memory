@@ -16,7 +16,7 @@ use super::pack::{self, hex};
 use super::registry::ModelSpec;
 
 /// Replaces the Hugging Face host, for mirrors (the path layout must match).
-pub const ENV_MIRROR: &str = "HMS_EMBED_MIRROR";
+pub const ENV_MIRROR: &str = "WARM_EMBED_MIRROR";
 
 fn download_file(url: &str, dest: &Path, want_sha: &str, max: u64) -> Result<()> {
     let read_limit = max
@@ -129,7 +129,7 @@ fn build_pack(
         return Ok(dest);
     }
     let work = tempfile::Builder::new()
-        .prefix(".hms-embed-fetch-")
+        .prefix(".warm-embed-fetch-")
         .tempdir_in(&cache)?;
     let bytes = build(work.path())?;
     let got = pack::sha256_hex(&bytes);
@@ -144,7 +144,7 @@ fn build_pack(
 
 pub fn download_pack(spec: &ModelSpec, cache: &Path) -> Result<PathBuf> {
     build_pack(spec, cache, |work| {
-        let base = std::env::var(ENV_MIRROR)
+        let base = crate::compatibility::var(ENV_MIRROR)
             .ok()
             .filter(|v| !v.is_empty())
             .unwrap_or_else(|| "https://huggingface.co".into());

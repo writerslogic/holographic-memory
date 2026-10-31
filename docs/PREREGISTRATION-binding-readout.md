@@ -13,7 +13,7 @@ and the curve reported before any claim enters a summary, changelog, or paper.
 
 ## 1. Background and the open question
 
-HMS's live algebra is:
+WARM's live algebra is:
 
 - **Bind** (`entangled.rs:bind`): symmetric difference (XOR) of sparse active-index
   sets. This operator is **self-inverse**: `a ⊕ a = 0`, and `bind` is its own
@@ -68,7 +68,7 @@ baseline, the contribution is empty.
 
 | Arm | Bind | Readout | Role |
 |-----|------|---------|------|
-| B0  | XOR (self-inverse), sparse | Jaccard | incumbent / control (current HMS) |
+| B0  | XOR (self-inverse), sparse | Jaccard | incumbent / control (current WARM) |
 | B1  | **HRR** (circular convolution), dense | matched-filter (circular correlation) | strong incumbent baseline |
 | B2  | **MAP** (element-wise product), bipolar | cosine | strong incumbent baseline |
 | X   | non-self-inverse candidate on the sparse substrate | nonlinear readout (e.g. k-WTA / entmax before overlap) | the proposed change |
@@ -247,7 +247,7 @@ saturated; the informative band is N=40..640.)
 **The original "self-inverse XOR is the bottleneck" framing is DISCONFIRMED as a
 causal claim.** `Inv` (self-inverse) matches or beats `X` (non-self-inverse); the
 self-inverse property is not the axis. The real axis is **role-relocation vs
-index-union**: HMS's bind is set symmetric-difference, which merges role and
+index-union**: WARM's bind is set symmetric-difference, which merges role and
 filler indices into a bag where the pairing leaks (any (role, filler) whose parts
 appear anywhere scores high); ANY position-permutation bind — self-inverse or not
 — relocates each filler into a role-specific slot that does not leak. Relocation
@@ -256,9 +256,9 @@ in section 11.
 
 Honest positioning of this result:
 - This is most likely a **validation of settled VSA knowledge** (permutation /
-  convolution binding outperforms set-XOR/BSC binding), re-derived on the HMS
+  convolution binding outperforms set-XOR/BSC binding), re-derived on the WARM
   substrate — NOT a novel discovery, and not independently citable.
-- It is nonetheless **practically actionable**: HMS's current bind is the weak
+- It is nonetheless **practically actionable**: WARM's current bind is the weak
   set-XOR kind; switching to a position-permutation bind (`permute` /
   `hash_permute` already exist in `entangled.rs`) recovers 3.5x-30x mis-binding
   discrimination at the same O(D) cost. An *exact* permutation (`Inv`'s idx^mask,
@@ -778,9 +778,9 @@ and the 0.1·D "Plate law" is a readout artifact of naive superposition + linear
 cleanup, NOT a fundamental wall — closing the gap to the ceiling with better codes
 is OPEN. Sharding is one capacity path (what the models defaulted to), not forced. For EXACT (S,R) queries a plain
 hash-to-shard KV store suffices; the VSA/attention layer earns its keep ONLY for
-NOISY/partial-cue queries. So the sharpest test of HMS's whole premise (Claude's
+NOISY/partial-cue queries. So the sharpest test of WARM's whole premise (Claude's
 "hash-router ablation"): does VSA similarity retrieval beat exact hash once the
-query key is corrupted? If not, HMS ≈ a sharded KV store and the holographic
+query key is corrupted? If not, WARM ≈ a sharded KV store and the holographic
 machinery is decorative.
 
 **Method (`src/bin/noisy-retrieval.rs`).** D=1024. Each fact = a random key phasor
@@ -797,7 +797,7 @@ phases (partial-cue corruption). Recover the object by argmax over the codebook 
 region where exact hash is 0 — quantifying the noise-tolerance envelope the
 holographic layer buys over a hash-sharded store. **Kill.** If VSA recall collapses
 to ~chance at ρ=0.2 at reasonable load (M/D≤0.2), the noise tolerance is negligible
-→ the holographic layer adds nothing over exact hash and HMS's honest positioning
+→ the holographic layer adds nothing over exact hash and WARM's honest positioning
 is "a sharded KV store," not a robust associative memory. Either way it turns the
 fusion's reasoning into a measured envelope.
 
@@ -820,11 +820,11 @@ N=16 essentially identical (56→62% at ρ=0.2/load 0.2). Exact hash-KV = 100% a
 is cheaper/exact) — the fusion was right that hash suffices there. But on NOISY /
 partial-cue queries the holographic layer holds far above chance where hash is dead:
 usable recall (>50%) out to ρ=0.2 at load≤0.2 and ρ=0.4 at load≤0.1. Kill needed
-~chance (1.6%) at ρ=0.2/load≤0.2; it measured 56–62%. So HMS is a genuine
+~chance (1.6%) at ρ=0.2/load≤0.2; it measured 56–62%. So WARM is a genuine
 noise-robust associative memory, not a decorative wrapper on a sharded KV store —
 and 4-bit phase is free again. Honest label: this VALIDATES known VSA noise-
 robustness on the qFHRR substrate (expected from theory), not a novel capacity
-result. It settles HMS's value axis (noisy-query robustness) with a measured
+result. It settles WARM's value axis (noisy-query robustness) with a measured
 envelope. It does NOT settle capacity: 0.5·D is NOT information-theoretically
 impossible (the counting ceiling ~1.33·D at V=64 sits well above it, and the 0.1·D
 Plate limit is a readout artifact, not a wall). Closing the 0.1·D→ceiling gap with
@@ -908,7 +908,7 @@ D-scaling (500 facts, 125 symbols): 55.8%@D=4096, 88.2%@8192, 99.4%@16384,
 100%@32768. **confound=0 throughout** — retrieval is well-posed; every failure is
 pure crosstalk (interference), not a wrong-but-valid filler.
 
-**Complete synthesis (closes §17–§24 capacity thread).** Both HMS substrates floor
+**Complete synthesis (closes §17–§24 capacity thread).** Both WARM substrates floor
 at a small constant fraction of D for well-posed per-fact retrieval: dense phase
 (§23: ~0.1·D @ 98%, ~0.3·D @ 50%, V=64) and sparse block codes (~0.03–0.06·D at
 high reliability, V=125). Neither approaches the ~1.33·D counting ceiling. This is
@@ -1006,7 +1006,7 @@ So it is a clean TRADEOFF that had been conflated:
 - approximate / robust / composable → superposition, ~0.1-0.3·D + soft properties
   (and §22's measured noisy-query robustness — the holographic layer's real value).
 This directly sharpens §22/§24: the holographic layer was never the right tool for
-EXACT capacity; its value axis is the soft/noisy dimension. HMS's honest architecture
+EXACT capacity; its value axis is the soft/noisy dimension. WARM's honest architecture
 = a coded store for exact capacity + the holographic layer for approximate/verifiable/
 plastic queries.
 
@@ -1073,14 +1073,14 @@ is apples-to-oranges on storage budget.
    once — exact retrieval to M=D, partial-cue robustness (98%), AND graceful
    similarity — as the pure-holographic row shows. That IS the fusion; cost = D²
    storage. This is what modern Hopfield / attention do.
-2. Within the strict ONE-D-VECTOR budget (HMS's holographic bundle substrate): exact
+2. Within the strict ONE-D-VECTOR budget (WARM's holographic bundle substrate): exact
    (coded, M≈D) vs robust (bundle, ~0.1-0.3·D) is a genuine TRADEOFF — base+residual
    splits the vector, no free lunch, because robustness (redundancy) and exact
    capacity both spend the same D bits. The fused row's exact caps at 0.5·D (its
    coded half) precisely because of the split.
 
 So: YES you can combine both — the clean way is an associative D×D matrix instead of
-a D-vector (a real design choice for HMS, not a wall). Under the strict single-vector
+a D-vector (a real design choice for WARM, not a wall). Under the strict single-vector
 constraint, combining is an allocation tradeoff. (Discipline note: the confound —
 matrix base vs vector residual — was caught and named, not shipped as a win.)
 

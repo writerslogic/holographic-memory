@@ -1,21 +1,21 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 import { createRequire } from 'node:module'
-import type { DocumentInput, DocumentResult, HmsConfigJs, HolographicMemorySystem, ListedDocument, SearchOptions } from 'holographic-memory'
+import type { DocumentInput, DocumentResult, WarmConfigJs, WarmMemorySystem, ListedDocument, SearchOptions } from 'writerslogic-warm'
 import { HashingEmbedder, type Embedder, type Reranker } from './embedders.js'
-import { HmsError } from './errors.js'
+import { WarmError } from './errors.js'
 import { matches, parseFilter, splitFilter, type FilterLike, type Metadata } from './filters.js'
 import { captureSource, restoreSource } from './source.js'
 
-export const RESERVED_PREFIX = '_hms_'
-const COLLECTION_KEY = '_hms_collection'
-const VECTOR_KEY = '_hms_vector'
-const SOURCE_KEY = '_hms_source'
+export const RESERVED_PREFIX = '_warm_'
+const COLLECTION_KEY = '_warm_collection'
+const VECTOR_KEY = '_warm_vector'
+const SOURCE_KEY = '_warm_source'
 const MAX_ID_BYTES = 256
 const NATIVE_MAX = 1000
-const writeQueues = new WeakMap<HolographicMemorySystem, Promise<unknown>>()
+const writeQueues = new WeakMap<WarmMemorySystem, Promise<unknown>>()
 
-export interface HmsRecord {
+export interface WarmRecord {
   id: string
   text: string
   metadata?: Metadata
@@ -55,9 +55,9 @@ export interface RecallOptions {
   minSemanticScore?: number
 }
 
-export interface HmsStoreOptions {
+export interface WarmStoreOptions {
   /** An existing native memory. Its embedding space must match `embedder` (default: the hashing embedder). */
-  memory?: HolographicMemorySystem
+  memory?: WarmMemorySystem
   /** Storage directory for a store this class creates. Omit for an in-memory store. */
   path?: string
   /** Hypervector dimensions of a store this class creates (default 4096). */
@@ -87,8 +87,8 @@ export interface HmsStoreOptions {
    * return it and a record can be re-saved without recomputing it. Costs about 20 bytes per dimension.
    */
   keepVectors?: boolean
-  /** Extra native config for a store this class creates, e.g. `{ encryptionEnabled: true, encryptionPassphraseEnv: 'HMS_PASSPHRASE' }`. */
-  hmsConfig?: HmsConfigJs
+  /** Extra native config for a store this class creates, e.g. `{ encryptionEnabled: true, encryptionPassphraseEnv: 'WARM_PASSPHRASE' }`. */
+  warmConfig?: WarmConfigJs
 }
 
 function bytes(s: string): number {
@@ -99,11 +99,11 @@ function sameSpace(a: Embedder['space'], b: Record<string, unknown> | undefined)
   return !!b && (['model', 'revision', 'dimensions', 'normalization', 'metric'] as const).every((k) => a[k] === b[k])
 }
 
-function validateSpace(space: Embedder['space'], config?: HmsConfigJs): void {
+function validateSpace(space: Embedder['space'], config?: WarmConfigJs): void {
   if (!space || typeof space.model !== 'string' || !space.model || typeof space.revision !== 'string' || !space.revision ||
       !Number.isInteger(space.dimensions) || space.dimensions < 1 || space.dimensions > 65536 ||
       space.normalization !== 'l2' || space.metric !== 'cosine') {
-    throw new HmsError('embedder space requires model, revision, dimensions 1..=65536, l2 normalization and cosine metric', 'invalid_argument')
+    throw new WarmError('embedder space requires model, revision, dimensions 1..=65536, l2 normalization and cosine metric', 'invalid_argument')
   }
   const reserved = {
     embeddingModel: space.model,
@@ -115,44 +115,44 @@ function validateSpace(space: Embedder['space'], config?: HmsConfigJs): void {
   for (const [key, value] of Object.entries(reserved)) {
     const supplied = (config as Record<string, unknown> | undefined)?.[key]
     if (supplied !== undefined && supplied !== value) {
-      throw new HmsError(`${key} must match the embedder space`, 'invalid_argument')
+      throw new WarmError(`${key} must match the embedder space`, 'invalid_argument')
     }
   }
 }
 
-function loadNative(): typeof import('holographic-memory') {
+function loadNative(): typeof import('writerslogic-warm') {
   try {
-    return createRequire(import.meta.url)('holographic-memory')
+    return createRequire(import.meta.url)('writerslogic-warm')
   } catch (cause) {
-    throw new HmsError('Install the holographic-memory native package to create a store from a path', 'backend', { cause })
+    throw new WarmError('Install the writerslogic-warm native package to create a store from a path', 'backend', { cause })
   }
 }
 
-function requireMetadata(memory: HolographicMemorySystem): void {
+function requireMetadata(memory: WarmMemorySystem): void {
   if (typeof memory.listDocuments !== 'function' || typeof memory.getDocumentInfo !== 'function') {
-    throw new HmsError('install a current native binding with metadata paging and document info support', 'backend')
+    throw new WarmError('install a current native binding with metadata paging and document info support', 'backend')
   }
 }
 
-export class HmsStore {
-  readonly memory: HolographicMemorySystem
+export class WarmStore {
+  readonly memory: WarmMemorySystem
   readonly embedder: Embedder
   readonly collection: string
-  private readonly opts: HmsStoreOptions
+  private readonly opts: WarmStoreOptions
   private readonly maxFetch: number
   private readonly probe: number[]
   private closed = false
 
-  constructor(opts: HmsStoreOptions = {}) {
+  constructor(opts: WarmStoreOptions = {}) {
     this.opts = opts
     const overfetch = opts.overfetch ?? 5
     this.maxFetch = opts.maxFetch ?? NATIVE_MAX
-    if (!Number.isInteger(overfetch) || overfetch < 1) throw new HmsError('overfetch must be an integer >= 1', 'invalid_argument')
+    if (!Number.isInteger(overfetch) || overfetch < 1) throw new WarmError('overfetch must be an integer >= 1', 'invalid_argument')
     if (!Number.isInteger(this.maxFetch) || this.maxFetch < 1 || this.maxFetch > NATIVE_MAX) {
-      throw new HmsError(`maxFetch must be 1..${NATIVE_MAX}`, 'invalid_argument')
+      throw new WarmError(`maxFetch must be 1..${NATIVE_MAX}`, 'invalid_argument')
     }
     if (opts.collection !== undefined && (opts.collection === '' || opts.collection.includes('/'))) {
-      throw new HmsError("collection must be non-empty and contain no '/'", 'invalid_argument')
+      throw new WarmError("collection must be non-empty and contain no '/'", 'invalid_argument')
     }
     this.collection = opts.collection ?? ''
     if (opts.memory) {
@@ -164,30 +164,30 @@ export class HmsStore {
         const dims = Number(space?.dimensions)
         this.embedder = new HashingEmbedder(dims)
       }
-      validateSpace(this.embedder.space, opts.hmsConfig)
+      validateSpace(this.embedder.space, opts.warmConfig)
       if (!sameSpace(this.embedder.space, space)) {
-        throw new HmsError('The embedder does not match the memory store embedding space; pass the matching embedder', 'invalid_argument')
+        throw new WarmError('The embedder does not match the memory store embedding space; pass the matching embedder', 'invalid_argument')
       }
     } else {
       this.embedder = opts.embedder ?? new HashingEmbedder(384)
-      validateSpace(this.embedder.space, opts.hmsConfig)
-      const { HolographicMemorySystem: Native } = loadNative()
+      validateSpace(this.embedder.space, opts.warmConfig)
+      const { WarmMemorySystem: Native } = loadNative()
       requireMetadata(Native.prototype)
       const s = this.embedder.space
       this.memory = new Native(opts.dimensions ?? 4096, opts.path ?? null, {
-        ...opts.hmsConfig,
+        ...opts.warmConfig,
         embeddingModel: s.model,
         embeddingRevision: s.revision,
         embeddingDimensions: s.dimensions,
       })
       const actual = (this.memory.securityStatus() as { embeddingSpace?: Record<string, unknown> }).embeddingSpace
-      if (!sameSpace(s, actual)) throw new HmsError('native store embedding space does not match the embedder', 'backend')
+      if (!sameSpace(s, actual)) throw new WarmError('native store embedding space does not match the embedder', 'backend')
     }
     this.probe = [1, ...new Array<number>(this.embedder.space.dimensions - 1).fill(0)]
   }
 
   private assertOpen(): void {
-    if (this.closed) throw new HmsError('store is closed', 'closed')
+    if (this.closed) throw new WarmError('store is closed', 'closed')
   }
 
   private serialized<T>(op: () => Promise<T>): Promise<T> {
@@ -199,15 +199,15 @@ export class HmsStore {
   private async assertOwned(sid: string): Promise<void> {
     const info = await this.memory.getDocumentInfo(sid)
     if (info && (info.metadata as Metadata)?.[COLLECTION_KEY] !== this.collection) {
-      throw new HmsError('record id belongs to another collection or an unscoped native document', 'invalid_argument')
+      throw new WarmError('record id belongs to another collection or an unscoped native document', 'invalid_argument')
     }
   }
 
   private sid(id: string): string {
-    if (typeof id !== 'string' || id === '') throw new HmsError('record id must be a non-empty string', 'invalid_argument')
+    if (typeof id !== 'string' || id === '') throw new WarmError('record id must be a non-empty string', 'invalid_argument')
     const sid = this.collection ? `${this.collection}/${id}` : id
-    if (sid.startsWith('hms:')) throw new HmsError("ids may not start with 'hms:'", 'invalid_argument')
-    if (bytes(sid) > MAX_ID_BYTES) throw new HmsError(`id exceeds ${MAX_ID_BYTES} bytes`, 'invalid_argument')
+    if (sid.startsWith('hms:')) throw new WarmError("ids may not start with 'hms:'", 'invalid_argument')
+    if (bytes(sid) > MAX_ID_BYTES) throw new WarmError(`id exceeds ${MAX_ID_BYTES} bytes`, 'invalid_argument')
     return sid
   }
 
@@ -239,24 +239,24 @@ export class HmsStore {
     try {
       return await op()
     } catch (cause) {
-      if (cause instanceof HmsError) throw cause
-      throw new HmsError(`holographic-memory: ${(cause as Error).message}`, 'backend', { cause })
+      if (cause instanceof WarmError) throw cause
+      throw new WarmError(`writerslogic-hms: ${(cause as Error).message}`, 'backend', { cause })
     }
   }
 
   /** Store records, replacing any with the same id. Returns the ids in order. */
-  async remember(records: HmsRecord[]): Promise<string[]> {
+  async remember(records: WarmRecord[]): Promise<string[]> {
     this.assertOpen()
     const prepared = records.map((r) => {
       const metadata = r.metadata ?? {}
-      if (metadata === null || typeof metadata !== 'object' || Array.isArray(metadata)) throw new HmsError('metadata must be an object', 'invalid_argument')
+      if (metadata === null || typeof metadata !== 'object' || Array.isArray(metadata)) throw new WarmError('metadata must be an object', 'invalid_argument')
       for (const key of Object.keys(metadata)) {
-        if (key.startsWith(RESERVED_PREFIX)) throw new HmsError(`metadata key ${JSON.stringify(key)} uses the reserved prefix ${RESERVED_PREFIX}`, 'invalid_argument')
+        if (key.startsWith(RESERVED_PREFIX)) throw new WarmError(`metadata key ${JSON.stringify(key)} uses the reserved prefix ${RESERVED_PREFIX}`, 'invalid_argument')
       }
-      if (typeof r.text !== 'string') throw new HmsError('record text must be a string', 'invalid_argument')
-      if (!r.text.replace(/[\s\u0085]/gu, '').length) throw new HmsError('record text must be nonblank', 'invalid_argument')
+      if (typeof r.text !== 'string') throw new WarmError('record text must be a string', 'invalid_argument')
+      if (!r.text.replace(/[\s\u0085]/gu, '').length) throw new WarmError('record text must be nonblank', 'invalid_argument')
       if (r.vector && r.vector.length !== this.embedder.space.dimensions) {
-        throw new HmsError(`vector length ${r.vector.length} != embedding dimensions ${this.embedder.space.dimensions}`, 'invalid_argument')
+        throw new WarmError(`vector length ${r.vector.length} != embedding dimensions ${this.embedder.space.dimensions}`, 'invalid_argument')
       }
       const input: DocumentInput = {
         id: this.sid(r.id),
@@ -278,13 +278,13 @@ export class HmsStore {
         for (const c of chunked) await this.assertOwned(c.input.id)
         const need = chunked.flatMap((c) => (c.record.vector ? [] : c.chunks.map((ch) => ch.text)))
         const vectors = need.length ? await this.embedder.encodeDocuments(need) : []
-        if (vectors.length !== need.length) throw new HmsError('embedder returned the wrong number of vectors', 'backend')
+        if (vectors.length !== need.length) throw new WarmError('embedder returned the wrong number of vectors', 'backend')
         let next = 0
         const inputs = chunked.map((c) => {
           const embeddings = c.chunks.map(() => Array.from(c.record.vector ?? (vectors[next++] as ArrayLike<number>)))
           const metadata = { ...c.input.metadata, [SOURCE_KEY]: c.source,
             ...(this.opts.keepVectors && embeddings[0] ? { [VECTOR_KEY]: embeddings[0] } : {}) }
-          if (bytes(JSON.stringify(metadata)) > 64 * 1024) throw new HmsError('metadata and source whitespace exceed 64 KiB', 'limit_exceeded')
+          if (bytes(JSON.stringify(metadata)) > 64 * 1024) throw new WarmError('metadata and source whitespace exceed 64 KiB', 'limit_exceeded')
           return { ...c.input, metadata, embeddings }
         })
         for (const input of inputs) await this.memory.memorizeDocument(input)
@@ -311,7 +311,7 @@ export class HmsStore {
       if (page.length < 1000) return
       const next = page[page.length - 1]?.id
       if (next === undefined || (cursor !== undefined && next <= cursor)) {
-        throw new HmsError('native metadata cursor did not advance', 'backend')
+        throw new WarmError('native metadata cursor did not advance', 'backend')
       }
       cursor = next
     }
@@ -321,15 +321,15 @@ export class HmsStore {
   async recall(query: string, options: RecallOptions = {}): Promise<Hit[]> {
     this.assertOpen()
     const k = options.k ?? 4
-    if (!Number.isInteger(k) || k < 1) throw new HmsError('k must be an integer >= 1', 'invalid_argument')
-    if (k > this.maxFetch) throw new HmsError(`k=${k} exceeds maxFetch=${this.maxFetch}`, 'limit_exceeded')
+    if (!Number.isInteger(k) || k < 1) throw new WarmError('k must be an integer >= 1', 'invalid_argument')
+    if (k > this.maxFetch) throw new WarmError(`k=${k} exceeds maxFetch=${this.maxFetch}`, 'limit_exceeded')
     const { pushed, residual } = splitFilter(parseFilter(options.filter))
     let eligible: string[] | undefined
     if (residual) {
       eligible = []
       for await (const record of this.metadata(options.filter)) {
         if (eligible.length === NATIVE_MAX) {
-          throw new HmsError('fused residual filtering supports at most 1000 matching records; narrow the filter', 'filter_limit')
+          throw new WarmError('fused residual filtering supports at most 1000 matching records; narrow the filter', 'filter_limit')
         }
         eligible.push(record.id)
       }
@@ -350,16 +350,16 @@ export class HmsStore {
     const desired = eligible ? Math.min(k, eligible.length) : k
     while (new Set(raw.map((hit) => hit.documentId)).size < desired && raw.length === so.k) {
       if (so.k === this.maxFetch) {
-        throw new HmsError('the passage budget cannot prove a complete record result; increase maxFetch', 'limit_exceeded')
+        throw new WarmError('the passage budget cannot prove a complete record result; increase maxFetch', 'limit_exceeded')
       }
       so.k = Math.min(this.maxFetch, (so.k as number) * 2)
       so.candidateLimit = Math.min(NATIVE_MAX, Math.max(so.k, 100))
       raw = await this.search(query, so)
     }
     if (this.opts.rerank && raw.length) {
-      if (raw.some((r) => r.text == null)) throw new HmsError('reranking needs stored text', 'backend')
+      if (raw.some((r) => r.text == null)) throw new WarmError('reranking needs stored text', 'backend')
       const scores = await this.opts.rerank(query, raw.map((r) => r.text as string))
-      if (scores.length !== raw.length || !scores.every(Number.isFinite)) throw new HmsError('reranker must return one finite score per passage', 'backend')
+      if (scores.length !== raw.length || !scores.every(Number.isFinite)) throw new WarmError('reranker must return one finite score per passage', 'backend')
       raw = raw.map((r, i) => ({ ...r, score: scores[i] as number })).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
     }
     const seen = new Set<string>()
@@ -377,7 +377,7 @@ export class HmsStore {
       const rec = full.get(r.documentId)
       if (!rec) return []
       if (typeof r.text !== 'string' || Buffer.from(rec.text, 'utf8').subarray(r.startByte, r.endByte).toString('utf8') !== r.text) {
-        throw new HmsError('source changed between ranking and citation assembly; retry the operation', 'concurrent_mutation')
+        throw new WarmError('source changed between ranking and citation assembly; retry the operation', 'concurrent_mutation')
       }
       const hit: Hit = {
         ...rec,
@@ -400,7 +400,7 @@ export class HmsStore {
         const info = await this.native(() => this.memory.getDocumentInfo(sid))
         if (!info || (info.metadata as Metadata)?.[COLLECTION_KEY] !== this.collection) continue
         if (info.chunkCount > NATIVE_MAX) {
-          throw new HmsError('record exceeds the native passage read limit; split it before storing', 'limit_exceeded')
+          throw new WarmError('record exceeds the native passage read limit; split it before storing', 'limit_exceeded')
         }
         const rows = await this.search('', {
           k: NATIVE_MAX,
@@ -413,7 +413,7 @@ export class HmsStore {
         const mine = rows.filter((r) => r.documentId === sid)
         if (!mine.length) continue
         if (mine.length !== info.chunkCount || mine.some((row) => row.version !== info.version)) {
-          throw new HmsError('record changed while reading its passages; retry the operation', 'concurrent_mutation')
+          throw new WarmError('record changed while reading its passages; retry the operation', 'concurrent_mutation')
         }
         const raw = (mine[0]?.metadata ?? {}) as Metadata
         const text = restoreSource(raw[SOURCE_KEY], mine)
@@ -444,7 +444,7 @@ export class HmsStore {
   /** Up to `limit` matching records in id order (default and ceiling: `maxFetch`). */
   async list(filter?: FilterLike, limit?: number): Promise<Page> {
     this.assertOpen()
-    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) throw new HmsError('limit must be a positive integer', 'invalid_argument')
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) throw new WarmError('limit must be a positive integer', 'invalid_argument')
     const want = Math.min(limit ?? this.maxFetch, this.maxFetch)
     const sids: string[] = []
     for await (const record of this.metadata(filter)) {

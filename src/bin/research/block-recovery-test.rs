@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use holographic_memory::core::block_codes::{BlockCodeConfig, BlockCodeStore};
 use std::collections::HashMap;
+use writerslogic_warm::core::block_codes::{BlockCodeConfig, BlockCodeStore};
 
 struct TestResult {
     n_facts: usize,

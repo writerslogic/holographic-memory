@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! The memory API through the real `hms-server` process: HTTP contract, error classes,
+//! The memory API through the real `warm-server` process: HTTP contract, error classes,
 //! limits, tenant isolation, configuration file and persistence across a restart.
 
 #![cfg(feature = "server")]
@@ -260,7 +260,7 @@ fn invalid_memory_config_stops_the_server_at_startup() {
     let dir = tempfile::tempdir().unwrap();
     let config = dir.path().join("memory.json");
     std::fs::write(&config, r#"{"defaultK": 0}"#).unwrap();
-    let status = Command::new(env!("CARGO_BIN_EXE_hms-server"))
+    let status = Command::new(env!("CARGO_BIN_EXE_warm-server"))
         .args(["--bind", "127.0.0.1:0", "--data-dir"])
         .arg(dir.path().join("data"))
         .args(["--memory-config", config.to_str().unwrap()])

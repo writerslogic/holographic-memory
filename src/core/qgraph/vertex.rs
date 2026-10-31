@@ -30,7 +30,7 @@ use super::kernels::{
 use super::rerank::{dot_f32_i4, dot_f32_i8};
 use super::vnni::query_sum;
 use super::{invalid, prepare_rows, upper_bytes, BuildParams, Graph, GraphView, Metric, NONE};
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 
 mod file;
 mod gated;
@@ -131,19 +131,19 @@ impl Default for VSearchParams {
 /// ([`SearchKnobs::from_env`]); [`VGraph::searcher_with`] takes them explicitly.
 ///
 /// Mechanisms, and what they may change:
-/// * `prefetch` (`HMS_QGRAPH_PREFETCH`, 0..=3, results never change): 0 prefetches the next
+/// * `prefetch` (`WARM_QGRAPH_PREFETCH`, 0..=3, results never change): 0 prefetches the next
 ///   candidate's neighbour list, the code row and estimate terms (scale, Euclidean norm) of
 ///   every admitted neighbour, and the rows the re-rank reads; 2 adds the neighbour list of
 ///   the second-nearest unexpanded candidate; 3 adds a lookahead that, after an expansion,
 ///   prefetches the code rows (or screen rows) of the next candidate's unvisited neighbours.
-/// * `batch_est` (`HMS_QGRAPH_BATCH_EST`, results never change): the admitted neighbours'
+/// * `batch_est` (`WARM_QGRAPH_BATCH_EST`, results never change): the admitted neighbours'
 ///   4-bit rows are estimated four at a time with shared query loads (`dot_i4_inline_x4` in
 ///   the kernels module); the integer sums are the same.
-/// * `frontier` (`HMS_QGRAPH_FRONTIER`, `0.0..=1.0`, 1.0 = off): with a full pool, stop when
+/// * `frontier` (`WARM_QGRAPH_FRONTIER`, `0.0..=1.0`, 1.0 = off): with a full pool, stop when
 ///   the nearest unexpanded estimate is past the point `frontier` of the way from the `k`-th
 ///   best to the `ef`-th best. Fewer expansions, so lower recall at a given `ef`; the
 ///   recall/QPS curve over `ef` is what to compare.
-/// * `block_screen` (`HMS_QGRAPH_BLOCK_SCREEN`, needs [`VGraph::with_blocks`]): the neighbour
+/// * `block_screen` (`WARM_QGRAPH_BLOCK_SCREEN`, needs [`VGraph::with_blocks`]): the neighbour
 ///   block screens instead of ordering; survivors fetch their code row and the pool holds row
 ///   estimates, as in the plain search. A fresh neighbour is skipped when its block estimate,
 ///   improved by `screen_sigmas` deviations of the calibrated edge error, could not enter the
@@ -180,13 +180,13 @@ impl SearchKnobs {
     pub fn from_env() -> Self {
         static KNOBS: OnceLock<SearchKnobs> = OnceLock::new();
         *KNOBS.get_or_init(|| Self {
-            prefetch: env_knob::<u8>("HMS_QGRAPH_PREFETCH").unwrap_or(0).min(3),
-            batch_est: env_knob::<u8>("HMS_QGRAPH_BATCH_EST").unwrap_or(0) != 0,
-            frontier: env_knob::<f32>("HMS_QGRAPH_FRONTIER")
+            prefetch: env_knob::<u8>("WARM_QGRAPH_PREFETCH").unwrap_or(0).min(3),
+            batch_est: env_knob::<u8>("WARM_QGRAPH_BATCH_EST").unwrap_or(0) != 0,
+            frontier: env_knob::<f32>("WARM_QGRAPH_FRONTIER")
                 .filter(|f| f.is_finite())
                 .map_or(1.0, |f| f.clamp(0.0, 1.0)),
-            block_screen: env_knob::<u8>("HMS_QGRAPH_BLOCK_SCREEN").unwrap_or(0) != 0,
-            rerank_z: env_knob::<f32>("HMS_QGRAPH_RERANK_Z")
+            block_screen: env_knob::<u8>("WARM_QGRAPH_BLOCK_SCREEN").unwrap_or(0) != 0,
+            rerank_z: env_knob::<f32>("WARM_QGRAPH_RERANK_Z")
                 .filter(|z| z.is_finite() && *z > 0.0)
                 .unwrap_or(0.0),
         })
@@ -202,7 +202,7 @@ impl Default for SearchKnobs {
 /// `name` parsed as `T`: `None` when unset, and when the value does not parse, which is
 /// reported.
 fn env_knob<T: std::str::FromStr>(name: &str) -> Option<T> {
-    let value = std::env::var(name).ok()?;
+    let value = crate::compatibility::var(name).ok()?;
     match value.trim().parse::<T>() {
         Ok(v) => Some(v),
         Err(_) => {
@@ -212,7 +212,7 @@ fn env_knob<T: std::str::FromStr>(name: &str) -> Option<T> {
     }
 }
 
-/// On unless `HMS_QGRAPH_HUGEPAGES` is set to 0: the large arrays of an index built in this
+/// On unless `WARM_QGRAPH_HUGEPAGES` is set to 0: the large arrays of an index built in this
 /// process or opened onto the heap (code rows, neighbour lists, scales, norm terms, residual
 /// rows, neighbour blocks) are advised into transparent huge pages before they are first
 /// touched, so the random row fetches of a search share one TLB entry per 2 MiB instead of
@@ -221,7 +221,7 @@ fn env_knob<T: std::str::FromStr>(name: &str) -> Option<T> {
 /// Read once.
 fn huge_pages() -> bool {
     static HUGE: OnceLock<bool> = OnceLock::new();
-    *HUGE.get_or_init(|| env_knob::<u8>("HMS_QGRAPH_HUGEPAGES").unwrap_or(1) != 0)
+    *HUGE.get_or_init(|| env_knob::<u8>("WARM_QGRAPH_HUGEPAGES").unwrap_or(1) != 0)
 }
 
 /// Huge-page advice given by this process (see [`huge_page_status`]).
@@ -235,7 +235,7 @@ static FAIL_HUGE_ADVICE: std::sync::atomic::AtomicBool = std::sync::atomic::Atom
 /// What the huge-page advice of this process achieved.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
 pub struct HugePageStatus {
-    /// The advice is on (`HMS_QGRAPH_HUGEPAGES` unset or non-zero).
+    /// The advice is on (`WARM_QGRAPH_HUGEPAGES` unset or non-zero).
     pub enabled: bool,
     /// Bytes for which `madvise(MADV_HUGEPAGE)` succeeded.
     pub advised_bytes: u64,
@@ -855,7 +855,7 @@ impl VertexLayout {
         residual_bits: u8,
         align: bool,
         id_bytes: u8,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         if !matches!(bits, 4 | 8) {
             return Err(invalid(format!(
                 "vertex code bits must be 4 or 8, not {bits}"
@@ -893,7 +893,7 @@ impl VertexLayout {
 impl VGraph {
     /// Encodes a built graph with the 8-bit residual code used by `rerank` (or none), unaligned
     /// rows and the build's vertex order.
-    pub fn from_graph(g: &Graph, residual: bool) -> Result<Self, HmsError> {
+    pub fn from_graph(g: &Graph, residual: bool) -> Result<Self, WarmError> {
         Self::from_graph_with(g, 8, if residual { 8 } else { 0 }, false, false, 4, false)
     }
 
@@ -913,7 +913,7 @@ impl VGraph {
         reorder: bool,
         id_bytes: u8,
         screen: bool,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         Self::encode_graph(
             g,
             (g.dim, g.metric.into()),
@@ -934,7 +934,7 @@ impl VGraph {
         align: bool,
         reorder: bool,
         id_bytes: u8,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         if g.metric != Metric::Euclidean || g.dim < 2 {
             return Err(invalid(
                 "direct IP serving requires a lifted Euclidean graph".into(),
@@ -959,7 +959,7 @@ impl VGraph {
         reorder: bool,
         id_bytes: u8,
         screen: bool,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         let (dim, metric) = geometry;
         let (bits, residual_bits) = precision;
         let layout = VertexLayout::new(g.n, dim, bits, residual_bits, align, id_bytes)?;
@@ -1185,7 +1185,7 @@ impl VGraph {
     /// layout (32 codes per block), so one streamed read and one table scan estimate all
     /// neighbours of an expanded vertex instead of one random row fetch per neighbour
     /// (SymphonyQG's layout; Gou et al., SIGMOD 2025). `bits` is 1, 2 or 4.
-    pub fn with_blocks(mut self, g: &Graph, bits: u8) -> Result<Self, HmsError> {
+    pub fn with_blocks(mut self, g: &Graph, bits: u8) -> Result<Self, WarmError> {
         if !matches!(bits, 1 | 2 | 4) {
             return Err(invalid(format!("block bits must be 1, 2 or 4, not {bits}")));
         }
@@ -1345,7 +1345,7 @@ impl VGraph {
                 }
             }
         }
-        if std::env::var_os("HMS_BLOCK_DIAG").is_some() && diag_n > 0.0 {
+        if crate::compatibility::var_os("WARM_BLOCK_DIAG").is_some() && diag_n > 0.0 {
             eprintln!(
                 "block diag: bits {} kappa {:.4} rms_err {:.5} rms_residual_ip {:.5} pairs {}",
                 self.block_bits,
@@ -1650,7 +1650,7 @@ impl VGraph {
     /// Removes unused adjacency slots without changing neighbors or their order.
     /// Saving expands the lists into the original persisted format; reopening uses that
     /// format until this method is called again. Delta-coded lists already have exact spans.
-    pub fn compact_adjacency(&mut self) -> Result<(), HmsError> {
+    pub fn compact_adjacency(&mut self) -> Result<(), WarmError> {
         if !self.adj_off.is_empty() || !self.adjv_off.is_empty() {
             return Ok(());
         }
@@ -1937,7 +1937,7 @@ impl VGraph {
         k: usize,
         params: VSearchParams,
         out: &mut Vec<u32>,
-    ) -> Result<usize, HmsError> {
+    ) -> Result<usize, WarmError> {
         let compatible = cache.as_ref().is_some_and(|s| {
             s.dim == self.dim
                 && s.visited.n == self.n
@@ -2340,7 +2340,7 @@ impl VSearcher<'_> {
         k: usize,
         params: VSearchParams,
         out: &mut Vec<u32>,
-    ) -> Result<usize, HmsError> {
+    ) -> Result<usize, WarmError> {
         self.scratch.search(self.index, query, k, params, out)
     }
 }
@@ -2460,12 +2460,12 @@ impl SearchScratch {
         k: usize,
         params: VSearchParams,
         out: &mut Vec<u32>,
-    ) -> Result<usize, HmsError> {
+    ) -> Result<usize, WarmError> {
         Self::validate_query(g, query)?;
         self.search_validated(g, query, k, params, out)
     }
 
-    fn validate_query(g: &VGraph, query: &[f32]) -> Result<(), HmsError> {
+    fn validate_query(g: &VGraph, query: &[f32]) -> Result<(), WarmError> {
         if query.len() != g.dim {
             return Err(invalid(format!(
                 "query has {} dimensions, the index has {}",
@@ -2492,7 +2492,7 @@ impl SearchScratch {
         k: usize,
         params: VSearchParams,
         out: &mut Vec<u32>,
-    ) -> Result<usize, HmsError> {
+    ) -> Result<usize, WarmError> {
         self.search_inner::<
             false,
             { cfg!(feature = "experimental-batch-pool") },
@@ -2515,7 +2515,7 @@ impl SearchScratch {
         params: VSearchParams,
         out: &mut Vec<u32>,
         profile: &mut QueryProfile,
-    ) -> Result<usize, HmsError> {
+    ) -> Result<usize, WarmError> {
         if params.reservoir > 0 && (g.has_blocks() || (g.has_screen() && params.screen)) {
             return Err(invalid(
                 "independent retention requires unscreened row-code search".into(),
@@ -3011,7 +3011,7 @@ impl VSearcher<'_> {
         k: usize,
         params: VSearchParams,
         out: &mut Vec<u32>,
-    ) -> Result<QueryProfile, HmsError> {
+    ) -> Result<QueryProfile, WarmError> {
         let g = self.index;
         if g.has_screen()
             || g.has_blocks()
@@ -3042,7 +3042,7 @@ impl VSearcher<'_> {
 #[cfg(feature = "experimental")]
 impl VGraph {
     /// Storage geometry and reconstruction error; diagnostic work is never part of search.
-    pub fn encoding_diagnostic(&self, source: &Graph) -> Result<serde_json::Value, HmsError> {
+    pub fn encoding_diagnostic(&self, source: &Graph) -> Result<serde_json::Value, WarmError> {
         if source.n != self.n || source.dim < self.dim {
             return Err(invalid("encoding diagnostic source shape mismatch".into()));
         }
@@ -3090,7 +3090,7 @@ impl VGraph {
         params: VSearchParams,
         oracle: Option<u32>,
         exact: bool,
-    ) -> Result<super::diagnostics::TraversalDiagnostic, HmsError> {
+    ) -> Result<super::diagnostics::TraversalDiagnostic, WarmError> {
         if source.n != self.n
             || source.dim != self.dim + usize::from(self.metric == VMetric::InnerProduct)
             || source.degree != self.degree
@@ -3182,7 +3182,7 @@ impl VGraph {
         query: &[f32],
         k: usize,
         params: VSearchParams,
-    ) -> Result<super::diagnostics::TraversalDiagnostic, HmsError> {
+    ) -> Result<super::diagnostics::TraversalDiagnostic, WarmError> {
         let mut report = super::diagnostics::TraversalDiagnostic::default();
         let mut searcher = self.searcher_with(SearchKnobs::OFF);
         searcher.search(query, k, params, &mut report.results)?;
@@ -3232,7 +3232,7 @@ impl VGraph {
         query: &[f32],
         k: usize,
         params: VSearchParams,
-    ) -> Result<super::diagnostics::TraversalDiagnostic, HmsError> {
+    ) -> Result<super::diagnostics::TraversalDiagnostic, WarmError> {
         let mut report = super::diagnostics::TraversalDiagnostic::default();
         let score = |id: u32| {
             let original = self.original(id) as usize;
@@ -4387,7 +4387,7 @@ mod tests {
                         if mode == 2 {
                             index = index.with_blocks(&graph, 4).unwrap();
                         }
-                        let path = directory.path().join("query-x4.hms");
+                        let path = directory.path().join("query-x4.warm");
                         index.save(&path).unwrap();
                         let reopened = VGraph::open(&path, Residency::Mapped).unwrap();
                         let knobs = SearchKnobs {
@@ -4940,7 +4940,7 @@ mod tests {
             .unwrap();
             for bits in [4, 8] {
                 let index = VGraph::from_graph_with(&graph, bits, 8, true, true, 3, false).unwrap();
-                let path = directory.path().join("batch-pool.hms");
+                let path = directory.path().join("batch-pool.warm");
                 index.save(&path).unwrap();
                 let reopened = VGraph::open(&path, Residency::Mapped).unwrap();
                 for batch_est in [false, true] {
@@ -5285,7 +5285,7 @@ mod tests {
             ..BuildParams::default()
         };
         let graph = Graph::build(&data, d, &params).expect("build");
-        let path = std::env::temp_dir().join(format!("hms-qgraph-cache-{}", std::process::id()));
+        let path = std::env::temp_dir().join(format!("warm-qgraph-cache-{}", std::process::id()));
         graph.save(&path).unwrap();
         let back = Graph::load(&data, d, &path, &params).unwrap();
         assert_eq!(back.structure_hash(), graph.structure_hash());
@@ -5781,7 +5781,7 @@ mod tests {
     fn invalid_inputs_are_errors_that_name_the_cause() {
         let d = 16;
         let data = clustered(500, d, 4);
-        let err = |r: Result<Graph, HmsError>| match r {
+        let err = |r: Result<Graph, WarmError>| match r {
             Err(e) => e.to_string(),
             Ok(_) => panic!("an invalid input was accepted"),
         };

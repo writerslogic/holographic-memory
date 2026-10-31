@@ -69,7 +69,7 @@ fn claims(value: &Value, issuer: &str, subject: &str) -> Result<()> {
     Ok(())
 }
 
-/// Verify a detached RFC 9942 RFC9162_SHA256 receipt for an HMS Ed25519 signed
+/// Verify a detached RFC 9942 RFC9162_SHA256 receipt for an WARM Ed25519 signed
 /// statement. This profile requires a single inclusion proof and an externally
 /// authenticated current root. Unsupported proof types and algorithms fail closed.
 pub fn verify_receipt(

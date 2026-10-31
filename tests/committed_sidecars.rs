@@ -4,17 +4,17 @@
 #![cfg(all(feature = "security", unix))]
 
 use anyhow::Result;
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{CommittedMutationError, EntangledHVec, HmsCore};
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{CommittedMutationError, EntangledHVec, WarmCore};
 
 #[test]
 fn failed_audit_sync_does_not_hide_durable_create_or_delete() -> Result<()> {
     let dir = tempfile::tempdir()?;
     std::os::unix::fs::symlink("/dev/null", dir.path().join("audit.bin"))?;
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.security.audit_enabled = true;
     let path = dir.path().display().to_string();
-    let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+    let core = WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
     let vector = EntangledHVec::new_deterministic(1024, 7);
     for id in ["deleted", "survivor"] {
         let error = core.memorize(id.into(), vector.clone()).unwrap_err();
@@ -41,7 +41,7 @@ fn failed_audit_sync_does_not_hide_durable_create_or_delete() -> Result<()> {
         .any(|hit| hit.id == "deleted"));
     drop(core);
     std::fs::remove_file(dir.path().join("audit.bin"))?;
-    let core = HmsCore::new(1024, Some(path), Some(config))?;
+    let core = WarmCore::new(1024, Some(path), Some(config))?;
     let hits = core.query(&vector, 10);
     assert!(hits.iter().any(|hit| hit.id == "survivor"));
     assert!(!hits.iter().any(|hit| hit.id == "deleted"));

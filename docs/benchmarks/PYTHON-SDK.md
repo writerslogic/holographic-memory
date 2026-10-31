@@ -1,9 +1,9 @@
 # Python SDK per-call overhead
 
 Development A/B, not a standings run. Source: `benchmarks/results/python_sdk_overhead.json`,
-produced by `bindings/python/holographic-sdk/benchmarks/client_overhead.py`.
+produced by `bindings/python/warm-sdk/benchmarks/client_overhead.py`.
 
-Setup: Apple M-series, 10 threads, CPython 3.14.7, httpx 0.28.1. Local release `hms-server`
+Setup: Apple M-series, 10 threads, CPython 3.14.7, httpx 0.28.1. Local release `warm-server`
 (`--features security,server`, default settings), 10,000 rows, dimension 384, `top_k` 10, sequential
 calls on one connection. One process per SDK build per round, 3 rounds with the build order
 rotated; within a process, raw `http.client`, the sync client and the async client alternate in

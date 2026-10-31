@@ -34,7 +34,7 @@ from check_longmemeval_answers import (
 class AnswerChecks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        source = Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json'
+        source = Path.home() / '.cache/warm-bench/downloads/longmemeval_s_cleaned.json'
         if not source.is_file():
             raise unittest.SkipTest('pinned LongMemEval source cache is unavailable')
         cls.question = next(question for question in json.loads(source.read_text())
@@ -187,7 +187,7 @@ class AnswerChecks(unittest.TestCase):
     def test_api_response_snapshot_matches_the_frozen_request(self):
         protocol = json.loads((ROOT / 'benchmarks/public/reader_protocol_v1.json').read_text())
         model = protocol['systems']['matched_gpt54']['reader_model']
-        cache = Path.home() / '.cache/hms-bench/answers-v1'
+        cache = Path.home() / '.cache/warm-bench/answers-v1'
         call = None
         for path in sorted(cache.glob('*.json')):
             recorded = json.loads(path.read_text())

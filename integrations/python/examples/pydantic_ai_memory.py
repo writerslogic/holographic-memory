@@ -3,7 +3,7 @@
 
 """Pydantic AI: memory toolset plus persistent message history.
 
-Needs a running hms-server (HMS_URL, default http://127.0.0.1:8080, default --input-dim 384).
+Needs a running warm-server (WARM_URL, default http://127.0.0.1:8080, default --input-dim 384).
 A FunctionModel stands in for the LLM; pass a model name to `Agent(...)` to use a real one.
 
     uv run --extra pydantic-ai python examples/pydantic_ai_memory.py
@@ -16,10 +16,10 @@ from pydantic_ai import Agent
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.pydantic_ai import MessageStore, memory_toolset
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.pydantic_ai import MessageStore, memory_toolset
 
-config = HmsConfig(url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
+config = WarmConfig(url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
 
 steps = iter([
     ToolCallPart("remember", {"text": "Release freeze starts on the 14th"}),

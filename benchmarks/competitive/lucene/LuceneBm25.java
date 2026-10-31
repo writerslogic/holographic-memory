@@ -1,13 +1,13 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// Apache Lucene 9.12.3 BM25 comparator for hms-bench: same phases and output shape as
+// Apache Lucene 9.12.3 BM25 comparator for warm-bench: same phases and output shape as
 // text_worker.py (build, serve, ops). EnglishAnalyzer (Porter stemming, English stop words)
 // and the default BM25Similarity (k1 1.2, b 0.75) are Lucene's documented defaults.
 //
 // Usage: java -cp lucene-core.jar:lucene-analysis-common.jar:classes LuceneBm25
 //        <build|serve|ops> <input.json> <store dir> <out.json> <t0 epoch ns> <passes> <ops>
-// The input is the {documents, queries} JSON written by hms-bench; it is parsed with a small
+// The input is the {documents, queries} JSON written by warm-bench; it is parsed with a small
 // purpose-built reader so the harness needs only the two Lucene jars.
 
 import java.io.IOException;

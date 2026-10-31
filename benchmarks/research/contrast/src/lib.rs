@@ -21,7 +21,7 @@
 //! * [`eval`]: nDCG@k, ROC AUC, calibrated thresholds, timing;
 //! * [`data`]: BEIR jsonl / qrels loading.
 //!
-//! The binary `hms-contrast` (src/main.rs) runs Part A (NFCorpus rerank) and
+//! The binary `warm-contrast` (src/main.rs) runs Part A (NFCorpus rerank) and
 //! Part B (synthetic false-accept / abstention / latency) and writes JSON.
 
 pub mod bm25;

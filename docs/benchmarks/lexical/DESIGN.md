@@ -30,7 +30,7 @@ COUNT never scores and counts live parent documents once. Ranked hits are chunks
 ordered by raw BM25 descending, parent document ID ascending, then chunk index.
 `k=0` returns no hits, with an exact count when requested.
 
-The analyzer is HMS's Unicode alphanumeric splitter, lowercase and optional English
+The analyzer is WARM's Unicode alphanumeric splitter, lowercase and optional English
 Snowball stemming. Benchmark ingest disables stemming. On its lowercase ASCII
 corpus this matches the whitespace analyzer except external token-length filters.
 BM25 is `idf * tf * (k1+1) / (tf + k1*(1-b+b*length/avg))`, defaults 1.2/0.75,
@@ -41,7 +41,7 @@ prohibited clauses do not. Nonfinite scores are rejected. Parameters and sizes a
 validated. Lucene/Tantivy norms, float width and duplicate-query rewrites differ;
 score/rank parity is claimed only for equivalent configurations.
 
-Ordinary ingest retains HMS's established chunk statistics and match unit. The
+Ordinary ingest retains WARM's established chunk statistics and match unit. The
 benchmark enables opt-in `IngestOptions::whole_document`, requiring lexical encoding
 and positions, so each article is a single chunk up to the existing 8 MiB document
 limit. This preserves article-level conjunctions, exclusions and phrases across the
@@ -96,7 +96,7 @@ survive compaction, replacement and reopen. Snapshot queries observe one generat
 ## Measurement and delivery
 
 Use an isolated fork checkout and target directory, at most two release builds from
-CI-passing HMS commits, and the shared remote timing lock for all heavy work. Reuse
+CI-passing WARM commits, and the shared remote timing lock for all heavy work. Reuse
 baseline JSON receipts; baseline data, indexes and binaries are currently absent on
 <benchmark host> and must be reacquired before comparable timings. Record dataset,
 queries, analyzer, hardware, threads, cache policy, index time/size and RSS. At least
@@ -167,7 +167,7 @@ Repeated-term phrases still verify adjacency and never use the single-term COUNT
 shortcut. Optional phrases alongside another positive clause retain the Boolean
 contract. The final release must measure this change as well as WAND.
 
-The pinned Lucene adapter uses BM25 0.9/0.4; HMS and Tantivy use 1.2/0.75.
+The pinned Lucene adapter uses BM25 0.9/0.4; WARM and Tantivy use 1.2/0.75.
 External rank identity is unclaimed. The pinned default roster also includes
 reordered Lucene 10.4.0, PISA 0.8.2 and IResearch 26.03.1. Their upstream timing
 receipts have unverified hardware for this comparison and cannot establish a

@@ -1,5 +1,5 @@
 {
-  "schema": "hms-research-scan/v1",
+  "schema": "warm-research-scan/v1",
   "generated_unix_s": 1792552189,
   "dataset": {
     "kind": "synthetic",

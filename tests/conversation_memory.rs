@@ -6,14 +6,14 @@
 use std::path::Path;
 use std::sync::{Arc, Barrier};
 
-use holographic_memory::core::memory_api::{
+use writerslogic_warm::core::memory_api::{
     ConversationEvidence, ConversationInput, ConversationMemory, ConversationRecallOptions,
     ConversationRole, ConversationTurn,
 };
-use holographic_memory::HmsCore;
+use writerslogic_warm::WarmCore;
 
 fn open(path: &Path) -> ConversationMemory {
-    ConversationMemory::new(HmsCore::new(4096, Some(path.display().to_string()), None).unwrap())
+    ConversationMemory::new(WarmCore::new(4096, Some(path.display().to_string()), None).unwrap())
         .unwrap()
 }
 
@@ -302,10 +302,10 @@ fn a_user_confirmation_and_its_following_answer_retain_the_original_assistant_re
 #[cfg(feature = "local-models")]
 #[test]
 fn default_model_stages_accept_one_native_candidate_and_one_retrieved_source() {
-    use holographic_memory::core::models::ModelStages;
+    use writerslogic_warm::core::models::ModelStages;
 
     let dir = tempfile::tempdir().unwrap();
-    let core = HmsCore::new(4096, Some(dir.path().display().to_string()), None).unwrap();
+    let core = WarmCore::new(4096, Some(dir.path().display().to_string()), None).unwrap();
     core.set_model_stages(Some(Arc::new(ModelStages::default())))
         .unwrap();
     let memory = ConversationMemory::new(core).unwrap();

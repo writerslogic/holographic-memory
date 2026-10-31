@@ -141,20 +141,20 @@ def run_dataset(dataset, frozen, directory):
         raise FileExistsError("refusing to reuse an existing VIBE alias or raw result directory")
     link.symlink_to(view.resolve())
     environment = {name: value for name, value in os.environ.items()
-                   if not name.startswith(("HMS_QGRAPH_", "HMS_QAG_"))}
+                   if not name.startswith(("WARM_QGRAPH_", "WARM_QAG_"))}
     environment.update({name: "1" for name in THREADS})
-    environment.update(HMS_QAG_BASELINE_SO=frozen["extensions"]["baseline"]["path"],
-                       HMS_QAG_CANDIDATE_SO=frozen["extensions"]["candidate"]["path"])
+    environment.update(WARM_QAG_BASELINE_SO=frozen["extensions"]["baseline"]["path"],
+                       WARM_QAG_CANDIDATE_SO=frozen["extensions"]["candidate"]["path"])
     command = [frozen["bench"], alias, "1", "vibe", frozen["definitions"], "nolock"]
     before = {
         "schema_version": 1, "created_utc": now(), "dataset": dataset["name"],
         "alias": alias, "host": host(), "command": command,
-        "outer_flock": str(Path.home() / "hms-timing.lock"),
+        "outer_flock": str(Path.home() / "warm-timing.lock"),
         "harness_sha256": frozen["harness_sha256"], "extensions": frozen["extensions"],
         "dataset_view": record(view), "export_receipt": export_receipt,
         "inputs": [*frozen["inputs"], *dependencies, record(view)],
         "environment": {name: environment[name] for name in environment
-                        if name in THREADS or name.startswith("HMS_QAG_")},
+                        if name in THREADS or name.startswith("WARM_QAG_")},
         "policy": frozen["policy"],
     }
     write_new(directory / "before.json", before)
@@ -162,7 +162,7 @@ def run_dataset(dataset, frozen, directory):
     process = subprocess.run(command, cwd=vibe, env=environment, capture_output=True, text=True)
     with (directory / "bench-stdout.txt").open("x") as stream:
         stream.write(process.stdout + process.stderr)
-    log = Path.home() / "vibe-hms/logs" / (alias + "-" + Path(frozen["definitions"]).name + ".log")
+    log = Path.home() / "vibe-warm/logs" / (alias + "-" + Path(frozen["definitions"]).name + ".log")
     if log.exists():
         copy_new(log, directory / "bench.log")
     printed_status = re.findall(r"\brc=(\d+)\b", process.stdout)
@@ -214,7 +214,7 @@ def run(args):
         extensions = {}
         for arm, path in (("baseline", args.baseline), ("candidate", args.candidate)):
             original = record(path)
-            saved = copy_new(original["path"], snapshots / (arm + "-holographic_memory.so"))
+            saved = copy_new(original["path"], snapshots / (arm + "-writerslogic_warm.so"))
             extensions[arm] = {**saved, "original_path": original["path"]}
         if extensions["baseline"]["sha256"] == extensions["candidate"]["sha256"]:
             raise ValueError("baseline and candidate must be distinct extension builds")
@@ -288,23 +288,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--baseline", type=Path,
-                        default=Path.home() / "sol-qag/artifacts/baseline-holographic_memory.so")
+                        default=Path.home() / "sol-qag/artifacts/baseline-writerslogic_warm.so")
     parser.add_argument("--candidate", type=Path,
-                        default=Path.home() / "sol-qag/artifacts/trained-holographic_memory.so")
+                        default=Path.home() / "sol-qag/artifacts/trained-writerslogic_warm.so")
     parser.add_argument("--runs", type=Path, default=Path.home() / "sol-qag/regression-runs")
-    parser.add_argument("--vibe", type=Path, default=Path.home() / "vibe-hms/vibe")
-    parser.add_argument("--bench", type=Path, default=Path.home() / "vibe-hms/bench.sh")
+    parser.add_argument("--vibe", type=Path, default=Path.home() / "vibe-warm/vibe")
+    parser.add_argument("--bench", type=Path, default=Path.home() / "vibe-warm/bench.sh")
     parser.add_argument("--config", type=Path,
                         default=Path(__file__).parent / "regression/qag_pair/config.yml")
     parser.add_argument("--sift-native", type=Path,
-                        default=Path.home() / "hms-bench-decisions/data/sift-128-euclidean")
+                        default=Path.home() / "warm-bench-decisions/data/sift-128-euclidean")
     parser.add_argument("--glove-native", type=Path,
-                        default=Path.home() / ".cache/hms-bench/glove-100-angular")
+                        default=Path.home() / ".cache/warm-bench/glove-100-angular")
     parser.add_argument("--yahoo-source", type=Path,
-                        default=Path.home() / "vibe-hms/vibe/data/yahoo-minilm-384-normalized.hdf5")
+                        default=Path.home() / "vibe-warm/vibe/data/yahoo-minilm-384-normalized.hdf5")
     args = parser.parse_args()
     if (sys.platform != "linux" or socket.gethostname().split(".")[0] != "writerslogic-02"
-            or os.environ.get("HMS_QAG_OUTER_LOCK") != "1"
+            or os.environ.get("WARM_QAG_OUTER_LOCK") != "1"
             or any(os.environ.get(name) != "1" for name in THREADS)):
         parser.error("execute on writerslogic-02 through qag_regression.sh and its outer flock")
     run(args)

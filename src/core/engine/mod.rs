@@ -46,7 +46,7 @@ use super::audit::{AuditLog, AuditOp};
 use super::cognition::governor::GovernanceReport;
 use super::cognition::r#loop::{CognitionConfig as CognitionLoopConfig, CognitionLoop, Insight};
 use super::composite_memory::CompositeMemory;
-use super::config::HmsConfig;
+use super::config::WarmConfig;
 use super::decompose::Decomposer;
 use super::diffusion::DiffusionFactorizer;
 use super::entangled::EntangledHVec;
@@ -67,8 +67,8 @@ type SignFn<'a> = Box<dyn Fn(&[u8]) -> super::audit::SignatureBytes + 'a>;
 
 /// A configuration whose store holds `dimensions`-wide fixture embeddings.
 #[cfg(test)]
-pub(crate) fn fixture_config(dimensions: usize) -> HmsConfig {
-    HmsConfig {
+pub(crate) fn fixture_config(dimensions: usize) -> WarmConfig {
+    WarmConfig {
         embedding_space: Some(super::EmbeddingSpace {
             model: "fixture".into(),
             revision: "1".into(),
@@ -81,8 +81,8 @@ pub(crate) fn fixture_config(dimensions: usize) -> HmsConfig {
 }
 
 /// Persistent operations take mutation_gate before ShardSet and component locks.
-pub struct HmsCore {
-    config: HmsConfig,
+pub struct WarmCore {
+    config: WarmConfig,
     mutation_gate: mutation_gate::MutationGate,
     /// Word interner carried from one document batch to the next.
     stem_memos: crate::core::documents::StemMemoPool,
@@ -140,12 +140,12 @@ pub struct HmsCore {
     _store_lock: StoreLock,
 }
 
-impl HmsCore {
-    /// Create a new HMS instance. If `storage_path` is None, uses the current directory.
+impl WarmCore {
+    /// Create a new WARM instance. If `storage_path` is None, uses the current directory.
     pub fn new(
         dimensions: u32,
         storage_path: Option<String>,
-        config: Option<HmsConfig>,
+        config: Option<WarmConfig>,
     ) -> Result<Self> {
         const MAX_DIMENSIONS: u32 = 1_000_000;
         if dimensions == 0 || dimensions > MAX_DIMENSIONS {
@@ -210,7 +210,7 @@ impl HmsCore {
                         .security
                         .encryption_passphrase_env
                         .as_deref()
-                        .and_then(|name| std::env::var(name).ok())
+                        .and_then(|name| crate::compatibility::var(name).ok())
                 })
                 .ok_or_else(|| {
                     anyhow::anyhow!(
@@ -366,7 +366,7 @@ impl HmsCore {
     }
 
     /// Read the persisted shard count written by a prior auto-shard, if any. An unreadable or
-    /// malformed file reads as absent; `hms-admin verify` reports it as `shard-meta-invalid`.
+    /// malformed file reads as absent; `warm-admin verify` reports it as `shard-meta-invalid`.
     fn load_shard_meta(base: &Path) -> Option<usize> {
         let data = std::fs::read_to_string(Self::shard_meta_path(base)).ok()?;
         let value: serde_json::Value = serde_json::from_str(&data).ok()?;
@@ -547,7 +547,7 @@ pub(super) struct EncodedIndices {
     metadata: Vec<u8>,
 }
 
-impl HmsCore {
+impl WarmCore {
     /// Bundle vectors respecting the PrivacyConfig.
     /// When dp_enabled, uses Laplace noise with the configured epsilon.
     pub fn bundle<V: std::borrow::Borrow<EntangledHVec>>(&self, vectors: &[V]) -> EntangledHVec {
@@ -1016,7 +1016,7 @@ impl HmsCore {
         let peer_outcomes: Vec<(String, Result<Vec<super::types::RetrievalResult>>)> = peer_paths
             .par_iter()
             .map(|path| {
-                let outcome = HmsCore::new(
+                let outcome = WarmCore::new(
                     self.dimensions as u32,
                     Some(path.clone()),
                     Some(self.config.clone()),
@@ -1790,14 +1790,15 @@ mod connection_graph_tests {
     #[test]
     fn relate_and_query_through_engine() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        let warm =
+            WarmCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
         // Query before any relation exists -> graph unused -> 0.0.
-        assert_eq!(hms.query_relation("paris", "capital_of", "france"), 0.0);
+        assert_eq!(warm.query_relation("paris", "capital_of", "france"), 0.0);
 
-        hms.relate("paris", "capital_of", "france");
-        let present = hms.query_relation("paris", "capital_of", "france");
-        let absent = hms.query_relation("berlin", "capital_of", "spain");
+        warm.relate("paris", "capital_of", "france");
+        let present = warm.query_relation("paris", "capital_of", "france");
+        let absent = warm.query_relation("berlin", "capital_of", "spain");
         assert!(
             present > absent,
             "asserted relation ({present}) must score above an absent one ({absent})"
@@ -1810,12 +1811,12 @@ mod connection_graph_tests {
         let path = dir.path().to_string_lossy().to_string();
 
         {
-            let hms = HmsCore::new(4096, Some(path.clone()), None).unwrap();
-            hms.relate("paris", "capital_of", "france");
+            let warm = WarmCore::new(4096, Some(path.clone()), None).unwrap();
+            warm.relate("paris", "capital_of", "france");
         } // engine dropped -> connection graph's BufWriter flushed on drop
 
         // New engine over the same storage: the relation must reload from the log.
-        let hms2 = HmsCore::new(4096, Some(path), None).unwrap();
+        let hms2 = WarmCore::new(4096, Some(path), None).unwrap();
         let present = hms2.query_relation("paris", "capital_of", "france");
         let absent = hms2.query_relation("madrid", "capital_of", "italy");
         assert!(
@@ -1827,38 +1828,39 @@ mod connection_graph_tests {
     #[test]
     fn phase_graph_relate_and_retrieve() {
         let dir = tempfile::tempdir().unwrap();
-        let hms = HmsCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
-        hms.relate_phase("paris", "capital_of", "france");
-        hms.relate_phase("berlin", "capital_of", "germany");
+        let warm =
+            WarmCore::new(4096, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+        warm.relate_phase("paris", "capital_of", "france");
+        warm.relate_phase("berlin", "capital_of", "germany");
         // forward retrieval and inverse (subject) retrieval from the same field.
         assert_eq!(
-            hms.phase_retrieve_object("paris", "capital_of").as_deref(),
+            warm.phase_retrieve_object("paris", "capital_of").as_deref(),
             Some("france")
         );
         assert_eq!(
-            hms.phase_retrieve_subject("capital_of", "germany")
+            warm.phase_retrieve_subject("capital_of", "germany")
                 .as_deref(),
             Some("berlin")
         );
-        hms.relate_phase("alice", "parent_of", "bob");
-        hms.relate_phase("bob", "parent_of", "carol");
+        warm.relate_phase("alice", "parent_of", "bob");
+        warm.relate_phase("bob", "parent_of", "carol");
         assert_eq!(
-            hms.phase_retrieve_object("bob", "parent_of").as_deref(),
+            warm.phase_retrieve_object("bob", "parent_of").as_deref(),
             Some("carol")
         );
         assert_eq!(
-            hms.phase_retrieve_subject("parent_of", "bob").as_deref(),
+            warm.phase_retrieve_subject("parent_of", "bob").as_deref(),
             Some("alice")
         );
         assert_eq!(
-            hms.phase_retrieve_path("alice", &["parent_of", "parent_of"])
+            warm.phase_retrieve_path("alice", &["parent_of", "parent_of"])
                 .as_deref(),
             Some("carol")
         );
     }
 }
 
-impl Drop for HmsCore {
+impl Drop for WarmCore {
     /// Closing writes a checkpoint when one is due (see `checkpoint_if_due`), so the next open
     /// maps it instead of replaying the frames. A failure leaves the journal as it was.
     fn drop(&mut self) {

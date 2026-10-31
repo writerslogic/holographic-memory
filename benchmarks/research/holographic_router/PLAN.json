@@ -1,5 +1,5 @@
 {
-  "schema": "hms.holographic-routing-screen/1",
+  "schema": "warm.holographic-routing-screen/1",
   "scope": "Local synthetic feasibility only; no official data, heldout queries, production routing or durable formats",
   "seeds": {"data": [17, 29, 43], "projection": [101, 211, 307], "reservoir": 701, "random_order": 907},
   "input_dimensions": 32,

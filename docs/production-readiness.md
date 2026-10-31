@@ -2,8 +2,8 @@
 
 ## Supported surfaces
 
-Rust `HmsCore` and Node `HolographicMemorySystem` expose persistent vector, document, and
-structured knowledge operations. `holographic-memory/semantic` adds bounded ingestion, local
+Rust `WarmCore` and Node `WarmMemorySystem` expose persistent vector, document, and
+structured knowledge operations. `writerslogic-warm/semantic` adds bounded ingestion, local
 ONNX embeddings, hybrid retrieval, and optional local cross-encoder reranking. Python currently
 exposes the quantized-phase substrate, not the document engine. The Rust MSRV is 1.89.
 
@@ -22,7 +22,7 @@ Existing supported formats 1–3 retain their recorded geometry through writes a
 (formats 1/2 use fixed 1 GiB segments; format 3 uses fixed 64 MiB segments). Opening them
 does not upgrade their layout. Older binaries reject format 4 before changing persistent
 data (opening still updates the ownership-lock PID). Storage health reports the current
-layout version and mapped file capacity (not RSS). `hms-admin migrate` copies the source format;
+layout version and mapped file capacity (not RSS). `warm-admin migrate` copies the source format;
 re-encoding original documents into a new destination creates format 4.
 
 **Embedding schema 2** is unchanged. `store.json` binds
@@ -36,8 +36,8 @@ projections discarded information; a bit-level conversion cannot recover it. Kee
 and its original application version. Re-encode the original source documents into a new path:
 
 ```sh
-cargo run --release --features cli --bin hms-admin -- reencode sources.jsonl ./store-v2 --dimensions 16384
-cargo run --release --features cli --bin hms-admin -- verify ./store-v2
+cargo run --release --features cli --bin warm-admin -- reencode sources.jsonl ./store-v2 --dimensions 16384
+cargo run --release --features cli --bin warm-admin -- verify ./store-v2
 ```
 
 Each UTF-8 JSONL line is a `DocumentInput`, for example:
@@ -60,24 +60,24 @@ text feature level before applying the existing cross-level frequency cap. It re
 encoder. To evaluate it with original source documents in a separate store:
 
 ```sh
-cargo run --release --features experimental,cli --bin hms-admin -- reencode sources.jsonl ./union-store --dimensions 16384 --text-encoder multiscale-capped-union-v1
+cargo run --release --features experimental,cli --bin warm-admin -- reencode sources.jsonl ./union-store --dimensions 16384 --text-encoder multiscale-capped-union-v1
 ```
 
-In Rust, select `HmsConfig.text_encoder = TextEncoder::MultiscaleCappedUnionV1`, importing
-`TextEncoder` from `holographic_memory::core::encoding`. Reopen with the same encoder;
+In Rust, select `WarmConfig.text_encoder = TextEncoder::MultiscaleCappedUnionV1`, importing
+`TextEncoder` from `writerslogic_warm::core::encoding`. Reopen with the same encoder;
 the schema rejects a different encoder before loading arena data. Both text encoding and
 document chunk encoding use the configured version. The lexical document search API and
 supplied dense embeddings retain their existing scoring. Capped union remains a research
 option; synthetic gains do not establish document relevance or a speed improvement.
 
-`hms-admin migrate SOURCE DESTINATION` makes a verified copy of an arena and its sidecars;
+`warm-admin migrate SOURCE DESTINATION` makes a verified copy of an arena and its sidecars;
 it does **not** change its text/vector encoding or upgrade an old embedding schema. Inspection
 and verification understand legacy frames and the active `CURRENT` generation:
 
 ```sh
-cargo run --release --features cli --bin hms-admin -- inspect ./store-v2
-cargo run --release --features cli --bin hms-admin -- verify ./store-v2
-cargo run --release --features cli --bin hms-admin -- migrate ./store-v2 ./store-copy
+cargo run --release --features cli --bin warm-admin -- inspect ./store-v2
+cargo run --release --features cli --bin warm-admin -- verify ./store-v2
+cargo run --release --features cli --bin warm-admin -- migrate ./store-v2 ./store-copy
 ```
 
 ## Durability and concurrency
@@ -134,7 +134,7 @@ obtain an auxiliary record. HTTP replays a retained idempotency key's committed 
 its cache TTL/capacity; that cache is process-local and does not survive restart. Reconciliation
 after cache expiry or restart must compare application-owned IDs, versions and resulting state.
 Any external repair/delivery workflow must persist its own stable effect IDs and deduplicate
-delivery; HMS currently provides no such automatic retry worker.
+delivery; WARM currently provides no such automatic retry worker.
 
 Memory policy writes compare the planned core revision inside the journal writer lease.
 Independent wrappers and raw document writers therefore cannot commit stale conflict or
@@ -158,7 +158,7 @@ caches are discarded; retrieval falls back to indices rebuilt from durable recor
 Ingestion no longer trains indices inside the write call. `indexStatus()` reports recommendations.
 Call `maintainIndices()` between ingestion batches or from a scheduled job. Native Node methods
 run off the JavaScript event loop. Rust callers can use
-`Arc<HmsCore>::maintain_indices_background()`. Training uses a snapshot outside the transaction
+`Arc<WarmCore>::maintain_indices_background()`. Training uses a snapshot outside the transaction
 gate and publishes only if the data revision still matches. If concurrent writes changed the
 store, the call returns a retryable maintenance error; ingestion remains committed.
 
@@ -269,11 +269,11 @@ npm run build
 npm test
 npm run test:types
 npm run test:package
-cargo run --release --bin hms-eval -- --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
-cargo run --release --features cli --bin hms-workload -- --vectors 1200 --operations 300 --dimensions 4096
+cargo run --release --bin warm-eval -- --dataset tests/fixtures/relevance.json --dimensions 4096 --k 3 --assert-min-recall 0.90
+cargo run --release --features cli --bin warm-workload -- --vectors 1200 --operations 300 --dimensions 4096
 ```
 
-`hms-eval` emits relevance, rank, and latency metrics; `hms-workload` measures concurrent query
+`warm-eval` emits relevance, rank, and latency metrics; `warm-workload` measures concurrent query
 and update p95/p99. `scripts/evaluate-local-model.mjs` compares lexical and hybrid search with
 actual local models, records model revisions and a dataset digest, and measures sparse
 projection fidelity against dense-cosine neighbors. See [evaluation.md](evaluation.md).

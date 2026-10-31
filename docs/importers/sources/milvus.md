@@ -1,6 +1,6 @@
 # Source: milvus
 
-`hms-import milvus --uri URI_OR_FILE --collection NAME [--vector-field F] [--text-field F] [--namespace-field F] [--partition P ...] [--created-at-field F] [--updated-at-field F] [--page-size N]`
+`warm-import milvus --uri URI_OR_FILE --collection NAME [--vector-field F] [--text-field F] [--namespace-field F] [--partition P ...] [--created-at-field F] [--updated-at-field F] [--page-size N]`
 
 Reads a collection through `pymilvus.MilvusClient`: a Milvus Lite database file, a Milvus server (`http://host:19530`) or Zilliz Cloud. Verified against real Milvus Lite (pymilvus 3.0, milvus-lite) including partitions, a VARCHAR primary key and dynamic fields. A Milvus server and Zilliz Cloud use the same client calls but were not run here (no server available); treat them as unverified.
 

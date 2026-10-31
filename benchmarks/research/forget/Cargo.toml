@@ -10,7 +10,7 @@
 # digests. No new third-party crates.
 
 [package]
-name = "hms-research-forget"
+name = "warm-research-forget"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.89"
@@ -21,15 +21,15 @@ description = "Kill test: exact deletion from a counter-backed sparse-hypervecto
 [workspace]
 
 [lib]
-name = "hms_research_forget"
+name = "warm_research_forget"
 path = "src/lib.rs"
 
 [[bin]]
-name = "hms-research-forget"
+name = "warm-research-forget"
 path = "src/main.rs"
 
 [dependencies]
-holographic-memory = { path = "../../..", default-features = false }
+writerslogic-warm = { path = "../../..", default-features = false }
 anyhow = "1.0"
 clap = { version = "4.4", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""RSS breakdown of `hms-server` after ingesting N synthetic documents, per component.
+"""RSS breakdown of `warm-server` after ingesting N synthetic documents, per component.
 
 Mechanism: one fresh server (fresh data directory, loopback, `--no-auth`) per arm; the same
 deterministic corpus (seeded LCG, values uniform in (-1, 1), rounded to 6 decimals) is
@@ -211,7 +211,7 @@ def arms_for(args: argparse.Namespace) -> list[Arm]:
         Arm("lexical_graph", "lexical", dim, text, True, None),
         # Journal pages kept resident (the pre-release behaviour): the difference to
         # `lexical` is what page release returns to the OS.
-        Arm("lexical_keep_pages", "lexical", dim, text, False, None, {"HMS_RELEASE_JOURNAL_PAGES": "0"}),
+        Arm("lexical_keep_pages", "lexical", dim, text, False, None, {"WARM_RELEASE_JOURNAL_PAGES": "0"}),
     ]
     for other in args.dims:
         if other != dim:
@@ -287,7 +287,7 @@ def derive(arms: dict[str, Arm], args: argparse.Namespace) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--hms-bin", required=True, help="hms-server binary (built with --features server)")
+    parser.add_argument("--warm-bin", required=True, help="warm-server binary (built with --features server)")
     parser.add_argument("--n", type=int, default=50_000)
     parser.add_argument("--dim", type=int, default=384)
     parser.add_argument("--dims", type=lambda s: [int(x) for x in s.split(",")], default=[384, 128],
@@ -301,19 +301,19 @@ def main() -> int:
     parser.add_argument("--arms", default="", help="comma-separated subset of arm names")
     parser.add_argument("--label", default="", help="free text recorded in the output (e.g. the commit)")
     parser.add_argument("--keep", action="store_true", help="keep the data directories")
-    parser.add_argument("--extra", nargs="*", default=[], help="extra hms-server flags for every arm")
+    parser.add_argument("--extra", nargs="*", default=[], help="extra warm-server flags for every arm")
     parser.add_argument("--env", action="append", default=[], metavar="KEY=VALUE",
-                        help="environment for every server (repeatable), e.g. HMS_RELEASE_JOURNAL_PAGES=0")
+                        help="environment for every server (repeatable), e.g. WARM_RELEASE_JOURNAL_PAGES=0")
     parser.add_argument("--no-encode-flag", action="store_true",
                         help="the binary predates --ingest-encode (origin/main baseline): run every arm eagerly")
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
 
-    binary = str(Path(args.hms_bin).resolve())
+    binary = str(Path(args.warm_bin).resolve())
     if not os.access(binary, os.X_OK):
         print(f"not executable: {binary}", file=sys.stderr)
         return 2
-    root = Path(tempfile.mkdtemp(prefix="hms-rss-"))
+    root = Path(tempfile.mkdtemp(prefix="warm-rss-"))
     results: dict[str, Arm] = {}
     try:
         for arm in arms_for(args):
@@ -323,7 +323,7 @@ def main() -> int:
             shutil.rmtree(root, ignore_errors=True)
     derived = derive(results, args)
     document = {
-        "schema": "hms-rss-breakdown/1",
+        "schema": "warm-rss-breakdown/1",
         "label": args.label,
         "binary": binary,
         "platform": sys.platform,

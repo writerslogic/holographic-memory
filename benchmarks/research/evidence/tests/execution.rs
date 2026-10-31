@@ -1,11 +1,11 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use hms_research_evidence::contract::{
+use warm_research_evidence::contract::{
     Amount, AnswerStatus, Claim, Gap, Interval, Modality, Operation, Query, Selection, Source,
     Span, MAX_CLAIMS, MAX_SOURCES, MAX_SOURCE_BYTES, MAX_TOTAL_BYTES, MAX_WORLDS,
 };
-use hms_research_evidence::execute::execute;
+use warm_research_evidence::execute::execute;
 
 fn source(id: &str, observed_at: i64) -> Source {
     Source {

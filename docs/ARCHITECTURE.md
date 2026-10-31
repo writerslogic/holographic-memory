@@ -16,7 +16,7 @@ lib.rs                          Public Rust exports and module declarations
   |
   core/
   +-- engine/
-  |   +-- mod.rs                HmsCore: main orchestrator
+  |   +-- mod.rs                WarmCore: main orchestrator
   |   +-- mutation.rs           Validated, logged transactions and replay
   |   +-- document_api.rs       Document lifecycle and bounded batches
   |   +-- query.rs              Query routing and execution
@@ -56,13 +56,13 @@ lib.rs                          Public Rust exports and module declarations
   +-- schema.rs                 Store and embedding-space compatibility
   +-- durable_file.rs           Flushed atomic file publication
   +-- storage.rs                PersistentArena: mmap segmented log and generations
-  +-- config.rs                 HmsConfig, MeaningConfig, CognitionConfig, and sub-configs
+  +-- config.rs                 WarmConfig, MeaningConfig, CognitionConfig, and sub-configs
   +-- security.rs               SigningManager, EncryptionManager (feature-gated)
   +-- audit.rs                  AuditLog: append-only operation log
   +-- diffusion.rs              DiffusionFactorizer: score-based vector decomposition
   +-- text.rs                   TextProcessor: readability metrics
   +-- types.rs                  Shared types (RetrievalResult, ConceptCandidate, etc.)
-  +-- error.rs                  HmsError enum
+  +-- error.rs                  WarmError enum
   +-- intersection.rs           Sparse sorted-merge intersection
   +-- atom_memory.rs            AtomMemory: concept vector store (meaning memory)
   +-- composite_memory.rs       CompositeMemory: role-bound composite vectors
@@ -100,7 +100,7 @@ benchmark manifests retain the paths at their measured revisions.
 ## Meaning Memory Module Graph
 
 ```
-HmsCore (engine/mod.rs)
+WarmCore (engine/mod.rs)
   |
   +-- atom_memory.rs            AtomMemory: concept vector store
   |     +-- indexed_memory.rs   IndexedMemory: posting lists + IDF + tombstones

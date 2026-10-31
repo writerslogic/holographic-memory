@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Vector query routes of `hms-server`: the graph index and the exact scan agree on a fixed
+//! Vector query routes of `warm-server`: the graph index and the exact scan agree on a fixed
 //! synthetic corpus, deletes and replaces are visible before and after the next maintenance,
 //! and the route options validate.
 

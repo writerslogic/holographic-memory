@@ -11,11 +11,11 @@ Keep the original store intact while investigating.
 
 ## Python import fails
 
-For `from holographic_sdk import HolographicClient`, install `holographic-memory-sdk` in the same
-virtual environment as your application. `holographic-memory-py` has a different import name and API.
+For `from writerslogic_warm_sdk import WarmClient`, install `writerslogic-warm-sdk` in the same
+virtual environment as your application. `writerslogic-warm-py` has a different import name and API.
 
 ```sh
-uv run --with holographic-memory-sdk python -c "from holographic_sdk import HolographicClient; print(HolographicClient.__name__)"
+uv run --with writerslogic-warm-sdk python -c "from writerslogic_warm_sdk import WarmClient; print(WarmClient.__name__)"
 ```
 
 If this works but your application fails, compare the interpreter and environment used to run it.
@@ -28,7 +28,7 @@ Build from the repository root with a Rust toolchain installed:
 ```sh
 npm ci --omit=optional
 npm run build
-node -e "const { HolographicMemorySystem } = require('./index.js'); console.log(typeof HolographicMemorySystem)"
+node -e "const { WarmMemorySystem } = require('./index.js'); console.log(typeof WarmMemorySystem)"
 ```
 
 The expected result is `function`. A binary built for another OS or CPU cannot be reused.
@@ -36,8 +36,8 @@ The quickstart also uses `node:sqlite`, so run it with Node 24 or newer.
 
 ## Connection refused or authentication rejected
 
-1. Confirm `hms-server` is running and that the client URL matches its listening address.
-2. Use the same API key in `HMS_API_KEY` on the server and `api_key` in the client.
+1. Confirm `warm-server` is running and that the client URL matches its listening address.
+2. Use the same API key in `WARM_API_KEY` on the server and `api_key` in the client.
 3. Confirm the tenant ID is the same for ingestion and querying.
 
 Do not paste API keys into issue reports. For authorization rules and tenant isolation, use the

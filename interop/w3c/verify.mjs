@@ -14,7 +14,7 @@ import * as vc from '@digitalbazaar/vc';
 import jsigs from 'jsonld-signatures';
 
 const input = JSON.parse(await readFile(process.argv[2], 'utf8'));
-const hmsContext = JSON.parse(await readFile(new URL('../../docs/reference/fixtures/hms-v1-context.jsonld', import.meta.url), 'utf8'));
+const warmContext = JSON.parse(await readFile(new URL('../../docs/reference/fixtures/warm-v1-context.jsonld', import.meta.url), 'utf8'));
 const didKey = driver();
 didKey.use({
   multibaseMultikeyHeader: 'z6Mk',
@@ -26,7 +26,7 @@ const documentLoader = async url => {
       return {documentUrl: url, document: input.statusList};
     }
     if(url === 'https://docs.holographic-memory.com/ns/hms/v1.jsonld') {
-      return {documentUrl: url, document: hmsContext};
+      return {documentUrl: url, document: warmContext};
     }
     return vc.defaultDocumentLoader(url);
   }

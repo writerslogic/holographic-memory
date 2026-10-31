@@ -7,7 +7,7 @@
   uv run --script benchmarks/public/longmemeval_sweep.py <run dir> <longmemeval_s_cleaned.json>
 
 <run dir> holds scores.json, targets.json, queries.json and rerank.json of a Modal dev run made
-with --all-kinds (`modal volume get hms-lme runs/<tag>`). Each lever is measured alone against the
+with --all-kinds (`modal volume get warm-lme runs/<tag>`). Each lever is measured alone against the
 baseline (user-turn keys for turns, session keys for sessions, original question, document-API
 hybrid RRF, max aggregation), then greedy coordinate ascent keeps a value only if it raises the
 objective (mean of recall_all@5/10 and ndcg_any@5/10 at that level) by at least MIN_GAIN, and a

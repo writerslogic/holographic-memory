@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use super::index::Index;
 use super::*;
-use crate::core::HmsCore;
+use crate::core::WarmCore;
 
 fn fact(id: &str, text: &str) -> RememberInput {
     RememberInput {
@@ -22,7 +22,7 @@ fn concurrent_wrappers_cannot_both_create_different_facts_with_one_id() {
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
     let policy = Arc::new(Synchronized(std::sync::Barrier::new(2)));
     let workers: Vec<_> = ["first fact", "second fact"]
         .into_iter()
@@ -66,7 +66,7 @@ fn concurrent_subject_updates_replan_against_the_committed_predecessor() {
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
     let policy = Arc::new(Synchronized {
         barrier: std::sync::Barrier::new(2),
         calls: Default::default(),
@@ -98,7 +98,7 @@ fn concurrent_subject_updates_replan_against_the_committed_predecessor() {
 #[test]
 fn conditional_changes_never_overwrite_a_raw_core_write() {
     let dir = tempfile::tempdir().unwrap();
-    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
     let memory = Memory::new(core.clone());
     memory.remember(fact("shared", "original")).unwrap();
     let revision = core.revision();
@@ -118,7 +118,7 @@ fn conditional_changes_never_overwrite_a_raw_core_write() {
 
 #[test]
 fn forgetting_policy_replans_instead_of_deleting_a_replaced_source() {
-    struct ReplaceDuringSelection(Arc<HmsCore>, std::sync::atomic::AtomicBool);
+    struct ReplaceDuringSelection(Arc<WarmCore>, std::sync::atomic::AtomicBool);
     impl ForgettingPolicy for ReplaceDuringSelection {
         fn select(&self, _: &[FactSummary], _: Millis) -> Vec<String> {
             if !self.1.swap(true, std::sync::atomic::Ordering::SeqCst) {
@@ -135,7 +135,7 @@ fn forgetting_policy_replans_instead_of_deleting_a_replaced_source() {
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
     let memory = Memory::new(core.clone());
     memory.remember(fact("source", "outdated fact")).unwrap();
     let report = memory
@@ -153,7 +153,7 @@ fn forgetting_policy_replans_instead_of_deleting_a_replaced_source() {
 
 #[test]
 fn continuous_foreign_writes_return_contention_without_a_stale_commit() {
-    struct AlwaysWrite(Arc<HmsCore>);
+    struct AlwaysWrite(Arc<WarmCore>);
     impl SupersessionPolicy for AlwaysWrite {
         fn resolve(&self, _: &FactView, _: &[FactView]) -> Resolution {
             self.0
@@ -168,7 +168,7 @@ fn continuous_foreign_writes_return_contention_without_a_stale_commit() {
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
     let memory = Memory::new(core.clone()).with_supersession(Arc::new(AlwaysWrite(core.clone())));
     let error = memory
         .remember(RememberInput {
@@ -186,7 +186,7 @@ fn continuous_foreign_writes_return_contention_without_a_stale_commit() {
 
 #[test]
 fn consolidation_replans_when_its_source_changes_during_the_policy_callback() {
-    struct ReplaceDuringPlan(Arc<HmsCore>, std::sync::atomic::AtomicBool);
+    struct ReplaceDuringPlan(Arc<WarmCore>, std::sync::atomic::AtomicBool);
     impl ConsolidationPolicy for ReplaceDuringPlan {
         fn plan(&self, facts: &[FactSummary], _: Millis) -> Vec<ConsolidationAction> {
             if !facts.iter().any(|fact| fact.id == "source") {
@@ -210,7 +210,7 @@ fn consolidation_replans_when_its_source_changes_during_the_policy_callback() {
         }
     }
     let dir = tempfile::tempdir().unwrap();
-    let core = Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
     let memory = Memory::new(core.clone());
     memory.remember(fact("source", "original fact")).unwrap();
     let result = memory
@@ -268,7 +268,7 @@ fn reentrant_policy_callbacks_do_not_hold_the_memory_index_lock() {
     for recall in [false, true] {
         let dir = tempfile::tempdir().unwrap();
         let core =
-            Arc::new(HmsCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
+            Arc::new(WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap());
         let policy = Arc::new(Reenter {
             memory: OnceLock::new(),
             wrote: false.into(),
@@ -313,7 +313,7 @@ fn reentrant_policy_callbacks_do_not_hold_the_memory_index_lock() {
 #[test]
 fn replacing_a_fact_leaves_the_index_equal_to_a_rebuild() {
     let dir = tempfile::tempdir().unwrap();
-    let core = Arc::new(HmsCore::new(64, Some(dir.path().display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(64, Some(dir.path().display().to_string()), None).unwrap());
     let config = MemoryConfig {
         on_id_conflict: IdConflict::Replace,
         ..MemoryConfig::default()

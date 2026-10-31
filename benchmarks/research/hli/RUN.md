@@ -16,11 +16,11 @@ uv run --no-project --with numpy --with torch --with transformers --with sentenc
 ```
 
 Works from any cwd. Model: `sentence-transformers/all-MiniLM-L6-v2` at revision
-`1110a243fdf4706b3f48f1d95db1a4f5529b4d41` (the revision recorded in `~/.cache/hms-bench/*/meta.json`,
+`1110a243fdf4706b3f48f1d95db1a4f5529b4d41` (the revision recorded in `~/.cache/warm-bench/*/meta.json`,
 already in the Hugging Face hub cache), loaded on CPU through `SentenceTransformer(id, revision=..., device="cpu")`
 as `benchmarks/embedding/bench_torch_cpu.py` does; `max_seq_length = 256`.
 
-Options (defaults in brackets): `--datasets nfcorpus scifact`, `--cache-root ~/.cache/hms-bench`,
+Options (defaults in brackets): `--datasets nfcorpus scifact`, `--cache-root ~/.cache/warm-bench`,
 `--out benchmarks/research/hli/out/hli_v1.json`, `--dims 2048 4096 8192 16384`,
 `--buckets 1 4 16`, `--kmeans 2 4 8`, `--maps real real_c sign rff`, `--rff-gamma 4`,
 `--expand-weight 1`, `--no-additions`, `--threads [min(10, cpu_count)]`, `--batch-size 64`,
@@ -57,7 +57,7 @@ judged document plus random others up to N (seeded) and records it under `stats.
 
 ## Inputs (read-only)
 
-`~/.cache/hms-bench/{nfcorpus,scifact}/{meta.json, corpus.jsonl, queries.jsonl, qrels.tsv, corpus.f32}`.
+`~/.cache/warm-bench/{nfcorpus,scifact}/{meta.json, corpus.jsonl, queries.jsonl, qrels.tsv, corpus.f32}`.
 NFCorpus: 3633 docs, 323 queries, 12334 judgments (grades 1-2). SciFact: 5183 docs, 300 queries,
 339 judgments. Queries without a positive judgment are dropped (count recorded). The pooled vectors
 recomputed here are compared with the cached `corpus.f32` (`stats.pooled_vs_cached_corpus_f32_cosine_mean`,
@@ -75,7 +75,7 @@ Mechanisms (rows), every one from the same token bank:
 | mechanism | score |
 |---|---|
 | `dense` | cosine of pooled vectors |
-| `bm25` | HMS BM25 (k1 1.2, b 0.75) from roc.py; hybrid partner |
+| `bm25` | WARM BM25 (k1 1.2, b 0.75) from roc.py; hybrid partner |
 | `maxsim`, `maxsim_idf`, `maxsim_centered` | sum over query tokens of the max cosine over document tokens, / n_q (idf-weighted query tokens; corpus-mean-centred tokens) |
 | `hli` | token hypervector h(x) = f(R^T x), grouped, bundled, quantised; see below |
 | `hli_puresum` | cosine of the summed query hypervector against the bundle (control; collapses to dense) |
@@ -155,7 +155,7 @@ selects, per mode and for both memory classes, the row with the highest tune-spl
 reports its eval-split nDCG@10, recall@100, delta vs dense and CI (eval bootstrap), memory and gap
 closed; that is the "best combination per dataset" answer and is free of test-set selection.
 
-## Output schema (`hms.research.hli/1`, floats rounded to 6 decimals)
+## Output schema (`warm.research.hli/1`, floats rounded to 6 decimals)
 
 ```
 schema, generated_at, command, model{id, revision, max_seq_length, hidden},

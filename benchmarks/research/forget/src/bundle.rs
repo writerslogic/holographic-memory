@@ -59,7 +59,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::EntangledHVec;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::{Digest, Sha256};
 

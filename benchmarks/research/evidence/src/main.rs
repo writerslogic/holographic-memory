@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{bail, ensure, Context, Result};
-use hms_research_evidence::contract::{
+use warm_research_evidence::contract::{
     validate_query, Claim, Operation, Query, Source, MAX_TOTAL_BYTES,
 };
-use hms_research_evidence::execute::execute;
-use hms_research_evidence::proof::{
+use warm_research_evidence::execute::execute;
+use warm_research_evidence::proof::{
     plan_forgetting, ProofCutResult, ProofCutStatus, ProofProblem, SearchLimits,
 };
-use hms_research_evidence::retrieval::{answer_with_repair, RetrievalLimits, RetrievalReport};
-use hms_research_evidence::store::{validate_bundle, EvidenceStore};
+use warm_research_evidence::retrieval::{answer_with_repair, RetrievalLimits, RetrievalReport};
+use warm_research_evidence::store::{validate_bundle, EvidenceStore};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -18,7 +18,7 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
 
-const USAGE: &str = "usage: hms-research-evidence demo | run FILE.json STORE | proof FILE.json";
+const USAGE: &str = "usage: warm-research-evidence demo | run FILE.json STORE | proof FILE.json";
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]

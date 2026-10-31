@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""langgraph-checkpoint-conformance against a live hms-server, plus real graphs."""
+"""langgraph-checkpoint-conformance against a live warm-server, plus real graphs."""
 
 import operator
 from typing import Annotated, TypedDict
@@ -12,20 +12,20 @@ from langgraph.checkpoint.conformance.capabilities import ALL_CAPABILITIES
 from langgraph.checkpoint.conformance.report import ProgressCallbacks
 from langgraph.graph import END, START, StateGraph
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.langgraph import HolographicSaver
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.langgraph import WarmSaver
 
 DIM = 8
 
 
 def saver_for(server, **kw):
-    return HolographicSaver(url=server.url, tenant_id=server.tenant(), input_dim=DIM, **kw)
+    return WarmSaver(url=server.url, tenant_id=server.tenant(), input_dim=DIM, **kw)
 
 
 async def test_checkpoint_conformance_all_capabilities(server_factory):
     server = server_factory(DIM)
 
-    @checkpointer_test(name="HolographicSaver")
+    @checkpointer_test(name="WarmSaver")
     async def factory():
         saver = saver_for(server)
         yield saver
@@ -62,11 +62,11 @@ def build(saver):
 def test_graph_resumes_across_saver_instances_and_stores_large_values(server_factory):
     server = server_factory(DIM)
     tenant = server.tenant()
-    first = HolographicSaver(url=server.url, tenant_id=tenant, input_dim=DIM)
+    first = WarmSaver(url=server.url, tenant_id=tenant, input_dim=DIM)
     cfg = {"configurable": {"thread_id": "t1"}}
     out = build(first).invoke({"items": [], "big": ""}, cfg)
     assert out["items"] == ["a", "b"] and len(out["big"]) == 200_000  # 200 kB blob spans several parts
-    second = HolographicSaver(url=server.url, tenant_id=tenant, input_dim=DIM)
+    second = WarmSaver(url=server.url, tenant_id=tenant, input_dim=DIM)
     state = build(second).get_state(cfg)
     assert state.values["items"] == ["a", "b"] and len(state.values["big"]) == 200_000
     history = list(build(second).get_state_history(cfg))
@@ -106,4 +106,4 @@ async def test_async_graph_and_long_thread_lists_across_pages(server_factory):
 def test_checkpoint_page_limit_is_enforced(server_factory):
     server = server_factory(DIM)
     with pytest.raises(ValueError):
-        HolographicSaver(config=HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, max_fetch=10))
+        WarmSaver(config=WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, max_fetch=10))

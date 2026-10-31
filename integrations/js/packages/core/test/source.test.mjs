@@ -6,21 +6,21 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { HmsStore } from '../dist/index.js'
+import { WarmStore } from '../dist/index.js'
 
-const tmp = () => mkdtempSync(join(tmpdir(), 'hms-source-'))
+const tmp = () => mkdtempSync(join(tmpdir(), 'warm-source-'))
 const fixture = '\u2003\t  alpha\nβeta\t三\r\n café\u0085omega\u00a0\n'
 
 for (const overlapWords of [0, 1, 3]) {
   test(`source bytes and citation spans survive restart with overlap ${overlapWords}`, async () => {
     const path = tmp()
     execFileSync(process.execPath, ['--input-type=module', '-e', `
-      import { HmsStore } from ${JSON.stringify(new URL('../dist/index.js', import.meta.url).href)}
-      const s = new HmsStore({ path: ${JSON.stringify(path)}, dimensions: 1024, chunkWords: 4, overlapWords: ${overlapWords} })
+      import { WarmStore } from ${JSON.stringify(new URL('../dist/index.js', import.meta.url).href)}
+      const s = new WarmStore({ path: ${JSON.stringify(path)}, dimensions: 1024, chunkWords: 4, overlapWords: ${overlapWords} })
       await s.remember([{ id: 'source', text: ${JSON.stringify(fixture)}, metadata: { label: 'original' } }])
       await s.close()
     `])
-    const s = new HmsStore({ path, dimensions: 1024, chunkWords: 4, overlapWords })
+    const s = new WarmStore({ path, dimensions: 1024, chunkWords: 4, overlapWords })
     const [record] = await s.get(['source'])
     assert.equal(record.text, fixture)
     assert.deepEqual(record.metadata, { label: 'original' })
@@ -38,7 +38,7 @@ for (const overlapWords of [0, 1, 3]) {
 test('large JSON and zero-overlap passage gaps preserve every byte', async () => {
   const text = JSON.stringify({ items: Array.from({ length: 6000 }, (_, i) => `café ${i}\t雪`) }, null, 2)
   assert.ok(Buffer.byteLength(text) > 65536)
-  const s = new HmsStore({ path: tmp(), dimensions: 1024, chunkWords: 100, overlapWords: 0 })
+  const s = new WarmStore({ path: tmp(), dimensions: 1024, chunkWords: 100, overlapWords: 0 })
   await s.remember([{ id: 'json', text }])
   for (const record of [(await s.get(['json']))[0], (await s.list()).records[0], (await s.recall('café', { k: 1 }))[0]]) {
     assert.equal(record.text, text)
@@ -48,7 +48,7 @@ test('large JSON and zero-overlap passage gaps preserve every byte', async () =>
 })
 
 test('blank text is rejected without writing other records in the request', async () => {
-  const s = new HmsStore({ path: tmp(), dimensions: 1024 })
+  const s = new WarmStore({ path: tmp(), dimensions: 1024 })
   for (const text of ['', ' ', '\t\n', '\u2003\u0085']) {
     await assert.rejects(s.remember([{ id: 'good', text: 'valid' }, { id: 'blank', text }]), (e) => e.code === 'invalid_argument')
     assert.deepEqual((await s.list()).records, [])
@@ -57,7 +57,7 @@ test('blank text is rejected without writing other records in the request', asyn
 })
 
 test('source metadata obeys the 64 KiB boundary before writing a batch', async () => {
-  const s = new HmsStore({ path: tmp(), dimensions: 1024 })
+  const s = new WarmStore({ path: tmp(), dimensions: 1024 })
   await s.remember([{ id: 'source', text: 'alpha', metadata: { pad: '' } }])
   const { metadata } = await s.memory.getDocumentInfo('source')
   const available = 65536 - Buffer.byteLength(JSON.stringify(metadata))
@@ -75,7 +75,7 @@ test('source metadata obeys the 64 KiB boundary before writing a batch', async (
 })
 
 test('a source replacement during reranking cannot produce a stale citation', async () => {
-  const s = new HmsStore({ path: tmp(), dimensions: 1024, rerank: async (_query, passages) => {
+  const s = new WarmStore({ path: tmp(), dimensions: 1024, rerank: async (_query, passages) => {
     await s.remember([{ id: 'source', text: 'replacement' }])
     return passages.map(() => 1)
   } })
@@ -86,15 +86,15 @@ test('a source replacement during reranking cannot produce a stale citation', as
 
 for (const damage of ['legacy', 'length', 'digest', 'gap', 'span']) {
   test(`missing or damaged source evidence (${damage}) requires reingestion`, async () => {
-    const s = new HmsStore({ path: tmp(), dimensions: 1024, chunkWords: 4, overlapWords: 0 })
+    const s = new WarmStore({ path: tmp(), dimensions: 1024, chunkWords: 4, overlapWords: 0 })
     await s.remember([{ id: 'source', text: fixture }])
     const { metadata } = await s.memory.getDocumentInfo('source')
     switch (damage) {
-      case 'legacy': delete metadata._hms_source; break
-      case 'length': metadata._hms_source.bytes = 8 * 1024 * 1024 + 1; break
-      case 'digest': metadata._hms_source.sha256 = '0'.repeat(64); break
-      case 'gap': metadata._hms_source.gaps[0].text = 'x'; break
-      case 'span': metadata._hms_source.gaps[0].startByte = -1; break
+      case 'legacy': delete metadata._warm_source; break
+      case 'length': metadata._warm_source.bytes = 8 * 1024 * 1024 + 1; break
+      case 'digest': metadata._warm_source.sha256 = '0'.repeat(64); break
+      case 'gap': metadata._warm_source.gaps[0].text = 'x'; break
+      case 'span': metadata._warm_source.gaps[0].startByte = -1; break
     }
     const input = { id: 'source', text: fixture, metadata, chunkWords: 4, overlapWords: 0, storeText: true }
     const chunks = await s.memory.chunkDocument(input)

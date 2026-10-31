@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! `hms-research-witness`: occupancy-balanced rare-witness decoding, a
+//! `warm-research-witness`: occupancy-balanced rare-witness decoding, a
 //! graph-free large-N ANN index whose candidate discovery streams sorted
 //! posting lists and never follows a data-dependent pointer.
 //!

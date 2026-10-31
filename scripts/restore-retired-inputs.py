@@ -60,7 +60,7 @@ def restore(root, revision, record, *, max_bytes=MAX_BYTES):
     target.parent.mkdir(parents=True, exist_ok=True)
     staged = None
     try:
-        with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".hms-restore-", delete=False) as output:
+        with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".warm-restore-", delete=False) as output:
             staged = Path(output.name)
             subprocess.run(["git", "cat-file", "blob", object_name], cwd=root, stdout=output,
                            stderr=subprocess.PIPE, check=True)

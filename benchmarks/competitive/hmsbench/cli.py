@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""`hms-bench` command line."""
+"""`warm-bench` command line."""
 
 import argparse
 import sys
@@ -10,7 +10,7 @@ from .common import RESULTS
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="hms-bench", description="Reproducible HMS comparison benchmark (see docs/benchmarks/README.md).")
+    p = argparse.ArgumentParser(prog="warm-bench", description="Reproducible WARM comparison benchmark (see docs/benchmarks/README.md).")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("lock", help="re-resolve the pinned comparator lock files (needs network)")
     ins = sub.add_parser("install", help="create the pinned comparator environments")
@@ -18,14 +18,14 @@ def main(argv=None):
     run = sub.add_parser("run", help="run a suite and write results under benchmarks/results/competitive/")
     run.add_argument("--suite", choices=list(runner.SUITES), default="light")
     run.add_argument("--only", choices=["ann", "text", "both"], default="both")
-    run.add_argument("--systems", nargs="*", help="restrict to these system keys (hms is always included)")
+    run.add_argument("--systems", nargs="*", help="restrict to these system keys (warm is always included)")
     run.add_argument("--datasets", nargs="*", help="restrict to these dataset names")
     run.add_argument("--builds", nargs="*", metavar="SYSTEM:BUILD",
                      help="ANN only: restrict a comparator to these builds (systems not named keep all builds)")
     run.add_argument("--rounds", type=int)
     run.add_argument("--build-repeats", type=int)
     run.add_argument("--mode", choices=["embedded", "server", "all"], default=None,
-                     help="embedded (default) or server-mode systems (hms-server is always included); naming server systems implies server")
+                     help="embedded (default) or server-mode systems (warm-server is always included); naming server systems implies server")
     srv = sub.add_parser("install-servers", help="download and verify the pinned server artifacts and the client environment")
     srv.add_argument("systems", nargs="*")
     tab =sub.add_parser("table", help="regenerate docs/benchmarks/COMPARISON.md and the README block from committed results")
@@ -67,13 +67,13 @@ def main(argv=None):
         if mode == "server":
             return 0
         if a.only in ("ann", "both"):
-            systems = [registry.HMS] + [s for s in registry.ANN_SYSTEMS if s not in registry.NOT_RUN and (wanted is None or s in wanted)]
+            systems = [registry.WARM] + [s for s in registry.ANN_SYSTEMS if s not in registry.NOT_RUN and (wanted is None or s in wanted)]
             for dataset, n_train, n_test in spec["ann"]:
                 if a.datasets and dataset not in a.datasets:
                     continue
                 print(runner.run_ann(dataset, n_train, n_test, spec, systems, only_builds=only_builds))
         if a.only in ("text", "both"):
-            systems = [registry.HMS] + [s for s in registry.TEXT_SYSTEMS if wanted is None or s in wanted]
+            systems = [registry.WARM] + [s for s in registry.TEXT_SYSTEMS if wanted is None or s in wanted]
             for dataset in spec["text"]:
                 if a.datasets and dataset not in a.datasets:
                     continue

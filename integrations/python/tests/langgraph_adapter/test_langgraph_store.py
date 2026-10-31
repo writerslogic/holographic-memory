@@ -7,7 +7,7 @@ import pytest
 from langchain_core.embeddings import DeterministicFakeEmbedding
 from langgraph.store.memory import InMemoryStore
 
-from holographic_integrations.langgraph import HolographicStore
+from writerslogic_warm_integrations.langgraph import WarmStore
 
 DIM = 16
 
@@ -26,15 +26,15 @@ def srv(server_factory):
 
 
 def fresh(srv, **kw):
-    return HolographicStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, **kw)
+    return WarmStore(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, **kw)
 
 
 def loaded(srv, **kw):
-    hms, mem = fresh(srv, **kw), InMemoryStore()
+    warm, mem = fresh(srv, **kw), InMemoryStore()
     for ns, key, value in DATA:
-        hms.put(ns, key, value)
+        warm.put(ns, key, value)
         mem.put(ns, key, value)
-    return hms, mem
+    return warm, mem
 
 
 def view(items):
@@ -75,20 +75,20 @@ def test_get_put_delete_and_timestamps(srv):
     ],
 )
 def test_filter_only_search_matches_oracle(srv, prefix, flt):
-    hms, mem = loaded(srv)
-    got = sorted(view(hms.search(prefix, filter=flt, limit=50)), key=repr)
+    warm, mem = loaded(srv)
+    got = sorted(view(warm.search(prefix, filter=flt, limit=50)), key=repr)
     want = sorted(view(mem.search(prefix, filter=flt, limit=50)), key=repr)
     assert got == want
 
 
 def test_search_limit_and_offset(srv):
-    hms, _ = loaded(srv)
-    everything = view(hms.search((), limit=50))
+    warm, _ = loaded(srv)
+    everything = view(warm.search((), limit=50))
     assert len(everything) == len(DATA)
-    assert view(hms.search((), limit=2)) == everything[:2]
-    assert view(hms.search((), limit=2, offset=2)) == everything[2:4]
+    assert view(warm.search((), limit=2)) == everything[:2]
+    assert view(warm.search((), limit=2, offset=2)) == everything[2:4]
     with pytest.raises(ValueError):
-        hms.search((), limit=100, offset=1)  # offset + limit above max_fetch
+        warm.search((), limit=100, offset=1)  # offset + limit above max_fetch
 
 
 @pytest.mark.parametrize(
@@ -107,19 +107,19 @@ def test_search_limit_and_offset(srv):
     ],
 )
 def test_list_namespaces_matches_oracle(srv, kwargs):
-    hms, mem = loaded(srv)
-    assert hms.list_namespaces(**kwargs) == mem.list_namespaces(**kwargs)
+    warm, mem = loaded(srv)
+    assert warm.list_namespaces(**kwargs) == mem.list_namespaces(**kwargs)
 
 
 def test_namespace_marker_removed_with_last_item(srv):
-    hms, _ = loaded(srv)
-    hms.delete(("users", "bob", "notes"), "n1")
-    assert ("users", "bob", "notes") not in hms.list_namespaces()
-    hms.delete(("users", "bob", "prefs"), "theme")
-    assert ("users", "bob", "prefs") not in hms.list_namespaces()
-    assert ("users", "alice", "prefs") in hms.list_namespaces()
-    hms.delete(("users", "alice", "prefs"), "theme")
-    assert ("users", "alice", "prefs") in hms.list_namespaces()  # still holds "font"
+    warm, _ = loaded(srv)
+    warm.delete(("users", "bob", "notes"), "n1")
+    assert ("users", "bob", "notes") not in warm.list_namespaces()
+    warm.delete(("users", "bob", "prefs"), "theme")
+    assert ("users", "bob", "prefs") not in warm.list_namespaces()
+    assert ("users", "alice", "prefs") in warm.list_namespaces()
+    warm.delete(("users", "alice", "prefs"), "theme")
+    assert ("users", "alice", "prefs") in warm.list_namespaces()  # still holds "font"
 
 
 def test_semantic_search_and_index_controls(srv):
@@ -168,11 +168,11 @@ def test_batch_preserves_order_and_rejects_ttl(srv):
 
 
 def test_namespace_depth_and_value_size_limits(srv):
-    from holographic_integrations.core import HmsError
+    from writerslogic_warm_integrations.core import WarmError
 
     s = fresh(srv)
     s.put(tuple(str(i) for i in range(16)), "k", {"v": 1})
     with pytest.raises(ValueError):
         s.put(tuple(str(i) for i in range(17)), "k", {"v": 1})
-    with pytest.raises(HmsError):
+    with pytest.raises(WarmError):
         s.put(("big",), "k", {"v": "x" * 70_000})

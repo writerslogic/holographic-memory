@@ -2,9 +2,9 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""BM25 k1/b for the HMS lexical scorer: tune on SciFact train, report on NFCorpus dev (2C.1).
+"""BM25 k1/b for the WARM lexical scorer: tune on SciFact train, report on NFCorpus dev (2C.1).
 
-Usage: lexical_relevance_tune.py --package <dir with index.js and holographic-memory.node>
+Usage: lexical_relevance_tune.py --package <dir with index.js and writerslogic-warm.node>
        --out benchmarks/results/lexical_relevance_v1.json [--work <folder>]
 
 The grid is scored on both datasets through the Node package (k=100, candidateLimit=100, lexical
@@ -26,21 +26,21 @@ TITLE_WEIGHTS = [1, 2, 3, 4]
 RUNNER = r"""
 'use strict'
 const fs = require('node:fs'); const path = require('node:path')
-const { HolographicMemorySystem } = require(path.join(process.argv[2], 'index.js'))
+const { WarmMemorySystem } = require(path.join(process.argv[2], 'index.js'))
 ;(async () => {
   const input = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'))
   const grid = JSON.parse(process.argv[4])
   const titleWeight = Number(process.argv[7] || 1)
   const dir = fs.mkdtempSync(path.join(process.argv[5], 'hmsrel-'))
-  const hms = new HolographicMemorySystem(1024, dir, {})
+  const warm = new WarmMemorySystem(1024, dir, {})
   const docs = titleWeight > 1 ? input.documents.map(d => ({ ...d, titleWeight })) : input.documents
-  for (let at = 0; at < docs.length; at += 4096) await hms.memorizeDocuments(docs.slice(at, at + 4096))
+  for (let at = 0; at < docs.length; at += 4096) await warm.memorizeDocuments(docs.slice(at, at + 4096))
   const out = {}
   for (const [k1, b] of grid) {
     const options = { k: 100, candidateLimit: 100, lexicalWeight: 1, semanticWeight: 0 }
     if (k1 !== null) { options.bm25K1 = k1; options.bm25B = b }
     const rows = {}
-    for (const q of input.queries) rows[q.id] = (await hms.searchDocuments(q.text, options)).slice(0, 10).map(h => h.documentId)
+    for (const q of input.queries) rows[q.id] = (await warm.searchDocuments(q.text, options)).slice(0, 10).map(h => h.documentId)
     out[`${k1}|${b}`] = rows
   }
   fs.writeFileSync(process.argv[6], JSON.stringify(out))
@@ -93,7 +93,7 @@ def main():
     k1, b = (float(x) for x in selected.split("|"))
     report = {
         "schema_version": 1, "category": "2C_lexical_relevance", "date": "2026-10-19",
-        "protocol": "HMS lexical-only BM25 through the Node package (k=100, candidateLimit=100), one chunk per document, title + text; k1 and b (at title weight 1) and the title weight (at default BM25) selected by nDCG@10 on SciFact train, reported on NFCorpus dev (324 queries); nDCG@10 computed in Python from the BEIR qrels in ~/.cache/hms-bench/downloads",
+        "protocol": "WARM lexical-only BM25 through the Node package (k=100, candidateLimit=100), one chunk per document, title + text; k1 and b (at title weight 1) and the title weight (at default BM25) selected by nDCG@10 on SciFact train, reported on NFCorpus dev (324 queries); nDCG@10 computed in Python from the BEIR qrels in ~/.cache/warm-bench/downloads",
         "grid": {"k1": K1_GRID, "b": B_GRID},
         "default": {"k1": 1.2, "b": 0.75, "scifact_train_ndcg10": tune["null|null"], "nfcorpus_dev_ndcg10": dev["null|null"]},
         "selected_on_scifact_train": {"k1": k1, "b": b, "scifact_train_ndcg10": tune[selected], "nfcorpus_dev_ndcg10": dev[selected]},

@@ -3,9 +3,9 @@
 //
 // §22. A multi-model fusion pass concluded that 0.5·D well-posed retrieval from a
 // single dense superposition is information-theoretically impossible, so capacity
-// must come from sharding — which HMS already does. For EXACT (S,R) queries a plain
+// must come from sharding — which WARM already does. For EXACT (S,R) queries a plain
 // hash-to-shard KV store suffices; the holographic/VSA layer earns its keep ONLY on
-// NOISY / partial-cue queries. This is the sharpest test of HMS's premise: does VSA
+// NOISY / partial-cue queries. This is the sharpest test of WARM's premise: does VSA
 // similarity retrieval beat exact hash once the query key is corrupted?
 //
 // Store M facts (random key ⊗ codebook object) superposed in one fixed-point complex
@@ -128,5 +128,7 @@ fn main() {
         println!();
     }
     println!("VSA earns its keep in the rho>0 region (where exact hash = 0). Kill: if VSA");
-    println!("collapses to ~chance at rho=0.2, load<=0.2 -> no noise tolerance, HMS ~ sharded KV.");
+    println!(
+        "collapses to ~chance at rho=0.2, load<=0.2 -> no noise tolerance, WARM ~ sharded KV."
+    );
 }

@@ -7,14 +7,14 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use holographic_memory::core::memory_api::*;
-use holographic_memory::HmsCore;
+use writerslogic_warm::core::memory_api::*;
+use writerslogic_warm::WarmCore;
 
 const DIM: u32 = 4096;
 const MARKERS: [&str; 3] = ["zyxquartzmarker", "wvutfeldsparmarker", "obsidianmarkerqq"];
 
 fn memory_at(path: &Path) -> Memory {
-    let core = Arc::new(HmsCore::new(DIM, Some(path.display().to_string()), None).unwrap());
+    let core = Arc::new(WarmCore::new(DIM, Some(path.display().to_string()), None).unwrap());
     Memory::new(core).with_clock(Arc::new(ManualClock::new(1)))
 }
 
@@ -124,7 +124,7 @@ fn forget_without_purge_scrubs_the_text_segment_at_once() {
 /// Child half of the crash test: ingests, purges, dies without unwinding.
 #[test]
 fn purge_child() {
-    let Ok(path) = std::env::var("HMS_PURGE_CRASH_DIR") else {
+    let Ok(path) = std::env::var("WARM_PURGE_CRASH_DIR") else {
         return;
     };
     let memory = memory_at(Path::new(&path));
@@ -139,7 +139,7 @@ fn purged_text_stays_gone_after_an_abrupt_death_and_restart() {
     let dir = tempfile::tempdir().unwrap();
     let output = std::process::Command::new(std::env::current_exe().unwrap())
         .args(["--exact", "purge_child", "--nocapture", "--test-threads=1"])
-        .env("HMS_PURGE_CRASH_DIR", dir.path())
+        .env("WARM_PURGE_CRASH_DIR", dir.path())
         .output()
         .unwrap();
     assert!(!output.status.success(), "the child must die by abort");
@@ -170,7 +170,7 @@ fn purge_erases_a_generation_left_by_an_interrupted_compaction() {
 #[test]
 fn replaced_text_is_zeroed_in_the_segment_at_once() {
     let dir = tempfile::tempdir().unwrap();
-    let core = HmsCore::new(DIM, Some(dir.path().display().to_string()), None).unwrap();
+    let core = WarmCore::new(DIM, Some(dir.path().display().to_string()), None).unwrap();
     let put = |id: &str, version: &str, text: &str| {
         let input = serde_json::from_value(serde_json::json!({
             "id": id, "version": version, "text": text,
@@ -199,13 +199,13 @@ fn replaced_text_is_zeroed_in_the_segment_at_once() {
 #[cfg(feature = "security")]
 #[test]
 fn encrypted_store_purges_and_keeps_survivors_readable() {
-    use holographic_memory::core::HmsConfig;
+    use writerslogic_warm::core::WarmConfig;
     let dir = tempfile::tempdir().unwrap();
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.security.encryption_enabled = true;
     config.security.encryption_passphrase = Some("purge-fixture".into());
-    let open = |config: &HmsConfig| {
-        let core = HmsCore::new(
+    let open = |config: &WarmConfig| {
+        let core = WarmCore::new(
             DIM,
             Some(dir.path().display().to_string()),
             Some(config.clone()),
@@ -230,12 +230,12 @@ fn encrypted_store_purges_and_keeps_survivors_readable() {
 /// Checkpoints hold lexical-only documents, so the fixture stores those through the engine.
 #[test]
 fn forget_and_purge_work_on_a_store_served_from_its_checkpoint() -> anyhow::Result<()> {
-    use holographic_memory::core::HmsConfig;
+    use writerslogic_warm::core::WarmConfig;
     let dir = tempfile::tempdir().unwrap();
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.document_checkpoint.min_journal_bytes = 0;
     let open = || {
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             DIM,
             Some(dir.path().display().to_string()),
             Some(config.clone()),
@@ -245,8 +245,8 @@ fn forget_and_purge_work_on_a_store_served_from_its_checkpoint() -> anyhow::Resu
     };
     {
         let memory = open();
-        let lexical = holographic_memory::core::documents::IngestOptions {
-            encode: holographic_memory::core::documents::EncodeMode::Lexical,
+        let lexical = writerslogic_warm::core::documents::IngestOptions {
+            encode: writerslogic_warm::core::documents::EncodeMode::Lexical,
             ..Default::default()
         };
         let mut texts: Vec<(String, String)> = MARKERS

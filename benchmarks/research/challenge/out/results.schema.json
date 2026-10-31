@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hms-research-challenge/results/v1",
-  "title": "hms-research-challenge run results",
-  "description": "Written by `hms-research-challenge run --out FILE`. Rates are fractions in [0, 1]; latencies are microseconds of single-caller-thread wall clock, the median across timed passes of each pass's nearest-rank percentile.",
+  "$id": "warm-research-challenge/results/v1",
+  "title": "warm-research-challenge run results",
+  "description": "Written by `warm-research-challenge run --out FILE`. Rates are fractions in [0, 1]; latencies are microseconds of single-caller-thread wall clock, the median across timed passes of each pass's nearest-rank percentile.",
   "type": "object",
   "required": ["schema", "generated_at_unix_ms", "split", "seed", "run", "dataset", "ingest", "arena", "methods", "challenge", "erase", "sqlite_baseline", "verdict"],
   "properties": {
-    "schema": { "const": "hms-research-challenge/results/v1" },
+    "schema": { "const": "warm-research-challenge/results/v1" },
     "generated_at_unix_ms": { "type": "integer" },
     "split": { "enum": ["tune", "test"], "description": "Which held-out template pool phrased records and queries." },
     "seed": { "type": "integer", "description": "Seed of the structural draw (default 0x5EEDC0DE20260001)." },

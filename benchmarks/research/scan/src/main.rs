@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! `hms-research-scan`: build a dataset, freeze the public basis, encode the
+//! `warm-research-scan`: build a dataset, freeze the public basis, encode the
 //! split-manifold / int8 / exact representations, and measure recall@10,
 //! single-thread QPS (median of `--runs` passes over all queries after a
 //! warmup), encode time, bytes per document, and delete/replace bytes
@@ -26,15 +26,15 @@ use anyhow::{ensure, Context, Result};
 use clap::{Parser, ValueEnum};
 use serde::Serialize;
 
-use hms_research_scan::codes::{
+use warm_research_scan::codes::{
     fit_basis, BasisKind, BasisParams, Int8Index, Primary, ResidualMode, Scratch, SplitIndex,
 };
-use hms_research_scan::data::{self, Dataset, Rng, SyntheticParams};
-use hms_research_scan::median;
-use hms_research_scan::scan::{Baseline, Searcher};
+use warm_research_scan::data::{self, Dataset, Rng, SyntheticParams};
+use warm_research_scan::median;
+use warm_research_scan::scan::{Baseline, Searcher};
 
-const SCHEMA: &str = "hms-research-scan/v2";
-const SWEEP_SCHEMA: &str = "hms-research-scan/sweep-v1";
+const SCHEMA: &str = "warm-research-scan/v2";
+const SWEEP_SCHEMA: &str = "warm-research-scan/sweep-v1";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -49,7 +49,7 @@ enum DatasetKind {
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "hms-research-scan",
+    name = "warm-research-scan",
     about = "Kill test: graph-free split-manifold scan vs int8 and exact f32 scans"
 )]
 struct Cli {
@@ -113,10 +113,10 @@ struct Cli {
     /// Delete/replace operations in the mutation experiment.
     #[arg(long, default_value_t = 1000)]
     deletes: usize,
-    /// NFCorpus directory (default ~/.cache/hms-bench/nfcorpus).
+    /// NFCorpus directory (default ~/.cache/warm-bench/nfcorpus).
     #[arg(long)]
     nfcorpus_dir: Option<PathBuf>,
-    /// glove-100-angular directory (default ~/.cache/hms-bench/glove-100-angular).
+    /// glove-100-angular directory (default ~/.cache/warm-bench/glove-100-angular).
     #[arg(long)]
     glove_dir: Option<PathBuf>,
     /// NFCorpus distractor perturbation norm.
@@ -328,7 +328,7 @@ fn home_cache(sub: &str) -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."))
         .join(".cache")
-        .join("hms-bench")
+        .join("warm-bench")
         .join(sub)
 }
 
@@ -1119,7 +1119,7 @@ fn main() -> Result<()> {
     let pass = thresholds.iter().all(|t| t.pass);
 
     println!(
-        "== hms-research-scan {} n={} dim={} basis={} mode={} head={} mult={} bits={} ==",
+        "== warm-research-scan {} n={} dim={} basis={} mode={} head={} mult={} bits={} ==",
         ds_name, n, dim, basis_tag, mode_tag, ev.config.head_dim, ev.config.residual_mult, ev.config.residual_bits
     );
     println!(

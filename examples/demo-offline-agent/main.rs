@@ -11,9 +11,9 @@
 //! against `examples/demo-offline-agent/expected-output.txt`.
 
 use anyhow::{ensure, Result};
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
 use serde_json::json;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 const DIMENSIONS: u32 = 4096;
 
@@ -32,14 +32,14 @@ fn note(id: &str, kind: &str, day: &str, text: &str) -> DocumentInput {
     }
 }
 
-fn config() -> HmsConfig {
-    let mut config = HmsConfig::default();
+fn config() -> WarmConfig {
+    let mut config = WarmConfig::default();
     config.meaning.enabled = true;
     config
 }
 
 /// Prints the ranked document ids for `query` and returns them.
-fn recall(memory: &HmsCore, query: &str, options: &SearchOptions) -> Result<Vec<String>> {
+fn recall(memory: &WarmCore, query: &str, options: &SearchOptions) -> Result<Vec<String>> {
     let ids: Vec<String> = memory
         .search_documents(query, options)?
         .into_iter()
@@ -58,7 +58,7 @@ fn main() -> Result<()> {
     };
 
     println!("== session 1: the agent learns ==");
-    let memory = HmsCore::new(DIMENSIONS, Some(path.clone()), Some(config()))?;
+    let memory = WarmCore::new(DIMENSIONS, Some(path.clone()), Some(config()))?;
     let notes = vec![
         note(
             "pref-drink",
@@ -177,7 +177,7 @@ fn main() -> Result<()> {
     drop(memory);
 
     println!("\n== session 2: the process restarted, the memory is still there ==");
-    let memory = HmsCore::new(DIMENSIONS, Some(path), Some(config()))?;
+    let memory = WarmCore::new(DIMENSIONS, Some(path), Some(config()))?;
     println!("reopened with {} relations", memory.meaning_triple_count());
     ensure!(recall(&memory, "green tea", &top3)?[0] == "pref-drink");
     ensure!(recall(&memory, "lighthouse novel recommended", &top3)?[0] == "book");

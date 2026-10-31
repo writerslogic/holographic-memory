@@ -67,7 +67,7 @@ def prepare(dataset):
             if sha(destination / name) != digest:
                 raise ValueError("existing input hash mismatch")
         return destination
-    source = Path.home() / ".cache/hms-bench" / dataset
+    source = Path.home() / ".cache/warm-bench" / dataset
     meta = json.loads((source / "meta.json").read_text())
     data = np.memmap(source / "train.f32", dtype="<f4", mode="r").reshape(-1, meta["dim"])
     rng = np.random.default_rng(24301)

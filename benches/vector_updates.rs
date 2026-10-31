@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use holographic_memory::core::qgraph::{
+use std::hint::black_box;
+use std::time::Duration;
+use writerslogic_warm::core::qgraph::{
     BuildParams, Graph, Metric, QGraph, SearchKnobs, SearchParams, UpdatableVGraph, VGraph,
     VSearchParams,
 };
-use std::hint::black_box;
-use std::time::Duration;
 
 fn vectors() -> Vec<f32> {
     let mut seed = 42u64;

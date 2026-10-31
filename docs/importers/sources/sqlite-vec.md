@@ -1,6 +1,6 @@
 # sqlite-vec
 
-`hms-import sqlite-vec --db FILE --table VEC0 [--side-table T --side-key COL] [--map FIELD=COLUMN ...]`
+`warm-import sqlite-vec --db FILE --table VEC0 [--side-table T --side-key COL] [--map FIELD=COLUMN ...]`
 
 Opens the database read-only, loads the `sqlite-vec` extension and pages the `vec0` table by `rowid` (keyset, so resume is exact and cheap: the cursor is the last rowid). The vector column is the first `float[N]`, `int8[N]` or `bit[N]` column of the `vec0` definition (override with `--vector-column`); int8 and bit vectors are decoded to floats.
 

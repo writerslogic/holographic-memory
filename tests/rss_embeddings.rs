@@ -6,14 +6,14 @@
 //! path and the vector snapshot report the same scores, the scores survive a reopen (the
 //! journal carries the `f32` form), and the `lexical` ingest mode (no hypervector channel)
 //! leaves vector search unchanged. With the `server` feature, `--ingest-encode lexical` is
-//! exercised through `hms-server`.
+//! exercised through `warm-server`.
 
-use holographic_memory::core::documents::{
+use serde_json::json;
+use writerslogic_warm::core::documents::{
     EncodeMode, IngestOptions, VectorIndexMode, VectorQueryOptions,
 };
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, DocumentResult, EmbeddingSpace, HmsCore, SearchOptions};
-use serde_json::json;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, DocumentResult, EmbeddingSpace, SearchOptions, WarmCore};
 
 #[cfg(feature = "server")]
 mod server_support;
@@ -90,8 +90,8 @@ fn inputs(documents: &[Vec<f64>]) -> Vec<DocumentInput> {
         .collect()
 }
 
-fn open(dir: &std::path::Path) -> HmsCore {
-    let config = HmsConfig {
+fn open(dir: &std::path::Path) -> WarmCore {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "test".into(),
             revision: "1".into(),
@@ -99,12 +99,12 @@ fn open(dir: &std::path::Path) -> HmsCore {
             normalization: "l2".into(),
             metric: "cosine".into(),
         }),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     };
-    HmsCore::new(1024, Some(dir.display().to_string()), Some(config)).unwrap()
+    WarmCore::new(1024, Some(dir.display().to_string()), Some(config)).unwrap()
 }
 
-fn generic(core: &HmsCore, query: &[f64]) -> Vec<DocumentResult> {
+fn generic(core: &WarmCore, query: &[f64]) -> Vec<DocumentResult> {
     let options = SearchOptions {
         k: Some(K as u32),
         candidate_limit: Some(100),
@@ -117,7 +117,7 @@ fn generic(core: &HmsCore, query: &[f64]) -> Vec<DocumentResult> {
     core.search_documents("", &options).unwrap()
 }
 
-fn snapshot(core: &HmsCore, query: &[f64]) -> Vec<DocumentResult> {
+fn snapshot(core: &WarmCore, query: &[f64]) -> Vec<DocumentResult> {
     let options = VectorQueryOptions {
         mode: VectorIndexMode::Exact,
         ..VectorQueryOptions::default()

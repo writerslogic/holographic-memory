@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[cfg(not(target_arch = "wasm32"))]
-use super::config::HmsConfig;
+use super::config::WarmConfig;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EmbeddingSpace {
@@ -61,7 +61,7 @@ struct StoreSchema {
 /// Checks the store's `store.json` against `config` (writing it for a new store) and returns
 /// its schema version, which fixes the journal format the store is written in.
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig) -> Result<u32> {
+pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &WarmConfig) -> Result<u32> {
     let mut expected = StoreSchema {
         version: super::format::STORE_SCHEMA_VERSION,
         dimensions,
@@ -98,7 +98,7 @@ pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &HmsConfig)
         }
     } else {
         if path.join("vectors_data.bin").exists() {
-            bail!("legacy store has no embedding schema; preserve it and use hms-admin reencode with original source documents to create a new store");
+            bail!("legacy store has no embedding schema; preserve it and use warm-admin reencode with original source documents to create a new store");
         }
         super::durable_file::atomic_write(&schema_path, &serde_json::to_vec_pretty(&expected)?)?;
     }

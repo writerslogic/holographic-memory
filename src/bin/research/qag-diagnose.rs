@@ -3,9 +3,9 @@
 
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use holographic_memory::core::qgraph::{BuildParams, Graph, Metric, VGraph, VSearchParams};
 use serde_json::{json, Value};
 use std::{fs, path::PathBuf, time::Instant};
+use writerslogic_warm::core::qgraph::{BuildParams, Graph, Metric, VGraph, VSearchParams};
 
 #[derive(Parser)]
 struct Args {
@@ -255,14 +255,18 @@ fn main() -> Result<()> {
             let compaction_seconds = started.elapsed().as_secs_f64();
             let mut saved = Value::Null;
             if let Some(directory) = &args.persist_dir {
-                let file = directory.join(if compact { "compact.hms" } else { "fixed.hms" });
+                let file = directory.join(if compact {
+                    "compact.warm"
+                } else {
+                    "fixed.warm"
+                });
                 let started = Instant::now();
                 index.save(&file)?;
                 let save_seconds = started.elapsed().as_secs_f64();
                 let started = Instant::now();
                 let reopened = VGraph::open(
                     &file,
-                    holographic_memory::core::qgraph::Residency::Prefaulted,
+                    writerslogic_warm::core::qgraph::Residency::Prefaulted,
                 )?;
                 let open_seconds = started.elapsed().as_secs_f64();
                 drop(reopened);
@@ -271,7 +275,7 @@ fn main() -> Result<()> {
                 persisted.push(file);
             }
             let mut searcher =
-                index.searcher_with(holographic_memory::core::qgraph::SearchKnobs::OFF);
+                index.searcher_with(writerslogic_warm::core::qgraph::SearchKnobs::OFF);
             let mut out = Vec::new();
             for _ in 0..4 {
                 for query in transformed.chunks_exact(dim + 1) {
@@ -443,7 +447,7 @@ fn compare_serving(
                     let found = index.diagnose(graph, &transformed, 100, settings, None, false)?;
                     let mut out = Vec::new();
                     let profile = index
-                        .searcher_with(holographic_memory::core::qgraph::SearchKnobs::OFF)
+                        .searcher_with(writerslogic_warm::core::qgraph::SearchKnobs::OFF)
                         .profile_search(&transformed, 100, settings, &mut out)?;
                     ensure!(
                         out == found.results,

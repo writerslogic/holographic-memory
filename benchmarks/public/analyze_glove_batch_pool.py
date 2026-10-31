@@ -74,7 +74,7 @@ def analyze(root):
             common.require(receipt["command"] == expected["command"], "command mismatch")
             binary = plan["arms"][arm]["binary"]
             common.require(expected["binary_sha256"] == bindings["frozen_files"][binary] and receipt["command"][0] == str(root / binary), "binary binding mismatch")
-            common.require(expected["environment"]["HMS_QGRAPH_BATCH_POOL"] == ("1" if arm == "enabled" else "0"), "mechanism switch mismatch")
+            common.require(expected["environment"]["WARM_QGRAPH_BATCH_POOL"] == ("1" if arm == "enabled" else "0"), "mechanism switch mismatch")
             raw, cells, details = common.load(path)
             common.require(raw["efs"] == EFS and raw["repeats"] == 7 and raw["knob_mode"] == "env", "raw configuration mismatch")
             common.require(raw["knobs"] == {"prefetch": 0, "batch_est": False, "frontier": 1.0, "block_screen": False, "rerank_z": 0.0}, "unrelated search knob changed")
@@ -106,7 +106,7 @@ def analyze(root):
     primary = {contrast: curves["80"][contrast]["query_only_qps"] for contrast in plan["primary_gate"]["contrasts"]}
     speed_pass = all(row["geometric_mean"] >= 1.10 and row["paired_process_block_bootstrap95"][0] > 1.0 for row in primary.values())
     return {
-        "schema": "hms-glove-batch-pool-ablation-analysis-v1", "development_only": True,
+        "schema": "warm-glove-batch-pool-ablation-analysis-v1", "development_only": True,
         "plan_sha256": bindings["plan_sha256"], "execution_manifest_sha256": common.fingerprints(root / "execution-manifest.json")["sha256"],
         "analyzer_sha256": common.fingerprints(Path(__file__))["sha256"], "shared_analyzer_sha256": common.fingerprints(Path(common.__file__))["sha256"],
         "process_results": results, "curves": curves, "raw_bindings": hashes, "memory_metrics": memory,

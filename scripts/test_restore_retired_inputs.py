@@ -71,7 +71,7 @@ class HistoricalInputs(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     RESTORE.restore(self.root, self.revision, dict(original, **change))
                 self.assertFalse((self.root / original["path"]).exists())
-        self.assertEqual(list(self.root.rglob(".hms-restore-*")), [])
+        self.assertEqual(list(self.root.rglob(".warm-restore-*")), [])
 
     @unittest.skipIf(os.name == "nt", "symlink privileges are not assumed on Windows")
     def test_symlinks_cannot_redirect_publication(self):

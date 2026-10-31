@@ -14,7 +14,7 @@ import posixpath
 import re
 from pathlib import Path
 
-REPO = "https://github.com/writerslogic/holographic-memory"
+REPO = "https://github.com/writerslogic/warm"
 LINK = re.compile(r"(\]\()([^)\s]+)((?:\s+\"[^\"]*\")?\))")
 SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 FENCE = re.compile(r"^\s*(```|~~~)")
@@ -28,7 +28,7 @@ def _github_url(ref: str, repo_path: str, is_dir: bool) -> str:
 def on_page_markdown(markdown, page, config, files):
     docs_dir = Path(config["docs_dir"]).resolve()
     repo_root = docs_dir.parent
-    ref = os.environ.get("HMS_DOCS_REF", "main")
+    ref = os.environ.get("WARM_DOCS_REF", "main")
     page_dir = posixpath.dirname(page.file.src_uri)
 
     def rewrite(match):

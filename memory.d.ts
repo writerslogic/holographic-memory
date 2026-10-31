@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-import type { HolographicMemorySystem } from './index'
+import type { WarmMemorySystem } from './index'
 
 /** A Date, or an integer of Unix milliseconds. Results always carry milliseconds. */
 export type Time = Date | number
@@ -187,7 +187,7 @@ export class MemoryError extends Error {
 
 export class Memory {
   /** Applies `config` to `system`'s memory API (replacing any earlier configuration). */
-  constructor(system: HolographicMemorySystem, config?: MemoryConfig)
+  constructor(system: WarmMemorySystem, config?: MemoryConfig)
   remember(input: RememberInput): Promise<Remembered>
   remember(text: string, options?: Omit<RememberInput, 'text'>): Promise<Remembered>
   /** One atomic transaction: every fact is stored or none is. */

@@ -391,8 +391,8 @@ mod tests {
     #[test]
     fn c2pa_manifest_box_structure() {
         let claim = serde_json::json!({
-            "dc:title": "HMS Knowledge Store",
-            "claim_generator": "HMS/0.1"
+            "dc:title": "WARM Knowledge Store",
+            "claim_generator": "WARM/0.1"
         });
         let signature = vec![0xD2, 0x84, 0x43];
         let assertions = vec![

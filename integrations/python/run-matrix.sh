@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Runs each adapter's tests in its own isolated environment (framework dependency trees conflict).
-# Usage: HMS_SERVER_BIN=/path/to/hms-server ./run-matrix.sh [extra ...]
+# Usage: WARM_SERVER_BIN=/path/to/warm-server ./run-matrix.sh [extra ...]
 set -u
 cd "$(dirname "$0")"
-: "${HMS_SERVER_BIN:?set HMS_SERVER_BIN to an hms-server binary}"
+: "${WARM_SERVER_BIN:?set WARM_SERVER_BIN to an warm-server binary}"
 
 # extra | extra to install | dependency groups | test paths
 matrix=(

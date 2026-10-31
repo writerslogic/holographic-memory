@@ -2,16 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 """Server-mode systems: registry entries merged into registry.py.
 
-Server rows are measured against `hms-server` (the HTTP service, feature `server`) and appear in
+Server rows are measured against `warm-server` (the HTTP service, feature `server`) and appear in
 their own table sections, never next to embedded rows. Kind `server-ann` / `server-text` keeps
 them out of the embedded ANN_SYSTEMS / TEXT_SYSTEMS lists.
 """
 
-HMS_SERVER = "hms-server"
+WARM_SERVER = "warm-server"
 ENV = "server-clients"
 
 SERVER_SYSTEMS = {
-    HMS_SERVER: {"display": "hms-server (HTTP)", "kind": "server-ann", "env": ENV, "engine": "hms-server", "package": "holographic-memory", "family": "hms"},
+    WARM_SERVER: {"display": "warm-server (HTTP)", "kind": "server-ann", "env": ENV, "engine": "warm-server", "package": "writerslogic-warm", "family": "warm"},
     "qdrant-server": {"display": "Qdrant server", "kind": "server-ann", "env": ENV, "engine": "qdrant", "package": "qdrant", "family": "hnsw"},
     "weaviate": {"display": "Weaviate", "kind": "server-ann", "env": ENV, "engine": "weaviate", "package": "weaviate", "family": "hnsw"},
     "opensearch-knn": {"display": "OpenSearch k-NN (faiss HNSW)", "kind": "server-ann", "env": ENV, "engine": "opensearch", "package": "opensearch", "family": "hnsw"},
@@ -26,7 +26,7 @@ SERVER_SYSTEMS = {
 
 _HTTP = "one persistent HTTP/1.1 keep-alive connection from a CPython client on loopback; request body serialized before the timer, response JSON decoded inside it"
 SERVER_TIMING_BOUNDARY = {
-    HMS_SERVER: f"{_HTTP}; ANN: POST /api/v1/query with index=graph and per-request ef; text: POST /api/v1/memory/recall, lexical weight only",
+    WARM_SERVER: f"{_HTTP}; ANN: POST /api/v1/query with index=graph and per-request ef; text: POST /api/v1/memory/recall, lexical weight only",
     "qdrant-server": f"{_HTTP}; POST /collections/c/points/query (REST, not gRPC); max_search_threads=1",
     "weaviate": f"{_HTTP}; GraphQL nearVector (REST, not gRPC); ef set on the class between sweep points",
     "opensearch-knn": f"{_HTTP}; _search knn query with method_parameters.ef_search; concurrent segment search off, one shard",
@@ -41,7 +41,7 @@ SERVER_TIMING_BOUNDARY = {
 
 _DOC = "documentation, not exercised here"
 SERVER_FACTS = {
-    HMS_SERVER: {"service_needed": {"value": "yes (this row; the library needs none)", "basis": _DOC},
+    WARM_SERVER: {"service_needed": {"value": "yes (this row; the library needs none)", "basis": _DOC},
                  "encrypted_at_rest": {"value": "yes with feature `security` (not enabled in these rows)", "basis": _DOC}},
     "qdrant-server": {"service_needed": {"value": "yes", "basis": _DOC}, "encrypted_at_rest": {"value": "no built-in", "basis": _DOC}},
     "weaviate": {"service_needed": {"value": "yes", "basis": _DOC}, "encrypted_at_rest": {"value": "no built-in", "basis": _DOC}},
@@ -57,7 +57,7 @@ SERVER_FACTS = {
 
 # What a replace/delete acknowledgement means for each server, as configured here.
 DURABILITY = {
-    HMS_SERVER: "one journal frame per request, msync(MS_SYNC) of the mapped segment before the response, then fcntl(F_FULLFSYNC) on macOS",
+    WARM_SERVER: "one journal frame per request, msync(MS_SYNC) of the mapped segment before the response, then fcntl(F_FULLFSYNC) on macOS",
     "qdrant-server": "wait=true: applied to the WAL and segment before the response; WAL fsync is periodic, not per request",
     "weaviate": "acknowledged after the write-ahead log append; per-request fsync not documented",
     "opensearch-knn": "translog fsync per request (index.translog.durability=request, the default); refresh=true makes it visible",
@@ -71,7 +71,7 @@ DURABILITY = {
 }
 
 DURABILITY_CLASS = {
-    HMS_SERVER: "per-request-flush",  # https://github.com/writerslogic/holographic-memory/blob/main/docs/file-format/CRASH-CONSISTENCY.md
+    WARM_SERVER: "per-request-flush",  # https://github.com/writerslogic/warm/blob/main/docs/file-format/CRASH-CONSISTENCY.md
     "qdrant-server": "periodic",  # https://qdrant.tech/documentation/operations/configuration/#configuration-file-example
     "weaviate": "undocumented",  # https://docs.weaviate.io/weaviate/concepts/storage#write-ahead-log
     "opensearch-knn": "per-request-flush",  # https://docs.opensearch.org/latest/install-and-configure/configuring-opensearch/index-settings/
@@ -92,5 +92,5 @@ SERVER_NOT_RUN = {
 SERVER_PINS = {ENV: ["psycopg[binary]==3.3.6", "redis==8.1.0"]}
 
 SERVER_ANN_SYSTEMS = [k for k, v in SERVER_SYSTEMS.items() if v["kind"] == "server-ann"]
-# hms-server serves both kinds; its text row goes through the memory API (server_worker.HmsServerText).
-SERVER_TEXT_SYSTEMS = [HMS_SERVER] + [k for k, v in SERVER_SYSTEMS.items() if v["kind"] == "server-text"]
+# warm-server serves both kinds; its text row goes through the memory API (server_worker.WarmServerText).
+SERVER_TEXT_SYSTEMS = [WARM_SERVER] + [k for k, v in SERVER_SYSTEMS.items() if v["kind"] == "server-text"]

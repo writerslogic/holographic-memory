@@ -1,8 +1,8 @@
 <!-- BENCH:START -->
 
-_Generated from `benchmarks/results/competitive/` by `hms-bench table`; method and caveats in [docs/benchmarks/COMPARISON.md](docs/benchmarks/COMPARISON.md). W = HMS ahead (95% interval excludes parity), T = tie, L = a comparator is ahead._
+_Generated from `benchmarks/results/competitive/` by `warm-bench table`; method and caveats in [docs/benchmarks/COMPARISON.md](docs/benchmarks/COMPARISON.md). W = WARM ahead (95% interval excludes parity), T = tie, L = a comparator is ahead._
 
-| Dataset | Metric | HMS | Best other | Advantage | |
+| Dataset | Metric | WARM | Best other | Advantage | |
 |---|---|---|---|---|---|
 | sift-128-euclidean | QPS @ recall@10 >= 0.95 (QPS) | 17,481 | hnswlib 7,630 | n/v | - |
 | sift-128-euclidean | p99 latency @ 0.95 (us) | 105 | hnswlib 220 | n/v | - |

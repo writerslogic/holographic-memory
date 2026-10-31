@@ -1,15 +1,15 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::engine::HmsCore;
+use crate::core::engine::WarmCore;
 use crate::core::entangled::EntangledHVec;
 
 #[test]
 fn test_determinism() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(1000, Some(dir.path().display().to_string()), None).unwrap();
-    let v1 = hms.encode_text("hello world");
-    let v2 = hms.encode_text("hello world");
+    let warm = WarmCore::new(1000, Some(dir.path().display().to_string()), None).unwrap();
+    let v1 = warm.encode_text("hello world");
+    let v2 = warm.encode_text("hello world");
     assert!((v1.similarity(&v2) - 1.0).abs() < 0.0001);
 }
 
@@ -17,13 +17,13 @@ fn test_determinism() {
 fn test_store_rejects_concurrent_engines_and_reopens_after_drop() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().display().to_string();
-    let first = HmsCore::new(1000, Some(path.clone()), None).unwrap();
-    let error = HmsCore::new(1000, Some(path.clone()), None)
+    let first = WarmCore::new(1000, Some(path.clone()), None).unwrap();
+    let error = WarmCore::new(1000, Some(path.clone()), None)
         .err()
         .expect("a second writable engine must be rejected");
     assert!(error.to_string().contains("already open"));
     drop(first);
-    HmsCore::new(1000, Some(path), None).expect("store lock must release after teardown");
+    WarmCore::new(1000, Some(path), None).expect("store lock must release after teardown");
 }
 
 #[test]
@@ -41,7 +41,7 @@ fn test_from_dense_produces_sparse() {
 #[test]
 fn test_batch_memorize() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     // Simulate what memorize_batch does: parallel encode, sequential insert
     let items = vec![
@@ -50,13 +50,13 @@ fn test_batch_memorize() {
         ("b3", "third batch item"),
     ];
     for (id, text) in &items {
-        let vec = hms.encode_text(text);
-        hms.memorize(id.to_string(), vec).unwrap();
+        let vec = warm.encode_text(text);
+        warm.memorize(id.to_string(), vec).unwrap();
     }
-    assert_eq!(hms.vector_count(), 3);
+    assert_eq!(warm.vector_count(), 3);
 
-    let q = hms.encode_text("first batch item");
-    let results = hms.query(&q, 3);
+    let q = warm.encode_text("first batch item");
+    let results = warm.query(&q, 3);
     assert!(!results.is_empty());
 }
 
@@ -65,11 +65,11 @@ fn test_batch_memorize() {
 #[test]
 fn test_custom_concept_config() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.concepts.similarity_threshold = 0.5;
     config.concepts.min_cluster_size = 5;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -78,11 +78,11 @@ fn test_custom_concept_config() {
 
     // With high threshold and min size, clusters are harder to form
     for i in 0..10 {
-        let vec = hms.encode_text(&format!("config test document {}", i));
-        hms.memorize(format!("cfg_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("config test document {}", i));
+        warm.memorize(format!("cfg_{}", i), vec).unwrap();
     }
 
-    let concepts = hms.synthesize_concepts();
+    let concepts = warm.synthesize_concepts();
     // With strict thresholds, fewer or no concepts should form
     // (this validates the config is actually used)
     for c in &concepts {
@@ -99,48 +99,48 @@ fn test_custom_concept_config() {
 #[test]
 fn test_factorize_returns_factors() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     // Memorize some domain items
     let colors = vec!["red", "blue", "green"];
     let shapes = vec!["circle", "square", "triangle"];
     for c in &colors {
-        let v = hms.encode_text(c);
-        hms.memorize(c.to_string(), v).unwrap();
+        let v = warm.encode_text(c);
+        warm.memorize(c.to_string(), v).unwrap();
     }
     for s in &shapes {
-        let v = hms.encode_text(s);
-        hms.memorize(s.to_string(), v).unwrap();
+        let v = warm.encode_text(s);
+        warm.memorize(s.to_string(), v).unwrap();
     }
 
     // Create a composite: red * circle
-    let red_vec = hms.encode_text("red");
-    let circle_vec = hms.encode_text("circle");
+    let red_vec = warm.encode_text("red");
+    let circle_vec = warm.encode_text("circle");
     let product = red_vec.bind(&circle_vec);
 
     let domains = vec![
         colors
             .iter()
-            .map(|s| hms.encode_text(s))
+            .map(|s| warm.encode_text(s))
             .collect::<Vec<EntangledHVec>>(),
         shapes
             .iter()
-            .map(|s| hms.encode_text(s))
+            .map(|s| warm.encode_text(s))
             .collect::<Vec<EntangledHVec>>(),
     ];
 
-    let results = hms.factorize_diffusion(&product, &domains, 20);
+    let results = warm.factorize_diffusion(&product, &domains, 20);
     assert_eq!(results.len(), 2);
 }
 
 #[test]
 fn test_concept_synthesis() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(1000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(1000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     // Create 20 slightly-varied versions of a "base" concept
     // Use the same seed with small variations to create tight clusters
-    let base = hms.encode_text("base concept");
+    let base = warm.encode_text("base concept");
     for i in 0..20 {
         // Create variants by permuting base slightly
         let variant = if i == 0 {
@@ -157,10 +157,10 @@ fn test_concept_synthesis() {
                 perturb,
             ])
         };
-        hms.memorize(format!("var_{}", i), variant).unwrap();
+        warm.memorize(format!("var_{}", i), variant).unwrap();
     }
 
-    let concepts = hms.synthesize_concepts();
+    let concepts = warm.synthesize_concepts();
     // We expect at least one synthesized concept representing the cluster
     assert!(
         !concepts.is_empty(),
@@ -176,10 +176,10 @@ fn test_concept_synthesis() {
 #[test]
 fn test_concept_refinement_stability() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.concepts.similarity_threshold = 0.3;
     config.concepts.min_cluster_size = 3;
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         1000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -187,8 +187,8 @@ fn test_concept_refinement_stability() {
     .unwrap();
 
     // Create two distinct clusters so refinement has work to do
-    let base_a = hms.encode_text("alpha cluster topic");
-    let base_b = hms.encode_text("beta different subject");
+    let base_a = warm.encode_text("alpha cluster topic");
+    let base_b = warm.encode_text("beta different subject");
     for i in 0..10 {
         let perturb = EntangledHVec::new_deterministic(1000, 20000 + i);
         let va = EntangledHVec::bundle(&[
@@ -198,7 +198,7 @@ fn test_concept_refinement_stability() {
             base_a.clone(),
             perturb.clone(),
         ]);
-        hms.memorize(format!("a_{}", i), va).unwrap();
+        warm.memorize(format!("a_{}", i), va).unwrap();
 
         let perturb_b = EntangledHVec::new_deterministic(1000, 30000 + i);
         let vb = EntangledHVec::bundle(&[
@@ -208,10 +208,10 @@ fn test_concept_refinement_stability() {
             base_b.clone(),
             perturb_b,
         ]);
-        hms.memorize(format!("b_{}", i), vb).unwrap();
+        warm.memorize(format!("b_{}", i), vb).unwrap();
     }
 
-    let concepts = hms.synthesize_concepts();
+    let concepts = warm.synthesize_concepts();
     assert!(
         !concepts.is_empty(),
         "Should synthesize at least one concept"
@@ -236,12 +236,12 @@ fn test_concept_refinement_stability() {
 #[test]
 fn test_nsg_train_and_query() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.nsg.max_degree = 8;
 
     config.nsg.ef_construction = 16;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         1000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -249,29 +249,29 @@ fn test_nsg_train_and_query() {
     .unwrap();
 
     for i in 0..50 {
-        let vec = hms.encode_text(&format!("nsg document {}", i));
-        hms.memorize(format!("nsg_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("nsg document {}", i));
+        warm.memorize(format!("nsg_{}", i), vec).unwrap();
     }
 
-    assert!(!hms.nsg_trained());
-    hms.train_nsg().unwrap();
-    assert!(hms.nsg_trained());
+    assert!(!warm.nsg_trained());
+    warm.train_nsg().unwrap();
+    assert!(warm.nsg_trained());
 
-    let q = hms.encode_text("nsg document 0");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("nsg document 0");
+    let results = warm.query(&q, 5);
     assert!(!results.is_empty(), "NSG query should return results");
 }
 
 #[test]
 fn test_nsg_maintenance_at_threshold() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.nsg.auto_threshold = 30;
     config.nsg.max_degree = 8;
 
     config.nsg.ef_construction = 16;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         1000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -279,17 +279,20 @@ fn test_nsg_maintenance_at_threshold() {
     .unwrap();
 
     for i in 0..29 {
-        let vec = hms.encode_text(&format!("auto nsg {}", i));
-        hms.memorize(format!("ansg_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("auto nsg {}", i));
+        warm.memorize(format!("ansg_{}", i), vec).unwrap();
     }
-    assert!(!hms.nsg_trained());
+    assert!(!warm.nsg_trained());
 
-    let vec = hms.encode_text("auto nsg 29");
-    hms.memorize("ansg_29".to_string(), vec).unwrap();
-    assert!(!hms.nsg_trained(), "ingestion must not synchronously train");
-    assert!(hms.index_status().nsg_training_recommended);
-    hms.maintain_indices().unwrap();
-    assert!(hms.nsg_trained());
+    let vec = warm.encode_text("auto nsg 29");
+    warm.memorize("ansg_29".to_string(), vec).unwrap();
+    assert!(
+        !warm.nsg_trained(),
+        "ingestion must not synchronously train"
+    );
+    assert!(warm.index_status().nsg_training_recommended);
+    warm.maintain_indices().unwrap();
+    assert!(warm.nsg_trained());
 }
 
 // === Phase 4 Integration Tests ===
@@ -297,12 +300,12 @@ fn test_nsg_maintenance_at_threshold() {
 #[test]
 fn test_adaptive_routing_e2e() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.nsg.max_degree = 8;
 
     config.nsg.ef_construction = 16;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         1000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -310,16 +313,16 @@ fn test_adaptive_routing_e2e() {
     .unwrap();
 
     for i in 0..50 {
-        let vec = hms.encode_text(&format!("routing item {}", i));
-        hms.memorize(format!("rt_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("routing item {}", i));
+        warm.memorize(format!("rt_{}", i), vec).unwrap();
     }
 
     // Train NSG — queries should now route through NSG
-    hms.train_nsg().unwrap();
-    assert!(hms.nsg_trained());
+    warm.train_nsg().unwrap();
+    assert!(warm.nsg_trained());
 
-    let q = hms.encode_text("routing item 0");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("routing item 0");
+    let results = warm.query(&q, 5);
     assert!(
         !results.is_empty(),
         "Adaptive routing should return results via NSG"
@@ -331,23 +334,23 @@ fn test_adaptive_routing_e2e() {
 #[test]
 fn test_triplet_memorize_and_query() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-    hms.memorize_triplet(
+    warm.memorize_triplet(
         "paris_capital".to_string(),
         "Paris".to_string(),
         "is_capital_of".to_string(),
         "France".to_string(),
     )
     .unwrap();
-    hms.memorize_triplet(
+    warm.memorize_triplet(
         "berlin_capital".to_string(),
         "Berlin".to_string(),
         "is_capital_of".to_string(),
         "Germany".to_string(),
     )
     .unwrap();
-    hms.memorize_triplet(
+    warm.memorize_triplet(
         "tokyo_capital".to_string(),
         "Tokyo".to_string(),
         "is_capital_of".to_string(),
@@ -355,7 +358,7 @@ fn test_triplet_memorize_and_query() {
     )
     .unwrap();
 
-    let results = hms
+    let results = warm
         .query_triplet("Paris".to_string(), "is_capital_of".to_string(), 3)
         .unwrap();
     assert!(!results.is_empty(), "Triplet query should return results");
@@ -370,9 +373,9 @@ fn test_triplet_memorize_and_query() {
 #[test]
 fn test_sequence_memorize_and_query() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-    hms.memorize_sequence(
+    warm.memorize_sequence(
         "recipe_1".to_string(),
         &[
             "preheat oven".to_string(),
@@ -382,7 +385,7 @@ fn test_sequence_memorize_and_query() {
         ],
     )
     .unwrap();
-    hms.memorize_sequence(
+    warm.memorize_sequence(
         "recipe_2".to_string(),
         &[
             "boil water".to_string(),
@@ -393,8 +396,8 @@ fn test_sequence_memorize_and_query() {
     .unwrap();
 
     // Query with a partial sequence match
-    let q = hms.encode_text("preheat oven").permute(0);
-    let results = hms.query(&q, 2);
+    let q = warm.encode_text("preheat oven").permute(0);
+    let results = warm.query(&q, 2);
     assert!(!results.is_empty(), "Sequence query should return results");
 }
 
@@ -403,17 +406,17 @@ fn test_sequence_memorize_and_query() {
 #[test]
 fn test_scalar_query_ordering() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     for i in 0..20 {
         let val = i as f64 * 5.0;
-        hms.memorize_scalar(format!("temp_{}", i), val, 0.0, 100.0)
+        warm.memorize_scalar(format!("temp_{}", i), val, 0.0, 100.0)
             .unwrap();
     }
 
     // Query near value 50 — should return items closest to 50
     let q = EntangledHVec::from_scalar(50.0, 0.0, 100.0, 10_000);
-    let results = hms.query(&q, 5);
+    let results = warm.query(&q, 5);
     assert!(!results.is_empty(), "Scalar query should return results");
 
     // Top results should cluster around value 50 (idx 10)
@@ -435,15 +438,15 @@ fn test_scalar_query_ordering() {
 #[test]
 fn test_analyze_components() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     for i in 0..30 {
-        let vec = hms.encode_text(&format!("component analysis document {}", i));
-        hms.memorize(format!("ca_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("component analysis document {}", i));
+        warm.memorize(format!("ca_{}", i), vec).unwrap();
     }
 
-    let vec = hms.encode_text("component analysis document 0");
-    let results = hms.analyze_components(&vec);
+    let vec = warm.encode_text("component analysis document 0");
+    let results = warm.analyze_components(&vec);
     assert!(
         !results.is_empty(),
         "analyze_components should return results"
@@ -459,17 +462,17 @@ fn test_analyze_components() {
 #[test]
 fn test_delete_existing() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-    let vec = hms.encode_text("hello");
-    hms.memorize("hello".to_string(), vec).unwrap();
-    assert_eq!(hms.vector_count(), 1);
+    let vec = warm.encode_text("hello");
+    warm.memorize("hello".to_string(), vec).unwrap();
+    assert_eq!(warm.vector_count(), 1);
 
-    assert!(hms.delete("hello").unwrap());
-    assert_eq!(hms.vector_count(), 0);
+    assert!(warm.delete("hello").unwrap());
+    assert_eq!(warm.vector_count(), 0);
 
-    let q = hms.encode_text("hello");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("hello");
+    let results = warm.query(&q, 5);
     assert!(
         results.is_empty(),
         "Deleted vector should not appear in results"
@@ -479,8 +482,8 @@ fn test_delete_existing() {
 #[test]
 fn test_delete_nonexistent() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
-    assert!(!hms.delete("no_such_id").unwrap());
+    let warm = WarmCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
+    assert!(!warm.delete("no_such_id").unwrap());
 }
 
 #[test]
@@ -489,14 +492,14 @@ fn test_basic_persistence() {
     let path = dir.path().to_string_lossy().to_string();
 
     {
-        let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
-        let v = hms.encode_text("persist me");
-        hms.memorize("p1".to_string(), v).unwrap();
-        assert_eq!(hms.vector_count(), 1);
+        let warm = WarmCore::new(10_000, Some(path.clone()), None).unwrap();
+        let v = warm.encode_text("persist me");
+        warm.memorize("p1".to_string(), v).unwrap();
+        assert_eq!(warm.vector_count(), 1);
     }
 
-    let hms = HmsCore::new(10_000, Some(path), None).unwrap();
-    assert_eq!(hms.vector_count(), 1);
+    let warm = WarmCore::new(10_000, Some(path), None).unwrap();
+    assert_eq!(warm.vector_count(), 1);
 }
 
 #[test]
@@ -505,38 +508,38 @@ fn test_delete_persistence() {
     let path = dir.path().to_string_lossy().to_string();
 
     {
-        let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
-        let v1 = hms.encode_text("keep me");
-        let v2 = hms.encode_text("delete me");
-        hms.memorize("keep".to_string(), v1).unwrap();
-        hms.memorize("del".to_string(), v2).unwrap();
-        assert_eq!(hms.vector_count(), 2);
-        hms.delete("del").unwrap();
-        assert_eq!(hms.vector_count(), 1);
+        let warm = WarmCore::new(10_000, Some(path.clone()), None).unwrap();
+        let v1 = warm.encode_text("keep me");
+        let v2 = warm.encode_text("delete me");
+        warm.memorize("keep".to_string(), v1).unwrap();
+        warm.memorize("del".to_string(), v2).unwrap();
+        assert_eq!(warm.vector_count(), 2);
+        warm.delete("del").unwrap();
+        assert_eq!(warm.vector_count(), 1);
     }
 
-    let hms = HmsCore::new(10_000, Some(path), None).unwrap();
-    assert_eq!(hms.vector_count(), 1);
-    let q = hms.encode_text("keep me");
-    let results = hms.query(&q, 5);
+    let warm = WarmCore::new(10_000, Some(path), None).unwrap();
+    assert_eq!(warm.vector_count(), 1);
+    let q = warm.encode_text("keep me");
+    let results = warm.query(&q, 5);
     assert!(!results.is_empty(), "Kept vector should survive restart");
 }
 
 #[test]
 fn test_delete_and_rememorize() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-    let v1 = hms.encode_text("version 1");
-    hms.memorize("doc".to_string(), v1).unwrap();
-    hms.delete("doc").unwrap();
+    let v1 = warm.encode_text("version 1");
+    warm.memorize("doc".to_string(), v1).unwrap();
+    warm.delete("doc").unwrap();
 
-    let v2 = hms.encode_text("version 2");
-    hms.memorize("doc".to_string(), v2.clone()).unwrap();
-    assert_eq!(hms.vector_count(), 1);
+    let v2 = warm.encode_text("version 2");
+    warm.memorize("doc".to_string(), v2.clone()).unwrap();
+    assert_eq!(warm.vector_count(), 1);
 
-    let q = hms.encode_text("version 2");
-    let results = hms.query(&q, 1);
+    let q = warm.encode_text("version 2");
+    let results = warm.query(&q, 1);
     assert_eq!(results[0].id, "doc");
 }
 
@@ -547,24 +550,24 @@ fn test_compact_basic() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().to_string_lossy().to_string();
 
-    let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(path.clone()), None).unwrap();
     for i in 0..50 {
-        let vec = hms.encode_text(&format!("item {}", i));
-        hms.memorize(format!("id_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("item {}", i));
+        warm.memorize(format!("id_{}", i), vec).unwrap();
     }
     // Delete half
     for i in 0..25 {
-        hms.delete(&format!("id_{}", i)).unwrap();
+        warm.delete(&format!("id_{}", i)).unwrap();
     }
-    assert_eq!(hms.vector_count(), 25);
+    assert_eq!(warm.vector_count(), 25);
 
-    hms.compact().unwrap();
+    warm.compact().unwrap();
 
     // Verify all live vectors still queryable
-    let q = hms.encode_text("item 30");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("item 30");
+    let results = warm.query(&q, 5);
     assert!(!results.is_empty(), "Should find results after compaction");
-    assert_eq!(hms.vector_count(), 25);
+    assert_eq!(warm.vector_count(), 25);
 }
 
 #[test]
@@ -573,20 +576,20 @@ fn test_compact_persistence() {
     let path = dir.path().to_string_lossy().to_string();
 
     {
-        let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
+        let warm = WarmCore::new(10_000, Some(path.clone()), None).unwrap();
         for i in 0..20 {
-            let vec = hms.encode_text(&format!("doc {}", i));
-            hms.memorize(format!("d_{}", i), vec).unwrap();
+            let vec = warm.encode_text(&format!("doc {}", i));
+            warm.memorize(format!("d_{}", i), vec).unwrap();
         }
         for i in 0..10 {
-            hms.delete(&format!("d_{}", i)).unwrap();
+            warm.delete(&format!("d_{}", i)).unwrap();
         }
-        hms.compact().unwrap();
+        warm.compact().unwrap();
     }
 
     // Re-open from compacted arena
-    let hms = HmsCore::new(10_000, Some(path), None).unwrap();
-    assert_eq!(hms.vector_count(), 10);
+    let warm = WarmCore::new(10_000, Some(path), None).unwrap();
+    assert_eq!(warm.vector_count(), 10);
 }
 
 // === Shard Tests ===
@@ -594,11 +597,11 @@ fn test_compact_persistence() {
 #[test]
 fn test_multi_shard_insert_query() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.shard.enabled = true;
     config.shard.shard_count = 4;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -606,14 +609,14 @@ fn test_multi_shard_insert_query() {
     .unwrap();
 
     for i in 0..100 {
-        let vec = hms.encode_text(&format!("shard document {}", i));
-        hms.memorize(format!("sd_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("shard document {}", i));
+        warm.memorize(format!("sd_{}", i), vec).unwrap();
     }
 
-    assert_eq!(hms.vector_count(), 100);
+    assert_eq!(warm.vector_count(), 100);
 
-    let q = hms.encode_text("shard document 0");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("shard document 0");
+    let results = warm.query(&q, 5);
     assert!(
         !results.is_empty(),
         "Multi-shard query should return results"
@@ -623,11 +626,11 @@ fn test_multi_shard_insert_query() {
 #[test]
 fn test_multi_shard_delete() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.shard.enabled = true;
     config.shard.shard_count = 4;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -635,27 +638,27 @@ fn test_multi_shard_delete() {
     .unwrap();
 
     for i in 0..20 {
-        let vec = hms.encode_text(&format!("item {}", i));
-        hms.memorize(format!("m_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("item {}", i));
+        warm.memorize(format!("m_{}", i), vec).unwrap();
     }
-    assert_eq!(hms.vector_count(), 20);
+    assert_eq!(warm.vector_count(), 20);
 
     for i in 0..10 {
-        assert!(hms.delete(&format!("m_{}", i)).unwrap());
+        assert!(warm.delete(&format!("m_{}", i)).unwrap());
     }
-    assert_eq!(hms.vector_count(), 10);
+    assert_eq!(warm.vector_count(), 10);
 }
 
 #[test]
 fn test_auto_shard_trigger() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.shard.enabled = true;
     config.shard.shard_count = 0; // auto
     config.shard.auto_threshold = 50;
     config.shard.target_shard_size = 25;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -663,21 +666,21 @@ fn test_auto_shard_trigger() {
     .unwrap();
 
     for i in 0..50 {
-        let vec = hms.encode_text(&format!("auto shard {}", i));
-        hms.memorize(format!("as_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("auto shard {}", i));
+        warm.memorize(format!("as_{}", i), vec).unwrap();
     }
 
-    assert_eq!(hms.vector_count(), 50);
+    assert_eq!(warm.vector_count(), 50);
 
-    hms.maintain_indices().unwrap();
+    warm.maintain_indices().unwrap();
     let metadata: serde_json::Value =
         serde_json::from_slice(&std::fs::read(dir.path().join("shard_meta.json")).unwrap())
             .unwrap();
     assert_eq!(metadata["shard_count"], 2);
 
     // Verify queries still work after auto-sharding
-    let q = hms.encode_text("auto shard 0");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("auto shard 0");
+    let results = warm.query(&q, 5);
     assert!(!results.is_empty(), "Should find results after auto-shard");
 }
 
@@ -686,21 +689,21 @@ fn test_auto_shard_trigger() {
 #[test]
 fn test_audit_records_operations() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.security.audit_enabled = true;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
     )
     .unwrap();
 
-    let v = hms.encode_text("audit test");
-    hms.memorize("aud_1".to_string(), v).unwrap();
-    hms.delete("aud_1").unwrap();
+    let v = warm.encode_text("audit test");
+    warm.memorize("aud_1".to_string(), v).unwrap();
+    warm.delete("aud_1").unwrap();
 
-    let entries = hms.audit_since(0).unwrap();
+    let entries = warm.audit_since(0).unwrap();
     assert_eq!(entries.len(), 2);
     assert_eq!(entries[0].op, crate::core::audit::AuditOp::Memorize);
     assert_eq!(entries[1].op, crate::core::audit::AuditOp::Delete);
@@ -709,29 +712,29 @@ fn test_audit_records_operations() {
 #[test]
 fn test_audit_disabled_returns_empty() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
-    let entries = hms.audit_since(0).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
+    let entries = warm.audit_since(0).unwrap();
     assert!(entries.is_empty());
 }
 
 #[test]
 fn test_audit_compact_recorded() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.security.audit_enabled = true;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
     )
     .unwrap();
 
-    let v = hms.encode_text("compact audit");
-    hms.memorize("ca_1".to_string(), v).unwrap();
-    hms.compact().unwrap();
+    let v = warm.encode_text("compact audit");
+    warm.memorize("ca_1".to_string(), v).unwrap();
+    warm.compact().unwrap();
 
-    let entries = hms.audit_since(0).unwrap();
+    let entries = warm.audit_since(0).unwrap();
     assert!(entries
         .iter()
         .any(|e| e.op == crate::core::audit::AuditOp::Compact));
@@ -742,15 +745,15 @@ fn test_audit_compact_recorded() {
 #[test]
 fn test_graph_add_and_traverse() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     // Memorize some nodes
     for city in &["paris", "france", "europe"] {
-        let v = hms.encode_text(city);
-        hms.memorize(city.to_string(), v).unwrap();
+        let v = warm.encode_text(city);
+        warm.memorize(city.to_string(), v).unwrap();
     }
 
-    hms.add_relation(&crate::core::types::Relation {
+    warm.add_relation(&crate::core::types::Relation {
         source_id: "paris".into(),
         relation_type: "is_in".into(),
         target_id: "france".into(),
@@ -759,7 +762,7 @@ fn test_graph_add_and_traverse() {
         valid_to: 0.0,
     })
     .unwrap();
-    hms.add_relation(&crate::core::types::Relation {
+    warm.add_relation(&crate::core::types::Relation {
         source_id: "france".into(),
         relation_type: "is_in".into(),
         target_id: "europe".into(),
@@ -769,9 +772,9 @@ fn test_graph_add_and_traverse() {
     })
     .unwrap();
 
-    assert_eq!(hms.relation_count(), 2);
+    assert_eq!(warm.relation_count(), 2);
 
-    let paths = hms.traverse("paris", Some("is_in"), 3, 0.0);
+    let paths = warm.traverse("paris", Some("is_in"), 3, 0.0);
     assert!(!paths.is_empty());
     let targets: Vec<&str> = paths
         .iter()
@@ -784,21 +787,21 @@ fn test_graph_add_and_traverse() {
 #[test]
 fn test_graph_transitive_inference() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     for name in &["a", "b", "c"] {
-        let v = hms.encode_text(name);
-        hms.memorize(name.to_string(), v).unwrap();
+        let v = warm.encode_text(name);
+        warm.memorize(name.to_string(), v).unwrap();
     }
 
-    hms.declare_relation_type(crate::core::types::RelationType {
+    warm.declare_relation_type(crate::core::types::RelationType {
         name: "contains".into(),
         transitive: true,
         symmetric: false,
     })
     .unwrap();
 
-    hms.add_relation(&crate::core::types::Relation {
+    warm.add_relation(&crate::core::types::Relation {
         source_id: "a".into(),
         relation_type: "contains".into(),
         target_id: "b".into(),
@@ -807,7 +810,7 @@ fn test_graph_transitive_inference() {
         valid_to: 0.0,
     })
     .unwrap();
-    hms.add_relation(&crate::core::types::Relation {
+    warm.add_relation(&crate::core::types::Relation {
         source_id: "b".into(),
         relation_type: "contains".into(),
         target_id: "c".into(),
@@ -817,7 +820,7 @@ fn test_graph_transitive_inference() {
     })
     .unwrap();
 
-    let paths = hms.traverse("a", Some("contains"), 3, 0.0);
+    let paths = warm.traverse("a", Some("contains"), 3, 0.0);
     // Should have inferred single-hop a->c
     let inferred = paths
         .iter()
@@ -831,10 +834,10 @@ fn test_graph_persistence() {
     let path = dir.path().to_string_lossy().to_string();
 
     {
-        let hms = HmsCore::new(10_000, Some(path.clone()), None).unwrap();
-        let v = hms.encode_text("node_a");
-        hms.memorize("node_a".to_string(), v).unwrap();
-        hms.add_relation(&crate::core::types::Relation {
+        let warm = WarmCore::new(10_000, Some(path.clone()), None).unwrap();
+        let v = warm.encode_text("node_a");
+        warm.memorize("node_a".to_string(), v).unwrap();
+        warm.add_relation(&crate::core::types::Relation {
             source_id: "node_a".into(),
             relation_type: "links_to".into(),
             target_id: "node_b".into(),
@@ -845,9 +848,9 @@ fn test_graph_persistence() {
         .unwrap();
     }
 
-    let hms = HmsCore::new(10_000, Some(path), None).unwrap();
-    assert_eq!(hms.relation_count(), 1);
-    let out = hms.outgoing_relations("node_a", None, 0.0);
+    let warm = WarmCore::new(10_000, Some(path), None).unwrap();
+    assert_eq!(warm.relation_count(), 1);
+    let out = warm.outgoing_relations("node_a", None, 0.0);
     assert_eq!(out.len(), 1);
     assert_eq!(out[0].target_id, "node_b");
 }
@@ -855,9 +858,9 @@ fn test_graph_persistence() {
 #[test]
 fn test_graph_temporal_query() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-    hms.add_relation(&crate::core::types::Relation {
+    warm.add_relation(&crate::core::types::Relation {
         source_id: "alice".into(),
         relation_type: "works_at".into(),
         target_id: "acme".into(),
@@ -866,7 +869,7 @@ fn test_graph_temporal_query() {
         valid_to: 2000.0,
     })
     .unwrap();
-    hms.add_relation(&crate::core::types::Relation {
+    warm.add_relation(&crate::core::types::Relation {
         source_id: "alice".into(),
         relation_type: "works_at".into(),
         target_id: "globex".into(),
@@ -876,11 +879,11 @@ fn test_graph_temporal_query() {
     })
     .unwrap();
 
-    let at_1500 = hms.outgoing_relations("alice", Some("works_at"), 1500.0);
+    let at_1500 = warm.outgoing_relations("alice", Some("works_at"), 1500.0);
     assert_eq!(at_1500.len(), 1);
     assert_eq!(at_1500[0].target_id, "acme");
 
-    let at_3000 = hms.outgoing_relations("alice", Some("works_at"), 3000.0);
+    let at_3000 = warm.outgoing_relations("alice", Some("works_at"), 3000.0);
     assert_eq!(at_3000.len(), 1);
     assert_eq!(at_3000[0].target_id, "globex");
 }
@@ -894,18 +897,18 @@ fn test_federated_query() {
 
     // Populate two separate instances
     {
-        let hms1 = HmsCore::new(10_000, Some(path1.clone()), None).unwrap();
+        let hms1 = WarmCore::new(10_000, Some(path1.clone()), None).unwrap();
         let v = hms1.encode_text("federated doc alpha");
         hms1.memorize("alpha".to_string(), v).unwrap();
     }
     {
-        let hms2 = HmsCore::new(10_000, Some(path2.clone()), None).unwrap();
+        let hms2 = WarmCore::new(10_000, Some(path2.clone()), None).unwrap();
         let v = hms2.encode_text("federated doc beta");
         hms2.memorize("beta".to_string(), v).unwrap();
     }
 
     // Query from instance 1, federating with instance 2
-    let hms1 = HmsCore::new(10_000, Some(path1), None).unwrap();
+    let hms1 = WarmCore::new(10_000, Some(path1), None).unwrap();
     let q = hms1.encode_text("federated doc");
     let results = hms1.federated_query(&[path2], &q, 5).unwrap();
     let ids: Vec<&str> = results.iter().map(|r| r.id.as_str()).collect();
@@ -916,7 +919,7 @@ fn test_federated_query() {
 #[test]
 fn test_hopfield_query_e2e() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     let topics = [
         "quantum physics experiments in laboratories",
@@ -931,12 +934,12 @@ fn test_hopfield_query_e2e() {
         "ancient roman architecture and aqueducts",
     ];
     for (i, topic) in topics.iter().enumerate() {
-        let v = hms.encode_text(topic);
-        hms.memorize(format!("doc_{}", i), v).unwrap();
+        let v = warm.encode_text(topic);
+        warm.memorize(format!("doc_{}", i), v).unwrap();
     }
 
-    let q = hms.encode_text("volcanic geology and tectonic plate movements");
-    let results = hms.query_hopfield(&q, 10);
+    let q = warm.encode_text("volcanic geology and tectonic plate movements");
+    let results = warm.query_hopfield(&q, 10);
     assert!(!results.is_empty(), "Hopfield query should return results");
     let top3_ids: Vec<&str> = results.iter().take(3).map(|r| r.id.as_str()).collect();
     assert!(
@@ -949,11 +952,11 @@ fn test_hopfield_query_e2e() {
 #[test]
 fn test_graph_compact_preserves_relations() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
-    let v = hms.encode_text("compactable");
-    hms.memorize("node1".to_string(), v).unwrap();
-    hms.add_relation(&crate::core::types::Relation {
+    let v = warm.encode_text("compactable");
+    warm.memorize("node1".to_string(), v).unwrap();
+    warm.add_relation(&crate::core::types::Relation {
         source_id: "node1".into(),
         relation_type: "related".into(),
         target_id: "node2".into(),
@@ -963,9 +966,9 @@ fn test_graph_compact_preserves_relations() {
     })
     .unwrap();
 
-    hms.compact().unwrap();
-    assert_eq!(hms.relation_count(), 1);
-    assert_eq!(hms.vector_count(), 1);
+    warm.compact().unwrap();
+    assert_eq!(warm.relation_count(), 1);
+    assert_eq!(warm.vector_count(), 1);
 }
 
 // === Analogy Tests ===
@@ -973,16 +976,16 @@ fn test_graph_compact_preserves_relations() {
 #[test]
 fn test_find_analogy() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     for word in &[
         "walking", "talking", "running", "walked", "talked", "runner",
     ] {
-        let v = hms.encode_text(word);
-        hms.memorize(word.to_string(), v).unwrap();
+        let v = warm.encode_text(word);
+        warm.memorize(word.to_string(), v).unwrap();
     }
 
-    let results = hms.find_analogy("walking", "walked", "talking", 5);
+    let results = warm.find_analogy("walking", "walked", "talking", 5);
     assert!(!results.is_empty(), "Analogy should return results");
 }
 
@@ -994,33 +997,33 @@ fn test_ivf_index_persistence() {
     let path = dir.path().to_string_lossy().to_string();
 
     {
-        let mut config = crate::core::config::HmsConfig::default();
+        let mut config = crate::core::config::WarmConfig::default();
         config.ivf.n_clusters = 8;
         config.ivf.n_landmarks = 64;
         config.ivf.d_reduced = 16;
         config.ivf.n_probe = 8;
 
-        let hms = HmsCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
+        let warm = WarmCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
         for i in 0..200 {
-            let v = hms.encode_text(&format!("ivf persist {}", i));
-            hms.memorize(format!("ip_{}", i), v).unwrap();
+            let v = warm.encode_text(&format!("ivf persist {}", i));
+            warm.memorize(format!("ip_{}", i), v).unwrap();
         }
-        hms.train_ivf().unwrap();
-        assert!(hms.ivf_trained());
+        warm.train_ivf().unwrap();
+        assert!(warm.ivf_trained());
     }
 
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.ivf.n_clusters = 8;
     config.ivf.n_landmarks = 64;
     config.ivf.d_reduced = 16;
     config.ivf.n_probe = 8;
-    let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
+    let warm = WarmCore::new(10_000, Some(path), Some(config)).unwrap();
     assert!(
-        hms.ivf_trained(),
+        warm.ivf_trained(),
         "IVF should be loaded from disk on re-open"
     );
-    let q = hms.encode_text("ivf persist 0");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("ivf persist 0");
+    let results = warm.query(&q, 5);
     assert!(!results.is_empty(), "IVF query should work after reload");
 }
 
@@ -1029,17 +1032,17 @@ fn test_ivf_index_persistence() {
 #[test]
 fn test_query_batch() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     for i in 0..20 {
-        let v = hms.encode_text(&format!("batch query doc {}", i));
-        hms.memorize(format!("bq_{}", i), v).unwrap();
+        let v = warm.encode_text(&format!("batch query doc {}", i));
+        warm.memorize(format!("bq_{}", i), v).unwrap();
     }
 
     let queries: Vec<EntangledHVec> = (0..3)
-        .map(|i| hms.encode_text(&format!("batch query doc {}", i)))
+        .map(|i| warm.encode_text(&format!("batch query doc {}", i)))
         .collect();
-    let batch_results = hms.query_batch(&queries, 3);
+    let batch_results = warm.query_batch(&queries, 3);
     assert_eq!(
         batch_results.len(),
         3,
@@ -1055,14 +1058,14 @@ fn test_query_batch() {
 #[test]
 fn test_memorize_vector_through_core() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
+    let warm = WarmCore::new(10_000, Some(dir.path().to_string_lossy().to_string()), None).unwrap();
 
     let dense: Vec<f32> = (0..128).map(|i| (i as f32 - 64.0) / 64.0).collect();
-    hms.memorize_vector("dense_1".to_string(), &dense).unwrap();
-    assert_eq!(hms.vector_count(), 1);
+    warm.memorize_vector("dense_1".to_string(), &dense).unwrap();
+    assert_eq!(warm.vector_count(), 1);
 
     let q = EntangledHVec::from_dense(&dense, 10_000);
-    let results = hms.query(&q, 1);
+    let results = warm.query(&q, 1);
     assert_eq!(results[0].id, "dense_1");
 }
 
@@ -1071,10 +1074,10 @@ fn test_memorize_vector_through_core() {
 #[test]
 fn test_readability_through_core() {
     let dir = tempfile::tempdir().unwrap();
-    let hms = HmsCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
-    let metrics = hms.analyze_text("The cat sat on the mat.");
+    let warm = WarmCore::new(10_000, Some(dir.path().display().to_string()), None).unwrap();
+    let metrics = warm.analyze_text("The cat sat on the mat.");
     assert!(metrics.word_count > 0);
-    let score = hms.calculate_readability(&metrics);
+    let score = warm.calculate_readability(&metrics);
     assert!(
         score > 50.0,
         "Simple sentence should be highly readable (got {:.1})",
@@ -1090,30 +1093,30 @@ fn test_nsg_index_persistence() {
     let path = dir.path().to_string_lossy().to_string();
 
     {
-        let mut config = crate::core::config::HmsConfig::default();
+        let mut config = crate::core::config::WarmConfig::default();
         config.nsg.max_degree = 8;
         config.nsg.ef_construction = 16;
 
-        let hms = HmsCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
+        let warm = WarmCore::new(10_000, Some(path.clone()), Some(config)).unwrap();
         for i in 0..50 {
-            let v = hms.encode_text(&format!("persist nsg {}", i));
-            hms.memorize(format!("pn_{}", i), v).unwrap();
+            let v = warm.encode_text(&format!("persist nsg {}", i));
+            warm.memorize(format!("pn_{}", i), v).unwrap();
         }
-        hms.train_nsg().unwrap();
-        assert!(hms.nsg_trained());
+        warm.train_nsg().unwrap();
+        assert!(warm.nsg_trained());
     }
 
     // Re-open and verify NSG was reloaded
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.nsg.max_degree = 8;
     config.nsg.ef_construction = 16;
-    let hms = HmsCore::new(10_000, Some(path), Some(config)).unwrap();
+    let warm = WarmCore::new(10_000, Some(path), Some(config)).unwrap();
     assert!(
-        hms.nsg_trained(),
+        warm.nsg_trained(),
         "NSG should be loaded from disk on re-open"
     );
-    let q = hms.encode_text("persist nsg 0");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("persist nsg 0");
+    let results = warm.query(&q, 5);
     assert!(!results.is_empty(), "NSG query should work after reload");
 }
 
@@ -1122,11 +1125,11 @@ fn test_nsg_index_persistence() {
 #[test]
 fn test_nsg_accuracy_matches_brute_force() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.nsg.max_degree = 8;
     config.nsg.ef_construction = 16;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -1134,18 +1137,18 @@ fn test_nsg_accuracy_matches_brute_force() {
     .unwrap();
 
     for i in 0..50 {
-        let v = hms.encode_text(&format!("accuracy test {}", i));
-        hms.memorize(format!("acc_{}", i), v).unwrap();
+        let v = warm.encode_text(&format!("accuracy test {}", i));
+        warm.memorize(format!("acc_{}", i), v).unwrap();
     }
 
     // Query before training (brute force)
-    let q = hms.encode_text("accuracy test 0");
-    let brute_results = hms.query(&q, 1);
+    let q = warm.encode_text("accuracy test 0");
+    let brute_results = warm.query(&q, 1);
 
-    hms.train_nsg().unwrap();
+    warm.train_nsg().unwrap();
 
     // Query after training (NSG)
-    let nsg_results = hms.query(&q, 1);
+    let nsg_results = warm.query(&q, 1);
 
     assert_eq!(
         brute_results[0].id, nsg_results[0].id,
@@ -1158,11 +1161,11 @@ fn test_nsg_accuracy_matches_brute_force() {
 #[test]
 fn test_multi_shard_results_from_multiple_shards() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.shard.enabled = true;
     config.shard.shard_count = 4;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -1170,12 +1173,12 @@ fn test_multi_shard_results_from_multiple_shards() {
     .unwrap();
 
     for i in 0..100 {
-        let v = hms.encode_text(&format!("multi verify {}", i));
-        hms.memorize(format!("mv_{}", i), v).unwrap();
+        let v = warm.encode_text(&format!("multi verify {}", i));
+        warm.memorize(format!("mv_{}", i), v).unwrap();
     }
 
-    let q = hms.encode_text("multi verify");
-    let results = hms.query(&q, 20);
+    let q = warm.encode_text("multi verify");
+    let results = warm.query(&q, 20);
     assert!(
         results.len() >= 10,
         "Should return many results from across shards"
@@ -1198,11 +1201,11 @@ fn test_multi_shard_results_from_multiple_shards() {
 #[test]
 fn test_compact_multi_shard() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.shard.enabled = true;
     config.shard.shard_count = 2;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10_000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -1210,19 +1213,19 @@ fn test_compact_multi_shard() {
     .unwrap();
 
     for i in 0..30 {
-        let v = hms.encode_text(&format!("compact shard {}", i));
-        hms.memorize(format!("cs_{}", i), v).unwrap();
+        let v = warm.encode_text(&format!("compact shard {}", i));
+        warm.memorize(format!("cs_{}", i), v).unwrap();
     }
     for i in 0..15 {
-        hms.delete(&format!("cs_{}", i)).unwrap();
+        warm.delete(&format!("cs_{}", i)).unwrap();
     }
-    assert_eq!(hms.vector_count(), 15);
+    assert_eq!(warm.vector_count(), 15);
 
-    hms.compact().unwrap();
-    assert_eq!(hms.vector_count(), 15);
+    warm.compact().unwrap();
+    assert_eq!(warm.vector_count(), 15);
 
-    let q = hms.encode_text("compact shard 20");
-    let results = hms.query(&q, 5);
+    let q = warm.encode_text("compact shard 20");
+    let results = warm.query(&q, 5);
     assert!(
         !results.is_empty(),
         "Should find results after multi-shard compact"
@@ -1234,13 +1237,13 @@ fn test_compact_multi_shard() {
 #[test]
 fn test_manual_ivf_train_and_query() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.ivf.n_clusters = 8;
     config.ivf.n_landmarks = 64;
     config.ivf.d_reduced = 16;
     config.ivf.n_probe = 8;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         10000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -1248,23 +1251,23 @@ fn test_manual_ivf_train_and_query() {
     .unwrap();
 
     for i in 0..200 {
-        let vec = hms.encode_text(&format!("document number {}", i));
-        hms.memorize(format!("doc_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("document number {}", i));
+        warm.memorize(format!("doc_{}", i), vec).unwrap();
     }
 
-    assert!(!hms.ivf_trained());
-    hms.train_ivf().unwrap();
-    assert!(hms.ivf_trained());
+    assert!(!warm.ivf_trained());
+    warm.train_ivf().unwrap();
+    assert!(warm.ivf_trained());
 
-    let q = hms.encode_text("document number 0");
-    let results = hms.query(&q, 10);
+    let q = warm.encode_text("document number 0");
+    let results = warm.query(&q, 10);
     assert!(!results.is_empty(), "IVF query should return results");
 }
 
 #[test]
 fn test_ivf_maintenance_at_threshold() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = crate::core::config::HmsConfig::default();
+    let mut config = crate::core::config::WarmConfig::default();
     config.ivf.enabled = true;
     config.ivf.auto_threshold = 50;
     config.ivf.n_clusters = 8;
@@ -1272,7 +1275,7 @@ fn test_ivf_maintenance_at_threshold() {
     config.ivf.d_reduced = 16;
     config.ivf.n_probe = 8;
 
-    let hms = HmsCore::new(
+    let warm = WarmCore::new(
         1000,
         Some(dir.path().to_string_lossy().to_string()),
         Some(config),
@@ -1280,16 +1283,19 @@ fn test_ivf_maintenance_at_threshold() {
     .unwrap();
 
     for i in 0..49 {
-        let vec = hms.encode_text(&format!("auto item {}", i));
-        hms.memorize(format!("auto_{}", i), vec).unwrap();
+        let vec = warm.encode_text(&format!("auto item {}", i));
+        warm.memorize(format!("auto_{}", i), vec).unwrap();
     }
-    assert!(!hms.ivf_trained(), "Should not be trained before threshold");
+    assert!(
+        !warm.ivf_trained(),
+        "Should not be trained before threshold"
+    );
 
     // Reaching the threshold requests maintenance outside ingestion.
-    let vec = hms.encode_text("auto item 49");
-    hms.memorize("auto_49".to_string(), vec).unwrap();
-    assert!(!hms.ivf_trained());
-    assert!(hms.index_status().ivf_training_recommended);
-    hms.maintain_indices().unwrap();
-    assert!(hms.ivf_trained());
+    let vec = warm.encode_text("auto item 49");
+    warm.memorize("auto_49".to_string(), vec).unwrap();
+    assert!(!warm.ivf_trained());
+    assert!(warm.index_status().ivf_training_recommended);
+    warm.maintain_indices().unwrap();
+    assert!(warm.ivf_trained());
 }

@@ -1,5 +1,4 @@
 use anyhow::{ensure, Context, Result};
-use holographic_memory::core::qgraph::{Residency, SearchKnobs, VGraph, VMetric, VSearchParams};
 use serde_json::json;
 use std::{
     fs,
@@ -7,6 +6,7 @@ use std::{
     path::Path,
     time::Instant,
 };
+use writerslogic_warm::core::qgraph::{Residency, SearchKnobs, VGraph, VMetric, VSearchParams};
 
 const N: usize = 65536;
 const Q: usize = 256;
@@ -240,7 +240,7 @@ fn main() -> Result<()> {
     }
     eprintln!("QUERY_FINISHED");
     let result = json!({
-        "schema": "hms-glove-development-v1", "development_only": true,
+        "schema": "warm-glove-development-v1", "development_only": true,
         "input": input, "index": index_path, "input_declaration": declaration,
         "binding_crc32": {"construction.f32": base_crc, "development.f32": queries_crc, "declaration.json": crc32fast::hash(&declaration_bytes), "index": index_crc},
         "construction_count": N, "query_count": Q, "dim": D, "k": K, "rerank": 64,

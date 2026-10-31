@@ -525,7 +525,7 @@ def self_test():
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("stage", choices=("fit", "evaluate", "self-test"))
-    root = Path.home() / ".cache/hms-bench"
+    root = Path.home() / ".cache/warm-bench"
     p.add_argument("--cache", type=Path, default=root / "holo_dev")
     p.add_argument("--source", type=Path, default=root / "downloads/longmemeval_s_cleaned.json")
     p.add_argument("--eval-utils", type=Path, default=root / "downloads/longmemeval_eval_utils_9e0b455f4ef0.py")

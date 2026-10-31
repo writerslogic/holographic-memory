@@ -107,14 +107,14 @@ def main():
     parser.add_argument("--slice", type=int, default=0)
     parser.add_argument("--degree", type=int, default=64)
     parser.add_argument("--build-threads", type=int, default=2)
-    parser.add_argument("--lock", default=os.path.expanduser("~/hms-timing.lock"))
+    parser.add_argument("--lock", default=os.path.expanduser("~/warm-timing.lock"))
     parser.add_argument("--max-load", type=float, default=3.0)
     parser.add_argument("--wait-seconds", type=float, default=600)
     parser.add_argument("--source", required=True)
     args = parser.parse_args()
     if args.out.exists() or args.slice < 0 or args.build_threads < 1:
         raise ValueError("output exists or invalid dimensions")
-    import holographic_memory as hm
+    import writerslogic_warm as hm
     with h5py.File(args.hdf5, "r") as handle:
         metric = str(handle.attrs["distance"])
         if metric not in ("ip", "angular", "normalized"):
@@ -132,7 +132,7 @@ def main():
     train_q = np.ascontiguousarray(learn[order[:LEARN_QUERIES]])
     val_q = np.ascontiguousarray(learn[order[LEARN_QUERIES:LEARN_QUERIES + VALIDATION]])
     val_truth = exact_top(base, val_q, K)
-    module_file = Path(hm.__file__).parent / "holographic_memory.abi3.so"
+    module_file = Path(hm.__file__).parent / "writerslogic_warm.abi3.so"
     result = {"schema_version": 1, "measurement": "development", "dataset": args.hdf5.name,
               "dataset_sha256": digest(args.hdf5), "source": args.source,
               "script_sha256": digest(__file__), "module_sha256": digest(module_file),

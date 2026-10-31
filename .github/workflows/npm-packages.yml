@@ -104,13 +104,13 @@ jobs:
         run: |
           set -euo pipefail
           cargo cyclonedx --format json --spec-version 1.5 --target "$TARGET" --features node-api,security \
-            --override-filename "holographic-memory-${SUFFIX}.cdx"
+            --override-filename "writerslogic-warm-${SUFFIX}.cdx"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: binding-${{ matrix.suffix }}
           path: |
-            holographic-memory.*.node
-            holographic-memory-${{ matrix.suffix }}.cdx.json
+            writerslogic-warm.*.node
+            writerslogic-warm-${{ matrix.suffix }}.cdx.json
           if-no-files-found: error
 
   package:
@@ -140,9 +140,9 @@ jobs:
           # The root package ships JavaScript only; the bindings come from the platform packages.
           cp npm/README.md README.md
           npm pack --ignore-scripts --pack-destination tarballs
-          tar -xOf "tarballs/holographic-memory-$(node -p 'require("./package.json").version').tgz" package/README.md | cmp - npm/README.md
+          tar -xOf "tarballs/writerslogic-warm-$(node -p 'require("./package.json").version').tgz" package/README.md | cmp - npm/README.md
           cp bindings/*.cdx.json tarballs/
-          npm sbom --sbom-format cyclonedx --package-lock-only --omit dev --omit optional --omit peer > "tarballs/holographic-memory-root-$(node -p 'require("./package.json").version').cdx.json"
+          npm sbom --sbom-format cyclonedx --package-lock-only --omit dev --omit optional --omit peer > "tarballs/writerslogic-warm-root-$(node -p 'require("./package.json").version').cdx.json"
           ls -l tarballs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security Vulnerability
-    url: https://github.com/writerslogic/holographic-memory/security/advisories/new
+    url: https://github.com/writerslogic/warm/security/advisories/new
     about: Please report security vulnerabilities privately — see SECURITY.md. Do not open a public issue.
   - name: Question or idea
-    url: https://github.com/writerslogic/holographic-memory/discussions
+    url: https://github.com/writerslogic/warm/discussions
     about: Ask how to do something, or float an idea, in Discussions before opening an issue.
   - name: Documentation
-    url: https://docs.holographic-memory.com/
+    url: https://writerslogic.com/warm/docs/
     about: Quickstart, concepts, API and security notes.

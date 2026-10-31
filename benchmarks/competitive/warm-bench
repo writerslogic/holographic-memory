@@ -1,0 +1,25 @@
+#!/usr/bin/env -S uv run --script
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["numpy==2.5.4"]
+# ///
+"""warm-bench: one command to reproduce the WARM comparison.
+
+  ./benchmarks/competitive/warm-bench run --suite light      # hosted-runner subset
+  ./benchmarks/competitive/warm-bench run --suite standard   # local workstation
+  ./benchmarks/competitive/warm-bench table                  # regenerate docs/benchmarks/COMPARISON.md
+
+See docs/benchmarks/README.md.
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from hmsbench.cli import main  # noqa: E402
+
+if __name__ == "__main__":
+    sys.exit(main())

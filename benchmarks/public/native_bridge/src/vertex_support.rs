@@ -233,7 +233,7 @@ mod bridge_snapshot_tests {
     #[test]
     fn bridge_snapshot_rejects_corrupted_real_train_layers() {
         let data_path = std::path::PathBuf::from(
-            std::env::var_os("HMS_NATIVE_TEST_TRAIN").expect("real cached glove train.f32 path"),
+            std::env::var_os("WARM_NATIVE_TEST_TRAIN").expect("real cached glove train.f32 path"),
         );
         let dim = 100;
         let n = 16384;
@@ -265,7 +265,7 @@ mod bridge_snapshot_tests {
         let index =
             pool.install(|| VGraph::from_graph_with(&graph, 8, 8, true, false, 3, false).unwrap());
         let directory = std::path::PathBuf::from(
-            std::env::var_os("HMS_NATIVE_TEST_DIR").expect("durable test directory"),
+            std::env::var_os("WARM_NATIVE_TEST_DIR").expect("durable test directory"),
         );
         std::fs::create_dir_all(&directory).unwrap();
         let path = directory.join(format!("snapshot-{}.index", std::process::id()));

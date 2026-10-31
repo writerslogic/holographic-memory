@@ -1,0 +1,8 @@
+warm-server is starting as a single stateful replica.
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "warm-server.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  curl -s {{ if .Values.tls.existingSecret }}-k https{{ else }}http{{ end }}://127.0.0.1:{{ .Values.service.port }}/readyz
+
+API reference:  /openapi.json    Metrics: /metrics (admin scope)
+Reload keys or the TLS certificate without a restart (admin key valid for every tenant):
+  POST /api/v1/admin/keys/reload      POST /api/v1/admin/tls/reload

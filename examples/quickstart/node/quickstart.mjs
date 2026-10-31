@@ -14,7 +14,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 
 const require = createRequire(import.meta.url)
-const { HolographicMemorySystem } = require('../../../index.js')
+const { WarmMemorySystem } = require('../../../index.js')
 const { DocumentMemory } = require('../../../semantic.js')
 
 const here = fileURLToPath(new URL('..', import.meta.url))
@@ -28,7 +28,7 @@ const sealedConfig = { encryptionEnabled: true, encryptionPassphrase: passphrase
 // writes each store from a short-lived child process of this same file.
 if (process.argv[2] === '--ingest') {
   const [, , , dir, mode] = process.argv
-  const store = new DocumentMemory(new HolographicMemorySystem(4096, dir, mode === 'encrypted' ? sealedConfig : undefined))
+  const store = new DocumentMemory(new WarmMemorySystem(4096, dir, mode === 'encrypted' ? sealedConfig : undefined))
   await store.ingest(corpus.map(toInput))
   await store.flush()
   process.exit(0)
@@ -36,7 +36,7 @@ if (process.argv[2] === '--ingest') {
 
 // --8<-- [start:ingest]
 // 1. Ingest. A store is a directory; it persists there and reopens with the same arguments.
-const memory = new DocumentMemory(new HolographicMemorySystem(4096, mkdtempSync(join(tmpdir(), 'hms-quickstart-'))))
+const memory = new DocumentMemory(new WarmMemorySystem(4096, mkdtempSync(join(tmpdir(), 'warm-quickstart-'))))
 const started = performance.now()
 await memory.ingest(corpus.map(toInput))
 console.log(`ingested ${corpus.length} documents in ${(performance.now() - started).toFixed(1)} ms`)
@@ -53,19 +53,19 @@ const fts5Query = query => query.split(/[^\p{L}\p{N}]+/u).filter(Boolean).map(w 
 const ftsTop = db.prepare('SELECT id FROM docs WHERE docs MATCH ? ORDER BY bm25(docs) LIMIT 1')
 
 // 2. Search both engines with the same queries.
-console.log(`\n${'query'.padEnd(58)} ${'HMS'.padEnd(9)} ${'FTS5'.padEnd(9)} expected`)
-let hmsHits = 0
+console.log(`\n${'query'.padEnd(58)} ${'WARM'.padEnd(9)} ${'FTS5'.padEnd(9)} expected`)
+let warmHits = 0
 let ftsHits = 0
 for (const { query, expect } of queries) {
   const [hit] = await memory.search(query, { k: 3 })
-  const hms = hit?.documentId ?? '-'
+  const warm = hit?.documentId ?? '-'
   const fts = ftsTop.get(fts5Query(query))?.id ?? '-'
-  hmsHits += hms === expect
+  warmHits += warm === expect
   ftsHits += fts === expect
-  console.log(`${query.padEnd(58)} ${hms.padEnd(9)} ${fts.padEnd(9)} ${expect}`)
+  console.log(`${query.padEnd(58)} ${warm.padEnd(9)} ${fts.padEnd(9)} ${expect}`)
 }
-console.log(`top-1 correct: HMS ${hmsHits}/${queries.length}, FTS5 ${ftsHits}/${queries.length}`)
-assert.ok(hmsHits >= 5, `HMS found the expected article for only ${hmsHits} queries`)
+console.log(`top-1 correct: WARM ${warmHits}/${queries.length}, FTS5 ${ftsHits}/${queries.length}`)
+assert.ok(warmHits >= 5, `WARM found the expected article for only ${warmHits} queries`)
 // --8<-- [end:compare]
 
 // --8<-- [start:hit]
@@ -82,7 +82,7 @@ const filesHolding = dir => readdirSync(dir, { recursive: true, withFileTypes: t
   .map(entry => entry.name)
   .sort()
 
-const sealedDir = mkdtempSync(join(tmpdir(), 'hms-sealed-'))
+const sealedDir = mkdtempSync(join(tmpdir(), 'warm-sealed-'))
 execFileSync(process.execPath, [fileURLToPath(import.meta.url), '--ingest', sealedDir, 'encrypted'], { stdio: 'inherit' })
 const leaks = filesHolding(sealedDir)
 console.log(`\nencrypted store, files holding the passage: ${JSON.stringify(leaks)}`)
@@ -93,11 +93,11 @@ console.log('no store file holds the passage text')
 
 // A wrong passphrase must not open the store; the right one must.
 const wrong = { ...sealedConfig, encryptionPassphrase: 'wrong passphrase' }
-assert.throws(() => new HolographicMemorySystem(4096, sealedDir, wrong), error => {
+assert.throws(() => new WarmMemorySystem(4096, sealedDir, wrong), error => {
   console.log(`opening with a wrong passphrase fails: ${error.message}`)
   return !/already open/.test(error.message)
 })
-const reopened = new HolographicMemorySystem(4096, sealedDir, sealedConfig)
+const reopened = new WarmMemorySystem(4096, sealedDir, sealedConfig)
 assert.equal(reopened.securityStatus().encryptionActive, true)
 const [again] = await new DocumentMemory(reopened).search('paid holidays')
 console.log(`reopened with the passphrase, top hit: ${again.documentId}`)

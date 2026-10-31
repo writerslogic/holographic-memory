@@ -3,7 +3,7 @@
 
 # challenge: answer-and-challenge retrieval with scoped erase-units
 
-Standalone crate `hms-research-challenge` at `benchmarks/research/challenge/`. Nothing
+Standalone crate `warm-research-challenge` at `benchmarks/research/challenge/`. Nothing
 outside this directory is edited. The code was written without being compiled or run (round
 rules); the first command below is therefore the compile check, and the root-crate API list
 at the end is there to fix anything that moved.
@@ -12,7 +12,7 @@ at the end is there to fix anything that moved.
 
 ```sh
 cd benchmarks/research/challenge
-export CARGO_TARGET_DIR=/tmp/hms-research-challenge-target   # optional: avoid the shared target dir lock
+export CARGO_TARGET_DIR=/tmp/warm-research-challenge-target   # optional: avoid the shared target dir lock
 
 # 1. compile check (the root crate builds with default features; several minutes cold)
 cargo build --release
@@ -140,7 +140,7 @@ not change.
 
 | name | definition |
 |------|------------|
-| `global_bm25_top4` | `HmsCore::search_documents(query_text, k = 4)` over the whole store |
+| `global_bm25_top4` | `WarmCore::search_documents(query_text, k = 4)` over the whole store |
 | `scoped_bm25_latest_first_engine` | `Memory::recall(query_text, subject = family, as_of, history = All, k = 64)`, keep hits with BM25 score > 0 that are valid as of the query and scope-compatible, order latest-first, top 4 |
 | `scoped_bm25_latest_first_local` | the same over the arena block with the in-crate BM25-lite (controls for engine overhead in the latency ratio) |
 | `scoped_lookup_no_challenge` | claims valid as of the query whose scope covers the query scope, most specific then latest, top 4; no retraction / supersession / tie handling |
@@ -175,15 +175,15 @@ variant is the honest reference for that comparison.
 
 | API | location |
 |-----|----------|
-| `HmsCore::new(dimensions: u32, storage_path: Option<String>, config: Option<HmsConfig>) -> Result<Self>` | `src/core/engine/mod.rs:114-118` |
-| `HmsCore::search_documents(&self, text: &str, options: &SearchOptions) -> Result<Vec<DocumentResult>>` | `src/core/engine/document_api.rs:101-105` |
+| `WarmCore::new(dimensions: u32, storage_path: Option<String>, config: Option<WarmConfig>) -> Result<Self>` | `src/core/engine/mod.rs:114-118` |
+| `WarmCore::search_documents(&self, text: &str, options: &SearchOptions) -> Result<Vec<DocumentResult>>` | `src/core/engine/document_api.rs:101-105` |
 | `SearchOptions { k, candidate_limit, filter, source_uri, document_ids, embedding, lexical_weight, semantic_weight, min_semantic_score, fusion, bm25_k1, bm25_b }` (Default) | `src/core/documents.rs:84-103` |
 | `DocumentResult { id, document_id, source_uri, version, metadata, text, start_byte, end_byte, score, lexical_score, semantic_score }` | `src/core/documents.rs:162-174` |
-| re-exports `holographic_memory::{HmsCore, SearchOptions, DocumentResult}` | `src/lib.rs:26-28, 39` |
-| `holographic_memory::core::memory_api` (`pub use policy::*; pub use types::*;`) | `src/core/mod.rs:76`, `src/core/memory_api/mod.rs:65-67` |
-| `Memory::new(core: Arc<HmsCore>) -> Self` | `src/core/memory_api/mod.rs:182` |
+| re-exports `writerslogic_warm::{WarmCore, SearchOptions, DocumentResult}` | `src/lib.rs:26-28, 39` |
+| `writerslogic_warm::core::memory_api` (`pub use policy::*; pub use types::*;`) | `src/core/mod.rs:76`, `src/core/memory_api/mod.rs:65-67` |
+| `Memory::new(core: Arc<WarmCore>) -> Self` | `src/core/memory_api/mod.rs:182` |
 | `Memory::with_clock(self, clock: Arc<dyn Clock>) -> Self` | `src/core/memory_api/mod.rs:264` |
-| `Memory::core(&self) -> &Arc<HmsCore>` | `src/core/memory_api/mod.rs:275` |
+| `Memory::core(&self) -> &Arc<WarmCore>` | `src/core/memory_api/mod.rs:275` |
 | `trait Clock { fn now_millis(&self) -> Millis }`, `ManualClock::new(Millis)`, `ManualClock::set(&self, Millis)` | `src/core/memory_api/policy.rs:15-17, 38-44` |
 | `Memory::remember_many(&self, inputs: Vec<RememberInput>) -> Result<Vec<Remembered>>` (batch cap `MAX_BATCH = 4096`) | `src/core/memory_api/write.rs:88`, `:16` |
 | `RememberInput { id, text, event_time, valid_from, valid_to, subject, supersedes, entities, metadata, embedding, source_uri }` (Default, `deny_unknown_fields`) | `src/core/memory_api/types.rs:14-40` |
@@ -205,7 +205,7 @@ Some(true)` and one chunk (`write.rs:388-399`), so `FactRecord::text` and
 
 ## Dependencies
 
-`holographic-memory` (path, default features), `serde`, `serde_json`, `anyhow`, `tempfile`:
+`writerslogic-warm` (path, default features), `serde`, `serde_json`, `anyhow`, `tempfile`:
 every crates.io dependency is already a dependency of the root crate at the same version
 (`Cargo.toml:24, 27, 35, 52`). No new third-party crate. No `Cargo.lock` is committed.
 

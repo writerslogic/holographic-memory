@@ -10,8 +10,8 @@ dspy = pytest.importorskip("dspy")
 
 from dspy.utils import DummyLM  # noqa: E402
 
-from holographic_integrations.core import HashingEmbedder  # noqa: E402
-from holographic_integrations.dspy import HolographicRetriever, HolographicRM  # noqa: E402
+from writerslogic_warm_integrations.core import HashingEmbedder  # noqa: E402
+from writerslogic_warm_integrations.dspy import WarmRetriever, WarmRM  # noqa: E402
 
 DIM = 64
 FACTS = [
@@ -23,7 +23,7 @@ FACTS = [
 
 
 def retriever(server, **kw):
-    return HolographicRetriever(url=server.url, tenant_id=server.tenant(), input_dim=DIM, **kw)
+    return WarmRetriever(url=server.url, tenant_id=server.tenant(), input_dim=DIM, **kw)
 
 
 class RAG(dspy.Module):
@@ -105,7 +105,7 @@ def test_react_tool(server):
 
 def test_legacy_rm_with_dspy_retrieve(server):
     r = retriever(server, corpus=FACTS)
-    dspy.settings.configure(rm=HolographicRM(r))
+    dspy.settings.configure(rm=WarmRM(r))
     try:
         got = dspy.Retrieve(k=2)("pasta tomato basil")
         assert got.passages[0] == FACTS[1] and len(got.passages) == 2
@@ -119,7 +119,7 @@ def test_dspy_embedder_callable_is_accepted(server):
     def embed(texts):  # shape of dspy.Embedder: list[str] -> ndarray
         return np.array(h.embed_documents(texts))
 
-    r = HolographicRetriever(url=server.url, tenant_id=server.tenant(), embedder=embed, corpus=FACTS)
+    r = WarmRetriever(url=server.url, tenant_id=server.tenant(), embedder=embed, corpus=FACTS)
     assert r.config.input_dim == DIM
     assert r("football striker goal", k=1).passages == [FACTS[2]]
 
@@ -138,4 +138,4 @@ async def test_async_paths_and_acall(server):
 
 def test_config_and_embedder_conflicts(server):
     with pytest.raises(ValueError):
-        HolographicRetriever(config=retriever(server).config, url="http://x")
+        WarmRetriever(config=retriever(server).config, url="http://x")

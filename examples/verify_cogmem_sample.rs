@@ -6,7 +6,7 @@
 //! The bytes in `examples/fixtures/*.cose` are the exact COSE/SCITT cognition
 //! statements embedded in cogmem's public C2PA sample
 //! (`cogmem/examples/c2pa-agent-credential/agent-content.c2pa`). This binary
-//! re-verifies them using holographic-memory's own, independent provenance
+//! re-verifies them using writerslogic-warm's own, independent provenance
 //! implementation — proving the shared substrate is byte-compatible across
 //! implementations, not just within one.
 //!
@@ -14,7 +14,7 @@
 
 use ciborium::value::Value;
 use ed25519_dalek::VerifyingKey;
-use holographic_memory::core::provenance::{cose, did};
+use writerslogic_warm::core::provenance::{cose, did};
 
 const MEMORY: &[u8] = include_bytes!("fixtures/cogmem.memory.provenance.cose");
 const REASONING: &[u8] = include_bytes!("fixtures/crosstalk.orchestration.audit.cose");
@@ -60,7 +60,7 @@ fn verify(label: &str, cose_bytes: &[u8]) -> anyhow::Result<Value> {
 
 fn main() -> anyhow::Result<()> {
     println!(
-        "holographic-memory independently verifying the cogmem C2PA sample's \
+        "writerslogic-warm independently verifying the cogmem C2PA sample's \
          cognition statements:\n"
     );
 
@@ -87,7 +87,7 @@ fn main() -> anyhow::Result<()> {
     );
 
     println!(
-        "\nPASS: both cognition statements verify under holographic-memory — \
+        "\nPASS: both cognition statements verify under writerslogic-warm — \
          identical bytes,\n      independent implementation. \
          Cross-implementation conformance confirmed."
     );

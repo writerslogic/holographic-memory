@@ -105,7 +105,7 @@ pub struct DocumentInput {
 
 /// When a document's chunk hypervectors are computed. Terms, postings and text are stored at
 /// ingest in every mode, so lexical search sees the document at once; only the vector side
-/// (`HmsCore::query` over chunk vectors) differs.
+/// (`WarmCore::query` over chunk vectors) differs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum EncodeMode {
@@ -169,7 +169,7 @@ pub(crate) enum VectorState {
     #[default]
     Encoded,
     /// Memorized with [`EncodeMode::Deferred`]; `vector` is empty and the chunk is not in the
-    /// vector index until `HmsCore::encode_pending_documents` installs its encoding.
+    /// vector index until `WarmCore::encode_pending_documents` installs its encoding.
     Pending,
     /// Memorized with [`EncodeMode::Lexical`]; `vector` is empty for good.
     Lexical,

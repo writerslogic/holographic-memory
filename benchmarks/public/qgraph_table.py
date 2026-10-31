@@ -10,7 +10,7 @@ so the prose is written from the files only.
 
 Per system: QPS at recall@10 0.90 and 0.95 (interpolated on the Pareto frontier as evaluate.py
 does), index bytes, build seconds, whether every timed row met the load gate, the load range, and
-the ratio HMS / system for QPS (above 1: HMS faster) and system / HMS for bytes (above 1: HMS
+the ratio WARM / system for QPS (above 1: WARM faster) and system / WARM for bytes (above 1: WARM
 smaller), so that a loss shows as a ratio below 1 with its margin.
 """
 
@@ -18,7 +18,7 @@ import json
 import sys
 from pathlib import Path
 
-from evaluate import hms_label, hms_series
+from evaluate import warm_label, warm_series
 
 RESULTS = Path(__file__).resolve().parents[1] / "results"
 
@@ -37,9 +37,9 @@ def series_info(r: dict) -> dict:
         i = info.setdefault(key, {"bytes": row["index_bytes"], "build": row["build_secs"], "gate": True, "loads": []})
         i["gate"] &= bool(row["load_gate_met"])
         i["loads"] += list(row["load_1m_before_runs"])
-    for h in r["hms"]:
-        for label in hms_series(h):
-            rows = [s for s in h["sweep"] if hms_label({**h, "sweep": [s]}) == label]
+    for h in r["warm"]:
+        for label in warm_series(h):
+            rows = [s for s in h["sweep"] if warm_label({**h, "sweep": [s]}) == label]
             info[label] = {"bytes": h["index_bytes"], "build": h["build"]["build_secs"],
                            "gate": all(x["load_gate_met"] for x in rows),
                            "loads": [x for s in rows for x in s["load_1m_before_runs"]]}
@@ -49,10 +49,10 @@ def series_info(r: dict) -> dict:
 def table(r: dict) -> str:
     info = series_info(r)
     at = r["qps_at_recall"]
-    hms_key = next((k for k in at if k.startswith("HMS VGraph (8-bit")), None)
-    hms = at.get(hms_key, {})
-    hms_bytes = info.get(hms_key, {}).get("bytes")
-    out = ["| System | QPS @ 0.90 | QPS @ 0.95 | HMS/sys @ 0.90 | HMS/sys @ 0.95 | Index bytes | sys/HMS bytes | Build s | Gate met | Load 1m |",
+    warm_key = next((k for k in at if k.startswith("WARM VGraph (8-bit")), None)
+    warm = at.get(warm_key, {})
+    warm_bytes = info.get(warm_key, {}).get("bytes")
+    out = ["| System | QPS @ 0.90 | QPS @ 0.95 | WARM/sys @ 0.90 | WARM/sys @ 0.95 | Index bytes | sys/WARM bytes | Build s | Gate met | Load 1m |",
            "|---|---|---|---|---|---|---|---|---|---|"]
 
     def q(x):
@@ -69,8 +69,8 @@ def table(r: dict) -> str:
         q90, q95 = q(v.get("0.90")), q(v.get("0.95"))
         loads = i.get("loads") or []
         out.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
-            key, num(q90), num(q95), ratio(q(hms.get("0.90")), q90), ratio(q(hms.get("0.95")), q95),
-            num(i.get("bytes")), ratio(i.get("bytes"), hms_bytes), num(i.get("build"), "{:,.0f}"),
+            key, num(q90), num(q95), ratio(q(warm.get("0.90")), q90), ratio(q(warm.get("0.95")), q95),
+            num(i.get("bytes")), ratio(i.get("bytes"), warm_bytes), num(i.get("build"), "{:,.0f}"),
             "yes" if i.get("gate") else "no", f"{min(loads):.0f}-{max(loads):.0f}" if loads else ""))
     for e in r.get("extra_systems", []):
         if e["status"] != "ran":

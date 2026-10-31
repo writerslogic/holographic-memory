@@ -80,7 +80,7 @@ Nothing in `src/core/documents/search.rs` changed.
 ## Commands
 
 ```sh
-cd /Volumes/A/holographic-memory            # or the worktree holding this branch
+cd /Volumes/A/writerslogic-warm            # or the worktree holding this branch
 cargo fmt --all
 cargo clippy --all-targets -- -D warnings
 cargo clippy --all-targets --all-features -- -D warnings
@@ -93,7 +93,7 @@ cargo test
 cargo test --all-features
 ```
 
-Timing, the harness of `RUN.md` (`$INPUT` is the hms-bench NFCorpus `{documents, queries}`
+Timing, the harness of `RUN.md` (`$INPUT` is the warm-bench NFCorpus `{documents, queries}`
 JSON; `--batch 512`, dim 1024). The harness now defaults to one cold build per process
 (`--repeats 1 --warmups 0`): the encoder memo tables are per-thread and survive between
 builds of one process, so a warm repeat measures cache-hit encoding, not an ingest. Run the
@@ -105,24 +105,24 @@ cd benchmarks/research/ingest
 cargo build --release
 for mode in lexical eager deferred; do
   for i in 1 2 3 4 5; do
-    ./target/release/hms-research-ingest --input "$INPUT" --encode $mode \
+    ./target/release/warm-research-ingest --input "$INPUT" --encode $mode \
       --batch 512 --dim 1024 --out /tmp/ingest-$mode-$i.json
   done
   jq -s 'map(.cold_ingest_s) | sort | .[2]' /tmp/ingest-$mode-[1-5].json   # cold median
 done
 jq '{mode, cold_ingest_s, median_catch_up_s, chunks, vectors_after_ingest, parity}' /tmp/ingest-*-1.json
 # warm figure (same process, memo tables full), for the encoder's share only:
-./target/release/hms-research-ingest --input "$INPUT" --encode eager --repeats 5 \
+./target/release/warm-research-ingest --input "$INPUT" --encode eager --repeats 5 \
   --batch 512 --dim 1024 --out /tmp/ingest-eager-warm.json
 jq '{cold_ingest_s, warm_ingest_s, median_warm_ingest_s}' /tmp/ingest-eager-warm.json
 # the whole corpus as one transaction (the bulk path at its widest):
-./target/release/hms-research-ingest --input "$INPUT" --encode lexical \
+./target/release/warm-research-ingest --input "$INPUT" --encode lexical \
   --batch 3633 --dim 1024 --out /tmp/ingest-lexical-1.json
 ```
 
-The competitive harness (`benchmarks/competitive`) now runs two HMS text rows, each build
-repeat a cold process: `hms` (`competitive_text build --encode lexical`, BM25 index only,
-like-for-like with FTS5/tantivy/Lucene/bm25s) and `hms-eager` (default encoding); the eager
+The competitive harness (`benchmarks/competitive`) now runs two WARM text rows, each build
+repeat a cold process: `warm` (`competitive_text build --encode lexical`, BM25 index only,
+like-for-like with FTS5/tantivy/Lucene/bm25s) and `warm-eager` (default encoding); the eager
 row is reported and never a verdict comparator (`table.best_other`).
 
 Pass/fail: cold-median `cold_ingest_s` for `lexical` under 0.090 s (SQLite FTS5) with both
@@ -169,7 +169,7 @@ write lock is released.
   (`for_each` 201, `iter` 185, `encode` 217).
 - Readers of postings unchanged: search.rs:245, 262-290, 316-334 (`for_each` in slot
   order, `owned_chunk`, `slot_word_count`), documents.rs:812, 840, 886, 1026, 1109.
-- `HmsCore::commit` mutation.rs:152, `commit_with_append` 156 (tests call it with injected
+- `WarmCore::commit` mutation.rs:152, `commit_with_append` 156 (tests call it with injected
   appends, signature kept), `validate_mutation` 185, `prepare_mutations` 339,
   `apply_mutations` 379 (Document arm 432-457), `arena_write` engine/mod.rs:1307,
   `MutationGate::begin_write`/`publish`, replay at engine/mod.rs:546 (same `apply_mutations`,

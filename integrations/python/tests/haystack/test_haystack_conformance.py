@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Haystack's own document store conformance suites, run against a real hms-server."""
+"""Haystack's own document store conformance suites, run against a real warm-server."""
 
 import pytest
 
@@ -18,7 +18,7 @@ from haystack.testing.document_store import (  # noqa: E402
     GetMetadataFieldUniqueValuesTest,
 )
 
-from holographic_integrations.haystack import HolographicDocumentStore  # noqa: E402
+from writerslogic_warm_integrations.haystack import WarmDocumentStore  # noqa: E402
 
 DIM = 768  # haystack's fixture embeddings
 
@@ -34,7 +34,7 @@ class TestHolographicDocumentStore(
     @pytest.fixture
     def document_store(self, server_factory):
         srv = server_factory(DIM, max_tenants=100000)
-        store = HolographicDocumentStore(url=srv.url, tenant_id=srv.tenant(), embedding_dim=DIM)
+        store = WarmDocumentStore(url=srv.url, tenant_id=srv.tenant(), embedding_dim=DIM)
         yield store
         store.close()
 

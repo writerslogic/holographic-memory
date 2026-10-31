@@ -4,8 +4,8 @@
 //! Properties of `chunk_document` that hold for every input, not only the hand-written case in
 //! `tests/documents.rs`.
 
-use holographic_memory::DocumentInput;
 use proptest::prelude::*;
+use writerslogic_warm::DocumentInput;
 
 fn input(text: &str, chunk_words: u32, overlap_words: u32) -> DocumentInput {
     serde_json::from_value(serde_json::json!({
@@ -33,7 +33,7 @@ fn mixed_text() -> impl Strategy<Value = String> {
 
 fn check(text: &str, size: u32, overlap: u32) -> Result<(), TestCaseError> {
     let words: Vec<&str> = text.split_whitespace().collect();
-    let result = holographic_memory::chunk_document(&input(text, size, overlap));
+    let result = writerslogic_warm::chunk_document(&input(text, size, overlap));
     if words.is_empty() {
         prop_assert!(result.is_err(), "a text without words must be rejected");
         return Ok(());
@@ -73,6 +73,6 @@ proptest! {
 
     #[test]
     fn an_overlap_not_below_the_chunk_size_is_an_error(text in mixed_text(), size in 1u32..=12, extra in 0u32..4) {
-        prop_assert!(holographic_memory::chunk_document(&input(&text, size, size + extra)).is_err());
+        prop_assert!(writerslogic_warm::chunk_document(&input(&text, size, size + extra)).is_err());
     }
 }

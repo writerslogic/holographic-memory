@@ -224,7 +224,7 @@ impl MemoryDocumentStore {
     /// (magic, version, bounded length, checksum, per-document shape) before any is used.
     pub fn import(bytes: &[u8]) -> Result<Self> {
         let header: &[u8; HEADER_BYTES] = bytes.first_chunk().context("snapshot is truncated")?;
-        ensure!(&bytes[..4] == MAGIC, "not a holographic-memory snapshot");
+        ensure!(&bytes[..4] == MAGIC, "not a writerslogic-warm snapshot");
         ensure!(
             bytes[4] == FORMAT_VERSION,
             "unsupported snapshot version {}",
@@ -487,7 +487,7 @@ mod tests {
     fn matches_the_engine_document_path() {
         let dir = tempfile::tempdir().unwrap();
         let engine =
-            crate::core::HmsCore::new(1024, Some(dir.path().display().to_string()), None).unwrap();
+            crate::core::WarmCore::new(1024, Some(dir.path().display().to_string()), None).unwrap();
         let mut store = MemoryDocumentStore::new(1024, None).unwrap();
         corpus(&mut store);
         for (id, text) in [

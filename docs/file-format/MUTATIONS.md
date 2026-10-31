@@ -72,7 +72,7 @@ keeps deleted data until compaction.
 Scoped maintenance mutations require `meaning_enabled` and store schema 5. They use the
 existing JSON mutation tag inside `HMS-TXN-3`; schemas 2–4 reject them on validation and
 replay. A governance transaction applies atom changes, recomposes affected owned triples,
-and refreshes derived indices atomically. An explicit `hms-format upgrade` changes the
+and refreshes derived indices atomically. An explicit `warm-format upgrade` changes the
 schema in a new copy; normal opens never opt old stores into these mutations.
 
 ## Binary frames (`HMS-TXN-3`, schemas 3–5)
@@ -101,4 +101,4 @@ flags     = bit0 explicit chunk id (else hms:chunk:<len(id)>:<id>:<index>), bit1
 Gaps: the first value is absolute, each next one the difference to the previous (vector
 indices and term ids strictly ascending). Term ids index the frame's dictionary, so a chunk's
 terms come out in byte order. A binary payload decodes to exactly the mutations its
-`HMS-TXN-2` form would hold; `hms-format` and `verify` read it through that JSON form.
+`HMS-TXN-2` form would hold; `warm-format` and `verify` read it through that JSON form.

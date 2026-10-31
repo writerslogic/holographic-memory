@@ -4,7 +4,7 @@
 const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
-const { HolographicMemorySystem } = require('holographic-memory')
+const { WarmMemorySystem } = require('writerslogic-warm')
 const { OrganizationalKnowledge, documentId, readCuratedFiles, validateImport } = require('../index.cjs')
 
 // Same dimensions and default configuration as examples/organizational_knowledge.rs,
@@ -24,7 +24,7 @@ const usage = `usage:
 async function validateBeforeOpening(namespace, entries) {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'ok-validate-'))
   try {
-    await validateImport(namespace, entries, new HolographicMemorySystem(DIMENSIONS, scratch))
+    await validateImport(namespace, entries, new WarmMemorySystem(DIMENSIONS, scratch))
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true })
   }
@@ -57,7 +57,7 @@ const isStore = store => fs.existsSync(path.join(store, 'store.json'))
 async function forgetScope(store, namespace, scope, { apply, limit }) {
   documentId(namespace, 'source', 'id') // rejects an unusable namespace before the store opens
   if (!isStore(store)) return console.log('The store does not exist; nothing to remove')
-  const knowledge = new OrganizationalKnowledge(new HolographicMemorySystem(DIMENSIONS, store), { namespace })
+  const knowledge = new OrganizationalKnowledge(new WarmMemorySystem(DIMENSIONS, store), { namespace })
   const result = await knowledge.forgetScope(scope, limit === undefined ? { apply } : { apply, limit })
   if (!apply) {
     for (const target of result.targets) console.log(target.documentId)
@@ -77,7 +77,7 @@ async function main(argv) {
     if (rest.length === 0) fail(usage)
     const entries = await readCuratedFiles(rest)
     await validateBeforeOpening(namespace, entries)
-    const knowledge = new OrganizationalKnowledge(new HolographicMemorySystem(DIMENSIONS, store), { namespace })
+    const knowledge = new OrganizationalKnowledge(new WarmMemorySystem(DIMENSIONS, store), { namespace })
     const result = await knowledge.importDocuments(entries)
     console.log(`Imported ${result.documents.length} document(s), ${result.chunks} chunk(s)`)
   } else if (command === 'search') {
@@ -87,7 +87,7 @@ async function main(argv) {
     const words = flag === -1 ? rest : rest.slice(0, flag)
     if (words.length !== 1 || !Number.isInteger(k) || k < 1) fail(usage)
     if (!isStore(store)) return console.log('[]')
-    const knowledge = new OrganizationalKnowledge(new HolographicMemorySystem(DIMENSIONS, store), { namespace })
+    const knowledge = new OrganizationalKnowledge(new WarmMemorySystem(DIMENSIONS, store), { namespace })
     const hits = await knowledge.search(words[0], { k })
     console.log(JSON.stringify(hits, null, 2))
   } else if (command === 'forget') {
@@ -101,7 +101,7 @@ async function main(argv) {
       return
     }
     if (!isStore(store)) return console.log('Removed: false')
-    const knowledge = new OrganizationalKnowledge(new HolographicMemorySystem(DIMENSIONS, store), { namespace })
+    const knowledge = new OrganizationalKnowledge(new WarmMemorySystem(DIMENSIONS, store), { namespace })
     const result = await knowledge.forget([{ sourceSystem, id }], { apply: true })
     console.log(`Removed: ${result.removed.length === 1}`)
   } else if (command === 'forget-all') {

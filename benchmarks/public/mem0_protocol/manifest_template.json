@@ -4,7 +4,7 @@
     "ingest_unit": "one fact per harness add() call; text = '{role}: {content}' per message, newline-joined",
     "model_calls_at_ingest": 0,
     "shim_sha256": "<fill>",
-    "tenant": "one hms-server tenant per harness user_id"
+    "tenant": "one warm-server tenant per harness user_id"
   },
   "audit": {
     "empty_generated_answers": [],
@@ -27,7 +27,7 @@
     "repo": "https://github.com/mem0ai/memory-benchmarks"
   },
   "harness_exit_code": 0,
-  "hms": {
+  "warm": {
     "commit": "<fill>",
     "dirty": false,
     "server_binary_sha256": "<fill>",
@@ -71,7 +71,7 @@
     "os": "<fill>"
   },
   "predict_dirs_sha256": {
-    "predicted_hms-locomo-smoke": "<fill>"
+    "predicted_warm-locomo-smoke": "<fill>"
   },
   "retrieval_config": {
     "max_k": 200,

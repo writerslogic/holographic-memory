@@ -571,7 +571,7 @@ mod tests {
         use std::hash::{Hash, Hasher};
         use std::io::Read;
 
-        let n = std::env::var("HMS_DELTA_ROWS")
+        let n = crate::compatibility::var("WARM_DELTA_ROWS")
             .map(|s| s.parse::<usize>().unwrap())
             .unwrap_or(100_000);
         assert!((1_000..=3_000_000).contains(&n));
@@ -594,10 +594,13 @@ mod tests {
                 .map(|b| f32::from_le_bytes(*b))
                 .collect::<Vec<_>>()
         };
-        let (vectors, queries) = if let Ok(path) = std::env::var("HMS_DELTA_DATA") {
+        let (vectors, queries) = if let Ok(path) = crate::compatibility::var("WARM_DELTA_DATA") {
             (
                 read_rows(path, n),
-                read_rows(std::env::var("HMS_DELTA_QUERIES").unwrap(), 256),
+                read_rows(
+                    crate::compatibility::var("WARM_DELTA_QUERIES").unwrap(),
+                    256,
+                ),
             )
         } else {
             let mut rng = SplitMix(42);

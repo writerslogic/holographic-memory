@@ -51,10 +51,10 @@ def main() -> None:
     shutil.copyfile(site / "latest" / "404.html", site / "404.html")
     (site / "index.html").write_text(
         '<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
-        "<title>Holographic Memory</title>\n"
+        "<title>WARM</title>\n"
         '<link rel="canonical" href="latest/">\n'
         '<meta http-equiv="refresh" content="0; url=latest/">\n'
-        '<a href="latest/">Holographic Memory documentation</a>\n',
+        '<a href="latest/">WARM documentation</a>\n',
         encoding="utf-8",
     )
     (site / "robots.txt").write_text(

@@ -1,11 +1,11 @@
 # WebAssembly runtime
 
-`@holographic-memory/wasm` runs the document store locally in browsers, Node, Deno and Bun. It is the
+`@writerslogic/warm-wasm` runs the document store locally in browsers, Node, Deno and Bun. It is the
 same engine code as the native and Node bindings: ingest, stemmed BM25 passage search with metadata
 filters, `titleWeight`, `bm25K1` / `bm25B`, optional caller-supplied dense embeddings with blend or RRF
 fusion, delete, stats, and a serialized store you can export, import and persist. No service calls.
 
-The package is available as source in this repository; `@holographic-memory/wasm` is not published on npm yet. Build it locally with the steps below.
+The package is available as source in this repository; `@writerslogic/warm-wasm` is not published on npm yet. Build it locally with the steps below.
 
 Package documentation (entry points, usage, storage, encryption): `bindings/wasm/npm/README.md`.
 Encryption decision and measurements: [ENCRYPTION.md](ENCRYPTION.md).
@@ -15,9 +15,9 @@ Browser demo: `examples/wasm` (see its README section below).
 
 The wasm module runs `MemoryDocumentStore` (`src/core/documents/memory.rs`): the engine's document
 chunking, term statistics, postings, filters and dense index, without the journal, shards, file locks
-or mmap that the native `HmsCore` adds for durability and multi-process use. A test
-(`matches_the_engine_document_path`) asserts its search results are byte-identical to `HmsCore`'s, and the
-benchmark compares top-10 digests across wasm, the native store and `HmsCore`.
+or mmap that the native `WarmCore` adds for durability and multi-process use. A test
+(`matches_the_engine_document_path`) asserts its search results are byte-identical to `WarmCore`'s, and the
+benchmark compares top-10 digests across wasm, the native store and `WarmCore`.
 Not in the wasm build: the vector/graph/knowledge-graph engine, local model stages, the HTTP server,
 signing and provenance.
 
@@ -60,7 +60,7 @@ for no gain. Run the store in a Worker to keep the page responsive during large 
 
 ## Persistence
 
-A store saves as one snapshot (magic `HMSD`, checksum, LZ4-compressed JSON) under a key. A
+A store saves as one snapshot (magic `WARMD`, checksum, LZ4-compressed JSON) under a key. A
 `StorageAdapter` is `get`, `set` (atomic replace), `delete` and optional `keys`:
 
 | Adapter | Where | Atomicity |
@@ -87,7 +87,7 @@ Windows; atomic publication there does not imply the Unix power-loss durability 
 | Node | `npm run test:node` |
 | Deno | `npm run test:deno` |
 | Bun | `npm run test:bun` |
-| Browser pages and the demo, offline, Chrome and Firefox | `HMS_FIREFOX=... node test/browser/run.mjs` |
+| Browser pages and the demo, offline, Chrome and Firefox | `WARM_FIREFOX=... node test/browser/run.mjs` |
 | webpack 5 (`bundler` and `web` entries) in Chrome | `node test/bundler/run.mjs` |
 | Packed tarball installed and imported from Node, Deno, Bun, plus type-check | `node scripts/pack-check.mjs` |
 
@@ -104,6 +104,6 @@ context, which OPFS and service workers need) with the built package at `/pkg/`.
 
 `benchmarks/results/wasm_v1.json`: synthetic Zipf-like corpus (100 words per document, 20 000-word
 vocabulary, 3-term queries sampled from the corpus), wasm under Node and headless Chrome/Firefox against
-the native in-memory store and the native `HmsCore`, with wasm module size (raw, gzip, brotli), module
+the native in-memory store and the native `WarmCore`, with wasm module size (raw, gzip, brotli), module
 load time, ingest rate, search latency percentiles, memory, snapshot size, export and import time, and
 top-10 agreement. Regenerate with `node bench/run.mjs` in `bindings/wasm/npm` after a build.

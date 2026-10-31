@@ -10,12 +10,12 @@ from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, ToolCall
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.pydantic_ai import AsyncMessageStore, MessageStore, memory_toolset
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.pydantic_ai import AsyncMessageStore, MessageStore, memory_toolset
 
 
 def cfg(server, **kw):
-    return HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
+    return WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=server.dim, **kw)
 
 
 def script(*steps):

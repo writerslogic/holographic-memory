@@ -1,0 +1,265 @@
+{
+  "decision": "NO_GO",
+  "cases": 18,
+  "queries_per_phase": 96,
+  "quality_query_executions": 17280,
+  "reopen_parity_query_executions": 17280,
+  "arms": [
+    {
+      "method": "exact_role_postings",
+      "quality_pass": true,
+      "safety_pass": true,
+      "no_regression_pass": true,
+      "advantage_pass": false,
+      "promote": false,
+      "recall": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "query_p50_us": {
+        "min": 0.125,
+        "median": 0.4165,
+        "max": 2.875
+      },
+      "query_p50_ratio_vs_exact": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "total_retained_bytes_ratio_vs_exact": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "lifecycle_ratio_vs_exact": {
+        "build_us": {
+          "min": 1.0,
+          "median": 1.0,
+          "max": 1.0
+        },
+        "update_us": {
+          "min": 1.0,
+          "median": 1.0,
+          "max": 1.0
+        },
+        "reopen_build_us": {
+          "min": 1.0,
+          "median": 1.0,
+          "max": 1.0
+        }
+      },
+      "fallback_fraction": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "safety_errors": 0
+    },
+    {
+      "method": "bm25_verified",
+      "quality_pass": false,
+      "safety_pass": true,
+      "no_regression_pass": false,
+      "advantage_pass": false,
+      "promote": false,
+      "recall": {
+        "min": 0.8098591549295775,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "query_p50_us": {
+        "min": 1.5,
+        "median": 4.25,
+        "max": 8.833
+      },
+      "query_p50_ratio_vs_exact": {
+        "min": 2.9565217391304346,
+        "median": 9.539156626506024,
+        "max": 28.644230769230766
+      },
+      "total_retained_bytes_ratio_vs_exact": {
+        "min": 1.4174946690259063,
+        "median": 1.7025147594706103,
+        "max": 1.8966604508170901
+      },
+      "lifecycle_ratio_vs_exact": {
+        "build_us": {
+          "min": 0.52833903556904,
+          "median": 0.6907926210307749,
+          "max": 0.9410968404486589
+        },
+        "update_us": {
+          "min": 1.427180475085497,
+          "median": 2.898024186665164,
+          "max": 6.481956267734936
+        },
+        "reopen_build_us": {
+          "min": 0.7034996648247125,
+          "median": 0.8572340800811753,
+          "max": 0.971195484348182
+        }
+      },
+      "fallback_fraction": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "safety_errors": 0
+    },
+    {
+      "method": "vsa_verified_32",
+      "quality_pass": true,
+      "safety_pass": true,
+      "no_regression_pass": false,
+      "advantage_pass": false,
+      "promote": false,
+      "recall": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "query_p50_us": {
+        "min": 6.667,
+        "median": 10.396,
+        "max": 14.708
+      },
+      "query_p50_ratio_vs_exact": {
+        "min": 4.869565217391305,
+        "median": 26.831129151291513,
+        "max": 67.3076923076923
+      },
+      "total_retained_bytes_ratio_vs_exact": {
+        "min": 1.8838261431572143,
+        "median": 6.342168238267325,
+        "max": 19.57961011099711
+      },
+      "lifecycle_ratio_vs_exact": {
+        "build_us": {
+          "min": 39.01060527436185,
+          "median": 47.32886782644323,
+          "max": 84.7530378613456
+        },
+        "update_us": {
+          "min": 7.63296131002092,
+          "median": 14.691616514165094,
+          "max": 26.209468839044355
+        },
+        "reopen_build_us": {
+          "min": 5.12665323269826,
+          "median": 30.051408708989513,
+          "max": 44.20882821192649
+        }
+      },
+      "fallback_fraction": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "safety_errors": 0
+    },
+    {
+      "method": "vsa_verified_128",
+      "quality_pass": true,
+      "safety_pass": true,
+      "no_regression_pass": false,
+      "advantage_pass": false,
+      "promote": false,
+      "recall": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "query_p50_us": {
+        "min": 7.042,
+        "median": 11.396,
+        "max": 15.625
+      },
+      "query_p50_ratio_vs_exact": {
+        "min": 5.391304347826087,
+        "median": 28.467815498154984,
+        "max": 69.11057692307692
+      },
+      "total_retained_bytes_ratio_vs_exact": {
+        "min": 1.8838261431572143,
+        "median": 6.342168238267325,
+        "max": 19.57961011099711
+      },
+      "lifecycle_ratio_vs_exact": {
+        "build_us": {
+          "min": 39.01060527436185,
+          "median": 47.32886782644323,
+          "max": 84.7530378613456
+        },
+        "update_us": {
+          "min": 7.63296131002092,
+          "median": 14.691616514165094,
+          "max": 26.209468839044355
+        },
+        "reopen_build_us": {
+          "min": 5.12665323269826,
+          "median": 30.051408708989513,
+          "max": 44.20882821192649
+        }
+      },
+      "fallback_fraction": {
+        "min": 0.0,
+        "median": 0.0,
+        "max": 0.0
+      },
+      "safety_errors": 0
+    },
+    {
+      "method": "vsa_verified_32_fallback",
+      "quality_pass": true,
+      "safety_pass": true,
+      "no_regression_pass": false,
+      "advantage_pass": false,
+      "promote": false,
+      "recall": {
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0
+      },
+      "query_p50_us": {
+        "min": 6.792000000000001,
+        "median": 11.0415,
+        "max": 16.375
+      },
+      "query_p50_ratio_vs_exact": {
+        "min": 5.485090909090909,
+        "median": 26.88924723247233,
+        "max": 68.71153846153845
+      },
+      "total_retained_bytes_ratio_vs_exact": {
+        "min": 2.152578395913345,
+        "median": 6.68443737224136,
+        "max": 19.934427758604606
+      },
+      "lifecycle_ratio_vs_exact": {
+        "build_us": {
+          "min": 39.63405646073071,
+          "median": 47.93474172064991,
+          "max": 85.3745598392849
+        },
+        "update_us": {
+          "min": 8.564622487088872,
+          "median": 15.53897368513634,
+          "max": 26.973588076276766
+        },
+        "reopen_build_us": {
+          "min": 5.181281991253079,
+          "median": 30.354095619419013,
+          "max": 44.75272172322944
+        }
+      },
+      "fallback_fraction": {
+        "min": 0.6666666666666666,
+        "median": 0.9895833333333333,
+        "max": 1.0
+      },
+      "safety_errors": 0
+    }
+  ],
+  "interpretation": "Admission test of this fixed structured signature design, not a universal result about VSA. Gate ratios use shared canonical creation/update/read costs plus per-index costs. Advantage must hold per case/phase, with no >10% query/build/update/reopen regression anywhere."
+}

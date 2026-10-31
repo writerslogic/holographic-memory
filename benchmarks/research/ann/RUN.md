@@ -24,14 +24,14 @@ edited.
 
 | Env var | Values | Mechanism | Results |
 |---|---|---|---|
-| `HMS_QGRAPH_PREFETCH` | `0` (default) .. `3` | 1: also prefetch each admitted neighbour's scale and, before the re-rank, the `rerank` rows (code + residual + scales). 2: also the neighbour list of the second-nearest unexpanded candidate (`Pool::peek_unexpanded(1)`). 3: also a lookahead: after scoring an expansion, prefetch the code rows (or 1-bit screen rows) and scales of the next candidate's not-yet-visited neighbours (`Marks::seen`), so they travel during the next pop. | identical at every level |
-| `HMS_QGRAPH_BATCH_EST` | `0` / `1` | Admitted neighbours are estimated four rows at a time (`VGraph::est4` -> `kernels::dot_i4_inline_x4`, AVX2 `dot_i4_avx2_x4`: the query's widened halves are loaded once per 16 packed bytes, four row loads in flight, four accumulators). Elsewhere (NEON, scalar, 8-bit rows) it falls back to four single calls. | identical (same integer sums) |
-| `HMS_QGRAPH_FRONTIER` | `1.0` (default, off) .. `0.0` | With a full pool, stop when the nearest unexpanded estimate is past the point `f` of the way from the `k`-th best to the `ef`-th best estimate (`est > kth + f * (worst - kth)`). `1.0` never fires. | changes results: fewer expansions per `ef`; compare the recall/QPS curve over `ef` |
-| `HMS_QGRAPH_BLOCK_SCREEN` | `0` / `1`; needs `--block-bits 1` (or 2, 4) | Knob 6. The neighbour block is scanned once per pop (`scan32`); a fresh neighbour whose block estimate, improved by `--screen-sigmas` deviations of the calibrated per-edge error (`sqrt(block_kappa * s^2 * |q - x_v|^2)`), cannot enter the full pool is skipped (counted in `screened_per_query`); survivors' 4-bit rows are prefetched together and estimated; the pool holds row estimates as in the plain search, and results come from the pool. `--screen-sigmas` sweeps the margin. | changes results by the screened candidates only; with an infinite margin it reproduces the plain search exactly (tested) |
-| `HMS_QGRAPH_HUGEPAGES` | `0` / `1` | At index encode time, `madvise(MADV_HUGEPAGE)` on the 2 MiB-aligned interior of the code rows, residual rows, scales, 3-byte neighbour lists and neighbour blocks before they are first touched (Linux only; no-op elsewhere). Needs `/sys/kernel/mm/transparent_hugepage/enabled` = `always` or `madvise`. Check it took: `grep AnonHugePages /proc/<pid>/smaps_rollup` while the sweep runs (expect >= the index size minus a few MB). | identical |
+| `WARM_QGRAPH_PREFETCH` | `0` (default) .. `3` | 1: also prefetch each admitted neighbour's scale and, before the re-rank, the `rerank` rows (code + residual + scales). 2: also the neighbour list of the second-nearest unexpanded candidate (`Pool::peek_unexpanded(1)`). 3: also a lookahead: after scoring an expansion, prefetch the code rows (or 1-bit screen rows) and scales of the next candidate's not-yet-visited neighbours (`Marks::seen`), so they travel during the next pop. | identical at every level |
+| `WARM_QGRAPH_BATCH_EST` | `0` / `1` | Admitted neighbours are estimated four rows at a time (`VGraph::est4` -> `kernels::dot_i4_inline_x4`, AVX2 `dot_i4_avx2_x4`: the query's widened halves are loaded once per 16 packed bytes, four row loads in flight, four accumulators). Elsewhere (NEON, scalar, 8-bit rows) it falls back to four single calls. | identical (same integer sums) |
+| `WARM_QGRAPH_FRONTIER` | `1.0` (default, off) .. `0.0` | With a full pool, stop when the nearest unexpanded estimate is past the point `f` of the way from the `k`-th best to the `ef`-th best estimate (`est > kth + f * (worst - kth)`). `1.0` never fires. | changes results: fewer expansions per `ef`; compare the recall/QPS curve over `ef` |
+| `WARM_QGRAPH_BLOCK_SCREEN` | `0` / `1`; needs `--block-bits 1` (or 2, 4) | Knob 6. The neighbour block is scanned once per pop (`scan32`); a fresh neighbour whose block estimate, improved by `--screen-sigmas` deviations of the calibrated per-edge error (`sqrt(block_kappa * s^2 * |q - x_v|^2)`), cannot enter the full pool is skipped (counted in `screened_per_query`); survivors' 4-bit rows are prefetched together and estimated; the pool holds row estimates as in the plain search, and results come from the pool. `--screen-sigmas` sweeps the margin. | changes results by the screened candidates only; with an infinite margin it reproduces the plain search exactly (tested) |
+| `WARM_QGRAPH_HUGEPAGES` | `0` / `1` | At index encode time, `madvise(MADV_HUGEPAGE)` on the 2 MiB-aligned interior of the code rows, residual rows, scales, 3-byte neighbour lists and neighbour blocks before they are first touched (Linux only; no-op elsewhere). Needs `/sys/kernel/mm/transparent_hugepage/enabled` = `always` or `madvise`. Check it took: `grep AnonHugePages /proc/<pid>/smaps_rollup` while the sweep runs (expect >= the index size minus a few MB). | identical |
 
-Combination semantics: independent; `HMS_QGRAPH_BLOCK_SCREEN=1` without `--block-bits` is a
-no-op, `--fuse` is ignored under the block screen, `HMS_QGRAPH_PREFETCH>=3` lookahead applies to
+Combination semantics: independent; `WARM_QGRAPH_BLOCK_SCREEN=1` without `--block-bits` is a
+no-op, `--fuse` is ignored under the block screen, `WARM_QGRAPH_PREFETCH>=3` lookahead applies to
 the plain (row) path only (the block paths prefetch the next record already).
 
 ## Code map (names are `rg`-able; line numbers from the edited tree)
@@ -73,7 +73,7 @@ at fault.
 
 ## Kill tests on glove-100-angular (x86, same machine, one process per arm)
 
-Data: `~/.cache/hms-bench/glove-100-angular/{train.f32,test.f32,neighbors.i32,meta.json}` as
+Data: `~/.cache/warm-bench/glove-100-angular/{train.f32,test.f32,neighbors.i32,meta.json}` as
 written by `benchmarks/public/prepare.py ann glove-100-angular` (present on this machine).
 Configuration string: the accepted one from `benchmarks/public/ann_modal_confirm.py` `CONFIG`
 (4-bit rows, 8-bit residual, degree 32, build ef 200, aligned rows, BFS reorder, 3-byte ids,
@@ -82,7 +82,7 @@ rerank 64, holdout 2000 train queries), with its ef sweep.
 ```sh
 BIN=target/release/public-bench
 cargo build --release --features cli,mimalloc --bin public-bench
-DATA=~/.cache/hms-bench/glove-100-angular
+DATA=~/.cache/warm-bench/glove-100-angular
 OUT=benchmarks/results/research/ann; mkdir -p $OUT
 CACHE=$OUT/glove-100.graph      # one graph for every arm: identical structure (graph_hash in each JSON)
 CONFIG="--index vertex --vertex-bits 4 --residual --residual-bits 8 --degree 32 --build-ef 200 \
@@ -92,29 +92,29 @@ CONFIG="--index vertex --vertex-bits 4 --residual --residual-bits 8 --degree 32 
 # Arm 0: baseline (all knobs off). Builds and saves the graph.
 $BIN ann-qgraph --data $DATA --out $OUT/base.json --graph-cache $CACHE $CONFIG
 # Arm P1..P3: prefetch levels (expect identical recall_at_10 per ef, higher qps).
-HMS_QGRAPH_PREFETCH=1 $BIN ann-qgraph --data $DATA --out $OUT/prefetch1.json --graph-cache $CACHE $CONFIG
-HMS_QGRAPH_PREFETCH=2 $BIN ann-qgraph --data $DATA --out $OUT/prefetch2.json --graph-cache $CACHE $CONFIG
-HMS_QGRAPH_PREFETCH=3 $BIN ann-qgraph --data $DATA --out $OUT/prefetch3.json --graph-cache $CACHE $CONFIG
+WARM_QGRAPH_PREFETCH=1 $BIN ann-qgraph --data $DATA --out $OUT/prefetch1.json --graph-cache $CACHE $CONFIG
+WARM_QGRAPH_PREFETCH=2 $BIN ann-qgraph --data $DATA --out $OUT/prefetch2.json --graph-cache $CACHE $CONFIG
+WARM_QGRAPH_PREFETCH=3 $BIN ann-qgraph --data $DATA --out $OUT/prefetch3.json --graph-cache $CACHE $CONFIG
 # Arm B: batched estimation (identical recall).
-HMS_QGRAPH_BATCH_EST=1 $BIN ann-qgraph --data $DATA --out $OUT/batch.json --graph-cache $CACHE $CONFIG
+WARM_QGRAPH_BATCH_EST=1 $BIN ann-qgraph --data $DATA --out $OUT/batch.json --graph-cache $CACHE $CONFIG
 # Arm H: huge pages (identical recall; Linux with THP enabled=always|madvise).
 cat /sys/kernel/mm/transparent_hugepage/enabled
-HMS_QGRAPH_HUGEPAGES=1 $BIN ann-qgraph --data $DATA --out $OUT/hugepages.json --graph-cache $CACHE $CONFIG
+WARM_QGRAPH_HUGEPAGES=1 $BIN ann-qgraph --data $DATA --out $OUT/hugepages.json --graph-cache $CACHE $CONFIG
 # Arm F: frontier rule (recall changes; compare curves). Sweep three values.
 for F in 0.75 0.5 0.25; do
-  HMS_QGRAPH_FRONTIER=$F $BIN ann-qgraph --data $DATA --out $OUT/frontier-$F.json --graph-cache $CACHE $CONFIG
+  WARM_QGRAPH_FRONTIER=$F $BIN ann-qgraph --data $DATA --out $OUT/frontier-$F.json --graph-cache $CACHE $CONFIG
 done
 # Arm S: block screen (knob 6) on 1-bit neighbour blocks; sweep the margin. Memory: index_bytes.
 BLOCKS="--block-bits 1 --screen-sigmas 0.5,1,2 --ef 128,192,256,320,384,512,736"
-HMS_QGRAPH_BLOCK_SCREEN=1 $BIN ann-qgraph --data $DATA --out $OUT/blockscreen-1bit.json --graph-cache $CACHE \
+WARM_QGRAPH_BLOCK_SCREEN=1 $BIN ann-qgraph --data $DATA --out $OUT/blockscreen-1bit.json --graph-cache $CACHE \
   ${CONFIG/--ef 128,192,256,320,384,512,736/} $BLOCKS
 # Control for S: the existing block path on the same blocks (block estimate orders the search).
 $BIN ann-qgraph --data $DATA --out $OUT/blocks-1bit-order.json --graph-cache $CACHE \
   ${CONFIG/--ef 128,192,256,320,384,512,736/} --block-bits 1 --ef 128,192,256,320,384,512,736
 # Arm ALL: the identity knobs together, then plus the block screen.
-HMS_QGRAPH_PREFETCH=3 HMS_QGRAPH_BATCH_EST=1 HMS_QGRAPH_HUGEPAGES=1 \
+WARM_QGRAPH_PREFETCH=3 WARM_QGRAPH_BATCH_EST=1 WARM_QGRAPH_HUGEPAGES=1 \
   $BIN ann-qgraph --data $DATA --out $OUT/all-identity.json --graph-cache $CACHE $CONFIG
-HMS_QGRAPH_PREFETCH=3 HMS_QGRAPH_BATCH_EST=1 HMS_QGRAPH_HUGEPAGES=1 HMS_QGRAPH_BLOCK_SCREEN=1 \
+WARM_QGRAPH_PREFETCH=3 WARM_QGRAPH_BATCH_EST=1 WARM_QGRAPH_HUGEPAGES=1 WARM_QGRAPH_BLOCK_SCREEN=1 \
   $BIN ann-qgraph --data $DATA --out $OUT/all-blockscreen.json --graph-cache $CACHE \
   ${CONFIG/--ef 128,192,256,320,384,512,736/} $BLOCKS
 ```
@@ -193,27 +193,27 @@ numbers above are a model, not a measurement; the kill tests replace them.
 
 ## hnswlib and FAISS HNSW on the same machine (competitive harness)
 
-The harness (`benchmarks/competitive/hms-bench`, `hmsbench/runner.py`, `ann_worker.py`) runs
-HMS and every comparator in interleaved rounds on one machine, one query at a time in a single
+The harness (`benchmarks/competitive/warm-bench`, `hmsbench/runner.py`, `ann_worker.py`) runs
+WARM and every comparator in interleaved rounds on one machine, one query at a time in a single
 client thread, per-query `perf_counter_ns` inside the worker process; builds use
 `spec["threads"]` cores, search one (`OMP_NUM_THREADS=1`, `hnswlib set_num_threads(1)`,
-`faiss.omp_set_num_threads(1)`). HMS is always included and runs
-`public-bench ann-qgraph` with the accepted configuration (`runner.py` `_hms_ann_round`:
+`faiss.omp_set_num_threads(1)`). WARM is always included and runs
+`public-bench ann-qgraph` with the accepted configuration (`runner.py` `_warm_ann_round`:
 `--index vertex --degree 32 --build-ef 200 --residual --residual-bits 8 --vertex-bits 4
 --id-bytes 3 --align-rows --reorder --rerank 64 --ef 64,96,128,192,256,384,512,736,1024
 --repeats 2 --latency`) against the hdf5 test queries (10,000 in the heavy suite), so its rows
 are comparable to the comparators' in the same file, not to the holdout rows above. The env
-is inherited (`run_measured` merges `os.environ`), so the knobs apply to the HMS row.
+is inherited (`run_measured` merges `os.environ`), so the knobs apply to the WARM row.
 
 ```sh
-./benchmarks/competitive/hms-bench install hnswlib faiss-hnsw        # pinned envs under ~/.cache/hms-bench/competitive/envs
+./benchmarks/competitive/warm-bench install hnswlib faiss-hnsw        # pinned envs under ~/.cache/warm-bench/competitive/envs
 cargo build --release --features cli,mimalloc --bin public-bench                              # the harness does not build
-# Full glove-100-angular (1,183,514 train, 10,000 test), 3 rounds, HMS + hnswlib + FAISS HNSW:
-./benchmarks/competitive/hms-bench run --suite heavy --only ann --systems hnswlib faiss-hnsw --datasets glove-100-angular
-# The same with the knobs on the HMS row (one file per setting; name them in the readout):
-HMS_QGRAPH_PREFETCH=3 HMS_QGRAPH_HUGEPAGES=1 \
-  ./benchmarks/competitive/hms-bench run --suite heavy --only ann --systems hnswlib faiss-hnsw --datasets glove-100-angular
-./benchmarks/competitive/hms-bench table                              # regenerates docs/benchmarks/COMPARISON.md
+# Full glove-100-angular (1,183,514 train, 10,000 test), 3 rounds, WARM + hnswlib + FAISS HNSW:
+./benchmarks/competitive/warm-bench run --suite heavy --only ann --systems hnswlib faiss-hnsw --datasets glove-100-angular
+# The same with the knobs on the WARM row (one file per setting; name them in the readout):
+WARM_QGRAPH_PREFETCH=3 WARM_QGRAPH_HUGEPAGES=1 \
+  ./benchmarks/competitive/warm-bench run --suite heavy --only ann --systems hnswlib faiss-hnsw --datasets glove-100-angular
+./benchmarks/competitive/warm-bench table                              # regenerates docs/benchmarks/COMPARISON.md
 ```
 
 Output: `benchmarks/results/competitive/heavy-ann-glove-100-angular-n1183514-<hardware class>.json`
@@ -227,13 +227,13 @@ documented settings, HNSW with M 16 and 32, efConstruction 200, ef in
 `efSearch = max(ef, k)`); for each target recall@10 (0.90, 0.95, 0.99) the row with recall at
 or above the target and the highest pooled median QPS over all rounds is chosen; a target
 not reached is reported with its best recall, never dropped; comparators are never tuned
-below their documented defaults. Apply the same selection to the HMS rows in that file and
-report, per target, HMS QPS / best-comparator QPS with the 95% interval the table generator
-computes (`hms-bench table`). The block screen needs `--block-bits 1` on the HMS command,
+below their documented defaults. Apply the same selection to the WARM rows in that file and
+report, per target, WARM QPS / best-comparator QPS with the 95% interval the table generator
+computes (`warm-bench table`). The block screen needs `--block-bits 1` on the WARM command,
 which the harness does not pass: for that arm run `public-bench ann-qgraph` by hand on the
-harness's data directory (`~/.cache/hms-bench/competitive/data/glove-100-angular-1183514/`,
-written by the run above) with the harness's HMS flags plus `--block-bits 1 --screen-sigmas 1`
-and `HMS_QGRAPH_BLOCK_SCREEN=1`, and select its rows with the same rule.
+harness's data directory (`~/.cache/warm-bench/competitive/data/glove-100-angular-1183514/`,
+written by the run above) with the harness's WARM flags plus `--block-bits 1 --screen-sigmas 1`
+and `WARM_QGRAPH_BLOCK_SCREEN=1`, and select its rows with the same rule.
 
 ## Open risks
 

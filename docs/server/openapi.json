@@ -212,7 +212,7 @@
           },
           "import_identity": {
             "default": null,
-            "description": "Import-owner digest; must match metadata.hms_import_identity.",
+            "description": "Import-owner digest; must match metadata.warm_import_identity.",
             "type": [
               "string",
               "null"
@@ -1885,8 +1885,8 @@
       "identifier": "Apache-2.0",
       "name": "Apache-2.0"
     },
-    "summary": "Holographic Memory HTTP service",
-    "title": "hms-server",
+    "summary": "WARM HTTP service",
+    "title": "warm-server",
     "version": "0.6.4"
   },
   "openapi": "3.1.0",

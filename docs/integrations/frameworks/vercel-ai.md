@@ -1,15 +1,15 @@
 # Vercel AI SDK
 
-Package: `@holographic-memory/vercel-ai` (peer: `ai` >=7 <8, `zod`). Built on `@holographic-memory/core` (see [js-core.md](js-core.md)).
+Package: `@writerslogic/warm-vercel-ai` (peer: `ai` >=7 <8, `zod`). Built on `@writerslogic/warm-core` (see [js-core.md](js-core.md)).
 
 The AI SDK has no vector-store or memory abstraction of its own: its memory guide lists provider-defined tools, hosted memory providers and custom tools. This package is the custom-tool path plus the SDK's documented RAG middleware pattern, so it works with any model provider.
 
 ```ts
 import { ToolLoopAgent, wrapLanguageModel } from 'ai'
-import { HmsStore } from '@holographic-memory/core'
-import { memoryMiddleware, memoryTools } from '@holographic-memory/vercel-ai'
+import { WarmStore } from '@writerslogic/warm-core'
+import { memoryMiddleware, memoryTools } from '@writerslogic/warm-vercel-ai'
 
-const store = new HmsStore({ path: './memory' })
+const store = new WarmStore({ path: './memory' })
 const agent = new ToolLoopAgent({
   model: wrapLanguageModel({ model: yourModel, middleware: memoryMiddleware(store, { k: 3, scope: { userId } }) }),
   tools: memoryTools(store, { scope: { userId } }),
@@ -23,7 +23,7 @@ const agent = new ToolLoopAgent({
 - `aiSdkEmbedder(embeddingModel, {model, revision, dimensions})`: any AI SDK embedding model as the store's encoder (uses `embed`/`embedMany`).
 - `aiSdkReranker(rerankingModel)`: any AI SDK reranking model as the store's `rerank` hook (uses `rerank`).
 
-HMS knobs (BM25 `k1`/`b`, `titleWeight`, lexical/semantic weights, fusion, encryption through `hmsConfig`, collection) are options of `HmsStore`; the adapter adds none of its own.
+WARM knobs (BM25 `k1`/`b`, `titleWeight`, lexical/semantic weights, fusion, encryption through `warmConfig`, collection) are options of `WarmStore`; the adapter adds none of its own.
 
 ## Limits
 

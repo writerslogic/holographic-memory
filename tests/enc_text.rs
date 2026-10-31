@@ -4,14 +4,14 @@
 //! text segment must authenticate what it returns.
 #![cfg(feature = "security")]
 
-use holographic_memory::{core::HmsConfig, DocumentInput, HmsCore, SearchOptions};
 use serde_json::json;
 use std::path::Path;
+use writerslogic_warm::{core::WarmConfig, DocumentInput, SearchOptions, WarmCore};
 
 const MARKER: &str = "zqxjmarkerplaintextcanary";
 
-fn config(passphrase: Option<&str>) -> HmsConfig {
-    let mut config = HmsConfig::default();
+fn config(passphrase: Option<&str>) -> WarmConfig {
+    let mut config = WarmConfig::default();
     config.security.encryption_enabled = passphrase.is_some();
     config.security.encryption_passphrase = passphrase.map(str::to_owned);
     config
@@ -46,7 +46,7 @@ fn leaks(dir: &Path) -> Vec<String> {
         .collect()
 }
 
-fn hit(core: &HmsCore) -> Option<String> {
+fn hit(core: &WarmCore) -> Option<String> {
     core.search_documents(MARKER, &SearchOptions::default())
         .unwrap()
         .into_iter()
@@ -59,7 +59,7 @@ fn encrypted_store_never_writes_document_text_in_the_clear() {
     let path = dir.path().to_string_lossy().to_string();
     let text = format!("alpha beta {MARKER} gamma delta");
     {
-        let core = HmsCore::new(1024, Some(path.clone()), Some(config(Some("pw-one")))).unwrap();
+        let core = WarmCore::new(1024, Some(path.clone()), Some(config(Some("pw-one")))).unwrap();
         core.memorize_document(document("d1", &text)).unwrap();
         assert_eq!(hit(&core).as_deref(), Some(text.as_str()));
         assert!(leaks(dir.path()).is_empty(), "before compact");
@@ -67,14 +67,14 @@ fn encrypted_store_never_writes_document_text_in_the_clear() {
         assert!(leaks(dir.path()).is_empty(), "after compact");
         assert_eq!(hit(&core).as_deref(), Some(text.as_str()));
     }
-    let core = HmsCore::new(1024, Some(path.clone()), Some(config(Some("pw-one")))).unwrap();
+    let core = WarmCore::new(1024, Some(path.clone()), Some(config(Some("pw-one")))).unwrap();
     assert_eq!(hit(&core).as_deref(), Some(text.as_str()));
     assert!(leaks(dir.path()).is_empty(), "after reopen");
     drop(core);
 
     // Wrong key and no key both fail closed.
-    assert!(HmsCore::new(1024, Some(path.clone()), Some(config(Some("pw-two")))).is_err());
-    assert!(HmsCore::new(1024, Some(path), Some(config(None))).is_err());
+    assert!(WarmCore::new(1024, Some(path.clone()), Some(config(Some("pw-two")))).is_err());
+    assert!(WarmCore::new(1024, Some(path), Some(config(None))).is_err());
 }
 
 #[test]
@@ -83,10 +83,10 @@ fn unencrypted_store_still_opens_and_searches() {
     let path = dir.path().to_string_lossy().to_string();
     let text = format!("one {MARKER} two");
     {
-        let core = HmsCore::new(1024, Some(path.clone()), Some(config(None))).unwrap();
+        let core = WarmCore::new(1024, Some(path.clone()), Some(config(None))).unwrap();
         core.memorize_document(document("d1", &text)).unwrap();
     }
-    let core = HmsCore::new(1024, Some(path), Some(config(None))).unwrap();
+    let core = WarmCore::new(1024, Some(path), Some(config(None))).unwrap();
     assert_eq!(hit(&core).as_deref(), Some(text.as_str()));
     // The detector sees plaintext where encryption is off.
     assert!(leaks(dir.path())
@@ -99,7 +99,7 @@ fn tampered_text_record_is_not_returned() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().to_string_lossy().to_string();
     let text = format!("one {MARKER} two");
-    let core = HmsCore::new(1024, Some(path), Some(config(Some("pw-one")))).unwrap();
+    let core = WarmCore::new(1024, Some(path), Some(config(Some("pw-one")))).unwrap();
     core.memorize_document(document("d1", &text)).unwrap();
     let segment = dir.path().join("documents.text");
     let mut bytes = std::fs::read(&segment).unwrap();

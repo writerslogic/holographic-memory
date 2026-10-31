@@ -1,5 +1,5 @@
 [package]
-name = "holographic-memory-fuzz"
+name = "writerslogic-warm-fuzz"
 version = "0.0.0"
 publish = false
 edition = "2021"
@@ -9,11 +9,11 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-holographic-memory = { path = ".." }
+writerslogic-warm = { path = ".." }
 serde_json = "1.0"
 tempfile = "3"
 ed25519-dalek = { version = "3", optional = true }
-# The hms-server sources are compiled into the server_requests target, so it needs the same
+# The warm-server sources are compiled into the server_requests target, so it needs the same
 # dependencies the server does.
 anyhow = { version = "1.0", optional = true }
 axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json", "query"], optional = true }
@@ -39,12 +39,12 @@ tokio-rustls = { version = "0.26", default-features = false, features = ["ring",
 tower-service = { version = "0.3", optional = true }
 
 [features]
-provenance = ["holographic-memory/provenance", "dep:ed25519-dalek"]
-private-search = ["holographic-memory/private-search"]
-experimental = ["holographic-memory/experimental"]
-local-models = ["holographic-memory/local-models"]
+provenance = ["writerslogic-warm/provenance", "dep:ed25519-dalek"]
+private-search = ["writerslogic-warm/private-search"]
+experimental = ["writerslogic-warm/experimental"]
+local-models = ["writerslogic-warm/local-models"]
 server = [
-    "holographic-memory/server", "dep:anyhow", "dep:axum", "dep:bytes", "dep:clap", "dep:futures-util",
+    "writerslogic-warm/server", "dep:anyhow", "dep:axum", "dep:bytes", "dep:clap", "dep:futures-util",
     "dep:http-body-util", "dep:hyper", "dep:hyper-util", "dep:libc", "dep:parking_lot", "dep:rand",
     "dep:rustls", "dep:schemars", "dep:serde", "dep:sha2", "dep:subtle", "dep:tar", "dep:tokio",
     "dep:tokio-rustls", "dep:tower-service", "dep:memmap2", "dep:crc32fast",

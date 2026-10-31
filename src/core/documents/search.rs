@@ -2268,7 +2268,7 @@ mod tests {
 
 /// Lexical latency microbenchmark on an NFCorpus-shaped synthetic store (3633 one-chunk
 /// documents, Zipf vocabulary, 324 queries); run ignored with `--nocapture`, and set
-/// `HMS_LEX_BENCH_OUT` to write the phase timings as JSON.
+/// `WARM_LEX_BENCH_OUT` to write the phase timings as JSON.
 #[cfg(test)]
 mod latency_bench {
     use super::*;
@@ -2352,7 +2352,7 @@ mod latency_bench {
         let documents = 3633;
         let vocabulary = 25_000;
         let mut rng = Rng(0x9E37_79B9_7F4A_7C15);
-        let (store, queries) = match std::env::var("HMS_LEX_BENCH_INPUT") {
+        let (store, queries) = match crate::compatibility::var("WARM_LEX_BENCH_INPUT") {
             Ok(path) => {
                 let input: Value =
                     serde_json::from_slice(&std::fs::read(path).expect("bench input")).unwrap();
@@ -2381,7 +2381,7 @@ mod latency_bench {
             ),
         };
         {
-            let k: u32 = std::env::var("HMS_LEX_BENCH_K")
+            let k: u32 = crate::compatibility::var("WARM_LEX_BENCH_K")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(100);
@@ -2443,7 +2443,7 @@ mod latency_bench {
                            summary("execute", &mut execute_ns), summary("total", &mut total_ns)],
             });
             println!("{report}");
-            if let Ok(path) = std::env::var("HMS_LEX_BENCH_OUT") {
+            if let Ok(path) = crate::compatibility::var("WARM_LEX_BENCH_OUT") {
                 std::fs::write(path, serde_json::to_string_pretty(&report).unwrap()).unwrap();
             }
         }

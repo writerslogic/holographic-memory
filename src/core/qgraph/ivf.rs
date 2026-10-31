@@ -10,7 +10,7 @@ use super::kernels::{
     dot, dot_f32_i4, dot_f32_i8, dot_i4_inline, dot_i8_inline, interleave_for_i4,
 };
 use super::vertex::{code_at, quantize, quantize4};
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 
 const MAGIC: &[u8; 8] = b"HMSIVF01";
 const HEADER: usize = 24;
@@ -26,11 +26,11 @@ struct CodeBounds {
     scales: Vec<[f32; 2]>,
 }
 
-fn bounds_vector<T: Clone>(len: usize, value: T) -> Result<Vec<T>, HmsError> {
+fn bounds_vector<T: Clone>(len: usize, value: T) -> Result<Vec<T>, WarmError> {
     let mut vector = Vec::new();
     vector
         .try_reserve_exact(len)
-        .map_err(|_| HmsError::CapacityExceeded {
+        .map_err(|_| WarmError::CapacityExceeded {
             limit: "IVF runtime bounds allocation".into(),
         })?;
     vector.resize(len, value);
@@ -44,7 +44,7 @@ impl CodeBounds {
             .is_some_and(|total| total <= MAX_BYTES)
     }
 
-    fn build(index: &QuantizedIvf) -> Result<Self, HmsError> {
+    fn build(index: &QuantizedIvf) -> Result<Self, WarmError> {
         let blocks = index
             .offsets
             .windows(2)
@@ -190,7 +190,7 @@ fn layout(
     clusters: usize,
     bits: u8,
     residual: u8,
-) -> Result<usize, HmsError> {
+) -> Result<usize, WarmError> {
     if n == 0
         || n >= u32::MAX as usize
         || !(1..=MAX_DIM).contains(&dim)
@@ -217,7 +217,12 @@ fn layout(
     Ok(size)
 }
 
-fn validate_units(rows: &[f32], dim: usize, label: &str, allow_zero: bool) -> Result<(), HmsError> {
+fn validate_units(
+    rows: &[f32],
+    dim: usize,
+    label: &str,
+    allow_zero: bool,
+) -> Result<(), WarmError> {
     for row in rows.chunks_exact(dim) {
         if row.iter().any(|x| !x.is_finite()) {
             return Err(invalid(format!("{label} contains a non-finite coordinate")));
@@ -274,7 +279,7 @@ impl QuantizedIvf {
         assignments: &[u32],
         bits: u8,
         residual_bits: u8,
-    ) -> Result<Self, HmsError> {
+    ) -> Result<Self, WarmError> {
         if dim == 0 || !rows.len().is_multiple_of(dim) || !centers.len().is_multiple_of(dim) {
             return Err(invalid("IVF input does not contain complete rows".into()));
         }
@@ -409,7 +414,7 @@ impl QuantizedIvf {
     }
 
     /// Checks shape, exact length, CRC, ids, offsets, scales and codes before use.
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, HmsError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, WarmError> {
         if bytes.len() < HEADER + 4 || &bytes[..8] != MAGIC || bytes[22..24] != [0, 0] {
             return Err(invalid("invalid IVF header".into()));
         }
@@ -583,7 +588,7 @@ impl<'a> IvfSearcher<'a> {
         query: &[f32],
         k: usize,
         params: IvfSearchParams,
-    ) -> Result<Vec<(u32, f32)>, HmsError> {
+    ) -> Result<Vec<(u32, f32)>, WarmError> {
         self.search_with_pruning(query, k, params, true)
     }
 
@@ -593,7 +598,7 @@ impl<'a> IvfSearcher<'a> {
         query: &[f32],
         k: usize,
         params: IvfSearchParams,
-    ) -> Result<Vec<(u32, f32)>, HmsError> {
+    ) -> Result<Vec<(u32, f32)>, WarmError> {
         self.search_with_pruning(query, k, params, false)
     }
 
@@ -603,7 +608,7 @@ impl<'a> IvfSearcher<'a> {
         k: usize,
         params: IvfSearchParams,
         prune: bool,
-    ) -> Result<Vec<(u32, f32)>, HmsError> {
+    ) -> Result<Vec<(u32, f32)>, WarmError> {
         let index = self.index;
         let prune = prune && !index.bounds.offsets.is_empty();
         if query.len() != index.dim

@@ -2,22 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "holographic-memory-c"
+name = "writerslogic-warm-c"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.89"
 license = "Apache-2.0"
 authors = ["WritersLogic, Inc. <david@writerslogic.com>"]
-description = "Stable C ABI for the Holographic Memory System document store (C, Go, Java and .NET bindings)."
-repository = "https://github.com/writerslogic/holographic-memory"
+description = "Stable C ABI for the WritersLogic Adaptive Retention & Memory document store (C, Go, Java and .NET bindings)."
+repository = "https://github.com/writerslogic/warm"
 publish = false
 
 [lib]
-name = "holographic_memory_c"
+name = "writerslogic_warm_c"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
-holographic-memory = { path = "../..", features = ["security"] }
+writerslogic-warm = { path = "../..", features = ["security"] }
 parking_lot = "0.12"
 serde_json = "1"
 anyhow = "1"

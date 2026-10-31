@@ -3,12 +3,12 @@
 
 #![no_main]
 
-//! Signed envelopes from outside: bare COSE_Sign1, the signed HMS manifest and the SCITT
+//! Signed envelopes from outside: bare COSE_Sign1, the signed WARM manifest and the SCITT
 //! signed statement. A fixed key verifies them, so only a correctly signed seed gets past the
 //! signature; every other input must be rejected without panicking.
 
 use ed25519_dalek::SigningKey;
-use holographic_memory::core::provenance::{c2pa_manifest, cose, scitt};
+use writerslogic_warm::core::provenance::{c2pa_manifest, cose, scitt};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

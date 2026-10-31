@@ -3,9 +3,9 @@
 
 use anyhow::{ensure, Result};
 use clap::Parser;
-use holographic_memory::{
-    core::{engine::diagnostic, EmbeddingSpace, HmsConfig},
-    DocumentInput, HmsCore, SearchOptions,
+use writerslogic_warm::{
+    core::{engine::diagnostic, EmbeddingSpace, WarmConfig},
+    DocumentInput, WarmCore, SearchOptions,
 };
 use serde_json::{json, Value};
 use std::{
@@ -81,7 +81,7 @@ fn changed(original: &DocumentInput, revision: usize, number: usize) -> Document
     input
 }
 
-fn query(core: &HmsCore, ids: Vec<String>, pair: usize, origin: Instant) -> Result<Value> {
+fn query(core: &WarmCore, ids: Vec<String>, pair: usize, origin: Instant) -> Result<Value> {
     let count = ids.len() as u32;
     let options = SearchOptions {
         k: Some(count),
@@ -96,7 +96,7 @@ fn query(core: &HmsCore, ids: Vec<String>, pair: usize, origin: Instant) -> Resu
     Ok(json!({"start_ns":start,"end_ns":end,"results":results}))
 }
 
-fn snapshot(core: &HmsCore, n: usize, origin: Instant, path: &Path) -> Result<()> {
+fn snapshot(core: &WarmCore, n: usize, origin: Instant, path: &Path) -> Result<()> {
     let mut output = create(path)?;
     for number in 0..n {
         let mut row = query(core, vec![format!("d{number:08}")], number / 2, origin)?;
@@ -118,7 +118,7 @@ fn main() -> Result<()> {
         "fixture size mismatch"
     );
     std::fs::create_dir(&args.out)?;
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "synthetic-one-hot-control".into(),
             revision: "1".into(),
@@ -130,7 +130,7 @@ fn main() -> Result<()> {
     };
     if args.seed {
         ensure!(!args.store.exists(), "refusing to overwrite store");
-        let core = HmsCore::new(1024, Some(args.store.display().to_string()), Some(config))?;
+        let core = WarmCore::new(1024, Some(args.store.display().to_string()), Some(config))?;
         for batch in documents.chunks(64) {
             core.memorize_documents(batch.to_vec())?;
         }
@@ -139,7 +139,7 @@ fn main() -> Result<()> {
     }
     ensure!(args.store.exists(), "missing seeded store");
     let origin = Instant::now();
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         1024,
         Some(args.store.display().to_string()),
         Some(config.clone()),
@@ -284,7 +284,7 @@ fn main() -> Result<()> {
     )?;
     core.flush()?;
     drop(core);
-    let core = HmsCore::new(1024, Some(args.store.display().to_string()), Some(config))?;
+    let core = WarmCore::new(1024, Some(args.store.display().to_string()), Some(config))?;
     snapshot(
         &core,
         args.documents,

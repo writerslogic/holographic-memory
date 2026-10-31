@@ -235,7 +235,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=("prepare", "run"))
     parser.add_argument("attempt", type=Path)
-    parser.add_argument("--binary", type=Path, default=Path("./.hms-target/release/examples/sparse_composition"))
+    parser.add_argument("--binary", type=Path, default=Path("./.warm-target/release/examples/sparse_composition"))
     args = parser.parse_args()
     args.attempt = args.attempt.resolve()
     if args.mode == "prepare":

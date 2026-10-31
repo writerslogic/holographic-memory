@@ -78,16 +78,16 @@ await test("ingest, search, filters, delete and export in the page", async () =>
 });
 
 await test("IndexedDB adapter round trip", async () => {
-  await roundTrip(new IndexedDbStorage({ database: `hms-test-${run}` }), "idb");
+  await roundTrip(new IndexedDbStorage({ database: `warm-test-${run}` }), "idb");
 });
 
 await test("OPFS adapter round trip", async () => {
-  await roundTrip(new OpfsStorage({ directory: `hms-test-${run}` }), "opfs");
+  await roundTrip(new OpfsStorage({ directory: `warm-test-${run}` }), "opfs");
 });
 
 for (const kdf of ["pbkdf2", "argon2id"]) {
   await test(`encrypted IndexedDB persistence with ${kdf}`, async () => {
-    const storage = new IndexedDbStorage({ database: `hms-enc-${run}-${kdf}` });
+    const storage = new IndexedDbStorage({ database: `warm-enc-${run}-${kdf}` });
     const encryption = { passphrase: "pässword ✓", kdf, iterations: 2000, memoryKiB: 64, passes: 1 };
     const key = "enc";
     const store = await openStore({ dimensions: 512, storage, key, encryption, autosave: false });
@@ -104,7 +104,7 @@ for (const kdf of ["pbkdf2", "argon2id"]) {
 }
 
 await test("autosave writes through to IndexedDB without an explicit save", async () => {
-  const storage = new IndexedDbStorage({ database: `hms-auto-${run}` });
+  const storage = new IndexedDbStorage({ database: `warm-auto-${run}` });
   const store = await openStore({ dimensions: 512, storage, key: "auto", autosave: { debounceMs: 30 } });
   await store.memorizeDocument({ id: "x", text: "written by autosave" });
   await new Promise((resolve) => setTimeout(resolve, 300));

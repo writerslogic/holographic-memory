@@ -36,7 +36,7 @@ function fixture(content = 'zebraquartz decision', revision = 'revision-1') {
 }
 
 test('Rust CLI rejects malformed imports and previews deletion without creating a store', t => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hms-organizational-cli-'))
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'warm-organizational-cli-'))
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const store = path.join(directory, 'store')
   const file = path.join(directory, 'document.json')
@@ -58,7 +58,7 @@ test('Rust CLI rejects malformed imports and previews deletion without creating 
 })
 
 test('Rust and JavaScript share identities, exact source spans, replacement and deletion', t => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hms-organizational-interop-'))
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'warm-organizational-interop-'))
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const store = path.join(directory, 'store')
   const file = path.join(directory, 'document.json')

@@ -96,7 +96,7 @@ try:
 except ImportError as exc:  # pragma: no cover - environment problem
     raise SystemExit(f"cannot import benchmarks/research/roc/roc.py ({exc}); it is required for BM25") from exc
 
-SCHEMA = "hms.research.hli/1"
+SCHEMA = "warm.research.hli/1"
 MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 MODEL_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
 MAX_SEQ = 256
@@ -1253,7 +1253,7 @@ def protocol_text(args) -> dict:
                       "D_rerank": f"candidates = dense top-{CAND_K} union positive-BM25 top-{CAND_K}; non-candidates "
                                   "unretrieved; reported as metrics.rerank for every row",
                       "E_meansub": "M_{d,g} -= W_{d,g} h_bar, h_bar = weight-mean token hypervector over the corpus"},
-        "hybrid": "metrics.hybrid_bm25 = per-query z-score of the row + z-score of BM25 (k1 1.2, b 0.75, HMS tokeniser "
+        "hybrid": "metrics.hybrid_bm25 = per-query z-score of the row + z-score of BM25 (k1 1.2, b 0.75, WARM tokeniser "
                   "from benchmarks/research/roc/roc.py)",
         "metrics": "nDCG@10 with linear gain over all judged grades, recall@100 over grade > 0, lower document index "
                    "wins ties; all queries plus the odd (tune) / even (eval) split",
@@ -1273,7 +1273,7 @@ def protocol_text(args) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--cache-root", type=Path, default=Path.home() / ".cache/hms-bench")
+    ap.add_argument("--cache-root", type=Path, default=Path.home() / ".cache/warm-bench")
     ap.add_argument("--datasets", nargs="+", default=["nfcorpus", "scifact"])
     ap.add_argument("--out", type=Path, default=HERE / "out/hli_v1.json")
     ap.add_argument("--dims", nargs="+", type=int, default=list(DIMS))

@@ -1,6 +1,6 @@
-# hms-research-forget: exact deletion from a superposition memory, with certificates
+# warm-research-forget: exact deletion from a superposition memory, with certificates
 
-Package: `benchmarks/research/forget/` (standalone crate `hms-research-forget`,
+Package: `benchmarks/research/forget/` (standalone crate `warm-research-forget`,
 not a workspace member, own `[workspace]` table). Not compiled by the author
 (round-2 hard rule); the mediator builds and runs.
 
@@ -30,7 +30,7 @@ deletion there is already exact and needs no counter.
 
 ## Dependencies
 
-`holographic-memory = { path = "../../..", default-features = false }`,
+`writerslogic-warm = { path = "../../..", default-features = false }`,
 `anyhow 1.0`, `clap 4.4 (derive)`, `serde 1.0 (derive)`, `serde_json 1.0
 (float_roundtrip)`, `sha2 0.11` (the root crate's optional `security`
 dependency, same version). No new third-party crates. `Cargo.lock` and
@@ -38,12 +38,12 @@ dependency, same version). No new third-party crates. `Cargo.lock` and
 
 ## Root-crate APIs used (file:line)
 
-- `holographic_memory::EntangledHVec` — `src/lib.rs:29` re-export of `src/core/entangled.rs:31` (`dim`, sorted `indices: Vec<u32>`, density `1/256`, `src/core/entangled.rs:12`).
+- `writerslogic_warm::EntangledHVec` — `src/lib.rs:29` re-export of `src/core/entangled.rs:31` (`dim`, sorted `indices: Vec<u32>`, density `1/256`, `src/core/entangled.rs:12`).
 - `EntangledHVec::new_deterministic(dim, seed)` — `src/core/entangled.rs:43` (item, probe generation).
 - `EntangledHVec::from_indices(Vec<u32>, dim)` — `src/core/entangled.rs:117` (`CounterBundle::view_hvec`).
 - `EntangledHVec::indices()` — `src/core/entangled.rs:240` (everywhere).
 - `EntangledHVec::bundle_bloom(&[V])` — `src/core/entangled.rs:422` (cross-check of the `tau = 1` view).
-- `holographic_memory::core::entangled::hash_u64(a, b)` — `src/core/entangled.rs:556` (`pub mod core` at `src/lib.rs:15`, `pub mod entangled` at `src/core/mod.rs:57`); seeds for items, deleted subset, probes.
+- `writerslogic_warm::core::entangled::hash_u64(a, b)` — `src/core/entangled.rs:556` (`pub mod core` at `src/lib.rs:15`, `pub mod entangled` at `src/core/mod.rs:57`); seeds for items, deleted subset, probes.
 - Read for semantics only (not called): `bundle` `src/core/entangled.rs:356-413` (majority threshold `ceil(n/2)`, then top `dim/256` by count), `similarity` (Jaccard) `:288`, `containment_similarity` `:449`, `bind` `:300`, `permute` `:309`; `CountingBloomMemory` `src/core/counting_bloom_memory.rs:31-61` (counts, insert only, `saturating_add`, no delete, no certificate).
 
 `sha2 0.11`: `Sha256::new() / update / finalize().into() -> [u8; 32]`, the same
@@ -137,7 +137,7 @@ unthresholded readout still recognises members past the Bloom wall); baseline
 `noop` z strongly positive where informative, baseline `clear` z strongly
 negative with `survivor_bits_lost_frac > 0`.
 
-## Output JSON schema (`schema = "hms-research-forget/v1"`)
+## Output JSON schema (`schema = "warm-research-forget/v1"`)
 
 ```text
 {
@@ -178,7 +178,7 @@ negative with `survivor_bits_lost_frac > 0`.
 
 Sample = { n, mean, sd, min, max }
 
-DeletionCertificate (schema "hms-forget/certificate-v1") = {
+DeletionCertificate (schema "warm-forget/certificate-v1") = {
   schema, dim, tau, counter_bits, item, state_before, state_after, view_after (64-hex),
   items_before, items_after,
   residual: { active, view_size, view_density, view_overlap, overlap_fraction, cosine,
@@ -187,8 +187,8 @@ DeletionCertificate (schema "hms-forget/certificate-v1") = {
 }
 ```
 
-Digest domains: item = SHA-256(`"hms-forget/item-v1"` || dim u64 LE || len u64
-LE || indices u32 LE); state = SHA-256(`"hms-forget/state-v1"` || dim u64 ||
+Digest domains: item = SHA-256(`"warm-forget/item-v1"` || dim u64 LE || len u64
+LE || indices u32 LE); state = SHA-256(`"warm-forget/state-v1"` || dim u64 ||
 tau u32 || counter bits u32 || live items u64 || counts LE). The ledger key is
 the first 8 bytes of the item digest.
 

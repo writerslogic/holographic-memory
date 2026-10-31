@@ -103,7 +103,7 @@ def recovery_fixture(tmp_path, extra_success=False):
     frozen_source.mkdir()
     signature = {"harness_commit": "pinned", "server_binary_sha256": "binary",
                  "shim_sha256": "shim", "retrieval_config_sha256": "config"}
-    manifest = {"hms": {"dirty": False, "server_binary_sha256": "binary"},
+    manifest = {"warm": {"dirty": False, "server_binary_sha256": "binary"},
                 "harness": {"commit": "pinned"}, "adapter": {"shim_sha256": "shim"},
                 "retrieval_config_sha256": "config", "llm": {"spend_usd": 7}}
     manifest_path = tmp_path / "manifest.json"

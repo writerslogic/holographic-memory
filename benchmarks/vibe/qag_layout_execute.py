@@ -19,8 +19,8 @@ def run(args):
 
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,47}", args.run_id):
         raise ValueError("invalid run ID")
-    vibe = Path.home() / "vibe-hms/vibe"
-    bench = Path.home() / "vibe-hms/bench.sh"
+    vibe = Path.home() / "vibe-warm/vibe"
+    bench = Path.home() / "vibe-warm/bench.sh"
     with h5py.File(args.view, "r") as source:
         metric, dim = str(source.attrs["distance"]), int(source.attrs["dimension"])
         if not args.legacy and (source.attrs.get("qag_scope") != "validation"
@@ -49,7 +49,7 @@ def run(args):
     extensions = {}
     inputs = []
     for arm, original in (("baseline", args.baseline), ("candidate", args.candidate)):
-        path = snapshots / (arm + "-holographic_memory.so")
+        path = snapshots / (arm + "-writerslogic_warm.so")
         shutil.copyfile(original, path)
         path.chmod(0o444)
         extensions[arm] = record(path)
@@ -63,7 +63,7 @@ def run(args):
     bits = 4 if args.legacy else 8
     algorithm = "qag-cost-v3" if args.revision else "qag-layout-v2"
     definition = {"name": algorithm, "module": "vibe.algorithms." + label,
-                  "constructor": "QAGLayout", "singularity_image": "hms", "disabled": False,
+                  "constructor": "QAGLayout", "singularity_image": "warm", "disabled": False,
                   "ood": not args.legacy, "base_args": ["@metric"],
                   "run_groups": {"fixed": {"args": [64, 500, bits, args.legacy, args.revision],
                                              "query_arg_groups": [schedule]}}}
@@ -80,16 +80,16 @@ def run(args):
         shutil.copyfile(path, target)
     inputs.extend(record(path) for path in sorted(dependencies))
     inputs.append(record(config))
-    environment = {k: v for k, v in os.environ.items() if not k.startswith(("HMS_QGRAPH_", "HMS_QAG_"))}
+    environment = {k: v for k, v in os.environ.items() if not k.startswith(("WARM_QGRAPH_", "WARM_QAG_"))}
     environment.update({name: "1" for name in THREADS})
-    environment.update(HMS_QAG_BASELINE_SO=extensions["baseline"]["path"],
-                       HMS_QAG_CANDIDATE_SO=extensions["candidate"]["path"])
+    environment.update(WARM_QAG_BASELINE_SO=extensions["baseline"]["path"],
+                       WARM_QAG_CANDIDATE_SO=extensions["candidate"]["path"])
     if not args.legacy:
         if args.training is None:
             raise ValueError("validation layout pair requires the frozen construction file")
         inputs.append(record(args.training))
-        environment.update(HMS_QAG_TRAINING_QUERIES=str(args.training.resolve()),
-                           HMS_QAG_TRAINING_QUERIES_SHA256=digest(args.training))
+        environment.update(WARM_QAG_TRAINING_QUERIES=str(args.training.resolve()),
+                           WARM_QAG_TRAINING_QUERIES_SHA256=digest(args.training))
     alias = f"qag-{'cost' if args.revision else 'layout'}-{args.run_id}-{dim}-{metric}"
     link = vibe / "data" / (alias + ".hdf5")
     if link.exists() or link.is_symlink() or (vibe / "results" / alias).exists():
@@ -100,7 +100,7 @@ def run(args):
               "scope": "legacy regression" if args.legacy else "validation-only revision comparison" if args.revision else "validation-only layout comparison",
               "inputs": inputs, "schedule": schedule, "extensions": extensions,
               "harness_sha256": digest(vibe / "vibe/runner.py"),
-              "environment": {k: v for k, v in environment.items() if k in THREADS or k.startswith("HMS_QAG_")}}
+              "environment": {k: v for k, v in environment.items() if k in THREADS or k.startswith("WARM_QAG_")}}
     write_new(args.out / "frozen.json", before)
     verify_inputs(before)
     process = subprocess.run(command, cwd=vibe, env=environment, capture_output=True, text=True)
@@ -112,7 +112,7 @@ def run(args):
         raise ValueError("expected one raw layout result")
     raw = args.out / "raw.hdf5"
     shutil.copyfile(raw_paths[0], raw)
-    shutil.copyfile(Path.home() / "vibe-hms/logs" / (alias + "-definitions.log"), args.out / "bench.log")
+    shutil.copyfile(Path.home() / "vibe-warm/logs" / (alias + "-definitions.log"), args.out / "bench.log")
     with h5py.File(raw, "r") as results:
         if set(results) != {"_".join(map(str, group)) for group in schedule}:
             raise ValueError("raw layout schedule is incomplete")
@@ -162,7 +162,7 @@ def main():
     modes.add_argument("--revision", action="store_true")
     parser.add_argument("--run-id", required=True)
     args = parser.parse_args()
-    if (socket.gethostname() != "writerslogic-02" or os.environ.get("HMS_QAG_OUTER_LOCK") != "1"
+    if (socket.gethostname() != "writerslogic-02" or os.environ.get("WARM_QAG_OUTER_LOCK") != "1"
             or any(os.environ.get(name) != "1" for name in THREADS)):
         parser.error("use the shared outer timing lock and one-thread environment")
     args.out.mkdir(parents=True, exist_ok=False)

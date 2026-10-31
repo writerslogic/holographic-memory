@@ -525,7 +525,7 @@ mod tests {
 
     #[test]
     fn identity_publication_crash_child() {
-        let Some(path) = std::env::var_os("HMS_IDENTITY_TEST_PATH") else {
+        let Some(path) = crate::compatibility::var_os("WARM_IDENTITY_TEST_PATH") else {
             return;
         };
         SigningManager::new(Path::new(&path)).unwrap();
@@ -542,8 +542,8 @@ mod tests {
                     "--exact",
                     "core::security::tests::identity_publication_crash_child",
                 ])
-                .env("HMS_IDENTITY_TEST_PATH", &path)
-                .env("HMS_IDENTITY_CRASH_AT", phase)
+                .env("WARM_IDENTITY_TEST_PATH", &path)
+                .env("WARM_IDENTITY_CRASH_AT", phase)
                 .output()
                 .unwrap();
             assert_eq!(output.status.code(), Some(84), "{phase}: {output:?}");

@@ -59,7 +59,7 @@ def validate_tests(path, enabled):
 
 
 def query_run(name, command, env, deadline, sampling=False):
-    if "HMS_QGRAPH_BATCH_POOL" in env:
+    if "WARM_QGRAPH_BATCH_POOL" in env:
         raise RuntimeError("runtime batch-pool environment switch is forbidden in featurev3")
     start = time.monotonic()
     sampled_peak = 0
@@ -174,10 +174,10 @@ def main(args):
     if rustc != baseline_manifest["rustc"]:
         raise RuntimeError("toolchain changed from baseline")
     env = {key: os.environ[key] for key in ["PATH", "HOME", "TMPDIR", "RUSTUP_HOME", "CARGO_HOME", "DEVELOPER_DIR", "SDKROOT"] if key in os.environ}
-    env.update({"CARGO_TARGET_DIR": str(base.TREE / "target"), "CARGO_BUILD_JOBS": "1", "RAYON_NUM_THREADS": "1", "CARGO_PROFILE_RELEASE_DEBUG": "1", "CARGO_PROFILE_RELEASE_STRIP": "none", "HMS_QGRAPH_PREFETCH": "0", "HMS_QGRAPH_BATCH_EST": "0", "HMS_QGRAPH_FRONTIER": "1", "HMS_QGRAPH_BLOCK_SCREEN": "0", "HMS_QGRAPH_RERANK_Z": "0"})
-    declared_env = {key: value for key, value in env.items() if key.startswith(("CARGO_", "RAYON_", "HMS_"))}
+    env.update({"CARGO_TARGET_DIR": str(base.TREE / "target"), "CARGO_BUILD_JOBS": "1", "RAYON_NUM_THREADS": "1", "CARGO_PROFILE_RELEASE_DEBUG": "1", "CARGO_PROFILE_RELEASE_STRIP": "none", "WARM_QGRAPH_PREFETCH": "0", "WARM_QGRAPH_BATCH_EST": "0", "WARM_QGRAPH_FRONTIER": "1", "WARM_QGRAPH_BLOCK_SCREEN": "0", "WARM_QGRAPH_RERANK_Z": "0"})
+    declared_env = {key: value for key, value in env.items() if key.startswith(("CARGO_", "RAYON_", "WARM_"))}
     plan = {
-        "schema": "hms-glove-batch-pool-ablation-plan-v3", "development_only": True,
+        "schema": "warm-glove-batch-pool-ablation-plan-v3", "development_only": True,
         "source": base.SOURCE, "candidate_vertex_sha256": args.candidate_sha256, "candidate_cargo_sha256": CARGO_SHA,
         "candidate_mechanism": "Same8-key batch merge behind nondefault experimental-batch-pool compile feature; feature0 restores oldPool/SearchKnobs layout and API, feature1 enables mechanism automatically; no runtime switch and no threshold tuning",
         "reason_for_isolation": "Final separately declared compile-feature attempt afterv2 failed defaultcontrol gates; preserve prior failures and park if this attempt fails, no automaticretry or additionalvariants",
@@ -199,7 +199,7 @@ def main(args):
         "uncertainty": "Collapse7 repeats per fresh process, paired whole-process-block bootstrap enumerating27 resamples;3blocks lowpower, conditionalhardware only. No query/repeat pseudoreplication.",
         "limits": {"per_compile_s": 600, "native_s": 180, "overall_s": 1200, "compile_sampled_tree_rss_gib": 4, "native_sampled_tree_rss_gib": 2},
         "memory_scope": "Approximately200ms sampled summed child-tree RSS, not strict OS peak or unique memory; controller/source preparation/sampler excluded",
-        "lock": str(Path.home() / "hms-timing.lock"), "environment": declared_env,
+        "lock": str(Path.home() / "warm-timing.lock"), "environment": declared_env,
         "official_test_arrays_read": False, "competitive_or_leaderboard_claim": False,
         "rustc": rustc, "hardware": subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string", "hw.memsize", "hw.ncpu"], text=True),
         "previous_candidate": {"root": str(PREVIOUS), "vertex_sha256": previous_plan["candidate_vertex_sha256"], "binary_sha256": previous_complete["sha256"]["candidate-binary"], "binary_bytes": (PREVIOUS / "candidate-binary").stat().st_size, "compile_receipt_sha256": frozen["v2-compile.receipt.json"], "compile_elapsed_s": previous_compile["elapsed_s"], "compile_sampled_summed_process_tree_rss_kib": previous_compile["sampled_summed_process_tree_rss_kib"]},
@@ -207,10 +207,10 @@ def main(args):
         "frozen_source_and_harness_sha256": frozen,
     }
     base.save(ROOT / "plan.json", plan)
-    lock = (Path.home() / "hms-timing.lock").open("a+")
+    lock = (Path.home() / "warm-timing.lock").open("a+")
     base.fcntl.flock(lock, base.fcntl.LOCK_EX | base.fcntl.LOCK_NB)
     try:
-        with Path("/Volumes/A/hms-coordination/RUN-ALL.md").open("a") as coordination:
+        with Path("/Volumes/A/warm-coordination/RUN-ALL.md").open("a") as coordination:
             coordination.write(f"\n{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} Vector batch-pool featurev3 owner acquired local timing flock; plan {ROOT / 'plan.json'},final separately declared compile-feature attempt afterv2 defaultcontrol failure. Same8-key mechanism, two serialized candidate builds then3balanced blocks/full9efcurves/7repeats and separate sample.1compilejob/1Rayon,4GiBcompile/2GiBnative sampledRSS,600spercompile/180snative/1200soverall. No runtimebatchpoolflag/finalarrays/remoteaction/lexical work.\n")
         compile_cost = {"v2": plan["previous_candidate"], "scope": plan["compile_cost_scope"]}
         compile_runs = {}

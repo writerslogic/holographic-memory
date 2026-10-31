@@ -1,10 +1,10 @@
    Compiling data-encoding-macro-internal v0.1.19
    Compiling data-encoding-macro v0.1.21
    Compiling multibase v0.9.3
-   Compiling holographic-memory v0.6.3 (/Volumes/A/.hms-integrate-standards-20261028)
+   Compiling writerslogic-warm v0.6.3 (/Volumes/A/.warm-integrate-standards-20261028)
    Compiling memmap2 v0.9.12
     Finished `test` profile [unoptimized + debuginfo] target(s) in 33.92s
-     Running unittests src/lib.rs (/Volumes/C/standards-provenance/debug/deps/holographic_memory-6150e2af396ffcc3)
+     Running unittests src/lib.rs (/Volumes/C/standards-provenance/debug/deps/writerslogic_warm-6150e2af396ffcc3)
 
 running 121 tests
 test core::provenance::access::tests::revoked_agent_cannot_readmit_with_an_earlier_credential ... ok

@@ -3,7 +3,7 @@
 
 // Drives real headless browsers against the built package and the demo page:
 //   node test/browser/run.mjs [--browser chrome|firefox|all]
-// Browser binaries: HMS_CHROME (default: the macOS Chrome app) and HMS_FIREFOX.
+// Browser binaries: WARM_CHROME (default: the macOS Chrome app) and WARM_FIREFOX.
 
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -18,9 +18,9 @@ const which = args.includes("--browser") ? args[args.indexOf("--browser") + 1] :
 const BROWSERS = {
   chrome: {
     browser: "chrome",
-    executablePath: process.env.HMS_CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    executablePath: process.env.WARM_CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   },
-  firefox: { browser: "firefox", executablePath: process.env.HMS_FIREFOX },
+  firefox: { browser: "firefox", executablePath: process.env.WARM_FIREFOX },
 };
 
 async function pageTests(browser, base, name) {
@@ -102,7 +102,7 @@ let failed = false;
 for (const name of which === "all" ? ["chrome", "firefox"] : [which]) {
   const spec = BROWSERS[name];
   if (!spec?.executablePath || !existsSync(spec.executablePath)) {
-    console.log(`SKIP ${name}: no executable (set HMS_${name.toUpperCase()})`);
+    console.log(`SKIP ${name}: no executable (set WARM_${name.toUpperCase()})`);
     failed = true;
     continue;
   }

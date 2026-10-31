@@ -1,4 +1,4 @@
-from holographic_memory import PhaseHVec, resonator_factorize
+from writerslogic_warm import PhaseHVec, resonator_factorize
 
 left = PhaseHVec.random(1024, 256, 1)
 right = PhaseHVec.random(1024, 256, 2)

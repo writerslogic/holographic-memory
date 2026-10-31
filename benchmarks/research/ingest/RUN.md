@@ -61,17 +61,17 @@ cargo test
 cargo test --all-features
 ```
 
-Timing, same harness as `INGEST-PROFILE.md` (release build, `HmsCore::new(1024, store, None)`,
-batches of 512, `examples/competitive_text.rs:67-75`); `$INPUT` is the hms-bench
+Timing, same harness as `INGEST-PROFILE.md` (release build, `WarmCore::new(1024, store, None)`,
+batches of 512, `examples/competitive_text.rs:67-75`); `$INPUT` is the warm-bench
 `{documents, queries}` JSON for NFCorpus:
 
 ```sh
 cargo build --release --example competitive_text
 for i in 1 2 3 4 5; do
-  rm -rf /tmp/hms-ingest-$i
+  rm -rf /tmp/warm-ingest-$i
   ./target/release/examples/competitive_text build --input "$INPUT" \
-    --store /tmp/hms-ingest-$i --out /tmp/hms-ingest-$i.json
-  jq .ingest_s /tmp/hms-ingest-$i.json
+    --store /tmp/warm-ingest-$i --out /tmp/warm-ingest-$i.json
+  jq .ingest_s /tmp/warm-ingest-$i.json
 done
 ```
 
@@ -81,7 +81,7 @@ The three modes, with parity against an eager store (pass = both parity flags tr
 cd benchmarks/research/ingest
 cargo build --release
 for mode in eager deferred lexical; do
-  ./target/release/hms-research-ingest --input "$INPUT" --encode $mode \
+  ./target/release/warm-research-ingest --input "$INPUT" --encode $mode \
     --repeats 5 --warmups 1 --batch 512 --dim 1024 --out /tmp/ingest-$mode.json
 done
 jq '{mode, median_ingest_s, median_catch_up_s, chunks, vectors_after_ingest, parity}' /tmp/ingest-*.json
@@ -97,8 +97,8 @@ switch in the example; a 3-line change would be, in
 `examples/competitive_text.rs:71-73`:
 
 ```rust
-let options = holographic_memory::core::documents::IngestOptions {
-    encode: std::env::var("HMS_ENCODE").as_deref().unwrap_or("eager").parse()?,
+let options = writerslogic_warm::core::documents::IngestOptions {
+    encode: std::env::var("WARM_ENCODE").as_deref().unwrap_or("eager").parse()?,
 };
 for chunk in input.documents.chunks(512) { core.memorize_documents_with(chunk.to_vec(), &options)?; }
 ```
@@ -120,7 +120,7 @@ for chunk in input.documents.chunks(512) { core.memorize_documents_with(chunk.to
 - `memorize_documents` document_api.rs:51-99 (`into_par_iter` 72, single `commit` 97),
   `train_document_index` 140, `remove_document_from_memory` 207.
 - `ShardSet::insert` shard.rs:404, `remove` 411 (missing id returns `Ok(false)`, 100-104).
-- `HmsCore::query` query.rs:12, `explain_query` 46 (`QueryExplanation.rationale`
+- `WarmCore::query` query.rs:12, `explain_query` 46 (`QueryExplanation.rationale`
   types.rs:45), `maintain_indices` 96, `encode_text` engine/mod.rs:561, `vector_count` 723.
 - `MutationGate::read` mutation_gate.rs:89, `begin_write` 97 (not reentrant: nothing holding
   `read()` may commit; `query` calls `encode_pending_documents` before taking its read guard
@@ -170,7 +170,7 @@ Profile baseline: 1.70 s wall = ~1.2 s parallel `prepare` (93% of 12.2 CPU-s is
   segment writes add to the serial part when the eager run had `storeText=false`).
 - `lexical`: same as deferred without the catch-up, ~0.5 s.
 
-So with these changes alone HMS lands near 2x tantivy (0.258 s) and ~5x FTS5 (0.090 s); the
+So with these changes alone WARM lands near 2x tantivy (0.258 s) and ~5x FTS5 (0.090 s); the
 serial install is the floor and must drop to about 0.05 s to beat FTS5. Nothing here changes a
 search result: lexical results are identical in every mode (asserted by the test and the
 harness parity), eager vectors are bit-identical, and deferred vectors are the eager vectors
@@ -186,7 +186,7 @@ or pending chunk has none of the shard side: roughly 260-310 B per chunk, i.e. ~
 NFCorpus if it holds ~4,700 chunks (`chunks` in the harness output gives the exact count). The
 journal is not smaller (`"vector":{"dim":1024,"indices":[]}` plus `"vector_state":"lexical"`
 is ~10 B longer than four indices). Whether that flips 1.07x SQLite depends on the absolute
-RSS; measure with the `HMS_ENCODE` switch above through the orchestrator's `serve` phase.
+RSS; measure with the `WARM_ENCODE` switch above through the orchestrator's `serve` phase.
 
 ## Format notes
 

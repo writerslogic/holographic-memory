@@ -15,12 +15,12 @@ def run(path):
 
 
 def rows():
-    hms = {"dataset": "nfcorpus", "model": "m", "system": "hms_impact_index", "host": "h", "ndcg_at_10": 0.33,
+    warm = {"dataset": "nfcorpus", "model": "m", "system": "warm_impact_index", "host": "h", "ndcg_at_10": 0.33,
            "recall_at_100": 0.27, "index_bytes": 2000, "postings": 1000, "qps_single_thread_k10": 5000.0,
            "ratios_to": "anserini", "qps_ratio": 2.5, "bytes_ratio": 0.5}
     ans = {"dataset": "nfcorpus", "model": "m", "system": "anserini", "host": "h", "ndcg_at_10": 0.33,
            "recall_at_100": 0.27, "index_bytes": 4000, "postings": 1000, "qps_single_thread_k10": 2000.0}
-    return [hms, ans]
+    return [warm, ans]
 
 
 def test_consistent_file_passes(tmp_path):

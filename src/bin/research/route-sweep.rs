@@ -10,10 +10,10 @@
 //!                    [--train-budget-secs 600] [--out path.json]
 
 use anyhow::{bail, Context, Result};
-use holographic_memory::{EntangledHVec, HmsCore, RetrievalResult};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::time::Instant;
+use writerslogic_warm::{EntangledHVec, RetrievalResult, WarmCore};
 
 const K: usize = 10;
 const CLUSTER_BASES: usize = 300;
@@ -118,20 +118,20 @@ fn summarize(mut lat_us: Vec<f64>, recalls: &[f64]) -> Value {
 }
 
 fn run_route(
-    hms: &HmsCore,
+    warm: &WarmCore,
     vectors: &[EntangledHVec],
     queries: &[EntangledHVec],
     kth: &[f64],
 ) -> Value {
     for q in queries.iter().take(10) {
-        let _ = hms.query(q, K as u32);
+        let _ = warm.query(q, K as u32);
     }
-    let route = hms.explain_query(&queries[0], K as u32).route;
+    let route = warm.explain_query(&queries[0], K as u32).route;
     let mut lat = Vec::with_capacity(queries.len());
     let mut rec = Vec::with_capacity(queries.len());
     for (q, &kt) in queries.iter().zip(kth) {
         let t = Instant::now();
-        let res = hms.query(q, K as u32);
+        let res = warm.query(q, K as u32);
         lat.push(t.elapsed().as_secs_f64() * 1e6);
         rec.push(recall(&res, vectors, q, kt));
     }
@@ -185,15 +185,15 @@ fn sweep_point(
     let exact = summarize(lat, &vec![1.0; nq]);
 
     let dir = tempfile::tempdir()?;
-    let hms = HmsCore::new(dim as u32, Some(dir.path().display().to_string()), None)?;
+    let warm = WarmCore::new(dim as u32, Some(dir.path().display().to_string()), None)?;
     let t = Instant::now();
     for (i, v) in vectors.iter().enumerate() {
-        hms.memorize(format!("v{i}"), v.clone())
+        warm.memorize(format!("v{i}"), v.clone())
             .with_context(|| format!("memorize v{i}"))?;
     }
     let memorize_secs = t.elapsed().as_secs_f64();
 
-    let inverted = run_route(&hms, &vectors, &queries, &kth);
+    let inverted = run_route(&warm, &vectors, &queries, &kth);
     if inverted["route_reported"] != json!("inverted") {
         bail!(
             "untrained store did not route to inverted: {}",
@@ -212,13 +212,13 @@ fn sweep_point(
         }
         let t = Instant::now();
         if name == "ivf" {
-            hms.train_ivf()?;
+            warm.train_ivf()?;
         } else {
-            hms.train_nsg()?;
+            warm.train_nsg()?;
         }
         let secs = t.elapsed().as_secs_f64();
         prev.record(kind, dim, name, n, secs);
-        let mut r = run_route(&hms, &vectors, &queries, &kth);
+        let mut r = run_route(&warm, &vectors, &queries, &kth);
         r["train_secs"] = json!(secs);
         if r["route_reported"] != json!(name) {
             bail!(
@@ -289,7 +289,7 @@ fn main() -> Result<()> {
                 "{CLUSTER_BASES} base vectors, each copy has {:.0}% indices replaced",
                 PERTURB * 100.0
             ),
-            "latency": "single-threaded caller, wall time per HmsCore::query, warm, microseconds",
+            "latency": "single-threaded caller, wall time per WarmCore::query, warm, microseconds",
             "points": points,
         });
         std::fs::write(out, serde_json::to_vec_pretty(&doc)?)?;

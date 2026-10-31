@@ -48,10 +48,10 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use anyhow::{anyhow, Context, Result};
-use holographic_memory::core::memory_api::{
+use writerslogic_warm::core::memory_api::{
     FactRecord, ForgetOptions, ForgetScope, ManualClock, Memory, RememberInput,
 };
-use holographic_memory::HmsCore;
+use writerslogic_warm::WarmCore;
 use serde::Serialize;
 use serde_json::{Map, Value};
 
@@ -321,7 +321,7 @@ impl ChallengeStore {
             }
         };
         let core = Arc::new(
-            HmsCore::new(dimensions, Some(path.display().to_string()), None)
+            WarmCore::new(dimensions, Some(path.display().to_string()), None)
                 .with_context(|| format!("cannot open the engine at {}", path.display()))?,
         );
         let clock = Arc::new(ManualClock::new(0));
@@ -343,7 +343,7 @@ impl ChallengeStore {
         &self.memory
     }
 
-    pub fn core(&self) -> &Arc<HmsCore> {
+    pub fn core(&self) -> &Arc<WarmCore> {
         self.memory.core()
     }
 

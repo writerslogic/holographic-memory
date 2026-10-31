@@ -142,11 +142,11 @@ def test_search_orders_only_after_identical_budget_selection():
         for enabled in (False, True):
             adapter = shim.Shim("http://unused", {"max_context_tokens": 4, "order_same_time": enabled})
 
-            async def hms(operation, tenant, body):
+            async def warm(operation, tenant, body):
                 assert operation == "recall" and tenant == "tenant"
                 return {"results": hits}
 
-            adapter.hms = hms
+            adapter.warm = warm
             response = await adapter.search(Request())
             outputs.append(json.loads(response.text)["results"])
         assert [row["id"] for row in outputs[0]] == ["later", "earlier"]
@@ -189,7 +189,7 @@ def hybrid_with_store(store, embedder):
     })
     adapter.embedder = embedder
 
-    async def hms(operation, tenant, body):
+    async def warm(operation, tenant, body):
         if operation == "get":
             return {"fact": store.get((tenant, body["id"]))}
         assert operation == "remember"
@@ -201,7 +201,7 @@ def hybrid_with_store(store, embedder):
         store[key] = fact
         return {"remembered": [{"id": fact["id"], "created": previous is None}]}
 
-    adapter.hms = hms
+    adapter.warm = warm
     return adapter
 
 

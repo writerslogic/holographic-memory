@@ -24,11 +24,11 @@ const browserMax = Number(option("--browser-max", "50000"));
 const out = option("--out", join(repo, "benchmarks/results/wasm_v1.json"));
 const cryptoFile = option("--crypto", "");
 const QUERIES = 200;
-const HMS_ENGINE_MAX = Number(option("--hms-max", "25000"));
+const WARM_ENGINE_MAX = Number(option("--warm-max", "25000"));
 const SCALAR_MAX = Number(option("--scalar-max", "25000"));
 const timeoutMs = 20 * 60 * 1000;
-const chrome = process.env.HMS_CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const firefox = process.env.HMS_FIREFOX;
+const chrome = process.env.WARM_CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const firefox = process.env.WARM_FIREFOX;
 
 function json(cmd, cmdArgs, options = {}) {
   const r = spawnSync(cmd, cmdArgs, { encoding: "utf8", timeout: timeoutMs, maxBuffer: 1 << 28, ...options });
@@ -40,17 +40,17 @@ function json(cmd, cmdArgs, options = {}) {
 const build = spawnSync(
   "cargo",
   ["build", "--release", "--example", "native_bench", "--manifest-path", join(crate, "Cargo.toml"), "--config", "profile.release.opt-level=3"],
-  { env: { ...process.env, CARGO_TARGET_DIR: "./.hms-target-wasm-native" }, stdio: ["ignore", "ignore", "inherit"] },
+  { env: { ...process.env, CARGO_TARGET_DIR: "./.warm-target-wasm-native" }, stdio: ["ignore", "ignore", "inherit"] },
 );
 if (build.status !== 0) throw new Error("native bench build failed");
-const nativeBin = "./.hms-target-wasm-native/release/examples/native_bench";
+const nativeBin = "./.warm-target-wasm-native/release/examples/native_bench";
 
 const points = [];
 let nodeFailed = false;
 for (const documents of sizes) {
   const point = { documents };
   point.nativeMemoryStore = json(nativeBin, ["--engine", "memory", "--documents", documents, "--queries", QUERIES]);
-  if (documents <= HMS_ENGINE_MAX) point.nativeEngineHmsCore = json(nativeBin, ["--engine", "hms", "--documents", documents, "--queries", QUERIES]);
+  if (documents <= WARM_ENGINE_MAX) point.nativeEngineHmsCore = json(nativeBin, ["--engine", "warm", "--documents", documents, "--queries", QUERIES]);
   for (const variant of ["simd", "scalar"]) {
     if (variant === "scalar" && documents > SCALAR_MAX) continue;
     point[`nodeWasm_${variant}`] = json(process.execPath, [join(here, "wasm-one.mjs"), documents, QUERIES, variant]);
@@ -124,7 +124,7 @@ const report = {
     dimensions: 16384,
   },
   notes: [
-    "Native baselines: nativeMemoryStore is the same MemoryDocumentStore the wasm module runs; nativeEngineHmsCore is the full journaled engine (HmsCore) in a temporary directory, run up to " + HMS_ENGINE_MAX + " documents.",
+    "Native baselines: nativeMemoryStore is the same MemoryDocumentStore the wasm module runs; nativeEngineHmsCore is the full journaled engine (WarmCore) in a temporary directory, run up to " + WARM_ENGINE_MAX + " documents.",
     "Native is built at opt-level 3; wasm at opt-level s with wasm-opt -Oz.",
     "wasm memory figures are the linear memory size (it never shrinks, so it is a high-water mark); native figures are peak RSS (ru_maxrss). They are different metrics.",
     "Latency is per query including result conversion to JavaScript objects. A sweep stops at the first size where the Node wasm run fails.",

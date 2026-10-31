@@ -1,6 +1,6 @@
-# Holographic Memory
+# WARM
 
-The `holographic-memory` MCP server keeps durable, private memory on this machine. Its tools appear as `mcp_holographic-memory_<tool>`: `remember`, `recall`, `search`, `get`, `list`, `forget`, `stats`, `export`.
+The `writerslogic-warm` MCP server keeps durable, private memory on this machine. Its tools appear as `mcp_writerslogic-warm_<tool>`: `remember`, `recall`, `search`, `get`, `list`, `forget`, `stats`, `export`.
 
 - Before starting a task, call `recall` with a short description of it and use what comes back.
 - Save durable facts, decisions and conventions with `remember`: one topic per memory and a stable `id` such as `decisions/<topic>`, so a later write with the same id replaces it.

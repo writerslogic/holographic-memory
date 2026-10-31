@@ -6,7 +6,7 @@ use std::collections::BinaryHeap;
 
 use super::kernels::Rotation;
 use super::{invalid, Graph, Metric, VGraph, VSearchParams, VSearcher};
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 
 /// Original vertex IDs at each boundary of a diagnostic traversal.
 #[derive(Clone, Debug, Default)]
@@ -76,7 +76,7 @@ impl<'a> ExactSearcher<'a> {
         }
     }
 
-    fn validate(&self, query: &[f32], k: usize) -> Result<(), HmsError> {
+    fn validate(&self, query: &[f32], k: usize) -> Result<(), WarmError> {
         if query.len() != self.graph.dim
             || query.iter().any(|v| !v.is_finite())
             || (self.graph.metric == Metric::Angular && query.iter().all(|&v| v == 0.0))
@@ -121,7 +121,7 @@ impl<'a> ExactSearcher<'a> {
         candidates: &[u32],
         k: usize,
         out: &mut Vec<u32>,
-    ) -> Result<(), HmsError> {
+    ) -> Result<(), WarmError> {
         self.validate(query, k)?;
         if candidates.iter().any(|&id| id as usize >= self.graph.n) {
             return Err(invalid("diagnostic candidate ID outside index".into()));
@@ -138,7 +138,12 @@ impl<'a> ExactSearcher<'a> {
         Ok(())
     }
 
-    pub fn flat(&mut self, query: &[f32], k: usize, out: &mut Vec<u32>) -> Result<usize, HmsError> {
+    pub fn flat(
+        &mut self,
+        query: &[f32],
+        k: usize,
+        out: &mut Vec<u32>,
+    ) -> Result<usize, WarmError> {
         self.validate(query, k)?;
         self.best.clear();
         for id in 0..self.graph.n as u32 {
@@ -167,7 +172,7 @@ impl<'a> ExactSearcher<'a> {
         k: usize,
         ef: usize,
         out: &mut Vec<u32>,
-    ) -> Result<usize, HmsError> {
+    ) -> Result<usize, WarmError> {
         self.validate(query, k)?;
         let g = self.graph;
         let ef = ef.max(k).min(g.n);
@@ -238,7 +243,7 @@ impl<'a> ExactSearcher<'a> {
 
 /// A second probe opposing symmetric int8 query-rounding error. The union still
 /// requires ranking with the original query; no unbiased estimator is implied.
-pub fn residual_feedback(query: &[f32]) -> Result<Vec<f32>, HmsError> {
+pub fn residual_feedback(query: &[f32]) -> Result<Vec<f32>, WarmError> {
     if query.is_empty() || query.iter().any(|v| !v.is_finite()) || query.iter().all(|&v| v == 0.0) {
         return Err(invalid("feedback requires finite nonzero query".into()));
     }
@@ -265,14 +270,14 @@ pub struct RotationControl {
     graph_hash: u64,
 }
 
-fn rotation_matrix_length(rows: usize, dimension: usize) -> Result<usize, HmsError> {
+fn rotation_matrix_length(rows: usize, dimension: usize) -> Result<usize, WarmError> {
     rows.checked_mul(dimension)
         .filter(|&n| n <= (1 << 29))
         .ok_or_else(|| invalid("rotated diagnostic matrix exceeds 2 GiB".into()))
 }
 
 impl RotationControl {
-    pub fn from_graph(graph: &Graph, bits: u8, seed: u64) -> Result<Self, HmsError> {
+    pub fn from_graph(graph: &Graph, bits: u8, seed: u64) -> Result<Self, WarmError> {
         if graph.metric != Metric::Angular || !matches!(bits, 4 | 8) || graph.dim > 8192 {
             return Err(invalid(
                 "rotation control requires angular data, 4 or 8 bits, and dimension <= 8192".into(),
@@ -351,7 +356,7 @@ impl RotationSearcher<'_> {
         k: usize,
         params: VSearchParams,
         out: &mut Vec<u32>,
-    ) -> Result<usize, HmsError> {
+    ) -> Result<usize, WarmError> {
         if query.len() != self.dim || k == 0 || query.iter().any(|x| !x.is_finite()) {
             return Err(invalid(
                 "rotation query requires finite coordinates of index dimension and positive k"
@@ -474,7 +479,7 @@ mod tests {
         graph.adj = super::super::adjacency::Adjacency::new(4, 2);
         let mut index = VGraph::from_graph_with(&graph, 4, 8, true, true, 3, false).unwrap();
         let path =
-            std::env::temp_dir().join(format!("hms-navigation-diagnostic-{}", std::process::id()));
+            std::env::temp_dir().join(format!("warm-navigation-diagnostic-{}", std::process::id()));
         index.save(&path).unwrap();
         let before = std::fs::read(&path).unwrap();
         for id in 0..4 {

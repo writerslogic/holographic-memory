@@ -1,7 +1,7 @@
 {
-  "name": "@holographic-memory/core",
+  "name": "@writerslogic/warm-core",
   "version": "0.1.0",
-  "description": "Memory API (remember, recall, get, list, forget) over the Holographic Memory native engine, shared by the framework adapters",
+  "description": "Memory API (remember, recall, get, list, forget) over the WARM native engine, shared by the framework adapters",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -19,6 +19,6 @@
     "test": "tsup && node --test test/*.test.mjs"
   },
   "peerDependencies": {
-    "holographic-memory": ">=0.6.0"
+    "writerslogic-warm": ">=0.6.0"
   }
 }

@@ -1,10 +1,10 @@
-<a href="https://holographic-memory.com/"><img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" alt="Holographic Memory logo" width="96" align="left"></a>
+<a href="https://writerslogic.com/warm/"><img src="https://raw.githubusercontent.com/writerslogic/warm/main/assets/crystal-halo/crystal-detailed-static.png" alt="WARM logo" width="96" align="left"></a>
 
-# Holographic Memory for Python
+# WARM for Python
 
-Native Python bindings for Holographic Memory's vector search and vector-symbolic algebra.
+Native Python bindings for WARM's vector search and vector-symbolic algebra.
 
-[Website](https://holographic-memory.com/) · [Documentation](https://docs.holographic-memory.com/) · [Source](https://github.com/writerslogic/holographic-memory) · [License](https://github.com/writerslogic/holographic-memory/blob/main/LICENSE)
+[Website](https://writerslogic.com/warm/) · [Documentation](https://writerslogic.com/warm/docs/) · [Source](https://github.com/writerslogic/warm) · [License](https://github.com/writerslogic/warm/blob/main/LICENSE)
 
 <br clear="left">
 
@@ -13,14 +13,14 @@ Native Python bindings for Holographic Memory's vector search and vector-symboli
 Python 3.9 or newer is required. Install the native binding and NumPy for the vector-index API:
 
 ```sh
-uv add holographic-memory-py numpy
+uv add writerslogic-warm-py numpy
 ```
 
-The distribution is named `holographic-memory-py`; the import is `holographic_memory`.
+The distribution is named `writerslogic-warm-py`; the import is `writerslogic_warm`.
 
 For the pinned default embedding model with no first-use download, install
-`holographic-memory-py[embed]`. That extra adds the separate
-[`holographic-memory-models`](https://pypi.org/project/holographic-memory-models/) wheel.
+`writerslogic-warm-py[embed]`. That extra adds the separate
+[`writerslogic-warm-models`](https://pypi.org/project/writerslogic-warm-models/) wheel.
 
 ## Vector search
 
@@ -29,7 +29,7 @@ angular, Euclidean, and inner-product search. The returned IDs are row numbers i
 
 ```python
 import numpy as np
-from holographic_memory import VectorIndex
+from writerslogic_warm import VectorIndex
 
 vectors = np.random.default_rng(7).normal(size=(128, 32)).astype(np.float32)
 index = VectorIndex("angular", degree=16, build_ef=64)
@@ -45,7 +45,7 @@ searches, and `SparseIndex` for sparse vectors.
 With the `[embed]` extra, the pinned default text embedding model is available offline:
 
 ```python
-from holographic_memory import Embedder
+from writerslogic_warm import Embedder
 
 embedder = Embedder(offline=True)
 print(len(embedder.embed_query("Where is my note?")))
@@ -56,7 +56,7 @@ print(len(embedder.embed_query("Where is my note?")))
 `PhaseHVec` supports deterministic phase-vector binding, unbinding, bundling, and similarity.
 
 ```python
-from holographic_memory import PhaseHVec
+from writerslogic_warm import PhaseHVec
 
 key = PhaseHVec.random(1024, 64, seed=1)
 value = PhaseHVec.random(1024, 64, seed=2)
@@ -80,6 +80,6 @@ or allocating the resonator index.
 ## Choosing the right Python package
 
 This native binding runs vector search and phase-vector operations in your Python process. It does
-not expose the persistent document-search and agent-memory APIs. For an HTTP client to `hms-server`,
-use [`holographic-memory-sdk`](https://pypi.org/project/holographic-memory-sdk/). The Rust and Node.js
+not expose the persistent document-search and agent-memory APIs. For an HTTP client to `warm-server`,
+use [`writerslogic-warm-sdk`](https://pypi.org/project/writerslogic-warm-sdk/). The Rust and Node.js
 packages expose the full embedded engine.

@@ -8,10 +8,10 @@
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use holographic_memory::core::memory_api::*;
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
 use serde_json::json;
+use writerslogic_warm::core::memory_api::*;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, EmbeddingSpace, SearchOptions, WarmCore};
 
 const DIM: u32 = 4096;
 
@@ -33,8 +33,8 @@ fn retry_contention<T>(mut call: impl FnMut() -> anyhow::Result<T>) -> T {
     panic!("finite concurrent writers did not make progress");
 }
 
-fn open(path: &std::path::Path) -> Arc<HmsCore> {
-    Arc::new(HmsCore::new(DIM, Some(path.display().to_string()), None).unwrap())
+fn open(path: &std::path::Path) -> Arc<WarmCore> {
+    Arc::new(WarmCore::new(DIM, Some(path.display().to_string()), None).unwrap())
 }
 
 fn memory_at(path: &std::path::Path, clock: &Arc<ManualClock>) -> Memory {
@@ -914,7 +914,7 @@ fn explain_reports_scores_terms_validity_and_chain() {
 #[test]
 fn explain_reports_semantic_scores_with_an_embedding_space() {
     let dir = tempfile::tempdir().unwrap();
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "test".into(),
             revision: "1".into(),
@@ -922,10 +922,10 @@ fn explain_reports_semantic_scores_with_an_embedding_space() {
             normalization: "l2".into(),
             metric: "cosine".into(),
         }),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     };
     let core =
-        Arc::new(HmsCore::new(DIM, Some(dir.path().display().to_string()), Some(config)).unwrap());
+        Arc::new(WarmCore::new(DIM, Some(dir.path().display().to_string()), Some(config)).unwrap());
     let memory = Memory::new(core);
     let with = |id: &str, text: &str, e: [f64; 4]| RememberInput {
         embedding: Some(e.to_vec()),
@@ -1371,7 +1371,7 @@ fn concurrent_writers_and_readers_stay_consistent_with_foreign_writes() {
 /// Child half of the crash test: remembers, then dies without unwinding or flushing.
 #[test]
 fn crash_child() {
-    let Ok(path) = std::env::var("HMS_MEMORY_CRASH_DIR") else {
+    let Ok(path) = std::env::var("WARM_MEMORY_CRASH_DIR") else {
         return;
     };
     let clock = Arc::new(ManualClock::new(1));
@@ -1406,7 +1406,7 @@ fn acknowledged_mutations_survive_an_abrupt_process_death() {
     let dir = tempfile::tempdir().unwrap();
     let output = std::process::Command::new(std::env::current_exe().unwrap())
         .args(["--exact", "crash_child", "--nocapture", "--test-threads=1"])
-        .env("HMS_MEMORY_CRASH_DIR", dir.path())
+        .env("WARM_MEMORY_CRASH_DIR", dir.path())
         .output()
         .unwrap();
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1637,12 +1637,12 @@ fn identical_inputs_give_byte_identical_results_in_separate_stores() {
 #[test]
 fn encrypted_stores_hold_facts_and_hide_text_on_disk() {
     let dir = tempfile::tempdir().unwrap();
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.security.encryption_enabled = true;
     config.security.encryption_passphrase = Some("memory-api-test-passphrase".into());
     let open_encrypted = || {
         Arc::new(
-            HmsCore::new(
+            WarmCore::new(
                 DIM,
                 Some(dir.path().display().to_string()),
                 Some(config.clone()),

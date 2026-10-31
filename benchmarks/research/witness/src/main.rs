@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! `hms-research-witness`: load an ann-benchmarks dataset, compute exact
+//! `warm-research-witness`: load an ann-benchmarks dataset, compute exact
 //! ground truth for disjoint reporting / selection query sets, then
 //!
 //! * stage 1 (always): for every `M x B x Q x t` configuration measure
@@ -31,14 +31,14 @@ use anyhow::{ensure, Context, Result};
 use clap::{Parser, ValueEnum};
 use serde::Serialize;
 
-use hms_research_witness::bank::{Bank, SelectScratch, GRID_LEVELS};
-use hms_research_witness::data::{self, AnnDataset, Rng};
-use hms_research_witness::join::Joiner;
-use hms_research_witness::postings::{self, Occupancy, Postings};
-use hms_research_witness::{exact_topk, median, overlap, summarize, Index, QueryParams, QueryScratch, Summary};
+use warm_research_witness::bank::{Bank, SelectScratch, GRID_LEVELS};
+use warm_research_witness::data::{self, AnnDataset, Rng};
+use warm_research_witness::join::Joiner;
+use warm_research_witness::postings::{self, Occupancy, Postings};
+use warm_research_witness::{exact_topk, median, overlap, summarize, Index, QueryParams, QueryScratch, Summary};
 
-const SCHEMA_STAGE1: &str = "hms-research-witness/stage1/v1";
-const SCHEMA_STAGE2: &str = "hms-research-witness/stage2/v1";
+const SCHEMA_STAGE1: &str = "warm-research-witness/stage1/v1";
+const SCHEMA_STAGE2: &str = "warm-research-witness/stage2/v1";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -98,14 +98,14 @@ fn parse_config(s: &str) -> std::result::Result<ConfigKey, String> {
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "hms-research-witness",
+    name = "warm-research-witness",
     about = "Kill test: occupancy-balanced rare-witness decoding for large-N ANN"
 )]
 struct Cli {
     /// Dataset.
     #[arg(long, value_enum, default_value_t = DatasetKind::Glove)]
     dataset: DatasetKind,
-    /// Dataset directory (default ~/.cache/hms-bench/<dataset>).
+    /// Dataset directory (default ~/.cache/warm-bench/<dataset>).
     #[arg(long)]
     data_dir: Option<PathBuf>,
     /// Corpus rows to load (prefix of train.f32); 0 = all.
@@ -476,7 +476,7 @@ fn home_cache(sub: &str) -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."))
         .join(".cache")
-        .join("hms-bench")
+        .join("warm-bench")
         .join(sub)
 }
 
@@ -924,7 +924,7 @@ fn main() -> Result<()> {
     let mut joiner = Joiner::new(n);
     let mut results: Vec<ConfigResult> = Vec::new();
     let mut banks: Vec<BankReport> = Vec::new();
-    println!("== hms-research-witness stage 1: {} n={} dim={} report={} select={} sample={} ==", ds.name, n, dim, split.report.len(), split.select.len(), n_sample);
+    println!("== warm-research-witness stage 1: {} n={} dim={} report={} select={} sample={} ==", ds.name, n, dim, split.report.len(), split.select.len(), n_sample);
     println!(
         "{:>6} {:>3} {:>3} {:>2} | {:>8} {:>8} | {:>7} {:>7} | {:>8} {:>8} | {:>8} | {:>7} | verdict (reporting set; [sel] = selection-set verdict)",
         "M", "B", "Q", "t", "cand_rec", "r10_surv", "cand_50", "cand_95", "postKB50", "postKB95", "projselu", "exp_KB"

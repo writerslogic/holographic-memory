@@ -14,15 +14,15 @@ from crewai.memory.storage.backend import StorageBackend  # noqa: E402
 from crewai.memory.types import MemoryRecord  # noqa: E402
 from crewai.memory.unified_memory import Memory  # noqa: E402
 
-from holographic_integrations.core import HashingEmbedder, HmsConfig  # noqa: E402
-from holographic_integrations.crewai import HolographicKnowledgeStorage, HolographicMemoryStorage  # noqa: E402
+from writerslogic_warm_integrations.core import HashingEmbedder, WarmConfig  # noqa: E402
+from writerslogic_warm_integrations.crewai import WarmKnowledgeStorage, WarmMemoryStorage  # noqa: E402
 
 DIM = 64
 EMB = HashingEmbedder(DIM)
 
 
 def cfg(server, **kw):
-    return HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, **kw)
+    return WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, **kw)
 
 
 def rec(content, scope="/", categories=(), metadata=None, **kw):
@@ -33,11 +33,11 @@ def rec(content, scope="/", categories=(), metadata=None, **kw):
 
 
 def test_implements_storage_backend_protocol(server):
-    assert isinstance(HolographicMemoryStorage(cfg(server)), StorageBackend)
+    assert isinstance(WarmMemoryStorage(cfg(server)), StorageBackend)
 
 
 def test_search_filters_scope_category_metadata(server):
-    s = HolographicMemoryStorage(cfg(server))
+    s = WarmMemoryStorage(cfg(server))
     s.save([
         rec("alpha deploy runbook", "/ops/deploy", ["runbook"], {"team": "a"}),
         rec("alpha deploy checklist", "/ops/deploy/prod", ["checklist", "runbook"], {"team": "b"}),
@@ -56,7 +56,7 @@ def test_search_filters_scope_category_metadata(server):
 
 def test_filters_apply_before_ranking_even_past_the_page(server_factory):
     srv = server_factory(DIM, max_top_k=5)
-    s = HolographicMemoryStorage(HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=5))
+    s = WarmMemoryStorage(WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=5))
     s.save([rec(f"alpha match {i}", "/a", metadata={"k": "no"}) for i in range(12)])
     s.save([rec("zzz rare needle", "/b", metadata={"k": "yes"})])
     hits = s.search(EMB.embed_query("alpha match"), metadata_filter={"k": "yes"}, limit=3)
@@ -64,7 +64,7 @@ def test_filters_apply_before_ranking_even_past_the_page(server_factory):
 
 
 def test_roundtrip_fields_update_and_get(server):
-    s = HolographicMemoryStorage(cfg(server))
+    s = WarmMemoryStorage(cfg(server))
     r = rec("remember me", "/x/y", ["c1", "c2"], {"k": 1, "nested": {"a": 1}}, importance=0.9, source="u1", private=True)
     s.save([r])
     got = s.get_record(r.id)
@@ -77,7 +77,7 @@ def test_roundtrip_fields_update_and_get(server):
 
 
 def test_scopes_categories_count_and_ordering(server):
-    s = HolographicMemoryStorage(cfg(server))
+    s = WarmMemoryStorage(cfg(server))
     base = datetime.utcnow()
     s.save([
         rec("one", "/a/b", ["p"], created_at=base - timedelta(days=2)),
@@ -95,7 +95,7 @@ def test_scopes_categories_count_and_ordering(server):
 
 
 def test_delete_variants_and_reset(server):
-    s = HolographicMemoryStorage(cfg(server))
+    s = WarmMemoryStorage(cfg(server))
     base = datetime.utcnow()
     old = rec("old", "/a", ["x"], {"k": 1}, created_at=base - timedelta(days=10))
     s.save([old, rec("new", "/a", ["x"], {"k": 2}), rec("other", "/b", ["y"]), rec("more", "/b/c", ["y"])])
@@ -119,7 +119,7 @@ def test_delete_variants_and_reset(server):
 
 def test_listing_warns_when_truncated(server_factory):
     srv = server_factory(DIM, max_top_k=5)
-    s = HolographicMemoryStorage(HmsConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=5))
+    s = WarmMemoryStorage(WarmConfig(url=srv.url, tenant_id=srv.tenant(), input_dim=DIM, max_fetch=5))
     s.save([rec(f"n{i}", "/s") for i in range(4)])
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -130,7 +130,7 @@ def test_listing_warns_when_truncated(server_factory):
 
 
 async def test_async_paths(server):
-    s = HolographicMemoryStorage(cfg(server))
+    s = WarmMemoryStorage(cfg(server))
     await s.asave([rec("async alpha", "/a", ["c"]), rec("async beta", "/b", ["c"])])
     hits = await s.asearch(EMB.embed_query("async alpha"), scope_prefix="/a")
     assert [r.content for r, _ in hits] == ["async alpha"]
@@ -139,7 +139,7 @@ async def test_async_paths(server):
 
 
 def test_unified_memory_end_to_end(server):
-    storage = HolographicMemoryStorage(cfg(server))
+    storage = WarmMemoryStorage(cfg(server))
     mem = Memory(storage=storage, embedder=EMB.embed_documents, llm="gpt-4o-mini", consolidation_threshold=1.0)
     kw = dict(scope="/team", categories=["fact"], importance=0.7)
     mem.remember("The release train departs every Thursday", **kw)
@@ -155,7 +155,7 @@ def test_unified_memory_end_to_end(server):
 
 
 def test_knowledge_storage_through_knowledge(server):
-    storage = HolographicKnowledgeStorage(config=cfg(server))
+    storage = WarmKnowledgeStorage(config=cfg(server))
     know = Knowledge(
         collection_name="docs",
         sources=[StringKnowledgeSource(content="The aurora project ships in March. Billing runs monthly.")],
@@ -170,7 +170,7 @@ def test_knowledge_storage_through_knowledge(server):
 
 
 def test_knowledge_metadata_filter_and_dedup(server):
-    storage = HolographicKnowledgeStorage(config=cfg(server))
+    storage = WarmKnowledgeStorage(config=cfg(server))
     storage.save_with(["alpha one", "alpha two"], {"src": "a"})
     storage.save_with(["alpha three"], {"src": "b"})
     storage.save_with(["alpha one"], {"src": "a"})
@@ -179,7 +179,7 @@ def test_knowledge_metadata_filter_and_dedup(server):
     assert got[0]["metadata"] == {"src": "a"}
 
 
-def test_crew_kickoff_recalls_from_holographic_memory(server):
+def test_crew_kickoff_recalls_from_writerslogic_warm(server):
     from crewai import Agent, Crew, Task
     from crewai.llms.base_llm import BaseLLM
 
@@ -192,7 +192,7 @@ def test_crew_kickoff_recalls_from_holographic_memory(server):
         def supports_function_calling(self):
             return False
 
-    storage = HolographicMemoryStorage(cfg(server))
+    storage = WarmMemoryStorage(cfg(server))
     llm = Scripted(model="scripted")
     mem = Memory(storage=storage, embedder=EMB.embed_documents, llm=llm, consolidation_threshold=1.0)
     mem.remember("The launch codename is Bluebird", scope="/project", categories=["fact"], importance=0.9)

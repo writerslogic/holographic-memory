@@ -6,7 +6,7 @@ committed measurements, labelled as such.
 
 ## 1. Measured problem and where the bytes were
 
-`benchmarks/research/server-ann/server_v2.json`, 50k x 384 (`rss_mb_after_ingest`): hms
+`benchmarks/research/server-ann/server_v2.json`, 50k x 384 (`rss_mb_after_ingest`): warm
 639 (`exact`) and 672 MB (`exact+index`); Qdrant 202-214 MB under load; SQLite+FastAPI
 236-372 MB. Live-heap arithmetic of the pre-change layout at 50k x 384:
 
@@ -47,10 +47,10 @@ The sum of the live heap (~320-330 MB without the bbox index) leaves ~300 MB of 
   and drops it with the builder. The stale delta pass dots the stored `f32` rows directly.
 - `src/core/documents/dense.rs`: node bounds are exact `f32` min/max (half the bytes);
   `upper` widens them and keeps the outward rounding over the `f64` dot.
-- `src/bin/hms-server/config.rs`, `documents.rs`, `docs/server/configuration.md`:
-  `--ingest-encode eager|deferred|lexical` (`HMS_INGEST_ENCODE`, default `eager`), validated
+- `src/bin/warm-server/config.rs`, `documents.rs`, `docs/server/configuration.md`:
+  `--ingest-encode eager|deferred|lexical` (`WARM_INGEST_ENCODE`, default `eager`), validated
   at startup, passed per batch as `IngestOptions { encode }` to
-  `HmsCore::memorize_documents_with`. The store's encoder in the server is the default text
+  `WarmCore::memorize_documents_with`. The store's encoder in the server is the default text
   encoder (`tenants.rs:339-349` sets only `embedding_space`), so `deferred` is accepted
   (text is stored); with a `LocalEmbedV1` encoder the engine refuses `deferred` at ingest
   (`documents.rs::prepare_with_options`), reported as 500 by the batch endpoint.
@@ -108,7 +108,7 @@ from the file. New `src/core/os_memory.rs` (declared in `src/core/mod.rs`) retur
   `load_from_log` (`src/core/engine/mod.rs`) after each replayed frame via the new
   `PersistentArena::release_pages(offset, len)`; `replace_compacted` after the swap
   (`release_all_pages` over the published generation).
-- Knob: `HMS_RELEASE_JOURNAL_PAGES` (`0`, `false`, `off`, `no` disable; default on), read
+- Knob: `WARM_RELEASE_JOURNAL_PAGES` (`0`, `false`, `off`, `no` disable; default on), read
   once per process (`os_memory::release_journal_pages_enabled`). Not a server flag, so the
   flag/doc test is untouched.
 - Correctness: every release happens after the bytes are on disk (`flush_range` MS_SYNC) or
@@ -141,7 +141,7 @@ idle ~25 MB):
 |---|---|---|---|
 | eager | 342 | ~165 | 342 - 177 journal |
 | lexical | 246 | ~70 | 246 - 177 |
-| lexical_keep_pages (new; `HMS_RELEASE_JOURNAL_PAGES=0`) | | ~246 | the before value, as the control |
+| lexical_keep_pages (new; `WARM_RELEASE_JOURNAL_PAGES=0`) | | ~246 | the before value, as the control |
 | lexical_snapshot (after maintain) | 248 | ~72 | +6.5 snapshot and bbox |
 | lexical_graph (after maintain) | 338 | ~115-125 | 70 + 45 VGraph + 0-10 retention; target < 200 |
 | lexical_long_text | 310 | ~100 | 70 + 25-30 terms/postings |
@@ -158,9 +158,9 @@ Commands for this round (after section 3's fmt/clippy/tests, plus):
 cargo test --lib core::os_memory core::storage
 cargo test --test store_lifecycle --test format_crash --test reliability --test documents
 cargo build --release --features server
-uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --hms-bin target/release/hms-server \
+uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --warm-bin target/release/warm-server \
   --n 50000 --dim 384 --dims 384,128 --label f32-release --out benchmarks/research/rss/breakdown_f32_release_50k.json
-uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --hms-bin target/release/hms-server \
+uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --warm-bin target/release/warm-server \
   --n 10000 --dim 384 --dims 384,128 --label f32-release --out benchmarks/research/rss/breakdown_f32_release_10k.json
 jq '.components, (.arms | map_values(.rss_after_ingest_mb))' benchmarks/research/rss/breakdown_f32_release_50k.json
 ```
@@ -168,7 +168,7 @@ jq '.components, (.arms | map_values(.rss_after_ingest_mb))' benchmarks/research
 Pass: `components.journal_pages_released_mb` >= 120 at 50k; `arms.lexical_graph.rss_after_maintain_mb`
 < 200; `arms.eager.rss_after_ingest_mb` < 200; `graph_mb` <= 55; the store tests above pass
 (replay after release reads the same frames). Then the server benchmark of section 3 with the
-flag set through `HMS_INGEST_ENCODE=lexical`, recording `rss_mb_after_ingest` per size.
+flag set through `WARM_INGEST_ENCODE=lexical`, recording `rss_mb_after_ingest` per size.
 
 ## 3. Commands (repo root; private `CARGO_TARGET_DIR` per the project memory)
 
@@ -179,7 +179,7 @@ cargo clippy --all-targets --features server,security -- -D warnings
 cargo test --lib core::documents
 cargo test --test rss_embeddings --test documents --test document_dense --test embed_store --test ingest_encode --test format_golden --test format_layout --test memory_api
 cargo test --features server --test rss_embeddings --test server --test server_api --test server_ann --test server_ops
-cargo test --features server --bin hms-server    # every_flag_has_an_environment_variable_and_a_documented_row
+cargo test --features server --bin warm-server    # every_flag_has_an_environment_variable_and_a_documented_row
 ```
 
 Pass criteria of `tests/rss_embeddings.rs`: on 300 x 64-d documents and 20 queries, the
@@ -206,15 +206,15 @@ cosine of a vector with its own `f32` rounding is `1 - O(2^-48)`.
 Breakdown (both binaries; `--label` records which):
 
 ```sh
-git worktree add /tmp/hms-main origin/main && (cd /tmp/hms-main && cargo build --release --features server)
+git worktree add /tmp/warm-main origin/main && (cd /tmp/warm-main && cargo build --release --features server)
 cargo build --release --features server
 # Baseline binary (no --ingest-encode flag): every arm ingests eagerly, so hypervectors_mb is
 # absent and the embedding slope, snapshot, graph and residual components are measured.
-uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --hms-bin /tmp/hms-main/target/release/hms-server \
+uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --warm-bin /tmp/warm-main/target/release/warm-server \
   --no-encode-flag --n 50000 --dim 384 --dims 384,128 --label main --out benchmarks/research/rss/breakdown_main_50k.json
-uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --hms-bin target/release/hms-server \
+uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --warm-bin target/release/warm-server \
   --n 50000 --dim 384 --dims 384,128 --label f32 --out benchmarks/research/rss/breakdown_f32_50k.json
-uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --hms-bin target/release/hms-server \
+uv run --no-project python -I benchmarks/research/rss/rss_breakdown.py --warm-bin target/release/warm-server \
   --n 10000 --dim 384 --dims 384,128 --label f32 --out benchmarks/research/rss/breakdown_f32_10k.json
 jq '.components' benchmarks/research/rss/breakdown_*_50k.json
 ```
@@ -226,7 +226,7 @@ reproduce `server_v2.json` (639 MB at 50k, 183 MB at 10k) within the run-to-run 
 that measurement; if it does not, the harness difference (6-decimal client values, `ps`
 instead of psutil) is the first thing to reconcile before comparing the new binary.
 
-Output schema (`hms-rss-breakdown/1`): `arms.<name>` = `{encode, dim, text_bytes, maintain,
+Output schema (`warm-rss-breakdown/1`): `arms.<name>` = `{encode, dim, text_bytes, maintain,
 graph_min_rows, rss_idle_mb, rss_after_ingest_mb, ingest_seconds, vectors,
 data_dir_bytes_after_ingest, [maintain_seconds, vector_index, rss_after_maintain_mb]}`;
 `components` = `{hypervectors_mb, text_tables_mb, snapshot_and_bbox_mb, graph_mb,
@@ -239,17 +239,17 @@ If `residual_mb` is above 150, journal residency is confirmed as the next lever
 
 Server benchmark (the protocol of `benchmarks/research/server-ann/RUN.md`; the comparison arm
 sets the flag through the environment, which the harness passes through, so
-`deploy/bench/server_bench.py` is unchanged; record the flag in `method.hms_flags` by hand):
+`deploy/bench/server_bench.py` is unchanged; record the flag in `method.warm_flags` by hand):
 
 ```sh
-QDRANT=$(command -v qdrant || find ~/.cache/hms-bench -maxdepth 4 -type f -name qdrant | head -1)
+QDRANT=$(command -v qdrant || find ~/.cache/warm-bench -maxdepth 4 -type f -name qdrant | head -1)
 uv run deploy/bench/server_bench.py compare \
-  --hms-bin target/release/hms-server --qdrant-bin "$QDRANT" \
-  --sizes 1000,10000,50000 --concurrency 1,4,16 --duration 6 --hms-work 10 \
+  --warm-bin target/release/warm-server --qdrant-bin "$QDRANT" \
+  --sizes 1000,10000,50000 --concurrency 1,4,16 --duration 6 --warm-work 10 \
   --out benchmarks/results/server_v3_f32.json
-HMS_INGEST_ENCODE=lexical uv run deploy/bench/server_bench.py compare \
-  --hms-bin target/release/hms-server --qdrant-bin "$QDRANT" \
-  --sizes 1000,10000,50000 --concurrency 1,4,16 --duration 6 --hms-work 10 \
+WARM_INGEST_ENCODE=lexical uv run deploy/bench/server_bench.py compare \
+  --warm-bin target/release/warm-server --qdrant-bin "$QDRANT" \
+  --sizes 1000,10000,50000 --concurrency 1,4,16 --duration 6 --warm-work 10 \
   --out benchmarks/results/server_v3_f32_lexical.json
 jq -c '.results[] | {system, variant, n, recall_at_10, rss: .rss_mb_after_ingest, qps: [.load[].qps]}' benchmarks/results/server_v3_f32*.json
 ```
@@ -274,10 +274,10 @@ chunks the snapshot covers, which is a larger change). `rss_mb_after_ingest` at 
   `embedded_count` (`:154`), `get` (`:235`), `text_segment`; `index::text_of` (`:112`);
   `ChunkWithText::serialize` (`:90-109`) is unchanged and emits the new form through
   `Embedding: Serialize`.
-- `HmsCore::memorize_documents_with(Vec<DocumentInput>, &IngestOptions)` `src/core/engine/document_api.rs:77-81`;
-  `search_vectors` (`:178`), `rebuild_vector_index` (`:265`); `HmsCore::new(u32, Option<String>, Option<HmsConfig>)` `src/core/engine/mod.rs:116`.
+- `WarmCore::memorize_documents_with(Vec<DocumentInput>, &IngestOptions)` `src/core/engine/document_api.rs:77-81`;
+  `search_vectors` (`:178`), `rebuild_vector_index` (`:265`); `WarmCore::new(u32, Option<String>, Option<WarmConfig>)` `src/core/engine/mod.rs:116`.
 - `EncodeMode: FromStr` `src/core/documents.rs:109`; `IngestOptions` (`:125`).
-- Server: `Config` (`src/bin/hms-server/config.rs:80`), `AppState.cfg`, `ApiError::internal`
+- Server: `Config` (`src/bin/warm-server/config.rs:80`), `AppState.cfg`, `ApiError::internal`
   (`error.rs`), `tests/server_support::{Server::open, Request::{req, tenant, json, send}, embedding, DIM}`.
 - Crates: none added.
 

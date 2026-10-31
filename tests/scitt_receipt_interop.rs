@@ -4,14 +4,14 @@
 
 use base64::Engine;
 use ed25519_dalek::VerifyingKey;
-use holographic_memory::core::provenance::{
+use serde_json::Value;
+use writerslogic_warm::core::provenance::{
     scitt::{
         receipt::{verify_receipt, ReceiptPolicy},
         SignedStatement, UnverifiedReceipt,
     },
     trust::TrustStore,
 };
-use serde_json::Value;
 
 #[test]
 fn independently_signed_python_receipts_require_inclusion_identity_trust_and_freshness() {

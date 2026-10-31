@@ -13,7 +13,7 @@ import json
 import math
 from pathlib import Path
 
-from proxies.beir_proxies import BM25, STOP, tok_hms
+from proxies.beir_proxies import BM25, STOP, tok_warm
 
 RRF_K0 = 60
 MAX_GROUPS = 4096
@@ -28,7 +28,7 @@ def _require(condition, message):
 
 
 def _tokens(text):
-    return [token for token in tok_hms(text) if token not in STOP]
+    return [token for token in tok_warm(text) if token not in STOP]
 
 
 def retrieve(question, source_groups, user_prior, limit=64):
@@ -202,7 +202,7 @@ def prove_dev(source, split, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json")
+    parser.add_argument("--source", type=Path, default=Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json")
     parser.add_argument("--split", type=Path, default=Path(__file__).with_name("longmemeval_split.json"))
     parser.add_argument("--output", type=Path, default=ROOT / "benchmarks/results/longmemeval_role_retrieval_dev_v1.json")
     args = parser.parse_args()

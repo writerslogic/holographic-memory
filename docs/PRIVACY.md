@@ -51,7 +51,7 @@ GCM nonces use fallible OS randomness rather than fork-inherited thread-local ge
 state. This preserves the encrypted format and does not make random collisions impossible.
 For q invocations under one key, the ideal 96-bit birthday collision bound is
 q(q−1)/2^97. [NIST SP 800-38D §8.3](https://csrc.nist.gov/pubs/sp/800/38/d/final)
-limits invocations for its random-IV construction; HMS has no persistent cross-process,
+limits invocations for its random-IV construction; WARM has no persistent cross-process,
 cross-backup key-usage accountant. Operators must budget all arena/cache/compaction writes
 and copied stores sharing a key. Changing a salt in place cannot rotate an encrypted store;
 re-encryption into a separately keyed store is required. No certification is asserted.
@@ -79,11 +79,11 @@ ordered binding does not, so compose sequences before masking.
 
 `core::provenance::access` (feature `provenance`) admits agents by W3C Verifiable Credentials
 carrying an `eddsa-jcs-2022` proof from an issuer `did:key` the host has explicitly trusted,
-with an optional expiry and explicit revocation. `HmsCore::query_as` refuses a query unless
+with an optional expiry and explicit revocation. `WarmCore::query_as` refuses a query unless
 the named agent holds a current read grant. The registry is in-memory and per-process. It
 decides authorization only: the host must authenticate that the caller controls the DID it
 presents, and in-process callers can still use the ungated `query`. PoSME receipts and RATS
-attestation evidence are not verified anywhere in HMS.
+attestation evidence are not verified anywhere in WARM.
 
 ## Differentially private bundling
 
@@ -103,7 +103,7 @@ a 2-epsilon bound under basic composition. The implementation uses floating-poin
 it has not been independently audited as a finite-precision DP mechanism. See the
 [Laplace mechanism and post-processing analysis](https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf).
 
-`HmsCore::bundle` uses the configured public dimensions even for empty input. The low-level
+`WarmCore::bundle` uses the configured public dimensions even for empty input. The low-level
 `EntangledHVec::bundle_dp` infers dimensions from the first vector (or zero for empty
 input); do not use that helper across datasets whose inferred dimensions can differ. Epsilon
 must be finite and positive. Lower values add more noise, but no epsilon value is universally
@@ -117,6 +117,6 @@ a panic before any output. These checks do not establish finite-precision DP or 
 the privacy cost of repeated releases.
 
 Repeated releases consume additional budget. The caller must account for every release and
-choose an adjacency model and privacy budget suitable for its use case. HMS does not provide
+choose an adjacency model and privacy budget suitable for its use case. WARM does not provide
 a persistent budget accountant, query privacy, private information retrieval, or a claim that
 non-DP outputs become private when bundling is enabled.

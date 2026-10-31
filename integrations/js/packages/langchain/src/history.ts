@@ -7,11 +7,11 @@ import {
   type BaseMessage,
   type StoredMessage,
 } from '@langchain/core/messages'
-import type { HmsStore } from '@holographic-memory/core'
+import type { WarmStore } from '@writerslogic/warm-core'
 import { OrderedLog, packPayload, unpackPayload } from './log.js'
 
-export interface HmsChatMessageHistoryInput {
-  store: HmsStore
+export interface WarmChatMessageHistoryInput {
+  store: WarmStore
   sessionId: string
 }
 
@@ -27,13 +27,13 @@ function plainText(message: BaseMessage): string {
  * also searchable with `search()`. Use a store dedicated to history, or one `collection` per
  * purpose. One writer per session.
  */
-export class HmsChatMessageHistory extends BaseListChatMessageHistory {
-  lc_namespace = ['holographic_memory', 'chat_history']
+export class WarmChatMessageHistory extends BaseListChatMessageHistory {
+  lc_namespace = ['writerslogic_warm', 'chat_history']
   readonly sessionId: string
-  private readonly store: HmsStore
+  private readonly store: WarmStore
   private readonly log: OrderedLog
 
-  constructor(input: HmsChatMessageHistoryInput) {
+  constructor(input: WarmChatMessageHistoryInput) {
     super()
     this.store = input.store
     this.sessionId = input.sessionId

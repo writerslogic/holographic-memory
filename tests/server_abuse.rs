@@ -352,7 +352,7 @@ fn hostile_paths_methods_and_headers_never_reach_a_5xx() {
         ("Idempotency-Key", "k".repeat(500)),
         ("X-Request-Id", "x".repeat(500)),
         ("Authorization", format!("Bearer {}", "A".repeat(60_000))),
-        ("Authorization", "Bearer hms_x.".into()),
+        ("Authorization", "Bearer warm_x.".into()),
         ("If-None-Match", "\"unterminated".into()),
         ("Content-Type", "application/x-ndjson; charset=\"".into()),
     ];
@@ -427,7 +427,7 @@ fn abandoned_and_stalled_connections_do_not_leak_work_slots_or_memory() {
         "k",
         &["--max-concurrent-work", "2", "--body-timeout-seconds", "1"],
     );
-    let warm: Value = s.req("GET", "/healthz").send().json();
+    let hms: Value = s.req("GET", "/healthz").send().json();
     assert_eq!(warm["status"], "ok");
     let before = rss(&s);
     for round in 0..24 {
@@ -445,7 +445,7 @@ fn abandoned_and_stalled_connections_do_not_leak_work_slots_or_memory() {
     let deadline = std::time::Instant::now() + Duration::from_secs(10);
     loop {
         let metrics = s.req("GET", "/metrics").bearer("k").send().text();
-        if metrics.contains("hms_work_slots_in_use 0") {
+        if metrics.contains("warm_work_slots_in_use 0") {
             break;
         }
         assert!(

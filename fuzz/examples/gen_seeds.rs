@@ -12,10 +12,10 @@
 use std::path::PathBuf;
 
 use ed25519_dalek::SigningKey;
-use holographic_memory::core::connection_graph::{ConnectionGraph, GraphConfig};
-use holographic_memory::core::provenance::jumbf::JumbfBox;
-use holographic_memory::core::provenance::{cose, did, vc};
-use holographic_memory::core::qgraph::ivf::QuantizedIvf;
+use writerslogic_warm::core::connection_graph::{ConnectionGraph, GraphConfig};
+use writerslogic_warm::core::provenance::jumbf::JumbfBox;
+use writerslogic_warm::core::provenance::{cose, did, vc};
+use writerslogic_warm::core::qgraph::ivf::QuantizedIvf;
 
 fn put(root: &std::path::Path, target: &str, name: &str, bytes: &[u8]) {
     let dir = root.join(target);
@@ -98,7 +98,7 @@ fn main() {
         serde_json::to_string(&credential).expect("json").as_bytes(),
     );
 
-    let log = std::env::temp_dir().join("hms-seed-graph.log");
+    let log = std::env::temp_dir().join("warm-seed-graph.log");
     let _ = std::fs::remove_file(&log);
     {
         let mut graph = ConnectionGraph::open(64, GraphConfig::default(), &log).expect("graph");

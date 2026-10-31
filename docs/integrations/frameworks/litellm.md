@@ -7,18 +7,18 @@ Tested against `litellm==1.106.0` (`mcp==2.3.0`, which litellm imports when `too
 ## Install
 
 ```sh
-pip install "holographic-integrations[litellm]"
+pip install "writerslogic-warm-integrations[litellm]"
 ```
 
-Needs a running `hms-server` whose `--input-dim` matches the embedder (default: 384).
+Needs a running `warm-server` whose `--input-dim` matches the embedder (default: 384).
 
 ## Use
 
 ```python
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.litellm import MemoryTools
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.litellm import MemoryTools
 
-tools = MemoryTools(HmsConfig(url="http://127.0.0.1:8080", tenant_id="acme"), user_id="alice")
+tools = MemoryTools(WarmConfig(url="http://127.0.0.1:8080", tenant_id="acme"), user_id="alice")
 
 messages = [{"role": "user", "content": "Remember that I prefer dark roast."}]
 response = tools.run(messages, model="gpt-5")                 # litellm.completion loop
@@ -34,13 +34,13 @@ for call in r.choices[0].message.tool_calls:
 ```
 
 - `tools_schema()` returns `remember(text, tags?)`, `recall(query, k?)`, `forget(memory_id)` as `{"type": "function", "function": {...}}` (a fresh copy per call).
-- `handle_tool_call` accepts LiteLLM `ChatCompletionMessageToolCall`, OpenAI SDK tool-call objects and plain dicts (arguments as a JSON string or a dict) and returns `{"role": "tool", "tool_call_id", "name", "content"}`. Bad arguments, malformed JSON or an unknown tool come back as an `Error: ...` tool message for the model to correct; service failures (`HmsError`, network) raise.
+- `handle_tool_call` accepts LiteLLM `ChatCompletionMessageToolCall`, OpenAI SDK tool-call objects and plain dicts (arguments as a JSON string or a dict) and returns `{"role": "tool", "tool_call_id", "name", "content"}`. Bad arguments, malformed JSON or an unknown tool come back as an `Error: ...` tool message for the model to correct; service failures (`WarmError`, network) raise.
 - `run`/`arun` extend `messages` in place with each assistant and tool message, pass extra keyword arguments to the completion call, accept `completion=` (any callable with the `litellm.completion` signature) and raise `RuntimeError` after `max_steps` (default 8) turns that all request tools.
 - `user_id` is stored as metadata and restricts `recall` (service-side equality filter) and `forget`. `k` is clamped to `max_k` (default 20).
 
 ## Knobs
 
-`HmsConfig`: `url`, `api_key`, `tenant_id`, `collection`, `embedder`, `text_queries`, `zero_trust_key`, `max_fetch`, `overfetch`; or pass ready `backend=` / `async_backend=` objects. Sync and async backends are created lazily.
+`WarmConfig`: `url`, `api_key`, `tenant_id`, `collection`, `embedder`, `text_queries`, `zero_trust_key`, `max_fetch`, `overfetch`; or pass ready `backend=` / `async_backend=` objects. Sync and async backends are created lazily.
 
 ## Filters
 
@@ -48,7 +48,7 @@ No filter argument; `user_id` is a top-level equality filter evaluated by the se
 
 ## Conformance
 
-LiteLLM's own mock completion path (`mock_tool_calls`, `mock_response`) drives real `litellm.completion`/`acompletion` calls through the loop, including `tools=` validation, against a real `hms-server`: `pytest tests/litellm`. Runaway tool loops, clamping, scoping and error messages are covered.
+LiteLLM's own mock completion path (`mock_tool_calls`, `mock_response`) drives real `litellm.completion`/`acompletion` calls through the loop, including `tools=` validation, against a real `warm-server`: `pytest tests/litellm`. Runaway tool loops, clamping, scoping and error messages are covered.
 
 ## Limitations
 

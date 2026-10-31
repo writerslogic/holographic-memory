@@ -8,7 +8,7 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use super::{mutation::Mutation, HmsCore};
+use super::{mutation::Mutation, WarmCore};
 
 /// Most deletions one journal transaction carries.
 pub(crate) const DELETE_BATCH: usize = 4096;
@@ -38,7 +38,7 @@ impl DocumentView<'_> {
     }
 }
 
-impl HmsCore {
+impl WarmCore {
     pub(crate) fn validate_document_search(
         &self,
         text: &str,
@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn fallible_scoped_scan_stops_at_the_first_error() -> Result<()> {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(256, Some(directory.path().display().to_string()), None)?;
+        let core = WarmCore::new(256, Some(directory.path().display().to_string()), None)?;
         for id in ["a", "b", "c"] {
             core.memorize_document(serde_json::from_value(
                 serde_json::json!({"id": id, "text": "evidence"}),

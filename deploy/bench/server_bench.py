@@ -4,13 +4,13 @@
 # ///
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Load, scaling and soak harness for hms-server.
+"""Load, scaling and soak harness for warm-server.
 
-    uv run deploy/bench/server_bench.py compare --hms-bin PATH --qdrant-bin PATH --out FILE
-    uv run deploy/bench/server_bench.py soak    --hms-bin PATH --minutes 10 --out FILE
+    uv run deploy/bench/server_bench.py compare --warm-bin PATH --qdrant-bin PATH --out FILE
+    uv run deploy/bench/server_bench.py soak    --warm-bin PATH --minutes 10 --out FILE
 
 `compare` drives three services with the same synthetic corpus, the same query vectors and the
-same closed-loop client, one fresh server per (system, corpus size): hms-server, a Qdrant server
+same closed-loop client, one fresh server per (system, corpus size): warm-server, a Qdrant server
 (HNSW and exact search) and a plain SQLite + FastAPI service (deploy/bench/baseline_sqlite_fastapi.py).
 Every number in the output is measured here; recall@10 is computed against an exact numpy scan.
 The corpus is synthetic Gaussian clusters, so this measures serving overhead and scan cost, not
@@ -157,8 +157,8 @@ class System:
     ready_path = "/healthz"
 
 
-class Hms(System):
-    name = "hms-server"
+class Warm(System):
+    name = "warm-server"
 
     def __init__(self, workdir: Path, binary: str, maintain: bool, work: int):
         super().__init__(workdir)
@@ -374,7 +374,7 @@ def environment(args: argparse.Namespace) -> dict:
         "load_average_at_start": os.getloadavg(),
         "git_commit": sh("git", "-C", str(REPO), "rev-parse", "HEAD"),
         "git_dirty": bool(sh("git", "-C", str(REPO), "status", "--porcelain", "--", "src", "Cargo.toml", "deploy")),
-        "hms_server_version": sh(args.hms_bin, "--version"),
+        "warm_server_version": sh(args.warm_bin, "--version"),
         "qdrant_version": sh(args.qdrant_bin, "--version") if getattr(args, "qdrant_bin", None) else None,
         "python": sys.version.split()[0],
         "client": "aiohttp, closed loop, same machine as the servers",
@@ -390,8 +390,8 @@ async def compare(args: argparse.Namespace) -> None:
         truth = exact_topk(docs, qs, TOP_K)
         bodies_cache: dict[str, list[bytes]] = {}
         factories = [
-            lambda w: Hms(w, args.hms_bin, False, args.hms_work),
-            lambda w: Hms(w, args.hms_bin, True, args.hms_work),
+            lambda w: Warm(w, args.warm_bin, False, args.warm_work),
+            lambda w: Warm(w, args.warm_bin, True, args.warm_work),
             lambda w: Qdrant(w, args.qdrant_bin, False),
             lambda w: Qdrant(w, args.qdrant_bin, True),
             SqliteFastApi,
@@ -423,14 +423,14 @@ async def compare(args: argparse.Namespace) -> None:
                 finally:
                     system.stop()
     out = {
-        "schema": "hms-server-bench/1",
+        "schema": "warm-server-bench/1",
         "environment": environment(args),
         "method": {
             "corpus": f"synthetic Gaussian clusters, dim {DIM}, sizes {sizes}; 600 queries = documents plus noise; top_k {TOP_K}",
             "recall": "recall@10 over 200 queries against an exact numpy cosine scan",
             "load": f"closed loop, concurrency {levels}, {args.duration}s per level after a 2s warmup, "
                     "client processes <= 4, a fresh server per (system, size)",
-            "hms_flags": f"--no-auth --max-concurrent-work {args.hms_work} --max-queue 4096 --queue-timeout-ms 60000 (defaults otherwise)",
+            "warm_flags": f"--no-auth --max-concurrent-work {args.warm_work} --max-queue 4096 --queue-timeout-ms 60000 (defaults otherwise)",
             "qdrant": "single node, default storage config, HNSW m=16 ef_construct=100 with hnsw_ef=128, and exact=true",
             "sqlite_fastapi": "SQLite WAL + in-memory numpy matrix, exact scan, one uvicorn worker (deploy/bench/baseline_sqlite_fastapi.py)",
             "caveat": "client and servers share one machine whose load average is recorded per run; absolute numbers are indicative",
@@ -450,7 +450,7 @@ async def soak(args: argparse.Namespace) -> None:
     rng = np.random.default_rng(11)
     work = Path(tempfile.mkdtemp(prefix="hmssoak-"))
     port = free_port()
-    cmd = [args.hms_bin, "--no-auth", "--bind", f"127.0.0.1:{port}", "--data-dir", str(work / "data"), "--input-dim", str(DIM),
+    cmd = [args.warm_bin, "--no-auth", "--bind", f"127.0.0.1:{port}", "--data-dir", str(work / "data"), "--input-dim", str(DIM),
            "--dim", "2048", "--max-concurrent-work", "8", "--max-queue", "256", "--queue-timeout-ms", "5000", "--max-tenants", "6",
            "--tenant-idle-seconds", "4", "--compaction-interval-seconds", "20", "--log-level", "warn"]
     base = f"http://127.0.0.1:{port}"
@@ -535,9 +535,9 @@ async def soak(args: argparse.Namespace) -> None:
                     "rss_mb": kv.get("process_resident_memory_bytes", 0) / 2**20,
                     "ps_rss_mb": ps.memory_info().rss / 2**20,
                     "fds": ps.num_fds(), "threads": ps.num_threads(),
-                    "work_in_use": kv.get("hms_work_slots_in_use"), "queue": kv.get("hms_queue_depth"),
-                    "tenants_open": kv.get("hms_tenants_open"), "connections": kv.get("hms_connections_open"),
-                    "evictions": kv.get("hms_tenant_evictions_total"),
+                    "work_in_use": kv.get("warm_work_slots_in_use"), "queue": kv.get("warm_queue_depth"),
+                    "tenants_open": kv.get("warm_tenants_open"), "connections": kv.get("warm_connections_open"),
+                    "evictions": kv.get("warm_tenant_evictions_total"),
                 })
             except aiohttp.ClientError:
                 continue  # a missed sample is not an error
@@ -571,7 +571,7 @@ async def soak(args: argparse.Namespace) -> None:
             got = await server_ids(t)
             if got != model[t]:
                 mismatches.append(t)
-        slots_idle = "hms_work_slots_in_use 0" in final_metrics
+        slots_idle = "warm_work_slots_in_use 0" in final_metrics
         # Durability: SIGTERM, restart on the same data, verify again.
         proc.send_signal(signal.SIGTERM)
         exit_code = proc.wait(timeout=60)
@@ -590,7 +590,7 @@ async def soak(args: argparse.Namespace) -> None:
     ys = np.array([x["rss_mb"] for x in half])
     slope = float(np.polyfit(xs, ys, 1)[0] * 60) if len(half) > 2 else float("nan")
     out = {
-        "schema": "hms-server-soak/1",
+        "schema": "warm-server-soak/1",
         "environment": environment(args),
         "config": {"minutes": args.minutes, "concurrency": args.concurrency, "flags": cmd[1:], "workload": "55% query, 25% upsert x20, 10% delete, 5% list, 5% stats; tenants rotate every 25 s through 12 ids with max-tenants 6 and idle eviction 4 s"},
         "requests": stats,
@@ -616,15 +616,15 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("compare")
-    c.add_argument("--hms-bin", required=True)
+    c.add_argument("--warm-bin", required=True)
     c.add_argument("--qdrant-bin", required=True)
     c.add_argument("--out", required=True)
     c.add_argument("--sizes", default="1000,10000,50000")
     c.add_argument("--concurrency", default="1,4,16")
     c.add_argument("--duration", type=float, default=8.0)
-    c.add_argument("--hms-work", type=int, default=10)
+    c.add_argument("--warm-work", type=int, default=10)
     s = sub.add_parser("soak")
-    s.add_argument("--hms-bin", required=True)
+    s.add_argument("--warm-bin", required=True)
     s.add_argument("--out", required=True)
     s.add_argument("--minutes", type=float, default=10)
     s.add_argument("--concurrency", type=int, default=16)

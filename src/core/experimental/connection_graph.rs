@@ -20,7 +20,7 @@
 //! digest is tamper-evident. This reconciles mutate-on-read with verifiability:
 //! the mutation is an auditable event, not a hidden write. (The chain hash here
 //! is a deterministic 64-bit digest; a production deployment substitutes the
-//! SHA-256 + Ed25519 checkpoint machinery HMS already ships under `provenance`.)
+//! SHA-256 + Ed25519 checkpoint machinery WARM already ships under `provenance`.)
 //!
 //! # Honest scope
 //! Plasticity is a **working-set** mechanism: it keeps frequently-queried

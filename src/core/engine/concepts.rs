@@ -3,13 +3,13 @@
 
 use crate::core::hash::{FastMap, FastSet};
 
-use super::HmsCore;
+use super::WarmCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::query_limits::{QueryBudget, QueryLimits};
 use crate::core::types::ConceptCandidate;
 use anyhow::Result;
 
-impl HmsCore {
+impl WarmCore {
     /// Cluster similar vectors and return concept candidates with centroids and coherence scores.
     ///
     /// Large sparse collections generate candidates from postings, one bounded seed
@@ -283,7 +283,7 @@ fn concept_candidates(
 }
 
 fn bounded_bundle(
-    core: &HmsCore,
+    core: &WarmCore,
     vectors: &[&EntangledHVec],
     budget: &mut QueryBudget,
 ) -> Result<EntangledHVec> {
@@ -321,11 +321,11 @@ mod tests {
     use super::*;
     use crate::core::query_limits::QueryLimitExceeded;
 
-    fn fixture(distinct: bool) -> (tempfile::TempDir, HmsCore) {
+    fn fixture(distinct: bool) -> (tempfile::TempDir, WarmCore) {
         let directory = tempfile::tempdir().unwrap();
-        let mut config = crate::core::HmsConfig::default();
+        let mut config = crate::core::WarmConfig::default();
         config.concepts.similarity_threshold = 0.9;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             Some(config),

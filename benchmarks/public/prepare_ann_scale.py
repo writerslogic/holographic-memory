@@ -35,7 +35,7 @@ def main():
         for name, expected in manifest["files"].items():
             if sha(old / name) != expected:
                 raise ValueError("old diagnostic input changed")
-        source = Path.home() / ".cache/hms-bench" / dataset / "train.f32"
+        source = Path.home() / ".cache/warm-bench" / dataset / "train.f32"
         if sha(source) != manifest["source_train_sha256"]:
             raise ValueError("original training corpus changed")
         dim = manifest["dim"]

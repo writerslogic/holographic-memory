@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::{ensure, Context, Result};
 
-use super::{HmsCore, Mutation};
+use super::{Mutation, WarmCore};
 use crate::core::atom_memory::AtomMemory;
 use crate::core::cognition::governor::{
     GovernanceConflict, GovernanceReport, GovernorConfig, MemoryGovernor,
@@ -51,7 +51,7 @@ fn append(
     Ok(())
 }
 
-impl HmsCore {
+impl WarmCore {
     /// Plans governance on an isolated snapshot, then commits one bounded transaction if
     /// its revision is still current. A conflict changes no governance state and may be retried.
     pub fn govern_memory_with_limits(&self, limits: QueryLimits) -> Result<GovernanceReport> {
@@ -68,7 +68,7 @@ impl HmsCore {
         }
         ensure!(
             self.schema >= crate::core::format::MEANING_MAINTENANCE_SCHEMA_VERSION,
-            "durable governance requires store schema 5; use hms-format upgrade to create an upgraded store"
+            "durable governance requires store schema 5; use warm-format upgrade to create an upgraded store"
         );
         let mut budget = QueryBudget::new(limits);
         // Two shadow indexes, rebuild overlap and IDF scratch scale with the ambient dimension.
@@ -313,10 +313,10 @@ impl HmsCore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{entangled::EntangledHVec, HmsConfig};
+    use crate::core::{entangled::EntangledHVec, WarmConfig};
 
-    fn config() -> HmsConfig {
-        let mut config = HmsConfig::default();
+    fn config() -> WarmConfig {
+        let mut config = WarmConfig::default();
         config.meaning.enabled = true;
         config.cognition.governor_forget_unreferenced = true;
         config
@@ -325,7 +325,7 @@ mod tests {
     #[test]
     fn governance_keeps_distinct_live_triple_owners() {
         let directory = tempfile::tempdir().unwrap();
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             16384,
             Some(directory.path().display().to_string()),
             Some(config()),
@@ -358,7 +358,7 @@ mod tests {
     fn governance_atom_alias_deletion_is_durable_without_deleting_the_raw_vector() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().display().to_string();
-        let core = HmsCore::new(1024, Some(path.clone()), Some(config())).unwrap();
+        let core = WarmCore::new(1024, Some(path.clone()), Some(config())).unwrap();
         let vector = EntangledHVec::from_indices(vec![7, 9], 1024);
         core.memorize("alias".into(), vector.clone()).unwrap();
         core.govern_memory().unwrap();
@@ -368,7 +368,7 @@ mod tests {
             vector.indices()
         );
         drop(core);
-        let core = HmsCore::new(1024, Some(path.clone()), Some(config())).unwrap();
+        let core = WarmCore::new(1024, Some(path.clone()), Some(config())).unwrap();
         assert!(core.atom_memory.as_ref().unwrap().get("alias").is_none());
         assert_eq!(
             core.shards.read().get_vector("alias").unwrap().indices(),
@@ -376,7 +376,7 @@ mod tests {
         );
         core.compact().unwrap();
         drop(core);
-        let core = HmsCore::new(1024, Some(path), Some(config())).unwrap();
+        let core = WarmCore::new(1024, Some(path), Some(config())).unwrap();
         assert!(core.atom_memory.as_ref().unwrap().get("alias").is_none());
         assert_eq!(
             core.shards.read().get_vector("alias").unwrap().indices(),
@@ -384,7 +384,7 @@ mod tests {
         );
     }
 
-    fn fingerprint(core: &HmsCore) -> serde_json::Value {
+    fn fingerprint(core: &WarmCore) -> serde_json::Value {
         let entries = |memory: &crate::core::indexed_memory::IndexedMemory| {
             let mut entries: Vec<_> = memory
                 .all_vectors()
@@ -420,7 +420,7 @@ mod tests {
         let path = directory.path().display().to_string();
         let mut config = config();
         config.cognition.refine_atoms = true;
-        let core = HmsCore::new(16384, Some(path.clone()), Some(config.clone())).unwrap();
+        let core = WarmCore::new(16384, Some(path.clone()), Some(config.clone())).unwrap();
         for (city, country) in [
             ("paris", "france"),
             ("berlin", "germany"),
@@ -469,11 +469,11 @@ mod tests {
             ));
         }
         drop(core);
-        let core = HmsCore::new(16384, Some(path.clone()), Some(config.clone())).unwrap();
+        let core = WarmCore::new(16384, Some(path.clone()), Some(config.clone())).unwrap();
         assert_eq!(fingerprint(&core), after);
         core.compact().unwrap();
         drop(core);
-        let core = HmsCore::new(16384, Some(path), Some(config)).unwrap();
+        let core = WarmCore::new(16384, Some(path), Some(config)).unwrap();
         assert_eq!(fingerprint(&core), after);
     }
 
@@ -481,7 +481,7 @@ mod tests {
     fn governance_cas_rejects_a_concurrent_writer_without_publishing_the_plan() {
         let directory = tempfile::tempdir().unwrap();
         let core = std::sync::Arc::new(
-            HmsCore::new(
+            WarmCore::new(
                 1024,
                 Some(directory.path().display().to_string()),
                 Some(config()),
@@ -517,7 +517,7 @@ mod tests {
     fn governance_transaction_limit_is_atomic_at_4096_operations() {
         for atoms in [4094, 4095, 4096] {
             let directory = tempfile::tempdir().unwrap();
-            let core = HmsCore::new(
+            let core = WarmCore::new(
                 1024,
                 Some(directory.path().display().to_string()),
                 Some(config()),
@@ -546,7 +546,7 @@ mod tests {
     #[test]
     fn governance_budget_errors_leave_authoritative_state_unchanged() {
         let directory = tempfile::tempdir().unwrap();
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             Some(config()),

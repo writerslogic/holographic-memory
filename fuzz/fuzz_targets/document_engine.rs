@@ -12,15 +12,15 @@
 
 use std::sync::OnceLock;
 
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::{DocumentInput, WarmCore, SearchOptions};
 use libfuzzer_sys::fuzz_target;
 
-static CORE: OnceLock<(tempfile::TempDir, HmsCore)> = OnceLock::new();
+static CORE: OnceLock<(tempfile::TempDir, WarmCore)> = OnceLock::new();
 
-fn core() -> &'static HmsCore {
+fn core() -> &'static WarmCore {
     let (_, core) = CORE.get_or_init(|| {
         let dir = tempfile::tempdir().expect("tempdir");
-        let core = HmsCore::new(512, Some(dir.path().display().to_string()), None).expect("store");
+        let core = WarmCore::new(512, Some(dir.path().display().to_string()), None).expect("store");
         (dir, core)
     });
     core

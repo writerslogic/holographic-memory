@@ -1,5 +1,5 @@
 ---
-description: Install Holographic Memory for Rust, Python or Node, with the version requirements and a one-line check that it works.
+description: Install WARM for Rust, Python or Node, with the version requirements and a one-line check that it works.
 next_steps:
   - title: Quickstart
     text: Ingest, search, compare with SQLite and encrypt, in five minutes.
@@ -8,13 +8,13 @@ next_steps:
     text: What "holographic" means in this code, and what is lossy.
     url: concepts/index.md
   - title: Server
-    text: Run hms-server for the Python client.
+    text: Run warm-server for the Python client.
     url: SERVER.md
 ---
 
 # Install
 
-HMS is a Rust engine. Use it directly, install the Node bindings, connect an editor through MCP,
+WARM is a Rust engine. Use it directly, install the Node bindings, connect an editor through MCP,
 or call a self-hosted server from Python. [Choose an integration](choose.md) before installing.
 Package installation needs network access; the engine can run offline after installation.
 
@@ -24,7 +24,7 @@ Package installation needs network access; the engine can run offline after inst
 |---|---|
 | Rust 1.89 or newer (the MSRV) | the Rust crate, the HTTP server and the Node build |
 | Node 22 or newer | the Node bindings; Node 24 for the quickstart, which uses `node:sqlite` |
-| Python 3.10 or newer | the Python SDK (`holographic-memory-py` needs 3.9) |
+| Python 3.10 or newer | the Python SDK (`writerslogic-warm-py` needs 3.9) |
 
 For Python, create and activate a virtual environment first: `uv venv`, then
 `source .venv/bin/activate` (PowerShell: `.venv\Scripts\Activate.ps1`).
@@ -34,36 +34,36 @@ For Python, create and activate a virtual environment first: `uv venv`, then
 === "Rust"
 
     ```sh
-    cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory
+    cargo add writerslogic-warm --git https://github.com/writerslogic/warm
     ```
 
     `default = []`: nothing is on unless you ask. Turn on what you need, for example
-    `cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory --features security` for AES-256-GCM stores and signed audit logs.
+    `cargo add writerslogic-warm --git https://github.com/writerslogic/warm --features security` for AES-256-GCM stores and signed audit logs.
     Every feature, what it turns on and whether it is experimental: [Cargo features](../reference/features.md).
 
 === "Python"
 
-    The Python SDK is an HTTP client for `hms-server`, which holds the engine and stores the
+    The Python SDK is an HTTP client for `warm-server`, which holds the engine and stores the
     vectors you supply:
 
     ```sh
-    uv pip install holographic-memory-sdk
+    uv pip install writerslogic-warm-sdk
     ```
 
     Build and start the server from a checkout, then point the client at it:
 
     ```sh
-    git clone https://github.com/writerslogic/holographic-memory
-    cd holographic-memory
-    cargo build --release --features server --bin hms-server
-    HMS_API_KEY=change-me target/release/hms-server --input-dim 384
+    git clone https://github.com/writerslogic/warm
+    cd warm
+    cargo build --release --features server --bin warm-server
+    WARM_API_KEY=change-me target/release/warm-server --input-dim 384
     ```
 
-    The `holographic-memory-py` wheel provides native vector search and phase vectors,
-    imported as `holographic_memory`. It does not include document search.
+    The `writerslogic-warm-py` wheel provides native vector search and phase vectors,
+    imported as `writerslogic_warm`. It does not include document search.
 
     ```sh
-    uv pip install holographic-memory-py
+    uv pip install writerslogic-warm-py
     ```
 
 === "Node"
@@ -71,11 +71,11 @@ For Python, create and activate a virtual environment first: `uv venv`, then
     Install the Node bindings. npm selects the native binary for your platform:
 
     ```sh
-    npm install holographic-memory
+    npm install writerslogic-warm
     ```
 
     To build from a checkout instead, run `npm ci --omit=optional && npm run build` with a Rust
-    toolchain. The separate `holographic-memory-mcp` package launches the MCP server.
+    toolchain. The separate `writerslogic-warm-mcp` package launches the MCP server.
 
 ## Check that it works
 
@@ -88,13 +88,13 @@ For Python, create and activate a virtual environment first: `uv venv`, then
 === "Python"
 
     ```sh
-    uv run --with holographic-memory-sdk python -c "from holographic_sdk import HolographicClient; print(HolographicClient.__name__)"
+    uv run --with writerslogic-warm-sdk python -c "from writerslogic_warm_sdk import WarmClient; print(WarmClient.__name__)"
     ```
 
 === "Node"
 
     ```sh
-    node -e "const { HolographicMemorySystem } = require('holographic-memory'); console.log(typeof HolographicMemorySystem)"
+    node -e "const { WarmMemorySystem } = require('writerslogic-warm'); console.log(typeof WarmMemorySystem)"
     ```
 
 The [quickstart](../quickstart/index.md) runs a full ingest and search against the same checkout.
@@ -107,13 +107,13 @@ round trip, run the Python tab in the [quickstart](../quickstart/index.md).
 Run the separate MCP launcher from npm:
 
 ```sh
-npx -y holographic-memory-mcp
+npx -y writerslogic-warm-mcp
 ```
 
-To build `hms-mcp` from this checkout instead and configure your editor to launch its absolute path:
+To build `warm-mcp` from this checkout instead and configure your editor to launch its absolute path:
 
 ```sh
-cargo build --release --features mcp,security --bin hms-mcp
+cargo build --release --features mcp,security --bin warm-mcp
 ```
 
 Follow the [editor setup guide](../integrations/editors/README.md) for your host. The

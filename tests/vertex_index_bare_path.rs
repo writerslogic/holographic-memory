@@ -5,7 +5,7 @@
 
 use std::path::Path;
 
-use holographic_memory::core::qgraph::{BuildParams, Graph, Residency, VGraph};
+use writerslogic_warm::core::qgraph::{BuildParams, Graph, Residency, VGraph};
 
 #[test]
 fn save_to_a_bare_file_name_succeeds() {

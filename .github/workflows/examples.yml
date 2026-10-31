@@ -96,14 +96,14 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-quickstart-python-${{ hashFiles('Cargo.toml') }}
-      - run: cargo build --release --features server --bin hms-server
-      - run: python -m pip install ./bindings/python/holographic-sdk
-      - name: Run the quickstart against a live hms-server
+      - run: cargo build --release --features server --bin warm-server
+      - run: python -m pip install ./bindings/python/warm-sdk
+      - name: Run the quickstart against a live warm-server
         env:
-          HMS_API_KEY: quickstart-ci
+          WARM_API_KEY: quickstart-ci
         run: |
           cd "$RUNNER_TEMP"
-          "$GITHUB_WORKSPACE/target/release/hms-server" --input-dim 384 --data-dir "$RUNNER_TEMP/hms-data" > "$RUNNER_TEMP/server.log" 2>&1 &
+          "$GITHUB_WORKSPACE/target/release/warm-server" --input-dim 384 --data-dir "$RUNNER_TEMP/warm-data" > "$RUNNER_TEMP/server.log" 2>&1 &
           server=$!
           trap 'kill "$server"' EXIT
           for _ in $(seq 1 60); do grep -q "listening on" "$RUNNER_TEMP/server.log" && break; sleep 1; done

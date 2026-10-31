@@ -1,5 +1,5 @@
 ---
-description: How the Holographic Memory documentation site is built, versioned and verified, and the commands to run every check locally.
+description: How the WARM documentation site is built, versioned and verified, and the commands to run every check locally.
 ---
 
 # How these docs are built and verified
@@ -30,7 +30,7 @@ under `latest/` as its canonical URL, old versions show a banner, and `versions.
 selector in the header. To test the tag path without creating a tag, build any revision as a version:
 
 ```sh
-HMS_DOCS_TAGS="v0.0.1-test=HEAD" bash scripts/build-docs-site.sh _site
+WARM_DOCS_TAGS="v0.0.1-test=HEAD" bash scripts/build-docs-site.sh _site
 ```
 
 ## Checks
@@ -48,15 +48,15 @@ navigation fails it. Pull requests also run, against a local build:
 ```sh
 uv venv .venv-docs && uv pip install --python .venv-docs -r docs/requirements.txt
 npm ci --prefix scripts/docs-api && npm ci --prefix scripts/docs-qa
-HMS_SITE_BASE=http://127.0.0.1:8123 MKDOCS=.venv-docs/bin/mkdocs PYTHON=.venv-docs/bin/python \
+WARM_SITE_BASE=http://127.0.0.1:8123 MKDOCS=.venv-docs/bin/mkdocs PYTHON=.venv-docs/bin/python \
   bash scripts/build-docs-site.sh _site
 VERSION=latest node scripts/docs-qa/axe.mjs _site
 VERSION=latest node scripts/docs-qa/lighthouse.mjs _site
 VERSION=latest node scripts/docs-qa/search.mjs _site
 ```
 
-Set `HMS_BUILD_RUSTDOC=1` to build the Rust reference as well (CI does, and sets
-`HMS_DOCS_REQUIRE_API=1` so a missing generator output fails the build).
+Set `WARM_BUILD_RUSTDOC=1` to build the Rust reference as well (CI does, and sets
+`WARM_DOCS_REQUIRE_API=1` so a missing generator output fails the build).
 
 ## Add or change a page
 

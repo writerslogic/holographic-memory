@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Browser demo binding: a standalone reimplementation of the sparse
-//! hypervector set algebra and the keyed coordinate mask. It is not the HMS
+//! hypervector set algebra and the keyed coordinate mask. It is not the WARM
 //! engine and its vectors are not interchangeable with the engine's.
 
 mod crypto;
@@ -12,7 +12,7 @@ pub use crypto::*;
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use sha2::{Digest, Sha256};
-pub use store::HmsStore;
+pub use store::WarmStore;
 use wasm_bindgen::prelude::*;
 
 const DEFAULT_RHO_DENOM: usize = 256;

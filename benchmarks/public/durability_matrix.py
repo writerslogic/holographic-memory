@@ -1,11 +1,11 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Durability and operations matrix: HMS against SQLite (WAL) and Lucene on one host.
+"""Durability and operations matrix: WARM against SQLite (WAL) and Lucene on one host.
 
 Cells per system (each a pass/fail with counts and times):
   kill_writes        SIGKILL at N random points during committed batch writes; a committed batch
                      that is missing or served with wrong text after recovery fails the cell.
-  kill_compaction    the same with the kill placed inside a compaction (HMS compact, SQLite
+  kill_compaction    the same with the kill placed inside a compaction (WARM compact, SQLite
                      wal_checkpoint + VACUUM, Lucene forceMerge).
   power_loss         SIGKILL under a userspace write barrier (LD_PRELOAD shim, Linux): every
                      write after a file's last fsync/fdatasync/msync is discarded before
@@ -25,9 +25,9 @@ difference between the store's size at the kill and after recovery (negative whe
 discards an unfinished tail) together with the count of committed documents lost.
 
 Usage: durability_matrix.py --driver <durability-driver> --work <dir> --out <json>
-       [--systems hms,sqlite,lucene] [--kill-points 200] [--flips 50] [--torn 50] [--power 50]
+       [--systems warm,sqlite,lucene] [--kill-points 200] [--flips 50] [--torn 50] [--power 50]
        [--docs 4000] [--batch 20] [--java-home DIR] [--lucene-jar JAR] [--old-lucene-jar JAR]
-       [--old-hms-admin BIN] [--shim-cc gcc]
+       [--old-warm-admin BIN] [--shim-cc gcc]
 """
 import argparse
 import json
@@ -266,8 +266,8 @@ class System:
         return p.stdout + ("" if p.returncode == 0 else f"\n[exit {p.returncode}] " + p.stderr[-800:])
 
 
-class Hms(System):
-    name = "hms"
+class Warm(System):
+    name = "warm"
 
     def writer(self, store, compact_every=0, revision=0):
         return [self.a.driver, "write", "--store", store, "--docs", str(self.a.docs), "--batch", str(self.a.batch),
@@ -282,9 +282,9 @@ class Hms(System):
 
     def verify(self, store, committed, revision=0):
         v = super().verify(store, committed, revision)
-        if self.a.hms_admin and v.get("open_ok"):
+        if self.a.warm_admin and v.get("open_ok"):
             # The engine's integrity scan (every arena frame's CRC32) is the detection report.
-            p = subprocess.run([self.a.hms_admin, "verify", store], capture_output=True, text=True, timeout=600)
+            p = subprocess.run([self.a.warm_admin, "verify", store], capture_output=True, text=True, timeout=600)
             v["detected"] = p.returncode != 0
             if p.returncode != 0:
                 v["integrity"] = (p.stderr or p.stdout)[-200:]
@@ -294,8 +294,8 @@ class Hms(System):
         copy_store(store, dst)
 
     def old_binary(self, store):
-        if not self.a.old_hms_admin:
-            return {"excluded": "no old hms-admin binary given (--old-hms-admin)"}
+        if not self.a.old_warm_admin:
+            return {"excluded": "no old warm-admin binary given (--old-warm-admin)"}
         bumped = store + "-bumped"
         copy_store(store, bumped)
         manifests = sorted(Path(bumped).rglob("format.json")) or [Path(bumped) / "store.json"]
@@ -308,7 +308,7 @@ class Hms(System):
             return {"excluded": f"format.json has no version field: {sorted(m)}"}
         m[key] = (m[key] + 1) if isinstance(m[key], int) else str(m[key]) + ".next"
         manifest.write_text(json.dumps(m))
-        p = subprocess.run([self.a.old_hms_admin, *self.a.old_hms_admin_args.split(), bumped], capture_output=True, text=True, timeout=120)
+        p = subprocess.run([self.a.old_warm_admin, *self.a.old_warm_admin_args.split(), bumped], capture_output=True, text=True, timeout=120)
         rejected = p.returncode != 0
         return {"pass": rejected, "exit": p.returncode, "stderr": p.stderr[-300:], "field": key, "method": "format manifest version bumped by one; the older release must refuse to open it"}
 
@@ -583,7 +583,7 @@ def main():
     p.add_argument("--driver", required=True)
     p.add_argument("--work", required=True)
     p.add_argument("--out", required=True)
-    p.add_argument("--systems", default="hms,sqlite,lucene")
+    p.add_argument("--systems", default="warm,sqlite,lucene")
     p.add_argument("--kill-points", type=int, default=200)
     p.add_argument("--flips", type=int, default=50)
     p.add_argument("--torn", type=int, default=50)
@@ -592,11 +592,11 @@ def main():
     p.add_argument("--batch", type=int, default=20)
     p.add_argument("--write-window", type=float, default=3.0, help="latest kill time (s) during writes")
     p.add_argument("--java-home", default=os.environ.get("JAVA_HOME", ""))
-    p.add_argument("--lucene-jar", default=str(Path.home() / ".cache/hms-bench/jars/lucene-core-9.12.3.jar"))
+    p.add_argument("--lucene-jar", default=str(Path.home() / ".cache/warm-bench/jars/lucene-core-9.12.3.jar"))
     p.add_argument("--old-lucene-jar", default="")
-    p.add_argument("--old-hms-admin", default="")
-    p.add_argument("--hms-admin", default="", help="current hms-admin for the integrity scan after corruption")
-    p.add_argument("--old-hms-admin-args", default="stats")
+    p.add_argument("--old-warm-admin", default="")
+    p.add_argument("--warm-admin", default="", help="current warm-admin for the integrity scan after corruption")
+    p.add_argument("--old-warm-admin-args", default="stats")
     p.add_argument("--shim-cc", default="gcc")
     p.add_argument("--seed", type=int, default=20261016)
     p.add_argument("--cells", default="kill_writes,kill_compaction,power_loss,torn_write,bit_flip,readers,snapshot_restore,old_binary")
@@ -606,7 +606,7 @@ def main():
     stores = work / "stores"
     stores.mkdir(exist_ok=True)
     shim, shim_note = build_shim(a, work)
-    systems = {"hms": Hms, "sqlite": Sqlite, "lucene": Lucene}
+    systems = {"warm": Warm, "sqlite": Sqlite, "lucene": Lucene}
     cells = a.cells.split(",")
     result = {"schema_version": 1, "host": platform.node(), "platform": platform.platform(), "docs": a.docs, "batch": a.batch,
               "versions": {"sqlite_library": sqlite3.sqlite_version, "lucene_jar": Path(a.lucene_jar).name, "java_home": a.java_home or "PATH"},

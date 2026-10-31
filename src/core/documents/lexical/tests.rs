@@ -4,7 +4,7 @@
 use super::*;
 use crate::core::documents::{self, DocumentInput, EncodeMode, IngestOptions};
 use crate::core::encoding::TextEncoder;
-use crate::HmsCore;
+use crate::WarmCore;
 use proptest::prelude::*;
 
 fn input(id: &str, text: &str) -> DocumentInput {
@@ -464,7 +464,7 @@ fn audit_regression_whole_article_embeddings_compose_with_phrases_and_replay() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().display().to_string();
     let config = crate::core::engine::fixture_config(2);
-    let core = HmsCore::new(64, Some(path.clone()), Some(config.clone())).unwrap();
+    let core = WarmCore::new(64, Some(path.clone()), Some(config.clone())).unwrap();
     let mut article = input("article", &format!("{} red blue", "x ".repeat(32769)));
     article.embeddings = Some(vec![vec![1.0, 0.0]]);
     article.store_text = Some(true);
@@ -496,7 +496,7 @@ fn audit_regression_whole_article_embeddings_compose_with_phrases_and_replay() {
     );
     core.compact().unwrap();
     drop(core);
-    let core = HmsCore::new(64, Some(path), Some(config)).unwrap();
+    let core = WarmCore::new(64, Some(path), Some(config)).unwrap();
     assert_eq!(
         core.count_lexical(&LexicalQuery::parse("\"red blue\"").unwrap())
             .unwrap(),
@@ -514,7 +514,7 @@ fn audit_regression_whole_article_embeddings_compose_with_phrases_and_replay() {
 fn live_visibility_chunk_deduplication_and_reopen() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().display().to_string();
-    let core = HmsCore::new(64, Some(path.clone()), None).unwrap();
+    let core = WarmCore::new(64, Some(path.clone()), None).unwrap();
     let ingest = options(true, true);
     let mut document = input("multi", "red blue red blue");
     document.chunk_words = Some(2);
@@ -538,7 +538,7 @@ fn live_visibility_chunk_deduplication_and_reopen() {
         .unwrap();
     core.flush().unwrap();
     drop(core);
-    let core = HmsCore::new(64, Some(path), None).unwrap();
+    let core = WarmCore::new(64, Some(path), None).unwrap();
     assert_eq!(core.count_lexical(&query).unwrap(), 1);
     assert_eq!(
         core.search_lexical(&query, &LexicalOptions::default())
@@ -554,7 +554,7 @@ fn live_visibility_chunk_deduplication_and_reopen() {
 
 #[test]
 fn phrase_ordinals_follow_replacement_slot_reuse_and_replay() {
-    fn check(core: &HmsCore) {
+    fn check(core: &WarmCore) {
         for text in [
             "\"red red\"",
             "\"running foxes\"",
@@ -591,7 +591,7 @@ fn phrase_ordinals_follow_replacement_slot_reuse_and_replay() {
     for count in [127, 128, 129] {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().display().to_string();
-        let core = HmsCore::new(64, Some(path.clone()), None).unwrap();
+        let core = WarmCore::new(64, Some(path.clone()), None).unwrap();
         for unstemmed in [false, true] {
             let documents = (0..count)
                 .map(|i| input(&format!("{unstemmed}-{i}"), "red red running foxes zebra"))
@@ -628,7 +628,7 @@ fn phrase_ordinals_follow_replacement_slot_reuse_and_replay() {
         check(&core);
         core.flush().unwrap();
         drop(core);
-        let core = HmsCore::new(64, Some(path), None).unwrap();
+        let core = WarmCore::new(64, Some(path), None).unwrap();
         check(&core);
     }
 }
@@ -879,7 +879,7 @@ proptest! {
 fn whole_articles_preserve_conjunction_exclusion_and_cross_boundary_phrases() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().display().to_string();
-    let core = HmsCore::new(64, Some(path.clone()), None).unwrap();
+    let core = WarmCore::new(64, Some(path.clone()), None).unwrap();
     let mut article = vec!["filler"; 4095];
     article.extend(["red", "blue", "fox"]);
     let ingest = IngestOptions {
@@ -904,7 +904,7 @@ fn whole_articles_preserve_conjunction_exclusion_and_cross_boundary_phrases() {
     }
     core.flush().unwrap();
     drop(core);
-    let core = HmsCore::new(64, Some(path), None).unwrap();
+    let core = WarmCore::new(64, Some(path), None).unwrap();
     assert_eq!(
         core.count_lexical(&LexicalQuery::parse("\"red blue\"").unwrap())
             .unwrap(),

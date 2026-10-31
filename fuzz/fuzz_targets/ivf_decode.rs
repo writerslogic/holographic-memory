@@ -6,7 +6,7 @@
 //! The quantized IVF index is persisted and reloaded from bytes. Arbitrary bytes must be
 //! rejected or decode to an index that re-encodes to exactly the same bytes.
 
-use holographic_memory::core::qgraph::ivf::QuantizedIvf;
+use writerslogic_warm::core::qgraph::ivf::QuantizedIvf;
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

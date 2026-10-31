@@ -1,12 +1,12 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use super::HmsCore;
+use super::WarmCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::types::RetrievalResult;
 use anyhow::Result;
 
-impl HmsCore {
+impl WarmCore {
     /// Encode a (head, relation, tail) triplet as `h XOR r XOR t` and memorize it.
     pub fn memorize_triplet(&self, id: String, h: String, r: String, t: String) -> Result<()> {
         super::mutation::validate_public_id(&id)?;

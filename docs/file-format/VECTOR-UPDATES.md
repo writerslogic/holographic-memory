@@ -5,7 +5,7 @@
 
 ## Structure and visibility
 
-`UpdatableVGraph` owns a directory containing an immutable `HMSVGR01` vertex
+`UpdatableVGraph` owns a directory containing an immutable `WARMVGR01` vertex
 index, an immutable full-precision row file, a checkpoint manifest, and an
 append-only update log. Existing standalone vertex files remain readable and
 unchanged. Creating an updatable index requires the original vectors: quantized
@@ -103,18 +103,18 @@ Limits are validated before allocation: dimensions 1..=2^20, ids below 2^32-1,
 frame payload at most 64 MiB and at most 65536 operations. Non-finite vectors and
 squared norms that overflow f32 are rejected. Checked arithmetic bounds lengths.
 
-* `CURRENT`: `HMSVUP01`, order (u64), identity (16 bytes), sixteen u64 words,
+* `CURRENT`: `WARMVUP01`, order (u64), identity (16 bytes), sixteen u64 words,
   CRC32 of all preceding bytes. Words: dimension, metric (0 angular, 1 Euclidean),
   checkpoint sequence, degree, build ef, alpha f32 bits, seed, quantized-search
   flag, vertex bits, residual bits, aligned flag, reordered flag, id bytes,
   screen flag, block bits, reserved zero.
-* `rows-<sequence>.bin`: `HMSVRW01`, order, dimension, count, metric, sequence,
+* `rows-<sequence>.bin`: `WARMVRW01`, order, dimension, count, metric, sequence,
   row offset (all u64), header CRC32 (u32), id-table CRC32 (u32): 64 bytes.
   Sorted external ids (`count` u32) follow. Rows start at the next 64-byte boundary;
   each is `dimension` f32 values followed by its CRC32. The header and id ordering
   and id-table checksum are validated at open; row checksums and finite values
   are validated on access.
-* `updates.log`: `HMSVLG01`, order, identity (16 bytes), dimension, metric,
+* `updates.log`: `WARMVLG01`, order, identity (16 bytes), dimension, metric,
   origin sequence (u64), header CRC32: 60 bytes. The identity binds it to CURRENT.
 * Batch frame: payload length u32, its bitwise complement u32, sequence u64,
   operation count u32, CRC32 u32, payload. The checksum covers the first 20 header
@@ -139,7 +139,7 @@ are completed; SIFT-1M timing runs only on Linux under the shared timing lock.
 `benchmarks/results/ann_updatable_x86_v1.json` contains the source revisions,
 executable hashes, commands, dataset checksum and raw measurements from one
 SIFT-1M comparison on the Intel Core Ultra 9 185H. Each measured child held
-`~/hms-timing.lock`; compilation and graph construction used cores 12–21.
+`~/warm-timing.lock`; compilation and graph construction used cores 12–21.
 No SIFT-1M measurements were run on macOS.
 
 Recall was identical at all 20 ef/rerank configurations. At target recalls
@@ -161,7 +161,7 @@ Mapped serving RSS from `/proc/<pid>/smaps_rollup` was 468.0 MiB before and
 query took 198.9 ms. Replacing 10,000 ids including commit took 1.291 seconds;
 deleting 10,000 ids including commit took 8.405 ms. The existing hnswlib adapter
 measured 1.311 ms per replacement and 0.02969 ms per deletion, including its save
-boundary. Its `save_index` has different durability semantics from HMS's synced log.
+boundary. Its `save_index` has different durability semantics from WARM's synced log.
 
 The update tests cover randomized insert/delete/replace sequences against exact
 kNN and a freshly built base; committed reopen equivalence; every byte offset of
@@ -180,13 +180,13 @@ Reproduce the full comparison on Linux, after preparing SIFT-1M with
 
 ```sh
 python benchmarks/competitive/ann_updatable_measure.py \
-  --data "$HMS_BENCH_DIR/ann-update/data" \
-  --work "$HMS_BENCH_DIR/ann-update/measurement" \
-  --before "$HMS_BENCH_DIR/ann-update/target-before/dist/public-bench" \
-  --after "$HMS_BENCH_DIR/ann-update/target-after/dist/public-bench" \
-  --python-hnsw "$HMS_BENCH_DIR/ann-update/hnsw-env/bin/python" \
+  --data "$WARM_BENCH_DIR/ann-update/data" \
+  --work "$WARM_BENCH_DIR/ann-update/measurement" \
+  --before "$WARM_BENCH_DIR/ann-update/target-before/dist/public-bench" \
+  --after "$WARM_BENCH_DIR/ann-update/target-after/dist/public-bench" \
+  --python-hnsw "$WARM_BENCH_DIR/ann-update/hnsw-env/bin/python" \
   --before-commit 6685568 --commit "$(git rev-parse HEAD)" \
-  --out "$HMS_BENCH_DIR/ann-update/ann_updatable_x86_v1.json"
+  --out "$WARM_BENCH_DIR/ann-update/ann_updatable_x86_v1.json"
 ```
 
 The hnswlib environment uses Python 3.13, numpy 2.5.4 and hnswlib 0.8.0.
@@ -198,11 +198,11 @@ private target directory per checkout (the before checkout needs the static-only
 benchmark source embedded in the result artifact):
 
 ```sh
-CARGO_TARGET_DIR="$HMS_BENCH_DIR/ann-update/target-after" \
+CARGO_TARGET_DIR="$WARM_BENCH_DIR/ann-update/target-after" \
   taskset -c 12-21 cargo +1.96.0 bench --profile dist --bench vector_updates --no-run
-CARGO_TARGET_DIR="$HMS_BENCH_DIR/ann-update/target-after" RAYON_NUM_THREADS=10 \
-  flock -F "$HOME/hms-timing.lock" taskset -c 2,3 \
-  "$HMS_BENCH_DIR/ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8" \
+CARGO_TARGET_DIR="$WARM_BENCH_DIR/ann-update/target-after" RAYON_NUM_THREADS=10 \
+  flock -F "$HOME/warm-timing.lock" taskset -c 2,3 \
+  "$WARM_BENCH_DIR/ann-update/target-after/dist/deps/vector_updates-c4f1efd2bcfee7d8" \
   --bench --save-baseline release-final
 ```
 

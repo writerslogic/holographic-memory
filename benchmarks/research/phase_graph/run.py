@@ -55,7 +55,7 @@ def main():
         "note": "Standalone actual graph/hash; FastMap uses std HashMap in both builds. Query loops do not access this membership map. Task-local scheduling; unrelated host jobs may remain. Not an end-to-end search benchmark.",
     }
     rows = []
-    with tempfile.TemporaryDirectory(prefix="hms-phase-graph-") as directory:
+    with tempfile.TemporaryDirectory(prefix="warm-phase-graph-") as directory:
         build = Path(directory)
         for label, files in sources.items():
             graph = build / f"{label}.rs"

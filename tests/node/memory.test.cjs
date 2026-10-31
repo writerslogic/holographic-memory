@@ -13,27 +13,27 @@ function run(source, directory) {
 }
 
 test('frozen native lifecycle matches the Rust and HTTP contract after each restart', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'hms-node-lifecycle-'))
+  const directory = mkdtempSync(join(tmpdir(), 'warm-node-lifecycle-'))
   try {
     for (let phase = 0; phase < 3; phase++) {
       run(`
         const assert = require('node:assert/strict');
-        const { HolographicMemorySystem } = require('./index.js');
+        const { WarmMemorySystem } = require('./index.js');
         const fixture = require('./tests/fixtures/native_memory_lifecycle_v1.json');
         (async () => {
-          const hms = new HolographicMemorySystem(4096, process.argv[1]);
+          const warm = new WarmMemorySystem(4096, process.argv[1]);
           for (const [index, step] of fixture.phases[${phase}].entries()) {
             if (step.error) {
-              await assert.rejects(hms.memoryCall(step.op, step.request), error => error.message.includes('[' + step.error + ']'));
+              await assert.rejects(warm.memoryCall(step.op, step.request), error => error.message.includes('[' + step.error + ']'));
               continue;
             }
-            const result = await hms.memoryCall(step.op, step.request);
+            const result = await warm.memoryCall(step.op, step.request);
             for (const [pointer, expected] of Object.entries(step.expect)) {
               const actual = pointer.slice(1).split('/').reduce((value, key) => value?.[key.replace(/~1/g, '/').replace(/~0/g, '~')], result);
               assert.deepEqual(actual, expected, 'phase ${phase} step ' + index + ': ' + pointer);
             }
           }
-          await hms.flush();
+          await warm.flush();
         })().catch(error => { console.error(error); process.exit(1); });
       `, directory)
     }
@@ -43,15 +43,15 @@ test('frozen native lifecycle matches the Rust and HTTP contract after each rest
 })
 
 test('memory API keeps history, answers as-of queries, explains, forgets and survives a restart', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'hms-node-memory-'))
+  const directory = mkdtempSync(join(tmpdir(), 'warm-node-memory-'))
   try {
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
+      const { WarmMemorySystem } = require('./index.js');
       const { Memory, MemoryError } = require('./memory.js');
       (async () => {
-        const hms = new HolographicMemorySystem(4096, process.argv[1]);
-        const memory = new Memory(hms, { supersession: 'latest-by-subject' });
+        const warm = new WarmMemorySystem(4096, process.argv[1]);
+        const memory = new Memory(warm, { supersession: 'latest-by-subject' });
         const day = n => new Date(Date.UTC(2025, 0, n));
 
         const paris = await memory.remember('Alice lives in Paris', { id: 'c1', subject: 'alice/city', validFrom: day(1), entities: ['Alice'] });
@@ -84,26 +84,26 @@ test('memory API keeps history, answers as-of queries, explains, forgets and sur
         await assert.rejects(memory.remember('t', { validFrom: 'yesterday' }), TypeError);
 
         // Facts are documents: the low-level surface still sees them.
-        assert.equal((await hms.searchDocuments('Berlin'))[0].documentId, 'c2');
+        assert.equal((await warm.searchDocuments('Berlin'))[0].documentId, 'c2');
 
         assert.deepEqual((await memory.forget({ entity: 'Alice' }, { dryRun: true })).forgotten, ['c1']);
-        await hms.flush();
+        await warm.flush();
       })().catch(error => { console.error(error); process.exit(1); });
     `, directory)
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
+      const { WarmMemorySystem } = require('./index.js');
       const { Memory } = require('./memory.js');
       (async () => {
-        const hms = new HolographicMemorySystem(4096, process.argv[1]);
-        const memory = new Memory(hms, { supersession: 'latest-by-subject' });
+        const warm = new WarmMemorySystem(4096, process.argv[1]);
+        const memory = new Memory(warm, { supersession: 'latest-by-subject' });
         assert.deepEqual((await memory.recall('Alice lives')).map(r => r.id), ['c2']);
         assert.equal((await memory.history('c1')).length, 2);
         assert.deepEqual((await memory.forget({ ids: ['c2'] }, { includeChain: true })).forgotten, ['c1', 'c2']);
         assert.deepEqual(await memory.recall('Alice', { history: 'all' }), []);
         assert.deepEqual((await memory.applyForgetting()).forgotten, []);
         assert.deepEqual((await memory.consolidate()).created, []);
-        await hms.flush();
+        await warm.flush();
       })().catch(error => { console.error(error); process.exit(1); });
     `, directory)
   } finally {
@@ -112,22 +112,22 @@ test('memory API keeps history, answers as-of queries, explains, forgets and sur
 })
 
 test('shared memory negotiation and malformed-input contract', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'hms-node-contract-'))
+  const directory = mkdtempSync(join(tmpdir(), 'warm-node-contract-'))
   try {
     run(`
       const assert = require('node:assert/strict');
-      const { HolographicMemorySystem } = require('./index.js');
+      const { WarmMemorySystem } = require('./index.js');
       const { Memory } = require('./memory.js');
       const fixture = require('./tests/fixtures/memory_contract_cases_v1.json');
       (async () => {
-        const hms = new HolographicMemorySystem(1024, process.argv[1]);
-        const memory = new Memory(hms);
+        const warm = new WarmMemorySystem(1024, process.argv[1]);
+        const memory = new Memory(warm);
         assert.equal((await memory.capabilities()).profile, 'temporal-memory-v1');
         for (const step of fixture.cases) {
           if (step.error) {
-            await assert.rejects(hms.memoryCall(step.op, step.request), error => error.message.includes('[' + step.error + ']'));
+            await assert.rejects(warm.memoryCall(step.op, step.request), error => error.message.includes('[' + step.error + ']'));
           } else {
-            const result = await hms.memoryCall(step.op, step.request);
+            const result = await warm.memoryCall(step.op, step.request);
             for (const [pointer, expected] of Object.entries(step.expect)) {
               const actual = pointer.slice(1).split('/').reduce((value, key) => value?.[key], result);
               assert.deepEqual(actual, expected);

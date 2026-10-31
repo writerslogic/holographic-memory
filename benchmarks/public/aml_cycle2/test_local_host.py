@@ -63,9 +63,9 @@ class LocalHostTests(unittest.TestCase):
         self._exercise_lifecycle(source_provenance=True)
 
     def _exercise_lifecycle(self, *, source_provenance: bool) -> None:
-        native = os.environ.get("HMS_QUERY_TEST_BINARY")
+        native = os.environ.get("WARM_QUERY_TEST_BINARY")
         if not native:
-            self.skipTest("set HMS_QUERY_TEST_BINARY to run native lifecycle")
+            self.skipTest("set WARM_QUERY_TEST_BINARY to run native lifecycle")
         binary = Path(native)
         digest = hashlib.sha256(binary.read_bytes()).hexdigest()
         with tempfile.TemporaryDirectory() as temporary:

@@ -11,14 +11,14 @@ from ag2 import Agent  # noqa: E402
 from ag2.events import ToolCallEvent  # noqa: E402
 from ag2.testing import TestConfig, TrackingConfig  # noqa: E402
 
-from holographic_integrations.ag2 import HolographicMemoryToolkit  # noqa: E402
-from holographic_integrations.core import HmsConfig  # noqa: E402
+from writerslogic_warm_integrations.ag2 import WarmMemoryToolkit  # noqa: E402
+from writerslogic_warm_integrations.core import WarmConfig  # noqa: E402
 
 DIM = 64
 
 
 def toolkit(server, **kw):
-    return HolographicMemoryToolkit(HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM), **kw)
+    return WarmMemoryToolkit(WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM), **kw)
 
 
 def call(name, **args):
@@ -51,7 +51,7 @@ async def test_recall_and_forget_semantics(server):
     by_name = {t.name: t for t in kit.tools}
     assert by_name["remember"] and by_name["recall"] and by_name["forget"]
     backend = kit.backend
-    from holographic_integrations.core import Record
+    from writerslogic_warm_integrations.core import Record
 
     await backend.remember([Record("a", "alpha note", {"k": "x"}), Record("b", "alpha other", {"k": "y"})])
     cfg = TestConfig(call("recall", query="alpha", filter={"k": "y"}), call("forget", id="b"), "done")

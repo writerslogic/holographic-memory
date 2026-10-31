@@ -13,8 +13,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-use holographic_memory::core::memory_api::{ForgetOptions, ForgetScope, RememberInput};
-use holographic_memory::{HmsCore, Memory};
+use writerslogic_warm::core::memory_api::{ForgetOptions, ForgetScope, RememberInput};
+use writerslogic_warm::{Memory, WarmCore};
 
 struct Counting;
 
@@ -122,7 +122,7 @@ fn main() -> anyhow::Result<()> {
         args.get(3).copied().unwrap_or(4096).max(1),
     );
     let dir = tempfile::tempdir()?;
-    let core = Arc::new(HmsCore::new(
+    let core = Arc::new(WarmCore::new(
         4096,
         Some(dir.path().display().to_string()),
         None,

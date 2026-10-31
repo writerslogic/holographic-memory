@@ -17,7 +17,7 @@ mapping, then, before the call returns:
 | macOS | `msync(MS_SYNC)` of the frame range, then `fcntl(F_FULLFSYNC)` on the segment file. `msync` and `fsync` alone leave the data in the drive's write cache. A volume that refuses `F_FULLFSYNC` gets `fsync` instead, which does not flush the drive cache there. | process crash, kernel crash, power loss (on volumes that support `F_FULLFSYNC`) |
 | Windows | `FlushViewOfFile`, then `FlushFileBuffers` on the segment file. | process crash, OS crash, power loss, if the drive honours the flush |
 
-`HmsCore::flush` performs the same sync over the whole active segment. Manifests, `CURRENT`,
+`WarmCore::flush` performs the same sync over the whole active segment. Manifests, `CURRENT`,
 `encryption.salt` and new segments are synced with `File::sync_all` (`F_FULLFSYNC` on macOS,
 without the `fsync` fallback, so a volume that refuses `F_FULLFSYNC` normally fails store
 creation before any commit).

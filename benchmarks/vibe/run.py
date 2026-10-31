@@ -24,7 +24,7 @@ import numpy as np
 
 EF = (100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000)
 TARGETS = (0.73, 0.77, 0.90, 0.94, 0.95, 0.99, 1.0)
-METHODS = ("hms", "pag", "glass", "glass-sq8", "symphonyqg", "ngt-qg", "rabitq-hnsw", "lorann", "hnswlib", "pynndescent")
+METHODS = ("warm", "pag", "glass", "glass-sq8", "symphonyqg", "ngt-qg", "rabitq-hnsw", "lorann", "hnswlib", "pynndescent")
 
 
 def sha(path):
@@ -37,8 +37,8 @@ def sha(path):
 
 def specification(method, metric):
     configurations = [[ef] for ef in EF]
-    if method == "hms":
-        return "hms", "HMS", [metric, 64, 500], [[ef, rerank] for ef in EF for rerank in (100, 200, 400)]
+    if method == "warm":
+        return "warm", "WARM", [metric, 64, 500], [[ef, rerank] for ef in EF for rerank in (100, 200, 400)]
     if method == "hnswlib":
         return "hnswlib", "HnswLib", [metric, 32, 500], configurations
     if method == "symphonyqg":

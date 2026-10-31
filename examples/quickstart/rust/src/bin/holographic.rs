@@ -5,7 +5,7 @@
 //! vector, test membership, and damage the vector to watch the signal degrade gradually.
 //! Run: `cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin holographic`
 
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::EntangledHVec;
 
 const DIM: usize = 16_384;
 const ITEMS: u64 = 100;

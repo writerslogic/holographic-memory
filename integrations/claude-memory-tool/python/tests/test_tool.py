@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Drives the backend with SDK-typed commands against a real hms-mcp process (HMS_MCP_BIN)."""
+"""Drives the backend with SDK-typed commands against a real warm-mcp process (WARM_MCP_BIN)."""
 
 from __future__ import annotations
 
@@ -24,16 +24,16 @@ from anthropic.types.beta import (
     BetaMemoryTool20250818ViewCommand,
 )
 
-from hms_memory_tool import (
-    HolographicMemoryTool,
-    HolographicMemoryToolSync,
+from warm_memory_tool import (
+    WarmMemoryTool,
+    WarmMemoryToolSync,
     MemoryPathError,
     normalize_path,
 )
 
-BIN = os.environ.get("HMS_MCP_BIN")
+BIN = os.environ.get("WARM_MCP_BIN")
 pytestmark = [
-    pytest.mark.skipif(not BIN, reason="set HMS_MCP_BIN to the hms-mcp binary"),
+    pytest.mark.skipif(not BIN, reason="set WARM_MCP_BIN to the warm-mcp binary"),
     pytest.mark.anyio,
 ]
 
@@ -44,12 +44,12 @@ def anyio_backend() -> str:
 
 
 def clean_env() -> dict[str, str]:
-    return {k: v for k, v in os.environ.items() if not k.startswith("HMS_MCP_")}
+    return {k: v for k, v in os.environ.items() if not k.startswith("WARM_MCP_")}
 
 
-async def open_tool(tmp_path: Path, *extra: str, namespace: str | None = None) -> HolographicMemoryTool:
+async def open_tool(tmp_path: Path, *extra: str, namespace: str | None = None) -> WarmMemoryTool:
     assert BIN
-    return await HolographicMemoryTool.connect(
+    return await WarmMemoryTool.connect(
         command=BIN,
         args=["--data-dir", str(tmp_path / "data"), "--namespace-arg", *extra],
         env=clean_env(),
@@ -58,7 +58,7 @@ async def open_tool(tmp_path: Path, *extra: str, namespace: str | None = None) -
 
 
 @pytest.fixture
-async def tool(tmp_path: Path) -> AsyncIterator[HolographicMemoryTool]:
+async def tool(tmp_path: Path) -> AsyncIterator[WarmMemoryTool]:
     t = await open_tool(tmp_path)
     try:
         yield t
@@ -66,14 +66,14 @@ async def tool(tmp_path: Path) -> AsyncIterator[HolographicMemoryTool]:
         await t.aclose()
 
 
-async def run(tool: HolographicMemoryTool, **command: Any) -> str:
+async def run(tool: WarmMemoryTool, **command: Any) -> str:
     """The runner entry point: raw tool input in, tool result text out."""
     result = await tool.call(command)
     assert isinstance(result, str)
     return result
 
 
-def failing(tool: HolographicMemoryTool, pattern: str, **command: Any):
+def failing(tool: WarmMemoryTool, pattern: str, **command: Any):
     class _Ctx:
         async def __aenter__(self) -> None:
             return None
@@ -125,7 +125,7 @@ def test_path_validation_accepts() -> None:
     assert normalize_path("/memories/naïve café.txt") == "/memories/naïve café.txt"
 
 
-async def test_every_command_validates_before_touching_storage(tool: HolographicMemoryTool) -> None:
+async def test_every_command_validates_before_touching_storage(tool: WarmMemoryTool) -> None:
     evil = "/memories/../../secrets.env"
     for command in (
         {"command": "view", "path": evil},
@@ -143,7 +143,7 @@ async def test_every_command_validates_before_touching_storage(tool: Holographic
     assert await tool.fs.store.list("/") == []
 
 
-async def test_command_walkthrough(tool: HolographicMemoryTool) -> None:
+async def test_command_walkthrough(tool: WarmMemoryTool) -> None:
     assert await run(tool, command="view", path="/memories") == (
         "Here're the files and directories up to 2 levels deep in /memories, excluding hidden items and node_modules:\n0B\t/memories"
     )
@@ -217,7 +217,7 @@ async def test_command_walkthrough(tool: HolographicMemoryTool) -> None:
     assert await tool.fs.store.list("/memories/") == []
 
 
-async def test_typed_sdk_commands(tool: HolographicMemoryTool) -> None:
+async def test_typed_sdk_commands(tool: WarmMemoryTool) -> None:
     """The abstract-class entry points take the SDK's own command models."""
     await tool.create(BetaMemoryTool20250818CreateCommand(command="create", path="/memories/t.txt", file_text="a\nb\n"))
     assert "     2\tb" in await tool.view(BetaMemoryTool20250818ViewCommand(command="view", path="/memories/t.txt"))
@@ -230,7 +230,7 @@ async def test_typed_sdk_commands(tool: HolographicMemoryTool) -> None:
     assert tool.to_dict() == {"type": "memory_20250818", "name": "memory"}
 
 
-async def test_directories(tool: HolographicMemoryTool) -> None:
+async def test_directories(tool: WarmMemoryTool) -> None:
     for p in ("a/one.txt", "a/b/two.txt", "a/b/c/three.txt", "z.txt"):
         await run(tool, command="create", path=f"/memories/{p}", file_text=f"{p} body\n")
     listing = await run(tool, command="view", path="/memories")
@@ -291,7 +291,7 @@ async def test_paging_and_size_limit(tmp_path: Path) -> None:
         await tool.aclose()
 
 
-async def test_concurrent_edits_lose_nothing(tool: HolographicMemoryTool) -> None:
+async def test_concurrent_edits_lose_nothing(tool: WarmMemoryTool) -> None:
     await run(tool, command="create", path="/memories/log.txt", file_text="start\n")
 
     async def edit(i: int) -> None:
@@ -339,11 +339,11 @@ async def test_persistence_recall_and_namespaces(tmp_path: Path) -> None:
         await bob.aclose()
 
 
-async def test_a_held_store_fails_fast_instead_of_hanging(tool: HolographicMemoryTool, tmp_path: Path) -> None:
+async def test_a_held_store_fails_fast_instead_of_hanging(tool: WarmMemoryTool, tmp_path: Path) -> None:
     assert BIN
     # The fixture's server holds tmp_path/data; a second server on it exits with store_locked.
     with pytest.raises((TimeoutError, Exception)):
-        await HolographicMemoryTool.connect(
+        await WarmMemoryTool.connect(
             command=BIN,
             args=["--data-dir", str(tmp_path / "data")],
             env=clean_env(),
@@ -398,7 +398,7 @@ def check_loop(seen: list[dict[str, Any]]) -> None:
     assert "escape" in json.dumps(blocked["content"])
 
 
-async def test_async_tool_runner(tool: HolographicMemoryTool) -> None:
+async def test_async_tool_runner(tool: WarmMemoryTool) -> None:
     replies, seen = scripted()
     calls = iter(replies)
 
@@ -422,7 +422,7 @@ async def test_async_tool_runner(tool: HolographicMemoryTool) -> None:
 
 def test_sync_tool_runner(tmp_path: Path) -> None:
     assert BIN
-    with HolographicMemoryToolSync.connect(command=BIN, args=["--data-dir", str(tmp_path / "data")], env=clean_env()) as sync:
+    with WarmMemoryToolSync.connect(command=BIN, args=["--data-dir", str(tmp_path / "data")], env=clean_env()) as sync:
         replies, seen = scripted()
         calls = iter(replies)
 

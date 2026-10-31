@@ -47,8 +47,8 @@ merged correctly. Reduce the selection or use a suitable server-side search cont
 
 New stores use schema 5 for scoped meaning maintenance. Existing schema 2/3/4 stores retain
 their schema during ordinary opens and writes; durable governance returns explicit upgrade
-guidance. Upgrade a copy with `hms-format plan /path/to/store`, then
-`hms-format upgrade /path/to/store /path/to/upgraded-store`. Verify the copy before switching
+guidance. Upgrade a copy with `warm-format plan /path/to/store`, then
+`warm-format upgrade /path/to/store /path/to/upgraded-store`. Verify the copy before switching
 paths. The upgrade preserves source bytes and existing checkpoints; it does not reembed or
 relabel model vectors. Older binaries reject schema 5 instead of omitting its scoped mutations.
 Node offers `governMemoryAsync()` for maintenance off the event loop; the synchronous

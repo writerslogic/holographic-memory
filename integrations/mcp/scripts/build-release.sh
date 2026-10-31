@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-# Build the hms-mcp release binary for the host target, name it as the launchers expect, and
+# Build the warm-mcp release binary for the host target, name it as the launchers expect, and
 # record its sha256 in both launcher checksum tables. Run once per target (CI matrix), merging
 # the produced checksums.json files, then upload the binaries to the `mcp-v<version>` release.
 #
@@ -19,10 +19,10 @@ triple="$(rustc -vV | sed -n 's/^host: //p')"
 exe=""
 case "$triple" in *windows*) exe=".exe" ;; esac
 
-(cd "$root" && cargo build --release --locked --features "$features" --bin hms-mcp)
+(cd "$root" && cargo build --release --locked --features "$features" --bin warm-mcp)
 target_dir="${CARGO_TARGET_DIR:-$root/target}"
-asset="hms-mcp-${triple}${exe}"
-cp "$target_dir/release/hms-mcp${exe}" "$out/$asset"
+asset="warm-mcp-${triple}${exe}"
+cp "$target_dir/release/warm-mcp${exe}" "$out/$asset"
 
 if command -v sha256sum >/dev/null 2>&1; then
   sum="$(sha256sum "$out/$asset" | cut -d' ' -f1)"
@@ -41,5 +41,5 @@ table.assets[triple] = sum;
 fs.writeFileSync(file, JSON.stringify(table, null, 2) + "\n");
 JS
 cp "$out/checksums.json" "$root/integrations/mcp/npm/checksums.json"
-cp "$out/checksums.json" "$root/integrations/mcp/pypi/src/holographic_memory_mcp/checksums.json"
+cp "$out/checksums.json" "$root/integrations/mcp/pypi/src/writerslogic_warm_mcp/checksums.json"
 echo "built $out/$asset ($sum)"

@@ -9,9 +9,9 @@ import { TextNode, Document } from '@llamaindex/core/schema'
 import { SimpleKVStore } from '@llamaindex/core/storage/kv-store'
 import { KVDocumentStore } from '@llamaindex/core/storage/doc-store'
 import { KVIndexStore } from '@llamaindex/core/storage/index-store'
-import { HmsError, HmsKVStore, HmsStore } from '../dist/index.js'
+import { WarmError, WarmKVStore, WarmStore } from '../dist/index.js'
 
-const store = (opts = {}) => new HmsStore({ path: mkdtempSync(join(tmpdir(), 'hms-li-kv-')), dimensions: 1024, ...opts })
+const store = (opts = {}) => new WarmStore({ path: mkdtempSync(join(tmpdir(), 'warm-li-kv-')), dimensions: 1024, ...opts })
 
 test('BaseKVStore contract matches SimpleKVStore for the same operation sequence', async () => {
   const ops = async (kv) => {
@@ -33,11 +33,11 @@ test('BaseKVStore contract matches SimpleKVStore for the same operation sequence
     out.push(await kv.getAll('empty'))
     return out
   }
-  assert.deepEqual(await ops(new HmsKVStore(store())), await ops(new SimpleKVStore()))
+  assert.deepEqual(await ops(new WarmKVStore(store())), await ops(new SimpleKVStore()))
 })
 
 test('keys with separators and unicode do not collide across collections', async () => {
-  const kv = new HmsKVStore(store())
+  const kv = new WarmKVStore(store())
   await kv.put('a:b', { v: 1 }, 'c')
   await kv.put('b', { v: 2 }, 'c:a')
   await kv.put('ключ/ü', { v: 3 })
@@ -47,7 +47,7 @@ test('keys with separators and unicode do not collide across collections', async
   assert.deepEqual(await kv.getAll('c'), { 'a:b': { v: 1 } })
 })
 
-test('KVDocumentStore on HmsKVStore behaves like KVDocumentStore on SimpleKVStore', async () => {
+test('KVDocumentStore on WarmKVStore behaves like KVDocumentStore on SimpleKVStore', async () => {
   const run = async (kv) => {
     const docStore = new KVDocumentStore(kv)
     const n1 = new TextNode({ id_: 'n1', text: 'first node' })
@@ -66,11 +66,11 @@ test('KVDocumentStore on HmsKVStore behaves like KVDocumentStore on SimpleKVStor
     out.push(await docStore.documentExists('n1'), Object.keys(await docStore.docs()))
     return out
   }
-  assert.deepEqual(await run(new HmsKVStore(store())), await run(new SimpleKVStore()))
+  assert.deepEqual(await run(new WarmKVStore(store())), await run(new SimpleKVStore()))
 })
 
-test('KVIndexStore on HmsKVStore round trips an index struct', async () => {
-  const kv = new HmsKVStore(store())
+test('KVIndexStore on WarmKVStore round trips an index struct', async () => {
+  const kv = new WarmKVStore(store())
   const indexStore = new KVIndexStore(kv)
   const { IndexDict } = await import('@llamaindex/core/data-structs')
   const struct = new IndexDict()
@@ -85,19 +85,19 @@ test('KVIndexStore on HmsKVStore round trips an index struct', async () => {
 
 test('getAll uses pagination to prove completeness at maxFetch and rejects larger collections', async () => {
   for (const [n, ok] of [[9, true], [10, true], [11, false]]) {
-    const kv = new HmsKVStore(store({ maxFetch: 10 }))
+    const kv = new WarmKVStore(store({ maxFetch: 10 }))
     for (let i = 0; i < n; i++) await kv.put(`k${i}`, { i })
     for (let i = 0; i < 11; i++) await kv.put(`other${i}`, { i }, 'other')
     if (ok) assert.deepEqual(await kv.getAll(), Object.fromEntries(Array.from({ length: n }, (_, i) => [`k${i}`, { i }])))
-    else await assert.rejects(kv.getAll(), (e) => e instanceof HmsError && e.code === 'limit_exceeded')
-    await assert.rejects(kv.getAll('other'), (e) => e instanceof HmsError && e.code === 'limit_exceeded')
+    else await assert.rejects(kv.getAll(), (e) => e instanceof WarmError && e.code === 'limit_exceeded')
+    await assert.rejects(kv.getAll('other'), (e) => e instanceof WarmError && e.code === 'limit_exceeded')
     // exact operations stay unbounded
     assert.deepEqual(await kv.get(`k${n - 1}`), { i: n - 1 })
   }
 })
 
 test('large values (over the metadata cap, several chunks) round trip', async () => {
-  const kv = new HmsKVStore(new HmsStore({ path: mkdtempSync(join(tmpdir(), 'hms-li-kv-')), dimensions: 1024, chunkWords: 50, overlapWords: 5 }))
+  const kv = new WarmKVStore(new WarmStore({ path: mkdtempSync(join(tmpdir(), 'warm-li-kv-')), dimensions: 1024, chunkWords: 50, overlapWords: 5 }))
   const big = { text: Array.from({ length: 30000 }, (_, i) => `wörd${i}`).join(' ') }
   await kv.put('big', big)
   assert.deepEqual(await kv.get('big'), big)

@@ -1,29 +1,26 @@
-<img src="https://raw.githubusercontent.com/writerslogic/holographic-memory/main/assets/crystal-halo/crystal-detailed-static.png" alt="Holographic Memory logo" width="96" align="left">
+<img src="https://raw.githubusercontent.com/writerslogic/warm/main/assets/crystal-halo/crystal-detailed-static.png" alt="WARM logo" width="96" align="left">
 
-# Holographic Memory
+# WARM
+
+**WritersLogic Adaptive Retention & Memory.**
 
 **Hybrid search, graph indexing, and vector-symbolic memory.**
 
 **Local memory for agents and apps: full-text and vector search, a memory API and a vector-symbolic fact store in one embeddable Rust engine that makes no network calls.**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/writerslogic/holographic-memory/ci.yml?branch=main&label=CI)](https://github.com/writerslogic/holographic-memory/actions/workflows/ci.yml)
-[![crates.io](https://img.shields.io/crates/v/holographic-memory.svg)](https://crates.io/crates/holographic-memory)
-[![docs.rs](https://img.shields.io/docsrs/holographic-memory)](https://docs.rs/holographic-memory)
-[![PyPI](https://img.shields.io/pypi/v/holographic-memory-py.svg?label=pypi)](https://pypi.org/project/holographic-memory-py/)
-[![npm](https://img.shields.io/npm/v/holographic-memory.svg?label=node)](https://www.npmjs.com/package/holographic-memory)
-[![MCP on npm](https://img.shields.io/npm/v/holographic-memory-mcp.svg?label=mcp)](https://www.npmjs.com/package/holographic-memory-mcp)
+[![CI](https://img.shields.io/github/actions/workflow/status/writerslogic/warm/ci.yml?branch=main&label=CI)](https://github.com/writerslogic/warm/actions/workflows/ci.yml)
 ![MSRV 1.89](https://img.shields.io/badge/MSRV-1.89-informational.svg)
-[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/writerslogic/holographic-memory)](https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/holographic-memory)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/writerslogic/warm)](https://securityscorecards.dev/viewer/?uri=github.com/writerslogic/warm)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13977/badge)](https://www.bestpractices.dev/projects/13977)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
-[![Holographic Memory MCP MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/writerslogic/holographic-memory/badges/score.svg)](https://glama.ai/mcp/servers/writerslogic/holographic-memory)
+[![WARM MCP MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/writerslogic/warm/badges/score.svg)](https://glama.ai/mcp/servers/writerslogic/warm)
 
 [![Bemula forgetting score, DeepSeek backbone](https://img.shields.io/badge/Bemula%20forgetting%2C%20DeepSeek%20backbone-32.2%20vs%2031.0%20best%20published-blue)](benchmarks/results/bemula_v1.json)
 [![LongMemEval dev, gpt-4o reader and judge](https://img.shields.io/badge/LongMemEval%20dev%2C%20gpt--4o%20reader-89.75%25%20mean%20of%204%20runs-blue)](benchmarks/results/longmemeval_official_dev_summary.json)
 [![VIBE llama-128-ip max recall@100, one thread](https://img.shields.io/badge/VIBE%20llama--128--ip%20max%20recall%40100%2C%201%20thread-0.997-blue)](benchmarks/results/query_aware_graph_v1/README.md)
 
-[Website](https://holographic-memory.com) ·
-[Docs](https://docs.holographic-memory.com/) ·
+[Website](https://writerslogic.com/warm) ·
+[Docs](https://writerslogic.com/warm/docs/) ·
 [Get started](#get-started-in-60-seconds) ·
 [Standards and provenance](docs/reference/standards.md) ·
 [Results](#headline-results) ·
@@ -36,7 +33,7 @@
 
 ## What it is
 
-Holographic Memory (HMS for short) is a Rust library that stores text, vectors and facts in a
+WARM (WARM for short) is a Rust library that stores text, vectors and facts in a
 directory on your machine and finds them again. It ships with Node.js bindings, C, WASM and UniFFI
 bindings, an HTTP server with a Python client, and an MCP server. There are no service calls, no
 telemetry and no model downloads unless you turn on a feature that asks for one.
@@ -56,7 +53,7 @@ telemetry and no model downloads unless you turn on a feature that asks for one.
 |------------------|--------------|
 | An agent or assistant that needs memory | A memory API with forgetting that removes facts from the store, and an MCP server for editors and agent hosts |
 | A local-first or offline app | Embedded search and storage in one directory, with no server process and optional encryption |
-| A service that needs vector or text search | `hms-server` over HTTP with tenants and scoped keys, or the library in-process |
+| A service that needs vector or text search | `warm-server` over HTTP with tenants and scoped keys, or the library in-process |
 | Research on vector-symbolic memory | The bind/bundle algebra, meaning memory and capacity experiments with their result files |
 
 ## Headline results
@@ -84,13 +81,13 @@ protocols, not a substitute for testing your own data.
 | glove-100-angular with the sparse vector path: recall@10 0.252 at 33.7 QPS against FAISS HNSW 0.832 at 4,111 QPS | One thread, Apple M4; the sparse path is experimental | [`public_glove-100-angular.json`](benchmarks/results/public_glove-100-angular.json) |
 
 Method, intervals and every loss: [docs/benchmarks](docs/benchmarks/README.md) and the
-[benchmarks pages](https://docs.holographic-memory.com/latest/benchmarks/).
+[benchmarks pages](https://writerslogic.com/warm/docs/latest/benchmarks/).
 
 <!-- BENCH:START -->
 
-_Generated from `benchmarks/results/competitive/` by `hms-bench table`; method and caveats in [docs/benchmarks/COMPARISON.md](docs/benchmarks/COMPARISON.md). W = HMS ahead (95% interval excludes parity), T = tie, L = a comparator is ahead._
+_Generated from `benchmarks/results/competitive/` by `warm-bench table`; method and caveats in [docs/benchmarks/COMPARISON.md](docs/benchmarks/COMPARISON.md). W = WARM ahead (95% interval excludes parity), T = tie, L = a comparator is ahead._
 
-| Dataset | Metric | HMS | Best other | Advantage | |
+| Dataset | Metric | WARM | Best other | Advantage | |
 |---|---|---|---|---|---|
 | sift-128-euclidean | QPS @ recall@10 >= 0.95 (QPS) | 17,481 | hnswlib 7,630 | n/v | - |
 | sift-128-euclidean | p99 latency @ 0.95 (us) | 105 | hnswlib 220 | n/v | - |
@@ -144,7 +141,7 @@ _Generated from `benchmarks/results/competitive/` by `hms-bench table`; method a
 
 ## Get started
 
-Clone once: `git clone https://github.com/writerslogic/holographic-memory && cd holographic-memory`.
+Clone once: `git clone https://github.com/writerslogic/warm && cd warm`.
 Run the offline agent-memory demo with `cargo run --release --example demo-offline-agent`.
 
 <details open>
@@ -153,17 +150,17 @@ Run the offline agent-memory demo with `cargo run --release --example demo-offli
 From your own Rust project, add the current Apache-2.0 source:
 
 ```sh
-cargo add holographic-memory --git https://github.com/writerslogic/holographic-memory
+cargo add writerslogic-warm --git https://github.com/writerslogic/warm
 ```
 
 The published crate 0.6.1 remains AGPL-3.0-or-later.
 
 ```rust quickstart-check
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::{DocumentInput, WarmCore, SearchOptions};
 
 let dir = tempfile::tempdir()?;
-let hms = HmsCore::new(4096, Some(dir.path().display().to_string()), None)?;
-hms.memorize_document(DocumentInput {
+let warm = WarmCore::new(4096, Some(dir.path().display().to_string()), None)?;
+warm.memorize_document(DocumentInput {
     id: "backups".into(),
     text: "Restore deleted documents from verified backups.".into(),
     source_uri: Some("operations.md".into()),
@@ -171,7 +168,7 @@ hms.memorize_document(DocumentInput {
     metadata: Some(serde_json::json!({ "project": "alpha" })),
     chunk_words: None, overlap_words: None, store_text: None, embeddings: None, title_weight: None,
 })?;
-let hits = hms.search_documents("restore backups", &SearchOptions::default())?;
+let hits = warm.search_documents("restore backups", &SearchOptions::default())?;
 println!("{} {:?}", hits[0].document_id, hits[0].source_uri);
 ```
 
@@ -180,13 +177,7 @@ println!("{} {:?}", hits[0].document_id, hits[0].source_uri);
 <details>
 <summary><strong>Node.js</strong></summary>
 
-Install the Node.js bindings (the package selects a native binary for your platform):
-
-```sh
-npm install holographic-memory
-```
-
-To build the native module from source instead (Rust required):
+The renamed npm package is not published yet. Build the native module from this source checkout (Rust required):
 
 ```sh
 npm ci --omit=optional && npm run build
@@ -199,12 +190,12 @@ method used for scoped pruning. See the
 provenance, namespace isolation, dry runs and deletion limits.
 
 ```js quickstart-check
-const { HolographicMemorySystem } = require('holographic-memory')
-const { DocumentMemory } = require('holographic-memory/semantic')
+const { WarmMemorySystem } = require('writerslogic-warm')
+const { DocumentMemory } = require('writerslogic-warm/semantic')
 
 async function main() {
-  const dir = require('node:fs').mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'hms-readme-'))
-  const memory = new DocumentMemory(new HolographicMemorySystem(4096, dir))
+  const dir = require('node:fs').mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'warm-readme-'))
+  const memory = new DocumentMemory(new WarmMemorySystem(4096, dir))
   await memory.memorize({
     id: 'backups', text: 'Restore deleted documents from verified backups.',
     sourceUri: 'operations.md', version: '1', metadata: { project: 'alpha' },
@@ -221,25 +212,25 @@ main().catch(error => { console.error(error); process.exit(1) })
 <details>
 <summary><strong>Server and Python</strong></summary>
 
-The Python package `holographic-memory-sdk` is an HTTP client for `hms-server`, which stores vectors you
-supply. (`holographic-memory-py` provides native vector search and phase vectors, but no document search.)
+The Python package `writerslogic-warm-sdk` is an HTTP client for `warm-server`, which stores vectors you
+supply. (`writerslogic-warm-py` provides native vector search and phase vectors, but no document search.)
 
 ```sh
-cargo build --release --features server --bin hms-server
-HMS_API_KEY=change-me target/release/hms-server --input-dim 384 &
-uv pip install holographic-memory-sdk
+cargo build --release --features server --bin warm-server
+WARM_API_KEY=change-me target/release/warm-server --input-dim 384 &
+uv pip install "git+https://github.com/writerslogic/warm#subdirectory=bindings/python/warm-sdk"
 ```
 
 ```python
-from holographic_sdk import HolographicClient
+from writerslogic_warm_sdk import WarmClient
 
-client = HolographicClient(url="http://127.0.0.1:8080", api_key="change-me", tenant_id="demo")
+client = WarmClient(url="http://127.0.0.1:8080", api_key="change-me", tenant_id="demo")
 client.add_documents([{"id": "a", "vector": [0.1] * 384, "text": "hello", "metadata": {}}])
 print(client.query([0.1] * 384, top_k=1)["matches"][0]["id"])
 ```
 
 Endpoints, flags, tenants and limits are in the
-[server docs](https://docs.holographic-memory.com/latest/SERVER/). A runnable Python quickstart
+[server docs](https://writerslogic.com/warm/docs/latest/SERVER/). A runnable Python quickstart
 with a toy embedder is in [`examples/quickstart/python`](examples/quickstart/python/quickstart.py).
 
 </details>
@@ -247,19 +238,19 @@ with a toy embedder is in [`examples/quickstart/python`](examples/quickstart/pyt
 <details>
 <summary><strong>MCP</strong></summary>
 
-`hms-mcp` serves a store to any Model Context Protocol client over stdio or HTTP:
+`warm-mcp` serves a store to any Model Context Protocol client over stdio or HTTP:
 
 ```sh
-npx -y holographic-memory-mcp                                # stdio; downloads a verified binary on first run
-npx -y holographic-memory-mcp --transport http               # http://127.0.0.1:8765/mcp
+npx -y writerslogic-warm-mcp                                # stdio; downloads a verified binary on first run
+npx -y writerslogic-warm-mcp --transport http               # http://127.0.0.1:8765/mcp
 ```
 
-The [MCP package](https://www.npmjs.com/package/holographic-memory-mcp) is a separate launcher. To build the server from source:
+The [MCP package](https://www.npmjs.com/package/writerslogic-warm-mcp) is a separate launcher. To build the server from source:
 
 ```sh
-cargo build --release --features mcp,security --bin hms-mcp   # add local-models for semantic recall
-./target/release/hms-mcp                                       # stdio
-./target/release/hms-mcp --transport http                      # http://127.0.0.1:8765/mcp
+cargo build --release --features mcp,security --bin warm-mcp   # add local-models for semantic recall
+./target/release/warm-mcp                                       # stdio
+./target/release/warm-mcp --transport http                      # http://127.0.0.1:8765/mcp
 ```
 
 Client setup, data directory and the one-writer rule: [MCP integration](docs/integrations/mcp/README.md).
@@ -268,7 +259,7 @@ For normalized content from multiple applications, see the [organizational knowl
 
 </details>
 
-The [five-minute quickstart](https://docs.holographic-memory.com/latest/quickstart/)
+The [five-minute quickstart](https://writerslogic.com/warm/docs/latest/quickstart/)
 walks through ingest, search, a SQLite FTS5 comparison and encryption in Rust, Python and Node,
 and CI runs that code on every pull request. For a whole agent memory with no embeddings and no
 network, run `cargo run --example demo-offline-agent`.
@@ -299,7 +290,7 @@ behind the `experimental` feature).
 not read the hypervectors), the graph and inverted-file vector indexes, the memory API, the
 journaled storage and the servers. No holographic behavior is claimed for these. The longer
 version, with the tested numbers, is in
-[Concepts](https://docs.holographic-memory.com/latest/concepts/holographic/).
+[Concepts](https://writerslogic.com/warm/docs/latest/concepts/holographic/).
 
 ## What ships today
 
@@ -319,8 +310,8 @@ version, with the tested numbers, is in
 | Encrypted stores (`security`) | Ships | AES-256-GCM, Argon2id; covers the log, index caches and the text segment. Metadata, file names and sizes are not encrypted |
 | Signed audit log, credential-gated access, COSE/SCITT/C2PA (`provenance`) | Ships | Host must authenticate DIDs; PoSME, RATS, `did:web` not implemented |
 | On-device models (`local-models`: Qwen3 embed/rerank/LLM) | Ships | Local weights only; never downloads |
-| `hms-server` HTTP API, multi-tenant (`server`) | Ships | Single node; TLS, per-tenant scoped keys ([guide](docs/SERVER.md)) |
-| MCP server (`mcp`: `hms-mcp`, stdio and HTTP) | Ships | Encryption needs `security`; semantic recall needs `local-models` |
+| `warm-server` HTTP API, multi-tenant (`server`) | Ships | Single node; TLS, per-tenant scoped keys ([guide](docs/SERVER.md)) |
+| MCP server (`mcp`: `warm-mcp`, stdio and HTTP) | Ships | Encryption needs `security`; semantic recall needs `local-models` |
 | Node.js bindings | Ships on npm and from source | Native binaries are selected by platform at install time |
 | C, Go, .NET, Java, Kotlin, Swift and WebAssembly bindings | Source available | Require local builds; the language packages and native bundles are not yet published ([runtime guides](docs/runtimes)) |
 | Python | Client + phase substrate | No in-process document search |
@@ -337,12 +328,12 @@ flowchart TB
     rust["Rust crate"]
     node["Node.js (napi)"]
     ffi["C, WASM, UniFFI"]
-    python["Python: holographic-memory-sdk"]
-    server["hms-server (HTTP)"]
-    mcp["hms-mcp (stdio, HTTP)"]
+    python["Python: writerslogic-warm-sdk"]
+    server["warm-server (HTTP)"]
+    mcp["warm-mcp (stdio, HTTP)"]
   end
   subgraph engine["Engine API"]
-    core["HmsCore: documents, vectors, facts, mutation gate"]
+    core["WarmCore: documents, vectors, facts, mutation gate"]
     prov["Security and provenance: signed audit log, COSE/SCITT"]
   end
   subgraph indexes["Indexes and memory"]
@@ -388,11 +379,11 @@ Module map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
   are the algebra and the meaning memory.
 - **One writer per store.** A second writing process fails at open with a lock error.
 - **Capacity numbers are points, not guarantees**, and are stated only over the tested range
-  ([capacity](https://docs.holographic-memory.com/latest/concepts/capacity/)).
+  ([capacity](https://writerslogic.com/warm/docs/latest/concepts/capacity/)).
 - **Benchmark results are single machines.** Conditions are in each results file; the single-core
   ann-benchmarks run and the VIBE high-recall points are losses (see [Where it's behind](#where-its-behind)).
 - **Masking is obfuscation.** Client-side vector masking preserves every pairwise similarity.
-- A store is a directory and `HmsCore::new(.., None, ..)` uses the current directory.
+- A store is a directory and `WarmCore::new(.., None, ..)` uses the current directory.
 
 Full statement: [docs/PRIVACY.md](docs/PRIVACY.md). Report vulnerabilities privately via
 [SECURITY.md](SECURITY.md).
@@ -400,8 +391,8 @@ Full statement: [docs/PRIVACY.md](docs/PRIVACY.md). Report vulnerabilities priva
 ## Contributing
 
 [CONTRIBUTING.md](CONTRIBUTING.md): setup, the checks CI runs, DCO sign-off (`git commit -s`, no
-CLA). Start with a [good first issue](https://github.com/writerslogic/holographic-memory/labels/good%20first%20issue)
-or [Discussions](https://github.com/writerslogic/holographic-memory/discussions). See the
+CLA). Start with a [good first issue](https://github.com/writerslogic/warm/labels/good%20first%20issue)
+or [Discussions](https://github.com/writerslogic/warm/discussions). See the
 [Code of Conduct](CODE_OF_CONDUCT.md). Benchmark changes regenerate the results file they touch;
 the README cites files, not remembered figures.
 

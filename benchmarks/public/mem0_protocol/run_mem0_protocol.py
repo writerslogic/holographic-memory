@@ -4,20 +4,20 @@
 # requires-python = ">=3.10"
 # dependencies = []
 # ///
-"""Run mem0ai/memory-benchmarks' own runners against HMS, unmodified.
+"""Run mem0ai/memory-benchmarks' own runners against WARM, unmodified.
 
-Starts hms-server, the Mem0-OSS shim in front of it and the
+Starts warm-server, the Mem0-OSS shim in front of it and the
 OpenAI logging proxy, then runs ``python -m benchmarks.<bench>.run`` inside a clean
 checkout of memory-benchmarks pinned to PINNED_COMMIT with the flags that reproduce
 the published headline runs (gpt-5 answerer and judge, top-200, single pass). Writes
-``manifest-<phase>-<UTC stamp>.json`` (HMS commit and binary hash, frozen retrieval config, harness
+``manifest-<phase>-<UTC stamp>.json`` (WARM commit and binary hash, frozen retrieval config, harness
 commit, exact command, dataset hash, model parameters and snapshots seen by the
 proxy, spend, silent-failure audit) next to the harness output.
 
 Example (authorized full LongMemEval run, existing private allocation):
     uv run benchmarks/public/mem0_protocol/run_mem0_protocol.py longmemeval \
         --clone /path/memory-benchmarks --python /path/venv/bin/python \
-        --hms-bin target/release/hms-server --work /path/out/longmemeval \
+        --warm-bin target/release/warm-server --work /path/out/longmemeval \
         --max-spend "$LME_ALLOCATION_USD" --budget-ledger "$BUDGET_LEDGER" --budget-allocation final-lme
 """
 
@@ -89,7 +89,7 @@ def load_run_ledger(max_spend, path=None, allocation=None):
 
 def harness_environment(environ):
     return {key: value for key, value in environ.items()
-            if not key.startswith(("OPENAI_", "OPENROUTER_", "AZURE_", "MEM0_", "HMS_PROXY_"))
+            if not key.startswith(("OPENAI_", "OPENROUTER_", "AZURE_", "MEM0_", "WARM_PROXY_"))
             and not any(part in key.upper() for part in ("TOKEN", "SECRET", "PASSWORD", "API_KEY", "CREDENTIAL"))}
 
 
@@ -292,11 +292,11 @@ def main() -> None:
     ap.add_argument("benchmark", choices=sorted(PROTOCOL))
     ap.add_argument("--clone", required=True, type=Path, help="memory-benchmarks checkout at PINNED_COMMIT")
     ap.add_argument("--python", required=True, help="interpreter with the harness requirements")
-    ap.add_argument("--hms-bin", required=True, type=Path, help="hms-server built with --features server")
+    ap.add_argument("--warm-bin", required=True, type=Path, help="warm-server built with --features server")
     ap.add_argument("--work", required=True, type=Path, help="output directory (server data, logs, results)")
     ap.add_argument("--dataset", type=Path, help="LoCoMo/LongMemEval JSON, or the BEAM cache dir")
     ap.add_argument("--data-dir", type=Path, default=None,
-                    help="hms-server store (default WORK/hms-data); put it on a local SSD: every remember is synced")
+                    help="warm-server store (default WORK/warm-data); put it on a local SSD: every remember is synced")
     ap.add_argument("--config", type=Path, default=HERE / "retrieval_config.json")
     ap.add_argument("--project-name", default=None)
     ap.add_argument("--max-spend", type=float, required=True, help="must equal the immutable final-run allocation")
@@ -331,32 +331,32 @@ def main() -> None:
 
     work = args.work.resolve()
     work.mkdir(parents=True, exist_ok=True)
-    hms_repo = HERE.parents[2]
-    project = args.project_name or f"hms-{args.benchmark}"
+    warm_repo = HERE.parents[2]
+    project = args.project_name or f"warm-{args.benchmark}"
     procs: list[subprocess.Popen] = []
     private_environment = harness_environment(os.environ)
     proxy_token = secrets.token_urlsafe(32)
-    proxy_environment = dict(private_environment, HMS_PROXY_TOKEN=proxy_token)
+    proxy_environment = dict(private_environment, WARM_PROXY_TOKEN=proxy_token)
     if args.max_spend > 0:
         proxy_environment["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
-    with open(work / "hms-server.log", "ab") as log_hms, open(work / "shim.log", "ab") as log_shim, \
+    with open(work / "warm-server.log", "ab") as log_hms, open(work / "shim.log", "ab") as log_shim, \
             open(work / "proxy.log", "ab") as log_proxy, open(work / "harness.log", "ab") as log_harness:
         try:
-            hms_cmd = [str(args.hms_bin), "--no-auth", "--bind", "127.0.0.1:0", "--data-dir", str((args.data_dir or work / "hms-data").resolve()),
+            warm_cmd = [str(args.warm_bin), "--no-auth", "--bind", "127.0.0.1:0", "--data-dir", str((args.data_dir or work / "hms-data").resolve()),
                        "--input-dim", str((config.get("embedding") or {}).get("dimensions", 384)),
                        "--max-top-k", str(config.get("max_k", 200)), "--max-tenants", "1024",
                        "--tenant-idle-seconds", "120", "--max-concurrent-work", "16", "--max-queue", "1024",
                        "--queue-timeout-ms", "60000"]
-            hms = subprocess.Popen(hms_cmd, stdout=subprocess.PIPE, stderr=log_hms, env=private_environment)
-            procs.append(hms)
-            line = hms.stdout.readline().decode()
+            warm = subprocess.Popen(warm_cmd, stdout=subprocess.PIPE, stderr=log_warm, env=private_environment)
+            procs.append(warm)
+            line = warm.stdout.readline().decode()
             m = re.search(r"listening on (\S+)", line)
             if not m:
-                raise RuntimeError(f"hms-server did not start: {line!r}")
-            hms_url = f"http://{m.group(1)}"
+                raise RuntimeError(f"warm-server did not start: {line!r}")
+            warm_url = f"http://{m.group(1)}"
 
             shim_port, proxy_port = free_port(), free_port()
-            shim_cmd = [sys.executable, str(HERE / "shim.py"), "--hms-url", hms_url, "--config", str(args.config),
+            shim_cmd = [sys.executable, str(HERE / "shim.py"), "--warm-url", warm_url, "--config", str(args.config),
                         "--port", str(shim_port)]
             if config.get("embedding"):
                 shim_cmd += ["--embedding-log", str(work / "embedding_calls.jsonl")]
@@ -433,14 +433,14 @@ def main() -> None:
     manifest = {
         "benchmark": args.benchmark,
         "started_utc": started, "finished_utc": finished, "harness_exit_code": rc, "wrapper_exit_code": wrapper_rc,
-        "hms": {"commit": git(hms_repo, "rev-parse", "HEAD"),
-                "dirty": bool(git(hms_repo, "status", "--porcelain", "--untracked-files=no")),
-                "server_binary_sha256": sha256_file(args.hms_bin), "server_command": hms_cmd[1:]},
+        "warm": {"commit": git(warm_repo, "rev-parse", "HEAD"),
+                "dirty": bool(git(warm_repo, "status", "--porcelain", "--untracked-files=no")),
+                "server_binary_sha256": sha256_file(args.warm_bin), "server_command": warm_cmd[1:]},
         "retrieval_config": config, "retrieval_config_sha256": sha256_file(args.config),
         "adapter": {"shim_sha256": sha256_file(HERE / "shim.py"),
                     "ingest_unit": "one fact per harness add() call; text = '{role}: {content}' per message, newline-joined",
                     "created_at": "harness timestamp (session date) as naive UTC ISO-8601",
-                    "tenant": "one hms-server tenant per harness user_id",
+                    "tenant": "one warm-server tenant per harness user_id",
                     "embedding": config.get("embedding"),
                     "embedding_usage": summarize_embedding_log(work / "embedding_calls.jsonl")},
         "harness": {"repo": HARNESS_REPO, "commit": head, "patches": [], "command": cmd[1:], "cwd": "<clone>"},

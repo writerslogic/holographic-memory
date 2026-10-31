@@ -1,5 +1,5 @@
 {
-  "name": "hms-docs-api",
+  "name": "warm-docs-api",
   "private": true,
   "version": "0.0.0",
   "description": "Generates the Node and TypeScript API reference from the package's .d.ts files.",

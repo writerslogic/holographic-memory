@@ -6,16 +6,16 @@ import type { EmbeddingsInterface } from '@langchain/core/embeddings'
 import { VectorStore, type MaxMarginalRelevanceSearchOptions } from '@langchain/core/vectorstores'
 import { maximalMarginalRelevance } from '@langchain/core/utils/math'
 import type { Callbacks } from '@langchain/core/callbacks/manager'
-import { HmsStore, type Embedder, type FilterLike, type Hit, type HmsStoreOptions } from '@holographic-memory/core'
+import { WarmStore, type Embedder, type FilterLike, type Hit, type WarmStoreOptions } from '@writerslogic/warm-core'
 
 /**
  * Filter accepted by every search method: a MongoDB-style object (`{ lang: 'en', year: { $gte: 2020 } }`)
  * or a core `Filter`. Top-level equalities are evaluated by the engine before ranking; everything
  * else is evaluated after an over-fetch, so it can return fewer than `k` documents.
  */
-export type HmsFilter = Exclude<FilterLike, null | undefined>
+export type WarmFilter = Exclude<FilterLike, null | undefined>
 
-export interface HmsVectorStoreOptions extends Omit<HmsStoreOptions, 'embedder'> {
+export interface WarmVectorStoreOptions extends Omit<WarmStoreOptions, 'embedder'> {
   /**
    * Identity of the embedding space. The engine refuses to reopen a store with a different model
    * or revision, so vectors from different models are never mixed. Default model
@@ -31,7 +31,7 @@ export interface AddOptions {
 
 export interface DeleteParams {
   ids?: string[]
-  filter?: HmsFilter
+  filter?: WarmFilter
   deleteAll?: boolean
 }
 
@@ -48,61 +48,61 @@ function toDocument(hit: { id: string; text: string; metadata: Record<string, un
 }
 
 /**
- * LangChain.js `VectorStore` over Holographic Memory.
+ * LangChain.js `VectorStore` over WARM.
  *
  * Search is hybrid: `similaritySearch` and `similaritySearchWithScore` send the query text to the
  * engine (BM25 fused with cosine over the vector from `embeddings`). The returned score is the
  * fused rank score, higher is better, not a cosine. `similaritySearchVectorWithScore` has no text,
  * so it ranks by cosine only.
  */
-export class HmsVectorStore extends VectorStore {
-  declare FilterType: HmsFilter
-  readonly store: HmsStore
+export class WarmVectorStore extends VectorStore {
+  declare FilterType: WarmFilter
+  readonly store: WarmStore
 
   static lc_name(): string {
-    return 'HmsVectorStore'
+    return 'WarmVectorStore'
   }
 
   _vectorstoreType(): string {
-    return 'holographic_memory'
+    return 'writerslogic_warm'
   }
 
-  /** Wrap an existing `HmsStore` whose embedder produces vectors in the same space as `embeddings`. */
-  constructor(embeddings: EmbeddingsInterface, args: { store: HmsStore }) {
+  /** Wrap an existing `WarmStore` whose embedder produces vectors in the same space as `embeddings`. */
+  constructor(embeddings: EmbeddingsInterface, args: { store: WarmStore }) {
     super(embeddings, args)
     this.store = args.store
   }
 
   /** Build the store, probing the embedding dimension from `embeddings`. */
-  static async create(embeddings: EmbeddingsInterface, options: HmsVectorStoreOptions = {}): Promise<HmsVectorStore> {
+  static async create(embeddings: EmbeddingsInterface, options: WarmVectorStoreOptions = {}): Promise<WarmVectorStore> {
     const { embeddingSpace, ...rest } = options
     const probe = await embeddings.embedQuery('dimension probe')
     const space = embeddingSpace ?? { model: 'langchain-embeddings', revision: 'unversioned' }
-    const store = new HmsStore({ ...rest, embedder: asEmbedder(embeddings, probe.length, space) })
-    return new HmsVectorStore(embeddings, { store })
+    const store = new WarmStore({ ...rest, embedder: asEmbedder(embeddings, probe.length, space) })
+    return new WarmVectorStore(embeddings, { store })
   }
 
   static override async fromTexts(
     texts: string[],
     metadatas: object[] | object,
     embeddings: EmbeddingsInterface,
-    options: HmsVectorStoreOptions & AddOptions = {},
-  ): Promise<HmsVectorStore> {
+    options: WarmVectorStoreOptions & AddOptions = {},
+  ): Promise<WarmVectorStore> {
     const { ids, ...rest } = options
     const docs = texts.map(
       (pageContent, i) =>
         new Document({ pageContent, metadata: Array.isArray(metadatas) ? (metadatas[i] as Record<string, unknown>) : (metadatas as Record<string, unknown>) }),
     )
-    return HmsVectorStore.fromDocuments(docs, embeddings, ids ? { ...rest, ids } : rest)
+    return WarmVectorStore.fromDocuments(docs, embeddings, ids ? { ...rest, ids } : rest)
   }
 
   static override async fromDocuments(
     docs: DocumentInterface[],
     embeddings: EmbeddingsInterface,
-    options: HmsVectorStoreOptions & AddOptions = {},
-  ): Promise<HmsVectorStore> {
+    options: WarmVectorStoreOptions & AddOptions = {},
+  ): Promise<WarmVectorStore> {
     const { ids, ...rest } = options
-    const vs = await HmsVectorStore.create(embeddings, rest)
+    const vs = await WarmVectorStore.create(embeddings, rest)
     await vs.addDocuments(docs, ids ? { ids } : {})
     return vs
   }
@@ -146,17 +146,17 @@ export class HmsVectorStore extends VectorStore {
     return recs.flatMap((r) => (r ? [toDocument(r)] : []))
   }
 
-  async similaritySearchVectorWithScore(query: number[], k: number, filter?: HmsFilter): Promise<[DocumentInterface, number][]> {
+  async similaritySearchVectorWithScore(query: number[], k: number, filter?: WarmFilter): Promise<[DocumentInterface, number][]> {
     const hits = await this.store.recall('', { k, vector: query, ...(filter !== undefined ? { filter } : {}) })
     return hits.map((h) => [toDocument(h), h.score])
   }
 
-  async similaritySearchWithScore(query: string, k = 4, filter?: HmsFilter, _callbacks?: Callbacks): Promise<[DocumentInterface, number][]> {
+  async similaritySearchWithScore(query: string, k = 4, filter?: WarmFilter, _callbacks?: Callbacks): Promise<[DocumentInterface, number][]> {
     const hits = await this.store.recall(query, { k, ...(filter !== undefined ? { filter } : {}) })
     return hits.map((h) => [toDocument(h), h.score])
   }
 
-  async similaritySearch(query: string, k = 4, filter?: HmsFilter, callbacks?: Callbacks): Promise<DocumentInterface[]> {
+  async similaritySearch(query: string, k = 4, filter?: WarmFilter, callbacks?: Callbacks): Promise<DocumentInterface[]> {
     return (await this.similaritySearchWithScore(query, k, filter, callbacks)).map(([d]) => d)
   }
 
@@ -167,7 +167,7 @@ export class HmsVectorStore extends VectorStore {
    */
   async maxMarginalRelevanceSearch(
     query: string,
-    options: MaxMarginalRelevanceSearchOptions<HmsFilter>,
+    options: MaxMarginalRelevanceSearchOptions<WarmFilter>,
     _callbacks?: Callbacks,
   ): Promise<DocumentInterface[]> {
     const { k, fetchK = 20, lambda = 0.5, filter } = options

@@ -1,16 +1,16 @@
 # Mastra
 
-Package: `@holographic-memory/mastra` (peer: `@mastra/core` >=1.78 <2). Built on `@holographic-memory/core` (see [js-core.md](js-core.md)).
+Package: `@writerslogic/warm-mastra` (peer: `@mastra/core` >=1.78 <2). Built on `@writerslogic/warm-core` (see [js-core.md](js-core.md)).
 
-`HolographicVector` implements `MastraVector` (`createIndex`, `listIndexes`, `describeIndex`, `deleteIndex`, `upsert`, `query`, `updateVector`, `deleteVector`, `deleteVectors`) over the in-process native engine, so it plugs into Mastra Memory semantic recall, `MastraVector` RAG tools and anything else that takes a vector store.
+`WarmVector` implements `MastraVector` (`createIndex`, `listIndexes`, `describeIndex`, `deleteIndex`, `upsert`, `query`, `updateVector`, `deleteVector`, `deleteVectors`) over the in-process native engine, so it plugs into Mastra Memory semantic recall, `MastraVector` RAG tools and anything else that takes a vector store.
 
 ```ts
 import { Agent } from '@mastra/core/agent'
 import { LibSQLStore } from '@mastra/libsql'
 import { Memory } from '@mastra/memory'
-import { HolographicVector } from '@holographic-memory/mastra'
+import { WarmVector } from '@writerslogic/warm-mastra'
 
-const vector = new HolographicVector({ id: 'hms', dimension: 1536, path: './hms-data' })
+const vector = new WarmVector({ id: 'warm', dimension: 1536, path: './hms-data' })
 const agent = new Agent({
   id: 'support', name: 'support', instructions: '...', model: 'openai/...',
   memory: new Memory({
@@ -24,7 +24,7 @@ const agent = new Agent({
 
 ## Options
 
-`id`, `dimension` (vector length of every index; default 1536; fixed for the life of the store), `path` (storage directory; omit for in-memory), `hypervectorDimensions` (engine hypervector size, default 4096), `maxFetch`, `overfetch`, `hmsConfig` (native config, e.g. encryption: `{ encryptionEnabled: true, encryptionPassphraseEnv: 'HMS_PASSPHRASE' }`), `memory` (an existing native store created with embedding model `mastra-supplied`).
+`id`, `dimension` (vector length of every index; default 1536; fixed for the life of the store), `path` (storage directory; omit for in-memory), `hypervectorDimensions` (engine hypervector size, default 4096), `maxFetch`, `overfetch`, `warmConfig` (native config, e.g. encryption: `{ encryptionEnabled: true, encryptionPassphraseEnv: 'WARM_PASSPHRASE' }`), `memory` (an existing native store created with embedding model `mastra-supplied`).
 
 ## Mapping
 
@@ -43,10 +43,10 @@ Mastra's MongoDB-style syntax: `$eq $ne $gt $gte $lt $lte $in $nin $all $elemMat
 
 - Metric: cosine only; other metrics fail at `createIndex`. Sparse vectors are rejected.
 - `describeIndex().count` is maintained by this adapter (updated inside every write); writes made outside it (through the native handle) are not counted.
-- Metadata keys starting with `_hms_` are rejected.
-- One writer process per store directory. Writes inside one `HolographicVector` are serialized.
-- Hybrid (BM25 + vector) search is not reachable through `MastraVector.query`, which has no text parameter; use `@holographic-memory/core` directly for it.
+- Metadata keys starting with `_warm_` are rejected.
+- One writer process per store directory. Writes inside one `WarmVector` are serialized.
+- Hybrid (BM25 + vector) search is not reachable through `MastraVector.query`, which has no text parameter; use `@writerslogic/warm-core` directly for it.
 
 ## Tested against
 
-`@mastra/core` 1.78.0, `@mastra/memory` 1.38.0, `@mastra/libsql` 1.26.2, Node 26.8. `npm test --workspace packages/mastra` runs 15 contract tests (index lifecycle, validation, cosine scores, every filter operator, pre-ranking filters past 100 candidates, replace, `deleteFilter`, update by id and filter, delete by ids and filter, index isolation) and one end-to-end test: a real `Agent` with `Memory` (LibSQL storage, `semanticRecall`, `lastMessages: 1`) driven by a scripted model, asserting that an old message is retrieved through `HolographicVector` into the prompt. Mastra does not publish its vector-store test suite as a package, so the contract tests follow the operations and filter semantics in its `MastraVector` types and docs. `examples/vector.mjs` is a runnable example.
+`@mastra/core` 1.78.0, `@mastra/memory` 1.38.0, `@mastra/libsql` 1.26.2, Node 26.8. `npm test --workspace packages/mastra` runs 15 contract tests (index lifecycle, validation, cosine scores, every filter operator, pre-ranking filters past 100 candidates, replace, `deleteFilter`, update by id and filter, delete by ids and filter, index isolation) and one end-to-end test: a real `Agent` with `Memory` (LibSQL storage, `semanticRecall`, `lastMessages: 1`) driven by a scripted model, asserting that an old message is retrieved through `WarmVector` into the prompt. Mastra does not publish its vector-store test suite as a package, so the contract tests follow the operations and filter semantics in its `MastraVector` types and docs. `examples/vector.mjs` is a runnable example.

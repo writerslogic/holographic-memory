@@ -24,7 +24,7 @@ def manifest(folder, scored, count):
               {"model": "gpt-5", "max_completion_tokens": 4096, "response_format": {"type": "json_object"}}]
     return {"benchmark": "locomo", "phase": "evaluate" if scored else "predict", "harness": {"commit": PINNED_COMMIT,
              "command": ["--categories", "1,2,3,4", *COMMON]},
-            "hms": {"dirty": False, "server_binary_sha256": "binary"}, "adapter": {"shim_sha256": "shim"},
+            "warm": {"dirty": False, "server_binary_sha256": "binary"}, "adapter": {"shim_sha256": "shim"},
             "wrapper_exit_code": 0, "harness_exit_code": 0,
             "audit": {"completion": {"complete": True, "expected_questions": count,
                                       "scored_questions": count if scored else 0}},

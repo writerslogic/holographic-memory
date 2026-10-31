@@ -43,7 +43,7 @@ Float re-rank on x86 and aarch64: left autovectorized (no explicit kernel won).
   ratios from 0.71 to 2.3. That is noise, not a result. Recall and exact evaluations per query
   were identical (0.9005 / 5810.9 at ef 256, 0.9518 / 14882.1 at ef 768).
 - x86 AVX512-VNNI (Modal, one 8 vCPU container, 7 alternating rounds, same binary with
-  `HMS_QGRAPH_KERNEL=avx2` against `vnni`): ef 256 / 736 at 1 thread 0.998 and 1.036, at 4 threads
+  `WARM_QGRAPH_KERNEL=avx2` against `vnni`): ef 256 / 736 at 1 thread 0.998 and 1.036, at 4 threads
   1.013 and 0.975 (median of round ratios, min 0.65, max 1.50). The microbenchmark gain of
   10 to 30 percent per call does not show in QPS at this noise; the search is bound by row fetch
   latency, not the dot product. Recall and exact evaluations per query were identical for both
@@ -55,12 +55,12 @@ Float re-rank on x86 and aarch64: left autovectorized (no explicit kernel won).
 ## Recall gate
 
 `cargo test --release --lib qgraph` (26 tests including the recall tests) passes on the M4, and on
-the AVX512 container once per tier (`HMS_QGRAPH_KERNEL=scalar`, `avx2`, `vnni`), all 26 passing
+the AVX512 container once per tier (`WARM_QGRAPH_KERNEL=scalar`, `avx2`, `vnni`), all 26 passing
 (see `qgraph_tests_by_tier` in the e2e file).
 
 ## Knob
 
-x86: `HMS_QGRAPH_KERNEL=scalar|avx2|vnni|auto` (read once, never above what the CPU supports).
+x86: `WARM_QGRAPH_KERNEL=scalar|avx2|vnni|auto` (read once, never above what the CPU supports).
 Default `auto`.
 
 ## Not obtained

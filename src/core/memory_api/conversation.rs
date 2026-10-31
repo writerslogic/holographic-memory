@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 use super::{HistoryMode, IdConflict, Memory, MemoryError, Millis, RecallOptions, RememberInput};
-use crate::core::HmsCore;
+use crate::core::WarmCore;
 
 mod context;
 pub use context::{ConversationContext, ConversationContextLimits};
@@ -337,7 +337,7 @@ fn spans(text: &str) -> Vec<(usize, usize)> {
 }
 
 impl ConversationMemory {
-    pub fn new(core: HmsCore) -> Result<Self> {
+    pub fn new(core: WarmCore) -> Result<Self> {
         #[cfg(feature = "local-models")]
         if let Some(stages) = core.model_stages() {
             if stages.extract_facts {

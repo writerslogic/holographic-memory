@@ -27,7 +27,7 @@ design improves recovery under the same block-AMP decoder at equal signal width.
 The historical experiment reports 0.43 versus 0.92 accuracy at `M/D = 0.29`;
 the additional cost audit records all new seeds and controls. These finite
 experiments support code design as a useful variable. They do not establish a
-universal threshold, a practical noise range, or an improvement in HMS retrieval.
+universal threshold, a practical noise range, or an improvement in WARM retrieval.
 
 This corrects a loose earlier reading. §25/§26 of `PREREGISTRATION-binding-readout.md`
 reached `M ≈ D` — but only with **exact coded key-value stores** (pinv / Reed-Solomon /
@@ -72,7 +72,7 @@ noiseless exact arithmetic the information is plainly there — 256 real numbers
 *verifiable ≠ findable.* This refutes a strict "info-theoretically impossible past
 ~0.5·D" reading and matches the known SPARC/CDMA hard-phase picture (a low algorithmic
 threshold ≈0.27 far below the information threshold). The **practical** capacity limit
-is instead set by quantization/noise — which is exactly why deterministic HMS shards.
+is instead set by quantization/noise — which is exactly why deterministic WARM shards.
 
 Soft/graceful readout is preserved throughout: the AMP posterior on the true entry
 degrades continuously across the transition (no cliff) — the property an exact code
@@ -216,15 +216,15 @@ The honest bound: the advantage narrows to *parity* under heavy corruption (~30%
 and at extreme AWGN (σ≈0.4) the wide-w code dips slightly *below* the bundle — so it is a
 practical-regime win, not a universal one. But the capacity/robustness tension is **not
 exclusive**: a co-designed code beats the random bundle on *both* axes at matched storage
-across the operating range HMS cares about.
+across the operating range WARM cares about.
 
-## What it means for HMS
+## What it means for WARM
 
 - **Capacity beyond the floor comes from code design, and it survives moderate noise.**
   No blind *decoder* beats the random floor (a measured statistical-to-computational
   gap), but a spatially-coupled *encoder* buys a real ~+33–50% facts/dim with a poly
   decoder and soft readout — and that advantage persists through ~20% AWGN and ~10–20%
-  dropout, degrading gracefully. So it is a usable lever for HMS, not a clean-room-only
+  dropout, degrading gracefully. So it is a usable lever for WARM, not a clean-room-only
   curiosity; only under heavy corruption does it converge to the bundle (never worse).
   Sharding remains the route to capacity in the *high-corruption* limit.
 - **The two escapes each cost something concrete.** Exact coded store → `M ≈ D` but hard
@@ -232,7 +232,7 @@ across the operating range HMS cares about.
   the side information (sharding). Soft superposition recovery → floored at `~0.27·D`.
   There is no free lunch, and now we know *why* (computational hardness), not just *that*.
 - **The holographic layer's value is not superposition capacity.** It is the preserved
-  soft/graceful readout (continuous degradation, noise robustness) and — the HMS novelty
+  soft/graceful readout (continuous degradation, noise robustness) and — the WARM novelty
   — verifiability/plasticity, not a higher fact-per-dimension count.
 
 ## Honest scope

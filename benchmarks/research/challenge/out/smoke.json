@@ -1,5 +1,5 @@
 {
-  "schema": "hms-research-challenge/results/v1",
+  "schema": "warm-research-challenge/results/v1",
   "generated_at_unix_ms": 1792551983341,
   "split": "test",
   "seed": 6840335469300285441,

@@ -29,7 +29,7 @@
 //
 // Run: cargo run --release --bin binding-baselines
 
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::EntangledHVec;
 
 const SPARSE_DENOM: usize = 256;
 const N_SYMBOLS: usize = 512; // shared codebook (real interference)

@@ -1,16 +1,16 @@
 'use strict'
 
 // Offline model packs for the local embedder, when the optional package is installed.
-if (!process.env.HMS_EMBED_MODEL_DIR) {
+if (!process.env.WARM_EMBED_MODEL_DIR) {
   try {
-    process.env.HMS_EMBED_MODEL_DIR = require('holographic-memory-models').packDir
+    process.env.WARM_EMBED_MODEL_DIR = require('writerslogic-warm-models').packDir
   } catch {}
 }
 
-// Loads the native binding. Order: a locally built `holographic-memory.node` (development
+// Loads the native binding. Order: a locally built `writerslogic-warm.node` (development
 // and the packed tarball used by `npm run test:package`), then the per-platform
-// `holographic-memory.<suffix>.node` next to this file, then the optional dependency
-// `holographic-memory-<suffix>` that npm installed for this os/cpu/libc.
+// `writerslogic-warm.<suffix>.node` next to this file, then the optional dependency
+// `writerslogic-warm-<suffix>` that npm installed for this os/cpu/libc.
 
 const { existsSync, readFileSync } = require('node:fs')
 
@@ -47,8 +47,8 @@ const supportedTargets = [
 ]
 
 const suffix = abi ? `${process.platform}-${process.arch}${abi()}` : undefined
-const candidates = ['./holographic-memory.node']
-if (suffix) candidates.push(`./holographic-memory.${suffix}.node`, `holographic-memory-${suffix}`)
+const candidates = ['./writerslogic-warm.node']
+if (suffix) candidates.push(`./writerslogic-warm.${suffix}.node`, `writerslogic-warm-${suffix}`)
 
 let binding
 let lastError
@@ -63,7 +63,7 @@ for (const candidate of candidates) {
 
 if (!binding) {
   throw new Error(
-    `Unable to load holographic-memory native binding for ${suffix ?? `${process.platform}-${process.arch}`}. ` +
+    `Unable to load writerslogic-warm native binding for ${suffix ?? `${process.platform}-${process.arch}`}. ` +
     `Supported targets: ${supportedTargets.join(', ')}. Last error: ${lastError?.message ?? 'none'}`,
   )
 }

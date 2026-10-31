@@ -83,8 +83,8 @@ def check(folder):
         produced = summary["results"][dataset]
         assert produced["quality"] == quality
         assert produced["queries"] == len(qrels)
-        assert produced["exact_hms_query_pairs"] == len(qrels) * protocol["rounds"]
-        all_pairs += produced["exact_hms_query_pairs"]
+        assert produced["exact_warm_query_pairs"] == len(qrels) * protocol["rounds"]
+        all_pairs += produced["exact_warm_query_pairs"]
         for arm, values in timings.items():
             assert produced["latency"][arm]["mean_ns"] == statistics.mean(values)
             values.sort()
@@ -97,7 +97,7 @@ def check(folder):
         assert produced["baseline_over_candidate_mean"] == latency["baseline"]["mean_ns"] / latency["candidate"]["mean_ns"]
         assert produced["sqlite_over_candidate_mean"] == latency["sqlite"]["mean_ns"] / latency["candidate"]["mean_ns"]
     assert summary["load_gate_met"] == all(row["load_gate_met"] for row in measurements)
-    return {"checked_runs": len(measurements), "exact_hms_query_pairs": all_pairs,
+    return {"checked_runs": len(measurements), "exact_warm_query_pairs": all_pairs,
             "quality_reconstructed": True, "load_gate_met": summary["load_gate_met"]}
 
 

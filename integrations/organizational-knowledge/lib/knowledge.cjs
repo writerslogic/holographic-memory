@@ -1,6 +1,6 @@
 'use strict'
 
-const { DocumentMemory } = require('holographic-memory/semantic')
+const { DocumentMemory } = require('writerslogic-warm/semantic')
 const { KnowledgeError } = require('./errors.cjs')
 const { NAMESPACE_KEY, adaptDocument, documentId, isPlainObject, parseDocumentId, requestFailure } = require('./document.cjs')
 
@@ -14,7 +14,7 @@ const MAX_EMBEDDING_VALUES = 1_048_576
 /**
  * Validates every entry against the adapter's rules and rejects duplicate identities. It
  * needs no engine, so a caller can reject bad input before opening (and thereby creating) a
- * store: a `HolographicMemorySystem` without a path persists to the working directory.
+ * store: a `WarmMemorySystem` without a path persists to the working directory.
  */
 function prepareImport(namespace, entries) {
   if (entries === null || typeof entries?.[Symbol.iterator] !== 'function') {
@@ -76,7 +76,7 @@ function checkTarget(target, index, list = 'targets') {
 }
 
 /**
- * Curated documents from one organization namespace in an HMS store. Identity is
+ * Curated documents from one organization namespace in an WARM store. Identity is
  * `[namespace, source_system, id]`; the document's content identifier (SAID) is its version.
  * One writer per store: do not open the same store directory from two processes.
  */
@@ -88,14 +88,14 @@ class OrganizationalKnowledge {
   #writes = Promise.resolve()
 
   /**
-   * @param memory A `HolographicMemorySystem`.
+   * @param memory A `WarmMemorySystem`.
    * @param options.namespace The organization namespace for every import, search, and forget.
    * @param options.embedder Optional `DocumentMemory` embedder; must match the store's embedding space.
    * @param options.rerank Optional `DocumentMemory` reranker.
    */
   constructor(memory, { namespace, embedder, rerank, maxPending } = {}) {
     if (!memory || typeof memory.chunkDocument !== 'function' || typeof memory.searchDocuments !== 'function') {
-      throw new TypeError('memory must be a HolographicMemorySystem')
+      throw new TypeError('memory must be a WarmMemorySystem')
     }
     documentId(namespace, 'source', 'id') // validates the namespace
     this.#memory = memory
@@ -172,10 +172,10 @@ class OrganizationalKnowledge {
   }
 
   /**
-   * Removes the listed documents from HMS retrieval. Targets are explicit
+   * Removes the listed documents from WARM retrieval. Targets are explicit
    * `{ sourceSystem, id }` pairs inside this namespace; there is no wildcard or bulk form.
    * Without `apply: true` it only reports the IDs it would remove. Repeating is safe.
-   * This removes HMS index entries; it does not erase upstream sources, backups, or
+   * This removes WARM index entries; it does not erase upstream sources, backups, or
    * filesystem snapshots, and importing the same document again restores it.
    */
   async forget(targets, { apply = false } = {}) {
@@ -221,7 +221,7 @@ class OrganizationalKnowledge {
   }
 
   /**
-   * Removes every document of a source system, or of the whole namespace, from HMS retrieval,
+   * Removes every document of a source system, or of the whole namespace, from WARM retrieval,
    * except an optional `keep` list. With `keep` set to the identities an upstream still holds,
    * it prunes what the upstream dropped. `scope` is `{ sourceSystem }` or `{ all: true }`, plus an
    * optional nonempty `keep` of `{ sourceSystem, id }` targets. Without `apply: true` it only
@@ -264,7 +264,7 @@ class OrganizationalKnowledge {
       }
     }
     if (typeof this.#memory.listDocuments !== 'function') {
-      throw new KnowledgeError('unsupported_binding', 'this holographic-memory binding has no listDocuments; rebuild it from a source that exports it')
+      throw new KnowledgeError('unsupported_binding', 'this writerslogic-warm binding has no listDocuments; rebuild it from a source that exports it')
     }
 
     const { planned, truncated } = await this.#scan(sourceSystem, kept, limit)

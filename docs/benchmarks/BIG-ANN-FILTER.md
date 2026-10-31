@@ -43,7 +43,7 @@ on a host shared with other jobs (load average 18-23 on 22 threads). Build ivf_m
 cluster_size 1000, max_lists 2048, copy_min 50000. Results:
 `benchmarks/results/bigann_filter_yfcc10m_dev_2026-10-23.json`.
 
-| run | HMS commit | bitset_min | brute_max | target | recall@10 | QPS |
+| run | WARM commit | bitset_min | brute_max | target | recall@10 | QPS |
 |---|---|---|---|---|---|---|
 | 1 | 372cddb | 5000 | 5000 | 2000 | 0.8857 | 17,530 |
 | 1 | 372cddb | 5000 | 5000 | 2500 | 0.9045 | 14,130 |
@@ -99,10 +99,10 @@ r3 ran at load average up to 29 and is not comparable for QPS; its recall column
 ## Post-freeze command (Azure D8lds_v5, maintainers' procedure)
 
 ```
-python install.py --neurips23track filter --algorithm hms
-python run.py --neurips23track filter --algorithm hms --dataset yfcc-10M
+python install.py --neurips23track filter --algorithm warm
+python run.py --neurips23track filter --algorithm warm --dataset yfcc-10M
 python data_export.py --out res.csv
 ```
 
-with `neurips23/filter/hms` from the fork branch `filter/hms`, whose Dockerfile pins the HMS
+with `neurips23/filter/warm` from the fork branch `filter/warm`, whose Dockerfile pins the WARM
 commit.

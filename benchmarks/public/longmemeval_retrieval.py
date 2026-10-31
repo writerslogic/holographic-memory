@@ -21,12 +21,12 @@ from pathlib import Path
 import longmemeval_pipeline as P
 from longmemeval_answer_evidence import _observation_key
 from longmemeval_dev_conversations import load_dev_conversations
-from proxies.beir_proxies import BM25, STOP, tok_hms
+from proxies.beir_proxies import BM25, STOP, tok_warm
 
 ROOT = Path(__file__).resolve().parents[2]
 SPLIT = ROOT / "benchmarks/public/longmemeval_split.json"
-SOURCE = Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json"
-RUN = Path.home() / ".cache/hms-bench/longmemeval_s/runs/s-dev-small-all2"
+SOURCE = Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json"
+RUN = Path.home() / ".cache/warm-bench/longmemeval_s/runs/s-dev-small-all2"
 AGGREGATION = re.compile(r"\b(?:how many|total|list all|list every|count of|number of)\b", re.I)
 ASSISTANT = re.compile(r"\b(?:you|your|assistant)\b.*\b(?:suggest\w*|recommend\w*|mention\w*|say|said|give|gave|provid\w*)\b|\b(?:suggest\w*|recommend\w*|provid\w*)\b.*\byou\b", re.I)
 

@@ -42,7 +42,7 @@ test('identity components reject blank, control, lone-surrogate and oversize val
   }
 })
 
-test('a curated document maps to HMS input without altering text or provenance', () => {
+test('a curated document maps to WARM input without altering text or provenance', () => {
   const content = '  \r\n Café 😀 line one\r\nline two  \n'
   const { input, identity } = adapt({ content, extra: { nested: [1, null, 'x'] }, date: '2026-10-01', collected_at: '2026-10-02T00:00:00Z' })
   assert.equal(input.text, content)

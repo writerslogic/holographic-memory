@@ -84,7 +84,7 @@ def test_timing_lock_is_a_noop_on_ci(monkeypatch):
     with timing_lock():
         pass
     monkeypatch.delenv("GITHUB_ACTIONS")
-    monkeypatch.setenv("HMS_BENCH_LOCK", "/nonexistent-dir/timing.lock")
+    monkeypatch.setenv("WARM_BENCH_LOCK", "/nonexistent-dir/timing.lock")
     with timing_lock():
         pass
 

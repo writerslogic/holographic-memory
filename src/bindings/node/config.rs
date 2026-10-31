@@ -6,7 +6,7 @@ use napi_derive::napi;
 use crate::EmbeddingSpace;
 
 #[napi(object)]
-pub struct HmsConfigJs {
+pub struct WarmConfigJs {
     pub embedding_model: Option<String>,
     pub embedding_revision: Option<String>,
     pub embedding_dimensions: Option<u32>,
@@ -52,10 +52,10 @@ pub struct HmsConfigJs {
     pub cognition_min_hypothesis_confidence: Option<f64>,
 }
 
-impl HmsConfigJs {
-    pub(super) fn into_config(self) -> crate::core::config::HmsConfig {
+impl WarmConfigJs {
+    pub(super) fn into_config(self) -> crate::core::config::WarmConfig {
         use crate::core::config::*;
-        let mut cfg = HmsConfig::default();
+        let mut cfg = WarmConfig::default();
         if self.embedding_model.is_some()
             || self.embedding_revision.is_some()
             || self.embedding_dimensions.is_some()

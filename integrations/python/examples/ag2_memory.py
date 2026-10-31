@@ -1,10 +1,10 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""AG2 agent with Holographic Memory tools.
+"""AG2 agent with WARM tools.
 
-    HMS_API_KEY=demo hms-server --input-dim 64 --dim 1024
-    HMS_URL=http://127.0.0.1:8080 HMS_API_KEY=demo python ag2_memory.py
+    WARM_API_KEY=demo warm-server --input-dim 64 --dim 1024
+    WARM_URL=http://127.0.0.1:8080 WARM_API_KEY=demo python ag2_memory.py
 
 Offline: ag2's scripted TestConfig plays the model, calling `remember` then `recall`.
 """
@@ -17,18 +17,18 @@ from ag2 import Agent
 from ag2.events import ToolCallEvent
 from ag2.testing import TestConfig
 
-from holographic_integrations.ag2 import HolographicMemoryToolkit
-from holographic_integrations.core import HashingEmbedder, HmsConfig
+from writerslogic_warm_integrations.ag2 import WarmMemoryToolkit
+from writerslogic_warm_integrations.core import HashingEmbedder, WarmConfig
 
 
 async def main() -> None:
-    hms = HmsConfig(
-        url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"),
-        api_key=os.environ.get("HMS_API_KEY"),
+    warm = WarmConfig(
+        url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"),
+        api_key=os.environ.get("WARM_API_KEY"),
         tenant_id="ag2_demo",
         embedder=HashingEmbedder(64),
     )
-    memory = HolographicMemoryToolkit(hms)
+    memory = WarmMemoryToolkit(warm)
     await memory.backend.forget_where(None)
     script = TestConfig(
         ToolCallEvent(name="remember", arguments=json.dumps({"text": "Deploys happen on Fridays", "metadata": {"team": "ops"}})),

@@ -25,9 +25,9 @@ fn refuses_to_start_without_credentials_or_explicit_dev_mode() {
     assert!(stderr.contains("--no-auth"), "{stderr}");
     let stderr = Server::refuses(&["--no-auth", "--bind", "0.0.0.0:0"], &[]);
     assert!(stderr.contains("loopback"), "{stderr}");
-    let stderr = Server::refuses(&["--no-auth"], &[("HMS_API_KEY", "k")]);
+    let stderr = Server::refuses(&["--no-auth"], &[("WARM_API_KEY", "k")]);
     assert!(stderr.contains("conflicts"), "{stderr}");
-    assert!(Server::refuses(&[], &[("HMS_API_KEY", "")]).contains("empty"));
+    assert!(Server::refuses(&[], &[("WARM_API_KEY", "")]).contains("empty"));
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn keys_are_scoped_tenant_bound_and_rotate_without_restart() {
 
     // The key file stores digests, never tokens.
     let stored = std::fs::read_to_string(&keys).unwrap();
-    assert!(!stored.contains(&reader) && !stored.contains("hms_reader."));
+    assert!(!stored.contains(&reader) && !stored.contains("warm_reader."));
     assert!(stored.contains("sha256:"));
 
     let doc_body = doc("one", 1);
@@ -92,8 +92,8 @@ fn keys_are_scoped_tenant_bound_and_rotate_without_restart() {
     );
     // Bad tokens: unknown id, wrong secret, scheme, none.
     for auth in [
-        "Bearer hms_nobody.00",
-        "Bearer hms_reader.00",
+        "Bearer warm_nobody.00",
+        "Bearer warm_reader.00",
         "Basic abc",
         "",
     ] {
@@ -284,20 +284,20 @@ fn health_readiness_and_metrics() {
     assert!(m.header("content-type").unwrap().starts_with("text/plain"));
     let text = m.text();
     for needle in [
-        "hms_build_info{version=",
-        "hms_ready 1",
-        "hms_work_slots_capacity 4",
-        "hms_queue_depth 0",
-        "hms_tenants_open 1",
-        "hms_tenant_documents{tenant=\"acme\"} 2",
-        "hms_tenant_vectors{tenant=\"acme\"} 2",
-        "hms_http_requests_total{route=\"/api/v1/documents/batch\",method=\"POST\",status=\"200\"} 1",
+        "warm_build_info{version=",
+        "warm_ready 1",
+        "warm_work_slots_capacity 4",
+        "warm_queue_depth 0",
+        "warm_tenants_open 1",
+        "warm_tenant_documents{tenant=\"acme\"} 2",
+        "warm_tenant_vectors{tenant=\"acme\"} 2",
+        "warm_http_requests_total{route=\"/api/v1/documents/batch\",method=\"POST\",status=\"200\"} 1",
         // Route templates, never raw ids, label the series.
-        "hms_http_requests_total{route=\"/api/v1/documents/{id}\",method=\"DELETE\",status=\"404\"} 1",
-        "hms_http_request_duration_seconds_bucket{route=\"/api/v1/query\",le=\"+Inf\"} 1",
-        "hms_http_request_duration_seconds_count{route=\"/api/v1/query\"} 1",
-        "hms_ingest_documents_total 2",
-        "hms_auth_failures_total",
+        "warm_http_requests_total{route=\"/api/v1/documents/{id}\",method=\"DELETE\",status=\"404\"} 1",
+        "warm_http_request_duration_seconds_bucket{route=\"/api/v1/query\",le=\"+Inf\"} 1",
+        "warm_http_request_duration_seconds_count{route=\"/api/v1/query\"} 1",
+        "warm_ingest_documents_total 2",
+        "warm_auth_failures_total",
     ] {
         assert!(text.contains(needle), "missing {needle:?} in\n{text}");
     }
@@ -333,14 +333,14 @@ fn openapi_matches_the_committed_file_and_documented_security_is_enforced() {
     assert!(out.status.success());
     let generated: Value = serde_json::from_slice(&out.stdout).unwrap();
     let committed = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/server/openapi.json");
-    if std::env::var_os("HMS_UPDATE_OPENAPI").is_some() {
+    if std::env::var_os("WARM_UPDATE_OPENAPI").is_some() {
         std::fs::write(committed, [out.stdout.as_slice(), b"\n"].concat()).unwrap();
     }
     let on_disk: Value = serde_json::from_slice(&std::fs::read(committed).unwrap())
-        .expect("docs/server/openapi.json; regenerate with HMS_UPDATE_OPENAPI=1");
+        .expect("docs/server/openapi.json; regenerate with WARM_UPDATE_OPENAPI=1");
     assert_eq!(
         on_disk, generated,
-        "docs/server/openapi.json is stale; run `HMS_UPDATE_OPENAPI=1 cargo test --features server --test server_api`"
+        "docs/server/openapi.json is stale; run `WARM_UPDATE_OPENAPI=1 cargo test --features server --test server_api`"
     );
     assert_eq!(generated["openapi"], "3.1.0");
 

@@ -1,25 +1,25 @@
-# hms-mcp: Holographic Memory as an MCP server
+# warm-mcp: WARM as an MCP server
 
-`hms-mcp` exposes a Holographic Memory store to Model Context Protocol clients (see `docs/integrations/editors/`). It runs on your machine and keeps memories in the same document store as `hms-server`. Optional remote OAuth mode makes token-introspection requests to the configured authorization server.
+`warm-mcp` exposes a WARM store to Model Context Protocol clients (see `docs/integrations/editors/`). It runs on your machine and keeps memories in the same document store as `warm-server`. Optional remote OAuth mode makes token-introspection requests to the configured authorization server.
 
 Transports: stdio (one client per process) and streamable HTTP (one server, many clients). Protocol: the `initialize` handshake revisions 2025-03-26, 2025-06-18 and 2025-11-25, and the stateless 2026-07-28 form, all served by the official Rust SDK (`rmcp` 3.7). OAuth mode uses stateless routing for every revision.
 
 ## Install and run
 
 ```sh
-cargo build --release --features mcp,security --bin hms-mcp     # add local-models for semantic recall (Rust >= 1.94)
-./target/release/hms-mcp                                         # stdio
-./target/release/hms-mcp --transport http                        # http://127.0.0.1:8765/mcp
+cargo build --release --features mcp,security --bin warm-mcp     # add local-models for semantic recall (Rust >= 1.94)
+./target/release/warm-mcp                                         # stdio
+./target/release/warm-mcp --transport http                        # http://127.0.0.1:8765/mcp
 ```
 
 After the first release the launchers fetch a prebuilt binary for you:
 
 ```sh
-npx -y holographic-memory-mcp          # npm launcher
-uvx holographic-memory-mcp             # PyPI launcher
+npx -y writerslogic-warm-mcp          # npm launcher
+uvx writerslogic-warm-mcp             # PyPI launcher
 ```
 
-Both verify the download against a SHA-256 table shipped inside the package and refuse to run a binary that does not match. `HMS_MCP_BINARY=/path/to/hms-mcp` makes them run your own build. The release assets are named `hms-mcp-<rust target triple>[.exe]` under the `mcp-v<version>` release; `integrations/mcp/scripts/build-release.sh` builds one and records its checksum.
+Both verify the download against a SHA-256 table shipped inside the package and refuse to run a binary that does not match. `WARM_MCP_BINARY=/path/to/warm-mcp` makes them run your own build. The release assets are named `warm-mcp-<rust target triple>[.exe]` under the `mcp-v<version>` release; `integrations/mcp/scripts/build-release.sh` builds one and records its checksum.
 
 ## Tools
 
@@ -66,27 +66,27 @@ An unknown or disabled tool, a malformed request or an unknown resource or promp
 
 | Setting | Flag / environment | Default |
 |---|---|---|
-| Root directory | `--data-dir` / `HMS_MCP_DATA_DIR` | `~/Library/Application Support/hms-mcp` (macOS), `$XDG_DATA_HOME/hms-mcp` or `~/.local/share/hms-mcp` (Linux), `%LOCALAPPDATA%\hms-mcp` (Windows) |
-| One exact directory | `--store` / `HMS_MCP_STORE` | unset |
-| Namespace strategy | `--namespace-strategy global\|project` / `HMS_MCP_NAMESPACE_STRATEGY` | `global` |
-| Global namespace name | `--namespace` / `HMS_MCP_NAMESPACE` | `default` |
-| Project directory | `--project` / `HMS_MCP_PROJECT` | working directory; its nearest `.git` ancestor is the root |
-| Per-call namespace | `--namespace-arg` / `HMS_MCP_NAMESPACE_ARG` | off |
+| Root directory | `--data-dir` / `WARM_MCP_DATA_DIR` | `~/Library/Application Support/warm-mcp` (macOS), `$XDG_DATA_HOME/warm-mcp` or `~/.local/share/warm-mcp` (Linux), `%LOCALAPPDATA%\warm-mcp` (Windows) |
+| One exact directory | `--store` / `WARM_MCP_STORE` | unset |
+| Namespace strategy | `--namespace-strategy global\|project` / `WARM_MCP_NAMESPACE_STRATEGY` | `global` |
+| Global namespace name | `--namespace` / `WARM_MCP_NAMESPACE` | `default` |
+| Project directory | `--project` / `WARM_MCP_PROJECT` | working directory; its nearest `.git` ancestor is the root |
+| Per-call namespace | `--namespace-arg` / `WARM_MCP_NAMESPACE_ARG` | off |
 
 Each namespace is its own engine store at `<data-dir>/stores/<namespace>`. Namespace names are `[a-z0-9_-]{1,64}`; the `project` strategy derives `<directory-name>-<8 hex digits of a path hash>`, so two projects with the same folder name do not collide. With `--namespace-arg` every tool takes an optional `namespace`, which is how a multi-user application keeps one store per user. At most `--max-stores` (16) active or opening stores occupy the cache. The least recently used idle store is closed before another namespace is opened; durable data remains available on reopen. Active requests retain their store lease. When every slot is active, admission returns `too_many_stores` and can be retried after an operation finishes. Initialization and flushing release the global namespace-map lock before disk I/O.
 
 ### Sharing a store
 
-An engine store has one writer. A second stdio process on the same store fails at startup with `store_locked`. Several clients that must share memories (Claude Code and Cursor on one project, say) should use one `hms-mcp --transport http` and point each at it; the editor pages show the remote form.
+An engine store has one writer. A second stdio process on the same store fails at startup with `store_locked`. Several clients that must share memories (Claude Code and Cursor on one project, say) should use one `warm-mcp --transport http` and point each at it; the editor pages show the remote form.
 
 ## Encryption at rest
 
 ```sh
-export HMS_MCP_PASSPHRASE='correct horse battery staple'
-hms-mcp --encrypt            # needs a build with --features security
+export WARM_MCP_PASSPHRASE='correct horse battery staple'
+warm-mcp --encrypt            # needs a build with --features security
 ```
 
-`--encrypt` (`HMS_MCP_ENCRYPT`) encrypts the store with a key derived from the passphrase in the environment variable named by `--passphrase-env` (default `HMS_MCP_PASSPHRASE`). The server refuses to start without the variable, never logs it, and a wrong passphrase fails the open. Reopening an encrypted store without `--encrypt`, or the reverse, fails rather than mixing modes. The end-to-end test stores a distinctive string and confirms it appears in no file under the data directory. What encryption does not cover: process memory while running, and the passphrase itself, which lives in whatever sets the environment.
+`--encrypt` (`WARM_MCP_ENCRYPT`) encrypts the store with a key derived from the passphrase in the environment variable named by `--passphrase-env` (default `WARM_MCP_PASSPHRASE`). The server refuses to start without the variable, never logs it, and a wrong passphrase fails the open. Reopening an encrypted store without `--encrypt`, or the reverse, fails rather than mixing modes. The end-to-end test stores a distinctive string and confirms it appears in no file under the data directory. What encryption does not cover: process memory while running, and the passphrase itself, which lives in whatever sets the environment.
 
 ## Recall: what "semantic" means for each build
 
@@ -99,8 +99,8 @@ hms-mcp --encrypt            # needs a build with --features security
 
 | Setting | Flag / environment | Default |
 |---|---|---|
-| Tools to expose | `--tools a,b` / `HMS_MCP_TOOLS` | all |
-| Read-only (drops `remember`, `forget`) | `--read-only` / `HMS_MCP_READ_ONLY` | off |
+| Tools to expose | `--tools a,b` / `WARM_MCP_TOOLS` | all |
+| Read-only (drops `remember`, `forget`) | `--read-only` / `WARM_MCP_READ_ONLY` | off |
 | Resources / prompts off | `--no-resources`, `--no-prompts` | on |
 | Memory text | `--max-text-bytes` | 32768 (hard cap 65536, and at most 4096 words, one storage chunk) |
 | Metadata | `--max-metadata-bytes` | 16384 |
@@ -114,7 +114,7 @@ hms-mcp --encrypt            # needs a build with --features security
 | Worker wait deadline | `--queue-timeout-ms` | 5000; expired work does not run |
 | Dimensions per store | `--dim` | 4096, fixed once the store exists |
 
-Every flag has an `HMS_MCP_*` environment variable (see `hms-mcp --help`). Long documents are not split for you: a memory that does not fit one chunk is rejected with `too_large` and the advice to split it, which keeps `get` exact.
+Every flag has an `WARM_MCP_*` environment variable (see `warm-mcp --help`). Long documents are not split for you: a memory that does not fit one chunk is rejected with `too_large` and the advice to split it, which keeps `get` exact.
 
 Cancelled calls retain their worker permit until the blocking operation finishes. Cancellation
 does not roll back a committed write; retry with the same ID and content for an idempotent outcome.
@@ -122,15 +122,15 @@ does not roll back a committed write; retry with the same ID and content for an 
 ## HTTP transport
 
 ```sh
-HMS_MCP_TOKEN="$(openssl rand -hex 24)" hms-mcp --transport http --bind 127.0.0.1:8765
+WARM_MCP_TOKEN="$(openssl rand -hex 24)" warm-mcp --transport http --bind 127.0.0.1:8765
 ```
 
 - Loopback by default. A non-loopback `--bind` requires `--allow-remote` and static bearer or OAuth authorization. Terminate TLS at a trusted proxy; the listener itself uses HTTP.
-- `HMS_MCP_TOKEN` (at least 16 characters, environment only) requires `Authorization: Bearer <token>` on the MCP endpoint, compared in constant time. `/health` answers `ok` without auth.
+- `WARM_MCP_TOKEN` (at least 16 characters, environment only) requires `Authorization: Bearer <token>` on the MCP endpoint, compared in constant time. `/health` answers `ok` without auth.
 - `Host` must be a loopback name (extend with `--allow-host`) and a request carrying an `Origin` header must match `--allow-origin`; both reject DNS rebinding and cross-site calls with 403. Requests without `Origin` (non-browser clients) pass.
 - Request bodies are capped (`--max-request-bytes`, 1 MiB). HTTP/1.1 connections, request admission, response streams and legacy protocol sessions have separate limits below. Requests above HTTP admission capacity return 503 immediately; excess TCP connections close before parsing.
 - SIGINT or SIGTERM cancels HTTP streams and sessions, allows the configured connection shutdown grace, then flushes stores before exit.
-- It prints `hms-mcp listening on http://<addr><path>` on stdout once bound (`--bind 127.0.0.1:0` picks a free port).
+- It prints `warm-mcp listening on http://<addr><path>` on stdout once bound (`--bind 127.0.0.1:0` picks a free port).
 
 | HTTP resource | Flag | Default |
 | --- | --- | --- |
@@ -144,7 +144,7 @@ HMS_MCP_TOKEN="$(openssl rand -hex 24)" hms-mcp --transport http --bind 127.0.0.
 | Legacy session operations / cumulative serialized outbound bytes | `--max-http-session-requests` / `--max-http-session-bytes` | 4,096 / 64 MiB |
 | Connection shutdown grace | `--http-shutdown-grace-ms` | 10,000 ms |
 
-The environment variable for each flag is its uppercase spelling with `HMS_MCP_` prepended
+The environment variable for each flag is its uppercase spelling with `WARM_MCP_` prepended
 and hyphens replaced by underscores. Headers also have fixed caps of 64 fields and a 16 KiB
 read buffer. Admission permits remain held until the response finishes or is dropped;
 they do not become available when response headers are sent. The response deadline is
@@ -167,16 +167,16 @@ memory/transport bounds, not a durable replay or exactly-once delivery guarantee
 Remote OAuth mode is a resource-server profile using an external authorization server. Configure its RFC 8414 discovery, OAuth authorization/code/PKCE/client registration policies and RFC 7662 endpoint there. Set these values through the deployment's secret/configuration mechanism:
 
 ```text
-HMS_MCP_TRANSPORT=http
-HMS_MCP_OAUTH_ISSUER=https://identity.example/tenant
-HMS_MCP_OAUTH_RESOURCE=https://memory.example/mcp
-HMS_MCP_OAUTH_INTROSPECTION=https://identity.example/introspect
-HMS_MCP_OAUTH_INTROSPECTION_TOKEN=<resource-server credential>
-HMS_MCP_NAMESPACE=team
-HMS_MCP_ALLOW_HOSTS=memory.example
+WARM_MCP_TRANSPORT=http
+WARM_MCP_OAUTH_ISSUER=https://identity.example/tenant
+WARM_MCP_OAUTH_RESOURCE=https://memory.example/mcp
+WARM_MCP_OAUTH_INTROSPECTION=https://identity.example/introspect
+WARM_MCP_OAUTH_INTROSPECTION_TOKEN=<resource-server credential>
+WARM_MCP_NAMESPACE=team
+WARM_MCP_ALLOW_HOSTS=memory.example
 ```
 
-Do not also set `HMS_MCP_TOKEN`. The public resource path must equal `--path`; OAuth mode requires the global namespace strategy and forbids `--namespace-arg`. The TLS proxy must restrict access to the internal listener and preserve the configured public host. Add allowed browser origins explicitly when needed.
+Do not also set `WARM_MCP_TOKEN`. The public resource path must equal `--path`; OAuth mode requires the global namespace strategy and forbids `--namespace-arg`. The TLS proxy must restrict access to the internal listener and preserve the configured public host. Add allowed browser origins explicitly when needed.
 
 Clients discover the external issuer through `/.well-known/oauth-protected-resource/mcp` and the `WWW-Authenticate` challenge. Each request requires a bearer token whose fresh introspection response has `active:true`, exact `iss`, resource in `aud`, nonempty `sub`, future integer `exp`, `token_type:Bearer`, and exact `hms_namespace:team`. Optional `nbf` and `iat` cannot be in the future. Every operation requires `hms:read`; `remember` and `forget` additionally require `hms:write`. The namespace claim is a deployment extension that the authority must issue from its own authorization policy, never from an unchecked client value.
 
@@ -188,14 +188,14 @@ stdout carries only protocol (stdio) or the one listening line (http). Logs go t
 
 ## Structure and the memory API
 
-Handlers are written against the `MemoryBackend` trait (`src/bin/hms-mcp/memory.rs`): `remember`, `get`, `search`, `list`, `forget`, `stats` over a namespace. `HmsBackend` implements it on the document store. A richer memory-API module can implement the same trait and replace `HmsBackend` in `main` without touching tool parsing, validation, resources or prompts. The store gained three read-only methods for this server: `HmsCore::get_document`, `list_documents` and `document_count`.
+Handlers are written against the `MemoryBackend` trait (`src/bin/warm-mcp/memory.rs`): `remember`, `get`, `search`, `list`, `forget`, `stats` over a namespace. `WarmBackend` implements it on the document store. A richer memory-API module can implement the same trait and replace `WarmBackend` in `main` without touching tool parsing, validation, resources or prompts. The store gained three read-only methods for this server: `WarmCore::get_document`, `list_documents` and `document_count`.
 
 ## Testing
 
 ```sh
-cargo test --features mcp --bin hms-mcp
-cargo build --features mcp,security --bin hms-mcp
-cd integrations/mcp/tests && npm install && HMS_MCP_BIN=$PWD/../../../target/debug/hms-mcp HMS_MCP_SECURITY=1 npm test
+cargo test --features mcp --bin warm-mcp
+cargo build --features mcp,security --bin warm-mcp
+cd integrations/mcp/tests && npm install && WARM_MCP_BIN=$PWD/../../../target/debug/warm-mcp WARM_MCP_SECURITY=1 npm test
 ```
 
 The end-to-end suite drives the binary with the official TypeScript SDK client: initialize and capabilities, tool listing and annotations, every tool, strict validation at the limit and limit plus one, resources and prompts, 60 concurrent writes with 30 concurrent reads, compare-and-set races, restart persistence over stdio and HTTP, lock contention, namespaces, tool exposure, encryption (no plaintext on disk, wrong passphrase refused, secrets absent from logs), HTTP auth, Host and Origin checks, body limits, graceful shutdown, and protocol negotiation over raw HTTP for all four protocol revisions.

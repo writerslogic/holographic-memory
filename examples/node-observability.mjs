@@ -1,6 +1,6 @@
-import { HolographicMemorySystem } from 'holographic-memory';
+import { WarmMemorySystem } from 'writerslogic-warm';
 
-const memory = new HolographicMemorySystem(16_384, './memory_db');
+const memory = new WarmMemorySystem(16_384, './memory_db');
 await memory.memorizeText('berlin', 'Berlin is the capital of Germany');
 
 console.log(memory.explainQuery('capital of Germany', 5));

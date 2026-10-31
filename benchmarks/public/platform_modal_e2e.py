@@ -7,12 +7,12 @@
 Modal cannot pick a CPU model, so the function checks /proc/cpuinfo first and returns at once on
 a container without AVX512-VNNI; the entrypoint retries up to --attempts times. On a capable
 container it (1) runs the qgraph unit tests, which include the recall tests, once per kernel
-tier through HMS_QGRAPH_KERNEL=scalar|avx2|vnni, (2) builds the glove-100-angular graph once
+tier through WARM_QGRAPH_KERNEL=scalar|avx2|vnni, (2) builds the glove-100-angular graph once
 (cached on the volume, the config of ann_modal_confirm.py), and (3) runs
 benchmarks/public/platform_paired.py with the arms `avx2` and `vnni` as the same binary under
 two values of the kernel knob, at 1 and 4 search threads. The paired script fails the run when
 the two arms disagree on recall or exact evaluations per query (the kernels are bit-exact, so
-the searches must visit the same candidates). The volume `hms-ann-confirm` already holds
+the searches must visit the same candidates). The volume `warm-ann-confirm` already holds
 /glove-100-angular (see ann_modal_confirm.py).
 """
 from __future__ import annotations
@@ -48,12 +48,12 @@ def source_tar() -> bytes:
     return buf.getvalue()
 
 
-SRC = Path("/tmp/hms-platform-e2e-src.tar")
+SRC = Path("/tmp/warm-platform-e2e-src.tar")
 if modal.is_local():
     SRC.write_bytes(source_tar())
 
-VOL = modal.Volume.from_name("hms-ann-confirm", create_if_missing=True)
-app = modal.App("hms-platform-e2e")
+VOL = modal.Volume.from_name("warm-ann-confirm", create_if_missing=True)
+app = modal.App("warm-platform-e2e")
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("curl", "build-essential", "pkg-config")
@@ -84,7 +84,7 @@ def e2e(cap_usd: float, repeats: int) -> dict:
     gate = {}
     for tier in ("scalar", "avx2", "vnni"):
         p = subprocess.run(["/opt/kbench", "qgraph::", "--test-threads=4"], text=True, capture_output=True,
-                           env={"HMS_QGRAPH_KERNEL": tier, "PATH": "/usr/bin:/bin"})
+                           env={"WARM_QGRAPH_KERNEL": tier, "PATH": "/usr/bin:/bin"})
         summary = next((l for l in p.stdout.splitlines() if l.startswith("test result")), p.stdout[-300:])
         gate[tier] = {"exit": p.returncode, "summary": summary}
     report["qgraph_tests_by_tier"] = gate
@@ -110,8 +110,8 @@ def e2e(cap_usd: float, repeats: int) -> dict:
             continue
         dest = out / f"paired-t{threads}.json"
         p = subprocess.run(
-            ["python3", "/opt/platform_paired.py", "--arm", "avx2=/opt/public-bench@HMS_QGRAPH_KERNEL=avx2",
-             "--arm", "vnni=/opt/public-bench@HMS_QGRAPH_KERNEL=vnni", "--data", data, "--cache", cache,
+            ["python3", "/opt/platform_paired.py", "--arm", "avx2=/opt/public-bench@WARM_QGRAPH_KERNEL=avx2",
+             "--arm", "vnni=/opt/public-bench@WARM_QGRAPH_KERNEL=vnni", "--data", data, "--cache", cache,
              "--threads", threads, "--ef", "256,736", "--repeats", str(repeats), "--out", str(dest), "--tag", "modal"],
             text=True, capture_output=True)
         report[f"threads_{threads}"] = {

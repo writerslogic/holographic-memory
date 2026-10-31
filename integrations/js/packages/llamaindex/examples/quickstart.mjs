@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { Document, Settings, VectorStoreIndex, storageContextFromDefaults } from 'llamaindex'
 import { BaseEmbedding } from '@llamaindex/core/embeddings'
 import { MockLLM } from '@llamaindex/core/llms/mock'
-import { HashingEmbedder, HmsKVStore, HmsStore, HmsVectorStore } from '@holographic-memory/llamaindex'
+import { HashingEmbedder, WarmKVStore, WarmStore, WarmVectorStore } from '@writerslogic/warm-llamaindex'
 
 // Any LlamaIndex embedding works (OpenAIEmbedding, HuggingFaceEmbedding, OllamaEmbedding...).
 // This one is the dependency-free hashing embedder (lexical, not semantic).
@@ -22,8 +22,8 @@ const embedModel = new HashEmbedding()
 Settings.embedModel = embedModel
 Settings.llm = new MockLLM({ responseMessage: 'Rust uses ownership and borrowing.' }) // replace with a real LLM
 
-const dir = mkdtempSync(join(tmpdir(), 'hms-llamaindex-example-'))
-const vectorStore = await HmsVectorStore.create({
+const dir = mkdtempSync(join(tmpdir(), 'warm-llamaindex-example-'))
+const vectorStore = await WarmVectorStore.create({
   path: join(dir, 'vectors'),
   dimensions: 4096,
   embedModel,
@@ -32,8 +32,8 @@ const vectorStore = await HmsVectorStore.create({
   semanticWeight: 1,
 })
 
-// Optional: keep the docstore and index store in Holographic Memory too (a separate store).
-const kv = new HmsKVStore(new HmsStore({ path: join(dir, 'kv'), dimensions: 1024 }))
+// Optional: keep the docstore and index store in WARM too (a separate store).
+const kv = new WarmKVStore(new WarmStore({ path: join(dir, 'kv'), dimensions: 1024 }))
 const storageContext = await storageContextFromDefaults({ vectorStore })
 
 const index = await VectorStoreIndex.fromDocuments(

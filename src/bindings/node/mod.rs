@@ -7,19 +7,19 @@ use tracing::info_span;
 
 use crate::{
     chunk_document, ConceptCandidate, DocumentChunk, DocumentInput, DocumentResult, EntangledHVec,
-    HardwareCapabilities, HmsCore, IndexStatus, MemorizeBatchItem, QueryExplanation,
-    RetrievalResult, SearchOptions, StorageHealth, TextMetrics,
+    HardwareCapabilities, IndexStatus, MemorizeBatchItem, QueryExplanation, RetrievalResult,
+    SearchOptions, StorageHealth, TextMetrics, WarmCore,
 };
 
 mod api;
-pub use api::HolographicMemorySystem;
+pub use api::WarmMemorySystem;
 mod config;
 mod types;
 
 #[cfg(feature = "local-embed")]
 mod embed;
 
-pub use config::HmsConfigJs;
+pub use config::WarmConfigJs;
 pub use types::*;
 
 fn napi_err(e: anyhow::Error) -> napi::Error {

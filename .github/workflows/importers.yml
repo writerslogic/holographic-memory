@@ -6,14 +6,14 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'bindings/python/holographic-sdk/**'
-      - 'src/bin/hms-server.rs'
+      - 'bindings/python/warm-sdk/**'
+      - 'src/bin/warm-server.rs'
       - '.github/workflows/importers.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'bindings/python/holographic-sdk/**'
-      - 'src/bin/hms-server.rs'
+      - 'bindings/python/warm-sdk/**'
+      - 'src/bin/warm-server.rs'
       - '.github/workflows/importers.yml'
 
 permissions:
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   importers:
-    name: hms-import against a real hms-server
+    name: warm-import against a real warm-server
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -40,16 +40,16 @@ jobs:
             target
           key: ${{ runner.os }}-importers-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build hms-server
-        run: cargo build --release --locked --features server --bin hms-server
+      - name: Build warm-server
+        run: cargo build --release --locked --features server --bin warm-server
 
       - name: Install uv
         uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
 
       - name: Run importer tests
-        working-directory: bindings/python/holographic-sdk
+        working-directory: bindings/python/warm-sdk
         env:
-          HMS_SERVER_BIN: ${{ github.workspace }}/target/release/hms-server
+          WARM_SERVER_BIN: ${{ github.workspace }}/target/release/warm-server
         run: |
           uv sync --python 3.12 --group dev --group importers-test
           uv run --python 3.12 pytest tests/importers -q -p no:cacheprovider

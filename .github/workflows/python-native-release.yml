@@ -30,7 +30,7 @@ jobs:
       contents: read
 
   publish:
-    name: Publish holographic-memory-py to PyPI
+    name: Publish writerslogic-warm-py to PyPI
     if: startsWith(github.ref, 'refs/tags/py-v')
     needs: wheels
     runs-on: ubuntu-latest

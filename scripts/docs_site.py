@@ -8,9 +8,9 @@ build time from docs/_data/site.yml and the committed files under benchmarks/res
 copy cannot drift from the repository. A violated contract fails the strict build.
 
 Environment, set by scripts/build-docs-site.sh:
-  HMS_DOCS_REF         the git ref the site is built from (main for dev, vX.Y.Z for a tag)
-  HMS_CANONICAL_BASE   site URL of the `latest` build; every version canonicalises to it
-  HMS_IS_LATEST        "1" while building the `latest` site (no outdated-version banner)
+  WARM_DOCS_REF         the git ref the site is built from (main for dev, vX.Y.Z for a tag)
+  WARM_CANONICAL_BASE   site URL of the `latest` build; every version canonicalises to it
+  WARM_IS_LATEST        "1" while building the `latest` site (no outdated-version banner)
 """
 
 import html
@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import docs_charts  # noqa: E402
 import docs_cards  # noqa: E402
 
-REPO = "https://github.com/writerslogic/holographic-memory"
+REPO = "https://github.com/writerslogic/warm"
 SNIPPET = re.compile(r"^(?P<path>[^:]+):(?P<name>[A-Za-z0-9_-]+)$")
 MARK = re.compile(r"^\s*(?://|#)\s*--8<--\s*\[(?P<kind>start|end):(?P<name>[A-Za-z0-9_-]+)\]\s*$")
 
@@ -118,11 +118,11 @@ def build_headline(root, site):
         _fail(f"headline file '{spec['file']}' does not exist")
     data = json.loads(path.read_text(encoding="utf-8"))
     value = _dotted(data, spec["metric"])
-    rows = [{"label": f"HMS hybrid (BM25 + exact cosine)", "value": value, "hms": True}]
+    rows = [{"label": f"WARM hybrid (BM25 + exact cosine)", "value": value, "warm": True}]
     for item in spec.get("compare", []):
-        rows.append({"label": item["label"], "value": _dotted(data, item["metric"]), "hms": True})
+        rows.append({"label": item["label"], "value": _dotted(data, item["metric"]), "warm": True})
     for item in spec.get("published", []):
-        rows.append({"label": item["label"], "value": item["value"], "hms": False,
+        rows.append({"label": item["label"], "value": item["value"], "warm": False,
                      "source": item.get("source")})
     rows.sort(key=lambda r: -r["value"])
     return {
@@ -152,7 +152,7 @@ def inline_css(docs_dir, site_url):
     """The site's own stylesheets, minified, for one <style> block: two fewer blocking requests."""
     from csscompressor import compress
 
-    css = "\n".join((docs_dir / "stylesheets" / name).read_text(encoding="utf-8") for name in ("hms.css", "home.css"))
+    css = "\n".join((docs_dir / "stylesheets" / name).read_text(encoding="utf-8") for name in ("warm.css", "home.css"))
     base = urlsplit(site_url or "/").path.rstrip("/")
     return compress(css.replace("../assets/", base + "/assets/"))
 
@@ -179,7 +179,7 @@ def on_config(config):
         config["theme"][key] = config["site_url"].rstrip("/") + "/assets/crystal-detailed-static.svg"
     root = _repo_root(config)
     site = yaml.safe_load((root / "docs" / "_data" / "site.yml").read_text(encoding="utf-8"))
-    ref = os.environ.get("HMS_DOCS_REF", "main")
+    ref = os.environ.get("WARM_DOCS_REF", "main")
     docs_dir = Path(config["docs_dir"]).resolve()
     extra = config["extra"]
     features = [dict(f, href=doc_url(docs_dir, f["link"])) for f in site.get("features", [])]
@@ -187,14 +187,14 @@ def on_config(config):
     headline["link"] = doc_url(docs_dir, headline["link"])
     chart = docs_charts.vector_chart(root, site["chart"])
     chart["link"] = doc_url(docs_dir, chart["link"])
-    extra["hms"] = {
+    extra["warm"] = {
         "technical_line": site["technical_line"],
         "tagline": site["tagline"], "lede": " ".join(site["lede"].split()),
         "license": site.get("license", ""), "announcement": site.get("announcement") or {},
         "runtimes": build_runtimes(root, site), "features": features,
         "headline": headline, "chart": chart, "inline_css": inline_css(docs_dir, config["site_url"]), "crate_version": crate_version(root),
         "comparison": build_comparison(root, site),
-        "ref": ref, "is_dev": ref == "main", "is_latest": os.environ.get("HMS_IS_LATEST") == "1",
+        "ref": ref, "is_dev": ref == "main", "is_latest": os.environ.get("WARM_IS_LATEST") == "1",
         "repo": REPO, "repo_ref": ref,
     }
     return config
@@ -285,22 +285,22 @@ def on_page_content(content, page, config, files):
 
 
 def on_page_context(context, page, config, nav):
-    base = os.environ.get("HMS_CANONICAL_BASE")
+    base = os.environ.get("WARM_CANONICAL_BASE")
     if base:
         page.canonical_url = base.rstrip("/") + "/" + page.url
     slug = re.sub(r"[^a-z0-9]+", "-", page.file.src_uri.lower().removesuffix(".md")).strip("-") or "index"
     section = page.ancestors[-1].title if page.ancestors else ""
-    page.hms_og = f"assets/og/{slug}.png"
+    page.warm_og = f"assets/og/{slug}.png"
     _state["pages"].append((slug, page.title or config["site_name"], section,
                             page.meta.get("description", config["site_description"])))
     site_url = config["site_url"] or ""
-    context["hms_og_url"] = site_url + page.hms_og
+    context["warm_og_url"] = site_url + page.warm_og
     return context
 
 
 def on_post_build(config):
-    rustdoc = os.environ.get("HMS_RUSTDOC_DIR")
-    if rustdoc and (Path(rustdoc) / "holographic_memory").is_dir():
+    rustdoc = os.environ.get("WARM_RUSTDOC_DIR")
+    if rustdoc and (Path(rustdoc) / "writerslogic_warm").is_dir():
         shutil.copytree(rustdoc, Path(config["site_dir"]) / "api" / "rust" / "doc", dirs_exist_ok=True)
     out = Path(config["site_dir"]) / "assets" / "og"
     out.mkdir(parents=True, exist_ok=True)

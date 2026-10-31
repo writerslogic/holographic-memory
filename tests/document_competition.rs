@@ -1,15 +1,15 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use holographic_memory::{core::HmsConfig, DocumentInput, EmbeddingSpace, HmsCore, SearchOptions};
 use serde_json::json;
+use writerslogic_warm::{core::WarmConfig, DocumentInput, EmbeddingSpace, SearchOptions, WarmCore};
 
 #[test]
 fn lexical_top_candidates_preserve_ties_and_scores_through_slot_reuse_and_replay(
 ) -> anyhow::Result<()> {
     let directory = tempfile::tempdir()?;
     let path = directory.path().display().to_string();
-    let config = HmsConfig {
+    let config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "fixture".into(),
             revision: "1".into(),
@@ -19,7 +19,7 @@ fn lexical_top_candidates_preserve_ties_and_scores_through_slot_reuse_and_replay
         }),
         ..Default::default()
     };
-    let core = HmsCore::new(1024, Some(path.clone()), Some(config.clone()))?;
+    let core = WarmCore::new(1024, Some(path.clone()), Some(config.clone()))?;
     for i in (0..12).rev() {
         let document: DocumentInput = serde_json::from_value(json!({
             "id": format!("d{i:02}"), "text": "equal running candidate",
@@ -64,7 +64,7 @@ fn lexical_top_candidates_preserve_ties_and_scores_through_slot_reuse_and_replay
     }
     core.compact()?;
     drop(core);
-    let core = HmsCore::new(1024, Some(path), Some(config))?;
+    let core = WarmCore::new(1024, Some(path), Some(config))?;
     for (options, expected) in snapshots {
         assert_eq!(
             serde_json::to_value(core.search_documents("running", &options)?)?,

@@ -68,7 +68,7 @@ import roc  # noqa: E402
 BOOT_N, BOOT_SEED, CAND_K, NDCG_K, RRF_K, WEIGHTS = roc.BOOT_N, roc.BOOT_SEED, roc.CAND_K, roc.NDCG_K, roc.RRF_K, roc.WEIGHTS
 Candidates = roc.Candidates
 
-SCHEMA = "hms.research.relevance/1"
+SCHEMA = "warm.research.relevance/1"
 RECALL_K = 100
 AGREE_TOP = 20
 PRF_M = (3, 5, 10)
@@ -404,7 +404,7 @@ def evaluate_fold(name: str, tune: np.ndarray, evl: np.ndarray, ctx: dict, prf_c
 def protocol_text() -> dict:
     """Exact procedure text, stored in the output."""
     return {
-        "inputs": "NFCorpus cache; queries with IDCG@10 = 0 dropped; BM25 k1=1.2 b=0.75 HMS tokenizer (roc.py); cosine = Q D^T on l2-normalised f32 rows cast to f64.",
+        "inputs": "NFCorpus cache; queries with IDCG@10 = 0 dropped; BM25 k1=1.2 b=0.75 WARM tokenizer (roc.py); cosine = Q D^T on l2-normalised f32 rows cast to f64.",
         "pool": "BM25 top-200 (positive scores only) | cosine top-200; PRF adds | cos' top-200. Channels z-scored over the pool; fused = (1-w) z(BM25) + w z(dense); top-100 by score, ties to the lower document index.",
         "metrics": "nDCG@10 linear gain over judged grades (1, 2); recall@100 = judged-relevant in the fused top-100 / judged-relevant.",
         "folds": "primary: tune = odd 0-based query index in queries.jsonl order, eval = even; swapped: mirrored. Every parameter chosen by tune-fold mean nDCG@10; eval reported once per family.",
@@ -587,7 +587,7 @@ def print_summary(doc: dict, out_path: Path) -> None:
 def main() -> None:
     """CLI entry: --cache <dir> --out <json>."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "hms-bench" / "nfcorpus", help="NFCorpus cache directory")
+    ap.add_argument("--cache", type=Path, default=Path.home() / ".cache" / "warm-bench" / "nfcorpus", help="NFCorpus cache directory")
     ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parent / "out" / "relevance_v1.json", help="result JSON path")
     args = ap.parse_args()
     for name in INPUT_FILES:

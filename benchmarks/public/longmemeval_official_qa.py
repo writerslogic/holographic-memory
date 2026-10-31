@@ -46,11 +46,11 @@ sys.path.insert(0, str(HERE))
 import longmemeval_pipeline as P  # noqa: E402
 
 SPLIT = HERE / "longmemeval_split.json"
-SOURCE = Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json"
+SOURCE = Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json"
 SOURCE_SHA256 = "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442"
-EVALUATE_QA = Path.home() / ".cache/hms-bench/downloads/longmemeval_evaluate_qa_9e0b455f4ef0.py"
-RUN_DIR = Path.home() / ".cache/hms-bench/longmemeval_s/runs/s-dev-small-all2"
-CACHE = Path.home() / ".cache/hms-bench/longmemeval_official_calls"
+EVALUATE_QA = Path.home() / ".cache/warm-bench/downloads/longmemeval_evaluate_qa_9e0b455f4ef0.py"
+RUN_DIR = Path.home() / ".cache/warm-bench/longmemeval_s/runs/s-dev-small-all2"
+CACHE = Path.home() / ".cache/warm-bench/longmemeval_official_calls"
 LEDGER = ROOT / "benchmarks/results/longmemeval_official_spend.json"
 SPEND_CAP_USD = 60.0
 JUDGE_MODEL = "gpt-4o-2024-08-06"
@@ -60,7 +60,7 @@ PRICES = {"gpt-4o-2024-08-06": (2.5e-6, 1.25e-6, 10e-6), "gpt-4o-mini-2024-07-18
 # Batch API: half the input and output rates. Cached input tokens are billed here at the batch input
 # rate, an upper bound that does not depend on whether a batch discount stacks with prompt caching.
 BATCH_PRICES = {model: (pin / 2, pin / 2, pout / 2) for model, (pin, _, pout) in PRICES.items()}
-BATCH_STATE = Path.home() / ".cache/hms-bench/longmemeval_official_batches"
+BATCH_STATE = Path.home() / ".cache/warm-bench/longmemeval_official_batches"
 BATCH_DONE = {"completed", "failed", "expired", "cancelled"}
 CHAT_URL = "/v1/chat/completions"
 GEN_LENGTH = 800

@@ -382,7 +382,7 @@ fn compaction_runs_on_schedule_only_when_changed_and_on_demand() {
     let metrics = s.req("GET", "/metrics").bearer("root").send().text();
     assert!(
         metrics.contains(&format!(
-            "hms_tenant_compactions_total{{tenant=\"t\"}} {}",
+            "warm_tenant_compactions_total{{tenant=\"t\"}} {}",
             runs + 1
         )),
         "{metrics}"
@@ -411,9 +411,9 @@ fn idle_tenants_close_and_reopen_over_http() {
     });
     wait_until("tenant a to reopen", || count(&s, "a") == 1);
     let metrics = s.req("GET", "/metrics").send().text();
-    assert!(metrics.contains("hms_tenant_evictions_total"), "{metrics}");
+    assert!(metrics.contains("warm_tenant_evictions_total"), "{metrics}");
     assert!(
-        !metrics.contains("hms_tenant_evictions_total 0\n"),
+        !metrics.contains("warm_tenant_evictions_total 0\n"),
         "{metrics}"
     );
 }
@@ -503,7 +503,7 @@ fn tls_serves_https_and_reloads_the_certificate_on_sighup() {
             .bearer("tls-key")
             .send()
             .text()
-            .contains("hms_tls_handshake_failures_total 1")
+            .contains("warm_tls_handshake_failures_total 1")
     });
     // Rotate: new certificate on disk, SIGHUP, clients that trust only the new one connect.
     let (pem_b, key_b) = self_signed(&["localhost"]);
@@ -628,7 +628,7 @@ fn shutdown_drains_in_flight_requests_and_flushes_before_exiting() {
         s.req("GET", "/metrics")
             .send()
             .text()
-            .contains("hms_work_slots_in_use 1")
+            .contains("warm_work_slots_in_use 1")
     });
     s.signal("TERM");
     // The listener closes at once and readiness drops while the request is still running.
@@ -685,7 +685,7 @@ fn readiness_fails_during_the_shutdown_delay_while_requests_are_still_served() {
         .req("GET", "/metrics")
         .send()
         .text()
-        .contains("hms_ready 0"));
+        .contains("warm_ready 0"));
     assert!(s.child.wait().unwrap().success());
     assert!(
         signalled.elapsed() >= Duration::from_millis(1900),
@@ -699,14 +699,14 @@ fn healthcheck_subcommand_reflects_readiness_for_containers_without_curl() {
     let probe = |addr: &str| {
         std::process::Command::new(BIN)
             .args(["healthcheck", "--bind", addr])
-            .env_remove("HMS_BIND")
+            .env_remove("WARM_BIND")
             .output()
             .unwrap()
     };
     let mut s = Server::open(&["--shutdown-delay-seconds", "3"]);
     let addr = s.addr().to_string();
     assert!(probe(&addr).status.success());
-    // An unspecified address is probed as loopback, as the image's HMS_BIND=0.0.0.0:8080 needs.
+    // An unspecified address is probed as loopback, as the image's WARM_BIND=0.0.0.0:8080 needs.
     let any = format!("0.0.0.0:{}", s.addr().port());
     assert!(probe(&any).status.success());
     s.signal("TERM");
@@ -804,14 +804,14 @@ fn metrics_for_a_tenant_limited_key_cover_only_its_tenants() {
     }
     let all = s.req("GET", "/metrics").bearer(&root).send().text();
     assert!(
-        all.contains("hms_tenant_documents{tenant=\"globex\"} 1"),
+        all.contains("warm_tenant_documents{tenant=\"globex\"} 1"),
         "{all}"
     );
     let scraped = s.req("GET", "/metrics").bearer(&acme).send();
     assert_eq!(scraped.status, 200, "{}", scraped.text());
     let text = scraped.text();
     assert!(
-        text.contains("hms_tenant_documents{tenant=\"acme\"} 1"),
+        text.contains("warm_tenant_documents{tenant=\"acme\"} 1"),
         "{text}"
     );
     assert!(!text.contains("globex"), "{text}");

@@ -25,7 +25,7 @@ def main():
     learn = rng.normal(size=(16384, 128)).astype(np.float32)
     neighbors = np.argsort(-(learn.astype(np.float64) @ base.astype(np.float64).T), axis=1)[:, :100]
     np.empty(0, dtype="<u4").tofile(args.reserved)
-    os.environ["HMS_QAG_VALIDATION_IDS"] = str(args.reserved)
+    os.environ["WARM_QAG_VALIDATION_IDS"] = str(args.reserved)
     pair = QAGPair("ip", 16, 64)
     pair.fit_ood(base, learn, np.ascontiguousarray(neighbors, dtype=np.uint32))
     rows = []
@@ -46,7 +46,7 @@ def main():
         np.testing.assert_array_equal(baseline.query(query, 100), candidate.query(query, 100))
     print(json.dumps({"native_arms": rows, "default_parity_queries": 16,
                       "resources": pair.get_additional()}), flush=True)
-    sys.modules["holographic_memory"] = pair._modules[1]
+    sys.modules["writerslogic_warm"] = pair._modules[1]
     import pytest
     raise SystemExit(pytest.main(["-q", str(args.python_tests)]))
 

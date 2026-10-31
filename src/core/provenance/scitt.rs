@@ -15,7 +15,7 @@ const MAX_STATEMENT_BYTES: usize = 1 << 20;
 #[cfg(feature = "provenance-scitt")]
 const MAX_RESPONSE_BYTES: u64 = 1 << 20;
 
-/// An issuer-signed HMS fact statement with RFC 9943 CWT issuer/subject headers.
+/// An issuer-signed WARM fact statement with RFC 9943 CWT issuer/subject headers.
 /// This type does not assert registration, receipt validity, or transparency-service trust.
 #[derive(Clone, Debug)]
 pub struct SignedStatement {
@@ -371,7 +371,7 @@ fn validate_claim(claim: &FactClaim) -> Result<()> {
             && claim.content_hash.len() == 32
             && claim.source_uri.as_ref().is_none_or(|s| s.len() <= 8192)
             && claim.store_id.as_ref().is_none_or(|s| s.len() <= 4096),
-        "invalid HMS fact claim"
+        "invalid WARM fact claim"
     );
     Ok(())
 }

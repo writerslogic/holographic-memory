@@ -16,7 +16,7 @@ use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 use crate::core::qgraph::{
     BuildParams, Consolidation, ConsolidationMode, ConsolidationPolicy, Graph, Metric, Residency,
     UpdatableVGraph, UpdateError, VGraph, VSearchParams, VSearcher,
@@ -25,7 +25,7 @@ use crate::core::qgraph::{
 /// Graphs below this many vertices store neighbour ids in three bytes.
 const THREE_BYTE_IDS_BELOW: usize = (1 << 24) - 1;
 
-fn err(e: HmsError) -> PyErr {
+fn err(e: WarmError) -> PyErr {
     PyValueError::new_err(e.to_string())
 }
 
@@ -178,7 +178,7 @@ fn approximate_neighbors(
     dim: usize,
     k: usize,
     ef: usize,
-) -> Result<Vec<u32>, HmsError> {
+) -> Result<Vec<u32>, WarmError> {
     let params = VSearchParams {
         ef: ef.max(k),
         rerank: ef.max(k),
@@ -195,7 +195,7 @@ fn approximate_neighbors(
             for (q, slot) in rows.chunks_exact(dim).zip(out.chunks_exact_mut(k)) {
                 searcher.search(q, k, params, &mut found)?;
                 if found.len() != k {
-                    return Err(HmsError::InvalidParam {
+                    return Err(WarmError::InvalidParam {
                         details: format!(
                             "a training query found {} of {k} neighbours",
                             found.len()
@@ -568,9 +568,9 @@ impl PyVectorIndex {
                                     let mut out = Vec::with_capacity(k);
                                     s.search(q, k, params, &mut out).map(|_| out)
                                 })
-                                .collect::<Result<Vec<_>, HmsError>>()
+                                .collect::<Result<Vec<_>, WarmError>>()
                         })
-                        .collect::<Result<Vec<_>, HmsError>>()
+                        .collect::<Result<Vec<_>, WarmError>>()
                         .map(|c| c.into_iter().flatten().collect())
                 })
             })
@@ -620,7 +620,7 @@ impl PyVectorIndex {
                                 *o = i64::from(id);
                             }
                         }
-                        Ok::<(), HmsError>(())
+                        Ok::<(), WarmError>(())
                     })
             })
         })
@@ -1036,7 +1036,7 @@ impl PyUpdatableIndex {
         })
     }
 
-    /// Streaming diagnostics, enabled at open/create by HMS_STREAM_DIAGNOSTICS=1.
+    /// Streaming diagnostics, enabled at open/create by WARM_STREAM_DIAGNOSTICS=1.
     fn streaming_diagnostics(
         &self,
         py: Python<'_>,

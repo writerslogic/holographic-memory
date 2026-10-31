@@ -1,18 +1,18 @@
-# LlamaIndex.TS (`@holographic-memory/llamaindex`)
+# LlamaIndex.TS (`@writerslogic/warm-llamaindex`)
 
-A `BaseVectorStore` and a `BaseKVStore` (for `KVDocumentStore` and `KVIndexStore`) for LlamaIndex.TS, running the native engine in process through [`@holographic-memory/core`](js-core.md). ESM and CJS, typed.
+A `BaseVectorStore` and a `BaseKVStore` (for `KVDocumentStore` and `KVIndexStore`) for LlamaIndex.TS, running the native engine in process through [`@writerslogic/warm-core`](js-core.md). ESM and CJS, typed.
 
 ```sh
-npm install @holographic-memory/llamaindex llamaindex @llamaindex/core holographic-memory
+npm install @writerslogic/warm-llamaindex llamaindex @llamaindex/core writerslogic-warm
 ```
 
 ## Quickstart
 
 ```ts
 import { Document, Settings, VectorStoreIndex, storageContextFromDefaults } from 'llamaindex'
-import { HmsVectorStore } from '@holographic-memory/llamaindex'
+import { WarmVectorStore } from '@writerslogic/warm-llamaindex'
 
-const vectorStore = await HmsVectorStore.create({
+const vectorStore = await WarmVectorStore.create({
   path: './memory',
   embedModel: Settings.embedModel,                 // any LlamaIndex BaseEmbedding
   embeddingSpace: { model: 'text-embedding-3-small', revision: '2024-01' },
@@ -29,18 +29,18 @@ Runnable (no API key: a mock LLM and the hashing embedder): `integrations/js/pac
 
 Beyond the `BaseVectorStore` contract (`add`, `delete(refDocId)`, `query`, `client`) the store has `deleteNodes(ids)`, `getNodes(ids)` and `clear()`. Nodes keep their full `_node_content`, relationships and `ref_doc_id`, so `index.deleteRefDoc(id)` works through the store.
 
-Key-value store, for a docstore or index store held in Holographic Memory too (use a separate `HmsStore` or `collection`):
+Key-value store, for a docstore or index store held in WARM too (use a separate `WarmStore` or `collection`):
 
 ```ts
 import { KVDocumentStore, KVIndexStore } from 'llamaindex'
-import { HmsKVStore, HmsStore } from '@holographic-memory/llamaindex'
-const kv = new HmsKVStore(new HmsStore({ path: './kv' }))
+import { WarmKVStore, WarmStore } from '@writerslogic/warm-llamaindex'
+const kv = new WarmKVStore(new WarmStore({ path: './kv' }))
 const storageContext = await storageContextFromDefaults({ vectorStore, docStore: new KVDocumentStore(kv), indexStore: new KVIndexStore(kv) })
 ```
 
-## Configuration (HMS knobs)
+## Configuration (WARM knobs)
 
-`HmsVectorStore.create(options)` takes every `HmsStoreOptions` field of the core, plus:
+`WarmVectorStore.create(options)` takes every `WarmStoreOptions` field of the core, plus:
 
 | Knob | Option |
 |---|---|
@@ -49,9 +49,9 @@ const storageContext = await storageContextFromDefaults({ vectorStore, docStore:
 | Title weight | `titleWeight` |
 | Hybrid weights | `lexicalWeight`, `semanticWeight`, `fusion: 'blend' \| 'rrf'` (used by `hybrid` and `semantic_hybrid` modes) |
 | Chunking | `chunkWords`, `overlapWords` |
-| Encryption at rest | `hmsConfig: { encryptionEnabled: true, encryptionPassphraseEnv: 'HMS_PASSPHRASE' }` |
+| Encryption at rest | `warmConfig: { encryptionEnabled: true, encryptionPassphraseEnv: 'WARM_PASSPHRASE' }` |
 | Scope, limits | `collection`, `overfetch` (5), `maxFetch` (1000), `mmrPrefetchFactor` (4) |
-| Existing store | `new HmsVectorStore({ store, embedModel })` |
+| Existing store | `new WarmVectorStore({ store, embedModel })` |
 
 ## Query modes
 
@@ -60,7 +60,7 @@ const storageContext = await storageContextFromDefaults({ vectorStore, docStore:
 | `default` | cosine of `queryEmbedding` | cosine scores (1.0 for an identical text) |
 | `hybrid`, `semantic_hybrid` | BM25 over `queryStr` fused with cosine of `queryEmbedding`; `alpha` is ignored, set the weights on the store | the engine's fused rank score |
 | `mmr` | top `similarityTopK * mmrPrefetchFactor` re-ranked for diversity; `mmrThreshold` is lambda; hit texts are re-embedded with the store's embedder, so build with `create({ embedModel })` | cosine of the query to each hit |
-| `sparse`, `svm`, `linear_regression`, `logistic_regression` | throw `HmsError` | n/a |
+| `sparse`, `svm`, `linear_regression`, `logistic_regression` | throw `WarmError` | n/a |
 
 `docIds` restricts results to those node ids (client-side, on the over-fetched candidates).
 
@@ -77,7 +77,7 @@ All 13 `FilterOperator`s map; `MetadataFilters.condition` is `and` (default) or 
 | `text_match` | substring of the metadata value (not a full-text query) | JS |
 | `is_empty` | key missing, `null`, `''` or `[]` | JS |
 
-JS-evaluated filters run on `overfetch * similarityTopK` candidates (at most `maxFetch`), so they can return fewer than `similarityTopK` nodes. `similarityTopK` above `maxFetch` throws `limit_exceeded`. LlamaIndex nested filter groups do not exist in the 0.6 `MetadataFilters` type used here. Node metadata keys may not start with `_hms_`.
+JS-evaluated filters run on `overfetch * similarityTopK` candidates (at most `maxFetch`), so they can return fewer than `similarityTopK` nodes. `similarityTopK` above `maxFetch` throws `limit_exceeded`. LlamaIndex nested filter groups do not exist in the 0.6 `MetadataFilters` type used here. Node metadata keys may not start with `_warm_`.
 
 ## Key-value store limits
 
@@ -90,4 +90,4 @@ JS-evaluated filters run on `overfetch * similarityTopK` candidates (at most `ma
 
 ## Tested against
 
-`llamaindex` 0.12.1, `@llamaindex/core` 0.6.22 (the exact version `llamaindex` 0.12.1 depends on; two copies break its constructor checks, so keep one), `holographic-memory` 0.6.0 (native build from this repository), Node 26.8, TypeScript 5.9. `npm test --workspace packages/llamaindex` in `integrations/js` builds and runs 18 tests against the real native addon, one temp directory per test.
+`llamaindex` 0.12.1, `@llamaindex/core` 0.6.22 (the exact version `llamaindex` 0.12.1 depends on; two copies break its constructor checks, so keep one), `writerslogic-warm` 0.6.0 (native build from this repository), Node 26.8, TypeScript 5.9. `npm test --workspace packages/llamaindex` in `integrations/js` builds and runs 18 tests against the real native addon, one temp directory per test.

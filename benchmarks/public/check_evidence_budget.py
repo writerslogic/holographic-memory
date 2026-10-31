@@ -90,7 +90,7 @@ def main():
     p.add_argument('report', type=Path)
     p.add_argument('--input', type=Path, default=Path('benchmarks/results/evidence_completeness_dev.json'))
     p.add_argument('--validated-input', type=Path, default=Path('benchmarks/results/evidence_completeness_summary.json'))
-    p.add_argument('--source', type=Path, default=Path.home() / '.cache/hms-bench/downloads/longmemeval_s_cleaned.json')
+    p.add_argument('--source', type=Path, default=Path.home() / '.cache/warm-bench/downloads/longmemeval_s_cleaned.json')
     p.add_argument('--output', type=Path, default=Path('benchmarks/results/evidence_budget_summary.json'))
     args = p.parse_args()
     report = json.loads(args.report.read_text())

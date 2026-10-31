@@ -8,11 +8,11 @@
 
 use std::sync::Arc;
 
-use holographic_memory::core::embed::testing::{write_tiny, WORDS};
-use holographic_memory::core::embed::{EmbedLimits, EmbedOptions, Embedder, Pooling, Quantization};
-use holographic_memory::core::encoding::TextEncoder;
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::core::embed::testing::{write_tiny, WORDS};
+use writerslogic_warm::core::embed::{EmbedLimits, EmbedOptions, Embedder, Pooling, Quantization};
+use writerslogic_warm::core::encoding::TextEncoder;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 fn input(id: &str, text: &str) -> DocumentInput {
     DocumentInput {
@@ -47,8 +47,8 @@ fn corpus() -> Vec<(String, String)> {
     out
 }
 
-fn config(path: &std::path::Path, sha: &str) -> HmsConfig {
-    HmsConfig {
+fn config(path: &std::path::Path, sha: &str) -> WarmConfig {
+    WarmConfig {
         text_encoder: TextEncoder::LocalEmbedV1,
         local_embed: Some(EmbedOptions {
             model: path.to_string_lossy().into_owned(),
@@ -56,13 +56,13 @@ fn config(path: &std::path::Path, sha: &str) -> HmsConfig {
             threads: 2,
             ..EmbedOptions::default()
         }),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     }
 }
 
 #[test]
 fn embedding_limits_fail_before_mutation_and_batches_share_one_admission() {
-    use holographic_memory::MemorizeBatchItem;
+    use writerslogic_warm::MemorizeBatchItem;
     let dir = tempfile::tempdir().unwrap();
     let (pack, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
     let mut cfg = config(&pack, &sha);
@@ -72,7 +72,7 @@ fn embedding_limits_fail_before_mutation_and_batches_share_one_admission() {
         ..Default::default()
     };
     let path = dir.path().join("bounded").display().to_string();
-    let core = HmsCore::new(1024, Some(path.clone()), Some(cfg.clone())).unwrap();
+    let core = WarmCore::new(1024, Some(path.clone()), Some(cfg.clone())).unwrap();
     let items: Vec<_> = (0..8)
         .map(|i| MemorizeBatchItem {
             id: format!("original-{i}"),
@@ -126,7 +126,7 @@ fn embedding_limits_fail_before_mutation_and_batches_share_one_admission() {
     assert!(core.try_encode_text(" \t").unwrap().indices().is_empty());
     core.flush().unwrap();
     drop(core);
-    let core = HmsCore::new(1024, Some(path), Some(cfg)).unwrap();
+    let core = WarmCore::new(1024, Some(path), Some(cfg)).unwrap();
     assert_eq!(core.vector_count(), 8);
     assert_eq!(core.query(&query, 16).len(), 8);
     assert!(core
@@ -140,7 +140,7 @@ fn corpus_round_trip_through_ingest_and_search() {
     let dir = tempfile::tempdir().unwrap();
     let (pack, sha) = write_tiny(dir.path(), Quantization::Int8, Pooling::Mean);
     let store = dir.path().join("store");
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         2048,
         Some(store.to_string_lossy().into()),
         Some(config(&pack, &sha)),
@@ -177,7 +177,7 @@ fn corpus_round_trip_through_ingest_and_search() {
     // search results are identical.
     let before = core.search_documents(&docs[5].1, &options).unwrap();
     drop(core);
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         2048,
         Some(store.to_string_lossy().into()),
         Some(config(&pack, &sha)),
@@ -203,12 +203,12 @@ fn a_store_rejects_a_different_model_pack() {
     let (f32p, sha32) = write_tiny(dir.path(), Quantization::F32, Pooling::Mean);
     let store = dir.path().join("store");
     let path = Some(store.to_string_lossy().into_owned());
-    let core = HmsCore::new(1024, path.clone(), Some(config(&int8, &sha8))).unwrap();
+    let core = WarmCore::new(1024, path.clone(), Some(config(&int8, &sha8))).unwrap();
     core.memorize_document(input("a", "the cat sat on the mat"))
         .unwrap();
     drop(core);
     // Same architecture, different quantization: the embedding space revision differs.
-    let err = HmsCore::new(1024, path, Some(config(&f32p, &sha32)))
+    let err = WarmCore::new(1024, path, Some(config(&f32p, &sha32)))
         .err()
         .expect("must reject")
         .to_string();
@@ -222,7 +222,7 @@ fn effective_options_and_same_metadata_different_weights_cannot_relabel_a_store(
     let store = dir.path().join("store");
     let path = Some(store.display().to_string());
     let original = config(&pack, &sha);
-    let core = HmsCore::new(1024, path.clone(), Some(original.clone())).unwrap();
+    let core = WarmCore::new(1024, path.clone(), Some(original.clone())).unwrap();
     core.memorize_document(input("fact", "the cat sat on the mat"))
         .unwrap();
     drop(core);
@@ -251,27 +251,27 @@ fn effective_options_and_same_metadata_different_weights_cannot_relabel_a_store(
     ] {
         let mut changed = original.clone();
         changed.local_embed = Some(options);
-        assert!(HmsCore::new(1024, path.clone(), Some(changed))
+        assert!(WarmCore::new(1024, path.clone(), Some(changed))
             .err()
             .expect("must reject changed embedding function")
             .to_string()
             .contains("incompatible store schema"));
     }
-    let bytes = holographic_memory::core::embed::testing::tiny_pack_bytes_with_group(
+    let bytes = writerslogic_warm::core::embed::testing::tiny_pack_bytes_with_group(
         Quantization::Int8,
         Pooling::Mean,
         32,
     );
     let changed_pack = dir.path().join("other-int8.hmsemb");
     std::fs::write(&changed_pack, &bytes).unwrap();
-    let changed_sha = holographic_memory::core::embed::sha256_hex(&bytes);
-    assert!(HmsCore::new(
+    let changed_sha = writerslogic_warm::core::embed::sha256_hex(&bytes);
+    assert!(WarmCore::new(
         1024,
         path.clone(),
         Some(config(&changed_pack, &changed_sha))
     )
     .is_err());
-    let reopened = HmsCore::new(1024, path, Some(original)).unwrap();
+    let reopened = WarmCore::new(1024, path, Some(original)).unwrap();
     assert_eq!(reopened.document_count(), 1);
 }
 
@@ -283,7 +283,7 @@ fn unnormalized_model_outputs_keep_truthful_identity_and_cosine_search() {
     let mut cfg = config(&pack, &sha);
     cfg.local_embed.as_mut().unwrap().normalize = Some(false);
     let path = Some(store.display().to_string());
-    let core = HmsCore::new(1024, path.clone(), Some(cfg.clone())).unwrap();
+    let core = WarmCore::new(1024, path.clone(), Some(cfg.clone())).unwrap();
     core.memorize_document(input("cat", "the cat sat on the mat"))
         .unwrap();
     core.memorize_document(input("dog", "the dog ran in the park"))
@@ -303,7 +303,7 @@ fn unnormalized_model_outputs_keep_truthful_identity_and_cosine_search() {
     let schema: serde_json::Value =
         serde_json::from_slice(&std::fs::read(store.join("store.json")).unwrap()).unwrap();
     assert_eq!(schema["embedding_space"]["normalization"], "none");
-    let reopened = HmsCore::new(1024, path.clone(), Some(cfg)).unwrap();
+    let reopened = WarmCore::new(1024, path.clone(), Some(cfg)).unwrap();
     assert_eq!(
         reopened
             .search_documents("the dog ran in the park", &query)
@@ -312,13 +312,13 @@ fn unnormalized_model_outputs_keep_truthful_identity_and_cosine_search() {
         "dog"
     );
     drop(reopened);
-    assert!(HmsCore::new(1024, path, Some(config(&pack, &sha))).is_err());
+    assert!(WarmCore::new(1024, path, Some(config(&pack, &sha))).is_err());
 }
 
 #[test]
 fn encoder_without_its_embedder_fails_at_open_not_at_query() {
     let dir = tempfile::tempdir().unwrap();
-    let cfg = HmsConfig {
+    let cfg = WarmConfig {
         text_encoder: TextEncoder::LocalEmbedV1,
         local_embed: Some(EmbedOptions {
             model: dir
@@ -328,9 +328,9 @@ fn encoder_without_its_embedder_fails_at_open_not_at_query() {
                 .into_owned(),
             ..EmbedOptions::default()
         }),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     };
-    let err = HmsCore::new(
+    let err = WarmCore::new(
         1024,
         Some(dir.path().join("s").to_string_lossy().into()),
         Some(cfg),
@@ -353,12 +353,12 @@ fn a_lexical_store_can_adopt_an_embedder_and_default_encoding_is_unchanged() {
         })
         .unwrap(),
     );
-    let cfg = HmsConfig {
+    let cfg = WarmConfig {
         embedding_space: Some(embedder.space()),
-        ..HmsConfig::default()
+        ..WarmConfig::default()
     };
     assert_eq!(cfg.text_encoder.name(), "multiscale-words-v1");
-    let core = HmsCore::new(
+    let core = WarmCore::new(
         2048,
         Some(dir.path().join("s").to_string_lossy().into()),
         Some(cfg),

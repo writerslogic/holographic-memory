@@ -713,9 +713,9 @@ pub fn check_transaction_with_schema(
 /// The header of `documents.text`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextHeader {
-    /// `HMST`, a version, and the flag byte (bit 0: records are encrypted).
+    /// `WARMT`, a version, and the flag byte (bit 0: records are encrypted).
     Versioned { version: u8, flags: u8 },
-    /// No `HMST` magic: a version-1 segment (plaintext, no header) or a foreign file.
+    /// No `WARMT` magic: a version-1 segment (plaintext, no header) or a foreign file.
     Headerless,
 }
 

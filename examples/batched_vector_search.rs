@@ -1,5 +1,5 @@
 use anyhow::{ensure, Result};
-use holographic_memory::core::qgraph::{
+use writerslogic_warm::core::qgraph::{
     BuildParams, Graph, Metric, Residency, SearchKnobs, VGraph, VSearchParams,
 };
 
@@ -26,7 +26,7 @@ fn main() -> Result<()> {
     )?;
     let index = VGraph::from_graph_with(&graph, 8, 8, true, true, 3, false)?;
     let directory = tempfile::tempdir()?;
-    let path = directory.path().join("vectors.hms");
+    let path = directory.path().join("vectors.warm");
     index.save(&path)?;
     let reopened = VGraph::open(&path, Residency::Mapped)?;
     let params = VSearchParams {

@@ -1,10 +1,10 @@
 # Source: opensearch
 
-Verification: MOCK ONLY (same mock harness as Elasticsearch, with basic-auth enforcement and the vector in `_source`; no live OpenSearch was available). The destination is a real `hms-server`.
+Verification: MOCK ONLY (same mock harness as Elasticsearch, with basic-auth enforcement and the vector in `_source`; no live OpenSearch was available). The destination is a real `warm-server`.
 
 ```sh
 export OPENSEARCH_PASSWORD=...
-hms-import opensearch --url https://os.example:9200 --user admin --index 'docs-*' --hms-url http://127.0.0.1:8080
+warm-import opensearch --url https://os.example:9200 --user admin --index 'docs-*' --warm-url http://127.0.0.1:8080
 ```
 
 Same flow and options as [elasticsearch](elasticsearch.md): scroll API (`POST /{index}/_search?scroll=`, `POST /_search/scroll`, `DELETE /_search/scroll`), `GET /{index}/_mapping` to find the `knn_vector` field, `POST /{index}/_count`. Docs: https://docs.opensearch.org/latest/api-reference/search-apis/scroll/ and https://docs.opensearch.org/latest/field-types/supported-field-types/knn-vector/.

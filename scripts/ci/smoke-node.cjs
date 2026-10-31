@@ -29,11 +29,11 @@ function npm(args, cwd) {
 const forwardSlashes = p => p.split(path.sep).join('/')
 
 const files = fs.readdirSync(tarballs).filter(f => f.endsWith('.tgz'))
-const rootTarball = files.find(f => /^holographic-memory-\d/.test(f))
+const rootTarball = files.find(f => /^writerslogic-warm-\d/.test(f))
 assert.ok(rootTarball, `no root tarball in ${tarballs}: ${files.join(', ')}`)
 const platformTarballs = files.filter(f => f !== rootTarball)
 
-const work = fs.mkdtempSync(path.join(os.tmpdir(), 'hms-smoke-'))
+const work = fs.mkdtempSync(path.join(os.tmpdir(), 'warm-smoke-'))
 try {
   const unpacked = path.join(work, 'root')
   fs.mkdirSync(unpacked)
@@ -51,26 +51,26 @@ try {
   assert.equal(platformTarballs.length, Object.keys(local).length, 'unexpected extra tarballs')
   manifest.optionalDependencies = local
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
-  const repacked = path.join(work, 'holographic-memory-smoke.tgz')
-  execFileSync('tar', ['-czf', 'holographic-memory-smoke.tgz', '-C', 'root', 'package'], { cwd: work })
+  const repacked = path.join(work, 'writerslogic-warm-smoke.tgz')
+  execFileSync('tar', ['-czf', 'writerslogic-warm-smoke.tgz', '-C', 'root', 'package'], { cwd: work })
 
   const project = path.join(work, 'project')
   fs.mkdirSync(project)
   fs.writeFileSync(path.join(project, 'package.json'), JSON.stringify({ name: 'smoke', private: true }))
   npm(['install', '--no-audit', '--no-fund', '--ignore-scripts', forwardSlashes(repacked)], project)
 
-  const installed = fs.readdirSync(path.join(project, 'node_modules')).filter(n => n.startsWith('holographic-memory-'))
-  assert.deepEqual(installed, [`holographic-memory-${expected}`], 'npm must select exactly this platform package')
+  const installed = fs.readdirSync(path.join(project, 'node_modules')).filter(n => n.startsWith('writerslogic-warm-'))
+  assert.deepEqual(installed, [`writerslogic-warm-${expected}`], 'npm must select exactly this platform package')
 
   fs.writeFileSync(path.join(project, 'search.cjs'), `
     const assert = require('node:assert/strict');
     (async () => {
-      const cjs = require('holographic-memory');
-      const esm = await import('holographic-memory');
-      assert.equal(cjs.HolographicMemorySystem, esm.HolographicMemorySystem);
-      const { DocumentMemory } = await import('holographic-memory/semantic');
-      const hms = new cjs.HolographicMemorySystem(4096, './store');
-      const memory = new DocumentMemory(hms);
+      const cjs = require('writerslogic-warm');
+      const esm = await import('writerslogic-warm');
+      assert.equal(cjs.WarmMemorySystem, esm.WarmMemorySystem);
+      const { DocumentMemory } = await import('writerslogic-warm/semantic');
+      const warm = new cjs.WarmMemorySystem(4096, './store');
+      const memory = new DocumentMemory(warm);
       await memory.memorize({ id: 'manual', text: 'Backups protect stored documents.', sourceUri: 'manual.md' });
       await memory.memorize({ id: 'other', text: 'Rivers carry water to the sea.', sourceUri: 'other.md' });
       const hits = await memory.search('backups');

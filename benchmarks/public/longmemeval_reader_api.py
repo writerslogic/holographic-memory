@@ -28,10 +28,10 @@ PREREGISTRATION = Path("benchmarks/results/preregistration_2026-10.json")
 RESULT = Path("benchmarks/results/longmemeval_dev_answers_v1.json")
 PREPARED = Path("target/superiority-validation/prepared_answers.json")
 LEDGER = Path("benchmarks/results/spend_2026-10.json")
-SOURCE = Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json"
+SOURCE = Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json"
 SPLIT = Path("benchmarks/public/longmemeval_split.json")
 EVIDENCE = Path("benchmarks/results/evidence_budget_dev.json")
-CACHE = Path.home() / ".cache/hms-bench/answers-v1"
+CACHE = Path.home() / ".cache/warm-bench/answers-v1"
 MUTEX = threading.Lock()
 
 

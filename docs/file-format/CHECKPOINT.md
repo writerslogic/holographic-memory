@@ -10,9 +10,9 @@ order. The frames that came before the checkpoint are not kept: the term data is
 
 ## When one is written
 
-A compaction (`HmsCore::compact`, `compact_scrubbing`, purge and forget) of a store that takes
+A compaction (`WarmCore::compact`, `compact_scrubbing`, purge and forget) of a store that takes
 checkpoints writes one in place of the document frames it would otherwise write. A store takes
-one when checkpoints are enabled (`HmsConfig::document_checkpoint.enabled`, on by default), every
+one when checkpoints are enabled (`WarmConfig::document_checkpoint.enabled`, on by default), every
 mutation applied since the open was a document write, encoding or delete, the vector shards are
 empty, and every chunk is lexical-only (no vector, embedding or pending encoding) and holds no
 word positions (`IngestOptions::positions`). Any other
@@ -59,7 +59,7 @@ records with a store that never checkpointed, through writes and reopens.
 All integers little endian; varints are LEB128.
 
 ```
-0    8  magic "HMSCKP\0\x01"
+0    8  magic "WARMCKP\0\x01"
 8    8  u64: CRC32 of bytes 16.. (low 32 bits)
 16   8  u64: CRC32 of the generation directory's name (low 32 bits)
 24   8  u64: vector dimensions of the store

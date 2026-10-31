@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! The migration framework behind `hms-format upgrade`.
+//! The migration framework behind `warm-format upgrade`.
 //!
 //! A `Migration` moves one artefact from one version to the next. `MIGRATIONS` is the
 //! registry; a format change adds an entry (and a golden store, see `tests/golden/`). The
@@ -249,8 +249,8 @@ fn refuse_unupgradable(report: &Report) -> Result<()> {
                 .collect();
             bail!(
                 "this build cannot upgrade the store ({}); a store with no store.json or a \
-                 pre-HMS-TXN-2 journal is rebuilt with `hms-admin reencode`, a store from a \
-                 newer release needs that release's hms-format",
+                 pre-HMS-TXN-2 journal is rebuilt with `warm-admin reencode`, a store from a \
+                 newer release needs that release's warm-format",
                 reasons.join("; ")
             )
         }
@@ -262,7 +262,7 @@ fn refuse_unupgradable(report: &Report) -> Result<()> {
                 .map(|f| format!("{}: {}", f.code, f.message))
                 .collect();
             bail!(
-                "the store is damaged and is not upgraded: {}. Run `hms-format verify` for \
+                "the store is damaged and is not upgraded: {}. Run `warm-format verify` for \
                  the full report; restore a snapshot first",
                 reasons.join("; ")
             )
@@ -310,7 +310,7 @@ pub fn upgrade_store(source: &Path, destination: &Path, dry_run: bool) -> Result
     );
     let _lock = StoreLock::acquire(source)?;
     let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
-    let staging = parent.join(format!(".hms-upgrade-{}-{nonce}", std::process::id()));
+    let staging = parent.join(format!(".warm-upgrade-{}-{nonce}", std::process::id()));
     let outcome = stage_and_publish(source, &staging, destination, plan.clone());
     if outcome.is_err() && staging.exists() {
         // The staging directory is unpublished; the upgrade's own error is the one to report.
@@ -368,7 +368,7 @@ fn upgrade_data_dir(
     }
     let parent = prepare_destination(destination)?;
     let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
-    let staging = parent.join(format!(".hms-upgrade-{}-{nonce}", std::process::id()));
+    let staging = parent.join(format!(".warm-upgrade-{}-{nonce}", std::process::id()));
     let result = (|| -> Result<(usize, Report)> {
         std::fs::create_dir_all(staging.join("tenants"))?;
         let mut frames = 0;

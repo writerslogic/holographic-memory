@@ -4,7 +4,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["aiohttp>=3.9", "tiktoken>=0.7"]
 # ///
-"""Mem0 OSS REST surface over hms-server's memory API.
+"""Mem0 OSS REST surface over warm-server's memory API.
 
 mem0ai/memory-benchmarks talks to a self-hosted Mem0 server through three calls
 (benchmarks/common/mem0_client.py, ``--backend oss``):
@@ -13,7 +13,7 @@ mem0ai/memory-benchmarks talks to a self-hosted Mem0 server through three calls
     POST   /search              {"query", "user_id", "limit"}
     DELETE /memories?user_id=   (not called by any run.py; answered 501)
 
-This process serves those routes and forwards them to hms-server:
+This process serves those routes and forwards them to warm-server:
 
 - add: the messages of one call become one fact (split only when it exceeds the
   engine's single-fact limit). Text is one ``"{role}: {content}"`` line per message,
@@ -55,7 +55,7 @@ RUST_WHITESPACE = "\t\n\v\f\r \u0085\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u
 
 
 def tenant_for(user_id: str) -> str:
-    """Map a harness user_id to an hms-server tenant id ([A-Za-z0-9_-]{1,64})."""
+    """Map a harness user_id to an warm-server tenant id ([A-Za-z0-9_-]{1,64})."""
     if TENANT_RE.match(user_id):
         return user_id
     return "u-" + hashlib.sha256(user_id.encode()).hexdigest()[:60]
@@ -215,8 +215,8 @@ class EmbeddingClient:
 
 
 class Shim:
-    def __init__(self, hms_url: str, config: dict[str, Any], embedding_log: str | None = None):
-        self.hms_url = hms_url.rstrip("/")
+    def __init__(self, warm_url: str, config: dict[str, Any], embedding_log: str | None = None):
+        self.warm_url = warm_url.rstrip("/")
         self.recall_options = dict(config.get("recall", {}))
         self.max_k = int(config.get("max_k", 200))
         # Optional fixed token budget on the returned memory texts (o200k_base), filled in rank
@@ -245,12 +245,12 @@ class Shim:
         if self.session:
             await self.session.close()
 
-    async def hms(self, op: str, tenant: str, body: dict[str, Any]) -> dict[str, Any]:
+    async def warm(self, op: str, tenant: str, body: dict[str, Any]) -> dict[str, Any]:
         assert self.session is not None
         delay = 0.05
         for _ in range(8):
             async with self.session.post(
-                f"{self.hms_url}/api/v1/memory/{op}", json=body, headers={"X-Tenant-ID": tenant}
+                f"{self.warm_url}/api/v1/memory/{op}", json=body, headers={"X-Tenant-ID": tenant}
             ) as resp:
                 if resp.status in (429, 503):
                     await asyncio.sleep(delay)
@@ -258,11 +258,11 @@ class Shim:
                     continue
                 payload = await resp.json(content_type=None)
                 if resp.status == 409:
-                    raise web.HTTPConflict(text="hms-server fact conflict")
+                    raise web.HTTPConflict(text="warm-server fact conflict")
                 if resp.status != 200:
-                    raise web.HTTPBadGateway(text=json.dumps({"hms_status": resp.status, "error": payload}))
+                    raise web.HTTPBadGateway(text=json.dumps({"warm_status": resp.status, "error": payload}))
                 return payload
-        raise web.HTTPServiceUnavailable(text="hms-server busy")
+        raise web.HTTPServiceUnavailable(text="warm-server busy")
 
     async def remember_embedded(self, tenant: str, facts: list[dict[str, Any]]) -> dict[str, Any]:
         assert self.embedder is not None
@@ -271,18 +271,18 @@ class Shim:
             identity = json.dumps([fact["text"], fact.get("eventTime"), self.embedding_config],
                                   ensure_ascii=False, sort_keys=True, separators=(",", ":"))
             fact["id"] = "mem0:" + hashlib.sha256(identity.encode()).hexdigest()
-            existing = (await self.hms("get", tenant, {"id": fact["id"]}))["fact"]
+            existing = (await self.warm("get", tenant, {"id": fact["id"]}))["fact"]
             if existing is None:
                 fact["embedding"] = (await self.embedder.embed([fact["text"]]))[0]
                 try:
-                    result = await self.hms("remember", tenant, {"facts": [fact]})
+                    result = await self.warm("remember", tenant, {"facts": [fact]})
                 except web.HTTPConflict:
-                    existing = (await self.hms("get", tenant, {"id": fact["id"]}))["fact"]
+                    existing = (await self.warm("get", tenant, {"id": fact["id"]}))["fact"]
                     if existing is None:
                         raise
                 else:
                     if len(result.get("remembered", [])) != 1:
-                        raise RuntimeError("hms-server returned an invalid remember result")
+                        raise RuntimeError("warm-server returned an invalid remember result")
                     remembered.extend(result["remembered"])
                     continue
             # Native single-chunk text excludes surrounding Unicode White_Space.
@@ -311,7 +311,7 @@ class Shim:
             out = await self.remember_embedded(tenant, facts)
             added = sum(bool(row.get("created")) for row in out["remembered"])
         else:
-            out = await self.hms("remember", tenant, {"facts": facts})
+            out = await self.warm("remember", tenant, {"facts": facts})
             added = len(facts)
         self.counts[tenant] = self.counts.get(tenant, 0) + added
         created = iso_from_ms(event_ms)
@@ -333,7 +333,7 @@ class Shim:
         recall = {"query": query, "k": k, **self.recall_options}
         if self.embedder:
             recall["embedding"] = (await self.embedder.embed([query]))[0]
-        out = await self.hms("recall", tenant, recall)
+        out = await self.warm("recall", tenant, recall)
         hits = out.get("results", [])
         if self.enc is not None:
             hits = fit_budget(hits, [len(self.enc.encode(r.get("text") or "")) for r in hits], self.max_context_tokens)
@@ -368,12 +368,12 @@ def build_app(shim: Shim) -> web.Application:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--hms-url", required=True, help="hms-server base URL, e.g. http://127.0.0.1:8080")
+    ap.add_argument("--warm-url", required=True, help="warm-server base URL, e.g. http://127.0.0.1:8080")
     ap.add_argument("--config", required=True, help="frozen retrieval config JSON")
     ap.add_argument("--port", type=int, default=8888)
     ap.add_argument("--embedding-log", default=None)
     args = ap.parse_args()
-    shim = Shim(args.hms_url, load_config(args.config), args.embedding_log)
+    shim = Shim(args.warm_url, load_config(args.config), args.embedding_log)
     print(f"mem0-shim listening on 127.0.0.1:{args.port}", file=sys.stderr, flush=True)
     web.run_app(build_app(shim), host="127.0.0.1", port=args.port, print=None, access_log=None)
 

@@ -17,7 +17,7 @@ use super::{
     VGraph, VSearchParams,
 };
 use crate::core::durable_file::{atomic_write, sync_directory, sync_mapped_file};
-use crate::core::error::HmsError;
+use crate::core::error::WarmError;
 
 mod delta;
 mod delta_rows;
@@ -67,7 +67,7 @@ pub enum UpdateError {
     #[error(transparent)]
     Persistence(#[from] anyhow::Error),
     #[error(transparent)]
-    Search(#[from] HmsError),
+    Search(#[from] WarmError),
 }
 
 /// Advisory thresholds; callers schedule consolidation outside their commit latency.
@@ -823,7 +823,7 @@ impl UpdatableVGraph {
         out.extend(candidates.into_iter().map(|(_, id)| id));
         Ok(())
     }
-    /// Returns streaming counters and delta topology when `HMS_STREAM_DIAGNOSTICS=1`
+    /// Returns streaming counters and delta topology when `WARM_STREAM_DIAGNOSTICS=1`
     /// was set at open/create. Topology scans run only on this explicit call. Base topology
     /// is unavailable through the immutable graph interface and is marked accordingly.
     pub fn streaming_diagnostics(&self) -> Option<std::collections::BTreeMap<String, f64>> {

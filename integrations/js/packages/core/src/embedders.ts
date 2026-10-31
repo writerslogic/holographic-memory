@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 
 /**
  * The encoder knob. `space` identifies the embedding space; the engine refuses a store reopened
- * with a different one. This is the same shape as `Embedder` in `holographic-memory/semantic`, so
+ * with a different one. This is the same shape as `Embedder` in `writerslogic-warm/semantic`, so
  * `createLocalEmbedder(...)` results can be passed directly.
  */
 export interface Embedder {
@@ -23,7 +23,7 @@ export class HashingEmbedder implements Embedder {
   readonly space: Embedder['space']
   constructor(readonly dimensions = 384, private readonly bigrams = true) {
     if (!Number.isInteger(dimensions) || dimensions < 8) throw new RangeError('dimensions must be an integer >= 8')
-    this.space = { model: 'hms-hashing', revision: bigrams ? 'uni-bi-v1' : 'uni-v1', dimensions, normalization: 'l2', metric: 'cosine' }
+    this.space = { model: 'warm-hashing', revision: bigrams ? 'uni-bi-v1' : 'uni-v1', dimensions, normalization: 'l2', metric: 'cosine' }
   }
 
   private encode(text: string): number[] {

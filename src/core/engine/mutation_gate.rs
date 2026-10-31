@@ -147,10 +147,10 @@ mod tests {
 
     #[test]
     fn queries_progress_while_compaction_waits_and_a_mutation_is_queued() -> anyhow::Result<()> {
-        use crate::{DocumentInput, HmsCore};
+        use crate::{DocumentInput, WarmCore};
         let directory = tempfile::tempdir()?;
         let path = directory.path().display().to_string();
-        let core = Arc::new(HmsCore::new(1024, Some(path.clone()), None)?);
+        let core = Arc::new(WarmCore::new(1024, Some(path.clone()), None)?);
         let vector = core.encode_text("reader remains available");
         core.memorize("original".into(), vector.clone())?;
         let documents = core.documents.write();
@@ -185,7 +185,7 @@ mod tests {
             "original"
         );
         drop(core);
-        let restored = HmsCore::new(1024, Some(path), None)?;
+        let restored = WarmCore::new(1024, Some(path), None)?;
         assert_eq!(
             restored.search_documents("durable", &Default::default())?[0].document_id,
             "after"

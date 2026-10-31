@@ -3,13 +3,13 @@
 
 use std::fmt::Write as _;
 
-use super::HmsCore;
+use super::WarmCore;
 use crate::core::entangled::EntangledHVec;
 use crate::core::hopfield;
 use crate::core::types::{IndexStatus, QueryExplanation, RetrievalResult, StorageHealth};
 use rayon::prelude::*;
 
-impl HmsCore {
+impl WarmCore {
     /// Query the memory system for the k most similar vectors.
     pub fn query(&self, query_vec: &EntangledHVec, k: u32) -> Vec<RetrievalResult> {
         if query_vec.dim != self.dimensions || k == 0 {
@@ -209,20 +209,20 @@ mod tests {
     #[test]
     fn diagnostics_report_route_lifecycle_and_storage() -> anyhow::Result<()> {
         let directory = tempfile::tempdir()?;
-        let hms = HmsCore::new(
+        let warm = WarmCore::new(
             1024,
             Some(directory.path().to_string_lossy().into_owned()),
             None,
         )?;
         let query = EntangledHVec::new_deterministic(1024, 1);
-        let explanation = hms.explain_query(&query, 5);
+        let explanation = warm.explain_query(&query, 5);
         assert_eq!(explanation.route, "brute_force");
-        assert_eq!(hms.index_status().vector_count, 0);
+        assert_eq!(warm.index_status().vector_count, 0);
         assert_eq!(
-            hms.storage_health().format_version,
+            warm.storage_health().format_version,
             crate::core::storage::STORAGE_FORMAT_VERSION
         );
-        hms.flush()?;
+        warm.flush()?;
         Ok(())
     }
 }

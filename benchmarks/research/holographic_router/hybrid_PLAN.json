@@ -1,5 +1,5 @@
 {
-  "schema": "hms.holographic-routing-hybrid-screen/1",
+  "schema": "warm.holographic-routing-hybrid-screen/1",
   "purpose": "One fresh synthetic followup after phase-only rejection; determine whether a phase field adds value beyond an explicit witness sidecar",
   "scope": "No official data, Linux work, heldout ANN queries, production integration or durable format",
   "data_seeds": [59, 71, 83],

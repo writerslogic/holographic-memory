@@ -279,7 +279,7 @@ def main() -> None:
                 raise ValueError("both ledger and allocation are required")
             ledger = BudgetLedger(args.budget_ledger, args.budget_allocation, args.max_spend)
         proxy = Proxy(args.log, args.max_spend, ledger=ledger,
-                      upstream_key=os.environ.get("OPENAI_API_KEY"), local_token=os.environ.get("HMS_PROXY_TOKEN"))
+                      upstream_key=os.environ.get("OPENAI_API_KEY"), local_token=os.environ.get("WARM_PROXY_TOKEN"))
     except Exception:
         parser.error("invalid private budget or proxy configuration")
     app = web.Application(client_max_size=MAX_BODY_BYTES)

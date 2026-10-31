@@ -10,7 +10,7 @@ exclude = [
   "^https://img\\.shields\\.io/",
   "^https://securityscorecards\\.dev/",
   # Pages for this repository exist only after the first deploy.
-  "^https://writerslogic\\.github\\.io/holographic-memory/",
+  "^https://writerslogic\\.github\\.io/writerslogic-warm/",
   # Local addresses used in examples.
   "^https?://(127\\.0\\.0\\.1|localhost)",
   "^https?://0\\.0\\.0\\.0",

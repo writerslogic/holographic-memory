@@ -7,5 +7,5 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: true,
   clean: true,
-  external: ['ai', 'zod', '@holographic-memory/core'],
+  external: ['ai', 'zod', '@writerslogic/warm-core'],
 })

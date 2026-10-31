@@ -126,7 +126,7 @@ impl QueryPlanner {
             route: IndexRoute::BruteForce,
             ef_search,
             n_probe,
-            rationale: "no trained index is available, so HMS falls back to exact search",
+            rationale: "no trained index is available, so WARM falls back to exact search",
         }
     }
 }

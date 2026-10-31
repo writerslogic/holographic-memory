@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-// Launcher for the hms-mcp binary: finds, or downloads and verifies, the prebuilt binary for this
+// Launcher for the warm-mcp binary: finds, or downloads and verifies, the prebuilt binary for this
 // platform, then runs it with stdio inherited so the MCP stdio transport passes straight through.
 "use strict";
 
@@ -26,7 +26,7 @@ const MAX_BYTES = 256 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
 
 function fail(message) {
-  process.stderr.write(`holographic-memory-mcp: ${message}\n`);
+  process.stderr.write(`writerslogic-warm-mcp: ${message}\n`);
   process.exit(1);
 }
 
@@ -34,18 +34,18 @@ function target() {
   const key = `${process.platform}-${process.arch}`;
   const triple = TARGETS[key];
   if (!triple) {
-    fail(`no prebuilt hms-mcp for ${key}; build it with cargo (--features mcp) and set HMS_MCP_BINARY`);
+    fail(`no prebuilt warm-mcp for ${key}; build it with cargo (--features mcp) and set WARM_MCP_BINARY`);
   }
   return triple;
 }
 
 function cacheDir() {
-  if (process.env.HMS_MCP_CACHE_DIR) return process.env.HMS_MCP_CACHE_DIR;
-  if (process.platform === "darwin") return path.join(os.homedir(), "Library", "Caches", "holographic-memory-mcp");
+  if (process.env.WARM_MCP_CACHE_DIR) return process.env.WARM_MCP_CACHE_DIR;
+  if (process.platform === "darwin") return path.join(os.homedir(), "Library", "Caches", "writerslogic-warm-mcp");
   if (process.platform === "win32") {
-    return path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), "holographic-memory-mcp");
+    return path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), "writerslogic-warm-mcp");
   }
-  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "holographic-memory-mcp");
+  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "writerslogic-warm-mcp");
 }
 
 function sha256File(file) {
@@ -55,12 +55,12 @@ function sha256File(file) {
 }
 
 function expectedChecksum(triple) {
-  const file = process.env.HMS_MCP_CHECKSUMS || path.join(__dirname, "..", "checksums.json");
+  const file = process.env.WARM_MCP_CHECKSUMS || path.join(__dirname, "..", "checksums.json");
   let table;
   try {
     table = JSON.parse(fs.readFileSync(file, "utf8"));
   } catch {
-    fail(`no checksum table at ${file}; this package was not built for release. Set HMS_MCP_BINARY to a binary you trust.`);
+    fail(`no checksum table at ${file}; this package was not built for release. Set WARM_MCP_BINARY to a binary you trust.`);
   }
   const sum = table.assets && table.assets[triple];
   if (!/^[0-9a-f]{64}$/.test(sum || "")) fail(`checksum table has no valid entry for ${triple}`);
@@ -75,7 +75,7 @@ function download(url, destination, redirects = 0) {
       return;
     }
     client
-      .get(url, { headers: { "user-agent": `holographic-memory-mcp/${pkg.version}` } }, (res) => {
+      .get(url, { headers: { "user-agent": `writerslogic-warm-mcp/${pkg.version}` } }, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           res.resume();
           if (redirects >= MAX_REDIRECTS) return reject(new Error("too many redirects"));
@@ -111,21 +111,21 @@ function isLoopback(url) {
 }
 
 async function ensureBinary() {
-  if (process.env.HMS_MCP_BINARY) return process.env.HMS_MCP_BINARY;
+  if (process.env.WARM_MCP_BINARY) return process.env.WARM_MCP_BINARY;
   const triple = target();
   const exe = process.platform === "win32" ? ".exe" : "";
   const dir = path.join(cacheDir(), pkg.version, triple);
-  const binary = path.join(dir, `hms-mcp${exe}`);
+  const binary = path.join(dir, `warm-mcp${exe}`);
   const expected = expectedChecksum(triple);
   if (fs.existsSync(binary) && sha256File(binary) === expected) return binary;
 
   const base =
-    process.env.HMS_MCP_RELEASE_BASE ||
-    `https://github.com/writerslogic/holographic-memory/releases/download/mcp-v${pkg.version}`;
-  const url = `${base.replace(/\/$/, "")}/hms-mcp-${triple}${exe}`;
+    process.env.WARM_MCP_RELEASE_BASE ||
+    `https://github.com/writerslogic/warm/releases/download/mcp-v${pkg.version}`;
+  const url = `${base.replace(/\/$/, "")}/warm-mcp-${triple}${exe}`;
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const partial = path.join(dir, `.download-${process.pid}`);
-  process.stderr.write(`holographic-memory-mcp: downloading ${url}\n`);
+  process.stderr.write(`writerslogic-warm-mcp: downloading ${url}\n`);
   try {
     await download(url, partial);
     const actual = sha256File(partial);

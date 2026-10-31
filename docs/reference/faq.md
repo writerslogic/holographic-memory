@@ -1,12 +1,12 @@
 ---
-description: Answers to the questions people ask about Holographic Memory, each traced to a documentation page, the code or an open issue.
+description: Answers to the questions people ask about WARM, each traced to a documentation page, the code or an open issue.
 ---
 
 # FAQ
 
 Each answer points to the page or issue that backs it. If your question is not here, open an
-[issue](https://github.com/writerslogic/holographic-memory/issues) or ask in
-[Discussions](https://github.com/writerslogic/holographic-memory/discussions).
+[issue](https://github.com/writerslogic/warm/issues) or ask in
+[Discussions](https://github.com/writerslogic/warm/discussions).
 
 ## Is the document search actually holographic?
 
@@ -19,14 +19,14 @@ and shows how to check it in the code.
 ## Do I need embeddings?
 
 No. Text search works from the text alone, with stemmed BM25. Supply an embedding per chunk and
-HMS also scores exact cosine and blends the two, which is where it can beat a lexical engine on
+WARM also scores exact cosine and blends the two, which is where it can beat a lexical engine on
 paraphrases. The [quickstart](../quickstart/index.md) runs both ways.
 
 ## Why does the Python package need a server?
 
-`holographic-memory-sdk` is an HTTP client for `hms-server`. The server wraps one store per tenant and
+`writerslogic-warm-sdk` is an HTTP client for `warm-server`. The server wraps one store per tenant and
 holds the engine, so the Python process stays small and the store has one writer. The
-`holographic-memory-py` wheel on PyPI provides native vector search and phase vectors, and
+`writerslogic-warm-py` wheel on PyPI provides native vector search and phase vectors, and
 does not include document search. See the [server page](../SERVER.md).
 
 ## Does it send anything over the network?
@@ -46,7 +46,7 @@ What the encryption covers, and what a stored hypervector still reveals, is on
 
 That is the current error: the real cause, an authenticated-decryption failure, is wrapped in
 the replay context. It means the passphrase is wrong or the store is damaged. A clearer message
-is tracked in [issue 91](https://github.com/writerslogic/holographic-memory/issues/91).
+is tracked in [issue 91](https://github.com/writerslogic/warm/issues/91).
 
 ## How many items fit in one bundle?
 
@@ -55,12 +55,12 @@ false-positive rate climbs well before the bundle saturates. The
 [capacity page](../concepts/capacity.md) reports what was swept, where the sweep stops, and that
 earlier "hard wall" figures were wrong and are retired.
 
-## Where does HMS lose?
+## Where does WARM lose?
 
 The benchmark pages say so next to the wins. On vector search the sparse vector path is far
 below exact search on recall, and the quantized graph index does not reach 0.95 recall@10 on
 nytimes-256 where FAISS, hnswlib, Lucene and RaBitQ do. On SciFact the hybrid search is the
-best HMS configuration. Start at [Public benchmarks](../PUBLIC-BENCHMARKS.md).
+best WARM configuration. Start at [Public benchmarks](../PUBLIC-BENCHMARKS.md).
 
 ## Which Rust version do I need?
 
@@ -71,7 +71,7 @@ quickstart, which uses `node:sqlite`.
 
 The napi build regenerates it, and the file is both tracked and listed in `.gitignore`. Do not
 commit that diff by accident. The cleanup is tracked in
-[issue 104](https://github.com/writerslogic/holographic-memory/issues/104).
+[issue 104](https://github.com/writerslogic/warm/issues/104).
 
 ## Why do the docs have three versions?
 

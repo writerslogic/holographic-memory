@@ -1,8 +1,8 @@
-# hms-research-scan: graph-free split-manifold scan kill test
+# warm-research-scan: graph-free split-manifold scan kill test
 
-Package: `benchmarks/research/scan/` (standalone crate `hms-research-scan`, not a
+Package: `benchmarks/research/scan/` (standalone crate `warm-research-scan`, not a
 workspace member, own `[workspace]` table). No root-crate API is called and the
-`holographic-memory` path dependency is intentionally omitted (see `Cargo.toml`);
+`writerslogic-warm` path dependency is intentionally omitted (see `Cargo.toml`);
 dependencies are `anyhow 1.0`, `clap 4.4 (derive)`, `serde 1.0 (derive)`,
 `serde_json 1.0 (float_roundtrip)`, all already used by the root crate at the
 same versions. No new third-party crates. `Cargo.lock` and `target/` are
@@ -79,8 +79,8 @@ Explicit bit counts: `--residual-bits` must be a multiple of 64 and at most
 `M x padded dim` (384-d: 512 for M=1, 1024 for M=2; `--residual-bits 768`
 needs `--residual-mult 2`).
 
-Dataset paths default to `~/.cache/hms-bench/nfcorpus` and
-`~/.cache/hms-bench/glove-100-angular` (`--nfcorpus-dir`, `--glove-dir` to
+Dataset paths default to `~/.cache/warm-bench/nfcorpus` and
+`~/.cache/warm-bench/glove-100-angular` (`--nfcorpus-dir`, `--glove-dir` to
 override). glove is loaded from the already-converted `train.f32` / `test.f32`
 in that directory (no hdf5 parsing, no new dependency); ground truth is
 recomputed on the subset, so `neighbors.i32` is not used. Real datasets take
@@ -118,7 +118,7 @@ that passes if any row passes.
 
 ## Output JSON schema
 
-Single mode (`schema = "hms-research-scan/v2"`):
+Single mode (`schema = "warm-research-scan/v2"`):
 
 ```text
 {
@@ -145,7 +145,7 @@ Single mode (`schema = "hms-research-scan/v2"`):
 }
 ```
 
-Sweep mode (`schema = "hms-research-scan/sweep-v1"`):
+Sweep mode (`schema = "warm-research-scan/sweep-v1"`):
 
 ```text
 {
@@ -164,7 +164,7 @@ when no K <= `threshold_max_k` reaches the target; the matched ratio is then
 
 ## Root-crate APIs used
 
-None. The crate does not depend on `holographic-memory`; all kernels are local
+None. The crate does not depend on `writerslogic-warm`; all kernels are local
 (`src/lib.rs` `dot_f32` / `dot_i8` lane-accumulator dots, `u64::count_ones`
 popcounts, `src/codes.rs` `fwht`).
 

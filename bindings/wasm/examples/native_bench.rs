@@ -3,14 +3,14 @@
 
 //! Native baseline for the wasm benchmark: the same corpus, queries and k as
 //! `npm/bench/bench-core.mjs`, run against the in-memory store (the code the wasm module runs)
-//! or the full engine (`HmsCore`, journaled in a temporary directory).
+//! or the full engine (`WarmCore`, journaled in a temporary directory).
 //!
-//!   cargo run --release --example native_bench -- --engine memory|hms --documents N --queries Q
+//!   cargo run --release --example native_bench -- --engine memory|warm --documents N --queries Q
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
-    use holographic_memory::core::documents::{DocumentInput, MemoryDocumentStore, SearchOptions};
-    use holographic_memory::HmsCore;
+    use writerslogic_warm::core::documents::{DocumentInput, MemoryDocumentStore, SearchOptions};
+    use writerslogic_warm::WarmCore;
     use std::time::Instant;
 
     const VOCABULARY: f64 = 20_000.0;
@@ -111,12 +111,12 @@ mod native {
 
         let dir = tempfile::tempdir().expect("temporary directory");
         let mut memory = None;
-        let mut hms = None;
+        let mut warm = None;
         match engine.as_str() {
             "memory" => memory = Some(MemoryDocumentStore::new(DIMENSIONS, None).expect("store")),
-            "hms" => {
-                hms = Some(
-                    HmsCore::new(
+            "warm" => {
+                warm = Some(
+                    WarmCore::new(
                         DIMENSIONS as u32,
                         Some(dir.path().display().to_string()),
                         None,
@@ -135,7 +135,7 @@ mod native {
             if let Some(store) = memory.as_mut() {
                 store.memorize_many(batch).expect("ingest");
             } else {
-                hms.as_ref()
+                warm.as_ref()
                     .unwrap()
                     .memorize_documents(batch)
                     .expect("ingest");
@@ -153,7 +153,7 @@ mod native {
             if let Some(store) = memory.as_ref() {
                 store.search(text, &options).expect("search")
             } else {
-                hms.as_ref()
+                warm.as_ref()
                     .unwrap()
                     .search_documents(text, &options)
                     .expect("search")

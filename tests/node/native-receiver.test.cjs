@@ -3,14 +3,14 @@
 
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
-const { HolographicMemorySystem } = require('../../index.js')
+const { WarmMemorySystem } = require('../../index.js')
 
 test('native methods reject unwrapped and prototype-spoofed receivers', async () => {
-  const receivers = [{}, Object.create(HolographicMemorySystem.prototype), new Date(), null]
+  const receivers = [{}, Object.create(WarmMemorySystem.prototype), new Date(), null]
   for (const receiver of receivers) {
-    assert.throws(() => HolographicMemorySystem.prototype.configureMemory.call(receiver), TypeError)
-    await assert.rejects(async () => HolographicMemorySystem.prototype.listDocuments.call(receiver), TypeError)
-    const getter = Object.getOwnPropertyDescriptor(HolographicMemorySystem.prototype, 'dimensions').get
+    assert.throws(() => WarmMemorySystem.prototype.configureMemory.call(receiver), TypeError)
+    await assert.rejects(async () => WarmMemorySystem.prototype.listDocuments.call(receiver), TypeError)
+    const getter = Object.getOwnPropertyDescriptor(WarmMemorySystem.prototype, 'dimensions').get
     assert.throws(() => getter.call(receiver), /Illegal invocation|Failed to unwrap exclusive reference/)
   }
 })

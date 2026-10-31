@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Stage 2 of the model selection: the Rust engine on a model pack.
 
-For one pack (f32, f16 or int8) this measures, through `hms-embed embed`:
+For one pack (f32, f16 or int8) this measures, through `warm-embed embed`:
   quality   SciFact-train and NFCorpus-dev nDCG@10 and LongMemEval-dev session recall/nDCG
             (same data and metrics as select_model.py, from the engine's own vectors)
   latency   ms per passage and per query at 1 thread and at N threads (best of --repeats)
@@ -13,7 +13,7 @@ Machine load is recorded with every run; on a shared machine treat absolute time
 and compare models within one run.
 
   uv run --no-project --with numpy python benchmarks/embedding/run_engine_eval.py \
-      --binary $TARGET/release/hms-embed --model-id BAAI/bge-small-en-v1.5 --pack bge-small-int8.hmsemb \
+      --binary $TARGET/release/warm-embed --model-id BAAI/bge-small-en-v1.5 --pack bge-small-int8.hmsemb \
       --query-prefix "Represent this sentence for searching relevant passages: " --out result.json
 """
 import argparse
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     ap.add_argument("--skip-lme", action="store_true")
     ap.add_argument("--skip-speed", action="store_true")
     a = ap.parse_args()
-    with tempfile.TemporaryDirectory(dir="./.hms-embed-work") as work:
+    with tempfile.TemporaryDirectory(dir="./.warm-embed-work") as work:
         out = {"model": a.model_id, "pack": Path(a.pack).name, "threads": a.threads}
         if not a.skip_quality:
             out["quality"] = quality(a.binary, a.pack, "", "", a.threads, work, a.max_length, not a.skip_lme)

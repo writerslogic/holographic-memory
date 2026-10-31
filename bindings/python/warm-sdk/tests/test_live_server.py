@@ -1,0 +1,164 @@
+"""Runs the SDK against a real warm-server process.
+
+Set WARM_SERVER_BIN to the path of a binary built with
+`cargo build --features server --bin warm-server`; the module is skipped otherwise.
+"""
+
+import asyncio
+import math
+import os
+import random
+import subprocess
+
+import httpx
+import pytest
+
+from writerslogic_warm_sdk import AsyncWarmClient, WarmClient, WarmError
+
+BIN = os.environ.get("WARM_SERVER_BIN")
+pytestmark = pytest.mark.skipif(not BIN, reason="WARM_SERVER_BIN not set")
+
+DIM = 24
+API_KEY = "live-test-key"
+SALT = b"0123456789abcdef"
+
+
+def embedding(seed: int):
+    rng = random.Random(seed)
+    return [rng.uniform(-1, 1) for _ in range(DIM)]
+
+
+def noisy(vec, seed: int, amount=0.02):
+    rng = random.Random(seed)
+    return [v + rng.uniform(-amount, amount) for v in vec]
+
+
+@pytest.fixture(scope="module")
+def server(tmp_path_factory):
+    data = tmp_path_factory.mktemp("hms-data")
+    env = {**os.environ, "WARM_API_KEY": API_KEY}
+    proc = subprocess.Popen(
+        [BIN, "--bind", "127.0.0.1:0", "--input-dim", str(DIM), "--dim", "4096", "--data-dir", str(data)],
+        stdout=subprocess.PIPE,
+        text=True,
+        env=env,
+    )
+    try:
+        line = proc.stdout.readline().strip()
+        assert line.startswith("warm-server listening on "), line
+        yield f"http://{line.rsplit(' ', 1)[1]}"
+    finally:
+        proc.terminate()
+        proc.wait(timeout=30)
+
+
+def docs(prefix: str):
+    return [
+        {"id": f"{prefix}{i}", "text": f"document {i}", "vector": embedding(i), "metadata": {"n": i, "even": i % 2 == 0}}
+        for i in range(6)
+    ]
+
+
+def test_sync_client_end_to_end(server):
+    with WarmClient(url=server, api_key=API_KEY, tenant_id="sync") as client:
+        client.add_documents(docs("s")[:1])
+        client.add_documents(docs("s")[1:])
+
+        for i in range(6):
+            res = client.query(noisy(embedding(i), 100 + i), top_k=3)
+            assert res["matches"][0]["id"] == f"s{i}"
+            assert res["matches"][0]["text"] == f"document {i}"
+            assert res["matches"][0]["metadata"]["n"] == i
+            scores = [m["score"] for m in res["matches"]]
+            assert scores == sorted(scores, reverse=True) and len(scores) == 3
+
+        res = client.query(embedding(1), top_k=6, filter={"even": True})
+        assert {m["id"] for m in res["matches"]} == {"s0", "s2", "s4"}
+
+        client.delete_document("s2")
+        res = client.query(embedding(2), top_k=6)
+        assert "s2" not in {m["id"] for m in res["matches"]}
+        with pytest.raises(httpx.HTTPStatusError) as err:
+            client.delete_document("s2")
+        assert err.value.response.status_code == 404
+        # the server's error body is read into a WarmError, which is still an HTTPStatusError
+        assert isinstance(err.value, WarmError)
+        assert (err.value.status_code, err.value.code) == (404, "not_found")
+
+
+def test_ids_needing_escaping_can_be_deleted(server):
+    with WarmClient(url=server, api_key=API_KEY, tenant_id="escape") as client:
+        doc_id = "folder/doc #1?x=y%20z"
+        client.add_documents([{"id": doc_id, "vector": embedding(7)}])
+        client.delete_document(doc_id)
+        assert client.query(embedding(7))["matches"] == []
+
+
+def test_async_client_end_to_end(server):
+    async def run():
+        async with AsyncWarmClient(url=server, api_key=API_KEY, tenant_id="async") as client:
+            await client.add_documents(docs("a"))
+            for i in range(6):
+                res = await client.query(noisy(embedding(i), 200 + i), top_k=2)
+                assert res["matches"][0]["id"] == f"a{i}"
+            await client.delete_document("a3")
+            res = await client.query(embedding(3), top_k=6)
+            assert "a3" not in {m["id"] for m in res["matches"]}
+
+    asyncio.run(run())
+
+
+def test_sync_and_async_document_maintenance_preserves_query_results(server):
+    indexed = [
+        {"id": f"indexed{i}", "text": f"document {i}", "vector": embedding(i), "metadata": {"even": i % 2 == 0}}
+        for i in range(128)
+    ]
+    with WarmClient(url=server, api_key=API_KEY, tenant_id="indexed") as client:
+        client.add_documents(indexed)
+        before = [client.query(embedding(i), top_k=10) for i in (0, 11, 127)]
+        filtered = client.query(embedding(11), top_k=10, filter={"even": True})
+        maintained = client.maintain_document_index()
+        assert maintained["documentIndexTrained"] is True
+        assert isinstance(maintained["vectorIndex"], dict)
+        assert [client.query(embedding(i), top_k=10) for i in (0, 11, 127)] == before
+        assert client.query(embedding(11), top_k=10, filter={"even": True}) == filtered
+        client.delete_document("indexed0")
+        after_delete = client.query(embedding(0), top_k=10)
+        assert all(hit["id"] != "indexed0" for hit in after_delete["matches"])
+
+    async def run():
+        async with AsyncWarmClient(url=server, api_key=API_KEY, tenant_id="indexed") as client:
+            assert (await client.maintain_document_index())["documentIndexTrained"] is False
+            assert await client.query(embedding(0), top_k=10) == after_delete
+        async with AsyncWarmClient(url=server, api_key=API_KEY, tenant_id="async-indexed") as client:
+            await client.add_documents(indexed)
+            expected = await client.query(embedding(11), top_k=10)
+            assert (await client.maintain_document_index())["documentIndexTrained"] is True
+            assert await client.query(embedding(11), top_k=10) == expected
+
+    asyncio.run(run())
+
+
+def test_masked_vectors_still_rank_nearest_first(server):
+    kwargs = dict(url=server, api_key=API_KEY, tenant_id="masked", zero_trust_key="pass", mask_salt=SALT)
+    with WarmClient(**kwargs) as client:
+        client.add_documents(docs("m"))
+        for i in range(6):
+            res = client.query(noisy(embedding(i), 300 + i), top_k=3)
+            assert res["matches"][0]["id"] == f"m{i}"
+
+
+def test_tenants_are_isolated_and_auth_required(server):
+    with WarmClient(url=server, api_key=API_KEY, tenant_id="one") as one:
+        one.add_documents(docs("t"))
+    with WarmClient(url=server, api_key=API_KEY, tenant_id="two") as two:
+        assert two.query(embedding(0))["matches"] == []
+    with WarmClient(url=server, tenant_id="one") as anonymous:
+        with pytest.raises(httpx.HTTPStatusError) as err:
+            anonymous.query(embedding(0))
+        assert err.value.response.status_code == 401
+    with WarmClient(url=server, api_key=API_KEY, tenant_id="one") as client:
+        with pytest.raises(httpx.HTTPStatusError) as err:
+            client.add_documents([{"id": "bad", "vector": [1.0, 2.0]}])
+        assert err.value.response.status_code == 422
+        assert not math.isnan(client.query(embedding(0))["matches"][0]["score"])

@@ -1,6 +1,6 @@
 # lancedb
 
-`hms-import lancedb --uri DIR_OR_URI [--table NAME ...] [--vector-column COL] [--map FIELD=COLUMN ...]`
+`warm-import lancedb --uri DIR_OR_URI [--table NAME ...] [--vector-column COL] [--map FIELD=COLUMN ...]`
 
 Reads every table (or the named ones) through the real `lancedb` client. Each table is checked out at its current version first, so concurrent writes cannot shift pages, then read with `limit/offset` pages (no `pylance` needed). The vector column is the first fixed-size-list column. Other columns become metadata (structs and lists stay structured). Without `--map id=...`, an `id` column is used if present, else the row ordinal.
 

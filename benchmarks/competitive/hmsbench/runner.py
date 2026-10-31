@@ -3,7 +3,7 @@
 """Orchestrates one (suite, dataset) run and writes benchmarks/results/competitive/<name>.json.
 
 Every system runs in its own process per phase; the orchestrator measures wall time and peak RSS
-of the child with wait4. Serve rounds are interleaved (HMS and every comparator once per round,
+of the child with wait4. Serve rounds are interleaved (WARM and every comparator once per round,
 order rotated each round) so a transient load spike lands on all systems, not on one.
 """
 
@@ -18,7 +18,7 @@ from pathlib import Path
 from . import SCHEMA_VERSION, data, envs, jars, registry, textdata
 from .common import CACHE, RESULTS, ROOT, commit, dir_bytes, hardware, log, pass_summary, run_measured, write_json
 
-WORK = Path(os.environ.get("HMS_BENCH_WORK", CACHE / "competitive" / "work"))
+WORK = Path(os.environ.get("WARM_BENCH_WORK", CACHE / "competitive" / "work"))
 WORKER_DIR = Path(__file__).resolve().parent
 _LIMITS = {"timeout": 7200}
 # On datasets above 200k vectors these exact-scan or Python-heavy systems answer only the first N queries
@@ -48,23 +48,23 @@ def _out_dir(spec):
     return CACHE / "competitive" / "smoke" if spec["name"] == "smoke" else RESULTS
 
 
-# Cargo profile of the HMS binaries the harness runs and measures: `dist` is the release build
+# Cargo profile of the WARM binaries the harness runs and measures: `dist` is the release build
 # without the symbol table (Cargo.toml), i.e. what is shipped. modal_run.py builds the same one.
-HMS_PROFILE = "dist"
+WARM_PROFILE = "dist"
 
 
-def hms_binary(name, example=False):
+def warm_binary(name, example=False):
     target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target"))
-    path = target / HMS_PROFILE / ("examples" if example else "") / name
+    path = target / WARM_PROFILE / ("examples" if example else "") / name
     if not path.exists():
         log(f"building {name}")
-        cmd = ["cargo", "build", "--profile", HMS_PROFILE, "--features", "cli,mimalloc", "--example" if example else "--bin", name]
+        cmd = ["cargo", "build", "--profile", WARM_PROFILE, "--features", "cli,mimalloc", "--example" if example else "--bin", name]
         subprocess.run(cmd, check=True, cwd=ROOT)
     return path
 
 
-def hms_install_facts(paths):
-    """Install footprint of the HMS binaries used: size and non-OS dynamic libraries."""
+def warm_install_facts(paths):
+    """Install footprint of the WARM binaries used: size and non-OS dynamic libraries."""
     out = {}
     for path in paths:
         probe = ["otool", "-L", str(path)] if os.uname().sysname == "Darwin" else ["ldd", str(path)]
@@ -72,8 +72,8 @@ def hms_install_facts(paths):
         non_system = [l for l in text.splitlines()[1:] if l.strip() and not any(
             m in l for m in ("/usr/lib/", "/System/", "libc.so", "libm.so", "libgcc_s", "libpthread", "libdl", "ld-linux", "linux-vdso", "librt"))]
         out[path.name] = {"bytes": path.stat().st_size, "non_system_dynamic_libraries": len(non_system),
-                          "profile": HMS_PROFILE, "symbols": "stripped"}
-    tree = subprocess.run(["cargo", "tree", "-e", "normal", "--prefix", "none", "-p", "holographic-memory", "--offline"],
+                          "profile": WARM_PROFILE, "symbols": "stripped"}
+    tree = subprocess.run(["cargo", "tree", "-e", "normal", "--prefix", "none", "-p", "writerslogic-warm", "--offline"],
                           capture_output=True, text=True, cwd=ROOT)
     crates = sorted({line.split()[0] for line in tree.stdout.splitlines() if line.strip()}) if tree.returncode == 0 else []
     out["_crate_dependencies"] = {"count": len(crates), "note": "unique crates in the default-feature normal dependency tree, including CLI-only crates; compiled in, not installed"}
@@ -116,7 +116,7 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
                             "search_threads": 1, "queries": meta["n_test"],
                             "timing": "one query at a time, single client thread, per-query perf_counter_ns inside the worker process",
                             "ops": "100 replacements then 100 deletions; each mutation is acknowledged and explicitly flushed before the next",
-                            "interleaving": "each round runs HMS and every comparator once, order rotated per round",
+                            "interleaving": "each round runs WARM and every comparator once, order rotated per round",
                             "query_caps": QUERY_CAPS if meta["n_train"] > 200_000 else {},
                             "recall_targets": [0.9, 0.95, 0.99], "selection": "pooled-median-QPS argmax over sweep rows with recall >= target"},
                "facts": registry.FACTS, "timing_boundary": registry.TIMING_BOUNDARY, "not_run": registry.NOT_RUN, "systems": {}, "skipped": {}}
@@ -127,7 +127,7 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
     envb = {k: str(threads) for k in SINGLE_THREAD}
     plan = []  # (system, build_id)
     for system in systems:
-        if system == registry.HMS:
+        if system == registry.WARM:
             plan.append((system, "vertex-d32"))
             continue
         cls = _adapter_class(system)
@@ -143,8 +143,8 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
         builds = []
         try:
             for _ in range(spec["build_repeats"]):
-                if system == registry.HMS:
-                    result = _hms_ann_build(directory, meta, threads, workdir)
+                if system == registry.WARM:
+                    result = _warm_ann_build(directory, meta, threads, workdir)
                 else:
                     result = _worker(system, ["build", "--system", system, "--build", build_id, "--data", str(directory), "--workdir", str(workdir),
                                               "--threads", str(threads)], envb)
@@ -159,12 +159,12 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
             key = (system, build_id)
             if key not in state:
                 continue
-            if system == registry.HMS:
+            if system == registry.WARM:
                 try:
-                    state[key]["serves"].append(_hms_ann_round(directory, meta, state[key]["workdir"]))
+                    state[key]["serves"].append(_warm_ann_round(directory, meta, state[key]["workdir"]))
                 except Exception as error:
                     results["skipped"][f"{system}:{build_id}"] = str(error)[-600:]
-                    log(f"hms round failed: {str(error)[-300:]}")
+                    log(f"warm round failed: {str(error)[-300:]}")
                 continue
             try:
                 merged = None
@@ -197,9 +197,9 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
         shutil.rmtree(copy, ignore_errors=True)
         shutil.copytree(st["workdir"], copy)
         try:
-            if system == registry.HMS:
-                command = [sys.executable, str(WORKER_DIR / "ann_worker.py"), "ops", "--system", "hms", "--build", "persisted", "--data", str(directory), "--workdir", str(copy)]
-                stdout, _, _, _ = run_measured(command, env={**env1, "HMS_PUBLIC_BENCH": str(hms_binary("public-bench"))}, timeout=14400)
+            if system == registry.WARM:
+                command = [sys.executable, str(WORKER_DIR / "ann_worker.py"), "ops", "--system", "warm", "--build", "persisted", "--data", str(directory), "--workdir", str(copy)]
+                stdout, _, _, _ = run_measured(command, env={**env1, "WARM_PUBLIC_BENCH": str(warm_binary("public-bench"))}, timeout=14400)
                 st["ops"] = _parse_result(stdout)
             else:
                 st["ops"] = _worker(system, ["ops", "--system", system, "--build", build_id, "--data", str(directory), "--workdir", str(copy)], env1)
@@ -209,19 +209,19 @@ def run_ann(dataset, n_train, n_test, spec, systems, out_path=None, only_builds=
     for (system, build_id), st in state.items():
         entry = results["systems"].setdefault(system, {"display": registry.SYSTEMS[system]["display"], "builds": {}})
         entry["builds"][build_id] = {"build_runs": st["builds"], "serve_rounds": st["serves"],
-                                      "params": _adapter_class(system).BUILDS[build_id] if system != registry.HMS else HMS_ANN_BUILDS[meta["metric"]]}
+                                      "params": _adapter_class(system).BUILDS[build_id] if system != registry.WARM else WARM_ANN_BUILDS[meta["metric"]]}
         if "ops" in st:
             entry["ops"] = st["ops"]
     _attach_versions_and_footprints(results)
-    if system_hms := results["systems"].get(registry.HMS):
-        system_hms["install"] = hms_install_facts([hms_binary("public-bench")])
+    if system_warm := results["systems"].get(registry.WARM):
+        system_warm["install"] = warm_install_facts([warm_binary("public-bench")])
     out_path = out_path or _out_dir(spec) / f"{spec['name']}-ann-{dataset}-n{meta['n_train']}-{results['hardware']['class']}.json"
     write_json(out_path, results)
     return out_path
 
 
-# HMS configuration per dataset metric, each tuned on a train holdout (never on the benchmark queries).
-HMS_ANN_BUILDS = {
+# WARM configuration per dataset metric, each tuned on a train holdout (never on the benchmark queries).
+WARM_ANN_BUILDS = {
     "angular": {"index": "vertex", "degree": 64, "build_ef": 500, "residual": True, "residual_bits": 8, "vertex_bits": 4,
                 "id_bytes": 3, "align_rows": True, "reorder": True, "rerank": "64", "quantized_search": True,
                 "ef": "64,96,128,192,256,384,512,736,1024",
@@ -237,8 +237,8 @@ HMS_ANN_BUILDS = {
 }
 
 
-def _hms_ann_args(build):
-    """`public-bench ann-qgraph` arguments of one HMS_ANN_BUILDS entry."""
+def _warm_ann_args(build):
+    """`public-bench ann-qgraph` arguments of one WARM_ANN_BUILDS entry."""
     return ["--index", build["index"], "--degree", str(build["degree"]), "--build-ef", str(build["build_ef"]),
             *(["--residual", "--residual-bits", str(build["residual_bits"])] if build["residual"] else []),
             "--vertex-bits", str(build["vertex_bits"]), "--id-bytes", str(build["id_bytes"]),
@@ -246,37 +246,37 @@ def _hms_ann_args(build):
             "--rerank", build["rerank"], *(["--quantized-search"] if build["quantized_search"] else []), "--ef", build["ef"]]
 
 
-def _hms_ann_command(directory, meta, out):
-    return [str(hms_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--metric", meta["metric"],
-            *_hms_ann_args(HMS_ANN_BUILDS[meta["metric"]]), "--max-load", "1000000", "--max-wait-secs", "0"]
+def _warm_ann_command(directory, meta, out):
+    return [str(warm_binary("public-bench")), "ann-qgraph", "--data", str(directory), "--out", str(out), "--metric", meta["metric"],
+            *_warm_ann_args(WARM_ANN_BUILDS[meta["metric"]]), "--max-load", "1000000", "--max-wait-secs", "0"]
 
 
-def _hms_ann_build(directory, meta, threads, workdir):
+def _warm_ann_build(directory, meta, threads, workdir):
     """One `public-bench ann-qgraph --save-index --save-updates` process: builds and encodes the index on
     `threads` threads and writes it to `workdir` (the index file and its build record), as each
     comparator's build process persists its index. Build time and build peak RSS come from here."""
     shutil.rmtree(workdir, ignore_errors=True)
     workdir.mkdir(parents=True)
-    out = WORK / "hms-ann-build.json"
+    out = WORK / "warm-ann-build.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
-    cmd = [*_hms_ann_command(directory, meta, out), "--save-index", str(workdir / "index.vgraph"),
+    cmd = [*_warm_ann_command(directory, meta, out), "--save-index", str(workdir / "index.vgraph"),
            "--save-updates", str(workdir / "index.updates")]
     stdout, stderr, wall, peak = run_measured(cmd, env={"RAYON_NUM_THREADS": str(threads)}, timeout=14400)
     raw = json.loads(out.read_text())
     out.unlink()
     return {"build_s": raw["build"]["build_secs"], "peak_rss_bytes": peak, "wall_s": wall, "n": meta["n_train"],
             "in_memory_index_bytes": raw["index_bytes"], "residual_bytes": raw["residual_bytes"], "graph_hash": raw["build"]["graph_hash"],
-            "memory_phases": raw["memory_phases"], "hms_threads": raw["build"]["threads"]}
+            "memory_phases": raw["memory_phases"], "warm_threads": raw["build"]["threads"]}
 
 
-def _hms_ann_round(directory, meta, workdir):
+def _warm_ann_round(directory, meta, workdir):
     """One mapped updatable-index serving process; queries never load the train matrix."""
-    out = WORK / "hms-ann-out.json"
+    out = WORK / "warm-ann-out.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
-    build = HMS_ANN_BUILDS[meta["metric"]]
-    cmd = [str(hms_binary("public-bench")), "ann-updates", "--action", "serve", "--index", str(workdir / "index.updates"),
+    build = WARM_ANN_BUILDS[meta["metric"]]
+    cmd = [str(warm_binary("public-bench")), "ann-updates", "--action", "serve", "--index", str(workdir / "index.updates"),
            "--data", str(directory), "--out", str(out), "--ef", build["ef"], "--rerank", build["rerank"], "--repeats", "2"]
     t0 = time.time_ns()
     stdout, stderr, wall, peak = run_measured(cmd, env=SINGLE_THREAD, timeout=14400)
@@ -301,8 +301,8 @@ def _attach_versions_and_footprints(results):
     cache = {}
     for system, entry in results["systems"].items():
         reg = registry.SYSTEMS[system]
-        if reg["family"] == "hms":
-            entry["version"] = _hms_version()
+        if reg["family"] == "warm":
+            entry["version"] = _warm_version()
             continue
         if system == "lucene":
             entry["version"] = {"lucene": jars.VERSION, "jvm": jars.java_version()}
@@ -322,11 +322,11 @@ def _sqlite_version():
     return sqlite3.sqlite_version
 
 
-def _hms_version():
+def _warm_version():
     text = (ROOT / "Cargo.toml").read_text()
     for line in text.splitlines():
         if line.startswith("version"):
-            return {"holographic-memory": line.split('"')[1], "commit": commit()}
+            return {"writerslogic-warm": line.split('"')[1], "commit": commit()}
     return {"commit": commit()}
 
 
@@ -340,9 +340,9 @@ def run_text(dataset, spec, systems, out_path=None):
                "hardware": hw, "dataset": meta | {"id": dataset},
                "protocol": {"measurement_version": 2, "resampling_unit": "independent process-round summaries", "operating_point_validation": "exploratory sweep; independent frozen-setting confirmation not implied", "rounds": spec["rounds"], "build_repeats": spec["build_repeats"], "k": 100, "passes_per_round": 3,
                             "retrieval": "lexical only, OR over the lowercase alphanumeric query word set, top 100; each system's own analyzer and default BM25",
-                            "timing": "one query at a time, single client thread; HMS timed inside its process, Python systems inside their worker",
-                            "hms_rows": "hms = `--encode lexical` (BM25 index only, like-for-like); hms-eager = default eager encoding (chunk hypervectors at ingest); every build repeat is one cold process",
-                            "interleaving": "each round runs HMS and every comparator once, order rotated per round",
+                            "timing": "one query at a time, single client thread; WARM timed inside its process, Python systems inside their worker",
+                            "warm_rows": "warm = `--encode lexical` (BM25 index only, like-for-like); warm-eager = default eager encoding (chunk hypervectors at ingest); every build repeat is one cold process",
+                            "interleaving": "each round runs WARM and every comparator once, order rotated per round",
                             "peak_rss": "wait4 rusage of that phase's own process, forked from a small helper so it never inherits the orchestrator's RSS (Linux)",
                             "disk": "allocated bytes of the store directory (du); where the filesystem reports sparse files as fully allocated, only non-zero 4 KiB blocks count",
                             "passes": "per timed pass: queries, total_ns and p50/p90/p99/max ns of the per-query latencies"},
@@ -400,10 +400,10 @@ def run_text(dataset, spec, systems, out_path=None):
         if system in stores:
             results["systems"][system] = {"display": registry.SYSTEMS[system]["display"], **body}
     _attach_versions_and_footprints(results)
-    for system in registry.HMS_TEXT_ENCODE:
+    for system in registry.WARM_TEXT_ENCODE:
         if system in results["systems"]:
-            results["systems"][system]["install"] = hms_install_facts([hms_binary("competitive_text", example=True)])
-            results["systems"][system]["encode"] = registry.HMS_TEXT_ENCODE[system]
+            results["systems"][system]["install"] = warm_install_facts([warm_binary("competitive_text", example=True)])
+            results["systems"][system]["encode"] = registry.WARM_TEXT_ENCODE[system]
     out_path = out_path or _out_dir(spec) / f"{spec['name']}-text-{dataset.replace(':', '-')}-{hw['class']}.json"
     write_json(out_path, results)
     return out_path
@@ -411,9 +411,9 @@ def run_text(dataset, spec, systems, out_path=None):
 
 def _text_cmd(system, phase, input_path, store, out, env, t0=None):
     t0 = t0 or time.time_ns()
-    if system in registry.HMS_TEXT_ENCODE:
-        cmd = [str(hms_binary("competitive_text", example=True)), phase, "--input", str(input_path), "--store", str(store),
-               "--out", str(out), "--t0-ns", str(t0), "--encode", registry.HMS_TEXT_ENCODE[system]]
+    if system in registry.WARM_TEXT_ENCODE:
+        cmd = [str(warm_binary("competitive_text", example=True)), phase, "--input", str(input_path), "--store", str(store),
+               "--out", str(out), "--t0-ns", str(t0), "--encode", registry.WARM_TEXT_ENCODE[system]]
     elif system == "lucene":
         classpath, _ = jars.ensure()
         cmd = ["java", "-cp", classpath, "LuceneBm25", phase, str(input_path), str(store), str(out), str(t0), "3", "100"]

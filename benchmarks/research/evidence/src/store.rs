@@ -7,9 +7,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{ensure, Context, Result};
-use holographic_memory::core::documents::{EncodeMode, IngestOptions};
-use holographic_memory::core::memory_api::{ForgetOptions, ForgetScope};
-use holographic_memory::{DocumentInput, DocumentRecord, HmsCore, Memory, SearchOptions};
+use writerslogic_warm::core::documents::{EncodeMode, IngestOptions};
+use writerslogic_warm::core::memory_api::{ForgetOptions, ForgetScope};
+use writerslogic_warm::{DocumentInput, DocumentRecord, WarmCore, Memory, SearchOptions};
 use serde::{Deserialize, Serialize};
 
 use crate::contract::{
@@ -77,7 +77,7 @@ pub fn validate_bundle(namespace: &str, sources: &[Source], claims: &[Claim]) ->
 
 /// Namespace selection is a query convention; it is not an authorization boundary.
 pub struct EvidenceStore {
-    core: Arc<HmsCore>,
+    core: Arc<WarmCore>,
     memory: Memory,
     namespace: String,
     prefix: String,
@@ -90,7 +90,7 @@ impl EvidenceStore {
             .as_ref()
             .to_str()
             .context("evidence store path is not UTF-8")?;
-        let core = Arc::new(HmsCore::new(STORE_DIMENSIONS, Some(path.into()), None)?);
+        let core = Arc::new(WarmCore::new(STORE_DIMENSIONS, Some(path.into()), None)?);
         let store = Self {
             memory: Memory::new(Arc::clone(&core)),
             core,
@@ -377,7 +377,7 @@ impl EvidenceStore {
         Ok((sources, claims))
     }
 
-    /// Uses HMS deletion and scrubbing compaction; it does not promise erasure from backups.
+    /// Uses WARM deletion and scrubbing compaction; it does not promise erasure from backups.
     pub fn forget_sources(&mut self, ids: &[String]) -> Result<usize> {
         let requested = requested_ids(ids)?;
         self.recover_pending()?;

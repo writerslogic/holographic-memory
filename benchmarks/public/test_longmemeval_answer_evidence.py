@@ -16,7 +16,7 @@ from longmemeval_answer_evidence import (
 )
 
 REPO = Path(__file__).resolve().parents[2]
-SOURCE = Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json"
+SOURCE = Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json"
 
 
 @unittest.skipUnless(SOURCE.exists(), "pinned LongMemEval S dev source is not cached")

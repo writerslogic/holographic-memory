@@ -5,7 +5,7 @@ import { checkKey } from "./storage.js";
 import type { StorageAdapter } from "./types.js";
 
 export interface OpfsStorageOptions {
-  /** Directory under the origin-private root (default `"holographic-memory"`). */
+  /** Directory under the origin-private root (default `"writerslogic-warm"`). */
   directory?: string;
   /** A directory handle to use instead of the origin-private file system root. */
   root?: FileSystemDirectoryHandle;
@@ -36,7 +36,7 @@ export class OpfsStorage implements StorageAdapter {
   #dir: Promise<FileSystemDirectoryHandle> | undefined;
 
   constructor(options: OpfsStorageOptions = {}) {
-    this.#directory = options.directory ?? "holographic-memory";
+    this.#directory = options.directory ?? "writerslogic-warm";
     this.#root = options.root;
     if (!options.root && !globalThis.navigator?.storage?.getDirectory) {
       throw new Error("the origin private file system is unavailable in this runtime");

@@ -4,7 +4,7 @@ const { mkdtempSync, rmSync, writeFileSync } = require('node:fs')
 const { tmpdir } = require('node:os')
 const { join } = require('node:path')
 
-const temporary = mkdtempSync(join(tmpdir(), 'hms-package-'))
+const temporary = mkdtempSync(join(tmpdir(), 'warm-package-'))
 // Invoke npm's JavaScript CLI directly; Windows cannot execFile a .cmd shim.
 const npmCli = process.env.npm_execpath
 if (!npmCli) throw new Error('Run this check with npm run test:package')
@@ -16,12 +16,12 @@ try {
   execFileSync(process.execPath, ['-e', `
     const assert = require('node:assert/strict');
     (async () => {
-      const cjs = require('holographic-memory');
-      const esm = await import('holographic-memory');
-      assert.equal(cjs.HolographicMemorySystem, esm.HolographicMemorySystem);
-      const { DocumentMemory } = await import('holographic-memory/semantic');
-      const hms = new cjs.HolographicMemorySystem(4096, './store');
-      const memory = new DocumentMemory(hms);
+      const cjs = require('writerslogic-warm');
+      const esm = await import('writerslogic-warm');
+      assert.equal(cjs.WarmMemorySystem, esm.WarmMemorySystem);
+      const { DocumentMemory } = await import('writerslogic-warm/semantic');
+      const warm = new cjs.WarmMemorySystem(4096, './store');
+      const memory = new DocumentMemory(warm);
       await memory.memorize({ id: 'manual', text: 'Backups protect stored documents.', sourceUri: 'manual.md' });
       assert.equal((await memory.search('backups'))[0].sourceUri, 'manual.md');
       await memory.flush();

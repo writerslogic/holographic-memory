@@ -4,9 +4,9 @@
 
 Usage: check_learned_sparse.py <results.json> [--summary OUT]
 
-Every row must name its dataset, model, system and host; quality values lie in [0, 1]; HMS
+Every row must name its dataset, model, system and host; quality values lie in [0, 1]; WARM
 rows carry positive index bytes, postings and single-thread QPS; a competitor row that
-serves the same vectors on the same host must exist for every HMS row that claims a QPS or
+serves the same vectors on the same host must exist for every WARM row that claims a QPS or
 bytes ratio, and the ratios must be recomputed from the rows (a ratio that does not match its
 rows within 0.5% fails). The targets are evaluated and reported, never enforced.
 """
@@ -34,7 +34,7 @@ def check(doc):
             v = r.get(key)
             if not isinstance(v, (int, float)) or not 0.0 <= v <= 1.0:
                 failures.append(f"row {i}: {key} out of range: {v}")
-        if r.get("system") == "hms_impact_index":
+        if r.get("system") == "warm_impact_index":
             for key in ("index_bytes", "postings", "qps_single_thread_k10"):
                 if not isinstance(r.get(key), (int, float)) or r.get(key, 0) <= 0:
                     failures.append(f"row {i}: {key} must be positive")

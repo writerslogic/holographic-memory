@@ -96,7 +96,7 @@ def _install_cells(put, system, entry, src):
     if not inst:
         return
     if "bytes" in inst:
-        # A comparator that ships with the interpreter installs nothing: 0 is not a result HMS can lose to.
+        # A comparator that ships with the interpreter installs nothing: 0 is not a result WARM can lose to.
         info = bool(inst.get("ships_with_interpreter"))
         note = "ships with the Python interpreter: not an install cost, no verdict drawn against it" if info else ""
         put("install_mib", system, cell(inst["bytes"] / 2**20, None, 1, f"{src}.install", "MiB", note or inst.get("note", ""), uncertainty="deterministic") | {"informational": info})
@@ -153,7 +153,7 @@ def ann_metrics(path, results, level=0.95):
         else:
             runs, runs_key = [r for r in build["serve_rounds"] if r.get("graph_built")], "serve_rounds[graph_built]"
             ib = build["serve_rounds"][0]["index_bytes"]
-            ib_note = "in-memory index_bytes reported by the binary (HMS has no persisted ANN index)"
+            ib_note = "in-memory index_bytes reported by the binary (WARM has no persisted ANN index)"
         bt = [r["build_s"] for r in runs]
         put("build_seconds", system, cell(_med(bt), ci(bt), len(bt), f"{src}.{runs_key}", "s", build_id))
         pk = [r["peak_rss_bytes"] / 2**20 for r in runs]

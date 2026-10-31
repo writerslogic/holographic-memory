@@ -38,13 +38,13 @@
 //! certificate per delete; a chain of certificates is consistent when each
 //! `state_after` equals the next `state_before`.
 
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::EntangledHVec;
 use serde::{Deserialize, Serialize};
 
 use crate::bundle::{hvec_digest, BundleError, Counter, CounterBundle, Digest32};
 
 /// Certificate schema identifier.
-pub const CERTIFICATE_SCHEMA: &str = "hms-forget/certificate-v1";
+pub const CERTIFICATE_SCHEMA: &str = "warm-forget/certificate-v1";
 /// Default residual bound width in standard deviations.
 pub const DEFAULT_SIGMA: f64 = 3.0;
 

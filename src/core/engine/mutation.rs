@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use super::{HmsCore, ShardSet};
+use super::{ShardSet, WarmCore};
 use crate::core::{
     documents::StoredDocument,
     entangled::EntangledHVec,
@@ -107,7 +107,7 @@ pub(super) enum Mutation {
     Rule(CompositionRule),
 }
 
-/// A batch of mutations with what [`HmsCore::prepare_mutations`] computed for each of them.
+/// A batch of mutations with what [`WarmCore::prepare_mutations`] computed for each of them.
 /// Installation takes the prepared values out, so the batch is passed by reference and its
 /// length stays readable afterwards.
 pub(super) struct PreparedBatch<'a> {
@@ -188,7 +188,7 @@ pub(super) fn validate_public_id(id: &str) -> Result<()> {
     Ok(())
 }
 
-impl HmsCore {
+impl WarmCore {
     pub(super) fn commit(&self, mutations: &[Mutation]) -> Result<()> {
         if !self.checkpoint_accepts(mutations) {
             self.hydrate_documents()?;
@@ -197,7 +197,7 @@ impl HmsCore {
     }
 
     /// [`Self::commit`] of a batch whose journal payload the caller built with
-    /// [`HmsCore::transaction_payload`] already (a document batch serializes once, where its
+    /// [`WarmCore::transaction_payload`] already (a document batch serializes once, where its
     /// size is checked).
     pub(super) fn commit_serialized(&self, mutations: &[Mutation], payload: &[u8]) -> Result<()> {
         debug_assert!(payload.starts_with(crate::core::format::TRANSACTION_MAGIC_PREFIX));
@@ -378,7 +378,7 @@ impl HmsCore {
                 validate_id(id)?;
                 ensure!(
                     self.schema >= crate::core::format::MEANING_MAINTENANCE_SCHEMA_VERSION,
-                    "scoped meaning deletion requires schema 5; use hms-format upgrade"
+                    "scoped meaning deletion requires schema 5; use warm-format upgrade"
                 );
                 ensure!(
                     self.meaning_enabled(),
@@ -388,7 +388,7 @@ impl HmsCore {
             Mutation::RefreshMeaningIndices {} => {
                 ensure!(
                     self.schema >= crate::core::format::MEANING_MAINTENANCE_SCHEMA_VERSION,
-                    "meaning index refresh requires schema 5; use hms-format upgrade"
+                    "meaning index refresh requires schema 5; use warm-format upgrade"
                 );
                 ensure!(
                     self.meaning_enabled(),
@@ -819,15 +819,15 @@ impl HmsCore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{documents, EmbeddingSpace, HmsConfig};
+    use crate::core::{documents, EmbeddingSpace, WarmConfig};
     use crate::{DocumentInput, SearchOptions};
     use serde_json::json;
     use std::path::PathBuf;
     use std::sync::{mpsc, Arc};
     use std::time::Duration;
 
-    fn config(encrypted: bool) -> HmsConfig {
-        let mut config = HmsConfig {
+    fn config(encrypted: bool) -> WarmConfig {
+        let mut config = WarmConfig {
             embedding_space: Some(EmbeddingSpace {
                 model: "publication-fixture".into(),
                 revision: "1".into(),
@@ -865,7 +865,7 @@ mod tests {
     #[test]
     fn prepared_batch_rediffs_a_document_replaced_before_installation() -> Result<()> {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             Some(config(false)),
@@ -923,7 +923,7 @@ mod tests {
     #[test]
     fn failed_scrub_still_applies_the_journaled_batch() -> Result<()> {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             Some(config(false)),
@@ -958,7 +958,7 @@ mod tests {
             revision + 1
         );
         drop(core);
-        let reopened = HmsCore::new(
+        let reopened = WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             Some(config(false)),
@@ -973,7 +973,7 @@ mod tests {
         Ok(())
     }
 
-    fn replacements(core: &HmsCore) -> Result<Vec<Mutation>> {
+    fn replacements(core: &WarmCore) -> Result<Vec<Mutation>> {
         ["a", "b"]
             .into_iter()
             .map(|id| {
@@ -995,7 +995,7 @@ mod tests {
             Document(&'a documents::StoredDocument),
         }
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(
+        let core = WarmCore::new(
             1024,
             Some(directory.path().display().to_string()),
             Some(config(false)),
@@ -1130,7 +1130,7 @@ mod tests {
                 let path = directory.path().display().to_string();
                 let mut config = config(encrypted);
                 config.embedding_space.as_mut().unwrap().dimensions = dense;
-                let core = HmsCore::new(vsa, Some(path.clone()), Some(config.clone()))?;
+                let core = WarmCore::new(vsa, Some(path.clone()), Some(config.clone()))?;
                 let mut tags = Vec::with_capacity(64);
                 tags.extend((0..count).map(|value| json!(value)));
                 let mut values = serde_json::Map::new();
@@ -1182,7 +1182,7 @@ mod tests {
                 assert_eq!(before.as_array().unwrap().len(), 1);
                 core.flush()?;
                 drop(core);
-                let core = HmsCore::new(vsa, Some(path.clone()), Some(config.clone()))?;
+                let core = WarmCore::new(vsa, Some(path.clone()), Some(config.clone()))?;
                 {
                     let documents = core.documents.read();
                     let document = documents.get("buffers").unwrap();
@@ -1195,7 +1195,7 @@ mod tests {
                 );
                 core.compact()?;
                 drop(core);
-                let core = HmsCore::new(vsa, Some(path), Some(config))?;
+                let core = WarmCore::new(vsa, Some(path), Some(config))?;
                 compact(core.documents.read().get("buffers").unwrap());
                 assert_eq!(
                     serde_json::to_value(core.search_documents("needle", &options)?)?,
@@ -1212,7 +1212,7 @@ mod tests {
             for count in [3, 4, 5] {
                 let directory = tempfile::tempdir()?;
                 let path = directory.path().display().to_string();
-                let core = HmsCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
+                let core = WarmCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
                 let input: DocumentInput = serde_json::from_value(json!({
                     "id":"capacity", "version":"1", "sourceUri":"source:capacity",
                     "text": (0..count).map(|i| format!("needle term{i}")).collect::<Vec<_>>().join(" "),
@@ -1233,7 +1233,7 @@ mod tests {
                 let wire = serde_json::to_vec(core.documents.read().get("capacity").unwrap())?;
                 core.flush()?;
                 drop(core);
-                let core = HmsCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
+                let core = WarmCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
                 {
                     let documents = core.documents.read();
                     let document = documents.get("capacity").unwrap();
@@ -1247,7 +1247,7 @@ mod tests {
                 );
                 core.compact()?;
                 drop(core);
-                let core = HmsCore::new(1024, Some(path), Some(config(encrypted)))?;
+                let core = WarmCore::new(1024, Some(path), Some(config(encrypted)))?;
                 assert_eq!(
                     core.documents
                         .read()
@@ -1271,7 +1271,7 @@ mod tests {
         for encrypted in modes() {
             let directory = tempfile::tempdir()?;
             let path = directory.path().display().to_string();
-            let core = HmsCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
             for chunks in [2, 1, 2, 3, 2] {
                 let text = ["needle alpha", "needle beta", "needle gamma"][..chunks].join(" ");
                 let input: DocumentInput = serde_json::from_value(json!({
@@ -1297,7 +1297,7 @@ mod tests {
             let before = serde_json::to_value(core.search_documents("needle", &options)?)?;
             core.flush()?;
             drop(core);
-            let core = HmsCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
             assert_eq!(
                 serde_json::to_value(core.search_documents("needle", &options)?)?,
                 before
@@ -1309,7 +1309,7 @@ mod tests {
                 .is_none());
             core.compact()?;
             drop(core);
-            let core = HmsCore::new(1024, Some(path), Some(config(encrypted)))?;
+            let core = WarmCore::new(1024, Some(path), Some(config(encrypted)))?;
             assert_eq!(
                 serde_json::to_value(core.search_documents("needle", &options)?)?,
                 before
@@ -1320,7 +1320,7 @@ mod tests {
         Ok(())
     }
 
-    fn current(core: &HmsCore, version: &str) -> Result<serde_json::Value> {
+    fn current(core: &WarmCore, version: &str) -> Result<serde_json::Value> {
         let found = core.search_documents(
             "needle",
             &SearchOptions {
@@ -1345,7 +1345,7 @@ mod tests {
         for encrypted in modes() {
             let directory = tempfile::tempdir()?;
             let path = directory.path().display().to_string();
-            let core = Arc::new(HmsCore::new(
+            let core = Arc::new(WarmCore::new(
                 1024,
                 Some(path.clone()),
                 Some(config(encrypted)),
@@ -1441,7 +1441,7 @@ mod tests {
                 .any(|row| row.id == "anchor"));
             let before = current(&core, "new")?;
             drop(core);
-            let restored = HmsCore::new(1024, Some(path), Some(config(encrypted)))?;
+            let restored = WarmCore::new(1024, Some(path), Some(config(encrypted)))?;
             assert_eq!(current(&restored, "new")?, before);
             assert!(restored.shards.read().get_vector("second").is_some());
         }
@@ -1463,7 +1463,7 @@ mod tests {
         for encrypted in modes() {
             let directory = tempfile::tempdir()?;
             let path = directory.path().display().to_string();
-            let core = HmsCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
             core.memorize_documents(vec![document("a", "old"), document("b", "old")])?;
             let before = current(&core, "old")?;
             let checkpoint = core.arena.checkpoint();
@@ -1489,7 +1489,7 @@ mod tests {
             assert_eq!(core.arena_read_frame(checkpoint.1)?.0, expected);
             let before = current(&core, "new")?;
             drop(core);
-            let restored = HmsCore::new(1024, Some(path), Some(config(encrypted)))?;
+            let restored = WarmCore::new(1024, Some(path), Some(config(encrypted)))?;
             assert_eq!(current(&restored, "new")?, before);
         }
         Ok(())
@@ -1502,7 +1502,7 @@ mod tests {
             let path = directory.path().display().to_string();
             let mut configuration = config(encrypted);
             configuration.meaning.enabled = true;
-            let core = HmsCore::new(1024, Some(path.clone()), Some(configuration.clone()))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(configuration.clone()))?;
             let vector = core.encode_text("needle café \"\\\n");
             let mut input = document("文書\"\\\n", "new");
             input.metadata = Some(json!({
@@ -1598,7 +1598,7 @@ mod tests {
             let before = serde_json::to_value(core.search_documents("needle", &options)?)?;
             assert_eq!(before.as_array().unwrap().len(), 1);
             drop(core);
-            let core = HmsCore::new(1024, Some(path.clone()), Some(configuration.clone()))?;
+            let core = WarmCore::new(1024, Some(path.clone()), Some(configuration.clone()))?;
             assert_eq!(core.arena_read_frame(checkpoint.1)?.0, expected);
             assert_eq!(
                 serde_json::to_value(core.search_documents("needle", &options)?)?,
@@ -1606,7 +1606,7 @@ mod tests {
             );
             core.compact()?;
             drop(core);
-            let core = HmsCore::new(1024, Some(path), Some(configuration))?;
+            let core = WarmCore::new(1024, Some(path), Some(configuration))?;
             assert_eq!(
                 serde_json::to_value(core.search_documents("needle", &options)?)?,
                 before
@@ -1623,7 +1623,7 @@ mod tests {
     #[test]
     fn transaction_limits_and_validation_precede_append() -> Result<()> {
         let directory = tempfile::tempdir()?;
-        let core = HmsCore::new(1024, Some(directory.path().display().to_string()), None)?;
+        let core = WarmCore::new(1024, Some(directory.path().display().to_string()), None)?;
         let checkpoint = core.arena.checkpoint();
         let revision = core.revision.load(std::sync::atomic::Ordering::Acquire);
         for count in [0, 1, 4095, 4096, 4097] {
@@ -1668,13 +1668,15 @@ mod tests {
 
     #[test]
     fn publication_exit_child() -> Result<()> {
-        let Some(path) = std::env::var_os("HMS_MUTATION_PUBLICATION_TEST_PATH") else {
+        let Some(path) = crate::compatibility::var_os("WARM_MUTATION_PUBLICATION_TEST_PATH") else {
             return Ok(());
         };
-        let phase: usize = std::env::var("HMS_MUTATION_PUBLICATION_TEST_PHASE")?.parse()?;
+        let phase: usize =
+            crate::compatibility::var("WARM_MUTATION_PUBLICATION_TEST_PHASE")?.parse()?;
         ensure!(phase <= 2, "invalid publication interruption phase");
-        let encrypted = std::env::var("HMS_MUTATION_PUBLICATION_TEST_ENCRYPTED")? == "true";
-        let core = HmsCore::new(
+        let encrypted =
+            crate::compatibility::var("WARM_MUTATION_PUBLICATION_TEST_ENCRYPTED")? == "true";
+        let core = WarmCore::new(
             1024,
             Some(PathBuf::from(path).display().to_string()),
             Some(config(encrypted)),
@@ -1698,7 +1700,7 @@ mod tests {
             for phase in 0..=2 {
                 let directory = tempfile::tempdir()?;
                 let path = directory.path().display().to_string();
-                let core = HmsCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
+                let core = WarmCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
                 core.memorize_documents(vec![document("a", "old"), document("b", "old")])?;
                 drop(core);
                 let child = std::process::Command::new(std::env::current_exe()?)
@@ -1707,10 +1709,10 @@ mod tests {
                         "core::engine::mutation::tests::publication_exit_child",
                         "--nocapture",
                     ])
-                    .env("HMS_MUTATION_PUBLICATION_TEST_PATH", &path)
-                    .env("HMS_MUTATION_PUBLICATION_TEST_PHASE", phase.to_string())
+                    .env("WARM_MUTATION_PUBLICATION_TEST_PATH", &path)
+                    .env("WARM_MUTATION_PUBLICATION_TEST_PHASE", phase.to_string())
                     .env(
-                        "HMS_MUTATION_PUBLICATION_TEST_ENCRYPTED",
+                        "WARM_MUTATION_PUBLICATION_TEST_ENCRYPTED",
                         encrypted.to_string(),
                     )
                     .output()?;
@@ -1720,7 +1722,7 @@ mod tests {
                     "{}",
                     String::from_utf8_lossy(&child.stderr)
                 );
-                let restored = HmsCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
+                let restored = WarmCore::new(1024, Some(path.clone()), Some(config(encrypted)))?;
                 let version = if phase == 0 { "old" } else { "new" };
                 let before = current(&restored, version)?;
                 assert!(restored
@@ -1737,7 +1739,7 @@ mod tests {
                     .is_empty());
                 restored.compact()?;
                 drop(restored);
-                let restored = HmsCore::new(1024, Some(path), Some(config(encrypted)))?;
+                let restored = WarmCore::new(1024, Some(path), Some(config(encrypted)))?;
                 assert_eq!(current(&restored, version)?, before);
             }
         }

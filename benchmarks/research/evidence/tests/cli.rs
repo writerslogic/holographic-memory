@@ -1,15 +1,15 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use hms_research_evidence::contract::{validate_claims, Gap, MAX_TOTAL_BYTES};
-use hms_research_evidence::retrieval::RetrievalReport;
+use warm_research_evidence::contract::{validate_claims, Gap, MAX_TOTAL_BYTES};
+use warm_research_evidence::retrieval::RetrievalReport;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 fn command() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_hms-research-evidence"))
+    Command::new(env!("CARGO_BIN_EXE_warm-research-evidence"))
 }
 
 fn fixture(name: &str) -> PathBuf {

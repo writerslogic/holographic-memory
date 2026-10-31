@@ -1,8 +1,8 @@
-# HMS vs Mem0 under Mem0's own harness (memory-benchmarks @ 4b61c5d)
+# WARM vs Mem0 under Mem0's own harness (memory-benchmarks @ 4b61c5d)
 
 Status: **prepared, not run.** The adapter, commands and anti-gaming rules are in
 [`benchmarks/public/mem0_protocol/README.md`](../../benchmarks/public/mem0_protocol/README.md).
-Everything below "HMS" is filled from a run's `manifest.json` and the harness result JSON.
+Everything below "WARM" is filled from a run's `manifest.json` and the harness result JSON.
 
 ## Mem0's reference numbers
 
@@ -17,7 +17,7 @@ The 64.1 / 48.6 BEAM figures are the **average rubric score** x100. The pass rat
 
 ### LoCoMo (categories 1-4, 1,540 q)
 
-| Category (id, n) | Mem0 top-200 (result file) | HMS |
+| Category (id, n) | Mem0 top-200 (result file) | WARM |
 |---|---|---|
 | multi-hop (1, 282) | 93.3 (263/282) | |
 | temporal (2, 321) | 92.8 (298/321) | |
@@ -28,7 +28,7 @@ The 64.1 / 48.6 BEAM figures are the **average rubric score** x100. The pass rat
 
 ### LongMemEval-S (500 q)
 
-| Type (n) | Mem0 top-200 (result file) | HMS |
+| Type (n) | Mem0 top-200 (result file) | WARM |
 |---|---|---|
 | knowledge-update (78) | 96.2 (75/78) | |
 | multi-session (133) | 86.5 (115/133) | |
@@ -41,7 +41,7 @@ The 64.1 / 48.6 BEAM figures are the **average rubric score** x100. The pass rat
 
 ### BEAM 1M (700 q) and 10M (200 q): pass rate (score >= 0.5) and average score x100
 
-| Ability | Mem0 1M pass | Mem0 1M avg | HMS 1M pass | HMS 1M avg | Mem0 10M pass | Mem0 10M avg | HMS 10M pass | HMS 10M avg |
+| Ability | Mem0 1M pass | Mem0 1M avg | WARM 1M pass | WARM 1M avg | Mem0 10M pass | Mem0 10M avg | WARM 10M pass | WARM 10M avg |
 |---|---|---|---|---|---|---|---|---|
 | abstention | 55.7 (39/70) | 52.5 | | | 40.0 (8/20) | 40.0 | | |
 | contradiction resolution | 48.6 (34/70) | 35.7 | | | 25.0 (5/20) | 32.5 | | |
@@ -55,8 +55,8 @@ The 64.1 / 48.6 BEAM figures are the **average rubric score** x100. The pass rat
 | temporal reasoning | 67.1 (47/70) | 61.8 | | | 20.0 (4/20) | 16.2 | | |
 | **overall** | **70.1 (491/700)** | **64.1** | | | **50.5 (101/200)** | **48.6** | | |
 
-Each HMS row also records the following from its manifest:
-- HMS commit and binary sha256
+Each WARM row also records the following from its manifest:
+- WARM commit and binary sha256
 - `retrieval_config` (count-matched or token-matched) and its sha256
 - mean answer-prompt tokens and the fraction of the haystack returned
 - resolved model snapshot, endpoint (OpenAI, not Azure) and spend
@@ -65,7 +65,7 @@ Each HMS row also records the following from its manifest:
 
 ## Cost and run plan
 
-Every HMS row is **token-matched**. `retrieval_config.json` caps the returned memory text at 7,000
+Every WARM row is **token-matched**. `retrieval_config.json` caps the returned memory text at 7,000
 o200k tokens per question, matching Mem0's documented ~7k memory tokens. The cap is filled in rank
 order, it is one constant for the whole run, and it is recorded in the manifest. Recall is
 lexical (BM25) only. The literal top-200 (count-matched) variant is documented in the adapter
@@ -91,7 +91,7 @@ out because the shipped local embedder does not serve the memory API (adapter RE
 ## Wall clock
 
 Ingest throughput depends on the disk, because every `remember` is synced. The machine was an Apple
-M-series running macOS, HMS 69d15687, with harness `--max-workers 10`. Development measurements, one
+M-series running macOS, WARM 69d15687, with harness `--max-workers 10`. Development measurements, one
 run each and not in the timing lock:
 - External USB HDD: 15 facts/s, one LoCoMo conversation alone (load avg about 3).
 - Internal SSD: 182 facts/s, which is 2.3 s for LoCoMo conversation 0's 419 turns.

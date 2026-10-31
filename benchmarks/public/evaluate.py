@@ -4,9 +4,9 @@
 # ///
 """Score public-bench output and run comparison libraries on the same data.
 
-  evaluate.py ann  <dataset> <hms-result.json>...   FAISS (flat, HNSW) and hnswlib sweeps
-  evaluate.py beir <dataset> <hms-runs.json>        nDCG@10 / recall@100 with pytrec_eval
-  evaluate.py longmemeval s <hms-runs.json>         recall/nDCG@5,10 with LongMemEval's own eval_utils.py
+  evaluate.py ann  <dataset> <warm-result.json>...   FAISS (flat, HNSW) and hnswlib sweeps
+  evaluate.py beir <dataset> <warm-runs.json>        nDCG@10 / recall@100 with pytrec_eval
+  evaluate.py longmemeval s <warm-runs.json>         recall/nDCG@5,10 with LongMemEval's own eval_utils.py
 
 Writes benchmarks/results/public_<dataset>.json.
 """
@@ -31,7 +31,7 @@ RESULTS = Path(__file__).resolve().parents[1] / "results"
 
 
 def data_dir(name: str) -> Path:
-    return Path(os.environ.get("HMS_BENCH_DATA", Path.home() / ".cache" / "hms-bench")) / name
+    return Path(os.environ.get("WARM_BENCH_DATA", Path.home() / ".cache" / "warm-bench")) / name
 
 
 def environment() -> dict:
@@ -120,7 +120,7 @@ def qps_at_recall(points: list[tuple[float, float]], target: float) -> dict:
             "method": "interpolated", "between": [lo, hi]}
 
 
-def run_ann(name: str, hms_files: list[str], repeats: int = 1, extra: tuple[str, ...] = (), builtin: bool = True,
+def run_ann(name: str, warm_files: list[str], repeats: int = 1, extra: tuple[str, ...] = (), builtin: bool = True,
             queries: int | None = None, train_rows: int | None = None) -> dict:
     import faiss
     import hnswlib
@@ -166,7 +166,7 @@ def run_ann(name: str, hms_files: list[str], repeats: int = 1, extra: tuple[str,
         series.update({k: [tuple(p) for p in v] for k, v in res.pop("series").items()})
         extra_runs.append(res)
     if not builtin:
-        return finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries)
+        return finish_ann(meta, repeats, rows, series, warm_files, extra_runs, queries)
 
     faiss.omp_set_num_threads(os.cpu_count())
     t = time.perf_counter()
@@ -212,15 +212,15 @@ def run_ann(name: str, hms_files: list[str], repeats: int = 1, extra: tuple[str,
             series.setdefault(f"faiss HNSW M={r['params']['M']}", []).append((r["recall_at_10"], r["qps_single_thread"]))
         elif r["library"] == "hnswlib":
             series.setdefault("hnswlib M=16", []).append((r["recall_at_10"], r["qps_single_thread"]))
-    return finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries)
+    return finish_ann(meta, repeats, rows, series, warm_files, extra_runs, queries)
 
 
-def hms_label(h: dict) -> str:
+def warm_label(h: dict) -> str:
     """Series name of an ann-qgraph sweep file; the encoding, the 1-bit screen and the patience
     stop rule tell the VGraph rows apart."""
     p = h.get("build", {}).get("params", {})
     if p.get("index") != "vertex":
-        return h.get("system", "hms")
+        return h.get("system", "warm")
     parts = [f"{p.get('vertex_bits', 8)}-bit codes"]
     if p.get("residual"):
         parts.append("rerank")
@@ -229,23 +229,23 @@ def hms_label(h: dict) -> str:
     patience = {r["params"].get("patience") for r in h.get("sweep", [])} - {None, 0}
     if patience:
         parts.append("patience " + "/".join(str(x) for x in sorted(patience)))
-    return f"HMS VGraph ({', '.join(parts)})"
+    return f"WARM VGraph ({', '.join(parts)})"
 
 
-def hms_series(h: dict) -> dict[str, list[tuple[float, float]]]:
+def warm_series(h: dict) -> dict[str, list[tuple[float, float]]]:
     """(recall, qps) points of an ann-qgraph sweep file, one series per patience value, so that
     `--patience 0,256` in one process yields a fixed-ef series and a patience series."""
     out: dict[str, list[tuple[float, float]]] = {}
     for r in h.get("sweep", []):
         one = {**h, "sweep": [r]}
-        out.setdefault(hms_label(one), []).append((r["recall_at_10"], r["qps_single_thread"]))
+        out.setdefault(warm_label(one), []).append((r["recall_at_10"], r["qps_single_thread"]))
     return out
 
 
-def finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries) -> dict:
-    hms = [json.loads(Path(f).read_text()) for f in hms_files]
+def finish_ann(meta, repeats, rows, series, warm_files, extra_runs, queries) -> dict:
+    warm = [json.loads(Path(f).read_text()) for f in warm_files]
     for h in hms:
-        series.update(hms_series(h))
+        series.update(warm_series(h))
     at_recall = {name: {f"{t:.2f}": qps_at_recall(pts, t) for t in TARGET_RECALLS} for name, pts in series.items()}
     env = environment()
     for p in ("rabitqlib", "ngt"):
@@ -255,9 +255,9 @@ def finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries) -> d
             continue
     report = {"dataset": {k: v for k, v in meta.items() if k != "_dir"}, "environment": env, "repeats": repeats,
               "max_load": MAX_LOAD, "qps_at_recall": at_recall, "competitors": rows, "extra_systems": extra_runs,
-              "hms": [{k: v for k, v in r.items() if k != "dataset"} for r in hms],
+              "warm": [{k: v for k, v in r.items() if k != "dataset"} for r in warm],
               "notes": ["Queries run single-threaded one at a time for every system; builds use all cores.",
-                        "HMS takes dense input through its sparse encoder; its latency includes encoding (query_total).",
+                        "WARM takes dense input through its sparse encoder; its latency includes encoding (query_total).",
                         ("hnswlib index_bytes is an estimate (vectors + level-0 links); FAISS sizes are serialized bytes; "
                         "rabitqlib sizes are saved-index bytes; NGT is the index directory; Lucene is the on-heap graph "
                         "plus the float vectors."),
@@ -267,27 +267,27 @@ def finish_ann(meta, repeats, rows, series, hms_files, extra_runs, queries) -> d
     return report
 
 
-def merge_ann(parts: list[str], hms_files: list[str] | None = None) -> dict:
+def merge_ann(parts: list[str], warm_files: list[str] | None = None) -> dict:
     """Merges `ann` reports of one dataset made in separate invocations (so that each system
-    holds the timing lock briefly): competitors, extra systems and HMS sweeps are concatenated
-    and qps_at_recall is recomputed over all of them. `hms_files` replaces the HMS sweeps the
-    parts embed (for an HMS sweep rerun with a wider ef range)."""
+    holds the timing lock briefly): competitors, extra systems and WARM sweeps are concatenated
+    and qps_at_recall is recomputed over all of them. `warm_files` replaces the WARM sweeps the
+    parts embed (for an WARM sweep rerun with a wider ef range)."""
     reports = [json.loads(Path(p).read_text()) for p in parts]
     names = {json.dumps(r["dataset"], sort_keys=True) for r in reports}
     if len(names) != 1:
         raise SystemExit(f"parts describe different datasets: {sorted(names)}")
-    rows, extra_runs, hms, seen = [], [], [], set()
+    rows, extra_runs, warm, seen = [], [], [], set()
     for r in reports:
         rows.extend(r["competitors"])
         extra_runs.extend(r.get("extra_systems", []))
-        for h in [] if hms_files else r["hms"]:  # every part embeds the HMS sweeps; keep each once
+        for h in [] if warm_files else r["warm"]:  # every part embeds the WARM sweeps; keep each once
             key = json.dumps(h, sort_keys=True)
             if key not in seen:
                 seen.add(key)
-                hms.append(h)
-    for f in hms_files or []:
+                warm.append(h)
+    for f in warm_files or []:
         h = json.loads(Path(f).read_text())
-        hms.append({k: v for k, v in h.items() if k != "dataset"})
+        warm.append({k: v for k, v in h.items() if k != "dataset"})
     series: dict[str, list[tuple[float, float]]] = {}
     for r in rows:
         if r["index"] == "IndexHNSWFlat":
@@ -300,15 +300,15 @@ def merge_ann(parts: list[str], hms_files: list[str] | None = None) -> dict:
             key = r.get("series") or f"{r['library']} {r['index']}"
         series.setdefault(key, []).append((r["recall_at_10"], r["qps_single_thread"]))
     for h in hms:
-        series.update(hms_series(h))
+        series.update(warm_series(h))
     first = reports[0]
     return {**first, "repeats": sorted({r["repeats"] for r in reports}), "merged_from": [Path(p).name for p in parts],
             "environment": [r["environment"] for r in reports],
             "qps_at_recall": {name: {f"{t:.2f}": qps_at_recall(pts, t) for t in TARGET_RECALLS} for name, pts in series.items()},
-            "competitors": rows, "extra_systems": extra_runs, "hms": hms}
+            "competitors": rows, "extra_systems": extra_runs, "warm": warm}
 
 
-def run_beir(name: str, hms_file: str) -> dict:
+def run_beir(name: str, warm_file: str) -> dict:
     import pytrec_eval
 
     d = data_dir(name)
@@ -317,15 +317,15 @@ def run_beir(name: str, hms_file: str) -> dict:
     for line in (d / "qrels.tsv").read_text().splitlines():
         qid, did, rel = line.split("\t")
         qrels.setdefault(qid, {})[did] = int(rel)
-    hms = json.loads(Path(hms_file).read_text())
+    warm = json.loads(Path(warm_file).read_text())
 
-    # Independent exact-cosine reference: HMS's dense run must reproduce it.
+    # Independent exact-cosine reference: WARM's dense run must reproduce it.
     corpus_ids = [json.loads(line)["id"] for line in (d / "corpus.jsonl").read_text().splitlines()]
     query_ids = [json.loads(line)["id"] for line in (d / "queries.jsonl").read_text().splitlines()]
     c = load_f32(d / "corpus.f32", meta["dim"])
     q = load_f32(d / "queries.f32", meta["dim"])
     top = np.argsort(-(q @ c.T), axis=1)[:, :100]
-    runs = dict(hms["runs"])
+    runs = dict(warm["runs"])
     runs["numpy_dense_exact_reference"] = {qid: [corpus_ids[i] for i in row] for qid, row in zip(query_ids, top)}
 
     evaluator = pytrec_eval.RelevanceEvaluator(qrels, {"ndcg_cut.10", "recall.100"})
@@ -338,8 +338,8 @@ def run_beir(name: str, hms_file: str) -> dict:
             "recall_at_100": float(np.mean([v["recall_100"] for v in per_query.values()])),
             "n_queries": len(per_query),
         }
-    return {"dataset": meta, "environment": {**environment(), "hms": hms["environment"]}, "sparse_dim": hms["sparse_dim"],
-            "ingest_secs": hms["ingest_secs"], "latency_us": hms["latency"], "metrics": scores}
+    return {"dataset": meta, "environment": {**environment(), "warm": warm["environment"]}, "sparse_dim": warm["sparse_dim"],
+            "ingest_secs": warm["ingest_secs"], "latency_us": warm["latency"], "metrics": scores}
 
 
 # LongMemEval's retrieval metrics, fetched at a pinned commit and used unmodified.
@@ -352,7 +352,7 @@ def lme_eval_utils():
     path = data_dir("downloads") / f"longmemeval_eval_utils_{LME_COMMIT[:12]}.py"
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        req = urllib.request.Request(LME_EVAL_URL, headers={"User-Agent": "hms-public-bench/1.0"})
+        req = urllib.request.Request(LME_EVAL_URL, headers={"User-Agent": "warm-public-bench/1.0"})
         path.write_bytes(urllib.request.urlopen(req).read())
     if not hasattr(np, "asfarray"):  # removed in NumPy 2; the file's only use is np.asfarray(x)
         np.asfarray = lambda a: np.asarray(a, dtype=float)
@@ -362,12 +362,12 @@ def lme_eval_utils():
     return mod, hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run_longmemeval(variant: str, hms_file: str, part: set[str] | None = None) -> dict:
+def run_longmemeval(variant: str, warm_file: str, part: set[str] | None = None) -> dict:
     ev, ev_sha = lme_eval_utils()
     d = data_dir(f"longmemeval_{variant}")
     meta = json.loads((d / "meta.json").read_text())
     questions = [json.loads(line) for line in (d / "questions.jsonl").read_text().splitlines()]
-    hms = json.loads(Path(hms_file).read_text())
+    warm = json.loads(Path(warm_file).read_text())
     qemb = load_f32(d / "queries.f32", meta["dim"])
 
     items, emb = {}, {}
@@ -422,13 +422,13 @@ def run_longmemeval(variant: str, hms_file: str, part: set[str] | None = None) -
     metrics: dict = {}
     for gran in ("turn", "session"):
         metrics[gran] = {}
-        runs = hms["runs"][gran]["rankings"]
+        runs = warm["runs"][gran]["rankings"]
         qids = [q["id"] for q in questions]
         for mode, ranked in runs.items():
             metrics[gran][mode] = score(
                 {i: full_ranking([c for c, _ in items[gran][i]], ranked[qids[i]]) for i in scored}, gran
             )
-        # Independent exact-cosine reference over the same embeddings: HMS dense must reproduce it.
+        # Independent exact-cosine reference over the same embeddings: WARM dense must reproduce it.
         ref = {}
         for i in scored:
             e = emb[gran][[row for _, row in items[gran][i]]]
@@ -447,8 +447,8 @@ def run_longmemeval(variant: str, hms_file: str, part: set[str] | None = None) -
                     "Session-level metrics of a turn run use evaluate_retrieval_turn2session. "
                     "recall_all and ndcg_any are the figures the official print_retrieval_metrics.py reports.",
         },
-        "environment": {**environment(), "hms": hms["environment"]},
-        "latency_us": {g: hms["runs"][g]["latency"] for g in ("turn", "session")},
+        "environment": {**environment(), "warm": warm["environment"]},
+        "latency_us": {g: warm["runs"][g]["latency"] for g in ("turn", "session")},
         "metrics": metrics,
     }
 
@@ -458,7 +458,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("kind", choices=["ann", "ann-merge", "beir", "longmemeval"])
     ap.add_argument("name", help="dataset; for ann-merge the part files follow and --out names the merged file")
-    ap.add_argument("hms", nargs="+")
+    ap.add_argument("warm", nargs="+")
     ap.add_argument("--split", choices=["dev"], help="longmemeval: score only this part of longmemeval_split.json")
     ap.add_argument("--repeats", type=int, default=1, help="ann: timed runs per configuration (median reported)")
     ap.add_argument("--out", help="result file name under benchmarks/results (default public_<dataset>.json)")
@@ -467,7 +467,7 @@ def main() -> None:
     ap.add_argument("--queries", type=int, help="ann: smoke test on the first N test queries only (not publishable)")
     ap.add_argument("--train-rows", type=int, help="ann --extra: smoke test on the first N train rows only (recall is meaningless)")
     ap.add_argument("--extra-timeout-secs", type=int, help=f"ann --extra: seconds per system before 'not run' (default {EXTRA_TIMEOUT_SECS})")
-    ap.add_argument("--hms-files", nargs="*", help="ann-merge: HMS sweep files that replace the ones embedded in the parts")
+    ap.add_argument("--warm-files", nargs="*", help="ann-merge: WARM sweep files that replace the ones embedded in the parts")
     ap.add_argument("--max-load", type=float, help=f"1-minute load the timing gate waits for (default {MAX_LOAD})")
     ap.add_argument("--max-wait-secs", type=int, help=f"total seconds the gate may wait (default {MAX_WAIT_SECS})")
     args = ap.parse_args()
@@ -485,15 +485,15 @@ def main() -> None:
             ap.error(f"unknown --extra systems {sorted(unknown)}; known: {ann_extra.SYSTEMS}")
     if args.kind == "longmemeval" and args.split:
         ids = set(json.loads((Path(__file__).with_name("longmemeval_split.json")).read_text())[args.split])
-        report, out_name = run_longmemeval(args.name, args.hms[0], ids), f"longmemeval_{args.split}_minilm_baseline.json"
+        report, out_name = run_longmemeval(args.name, args.warm[0], ids), f"longmemeval_{args.split}_minilm_baseline.json"
     elif args.kind == "longmemeval":
-        report, out_name = run_longmemeval(args.name, args.hms[0]), f"public_longmemeval_{args.name}.json"
+        report, out_name = run_longmemeval(args.name, args.warm[0]), f"public_longmemeval_{args.name}.json"
     elif args.kind == "ann-merge":
-        report, out_name = merge_ann(args.hms, args.hms_files), f"public_{args.name}.json"
+        report, out_name = merge_ann(args.warm, args.warm_files), f"public_{args.name}.json"
     else:
-        report = (run_ann(args.name, args.hms, args.repeats, tuple(args.extra), not args.no_builtin, args.queries,
+        report = (run_ann(args.name, args.warm, args.repeats, tuple(args.extra), not args.no_builtin, args.queries,
                           args.train_rows)
-                  if args.kind == "ann" else run_beir(args.name, args.hms[0]))
+                  if args.kind == "ann" else run_beir(args.name, args.warm[0]))
         out_name = f"public_{args.name}.json"
     out = RESULTS / (args.out or out_name)
     out.write_text(json.dumps(report, indent=2) + "\n")

@@ -36,7 +36,7 @@ async function createLocalEmbedder({ modelPath, modelId, revision, queryPrefix =
   try {
     const [probe] = await encode(['dimension probe'], documentPrefix)
     return {
-      space: { model: modelId, revision: `${revision}+hms-${preprocessing}`, dimensions: probe.length, normalization: 'l2', metric: 'cosine' },
+      space: { model: modelId, revision: `${revision}+warm-${preprocessing}`, dimensions: probe.length, normalization: 'l2', metric: 'cosine' },
       encodeDocuments: texts => encode(texts, documentPrefix),
       encodeQuery: async text => (await encode([text], queryPrefix))[0],
       dispose: () => extractor.dispose(),

@@ -21,8 +21,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-RESULTS = Path(os.environ.get("HMS_BENCH_RESULTS", ROOT / "benchmarks/results/competitive"))
-CACHE = Path(os.environ.get("HMS_BENCH_DATA", Path.home() / ".cache" / "hms-bench"))
+RESULTS = Path(os.environ.get("WARM_BENCH_RESULTS", ROOT / "benchmarks/results/competitive"))
+CACHE = Path(os.environ.get("WARM_BENCH_DATA", Path.home() / ".cache" / "warm-bench"))
 
 
 def _sysctl(name):
@@ -59,7 +59,7 @@ def hardware():
     slug = "-".join(part for part in slug.split("-") if part and part not in ("r", "tm", "cpu", "processor", "with", "core"))
     derived = f"{platform.system().lower()}-{platform.machine()}-{slug}-{cores}c-{round(mem / 2**30)}g"
     return {
-        "class": os.environ.get("HMS_BENCH_HW_CLASS", derived),
+        "class": os.environ.get("WARM_BENCH_HW_CLASS", derived),
         "cpu": cpu, "logical_cores": cores, "memory_bytes": mem,
         "os": f"{platform.system()} {platform.release()}", "machine": platform.machine(),
         "hosted_runner": bool(os.environ.get("GITHUB_ACTIONS")),
@@ -68,8 +68,8 @@ def hardware():
 
 
 def commit():
-    if os.environ.get("HMS_BENCH_COMMIT"):  # a shipped source tree has no .git
-        return os.environ["HMS_BENCH_COMMIT"]
+    if os.environ.get("WARM_BENCH_COMMIT"):  # a shipped source tree has no .git
+        return os.environ["WARM_BENCH_COMMIT"]
     try:
         return subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
@@ -230,7 +230,7 @@ def timing_lock():
     """Exclusive timing lock shared with the other harnesses on this host (one phase at a time,
     never held across a suite, so each hold stays far below the 14 minute rule). A no-op on CI
     and wherever the lock directory does not exist."""
-    path = Path(os.environ.get("HMS_BENCH_LOCK", "./.hms-target/timing.lock"))
+    path = Path(os.environ.get("WARM_BENCH_LOCK", "./.warm-target/timing.lock"))
     if os.environ.get("GITHUB_ACTIONS") or not path.parent.exists():
         yield
         return

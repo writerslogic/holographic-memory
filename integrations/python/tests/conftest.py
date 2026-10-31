@@ -1,9 +1,9 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Real hms-server fixture.
+"""Real warm-server fixture.
 
-Set HMS_SERVER_BIN to a binary built with `cargo build --release --features server --bin hms-server`.
+Set WARM_SERVER_BIN to a binary built with `cargo build --release --features server --bin warm-server`.
 Each test gets its own tenant, so tests share one server process per configuration but no data.
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-BIN = os.environ.get("HMS_SERVER_BIN")
+BIN = os.environ.get("WARM_SERVER_BIN")
 _counter = itertools.count()
 
 
@@ -32,17 +32,17 @@ def server_factory(tmp_path_factory):
 
     def start(dim: int, **flags) -> Server:
         if not BIN or not Path(BIN).exists():
-            pytest.skip("HMS_SERVER_BIN not set to an hms-server binary")
+            pytest.skip("WARM_SERVER_BIN not set to an warm-server binary")
         key = (dim, tuple(sorted(flags.items())))
         if key not in servers:
-            data = tmp_path_factory.mktemp(f"hms-data-{dim}")
+            data = tmp_path_factory.mktemp(f"warm-data-{dim}")
             args = [BIN, "--bind", "127.0.0.1:0", "--no-auth", "--input-dim", str(dim), "--dim", "1024", "--data-dir", str(data)]
             for name, value in flags.items():
                 args += [f"--{name.replace('_', '-')}", str(value)]
             proc = subprocess.Popen(args, stdout=subprocess.PIPE, text=True)
             procs.append(proc)
             line = proc.stdout.readline().strip()
-            assert line.startswith("hms-server listening on "), line
+            assert line.startswith("warm-server listening on "), line
             servers[key] = Server(f"http://{line.rsplit(' ', 1)[1]}", dim)
         return servers[key]
 

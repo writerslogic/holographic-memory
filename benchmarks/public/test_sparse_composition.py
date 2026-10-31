@@ -10,7 +10,7 @@ import unittest
 
 import check_sparse_composition as checker
 
-BINARY = Path('./.hms-target/release/examples/sparse_composition')
+BINARY = Path('./.warm-target/release/examples/sparse_composition')
 
 
 class WitnessTests(unittest.TestCase):

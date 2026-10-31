@@ -3,7 +3,7 @@
 
 """OpenAI Agents SDK: persistent session plus long-term memory tools.
 
-Needs a running hms-server (HMS_URL, default http://127.0.0.1:8080; start it with the
+Needs a running warm-server (WARM_URL, default http://127.0.0.1:8080; start it with the
 default --input-dim 384). A scripted model stands in for the LLM so no API key is needed:
 replace `model=` with a model name to use a real one.
 
@@ -21,8 +21,8 @@ from agents.models.interface import Model
 from agents.usage import Usage
 from openai.types.responses import ResponseFunctionToolCall, ResponseOutputMessage, ResponseOutputText
 
-from holographic_integrations.core import HmsConfig
-from holographic_integrations.openai_agents import HolographicSession, memory_tools
+from writerslogic_warm_integrations.core import WarmConfig
+from writerslogic_warm_integrations.openai_agents import WarmSession, memory_tools
 
 
 class Script(Model):
@@ -46,8 +46,8 @@ def call(name, **args):
 
 
 async def main() -> None:
-    config = HmsConfig(url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
-    session = HolographicSession("demo-conversation", config)
+    config = WarmConfig(url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"), tenant_id=f"demo{uuid.uuid4().hex[:8]}")
+    session = WarmSession("demo-conversation", config)
     agent = Agent(
         name="assistant",
         model=Script(call("remember", text="The staging database password rotates on Fridays"), say("Noted."),

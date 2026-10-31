@@ -129,7 +129,7 @@ def make_plan(tree, output, arm, extra, interpreter):
         raise ValueError("Python interpreter is not a file")
     command = [str(executable), "-m", "maturin", "build", "--offline", "--locked", "--release", "--no-default-features", "--features", ",".join(features), "--interpreter", str(executable), "--out", str(output / "wheels")]
     return {
-        "schema": "hms-vector-candidate-wheel-plan-v1",
+        "schema": "warm-vector-candidate-wheel-plan-v1",
         "scope": "Local development wheel only; no deployment, publication, or leaderboard evidence",
         "tree": str(tree), "output": str(output), "arm": arm,
         "requested_features": features, "candidate_features": sorted(extra),
@@ -277,7 +277,7 @@ def execute(plan):
         raise ValueError("build must produce exactly one wheel")
     wheel = wheels[0]
     return {
-        "schema": "hms-vector-candidate-wheel-receipt-v1",
+        "schema": "warm-vector-candidate-wheel-receipt-v1",
         "build_executed": True, "returncode": code,
         "elapsed_s": time.monotonic() - started,
         "plan_sha256": digest(output / "plan.json"),

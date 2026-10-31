@@ -18,7 +18,7 @@ class QAGLayout(QAGPair):
         if self._legacy_reference and candidate_code_bits != 4:
             raise ValueError("the original reference uses four-bit codes")
 
-    def _fit_hms(self, rows, training_queries=None):
+    def _fit_warm(self, rows, training_queries=None):
         self._indexes.clear()
         self._build_seconds.clear()
         self._training_count = 0 if training_queries is None else len(training_queries)
@@ -43,7 +43,7 @@ class QAGLayout(QAGPair):
         training, path, checksum = _training_query_file(rows.shape[1], len(learn))
         if training is None or training.shape != learn.shape or not (training == learn).all():
             raise ValueError("layout training file differs from the permitted construction view")
-        self._fit_hms(rows, training)
+        self._fit_warm(rows, training)
         self._construction_count = len(learn)
         self._training_path, self._training_sha256 = path, checksum
 

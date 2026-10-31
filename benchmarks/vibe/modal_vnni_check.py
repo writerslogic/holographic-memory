@@ -6,7 +6,7 @@ land on varying hosts, so the container first reads /proc/cpuinfo and exits nonz
 building when the flag is missing; the entrypoint then asks for a new container, at most three
 times. On a host with the flag it builds the library tests in release (runtime feature
 detection, no target-cpu flags) and runs the VNNI and kernel tests on the auto-detected tier
-and on every pinned tier (HMS_QGRAPH_KERNEL), then the existing VNNI microbenchmark.
+and on every pinned tier (WARM_QGRAPH_KERNEL), then the existing VNNI microbenchmark.
 
     modal run benchmarks/vibe/modal_vnni_check.py --out vnni-check.log
 """
@@ -20,7 +20,7 @@ import modal
 
 # The repository root; only read on the local side (the container imports this file from /root).
 ROOT = Path(__file__).resolve().parents[2] if modal.is_local() else Path("/")
-SRC = "/work/hms"
+SRC = "/work/warm"
 CPU, MEM_GIB = 4, 8
 USD_CORE_S, USD_GIB_S = 0.0000131, 0.00000222  # Modal published rates, as in modal_vibe.py
 KEEP_DIRS = ("src/", "benches/", "tests/", "examples/", "proptest-regressions/")
@@ -45,20 +45,20 @@ image = (
     .run_commands("curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable")
     .add_local_dir(ROOT, SRC, ignore=ignore)
 )
-app = modal.App("hms-vnni-check")
+app = modal.App("warm-vnni-check")
 
 STEPS = [
     ("vnni encodings, auto tier", {}, "qgraph::vnni"),
     ("kernels, auto tier", {}, "qgraph::kernels::tests"),
-    ("kernels, pinned vnni", {"HMS_QGRAPH_KERNEL": "vnni"}, "qgraph::kernels::tests"),
-    ("kernels, pinned avxvnni", {"HMS_QGRAPH_KERNEL": "avxvnni"}, "qgraph::kernels::tests"),
-    ("kernels, pinned avx2", {"HMS_QGRAPH_KERNEL": "avx2"}, "qgraph::kernels::tests"),
-    ("kernels, pinned scalar", {"HMS_QGRAPH_KERNEL": "scalar"}, "qgraph::kernels::tests"),
+    ("kernels, pinned vnni", {"WARM_QGRAPH_KERNEL": "vnni"}, "qgraph::kernels::tests"),
+    ("kernels, pinned avxvnni", {"WARM_QGRAPH_KERNEL": "avxvnni"}, "qgraph::kernels::tests"),
+    ("kernels, pinned avx2", {"WARM_QGRAPH_KERNEL": "avx2"}, "qgraph::kernels::tests"),
+    ("kernels, pinned scalar", {"WARM_QGRAPH_KERNEL": "scalar"}, "qgraph::kernels::tests"),
     ("construction kernels, auto tier", {}, "qgraph::build_kernels"),
 ]
 BENCHES = [
     ("vnni microbench, auto tier", {}, "microbench_dot_kernels"),
-    ("vnni microbench, pinned avx2", {"HMS_QGRAPH_KERNEL": "avx2"}, "microbench_dot_kernels"),
+    ("vnni microbench, pinned avx2", {"WARM_QGRAPH_KERNEL": "avx2"}, "microbench_dot_kernels"),
 ]
 
 

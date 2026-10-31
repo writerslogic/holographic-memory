@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { BaseKVStore } from '@llamaindex/core/storage/kv-store'
 import type { StoredValue } from '@llamaindex/core/schema'
-import { HmsError, type HmsStore } from '@holographic-memory/core'
+import { WarmError, type WarmStore } from '@writerslogic/warm-core'
 
 const DEFAULT_COLLECTION = 'data'
 
 /**
- * LlamaIndex `BaseKVStore` over Holographic Memory, for `KVDocumentStore`, `KVIndexStore` and
+ * LlamaIndex `BaseKVStore` over WARM, for `KVDocumentStore`, `KVIndexStore` and
  * `storageContextFromDefaults({ docStore, indexStore })`. Values are JSON text; every record
  * carries a constant vector, so nothing is embedded. Use a store (or `collection`) dedicated to
  * key-value data.
@@ -17,10 +17,10 @@ const DEFAULT_COLLECTION = 'data'
  * throws `limit_exceeded` instead of silently returning a partial map when a collection is larger.
  * `KVDocumentStore.docs()` and `getAllDocumentHashes()` use `getAll`.
  */
-export class HmsKVStore extends BaseKVStore {
+export class WarmKVStore extends BaseKVStore {
   private readonly axis: number[]
 
-  constructor(readonly store: HmsStore) {
+  constructor(readonly store: WarmStore) {
     super()
     this.axis = [1, ...new Array<number>(store.embedder.space.dimensions - 1).fill(0)]
   }
@@ -43,7 +43,7 @@ export class HmsKVStore extends BaseKVStore {
   async getAll(collection: string = DEFAULT_COLLECTION): Promise<Record<string, StoredValue>> {
     const page = await this.store.list({ kv_collection: collection })
     if (page.truncated) {
-      throw new HmsError(`collection "${collection}" exceeds maxFetch; raise maxFetch or split the collection`, 'limit_exceeded')
+      throw new WarmError(`collection "${collection}" exceeds maxFetch; raise maxFetch or split the collection`, 'limit_exceeded')
     }
     const out: Record<string, StoredValue> = {}
     for (const r of page.records) out[String(r.metadata.kv_key)] = JSON.parse(r.text) as StoredValue

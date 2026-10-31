@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Loaders for the pre-converted ann-benchmarks layout under
-//! `~/.cache/hms-bench/<name>/`:
+//! `~/.cache/warm-bench/<name>/`:
 //!
 //! * `meta.json`: `dim`, `n_train`, `n_test`, `n_neighbors` (positive ints);
 //! * `train.f32`, `test.f32`: little-endian `f32`, row-major, no header;

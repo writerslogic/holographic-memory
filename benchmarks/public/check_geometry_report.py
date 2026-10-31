@@ -121,8 +121,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("report", type=Path)
     ap.add_argument("--work", type=Path, default=Path("target/conversation-geometry-validation/models"))
-    ap.add_argument("--cache", type=Path, default=Path.home() / ".cache/hms-bench/holo_dev")
-    ap.add_argument("--source", type=Path, default=Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json")
+    ap.add_argument("--cache", type=Path, default=Path.home() / ".cache/warm-bench/holo_dev")
+    ap.add_argument("--source", type=Path, default=Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json")
     ap.add_argument("--summary", type=Path, default=Path("benchmarks/results/geometry_dev_summary.json"))
     args = ap.parse_args()
     with gzip.open(args.report, "rt") as f:

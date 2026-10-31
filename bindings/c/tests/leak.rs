@@ -7,7 +7,7 @@
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicIsize, Ordering};
 
-use holographic_memory_c::*;
+use writerslogic_warm_c::*;
 
 struct Counting;
 static LIVE: AtomicIsize = AtomicIsize::new(0);
@@ -40,16 +40,16 @@ unsafe impl GlobalAlloc for Counting {
 #[global_allocator]
 static ALLOCATOR: Counting = Counting;
 
-fn s(value: &str) -> hms_str_t {
-    hms_str_t::of(value)
+fn s(value: &str) -> warm_str_t {
+    warm_str_t::of(value)
 }
 
-fn document<'a>(id: &'a str, text: &'a str) -> hms_document_t {
-    hms_document_t {
+fn document<'a>(id: &'a str, text: &'a str) -> warm_document_t {
+    warm_document_t {
         id: s(id),
         text: s(text),
-        source_uri: hms_str_t::ABSENT,
-        version: hms_str_t::ABSENT,
+        source_uri: warm_str_t::ABSENT,
+        version: warm_str_t::ABSENT,
         metadata_json: s("{\"k\":\"v\"}"),
         chunk_words: 0,
         overlap_words: 0,
@@ -66,7 +66,7 @@ fn cycle(path: &str) {
         let mut store = std::ptr::null_mut();
         assert_eq!(
             hms1_store_open(s(path), 512, std::ptr::null(), &mut store),
-            HMS_OK
+            WARM_OK
         );
         let docs = [
             document("a", "alpha beta gamma delta epsilon"),
@@ -74,26 +74,26 @@ fn cycle(path: &str) {
         ];
         assert_eq!(
             hms1_store_ingest(store, docs.as_ptr(), 2, std::ptr::null_mut()),
-            HMS_OK
+            WARM_OK
         );
         for _ in 0..4 {
             let mut results = std::ptr::null_mut();
             assert_eq!(
                 hms1_store_search(store, s("beta theta"), std::ptr::null(), &mut results),
-                HMS_OK
+                WARM_OK
             );
-            let mut hit = std::mem::zeroed::<hms_result_t>();
-            assert_eq!(hms1_results_get(results, 0, &mut hit), HMS_OK);
+            let mut hit = std::mem::zeroed::<warm_result_t>();
+            assert_eq!(hms1_results_get(results, 0, &mut hit), WARM_OK);
             hms1_results_free(results);
             // Failing calls allocate error text; it must not accumulate either.
             assert_ne!(
                 hms1_store_search(store, s("x"), std::ptr::null(), std::ptr::null_mut()),
-                HMS_OK
+                WARM_OK
             );
         }
         let mut deleted = 0;
-        assert_eq!(hms1_store_delete(store, s("a"), &mut deleted), HMS_OK);
-        assert_eq!(hms1_store_close(store), HMS_OK);
+        assert_eq!(hms1_store_delete(store, s("a"), &mut deleted), WARM_OK);
+        assert_eq!(hms1_store_close(store), WARM_OK);
     }
 }
 

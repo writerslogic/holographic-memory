@@ -1,0 +1,10 @@
+name: WARM
+version: 0.1.0
+schema: v1
+mcpServers:
+  - name: writerslogic-warm
+    type: stdio
+    command: npx
+    args:
+      - "-y"
+      - "writerslogic-warm-mcp"

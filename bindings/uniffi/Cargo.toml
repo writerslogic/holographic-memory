@@ -2,23 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "hms-mobile"
+name = "warm-mobile"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.89"
 license = "Apache-2.0"
-description = "UniFFI bindings (Swift, Kotlin) for the Holographic Memory System document store."
+description = "UniFFI bindings (Swift, Kotlin) for the WritersLogic Adaptive Retention & Memory document store."
 publish = false
 
 # Standalone workspace root: the mobile toolchains build this crate on its own.
 [workspace]
 
 [lib]
-name = "hms_mobile"
+name = "warm_mobile"
 crate-type = ["cdylib", "staticlib", "lib"]
 
 [dependencies]
-holographic-memory = { path = "../..", features = ["security"] }
+writerslogic-warm = { path = "../..", features = ["security"] }
 uniffi = { version = "0.32", features = ["tokio"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 thiserror = "2"

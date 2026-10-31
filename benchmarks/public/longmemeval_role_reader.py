@@ -23,7 +23,7 @@ from longmemeval_role_retrieval import retrieve
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_WORK = ROOT / "benchmarks/results/longmemeval_role_retrieval_v1"
-SOURCE = Path.home() / ".cache/hms-bench/downloads/longmemeval_s_cleaned.json"
+SOURCE = Path.home() / ".cache/warm-bench/downloads/longmemeval_s_cleaned.json"
 
 
 def groups_for_question(question, historical_ids):

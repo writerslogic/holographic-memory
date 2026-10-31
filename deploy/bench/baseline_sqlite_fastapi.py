@@ -5,7 +5,7 @@
 The simplest service a team would write without a vector database: documents (id, text,
 metadata JSON, float32 embedding blob) persist in SQLite; an in-memory numpy matrix mirrors the
 embeddings; a query is an exact cosine scan (matrix @ q) with a partial sort. One uvicorn
-worker, no auth. Endpoints mirror hms-server's shapes so the load generator is shared.
+worker, no auth. Endpoints mirror warm-server's shapes so the load generator is shared.
 
 Run: uvicorn baseline_sqlite_fastapi:app --port 8099   (DB path from BASELINE_DB)
 """

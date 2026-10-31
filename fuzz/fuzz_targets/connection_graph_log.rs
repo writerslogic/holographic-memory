@@ -9,7 +9,7 @@
 
 use std::sync::OnceLock;
 
-use holographic_memory::core::connection_graph::{ConnectionGraph, GraphConfig};
+use writerslogic_warm::core::connection_graph::{ConnectionGraph, GraphConfig};
 use libfuzzer_sys::fuzz_target;
 
 fn log_path() -> &'static std::path::Path {

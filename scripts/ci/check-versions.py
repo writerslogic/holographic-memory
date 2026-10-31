@@ -27,17 +27,17 @@ def main() -> int:
     openapi = json.loads((ROOT / "docs/server/openapi.json").read_text())
     native = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
     models = tomllib.loads((ROOT / "bindings/embed-models/python/pyproject.toml").read_text())["project"]
-    sdk = tomllib.loads((ROOT / "bindings/python/holographic-sdk/pyproject.toml").read_text())["project"]
+    sdk = tomllib.loads((ROOT / "bindings/python/warm-sdk/pyproject.toml").read_text())["project"]
     problems = []
-    if native["name"] != "holographic-memory-py":
+    if native["name"] != "writerslogic-warm-py":
         problems.append(f"native Python distribution is {native['name']}")
-    if models["name"] != "holographic-memory-models":
+    if models["name"] != "writerslogic-warm-models":
         problems.append(f"embedding model distribution is {models['name']}")
     if native.get("optional-dependencies", {}).get("embed") != [
-        f"holographic-memory-models=={models['version']}"
+        f"writerslogic-warm-models=={models['version']}"
     ]:
         problems.append("native Python embed extra disagrees with the model package")
-    if sdk["name"] != "holographic-memory-sdk":
+    if sdk["name"] != "writerslogic-warm-sdk":
         problems.append(f"SDK distribution is {sdk['name']}")
     if package["version"] != cargo:
         problems.append(f"package.json is {package['version']}, Cargo.toml is {cargo}")

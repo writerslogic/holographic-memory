@@ -18,15 +18,15 @@ from jsonschema import Draft202012Validator
 
 
 def check(binary):
-    with tempfile.TemporaryDirectory(prefix="hms-memory-schema-") as directory:
+    with tempfile.TemporaryDirectory(prefix="warm-memory-schema-") as directory:
         process = subprocess.Popen(
             [binary, "--bind", "127.0.0.1:0", "--data-dir", directory, "--dim", "1024", "--input-dim", "2"],
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
-            env={**os.environ, "HMS_API_KEY": "memory-schema-test-key"},
+            env={**os.environ, "WARM_API_KEY": "memory-schema-test-key"},
         )
         try:
             line = process.stdout.readline().strip()
-            assert line.startswith("hms-server listening on "), "server did not announce its listener"
+            assert line.startswith("warm-server listening on "), "server did not announce its listener"
             base = "http://" + line.rsplit(" ", 1)[1]
 
             def request(path, payload=None, method="POST"):
@@ -99,8 +99,8 @@ def check(binary):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--server-binary", default=os.environ.get("HMS_SERVER_BIN"))
+    parser.add_argument("--server-binary", default=os.environ.get("WARM_SERVER_BIN"))
     arguments = parser.parse_args()
     if not arguments.server_binary:
-        parser.error("pass --server-binary or set HMS_SERVER_BIN")
+        parser.error("pass --server-binary or set WARM_SERVER_BIN")
     check(os.path.abspath(arguments.server_binary))

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Research round 2, package `challenge`: answer-and-challenge retrieval with scoped
-//! erase-units for agent memory, prototyped on the HMS memory API and kill-tested against
+//! erase-units for agent memory, prototyped on the WARM memory API and kill-tested against
 //! ranking baselines.
 //!
 //! # Mechanism

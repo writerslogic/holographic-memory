@@ -1,6 +1,6 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for holographic_memory.VectorIndex (the quantized graph index binding).
+"""Tests for writerslogic_warm.VectorIndex (the quantized graph index binding).
 
 Run against an installed build of the extension:
     maturin develop --release && pytest tests/python
@@ -8,7 +8,7 @@ Run against an installed build of the extension:
 import numpy as np
 import pytest
 
-import holographic_memory as hm
+import writerslogic_warm as hm
 
 N, DIM, K = 4000, 48, 10
 
@@ -295,7 +295,7 @@ def test_residual_layout_load_and_refit_preserve_codes(tmp_path, code_bits, dim)
         assert parts["adjacency_offsets_bytes"] == 0
         sizes[residual_bits] = index.index_bytes
         expected = index.batch_query_array(probes, K)
-        path = tmp_path / f"vectors-{code_bits}-{residual_bits}-{dim}.hms"
+        path = tmp_path / f"vectors-{code_bits}-{residual_bits}-{dim}.warm"
         index.save(path)
         loaded = hm.VectorIndex("euclidean", degree=8, build_ef=32, threads=1,
                                 code_bits=12 - code_bits, residual_bits=8 - residual_bits)
@@ -325,7 +325,7 @@ def test_residual_options_preserve_query_paths(tmp_path, metric, direct_ip, resi
         assert len(np.unique(ids)) == K
         assert np.all((ids >= 0) & (ids < len(rows)))
         np.testing.assert_array_equal(index.query(query, K), ids)
-    path = tmp_path / "vectors.hms"
+    path = tmp_path / "vectors.warm"
     index.save(path)
     loaded = hm.VectorIndex(metric, threads=1, direct_ip=direct_ip)
     loaded.load(path)
@@ -350,7 +350,7 @@ def test_failed_load_preserves_residual_configuration_and_results(tmp_path):
     index.fit(rows)
     expected = index.query(rows[0], K)
     parts = index.memory_breakdown
-    path = tmp_path / "invalid.hms"
+    path = tmp_path / "invalid.warm"
     path.write_bytes(b"not an index")
     with pytest.raises(RuntimeError, match="load"):
         index.load(path)

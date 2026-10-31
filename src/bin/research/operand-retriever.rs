@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{ensure, Result};
-use holographic_memory::core::operand_retriever::{
+use std::io::{self, BufRead, Read, Write};
+use writerslogic_warm::core::operand_retriever::{
     knapsack_prepared, retrieve_prepared, Prepared, Request,
 };
-use std::io::{self, BufRead, Read, Write};
 
 fn main() -> Result<()> {
     let stdin = io::stdin();

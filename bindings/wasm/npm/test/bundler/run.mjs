@@ -16,7 +16,7 @@ import webpack from "webpack";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = resolve(here, "../../dist");
-const chrome = process.env.HMS_CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const chrome = process.env.WARM_CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 const entrySource = (specifier) => `
 import { openStore } from ${JSON.stringify(specifier)};
@@ -33,7 +33,7 @@ window.__run = async () => {
 `;
 
 async function bundle(name, specifier) {
-  const work = mkdtempSync(join(tmpdir(), `hms-${name}-`));
+  const work = mkdtempSync(join(tmpdir(), `warm-${name}-`));
   writeFileSync(join(work, "entry.js"), entrySource(specifier));
   writeFileSync(join(work, "index.html"), `<!doctype html><meta charset="utf-8"><script src="main.js"></script>`);
   const compiler = webpack({

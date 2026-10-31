@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::{ensure, Context, Result};
-use holographic_memory::{
-    core::{
-        counting_bloom_memory::CountingBloomMemory, encoding::encode_text_internal,
-        entangled::hash_u64,
-    },
-    EntangledHVec,
-};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::{
     collections::BTreeMap,
     io::{self, BufRead, Read, Write},
     time::Instant,
+};
+use writerslogic_warm::{
+    core::{
+        counting_bloom_memory::CountingBloomMemory, encoding::encode_text_internal,
+        entangled::hash_u64,
+    },
+    EntangledHVec,
 };
 
 #[derive(Deserialize)]
@@ -376,11 +376,11 @@ mod tests {
 
     #[test]
     fn unchanged_encoder_survives_document_restart() -> Result<()> {
-        use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+        use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
         for dim in [1024, 16384] {
             let temp = tempfile::tempdir()?;
             let path = temp.path().display().to_string();
-            let core = HmsCore::new(dim, Some(path.clone()), None)?;
+            let core = WarmCore::new(dim, Some(path.clone()), None)?;
             let text = "An independent document describes memory composition and durable restart.";
             let before = core.encode_text(text).indices().to_vec();
             let document: DocumentInput =
@@ -390,7 +390,7 @@ mod tests {
                 core.search_documents("durable restart", &SearchOptions::default())?,
             )?;
             drop(core);
-            let core = HmsCore::new(dim, Some(path), None)?;
+            let core = WarmCore::new(dim, Some(path), None)?;
             assert_eq!(core.encode_text(text).indices(), before);
             assert_eq!(
                 serde_json::to_value(

@@ -19,7 +19,7 @@
 technical_line: Hybrid search, graph indexing, and vector-symbolic memory.
 tagline: Search and memory that run entirely on your machine.
 lede: >-
-  HMS is a local-first document search engine and a vector-symbolic associative memory in one
+  WARM is a local-first document search engine and a vector-symbolic associative memory in one
   store. Hybrid BM25 and exact-cosine retrieval, byte-offset hits, crash-safe persistence, and
   superposed memory you can bind, bundle and query. No service calls and no telemetry.
 license: Apache-2.0
@@ -33,7 +33,7 @@ runtimes:
   - id: rust
     name: Rust
     status: available
-    install: cargo add holographic-memory --features security
+    install: cargo add writerslogic-warm --git https://github.com/writerslogic/warm --features security
     requires: [Cargo.toml, examples/quickstart/rust/src/main.rs]
     snippets:
       - examples/quickstart/rust/src/main.rs:ingest
@@ -42,17 +42,20 @@ runtimes:
   - id: python
     name: Python
     status: available
-    install: uv pip install holographic-memory-sdk
-    requires: [bindings/python/holographic-sdk/pyproject.toml, examples/quickstart/python/quickstart.py]
+    install: uv pip install "git+https://github.com/writerslogic/warm#subdirectory=bindings/python/warm-sdk"
+    requires: [bindings/python/warm-sdk/pyproject.toml, examples/quickstart/python/quickstart.py]
     snippets:
       - examples/quickstart/python/quickstart.py:ingest
       - examples/quickstart/python/quickstart.py:hit
-    note: An HTTP client for hms-server. The holographic-memory-py wheel provides native vector search and phase vectors.
+    note: An HTTP client for warm-server. The writerslogic-warm-py wheel provides native vector search and phase vectors.
   - id: node
     name: Node
     status: available
     install: |-
-      npm install holographic-memory
+      git clone https://github.com/writerslogic/warm
+      cd warm
+      npm ci --omit=optional
+      npm run build
     requires: [index.d.ts, examples/quickstart/node/quickstart.mjs]
     snippets:
       - examples/quickstart/node/quickstart.mjs:ingest
@@ -86,9 +89,9 @@ headline:
   metric: metrics.hms_hybrid.ndcg_at_10
   metric_label: nDCG@10
   compare:
-    - label: HMS dense (exact cosine)
+    - label: WARM dense (exact cosine)
       metric: metrics.hms_dense_exact.ndcg_at_10
-    - label: HMS lexical (stemmed BM25)
+    - label: WARM lexical (stemmed BM25)
       metric: metrics.hms_lexical.ndcg_at_10
   context: BEIR SciFact test split, 300 queries over 5,183 documents, MiniLM-L6-v2 embeddings (384 dimensions).
   caveat: The published BM25 figure (0.665, Thakur et al. 2021) is quoted from the BEIR paper, not re-run here.
@@ -104,11 +107,11 @@ chart:
   title: Vector search on nytimes-256-angular
   file: benchmarks/results/public_qgraph_nytimes-256-angular.json
   recall_targets: ["0.90", "0.95"]
-  hms_prefix: HMS
+  warm_prefix: HMS
   # Rows the benchmark page itself marks as unconfirmed. They stay on the chart, marked, and are
-  # left out of the "fastest HMS configuration" sentence.
+  # left out of the "fastest WARM configuration" sentence.
   annotations:
-    "HMS VGraph (4-bit codes, rerank)": opt-in encoding that ran at lower machine load than the other rows; the benchmark page treats it as unconfirmed.
+    "WARM VGraph (4-bit codes, rerank)": opt-in encoding that ran at lower machine load than the other rows; the benchmark page treats it as unconfirmed.
   link: PUBLIC-BENCHMARKS.md
 
 comparison_fallback:

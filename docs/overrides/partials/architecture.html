@@ -2,9 +2,9 @@
     SPDX-License-Identifier: Apache-2.0
     The engine diagram. Surface names come from docs/_data/site.yml; the engine boxes mirror
     docs/ARCHITECTURE.md and docs/concepts/holographic.md. -#}
-{% set surfaces = config.extra.hms.runtimes | selectattr("status", "equalto", "available") | list %}
+{% set surfaces = config.extra.warm.runtimes | selectattr("status", "equalto", "available") | list %}
 <svg class="ad" viewBox="0 0 960 470" role="img" aria-labelledby="ad-title ad-desc">
-  <title id="ad-title">HMS architecture</title>
+  <title id="ad-title">WARM architecture</title>
   <desc id="ad-desc">Applications reach one Rust engine through its language surfaces. The engine has two layers, document search and vector-symbolic memory, over one persistent store.</desc>
   <defs>
     <marker id="ad-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -13,7 +13,7 @@
   </defs>
 
   <text class="ad-col" x="20" y="24">Your application</text>
-  <text class="ad-col" x="256" y="24">HMS engine (Rust, in your process)</text>
+  <text class="ad-col" x="256" y="24">WARM engine (Rust, in your process)</text>
   <text class="ad-col" x="766" y="24">What comes back</text>
 
   <g class="ad-box ad-soft">
@@ -32,7 +32,7 @@
   {% set sy = 150 + surfaces | length * 44 %}
   <g class="ad-box ad-surface">
     <rect x="20" y="{{ sy }}" width="190" height="34" rx="8"/>
-    <text x="115" y="{{ sy + 22 }}" text-anchor="middle" class="ad-t">hms-server (HTTP)</text>
+    <text x="115" y="{{ sy + 22 }}" text-anchor="middle" class="ad-t">warm-server (HTTP)</text>
   </g>
 
   <path class="ad-line" d="M214 82 H246" marker-end="url(#ad-arrow)"/>

@@ -1,12 +1,12 @@
 # qdrant
 
-`hms-import qdrant (--path DIR | --url URL) [--collection NAME ...] [--vector-name N] [--text-field F] [--namespace-field F]`
+`warm-import qdrant (--path DIR | --url URL) [--collection NAME ...] [--vector-name N] [--text-field F] [--namespace-field F]`
 
 Scrolls every collection (or the named ones) with payloads and vectors through the real `qdrant-client`, in point-id order. Resume is a keyset: the cursor is `[collection, last point id]`.
 
-| Qdrant | HMS |
+| Qdrant | WARM |
 |---|---|
-| point id | `hms_source_id` (ints become strings) |
+| point id | `warm_source_id` (ints become strings) |
 | payload text (`--text-field`, else first of `document`, `text`, `content`, `page_content`, `data`) | text, removed from metadata |
 | rest of payload | metadata; a nested `metadata` object is flattened for LangChain-style `page_content` payloads (or `--metadata-field`) |
 | collection | namespace, or the payload key named by `--namespace-field` (multi-tenant payload pattern) |

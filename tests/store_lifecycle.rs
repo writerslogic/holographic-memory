@@ -6,7 +6,7 @@
 //! or truncate a file that is still mapped or held open, so this is the surface where an
 //! engine that leaves a handle behind fails with "Access is denied (os error 5)".
 
-use holographic_memory::{DocumentInput, HmsCore, SearchOptions};
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 fn document(id: &str, round: usize) -> DocumentInput {
     let text = (0..400)
@@ -24,37 +24,37 @@ fn document(id: &str, round: usize) -> DocumentInput {
 fn compact_reopen_and_delete_with_live_readers() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
     let path = dir.path().join("store");
-    let open = || HmsCore::new(4096, Some(path.display().to_string()), None);
+    let open = || WarmCore::new(4096, Some(path.display().to_string()), None);
 
-    let hms = open()?;
+    let warm = open()?;
     for round in 0..3 {
-        hms.memorize_documents((0..4).map(|n| document(&format!("d{n}"), round)).collect())?;
-        hms.memorize(format!("v{round}"), hms.encode_text("vector payload"))?;
+        warm.memorize_documents((0..4).map(|n| document(&format!("d{n}"), round)).collect())?;
+        warm.memorize(format!("v{round}"), warm.encode_text("vector payload"))?;
     }
-    let before = hms.search_documents("token2x7", &SearchOptions::default())?;
+    let before = warm.search_documents("token2x7", &SearchOptions::default())?;
     assert!(!before.is_empty());
-    hms.compact()?;
-    hms.compact()?;
-    let after = hms.search_documents("token2x7", &SearchOptions::default())?;
+    warm.compact()?;
+    warm.compact()?;
+    let after = warm.search_documents("token2x7", &SearchOptions::default())?;
     assert_eq!(before[0].document_id, after[0].document_id);
-    hms.memorize_documents(vec![document("d9", 5)])?;
-    hms.maintain_indices()?;
-    drop(hms);
+    warm.memorize_documents(vec![document("d9", 5)])?;
+    warm.maintain_indices()?;
+    drop(warm);
 
-    let hms = open()?;
-    assert!(!hms
+    let warm = open()?;
+    assert!(!warm
         .search_documents("token5x3", &SearchOptions::default())?
         .is_empty());
-    assert!(hms.delete_document("d0")?);
-    hms.compact()?;
-    drop(hms);
+    assert!(warm.delete_document("d0")?);
+    warm.compact()?;
+    drop(warm);
 
-    let hms = open()?;
-    assert!(hms
+    let warm = open()?;
+    assert!(warm
         .search_documents("token2x7", &SearchOptions::default())?
         .iter()
         .all(|hit| hit.document_id != "d0"));
-    drop(hms);
+    drop(warm);
     std::fs::remove_dir_all(&path)?;
     assert!(!path.exists());
     Ok(())
@@ -66,7 +66,7 @@ fn compact_reopen_and_delete_with_live_readers() -> anyhow::Result<()> {
 fn large_single_batch_reopens_identically() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
     let path = dir.path().join("store");
-    let open = || HmsCore::new(1024, Some(path.display().to_string()), None);
+    let open = || WarmCore::new(1024, Some(path.display().to_string()), None);
     let documents: Vec<DocumentInput> = (0..1_300)
         .map(|n| {
             serde_json::from_value(serde_json::json!({
@@ -77,7 +77,7 @@ fn large_single_batch_reopens_identically() -> anyhow::Result<()> {
         })
         .collect();
     let queries = ["topic5 common", "item1299", "word7 topic11", "shared"];
-    let snapshot = |hms: &HmsCore| -> anyhow::Result<Vec<Vec<(String, u64)>>> {
+    let snapshot = |hms: &WarmCore| -> anyhow::Result<Vec<Vec<(String, u64)>>> {
         queries
             .iter()
             .map(|q| {
@@ -85,7 +85,7 @@ fn large_single_batch_reopens_identically() -> anyhow::Result<()> {
                     k: Some(50),
                     ..Default::default()
                 };
-                Ok(hms
+                Ok(warm
                     .search_documents(q, &options)?
                     .into_iter()
                     .map(|r| (r.document_id, r.score.to_bits()))
@@ -94,13 +94,13 @@ fn large_single_batch_reopens_identically() -> anyhow::Result<()> {
             .collect()
     };
     let before = {
-        let hms = open()?;
-        hms.memorize_documents(documents)?;
-        hms.flush()?;
-        snapshot(&hms)?
+        let warm = open()?;
+        warm.memorize_documents(documents)?;
+        warm.flush()?;
+        snapshot(&warm)?
     };
-    let hms = open()?;
-    assert_eq!(snapshot(&hms)?, before);
+    let warm = open()?;
+    assert_eq!(snapshot(&warm)?, before);
     assert!(before.iter().all(|hits| !hits.is_empty()));
     Ok(())
 }

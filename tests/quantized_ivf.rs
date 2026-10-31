@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #![cfg(feature = "experimental")]
 
-use holographic_memory::core::qgraph::ivf::{IvfSearchParams, IvfSearcher, QuantizedIvf};
 use rand::{rngs::StdRng, RngExt, SeedableRng};
+use writerslogic_warm::core::qgraph::ivf::{IvfSearchParams, IvfSearcher, QuantizedIvf};
 
 fn hit_bits(hits: &[(u32, f32)]) -> Vec<(u32, u32)> {
     hits.iter()

@@ -24,14 +24,14 @@ A store is one directory. The engine creates it on first open.
 ```
 
 Server data directory: `<data-dir>/tenants/<hex(utf8 tenant name)>/` is one store per tenant.
-`hms-format verify <data-dir>` checks each store.
+`warm-format verify <data-dir>` checks each store.
 Server ownership files live separately at `<data-dir>/tenant-locks/<hex>.owner`. Their lifetime
 advisory locks survive a live-store rename; they are control metadata, not store data. The
 `tenants/` namespace contains only tenant directories.
 Other server control metadata in `<data-dir>` is not read as store data.
 
 A snapshot is a copy of the whole directory taken while no engine holds the lock;
-`hms-admin migrate` makes a verified copy (lock file left out). There is no other snapshot
+`warm-admin migrate` makes a verified copy (lock file left out). There is no other snapshot
 artefact.
 
 ## store.json

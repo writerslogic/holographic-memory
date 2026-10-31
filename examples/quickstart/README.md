@@ -7,7 +7,7 @@ queries drive all three languages, and CI runs each one on every pull request.
 |------|------------------------------|
 | `rust/` | `cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml` |
 | `node/quickstart.mjs` | `npm ci --omit=optional && npm run build && node examples/quickstart/node/quickstart.mjs` (Node 24+) |
-| `python/quickstart.py` | start `hms-server` first; see the header of the file |
+| `python/quickstart.py` | start `warm-server` first; see the header of the file |
 
 ## Data
 

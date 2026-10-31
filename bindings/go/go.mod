@@ -1,3 +1,3 @@
-module github.com/writerslogic/holographic-memory/bindings/go
+module github.com/writerslogic/warm/bindings/go
 
 go 1.24

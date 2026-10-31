@@ -10,12 +10,12 @@ use std::time::Instant;
 
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand};
-use holographic_memory::{
-    core::{EmbeddingSpace, HmsConfig},
-    DocumentInput, HmsCore, SearchOptions,
-};
 use serde_json::{json, Value};
 use subtle::ConstantTimeEq;
+use writerslogic_warm::{
+    core::{EmbeddingSpace, WarmConfig},
+    DocumentInput, SearchOptions, WarmCore,
+};
 use zeroize::Zeroize;
 
 const DIM: usize = 128;
@@ -132,8 +132,8 @@ fn read_passphrase() -> Result<String> {
     Ok(p)
 }
 
-fn config(passphrase: Option<String>, audit: bool) -> HmsConfig {
-    let mut config = HmsConfig {
+fn config(passphrase: Option<String>, audit: bool) -> WarmConfig {
+    let mut config = WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "synthetic-probe".into(),
             revision: "1".into(),
@@ -154,15 +154,15 @@ fn config(passphrase: Option<String>, audit: bool) -> HmsConfig {
     config
 }
 
-fn open(store: &Path, passphrase: Option<String>, audit: bool) -> Result<HmsCore> {
-    HmsCore::new(
+fn open(store: &Path, passphrase: Option<String>, audit: bool) -> Result<WarmCore> {
+    WarmCore::new(
         1024,
         Some(store.display().to_string()),
         Some(config(passphrase, audit)),
     )
 }
 
-fn seed(core: &HmsCore, docs: usize, audit: bool) -> Result<()> {
+fn seed(core: &WarmCore, docs: usize, audit: bool) -> Result<()> {
     let mut rng = SplitMix(11);
     for n in 0..docs {
         core.memorize_document(document(n, &mut rng))?;
@@ -183,7 +183,7 @@ fn queries(count: usize) -> Vec<Vec<f64>> {
     (0..count).map(|_| rng.unit()).collect()
 }
 
-fn run_queries(core: &HmsCore, count: usize) -> Result<Vec<Value>> {
+fn run_queries(core: &WarmCore, count: usize) -> Result<Vec<Value>> {
     let mut out = Vec::with_capacity(count);
     for q in queries(count) {
         let options = SearchOptions {
@@ -339,7 +339,7 @@ fn memscan(store: &Path) -> Result<Value> {
     key.zeroize();
     // The probe's own derivation left the key in callee frames; scrub them so every copy
     // the scan finds belongs to the store or its cipher.
-    holographic_memory::core::scrub_stack();
+    writerslogic_warm::core::scrub_stack();
     let core = open(store, Some(pass.clone()), false)?;
     pass.zeroize();
     drop(pass);

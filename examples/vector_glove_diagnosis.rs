@@ -1,9 +1,9 @@
 use anyhow::{ensure, Context, Result};
-use holographic_memory::core::qgraph::{
-    BuildParams, Graph, Metric, SearchKnobs, VGraph, VSearchParams,
-};
 use serde_json::json;
 use std::{fs, path::Path, time::Instant};
+use writerslogic_warm::core::qgraph::{
+    BuildParams, Graph, Metric, SearchKnobs, VGraph, VSearchParams,
+};
 
 fn rows(path: &Path, count: usize) -> Result<Vec<f32>> {
     ensure!(
@@ -44,7 +44,7 @@ fn main() -> Result<()> {
     };
     ensure!(!output.exists(), "output already exists");
     ensure!(
-        std::env::var_os("HMS_QGRAPH_BUILD_PROFILE").is_some() == profiled,
+        std::env::var_os("WARM_QGRAPH_BUILD_PROFILE").is_some() == profiled,
         "profile flag mismatch"
     );
     let declaration: serde_json::Value =
@@ -73,7 +73,7 @@ fn main() -> Result<()> {
     let index = VGraph::from_graph_with(&graph, 8, 8, true, true, 3, false)?;
     let encoding_s = start.elapsed().as_secs_f64();
     drop(graph);
-    let index_path = output.with_extension("hms");
+    let index_path = output.with_extension("warm");
     ensure!(!index_path.exists(), "index output already exists");
     index.save(&index_path).context("save diagnostic index")?;
     eprintln!("BUILD_FINISHED");

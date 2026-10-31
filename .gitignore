@@ -68,7 +68,7 @@ benchmarks/public/*.py.lock
 # Local embedder model packs are build products (see bindings/embed-models)
 *.hmsemb
 bindings/embed-models/**/packs/
-.hms-local/
+.warm-local/
 benchmarks/results/research/ann/*.graph
 
 # Historical benchmark inputs are restored locally from benchmarks/evidence/retired-inputs.json.
@@ -80,3 +80,6 @@ benchmarks/results/research/ann/*.graph
 /benchmarks/results/longmemeval_dev_answers_v1.json
 /benchmarks/results/longmemeval_dev_answers_v3.json
 /benchmarks/results/longmemeval_dev_answers_local30b_v1.json
+
+/_legacy-docs/
+/.hms-local/

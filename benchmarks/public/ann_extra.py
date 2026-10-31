@@ -204,7 +204,7 @@ def run_ngt(c: Ctx) -> tuple[list, dict]:
 
 
 def lucene_jar() -> Path:
-    jar = Path.home() / ".cache" / "hms-bench" / "jars" / f"lucene-core-{LUCENE_VERSION}.jar"
+    jar = Path.home() / ".cache" / "warm-bench" / "jars" / f"lucene-core-{LUCENE_VERSION}.jar"
     if not jar.exists():
         jar.parent.mkdir(parents=True, exist_ok=True)
         urllib.request.urlretrieve(LUCENE_URL, jar)

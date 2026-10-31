@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-import { HolographicMemorySystem } from '../../index.js'
+import { WarmMemorySystem } from '../../index.js'
 import { Memory, MemoryError, type Recalled, type ForgetReport, type MemoryConfig } from '../../memory.js'
 
 const config: MemoryConfig = {
@@ -8,7 +8,7 @@ const config: MemoryConfig = {
   recency: { kind: 'exponential', halfLifeMs: 86_400_000, basis: 'event' },
   forgetting: { kind: 'expired-for', graceMs: 1000 },
 }
-const memory = new Memory(new HolographicMemorySystem(4096, './types-only'), config)
+const memory = new Memory(new WarmMemorySystem(4096, './types-only'), config)
 const stored = await memory.remember('Alice lives in Paris', { subject: 'alice/city', validFrom: new Date(), entities: ['Alice'] })
 const id: string = stored.id
 const created: boolean = stored.created
@@ -28,4 +28,4 @@ await memory.recall('q', { history: 'everything' })
 // @ts-expect-error times are Dates or integer milliseconds
 await memory.recall('q', { asOf: 'yesterday' })
 // @ts-expect-error unknown configuration values are rejected
-new Memory(new HolographicMemorySystem(4096), { supersession: 'magic' })
+new Memory(new WarmMemorySystem(4096), { supersession: 'magic' })

@@ -9,7 +9,7 @@
   HTTP     the OpenAPI document the server publishes, rendered as pages (when the tree has one)
   C        the shipped header, rendered as pages (when the tree has one)
 
-A surface the tree does not have yet gets no page. Set HMS_DOCS_REQUIRE_API=1 (CI does) to make a
+A surface the tree does not have yet gets no page. Set WARM_DOCS_REQUIRE_API=1 (CI does) to make a
 missing generator input, such as the typedoc install or the rustdoc output, fail the build instead
 of silently dropping a page.
 """
@@ -30,8 +30,8 @@ import docs_openapi  # noqa: E402
 import docs_pyo3_stub  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRE = os.environ.get("HMS_DOCS_REQUIRE_API") == "1"
-TOOLS = Path(os.environ.get("HMS_DOCS_API_TOOLS") or Path(__file__).resolve().parent / "docs-api")
+REQUIRE = os.environ.get("WARM_DOCS_REQUIRE_API") == "1"
+TOOLS = Path(os.environ.get("WARM_DOCS_API_TOOLS") or Path(__file__).resolve().parent / "docs-api")
 
 
 def write(path: str, text: str, edit: str | None = None) -> None:
@@ -48,7 +48,7 @@ def front(description: str, boost: float = 1.0) -> str:
 
 def missing(what: str) -> None:
     if REQUIRE:
-        raise SystemExit(f"docs_api: {what} is required (HMS_DOCS_REQUIRE_API=1) and is not available")
+        raise SystemExit(f"docs_api: {what} is required (WARM_DOCS_REQUIRE_API=1) and is not available")
     print(f"docs_api: skipping {what}")
 
 
@@ -56,27 +56,27 @@ def missing(what: str) -> None:
 
 def python_pages() -> list[str]:
     pages = []
-    sdk = ROOT / "bindings" / "python" / "holographic-sdk" / "holographic_sdk"
+    sdk = ROOT / "bindings" / "python" / "warm-sdk" / "writerslogic_warm_sdk"
     intro = {
-        "client": ("HTTP clients", "`HolographicClient` and `AsyncHolographicClient` talk to `hms-server`, which stores vectors you supply and answers queries by exact cosine."),
+        "client": ("HTTP clients", "`WarmClient` and `AsyncWarmClient` talk to `warm-server`, which stores vectors you supply and answers queries by exact cosine."),
         "memory": ("Memory clients", "The memory API over HTTP: record, recall, supersede and explain."),
         "evidence": ("Evidence packets", "Encode, decode and complete the evidence packets that carry sources with an answer."),
     }
     for module, (title, text) in intro.items():
         if (sdk / f"{module}.py").is_file():
             name = f"api/python/{module}.md"
-            write(name, front(text) + f"# {title}\n\n{text}\n\n::: holographic_sdk.{module}\n",
-                  f"bindings/python/holographic-sdk/holographic_sdk/{module}.py")
+            write(name, front(text) + f"# {title}\n\n{text}\n\n::: writerslogic_warm_sdk.{module}\n",
+                  f"bindings/python/warm-sdk/writerslogic_warm_sdk/{module}.py")
             pages.append(name)
     native_source = next((path for path in ("src/bindings/python/mod.rs", "src/python.rs")
                           if (ROOT / path).is_file()), None)
     if native_source:
         stub_dir = ROOT / ".docs-gen" / "pyi"
         docs_pyo3_stub.write(ROOT, stub_dir)
-        text = ("The `holographic-memory-py` wheel provides native vector search and phase vectors, "
-                "imported as `holographic_memory`. It does not include document search; "
-                "`holographic-memory-sdk` is the HTTP client for that API.")
-        write("api/python/vsa.md", front(text) + f"# Phase vectors\n\n{text}\n\n::: holographic_memory\n", native_source)
+        text = ("The `writerslogic-warm-py` wheel provides native vector search and phase vectors, "
+                "imported as `writerslogic_warm`. It does not include document search; "
+                "`writerslogic-warm-sdk` is the HTTP client for that API.")
+        write("api/python/vsa.md", front(text) + f"# Phase vectors\n\n{text}\n\n::: writerslogic_warm\n", native_source)
         pages.append("api/python/vsa.md")
     return pages
 
@@ -102,7 +102,7 @@ def node_pages() -> list[str]:
     if not entries or not typedoc.is_file():
         missing("the typedoc output (run `npm ci` in scripts/docs-api)")
         return []
-    with tempfile.TemporaryDirectory(prefix="hms-typedoc-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="warm-typedoc-") as tmp:
         out = Path(tmp) / "md"
         tsconfig = Path(tmp) / "tsconfig.json"
         tsconfig.write_text(json.dumps({
@@ -131,7 +131,7 @@ def node_pages() -> list[str]:
             if rel.name in seen:
                 raise SystemExit(f"docs_api: two Node symbols are both named {rel.name}: {seen[rel.name]} and {rel}")
             seen[rel.name] = rel
-        label = {"index": "holographic-memory"}
+        label = {"index": "writerslogic-warm"}
         for md in sorted(out.rglob("*.md")):
             rel = md.relative_to(out)
             if len(rel.parts) < 3:
@@ -143,17 +143,17 @@ def node_pages() -> list[str]:
             name = heading.group(1).rstrip("()") if heading else md.stem
             text = f"# {name}\n" + rest
             text = re.sub(r"\]\(((?:\.\./|\./)*)(?:[\w-]+/)*([\w.-]+\.md)", r"](\2", text)
-            module_name = label.get(rel.parts[0], f"holographic-memory/{rel.parts[0]}")
+            module_name = label.get(rel.parts[0], f"writerslogic-warm/{rel.parts[0]}")
             desc = f"{kind.replace('-', ' ').rstrip('s').capitalize()} `{name}` from `{module_name}`."
             target = f"api/node/{md.stem}.md"
             write(target, front(desc, 0.5) + text, None)
             pages.append(target)
-        lines = [front("The Node and TypeScript API of the holographic-memory package, generated from its type declarations.").rstrip(), "",
+        lines = [front("The Node and TypeScript API of the writerslogic-warm package, generated from its type declarations.").rstrip(), "",
                  "# Node and TypeScript API", "",
                  "Generated from the package's `.d.ts` files, one page per exported symbol. "
                  + "The package is built from source with a Rust toolchain; the [quickstart](../../quickstart/index.md) shows how.", ""]
         for module, listing in modules.items():
-            lines += [f"## `{label.get(module, 'holographic-memory/' + module)}`", ""]
+            lines += [f"## `{label.get(module, 'writerslogic-warm/' + module)}`", ""]
             for line in listing.splitlines():
                 if line.startswith("## "):
                     lines += ["", f"### {line[3:]}", ""]
@@ -167,27 +167,27 @@ def node_pages() -> list[str]:
 # ---- Rust, HTTP, C ----------------------------------------------------------------------------
 
 def rust_pages() -> list[str]:
-    docs = os.environ.get("HMS_RUSTDOC_DIR")
+    docs = os.environ.get("WARM_RUSTDOC_DIR")
     version = re.search(r'^version\s*=\s*"([^"]+)"', (ROOT / "Cargo.toml").read_text(encoding="utf-8"), re.M).group(1)
-    if not docs or not (Path(docs) / "holographic_memory" / "index.html").is_file():
-        missing("the rustdoc output (HMS_RUSTDOC_DIR, built by scripts/build-rustdoc.sh)")
+    if not docs or not (Path(docs) / "writerslogic_warm" / "index.html").is_file():
+        missing("the rustdoc output (WARM_RUSTDOC_DIR, built by scripts/build-rustdoc.sh)")
         write("api/rust/index.md", front("Rust API reference and local build instructions.") + """# Rust API reference
 
 This preview does not include a local rustdoc build. Browse the
-[released Rust reference](https://docs.rs/holographic-memory), or build the reference for this
+[released Rust reference](https://docs.rs/writerslogic-warm), or build the reference for this
 checkout with `cargo doc --no-deps --lib --features provenance --locked --open`.
 
 Production documentation includes rustdoc generated from the same source revision as the site.
 """, "src/lib.rs")
         return ["api/rust/index.md"]
-    text = front("The Rust API of the holographic-memory crate, generated by rustdoc from the source of this version.") + f"""# Rust API reference
+    text = front("The Rust API of the writerslogic-warm crate, generated by rustdoc from the source of this version.") + f"""# Rust API reference
 
 The reference is the crate's own rustdoc, built from the source of this version of the docs with
 the `provenance` feature (which includes `security`). It is a separate, searchable site.
 
-<p><a class="hms-btn hms-btn--primary" href="doc/holographic_memory/index.html">Open the rustdoc for {version}</a></p>
+<p><a class="warm-btn warm-btn--primary" href="doc/writerslogic_warm/index.html">Open the rustdoc for {version}</a></p>
 
-Released versions are also on [docs.rs](https://docs.rs/holographic-memory). Experimental modules sit behind the
+Released versions are also on [docs.rs](https://docs.rs/writerslogic-warm). Experimental modules sit behind the
 `experimental` feature and are not part of the published API, so they are not in this reference.
 """
     write("api/rust/index.md", text, "src/lib.rs")
@@ -212,12 +212,12 @@ def c_pages() -> list[str]:
 
 def overview(pages: list[str]) -> None:
     rows = {
-        "api/rust/index.md": ("Rust", "The `holographic-memory` crate: the engine itself."),
-        "api/node/index.md": ("Node and TypeScript", "The `holographic-memory` npm package."),
-        "api/http.md": ("HTTP", "The `hms-server` endpoints, from its OpenAPI document."),
+        "api/rust/index.md": ("Rust", "The `writerslogic-warm` crate: the engine itself."),
+        "api/node/index.md": ("Node and TypeScript", "The `writerslogic-warm` npm package."),
+        "api/http.md": ("HTTP", "The `warm-server` endpoints, from its OpenAPI document."),
         "api/c.md": ("C", "The stable C ABI that the Go, Java and .NET bindings sit on."),
     }
-    lines = [front("The API reference for Holographic Memory in every language, generated from the source so it cannot drift").rstrip(), "",
+    lines = [front("The API reference for WARM in every language, generated from the source so it cannot drift").rstrip(), "",
              "# API reference", "",
              "Every page in this section is generated at build time from the source of the version you are reading: "
              + "rustdoc for Rust, typedoc for Node and TypeScript, mkdocstrings for Python, the server's OpenAPI document for HTTP and the "

@@ -6,24 +6,24 @@ index 1d6a663..6900ed2 100644
  | [FlatNav](https://github.com/BlaiseMuhirwa/flatnav) | 0.1.2 |
  | [GGNN](https://github.com/cgtuebingen/ggnn) | 0.9 |
  | [Glass](https://github.com/zilliztech/pyglass) | git+d2296ec |
-+| [HMS](https://github.com/writerslogic/holographic-memory) | git+f73305b |
++| [WARM](https://github.com/writerslogic/warm) | git+f73305b |
  | [HNSW-RaBitQ](https://github.com/VectorDB-NTU/RaBitQ-Library) | 0.3.7 |
  | [HNSW](https://github.com/nmslib/hnswlib) | 0.8.0 |
  | [IVF (Faiss)](https://github.com/facebookresearch/faiss) | 1.14.3 |
-diff --git a/vibe/algorithms/hms-query-aware/config.yml b/vibe/algorithms/hms-query-aware/config.yml
+diff --git a/vibe/algorithms/warm-query-aware/config.yml b/vibe/algorithms/warm-query-aware/config.yml
 new file mode 100644
 index 0000000..68557b1
 --- /dev/null
-+++ b/vibe/algorithms/hms-query-aware/config.yml
++++ b/vibe/algorithms/warm-query-aware/config.yml
 @@ -0,0 +1,20 @@
 +# Copyright 2024-2026 WritersLogic Contributors
 +# SPDX-License-Identifier: Apache-2.0
 +float:
 +  ip:
-+  - name: hms-query-aware
-+    module: vibe.algorithms.hms
-+    constructor: HMS
-+    singularity_image: hms
++  - name: warm-query-aware
++    module: vibe.algorithms.warm
++    constructor: WARM
++    singularity_image: warm
 +    disabled: false
 +    ood: true
 +    base_args: ['@metric']
@@ -36,18 +36,18 @@ index 0000000..68557b1
 +          query_aware: [true]
 +        query_arg_groups:
 +        - [[100, 100], [160, 200, 8], [160, 200, 20], [160, 200, 24], [256, 400], [512, 400]]
-diff --git a/vibe/algorithms/hms/config.yml b/vibe/algorithms/hms/config.yml
+diff --git a/vibe/algorithms/warm/config.yml b/vibe/algorithms/warm/config.yml
 new file mode 100644
 index 0000000..1bb0654
 --- /dev/null
-+++ b/vibe/algorithms/hms/config.yml
++++ b/vibe/algorithms/warm/config.yml
 @@ -0,0 +1,61 @@
 +float:
 +  cosine:
-+  - name: hms
-+    module: vibe.algorithms.hms
-+    constructor: HMS
-+    singularity_image: hms
++  - name: warm
++    module: vibe.algorithms.warm
++    constructor: WARM
++    singularity_image: warm
 +    disabled: false
 +    base_args: ['@metric']
 +    run_groups:
@@ -59,10 +59,10 @@ index 0000000..1bb0654
 +          ef: [100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000]
 +          rerank: [100, 200, 400]
 +  normalized:
-+  - name: hms
-+    module: vibe.algorithms.hms
-+    constructor: HMS
-+    singularity_image: hms
++  - name: warm
++    module: vibe.algorithms.warm
++    constructor: WARM
++    singularity_image: warm
 +    disabled: false
 +    base_args: ['@metric']
 +    run_groups:
@@ -74,10 +74,10 @@ index 0000000..1bb0654
 +          ef: [100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000]
 +          rerank: [100, 200, 400]
 +  euclidean:
-+  - name: hms
-+    module: vibe.algorithms.hms
-+    constructor: HMS
-+    singularity_image: hms
++  - name: warm
++    module: vibe.algorithms.warm
++    constructor: WARM
++    singularity_image: warm
 +    disabled: false
 +    base_args: ['@metric']
 +    run_groups:
@@ -89,10 +89,10 @@ index 0000000..1bb0654
 +          ef: [100, 128, 160, 200, 256, 320, 400, 512, 640, 800, 1000]
 +          rerank: [100, 200, 400]
 +  ip:
-+  - name: hms
-+    module: vibe.algorithms.hms
-+    constructor: HMS
-+    singularity_image: hms
++  - name: warm
++    module: vibe.algorithms.warm
++    constructor: WARM
++    singularity_image: warm
 +    disabled: false
 +    base_args: ['@metric']
 +    run_groups:
@@ -103,38 +103,38 @@ index 0000000..1bb0654
 +        query_args:
 +          ef: [160, 200, 256, 320, 400, 512, 640, 800, 1000, 1500, 2000, 3000, 5000, 8000]
 +          rerank: [100, 200, 400, 1000]
-diff --git a/vibe/algorithms/hms/image.def b/vibe/algorithms/hms/image.def
+diff --git a/vibe/algorithms/warm/image.def b/vibe/algorithms/warm/image.def
 new file mode 100644
 index 0000000..1f3118b
 --- /dev/null
-+++ b/vibe/algorithms/hms/image.def
++++ b/vibe/algorithms/warm/image.def
 @@ -0,0 +1,19 @@
 +Bootstrap: localimage
 +From: base.sif
 +
 +%post
-+  HMS_REV=f73305b624305836211c8157975c4f1c37f10df9
++  WARM_REV=f73305b624305836211c8157975c4f1c37f10df9
 +
 +  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.96.0
 +  export PATH="$HOME/.cargo/bin:$PATH"
 +  pip install --no-cache-dir maturin==1.15.0
 +
-+  git clone https://github.com/writerslogic/holographic-memory.git /tmp/hms
-+  cd /tmp/hms
-+  git checkout "$HMS_REV"
-+  RUSTFLAGS="-C target-cpu=native" maturin build --release --locked --out /tmp/hms-dist
-+  pip install --no-cache-dir /tmp/hms-dist/*.whl
++  git clone https://github.com/writerslogic/warm.git /tmp/warm
++  cd /tmp/warm
++  git checkout "$WARM_REV"
++  RUSTFLAGS="-C target-cpu=native" maturin build --release --locked --out /tmp/warm-dist
++  pip install --no-cache-dir /tmp/warm-dist/*.whl
 +  cd /
-+  rm -rf /tmp/hms /tmp/hms-dist "$HOME/.cargo" "$HOME/.rustup"
++  rm -rf /tmp/warm /tmp/warm-dist "$HOME/.cargo" "$HOME/.rustup"
 +
-+  python -c 'from holographic_memory import VectorIndex; print(VectorIndex())'
-diff --git a/vibe/algorithms/hms/module.py b/vibe/algorithms/hms/module.py
++  python -c 'from writerslogic_warm import VectorIndex; print(VectorIndex())'
+diff --git a/vibe/algorithms/warm/module.py b/vibe/algorithms/warm/module.py
 new file mode 100644
 index 0000000..d27a247
 --- /dev/null
-+++ b/vibe/algorithms/hms/module.py
++++ b/vibe/algorithms/warm/module.py
 @@ -0,0 +1,70 @@
-+"""VIBE wrapper for HMS (holographic-memory), the quantized graph index.
++"""VIBE wrapper for WARM (writerslogic-warm), the quantized graph index.
 +
 +The index is a proximity graph whose traversal reads 4-bit (default) or 8-bit codes of the mean-centered rows;
 +the `rerank` best candidates are re-scored with an 8-bit residual code. Cosine and normalized
@@ -142,17 +142,17 @@ index 0000000..d27a247
 +(reduced to Euclidean search by appending one coordinate to each row).
 +"""
 +import numpy as np
-+from holographic_memory import VectorIndex
++from writerslogic_warm import VectorIndex
 +
 +from ..base.module import BaseANN
 +
 +METRICS = {"cosine": "angular", "normalized": "angular", "euclidean": "euclidean", "ip": "ip"}
 +
 +
-+class HMS(BaseANN):
++class WARM(BaseANN):
 +    def __init__(self, metric, degree, build_ef, code_bits=4, query_aware=False):
 +        if metric not in METRICS:
-+            raise NotImplementedError(f"hms does not support the {metric} distance")
++            raise NotImplementedError(f"warm does not support the {metric} distance")
 +        self.metric = metric
 +        self.degree = degree
 +        self.build_ef = build_ef
@@ -167,7 +167,7 @@ index 0000000..d27a247
 +
 +    def fit(self, X):
 +        if self.query_aware:
-+            raise ValueError("query-aware HMS requires the separate learn split through fit_ood")
++            raise ValueError("query-aware WARM requires the separate learn split through fit_ood")
 +        self._fit(X, None)
 +
 +    def fit_ood(self, X, X_learn, X_learn_neighbors):
@@ -203,4 +203,4 @@ index 0000000..d27a247
 +        precision = "" if self.code_bits == 4 else f", code_bits={self.code_bits}"
 +        training = ", query_aware=True" if self.query_aware else ""
 +        early_stop = f", patience={self.patience}" if self.patience > 0 else ""
-+        return f"HMS(metric={self.metric}, degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank}{precision}{training}{early_stop})"
++        return f"WARM(metric={self.metric}, degree={self.degree}, build_ef={self.build_ef}, ef={self.ef}, rerank={self.rerank}{precision}{training}{early_stop})"

@@ -1,8 +1,8 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Finding the pack for a model. Order for a registry model: `HMS_EMBED_PACK`, the model
-//! directory (option or `HMS_EMBED_MODEL_DIR`), the cache, then a pinned download (only with
+//! Finding the pack for a model. Order for a registry model: `WARM_EMBED_PACK`, the model
+//! directory (option or `WARM_EMBED_MODEL_DIR`), the cache, then a pinned download (only with
 //! feature `local-embed-download` and never when offline).
 
 use std::path::{Path, PathBuf};
@@ -13,13 +13,13 @@ use super::registry::{self, ModelSpec};
 use super::EmbedOptions;
 
 /// A pack file to load directly for a registry model.
-pub const ENV_PACK: &str = "HMS_EMBED_PACK";
+pub const ENV_PACK: &str = "WARM_EMBED_PACK";
 /// A directory searched for ready packs before the cache (air-gapped installs, companion wheels).
-pub const ENV_MODEL_DIR: &str = "HMS_EMBED_MODEL_DIR";
+pub const ENV_MODEL_DIR: &str = "WARM_EMBED_MODEL_DIR";
 /// The download cache directory.
-pub const ENV_CACHE: &str = "HMS_EMBED_CACHE";
+pub const ENV_CACHE: &str = "WARM_EMBED_CACHE";
 /// `1`, `true` or `yes` forbids any network access.
-pub const ENV_OFFLINE: &str = "HMS_EMBED_OFFLINE";
+pub const ENV_OFFLINE: &str = "WARM_EMBED_OFFLINE";
 
 #[derive(Debug)]
 pub(crate) struct Located {
@@ -30,14 +30,14 @@ pub(crate) struct Located {
 }
 
 fn env_path(name: &str) -> Option<PathBuf> {
-    std::env::var_os(name)
+    crate::compatibility::var_os(name)
         .filter(|v| !v.is_empty())
         .map(PathBuf::from)
 }
 
 pub(crate) fn offline(options: &EmbedOptions) -> bool {
     options.offline.unwrap_or_else(|| {
-        std::env::var(ENV_OFFLINE)
+        crate::compatibility::var(ENV_OFFLINE)
             .map(|v| {
                 matches!(
                     v.trim().to_ascii_lowercase().as_str(),
@@ -147,7 +147,7 @@ pub(crate) fn missing_message(spec: &ModelSpec, cache: &Path, why: &str) -> Stri
     format!(
         "embedding model {id:?} is not installed and {why}. Provide the pack {name} (sha256 {sha}) in one of these ways: \
          set {ENV_PACK} to its path; put it in a directory named by {ENV_MODEL_DIR}; or copy it to {cache}. \
-         On a connected machine, `hms-embed fetch {id} --out DIR` creates it. \
+         On a connected machine, `warm-embed fetch {id} --out DIR` creates it. \
          Unset {ENV_OFFLINE} to allow the one-time pinned download.",
         id = spec.id,
         name = spec.pack_name(),

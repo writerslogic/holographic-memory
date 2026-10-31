@@ -19,7 +19,7 @@ defineSuite({
   api,
   FileStorage,
   scratch: async () => {
-    const dir = await mkdtemp(join(tmpdir(), "hms-wasm-"));
+    const dir = await mkdtemp(join(tmpdir(), "warm-wasm-"));
     made.push(dir);
     return dir;
   },

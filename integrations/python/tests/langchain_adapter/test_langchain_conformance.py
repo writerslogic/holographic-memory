@@ -1,7 +1,7 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""langchain-tests' own standard suites against a live hms-server."""
+"""langchain-tests' own standard suites against a live warm-server."""
 
 import pytest
 from langchain_core.documents import Document
@@ -9,11 +9,11 @@ from langchain_core.vectorstores import VectorStore
 from langchain_tests.integration_tests import RetrieversIntegrationTests, VectorStoreIntegrationTests
 from langchain_tests.integration_tests.vectorstores import EMBEDDING_SIZE
 
-from holographic_integrations.langchain import HolographicRetriever, HolographicVectorStore
+from writerslogic_warm_integrations.langchain import WarmRetriever, WarmVectorStore
 
 
-def _store(server, **kw) -> HolographicVectorStore:
-    return HolographicVectorStore(
+def _store(server, **kw) -> WarmVectorStore:
+    return WarmVectorStore(
         VectorStoreIntegrationTests.get_embeddings(), url=server.url, tenant_id=server.tenant(), **kw
     )
 
@@ -42,7 +42,7 @@ class TestHolographicRetriever(RetrieversIntegrationTests):
 
     @property
     def retriever_constructor(self):
-        return HolographicRetriever
+        return WarmRetriever
 
     @property
     def retriever_constructor_params(self):

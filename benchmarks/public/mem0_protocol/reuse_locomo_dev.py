@@ -35,7 +35,7 @@ def binding(manifest: dict, expected: int, scored: bool) -> dict:
     completion = audit["completion"]
     if (manifest["benchmark"] != "locomo" or manifest["harness"]["commit"] != PINNED_COMMIT
             or manifest["phase"] != ("evaluate" if scored else "predict")
-            or manifest["hms"]["dirty"] or manifest["wrapper_exit_code"] or manifest["harness_exit_code"]
+            or manifest["warm"]["dirty"] or manifest["wrapper_exit_code"] or manifest["harness_exit_code"]
             or not completion["complete"] or completion["expected_questions"] != expected
             or completion["scored_questions"] != (expected if scored else 0)
             or any(audit.get(key) for key in ("ingestion_failures", "failed_after_retries_lines",
@@ -81,7 +81,7 @@ def binding(manifest: dict, expected: int, scored: bool) -> dict:
     return {"harness_commit": PINNED_COMMIT, "effective_command": effective, "retrieval_config": config,
             "retrieval_config_sha256": manifest["retrieval_config_sha256"],
             "shim_sha256": manifest["adapter"]["shim_sha256"],
-            "server_binary_sha256": manifest["hms"]["server_binary_sha256"]}
+            "server_binary_sha256": manifest["warm"]["server_binary_sha256"]}
 
 
 def freeze_source(source: Path, manifest_path: Path, expected: int = 385) -> dict:

@@ -7,5 +7,5 @@ use libfuzzer_sys::fuzz_target;
 // Every persisted-format reader (frames, payloads, manifests, headers, audit, caches) on
 // arbitrary bytes: must return, never panic, never allocate from an untrusted length.
 fuzz_target!(|data: &[u8]| {
-    holographic_memory::core::format::scan::probe(data);
+    writerslogic_warm::core::format::scan::probe(data);
 });

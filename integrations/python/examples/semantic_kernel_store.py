@@ -1,10 +1,10 @@
 # Copyright 2024-2026 WritersLogic Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Semantic Kernel vector store backed by Holographic Memory.
+"""Semantic Kernel vector store backed by WARM.
 
-    HMS_API_KEY=demo hms-server --input-dim 64 --dim 1024
-    HMS_URL=http://127.0.0.1:8080 HMS_API_KEY=demo python semantic_kernel_store.py
+    WARM_API_KEY=demo warm-server --input-dim 64 --dim 1024
+    WARM_URL=http://127.0.0.1:8080 WARM_API_KEY=demo python semantic_kernel_store.py
 """
 
 import asyncio
@@ -15,8 +15,8 @@ from typing import Annotated
 from semantic_kernel import Kernel
 from semantic_kernel.data.vector import VectorStoreField, vectorstoremodel
 
-from holographic_integrations.core import HashingEmbedder, HmsConfig
-from holographic_integrations.semantic_kernel import HolographicStore
+from writerslogic_warm_integrations.core import HashingEmbedder, WarmConfig
+from writerslogic_warm_integrations.semantic_kernel import WarmStore
 
 
 @vectorstoremodel
@@ -29,14 +29,14 @@ class Note:
 
 
 async def main() -> None:
-    config = HmsConfig(
-        url=os.environ.get("HMS_URL", "http://127.0.0.1:8080"),
-        api_key=os.environ.get("HMS_API_KEY"),
+    config = WarmConfig(
+        url=os.environ.get("WARM_URL", "http://127.0.0.1:8080"),
+        api_key=os.environ.get("WARM_API_KEY"),
         tenant_id="sk_demo",
         input_dim=64,
         embedder=HashingEmbedder(64),  # swap for a real model and match --input-dim
     )
-    async with HolographicStore(config).get_collection(Note, collection_name="notes") as notes:
+    async with WarmStore(config).get_collection(Note, collection_name="notes") as notes:
         await notes.ensure_collection_deleted()
         await notes.upsert([
             Note(id="1", text="The release train leaves every Thursday", team="platform"),

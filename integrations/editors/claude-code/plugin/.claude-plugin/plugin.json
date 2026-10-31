@@ -1,14 +1,14 @@
 {
-  "name": "holographic-memory",
-  "displayName": "Holographic Memory",
+  "name": "writerslogic-warm",
+  "displayName": "WARM",
   "version": "0.1.0",
   "description": "Persistent, private, on-device memory for Claude Code: an MCP server (remember, recall, search, list, forget, export), a session-start hook and a usage skill.",
   "author": {
     "name": "WritersLogic, Inc.",
     "email": "david@writerslogic.com"
   },
-  "homepage": "https://github.com/writerslogic/holographic-memory/tree/main/docs/integrations/editors",
-  "repository": "https://github.com/writerslogic/holographic-memory",
+  "homepage": "https://github.com/writerslogic/warm/tree/main/docs/integrations/editors",
+  "repository": "https://github.com/writerslogic/warm",
   "license": "Apache-2.0",
   "keywords": ["memory", "mcp", "local-first", "recall"],
   "userConfig": {

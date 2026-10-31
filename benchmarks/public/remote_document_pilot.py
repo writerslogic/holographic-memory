@@ -119,7 +119,7 @@ def remote_run(source, baseline, manifest, work_root):
         cpu = str(receipt["allowed_cpus"][0])
         run(["taskset", "-c", cpu, "python", "benchmarks/public/document_search_compare.py",
              "--baseline", bins["baseline"], "--candidate", bins["candidate"],
-             "--out", str(evidence / "paired"), "--lock-path", "/tmp/hms-benchmark-timing.lock"],
+             "--out", str(evidence / "paired"), "--lock-path", "/tmp/warm-benchmark-timing.lock"],
             "paired", 900, env=env)
         run(["python", "benchmarks/public/check_document_search_compare.py", str(evidence / "paired")],
             "independent-check", 120, env=env)

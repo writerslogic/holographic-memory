@@ -21,7 +21,7 @@
 //! are declared by hand (the `libc` crate is an optional dependency of this crate), with the
 //! platform constants of `<sys/mman.h>` and `<malloc/malloc.h>` given at each use.
 //!
-//! Knob: `HMS_RELEASE_JOURNAL_PAGES` (`0`, `false`, `off` or `no` disable; default on), read
+//! Knob: `WARM_RELEASE_JOURNAL_PAGES` (`0`, `false`, `off` or `no` disable; default on), read
 //! once per process.
 
 use std::sync::OnceLock;
@@ -30,7 +30,7 @@ use std::sync::OnceLock;
 pub(crate) fn release_journal_pages_enabled() -> bool {
     static ENABLED: OnceLock<bool> = OnceLock::new();
     *ENABLED.get_or_init(|| {
-        std::env::var("HMS_RELEASE_JOURNAL_PAGES").map_or(true, |value| {
+        crate::compatibility::var("WARM_RELEASE_JOURNAL_PAGES").map_or(true, |value| {
             !matches!(
                 value.trim().to_ascii_lowercase().as_str(),
                 "0" | "false" | "off" | "no"

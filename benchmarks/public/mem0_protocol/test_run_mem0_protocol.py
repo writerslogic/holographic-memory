@@ -135,7 +135,7 @@ def test_positive_cli_budget_requires_fixed_private_allocation(tmp_path):
 def test_harness_never_inherits_upstream_or_other_provider_secrets():
     environment = {"PATH": "/synthetic/bin", "OPENAI_API_KEY": "upstream", "OPENAI_BASE_URL": "external",
                    "OPENROUTER_API_KEY": "router", "AZURE_OPENAI_API_KEY": "azure", "HF_TOKEN": "hf",
-                   "GOOGLE_APPLICATION_CREDENTIALS": "/private/file", "HMS_PROXY_TOKEN": "local"}
+                   "GOOGLE_APPLICATION_CREDENTIALS": "/private/file", "WARM_PROXY_TOKEN": "local"}
     assert harness_environment(environment) == {"PATH": "/synthetic/bin"}
 
 

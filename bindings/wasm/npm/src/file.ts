@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { checkKey } from "./storage.js";
 import type { StorageAdapter } from "./types.js";
 
-const SUFFIX = ".hms";
+const SUFFIX = ".warm";
 
 async function syncDirectory(path: string): Promise<void> {
   if (process.platform === "win32") return;
@@ -19,7 +19,7 @@ async function syncDirectory(path: string): Promise<void> {
 }
 
 /**
- * File storage for Node, Deno and Bun: one `<key>.hms` file per key. A save writes a
+ * File storage for Node, Deno and Bun: one `<key>.warm` file per key. A save writes a
  * temporary file, syncs it, then renames it over the old one, so a crash leaves either
  * the old snapshot or the new one.
  */

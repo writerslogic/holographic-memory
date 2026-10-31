@@ -1,5 +1,5 @@
 {
- "schema": "hms.research.hli/1",
+ "schema": "warm.research.hli/1",
  "generated_at": "2026-10-21T06:43:18+00:00",
  "command": "benchmarks/research/hli/hli.py --out benchmarks/research/hli/out/hli_v1.json",
  "model": {
@@ -76,7 +76,7 @@
    "D_rerank": "candidates = dense top-100 union positive-BM25 top-100; non-candidates unretrieved; reported as metrics.rerank for every row",
    "E_meansub": "M_{d,g} -= W_{d,g} h_bar, h_bar = weight-mean token hypervector over the corpus"
   },
-  "hybrid": "metrics.hybrid_bm25 = per-query z-score of the row + z-score of BM25 (k1 1.2, b 0.75, HMS tokeniser from benchmarks/research/roc/roc.py)",
+  "hybrid": "metrics.hybrid_bm25 = per-query z-score of the row + z-score of BM25 (k1 1.2, b 0.75, WARM tokeniser from benchmarks/research/roc/roc.py)",
   "metrics": "nDCG@10 with linear gain over all judged grades, recall@100 over grade > 0, lower document index wins ties; all queries plus the odd (tune) / even (eval) split",
   "bootstrap": "paired percentile bootstrap of the mean nDCG@10 difference, 2000 resamples, seed 0, one shared index matrix per dataset (all) and per eval split",
   "memory": "dense 1536 B; maxsim tokens x 384 x 2 (fp16; fp32 also recorded); int8 bundle G x (D + 4); binary G x D / 8",

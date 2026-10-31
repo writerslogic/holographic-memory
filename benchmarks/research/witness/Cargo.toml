@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Standalone research crate (not a workspace member). It calls no root-crate
-# API, so the `holographic-memory` path dependency is intentionally omitted
+# API, so the `writerslogic-warm` path dependency is intentionally omitted
 # (same reasoning as `benchmarks/research/scan`): the kill test is about a
 # posting-list index written in plain Rust, and a root dependency would add
 # minutes of LTO build time for nothing. Every third-party crate and version
@@ -11,7 +11,7 @@
 # timed query path is single-threaded).
 
 [package]
-name = "hms-research-witness"
+name = "warm-research-witness"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.89"
@@ -22,11 +22,11 @@ description = "Kill test: occupancy-balanced rare-witness decoding (SRHT channel
 [workspace]
 
 [lib]
-name = "hms_research_witness"
+name = "warm_research_witness"
 path = "src/lib.rs"
 
 [[bin]]
-name = "hms-research-witness"
+name = "warm-research-witness"
 path = "src/main.rs"
 
 [dependencies]

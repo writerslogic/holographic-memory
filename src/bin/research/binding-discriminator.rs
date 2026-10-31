@@ -24,7 +24,7 @@
 //
 // Run: cargo run --release --bin binding-discriminator
 
-use holographic_memory::EntangledHVec;
+use writerslogic_warm::EntangledHVec;
 
 const DIM: usize = 16_384;
 const DENSITY_DENOM: usize = 256; // active count per symbol ~ DIM/256 = 64

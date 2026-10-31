@@ -66,8 +66,8 @@ def export(root):
             for target in saved.TARGETS:
                 candidate, _ = saved.select({"rows": rows}, {1}, target)
                 competitor, _ = saved.select({"rows": rows}, {2, 3, 4}, target)
-                comparisons.append({"target": target, "hms": candidate, "competitor": competitor,
-                                    "hms_qps_delta_percent": 100 * (candidate["qps_median"] / competitor["qps_median"] - 1)
+                comparisons.append({"target": target, "warm": candidate, "competitor": competitor,
+                                    "warm_qps_delta_percent": 100 * (candidate["qps_median"] / competitor["qps_median"] - 1)
                                     if candidate and competitor else None})
             datasets[name] = {"source": report["source"], "protocol": report["protocol"],
                               "rows": rows, "frontier_all_measured": frontier(rows),
@@ -77,7 +77,7 @@ def export(root):
     return {"schema_version": 1, "scope": "Frozen v1 results only; validation and official kept separate",
             "competitor_scope": "Measured RoarGraph M48/M96 and MLANN RF10/depth14, plus RF80/depth13 when complete; not the entire VIBE roster",
             "hardware": "writerslogic-02; Intel Core Ultra 9 185H; Linux/WSL2; AVX2; no AVX-512",
-            "hms_build": {"rustc": "1.96.0", "profile": "release", "rustflags": "-C target-cpu=native",
+            "warm_build": {"rustc": "1.96.0", "profile": "release", "rustflags": "-C target-cpu=native",
                           "baseline_sha256": "91beaaf58f5bced0060e6337052edad5aa1dd8c6733fece137b927c9d0788b7e",
                           "candidate_sha256": "31988dc57c8998e12f2daabb8e6b77086775d8532d60f475ac12095d7d2d0a26"},
             "resource_limits": "Main process RSS aggregates all resident arms; encoded bytes are not persisted file size. Build times are single observations.",

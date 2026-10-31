@@ -9,8 +9,8 @@ use std::path::Path;
 
 use anyhow::{ensure, Result};
 use format_common::*;
-use holographic_memory::core::format::{scan, verify_path, Verdict, VerifyOptions};
-use holographic_memory::HmsCore;
+use writerslogic_warm::core::format::{scan, verify_path, Verdict, VerifyOptions};
+use writerslogic_warm::WarmCore;
 
 fn unpacked(name: &str) -> Result<(tempfile::TempDir, std::path::PathBuf, Golden)> {
     let golden = goldens()?
@@ -23,8 +23,8 @@ fn unpacked(name: &str) -> Result<(tempfile::TempDir, std::path::PathBuf, Golden
     Ok((scratch, store, golden))
 }
 
-fn open(store: &Path, golden: &Golden) -> Result<HmsCore> {
-    HmsCore::new(
+fn open(store: &Path, golden: &Golden) -> Result<WarmCore> {
+    WarmCore::new(
         golden.dimensions(),
         Some(store.display().to_string()),
         Some(golden.config()?),
@@ -155,7 +155,7 @@ fn audit_torn_entry_is_repaired() -> Result<()> {
     let count = core.audit_since(0)?.len();
     core.memorize(
         "audit-new".into(),
-        holographic_memory::EntangledHVec::new_deterministic(1024, 5),
+        writerslogic_warm::EntangledHVec::new_deterministic(1024, 5),
     )?;
     assert_eq!(core.audit_since(0)?.len(), count + 1);
     drop(core);
@@ -168,10 +168,10 @@ fn audit_torn_entry_is_repaired() -> Result<()> {
 #[test]
 fn salt_is_created_whole_before_the_first_frame() -> Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut config = holographic_memory::core::HmsConfig::default();
+    let mut config = writerslogic_warm::core::WarmConfig::default();
     config.security.encryption_enabled = true;
     config.security.encryption_passphrase = Some("p".into());
-    let core = HmsCore::new(256, Some(dir.path().display().to_string()), Some(config))?;
+    let core = WarmCore::new(256, Some(dir.path().display().to_string()), Some(config))?;
     assert_eq!(
         std::fs::metadata(dir.path().join("encryption.salt"))?.len(),
         16

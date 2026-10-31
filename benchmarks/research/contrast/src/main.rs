@@ -1,7 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-//! `hms-contrast`: runs the two kill tests and writes JSON reports.
+//! `warm-contrast`: runs the two kill tests and writes JSON reports.
 //!
 //! * `nfcorpus` (Part A): own BM25 top-`k` over `corpus.jsonl`, reranked by
 //!   `minmax(BM25) + alpha * minmax(feature)` for each structural feature;
@@ -28,12 +28,12 @@ use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 
-use hms_research_contrast::bm25::{self, Bm25Index};
-use hms_research_contrast::data;
-use hms_research_contrast::eval;
-use hms_research_contrast::hv::{self, DIM};
-use hms_research_contrast::sketch::{self, DocSketch, PairTable, GENERIC_FOILS};
-use hms_research_contrast::synth::{self, SynthConfig, Triple};
+use warm_research_contrast::bm25::{self, Bm25Index};
+use warm_research_contrast::data;
+use warm_research_contrast::eval;
+use warm_research_contrast::hv::{self, DIM};
+use warm_research_contrast::sketch::{self, DocSketch, PairTable, GENERIC_FOILS};
+use warm_research_contrast::synth::{self, SynthConfig, Triple};
 
 const OUT_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/out");
 const OUT_A: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/out/part_a.json");
@@ -54,7 +54,7 @@ const PASS_B_LATENCY_US: f64 = 100.0;
 const TAR_TARGET: f64 = 0.80;
 
 #[derive(Parser)]
-#[command(name = "hms-contrast", about = "Counterfactual structural contrast kill tests")]
+#[command(name = "warm-contrast", about = "Counterfactual structural contrast kill tests")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -72,10 +72,10 @@ enum TuneMode {
 enum Cmd {
     /// Part A: NFCorpus BM25 top-k rerank.
     Nfcorpus {
-        /// NFCorpus directory (default `~/.cache/hms-bench/nfcorpus`).
+        /// NFCorpus directory (default `~/.cache/warm-bench/nfcorpus`).
         #[arg(long)]
         data: Option<PathBuf>,
-        /// Tuning directory (default `~/.cache/hms-bench/scifact`).
+        /// Tuning directory (default `~/.cache/warm-bench/scifact`).
         #[arg(long)]
         tune_data: Option<PathBuf>,
         /// Where alpha/lambda are tuned.
@@ -126,7 +126,7 @@ fn home_cache(sub: &str) -> PathBuf {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."));
-    home.join(".cache").join("hms-bench").join(sub)
+    home.join(".cache").join("warm-bench").join(sub)
 }
 
 fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {

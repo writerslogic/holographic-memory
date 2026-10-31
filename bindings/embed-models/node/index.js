@@ -2,5 +2,5 @@
 // SPDX-License-Identifier: Apache-2.0
 'use strict'
 
-// Directory of verified model packs; holographic-memory points HMS_EMBED_MODEL_DIR at it.
+// Directory of verified model packs; writerslogic-warm points WARM_EMBED_MODEL_DIR at it.
 module.exports = { packDir: require('path').join(__dirname, 'packs') }

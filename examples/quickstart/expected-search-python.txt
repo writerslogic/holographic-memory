@@ -1,4 +1,4 @@
-query                                                      HMS       FTS5      expected
+query                                                      WARM       FTS5      expected
 right to a fair trial                                      udhr-23   udhr-10   udhr-10
 freedom of religion                                        udhr-18   udhr-18   udhr-18
 paid holidays and rest from work                           udhr-24   udhr-24   udhr-24
@@ -7,4 +7,4 @@ everyone may take part in elections                        udhr-28   udhr-21   u
 protection of private correspondence and home              udhr-22   udhr-12   udhr-12
 free education for children                                udhr-26   udhr-26   udhr-26
 escaping persecution by seeking asylum in another country  udhr-14   udhr-14   udhr-14
-top-1 correct: HMS 4/8, FTS5 7/8
+top-1 correct: WARM 4/8, FTS5 7/8

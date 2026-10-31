@@ -11,12 +11,12 @@ use crate::error::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[allow(non_camel_case_types)]
-pub struct hms_str_t {
+pub struct warm_str_t {
     pub ptr: *const u8,
     pub len: usize,
 }
 
-impl hms_str_t {
+impl warm_str_t {
     pub const ABSENT: Self = Self {
         ptr: std::ptr::null(),
         len: 0,
@@ -30,39 +30,39 @@ impl hms_str_t {
     }
 }
 
-/// Store open options. Set `struct_size = sizeof(hms_open_options_t)`; fields past the
+/// Store open options. Set `struct_size = sizeof(warm_open_options_t)`; fields past the
 /// caller's `struct_size` take their defaults, so a newer library accepts an older caller.
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[allow(non_camel_case_types)]
-pub struct hms_open_options_t {
+pub struct warm_open_options_t {
     /// `sizeof` of this struct as the caller compiled it.
     pub struct_size: u32,
     /// Reserved; must be zero.
     pub flags: u32,
     /// Encryption passphrase (UTF-8). Absent leaves encryption off. A store created with a
     /// key can only be opened with the same key.
-    pub encryption_key: hms_str_t,
+    pub encryption_key: warm_str_t,
     /// 0 default (off), 1 on, -1 off. Signs mutations with an Ed25519 key kept in the store.
     pub signing: i32,
     /// 0 default (off), 1 on, -1 off.
     pub audit: i32,
     /// Embedding space for caller-supplied embeddings. All three or none; the model and
     /// revision are identifiers the store pins, the dimension is 1..=65536.
-    pub embedding_model: hms_str_t,
-    pub embedding_revision: hms_str_t,
+    pub embedding_model: warm_str_t,
+    pub embedding_revision: warm_str_t,
     pub embedding_dimensions: u32,
 }
 
-impl hms_open_options_t {
+impl warm_open_options_t {
     pub const DEFAULT: Self = Self {
         struct_size: std::mem::size_of::<Self>() as u32,
         flags: 0,
-        encryption_key: hms_str_t::ABSENT,
+        encryption_key: warm_str_t::ABSENT,
         signing: 0,
         audit: 0,
-        embedding_model: hms_str_t::ABSENT,
-        embedding_revision: hms_str_t::ABSENT,
+        embedding_model: warm_str_t::ABSENT,
+        embedding_revision: warm_str_t::ABSENT,
         embedding_dimensions: 0,
     };
 }
@@ -71,14 +71,14 @@ impl hms_open_options_t {
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[allow(non_camel_case_types)]
-pub struct hms_document_t {
+pub struct warm_document_t {
     /// Unique non-empty identifier, at most 4096 bytes. Re-ingesting an id replaces it.
-    pub id: hms_str_t,
-    pub text: hms_str_t,
-    pub source_uri: hms_str_t,
-    pub version: hms_str_t,
+    pub id: warm_str_t,
+    pub text: warm_str_t,
+    pub source_uri: warm_str_t,
+    pub version: warm_str_t,
     /// A JSON value (object recommended) stored with the document and returned with hits.
-    pub metadata_json: hms_str_t,
+    pub metadata_json: warm_str_t,
     /// Words per chunk; 0 is the engine default.
     pub chunk_words: u32,
     /// Overlap words between chunks; 0 is the engine default.
@@ -95,15 +95,15 @@ pub struct hms_document_t {
     pub embedding_dim: usize,
 }
 
-/// Search options. Set `struct_size = sizeof(hms_search_options_t)`; see
-/// `hms_open_options_t` for the compatibility rule. Initialise it with `hms1_search_options_init`;
+/// Search options. Set `struct_size = sizeof(warm_search_options_t)`; see
+/// `warm_open_options_t` for the compatibility rule. Initialise it with `hms1_search_options_init`;
 /// a zero-initialised struct (with `struct_size` set) selects every engine default.
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[allow(non_camel_case_types)]
-pub struct hms_search_options_t {
+pub struct warm_search_options_t {
     pub struct_size: u32,
-    /// Bitwise OR of `HMS_SEARCH_SET_*`; a numeric field below is honoured only when its bit
+    /// Bitwise OR of `WARM_SEARCH_SET_*`; a numeric field below is honoured only when its bit
     /// is set (zero is a meaningful weight), so a zero-initialised struct means all defaults.
     pub flags: u32,
     /// Hits to return; 0 is the engine default.
@@ -111,39 +111,39 @@ pub struct hms_search_options_t {
     /// Candidates gathered per list before fusion; 0 is the engine default.
     pub candidate_limit: u32,
     /// JSON metadata filter; absent matches everything.
-    pub filter_json: hms_str_t,
+    pub filter_json: warm_str_t,
     /// Restrict to one source URI.
-    pub source_uri: hms_str_t,
+    pub source_uri: warm_str_t,
     /// Restrict to these document ids (`document_id_count` entries).
-    pub document_ids: *const hms_str_t,
+    pub document_ids: *const warm_str_t,
     pub document_id_count: usize,
     /// Query embedding for semantic or hybrid search (`embedding_len` doubles).
     pub embedding: *const f64,
     pub embedding_len: usize,
-    /// Honoured with `HMS_SEARCH_SET_LEXICAL_WEIGHT`.
+    /// Honoured with `WARM_SEARCH_SET_LEXICAL_WEIGHT`.
     pub lexical_weight: f64,
-    /// Honoured with `HMS_SEARCH_SET_SEMANTIC_WEIGHT`.
+    /// Honoured with `WARM_SEARCH_SET_SEMANTIC_WEIGHT`.
     pub semantic_weight: f64,
-    /// Honoured with `HMS_SEARCH_SET_MIN_SEMANTIC_SCORE`.
+    /// Honoured with `WARM_SEARCH_SET_MIN_SEMANTIC_SCORE`.
     pub min_semantic_score: f64,
     /// BM25 term-frequency saturation k1 (default 1.2, finite and nonnegative); honoured with
-    /// `HMS_SEARCH_SET_BM25_K1`.
+    /// `WARM_SEARCH_SET_BM25_K1`.
     pub bm25_k1: f64,
     /// BM25 length normalization b (default 0.75, in [0, 1]); honoured with
-    /// `HMS_SEARCH_SET_BM25_B`.
+    /// `WARM_SEARCH_SET_BM25_B`.
     pub bm25_b: f64,
     /// `"blend"` (default) or `"rrf"`; absent is the default.
-    pub fusion: hms_str_t,
+    pub fusion: warm_str_t,
 }
 
-impl hms_search_options_t {
+impl warm_search_options_t {
     pub const DEFAULT: Self = Self {
         struct_size: std::mem::size_of::<Self>() as u32,
         flags: 0,
         k: 0,
         candidate_limit: 0,
-        filter_json: hms_str_t::ABSENT,
-        source_uri: hms_str_t::ABSENT,
+        filter_json: warm_str_t::ABSENT,
+        source_uri: warm_str_t::ABSENT,
         document_ids: std::ptr::null(),
         document_id_count: 0,
         embedding: std::ptr::null(),
@@ -153,32 +153,32 @@ impl hms_search_options_t {
         min_semantic_score: 0.0,
         bm25_k1: 0.0,
         bm25_b: 0.0,
-        fusion: hms_str_t::ABSENT,
+        fusion: warm_str_t::ABSENT,
     };
 }
 
-pub const HMS_SEARCH_SET_LEXICAL_WEIGHT: u32 = 1 << 0;
-pub const HMS_SEARCH_SET_SEMANTIC_WEIGHT: u32 = 1 << 1;
-pub const HMS_SEARCH_SET_MIN_SEMANTIC_SCORE: u32 = 1 << 2;
-pub const HMS_SEARCH_SET_BM25_K1: u32 = 1 << 3;
-pub const HMS_SEARCH_SET_BM25_B: u32 = 1 << 4;
+pub const WARM_SEARCH_SET_LEXICAL_WEIGHT: u32 = 1 << 0;
+pub const WARM_SEARCH_SET_SEMANTIC_WEIGHT: u32 = 1 << 1;
+pub const WARM_SEARCH_SET_MIN_SEMANTIC_SCORE: u32 = 1 << 2;
+pub const WARM_SEARCH_SET_BM25_K1: u32 = 1 << 3;
+pub const WARM_SEARCH_SET_BM25_B: u32 = 1 << 4;
 
-/// One search hit. Strings borrow from the `hms_results_t` that produced it and stay valid
+/// One search hit. Strings borrow from the `warm_results_t` that produced it and stay valid
 /// until `hms1_results_free`.
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[allow(non_camel_case_types)]
-pub struct hms_result_t {
+pub struct warm_result_t {
     /// Chunk id.
-    pub id: hms_str_t,
-    pub document_id: hms_str_t,
+    pub id: warm_str_t,
+    pub document_id: warm_str_t,
     /// `ptr == NULL` when the document has no source URI.
-    pub source_uri: hms_str_t,
-    pub version: hms_str_t,
+    pub source_uri: warm_str_t,
+    pub version: warm_str_t,
     /// The document metadata as JSON text.
-    pub metadata_json: hms_str_t,
+    pub metadata_json: warm_str_t,
     /// The chunk text; `ptr == NULL` when the document was stored without text.
-    pub text: hms_str_t,
+    pub text: warm_str_t,
     pub start_byte: u32,
     pub end_byte: u32,
     pub score: f64,
@@ -191,9 +191,9 @@ pub struct hms_result_t {
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[allow(non_camel_case_types)]
-pub struct hms_chunk_t {
-    pub id: hms_str_t,
-    pub text: hms_str_t,
+pub struct warm_chunk_t {
+    pub id: warm_str_t,
+    pub text: warm_str_t,
     pub start_byte: u32,
     pub end_byte: u32,
 }
@@ -203,7 +203,7 @@ pub struct hms_chunk_t {
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
 #[allow(non_camel_case_types)]
-pub struct hms_stats_t {
+pub struct warm_stats_t {
     pub struct_size: u32,
     pub dimensions: u32,
     /// Vectors in the store (document chunks count as vectors).
@@ -224,7 +224,7 @@ pub struct hms_stats_t {
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
 #[allow(non_camel_case_types)]
-pub struct hms_security_status_t {
+pub struct warm_security_status_t {
     pub struct_size: u32,
     /// The library was built with encryption and signing support.
     pub security_compiled: i32,
@@ -239,13 +239,13 @@ pub struct hms_security_status_t {
 pub(crate) fn require_ptr<'a, T>(ptr: *const T, what: &str) -> ApiResult<&'a T> {
     // SAFETY: the caller promises a valid pointer or NULL; NULL is rejected here.
     unsafe { ptr.as_ref() }
-        .ok_or_else(|| ApiError::new(HMS_ERR_NULL_POINTER, format!("{what} is NULL")))
+        .ok_or_else(|| ApiError::new(WARM_ERR_NULL_POINTER, format!("{what} is NULL")))
 }
 
 pub(crate) fn require_out<'a, T>(ptr: *mut T, what: &str) -> ApiResult<&'a mut T> {
     // SAFETY: as `require_ptr`; the caller promises exclusive access for the call.
     unsafe { ptr.as_mut() }
-        .ok_or_else(|| ApiError::new(HMS_ERR_NULL_POINTER, format!("{what} is NULL")))
+        .ok_or_else(|| ApiError::new(WARM_ERR_NULL_POINTER, format!("{what} is NULL")))
 }
 
 /// Read `len` elements at `ptr`, rejecting NULL with a nonzero length and any length beyond
@@ -256,21 +256,21 @@ pub(crate) fn slice<'a, T>(ptr: *const T, len: usize, what: &str) -> ApiResult<&
     }
     if ptr.is_null() {
         return Err(ApiError::new(
-            HMS_ERR_NULL_POINTER,
+            WARM_ERR_NULL_POINTER,
             format!("{what} is NULL with length {len}"),
         ));
     }
     let bytes = len.checked_mul(std::mem::size_of::<T>());
     let limit = if std::mem::size_of::<T>() == 1 {
-        HMS_MAX_BUFFER_BYTES
+        WARM_MAX_BUFFER_BYTES
     } else {
-        HMS_MAX_ARRAY_LEN.saturating_mul(std::mem::size_of::<T>().max(1))
+        WARM_MAX_ARRAY_LEN.saturating_mul(std::mem::size_of::<T>().max(1))
     };
     match bytes {
         Some(bytes) if bytes <= limit => {}
         _ => {
             return Err(ApiError::new(
-                HMS_ERR_LIMIT_EXCEEDED,
+                WARM_ERR_LIMIT_EXCEEDED,
                 format!("{what} length {len} exceeds the limit"),
             ))
         }
@@ -279,13 +279,13 @@ pub(crate) fn slice<'a, T>(ptr: *const T, len: usize, what: &str) -> ApiResult<&
     Ok(unsafe { std::slice::from_raw_parts(ptr, len) })
 }
 
-pub(crate) fn utf8<'a>(value: hms_str_t, what: &str) -> ApiResult<&'a str> {
+pub(crate) fn utf8<'a>(value: warm_str_t, what: &str) -> ApiResult<&'a str> {
     let bytes = slice(value.ptr, value.len, what)?;
     std::str::from_utf8(bytes)
-        .map_err(|e| ApiError::new(HMS_ERR_INVALID_UTF8, format!("{what} is not UTF-8: {e}")))
+        .map_err(|e| ApiError::new(WARM_ERR_INVALID_UTF8, format!("{what} is not UTF-8: {e}")))
 }
 
-pub(crate) fn opt_utf8<'a>(value: hms_str_t, what: &str) -> ApiResult<Option<&'a str>> {
+pub(crate) fn opt_utf8<'a>(value: warm_str_t, what: &str) -> ApiResult<Option<&'a str>> {
     if value.ptr.is_null() && value.len == 0 {
         Ok(None)
     } else {
@@ -307,7 +307,7 @@ fn declared_size(caller: *const u8, what: &str) -> ApiResult<usize> {
     let declared = unsafe { std::ptr::read_unaligned(caller.cast::<u32>()) } as usize;
     if declared < std::mem::size_of::<u32>() {
         return Err(ApiError::new(
-            HMS_ERR_ABI_MISMATCH,
+            WARM_ERR_ABI_MISMATCH,
             format!("{what}.struct_size {declared} is smaller than 4"),
         ));
     }
@@ -336,7 +336,7 @@ pub(crate) fn write_out<T: Copy>(out: *mut T, mut value: T, what: &str) -> ApiRe
     let out = out.cast::<u8>();
     if out.is_null() {
         return Err(ApiError::new(
-            HMS_ERR_NULL_POINTER,
+            WARM_ERR_NULL_POINTER,
             format!("{what} is NULL"),
         ));
     }

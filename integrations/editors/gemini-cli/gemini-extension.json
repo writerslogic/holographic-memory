@@ -1,11 +1,11 @@
 {
-  "name": "holographic-memory",
+  "name": "writerslogic-warm",
   "version": "0.1.0",
   "description": "Persistent, private, on-device memory over MCP: remember, recall, search, list, forget, export.",
   "mcpServers": {
-    "holographic-memory": {
+    "writerslogic-warm": {
       "command": "npx",
-      "args": ["-y", "holographic-memory-mcp"]
+      "args": ["-y", "writerslogic-warm-mcp"]
     }
   },
   "contextFileName": "HOLOGRAPHIC-MEMORY.md"

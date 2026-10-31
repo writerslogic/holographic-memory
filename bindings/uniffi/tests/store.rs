@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use hms_mobile::{chunk_document, DocumentInput, HmsError, HmsStore, SearchOptions, StoreOptions};
+use warm_mobile::{chunk_document, DocumentInput, WarmError, WarmStore, SearchOptions, StoreOptions};
 
 fn doc(id: &str, text: &str) -> DocumentInput {
     DocumentInput {
@@ -27,11 +27,11 @@ fn small() -> StoreOptions {
     }
 }
 
-fn open(dir: &std::path::Path) -> Arc<HmsStore> {
-    HmsStore::open_blocking(dir.join("store").display().to_string(), Some(small())).unwrap()
+fn open(dir: &std::path::Path) -> Arc<WarmStore> {
+    WarmStore::open_blocking(dir.join("store").display().to_string(), Some(small())).unwrap()
 }
 
-fn top_ids(store: &HmsStore, query: &str, options: Option<SearchOptions>) -> Vec<String> {
+fn top_ids(store: &WarmStore, query: &str, options: Option<SearchOptions>) -> Vec<String> {
     store
         .search_blocking(query.into(), options)
         .unwrap()
@@ -149,7 +149,7 @@ fn bm25_options_change_scores_and_are_validated() {
     };
     assert!(matches!(
         store.search_blocking("needle".into(), Some(bad)),
-        Err(HmsError::InvalidInput { .. })
+        Err(WarmError::InvalidInput { .. })
     ));
 }
 
@@ -177,21 +177,21 @@ fn bad_input_is_a_typed_error() {
     input.metadata_json = Some("[1,2]".into());
     assert!(matches!(
         store.ingest_blocking(input),
-        Err(HmsError::InvalidInput { .. })
+        Err(WarmError::InvalidInput { .. })
     ));
     assert!(matches!(
         store.ingest_blocking(doc("", "text")),
-        Err(HmsError::InvalidInput { .. })
+        Err(WarmError::InvalidInput { .. })
     ));
     assert!(matches!(
-        HmsStore::open_blocking(
+        WarmStore::open_blocking(
             dir.path().join("tiny").display().to_string(),
             Some(StoreOptions {
                 dimensions: 0,
                 ..Default::default()
             })
         ),
-        Err(HmsError::InvalidInput { .. })
+        Err(WarmError::InvalidInput { .. })
     ));
 }
 
@@ -208,8 +208,8 @@ fn chunking_reports_source_offsets() {
 fn a_directory_opens_once() {
     let dir = tempfile::tempdir().unwrap();
     let store = open(dir.path());
-    let second = HmsStore::open_blocking(dir.path().join("store").display().to_string(), None);
-    assert!(matches!(second, Err(HmsError::StoreLocked { .. })));
+    let second = WarmStore::open_blocking(dir.path().join("store").display().to_string(), None);
+    assert!(matches!(second, Err(WarmError::StoreLocked { .. })));
     store.shutdown();
     drop(store);
     open(dir.path());
@@ -220,10 +220,10 @@ fn closed_handles_fail_with_closed() {
     let dir = tempfile::tempdir().unwrap();
     let store = open(dir.path());
     store.shutdown();
-    assert!(matches!(store.stats(), Err(HmsError::Closed)));
+    assert!(matches!(store.stats(), Err(WarmError::Closed)));
     assert!(matches!(
         store.ingest_blocking(doc("a", "x")),
-        Err(HmsError::Closed)
+        Err(WarmError::Closed)
     ));
 }
 
@@ -239,7 +239,7 @@ fn encrypted_store_requires_its_key_and_hides_text() {
     let secret = "uniquemarkerphrase correct horse battery staple";
     {
         let store =
-            HmsStore::open_blocking(path.clone(), Some(keyed(Some("passphrase-1")))).unwrap();
+            WarmStore::open_blocking(path.clone(), Some(keyed(Some("passphrase-1")))).unwrap();
         store.ingest_blocking(doc("a", secret)).unwrap();
         assert!(store.stats().unwrap().encrypted);
         store.compact_blocking().unwrap();
@@ -260,19 +260,19 @@ fn encrypted_store_requires_its_key_and_hides_text() {
     );
 
     assert!(matches!(
-        HmsStore::open_blocking(path.clone(), Some(keyed(None))),
-        Err(HmsError::IncompatibleStore { .. })
+        WarmStore::open_blocking(path.clone(), Some(keyed(None))),
+        Err(WarmError::IncompatibleStore { .. })
     ));
-    let wrong = HmsStore::open_blocking(path.clone(), Some(keyed(Some("not-the-key"))));
+    let wrong = WarmStore::open_blocking(path.clone(), Some(keyed(Some("not-the-key"))));
     assert!(
         matches!(
             wrong,
-            Err(HmsError::Encryption { .. }) | Err(HmsError::Corrupt { .. })
+            Err(WarmError::Encryption { .. }) | Err(WarmError::Corrupt { .. })
         ),
         "wrong key gave {:?}",
         wrong.err()
     );
-    let store = HmsStore::open_blocking(path, Some(keyed(Some("passphrase-1")))).unwrap();
+    let store = WarmStore::open_blocking(path, Some(keyed(Some("passphrase-1")))).unwrap();
     assert_eq!(top_ids(&store, "uniquemarkerphrase", None), ["a"]);
 }
 
@@ -289,7 +289,7 @@ fn walk(root: &std::path::Path) -> Vec<std::path::PathBuf> {
     out
 }
 
-fn populate(store: &HmsStore) {
+fn populate(store: &WarmStore) {
     for i in 0..40 {
         let mut input = doc(
             &format!("d{i}"),
@@ -316,7 +316,7 @@ fn snapshot_restores_identical_results_and_survives_later_writes() {
         .ingest_blocking(doc("late", "added after the snapshot"))
         .unwrap();
 
-    let restored = HmsStore::restore_blocking(
+    let restored = WarmStore::restore_blocking(
         snap.display().to_string(),
         dir.path().join("restored").display().to_string(),
         Some(small()),
@@ -334,7 +334,7 @@ fn snapshot_restores_identical_results_and_survives_later_writes() {
     drop(store);
     std::fs::remove_dir_all(dir.path().join("store")).unwrap();
     drop(restored);
-    let again = HmsStore::restore_blocking(
+    let again = WarmStore::restore_blocking(
         snap.display().to_string(),
         dir.path().join("again").display().to_string(),
         Some(small()),
@@ -352,11 +352,11 @@ fn snapshot_refuses_bad_destinations_and_restore_detects_tampering() {
     store.snapshot_blocking(snap.display().to_string()).unwrap();
     assert!(matches!(
         store.snapshot_blocking(snap.display().to_string()),
-        Err(HmsError::AlreadyExists { .. })
+        Err(WarmError::AlreadyExists { .. })
     ));
     assert!(matches!(
         store.snapshot_blocking(dir.path().join("store/inside").display().to_string()),
-        Err(HmsError::InvalidInput { .. })
+        Err(WarmError::InvalidInput { .. })
     ));
 
     let victim = walk(&snap)
@@ -370,21 +370,21 @@ fn snapshot_refuses_bad_destinations_and_restore_detects_tampering() {
     std::fs::write(&victim, bytes).unwrap();
     let target = dir.path().join("tampered");
     assert!(matches!(
-        HmsStore::restore_blocking(
+        WarmStore::restore_blocking(
             snap.display().to_string(),
             target.display().to_string(),
             Some(small())
         ),
-        Err(HmsError::Corrupt { .. })
+        Err(WarmError::Corrupt { .. })
     ));
     assert!(!target.exists(), "a failed restore leaves nothing behind");
     assert!(matches!(
-        HmsStore::restore_blocking(
+        WarmStore::restore_blocking(
             dir.path().join("missing").display().to_string(),
             dir.path().join("x").display().to_string(),
             None
         ),
-        Err(HmsError::NotFound { .. })
+        Err(WarmError::NotFound { .. })
     ));
 }
 
@@ -397,7 +397,7 @@ fn snapshots_reject_absolute_descendants_of_relative_stores() {
     for destination in [source.join("inside"), source.join("../store/inside")] {
         assert!(matches!(
             store.snapshot_blocking(destination.display().to_string()),
-            Err(HmsError::InvalidInput { .. })
+            Err(WarmError::InvalidInput { .. })
         ));
     }
     assert!(!source.join("inside").exists());
@@ -418,14 +418,14 @@ fn snapshots_reject_symlink_aliases_of_the_store() {
     std::os::unix::fs::symlink(dir.path().join("store"), &alias).unwrap();
     assert!(matches!(
         store.snapshot_blocking(alias.join("inside").display().to_string()),
-        Err(HmsError::InvalidInput { .. })
+        Err(WarmError::InvalidInput { .. })
     ));
     assert!(!alias.join("inside").exists());
     let snapshot = dir.path().join("outside/snapshot");
     store
         .snapshot_blocking(snapshot.display().to_string())
         .unwrap();
-    let restored = HmsStore::restore_blocking(
+    let restored = WarmStore::restore_blocking(
         snapshot.display().to_string(),
         dir.path().join("restored").display().to_string(),
         Some(small()),
@@ -472,7 +472,7 @@ fn snapshot_while_searching_and_ingesting_stays_consistent() {
     store.shutdown();
     drop(store);
     for (n, (snap, expected)) in counts.into_iter().enumerate() {
-        let restored = HmsStore::restore_blocking(
+        let restored = WarmStore::restore_blocking(
             snap.display().to_string(),
             dir.path().join(format!("r{n}")).display().to_string(),
             Some(small()),
@@ -485,7 +485,7 @@ fn snapshot_while_searching_and_ingesting_stays_consistent() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn async_forms_run_off_the_caller_thread() {
     let dir = tempfile::tempdir().unwrap();
-    let store = HmsStore::open(
+    let store = WarmStore::open(
         dir.path().join("store").display().to_string(),
         Some(small()),
     )
@@ -515,7 +515,7 @@ async fn async_forms_run_off_the_caller_thread() {
 #[test]
 fn semantic_search_with_caller_embeddings() {
     let dir = tempfile::tempdir().unwrap();
-    let store = HmsStore::open_blocking(
+    let store = WarmStore::open_blocking(
         dir.path().join("store").display().to_string(),
         Some(StoreOptions {
             dimensions: 1024,

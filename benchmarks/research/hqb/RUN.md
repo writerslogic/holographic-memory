@@ -19,7 +19,7 @@ uv run --no-project --with numpy python benchmarks/research/hqb/hqb.py
 # 10-20 s smoke run first if desired (n=5000, 50 queries, out/hqb_quick.json)
 uv run --no-project --with numpy python benchmarks/research/hqb/hqb.py --quick
 
-# synthetic only, if ~/.cache/hms-bench/nfcorpus is unavailable
+# synthetic only, if ~/.cache/warm-bench/nfcorpus is unavailable
 uv run --no-project --with numpy python benchmarks/research/hqb/hqb.py --datasets synthetic
 ```
 
@@ -33,7 +33,7 @@ Options (defaults in brackets): `--datasets synthetic,nfcorpus`, `--n 50000`,
 `--queries 500`, `--dim 768`, `--clusters 200`, `--spread 0.75`,
 `--spectrum-alpha 0.5`, `--distractor-noise 0.6`, `--seed 42`,
 `--ks 1,2,4,8,16`, `--cs 200,1000,5000`, `--runs 5`, `--warmup 1`,
-`--timing-queries 16`, `--nfcorpus-dir ~/.cache/hms-bench/nfcorpus`, `--out`.
+`--timing-queries 16`, `--nfcorpus-dir ~/.cache/warm-bench/nfcorpus`, `--out`.
 
 Exit code: 0 after a completed run (PASS or FAIL is the verdict line, not
 the exit code); 2 for bad arguments or an unloadable dataset; 1 if the JSON
@@ -47,7 +47,7 @@ cannot be written.
   500 held-out queries drawn the same way. numpy PCG64 replaces xoshiro, so
   rows are not bit-identical to the Rust generator.
 * `nfcorpus`: the 3,633 real MiniLM-L6 384-d rows from
-  `~/.cache/hms-bench/nfcorpus/corpus.f32` padded to 50,000 with on-manifold
+  `~/.cache/warm-bench/nfcorpus/corpus.f32` padded to 50,000 with on-manifold
   distractors `normalize(x_j + 0.6*g/sqrt(384))` around random real rows;
   queries are the real queries after a seeded shuffle. The file holds 323
   queries, so `n_queries = 323` (the brief's 500 is `n_queries_requested`);

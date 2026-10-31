@@ -1,12 +1,12 @@
-import type { DocumentInput, DocumentResult, HolographicMemorySystem, SearchOptions } from 'holographic-memory'
-import type { Embedder, Reranker } from 'holographic-memory/semantic'
+import type { DocumentInput, DocumentResult, WarmMemorySystem, SearchOptions } from 'writerslogic-warm'
+import type { Embedder, Reranker } from 'writerslogic-warm/semantic'
 
 /** A flat curated document as written by the ToIP EGWG prototype's `src.curate`. */
 export interface CuratedDocument {
   /** Stable, human-readable ID; with `source_system` and the namespace it is the document's identity. */
   id: string
   source_system: string
-  /** Content identifier (SAID). Kept verbatim as the HMS version; not verified. */
+  /** Content identifier (SAID). Kept verbatim as the WARM version; not verified. */
   identifier: string
   content: string
   organizational_unit: string[]
@@ -114,7 +114,7 @@ export interface OrganizationalKnowledgeOptions {
 }
 
 export class OrganizationalKnowledge {
-  constructor(memory: HolographicMemorySystem, options: OrganizationalKnowledgeOptions)
+  constructor(memory: WarmMemorySystem, options: OrganizationalKnowledgeOptions)
   readonly namespace: string
   importDocuments(entries: Iterable<ImportEntry>): Promise<ImportResult>
   search(query: string, options?: Omit<SearchOptions, 'filter'> & { filter?: Record<string, unknown> }): Promise<Hit[]>
@@ -123,7 +123,7 @@ export class OrganizationalKnowledge {
   forgetScope(scope: ForgetScope, options?: { apply?: boolean; limit?: number }): Promise<ForgetScopeResult>
 }
 
-/** The HMS document ID for an identity. Throws `invalid_request` for unusable parts. */
+/** The WARM document ID for an identity. Throws `invalid_request` for unusable parts. */
 export function documentId(namespace: string, sourceSystem: string, id: string): string
 /** Reads one curated document per `.json` file, from files or directories (not recursive). */
 export function readCuratedFiles(targets: string[]): Promise<Array<{ source: string; document: unknown }>>
@@ -139,6 +139,6 @@ export function prepareImport(namespace: string, entries: Iterable<ImportEntry>)
 export function validateImport(
   namespace: string,
   entries: Iterable<ImportEntry>,
-  memory: HolographicMemorySystem,
+  memory: WarmMemorySystem,
   options?: { embeddingDimensions?: number },
 ): Promise<PreparedDocument[]>

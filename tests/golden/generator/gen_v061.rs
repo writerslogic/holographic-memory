@@ -6,8 +6,8 @@
 #[path = "ops.rs"]
 mod ops;
 
-use holographic_memory::core::HmsConfig;
-use holographic_memory::HmsCore;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::WarmCore;
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -16,14 +16,14 @@ fn main() -> anyhow::Result<()> {
         "usage: gen_v061 <out-dir> <corpus.json> <dim> [passphrase]"
     );
     let dim: u32 = args[3].parse()?;
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     if let Some(passphrase) = args.get(4) {
         config.security.encryption_enabled = true;
         config.security.encryption_passphrase = Some(passphrase.clone());
     }
     let corpus = ops::load_corpus(std::path::Path::new(&args[2]))?;
     {
-        let core = HmsCore::new(dim, Some(args[1].clone()), Some(config))?;
+        let core = WarmCore::new(dim, Some(args[1].clone()), Some(config))?;
         ops::populate(&core, corpus, dim as usize, true)?;
     }
     Ok(())

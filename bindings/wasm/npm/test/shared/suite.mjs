@@ -139,7 +139,7 @@ export function defineSuite({ test, api, FileStorage, scratch }) {
     assert.equal(await fourth.hasDocument("late"), false);
     await fourth.close();
     const { readdir } = await import("node:fs/promises");
-    assert.deepEqual((await readdir(dir)).sort(), ["notes.hms"]);
+    assert.deepEqual((await readdir(dir)).sort(), ["notes.warm"]);
     await assert.rejects(storage.set("../escape", new Uint8Array(1)), /keys are/);
   });
 
@@ -264,7 +264,7 @@ export function defineSuite({ test, api, FileStorage, scratch }) {
       const store = await filled(api, { storage, encryption, autosave: false });
       await store.save();
       await store.close();
-      const raw = await storage.get("hms-store");
+      const raw = await storage.get("warm-store");
       assert.deepEqual([...raw.slice(0, 4)], [0x48, 0x4d, 0x53, 0x45]);
       assert.ok(!Buffer.from(raw).includes("holographic"), "plaintext leaked into the envelope");
       assert.ok(!Buffer.from(raw).includes("HMSD"), "snapshot magic leaked");
@@ -273,7 +273,7 @@ export function defineSuite({ test, api, FileStorage, scratch }) {
       assert.equal((await reopened.searchDocuments("holographic"))[0].documentId, "hrr");
       await reopened.memorizeDocument({ id: "more", text: "second save reuses the key with a new nonce" });
       await reopened.save();
-      const second = await storage.get("hms-store");
+      const second = await storage.get("warm-store");
       assert.notDeepEqual(second.slice(34, 46), raw.slice(34, 46), "nonce reused");
       assert.deepEqual(second.slice(18, 34), raw.slice(18, 34), "salt is per store, not per save");
       await reopened.close();
@@ -299,7 +299,7 @@ export function defineSuite({ test, api, FileStorage, scratch }) {
     const store = await filled(api, { storage, encryption, autosave: false });
     await store.save();
     await store.close();
-    const raw = await storage.get("hms-store");
+    const raw = await storage.get("warm-store");
     const bomb = raw.slice();
     new DataView(bomb.buffer).setUint32(6, 0xffffffff);
     await storage.set("bomb", bomb);

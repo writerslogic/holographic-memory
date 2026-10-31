@@ -1,6 +1,6 @@
 # Organizational knowledge across applications
 
-HMS can index normalized documents from multiple source systems without owning
+WARM can index normalized documents from multiple source systems without owning
 their collection or normalization. The runnable adapter below targets the flat
 curated JSON documents currently produced by
 [the ToIP EGWG prototype](https://github.com/trustoverip/egwg-reporting-tf-prototype-mcp).
@@ -9,7 +9,7 @@ backend. The proposed nested model in issue #8 is not supported by this example.
 
 ## Import and retrieve
 
-Run from the HMS checkout. Use a dedicated store directory; the example uses the
+Run from the WARM checkout. Use a dedicated store directory; the example uses the
 default unencrypted configuration. It performs local lexical retrieval without
 model downloads, API keys, or paid services.
 
@@ -27,7 +27,7 @@ The adapter rejects upstream `hms_namespace` fields because that name is reserve
 for query scoping. Identity components must be nonempty and contain no control
 characters. Schema and chunking validation finish before the import opens a store.
 
-| Upstream field | HMS representation |
+| Upstream field | WARM representation |
 |---|---|
 | Namespace + source system + stable `id` | Collision-safe JSON tuple as document ID |
 | `identifier` | Document version, preserved verbatim |
@@ -60,7 +60,7 @@ cargo run --locked --example organizational_knowledge -- forget ./toip-example t
 ```
 
 The first command previews the selected ID without opening the store. `--apply`
-removes its chunks from HMS retrieval; repeating it is safe. Remove or suppress
+removes its chunks from WARM retrieval; repeating it is safe. Remove or suppress
 the upstream document as well: importing it again intentionally restores it.
 This operation does not erase upstream artifacts, backups, model inferences, or
 filesystem snapshots, and is not a physical-erasure guarantee. See the memory
@@ -113,7 +113,7 @@ must enforce authorization independently.
 
 ## Optional backend boundary
 
-The current examples consume flat curated documents and use HMS chunking. They
+The current examples consume flat curated documents and use WARM chunking. They
 are not wired into the prototype's MCP server. An optional backend should
 preserve the workstream boundaries in
 [issue #8](https://github.com/trustoverip/egwg-reporting-tf-prototype-mcp/issues/8):
@@ -122,11 +122,11 @@ preserve the workstream boundaries in
 |---|---|
 | Raw Artifact and Normalized Document | Keep collection, normalization, SAID rules, and authoritative provenance upstream |
 | Embedded Chunk | Preserve the agreed chunk identity, text, metadata, and parent document reference when adding an indexing adapter |
-| Vector Index Entry | Treat HMS as a rebuildable derived index; retain the existing backend as an option |
+| Vector Index Entry | Treat WARM as a rebuildable derived index; retain the existing backend as an option |
 | Search Result | Join authoritative metadata at retrieval and preserve the existing MCP tools and response contract |
 
-HMS's internal document ID is the namespaced stable source identity; `version`
-and `metadata.identifier` retain the upstream content identifier. Internal HMS
+WARM's internal document ID is the namespaced stable source identity; `version`
+and `metadata.identifier` retain the upstream content identifier. Internal WARM
 chunk IDs are not the proposed SAID-based chunk IDs. Mapping those identities,
 implementing the nested schema, matching working-group filter semantics, and
 wiring the retrieval-time provenance join remain prototype integration work.
@@ -135,7 +135,7 @@ or Search Result schemas.
 
 The prototype already replaces changed documents transactionally, supports
 `--prune`, and filters working groups before vector ranking. Its lexical scorer
-reranks vector-shortlisted candidates. HMS provides an alternative lexical or
+reranks vector-shortlisted candidates. WARM provides an alternative lexical or
 hybrid document search path; whether that improves results needs a comparison.
 See the prototype's
 [indexer](https://github.com/trustoverip/egwg-reporting-tf-prototype-mcp/blob/main/toip-mcp-server/src/ingest.ts)

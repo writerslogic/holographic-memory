@@ -1,29 +1,29 @@
 # LangGraph
 
-`holographic_integrations.langgraph` provides a long-term-memory `BaseStore` (`HolographicStore`) and a checkpoint saver (`HolographicSaver`) over Holographic Memory (`hms-server`).
+`writerslogic_warm_integrations.langgraph` provides a long-term-memory `BaseStore` (`WarmStore`) and a checkpoint saver (`WarmSaver`) over WARM (`warm-server`).
 
 ## Install
 
 ```sh
-pip install "holographic-integrations[langgraph]"
-hms-server --input-dim 384
+pip install "writerslogic-warm-integrations[langgraph]"
+warm-server --input-dim 384
 ```
 
 ## Quickstart
 
 ```python
-from holographic_integrations.langgraph import HolographicSaver, HolographicStore
+from writerslogic_warm_integrations.langgraph import WarmSaver, WarmStore
 
-saver = HolographicSaver(url="http://127.0.0.1:8080", tenant_id="acme")
-store = HolographicStore(index={"embed": embeddings, "dims": 384, "fields": ["text"]}, url="http://127.0.0.1:8080", tenant_id="acme")
+saver = WarmSaver(url="http://127.0.0.1:8080", tenant_id="acme")
+store = WarmStore(index={"embed": embeddings, "dims": 384, "fields": ["text"]}, url="http://127.0.0.1:8080", tenant_id="acme")
 app = graph.compile(checkpointer=saver, store=store)
 ```
 
 Runnable example: `integrations/python/examples/langgraph_memory.py`.
 
-## HolographicStore (`BaseStore`)
+## WarmStore (`BaseStore`)
 
-Implements `batch`/`abatch` (so `get`, `put`, `delete`, `search`, `list_namespaces` and their async twins). `index` is LangGraph's `IndexConfig` (`embed`: `Embeddings`, function or provider string; `dims`; `fields`). Without `index`, semantic search is off as for every `BaseStore`: `query` is ignored and `put(index=...)` has no effect. HMS knobs: `config=HmsConfig(...)` or keyword arguments (`url`, `api_key`, `tenant_id`, `collection` default `langgraph-store`, `zero_trust_key`, `max_fetch`, ...).
+Implements `batch`/`abatch` (so `get`, `put`, `delete`, `search`, `list_namespaces` and their async twins). `index` is LangGraph's `IndexConfig` (`embed`: `Embeddings`, function or provider string; `dims`; `fields`). Without `index`, semantic search is off as for every `BaseStore`: `query` is ignored and `put(index=...)` has no effect. WARM knobs: `config=WarmConfig(...)` or keyword arguments (`url`, `api_key`, `tenant_id`, `collection` default `langgraph-store`, `zero_trust_key`, `max_fetch`, ...).
 
 | LangGraph operation | Mapping |
 |---|---|
@@ -34,7 +34,7 @@ Implements `batch`/`abatch` (so `get`, `put`, `delete`, `search`, `list_namespac
 
 Differences from `InMemoryStore`, all deliberate: several index fields are joined into one vector (one vector per record; InMemory keeps one per field); TTL is not supported (`ttl=` raises `NotImplementedError`); a search without `query` returns items sorted by (namespace, key) after fetching at most `max_fetch` matches, so `offset + limit` above `max_fetch` raises `ValueError`; namespaces are limited to 16 levels; a value must fit 64 KiB as JSON. Namespace listing returns at most `max_fetch` namespaces. Scores are cosine similarity.
 
-## HolographicSaver (checkpointer)
+## WarmSaver (checkpointer)
 
 Implements `put`, `put_writes`, `get_tuple`, `list`, `delete_thread`, `delete_for_runs`, `copy_thread`, `prune` and their async twins. Channel values are stored as shared blobs keyed by `(channel, version)` like `InMemorySaver`; payloads of any size are split over part records, so a 200 kB channel value works although the service caps text at 64 KiB. Checkpoints are grouped into pages of 50 by sequence number, so a thread of any length lists newest-first exactly; each page, channel blob and pending-write set is one query. Pending writes are stored one record per (checkpoint, task).
 
@@ -50,5 +50,5 @@ Limits: one writer per (thread, namespace) (LangGraph serializes a thread alread
 | langchain-core | 1.6.12 |
 | Python | 3.12 |
 
-- **Checkpoint saver:** `langgraph-checkpoint-conformance` against a live `hms-server`, all eight capabilities detected, 81 tests passed, 0 failed, level FULL. Plus real graphs: resume from a second saver instance, a 200 kB value, `get_state_history`, and a 62-checkpoint thread listed across pages with `limit` and `before`, sync and async.
+- **Checkpoint saver:** `langgraph-checkpoint-conformance` against a live `warm-server`, all eight capabilities detected, 81 tests passed, 0 failed, level FULL. Plus real graphs: resume from a second saver instance, a 200 kB value, `get_state_history`, and a 62-checkpoint thread listed across pages with `limit` and `before`, sync and async.
 - **Store:** LangGraph publishes no store conformance package (`langgraph-store-conformance` does not exist), so `InMemoryStore` is the oracle: 14 filter queries and 10 `list_namespaces` forms are compared against it on identical data, plus semantic search, index controls, batch ordering, TTL rejection and limits.

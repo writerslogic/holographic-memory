@@ -8,5 +8,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   shims: true,
-  external: ['@holographic-memory/core', '@langchain/core', 'holographic-memory'],
+  external: ['@writerslogic/warm-core', '@langchain/core', 'writerslogic-warm'],
 })

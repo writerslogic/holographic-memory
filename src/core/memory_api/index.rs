@@ -12,7 +12,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use super::stamp::Stamp;
 use super::types::Millis;
 use crate::core::engine::memory_access::DocumentView;
-use crate::core::HmsCore;
+use crate::core::WarmCore;
 
 /// A fact that supersedes another, with when that takes effect.
 #[derive(Clone, Debug, PartialEq)]
@@ -295,7 +295,7 @@ impl Index {
     }
 
     /// Rebuilds the index from the store's documents.
-    pub(crate) fn rebuild(core: &HmsCore) -> Self {
+    pub(crate) fn rebuild(core: &WarmCore) -> Self {
         let mut stamps: Vec<(String, Stamp)> = Vec::new();
         let revision = core.scan_documents(|document: DocumentView<'_>| {
             if let Some(stamp) = Stamp::from_parts(document.version, document.metadata) {

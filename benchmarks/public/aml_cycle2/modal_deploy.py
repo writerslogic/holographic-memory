@@ -15,10 +15,10 @@ import modal
 
 ROOT = Path(__file__).resolve().parents[3] if modal.is_local() else Path("/work/src")
 SOURCE_SHA = "12c80decb094d57ee13ba187a01bf1de8788ca2f"
-APP_NAME = "hms-aml-cycle2-text-s"
+APP_NAME = "warm-aml-cycle2-text-s"
 
 app = modal.App(APP_NAME)
-volume = modal.Volume.from_name("hms-aml-cycle2-text-s", create_if_missing=True)
+volume = modal.Volume.from_name("warm-aml-cycle2-text-s", create_if_missing=True)
 image = (
     modal.Image.from_registry("rust:1.96-bookworm", add_python="3.12")
     .apt_install("build-essential", "pkg-config", "libssl-dev")
@@ -32,14 +32,14 @@ image = (
             "benchmarks/data/**", "docs/research/**", "figures/**", "*.env",
         ],
     )
-    .run_commands("cd /work/src && cargo build --locked --release --features server --bin hms-server")
+    .run_commands("cd /work/src && cargo build --locked --release --features server --bin warm-server")
 )
 
 
 @app.function(
     image=image,
     volumes={"/data": volume},
-    secrets=[modal.Secret.from_name("hms-aml-cycle2-token")],
+    secrets=[modal.Secret.from_name("warm-aml-cycle2-token")],
     cpu=(8, 8),
     memory=(32768, 32768),
     min_containers=1,
@@ -54,7 +54,7 @@ def api():
     from adapter import create_app
 
     command = [
-        "/work/src/target/release/hms-server",
+        "/work/src/target/release/warm-server",
         "--no-auth", "--bind", "127.0.0.1:8777",
         "--data-dir", "/data/stores",
         "--max-top-k", "100",
@@ -74,5 +74,5 @@ def api():
                 break
         time.sleep(0.2)
     else:
-        raise RuntimeError("hms-server did not become ready")
+        raise RuntimeError("warm-server did not become ready")
     return create_app("http://127.0.0.1:8777", os.environ["AML_TOKEN"], volume.commit)

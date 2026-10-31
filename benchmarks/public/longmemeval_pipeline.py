@@ -9,7 +9,7 @@ CPU-only logic shared by the local dev sweeps and the Modal job (longmemeval_mod
   keys        multi-granularity keys per question: user turns, rounds (user turn + assistant reply),
               sessions (concatenated user turns, the official session value), LLM-extracted user
               facts (separate keys) and fact-expanded turns/sessions (K = V + facts)
-  scores      public-bench lme-scores gives the HMS document API's BM25 and exact-cosine score of
+  scores      public-bench lme-scores gives the WARM document API's BM25 and exact-cosine score of
               every key for every query variant (original question, LLM rewrite, sub-queries)
   fuse        weighted RRF of lexical and dense ranks (the document API's own hybrid formula) or a
               convex blend of normalized scores; key scores aggregated to turns and sessions; ranked

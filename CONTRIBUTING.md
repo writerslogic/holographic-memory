@@ -1,6 +1,6 @@
-# Contributing to HMS
+# Contributing to WARM
 
-Thank you for helping. HMS is a Rust vector-symbolic memory engine with Node.js bindings, a
+Thank you for helping. WARM is a Rust vector-symbolic memory engine with Node.js bindings, a
 Python client and an HTTP server, licensed under Apache-2.0. There is no CLA: you keep your
 copyright and certify your right to contribute with a sign-off on each commit (see
 [Sign off your commits](#sign-off-your-commits-dco)).
@@ -10,9 +10,9 @@ privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
 
 ## Ways to help
 
-- Pick an issue labelled [good first issue](https://github.com/writerslogic/holographic-memory/labels/good%20first%20issue).
+- Pick an issue labelled [good first issue](https://github.com/writerslogic/warm/labels/good%20first%20issue).
   Each one states the files involved and how to check the result.
-- Ask or answer questions in [Discussions](https://github.com/writerslogic/holographic-memory/discussions).
+- Ask or answer questions in [Discussions](https://github.com/writerslogic/warm/discussions).
 - Report a bug with the smallest input that reproduces it. Include the OS, Rust and Node
   versions, and the enabled Cargo features.
 - Open an issue before a large change so the approach can be agreed first.
@@ -26,8 +26,8 @@ The Node bindings require Node.js 22 or newer (24 for the quickstart, which uses
 binding requirements are documented separately.
 
 ```sh
-git clone https://github.com/writerslogic/holographic-memory
-cd holographic-memory
+git clone https://github.com/writerslogic/warm
+cd writerslogic-warm
 cargo test                          # default features, no native dependencies
 cargo test --all-features           # everything CI builds
 npm ci --omit=optional && npm run build && npm test   # Node bindings
@@ -36,7 +36,7 @@ bash scripts/check-generated.sh     # regenerate schemas/types in a temporary di
 ```
 
 If your cargo `target-dir` is shared with other builds and you see
-`Blocking waiting for file lock`, set a private one: `export CARGO_TARGET_DIR=$HOME/.cache/hms-target`.
+`Blocking waiting for file lock`, set a private one: `export CARGO_TARGET_DIR=$HOME/.cache/warm-target`.
 
 `default = []`: nothing is on unless asked for. A change that compiles under only one feature
 combination is not done. Check the combinations the [CI matrix](.github/workflows/ci.yml) builds.
@@ -66,7 +66,7 @@ Also:
   a UI bug needs a UI check, an export bug needs a real round trip.
 - **Numbers.** Every number in the README or the docs traces to a committed file under
   [`benchmarks/results/`](benchmarks/results). Never write a figure from memory. If your change
-  moves a number, regenerate the results file and say so. Report where HMS loses as plainly as
+  moves a number, regenerate the results file and say so. Report where WARM loses as plainly as
   where it wins. Capacity and scaling claims state the tested range; they do not extrapolate.
   The block between `<!-- BENCH:START -->` and `<!-- BENCH:END -->` in the README is generated;
   do not edit it by hand.
@@ -86,7 +86,7 @@ Also:
 
 ## Sign off your commits (DCO)
 
-HMS uses the [Developer Certificate of Origin](https://developercertificate.org/) instead of a
+WARM uses the [Developer Certificate of Origin](https://developercertificate.org/) instead of a
 CLA. By signing off you certify that you wrote the change or have the right to submit it under
 the project licence. Add a trailer to every commit:
 

@@ -1,6 +1,6 @@
 # contrast: counterfactual structural contrast kill test
 
-Crate `hms-research-contrast` (standalone, `benchmarks/research/contrast/`, binary `hms-contrast`).
+Crate `warm-research-contrast` (standalone, `benchmarks/research/contrast/`, binary `warm-contrast`).
 Nothing outside this directory is touched. No `Cargo.lock` is committed.
 
 ## Mechanism under test
@@ -33,7 +33,7 @@ None are called: every needed root function is `pub(crate)`. Copied instead:
 * BM25 constants and weight formula: `src/core/documents.rs:116-121` (defaults) and
   `src/core/documents.rs:147-156` (`norm`, `weight`). The root idf was not read; this crate uses the
   Lucene/BEIR form `ln(1 + (N - df + 0.5) / (df + 0.5))`. The root's document search is only
-  reachable through `HmsCore` and was not used, so Part A's BM25 is an own implementation over the
+  reachable through `WarmCore` and was not used, so Part A's BM25 is an own implementation over the
   same stems (expect a number near but not equal to the measured root BM25 0.2916).
 
 Dependencies (all already in the root manifest, same versions): `serde 1.0`, `serde_json 1.0`,
@@ -51,24 +51,24 @@ cd ./benchmarks/research/contrast
 cargo test --release
 
 # Part A: NFCorpus rerank, alpha/lambda tuned on SciFact, reported on all 323 NFCorpus queries
-cargo run --release --bin hms-contrast -- nfcorpus
+cargo run --release --bin warm-contrast -- nfcorpus
 #   -> out/part_a.json ; stdout line "PART A: ... -> PASS|FAIL"
 
 # Part A robustness variant: tune on the first 100 NFCorpus queries, report on the remaining 223
-cargo run --release --bin hms-contrast -- nfcorpus --tune nfcorpus-head --head 100 --out out/part_a_head100.json
+cargo run --release --bin warm-contrast -- nfcorpus --tune nfcorpus-head --head 100 --out out/part_a_head100.json
 
 # Part B: synthetic agent memory (2,000 docs, 500 + 500 queries, 20 candidates, 7 timed repeats)
-cargo run --release --bin hms-contrast -- synth
+cargo run --release --bin warm-contrast -- synth
 #   -> out/part_b.json, out/synth_corpus.jsonl, out/synth_queries.jsonl
 #   stdout "PART B: ... -> PASS|FAIL" and zero or more "DEMOTE: ..." lines
 
 # both with defaults
-cargo run --release --bin hms-contrast -- all
+cargo run --release --bin warm-contrast -- all
 ```
 
 Options: `nfcorpus --data DIR --tune-data DIR --candidates 200 --head 100 --out PATH`;
 `synth --seed U64 --docs 2000 --queries 500 --candidates 20 --repeats 7 --warmup 1 --out PATH --no-dump`.
-Data defaults: `$HOME/.cache/hms-bench/nfcorpus` and `$HOME/.cache/hms-bench/scifact`.
+Data defaults: `$HOME/.cache/warm-bench/nfcorpus` and `$HOME/.cache/warm-bench/scifact`.
 
 Expected wall clock (single thread): Part A ~1-2 min (sketching 3,633 + 5,183 abstracts dominates),
 Part B ~1 min (7 timed passes over 8 methods).
@@ -77,7 +77,7 @@ Part B ~1 min (7 timed passes over 8 methods).
 
 * Part A: fusion `minmax(BM25) + alpha * minmax(feature)` within each query's BM25 top-200.
   Grid `alpha in {0, .05, .1, .2, .3, .5, .75, 1, 1.5, 2}`, `lambda in {.25, .5, .75, 1, 1.5, 2}` (mean-foil only).
-  Default tuning set: the SciFact split at `~/.cache/hms-bench/scifact` (300 queries, 339 qrels; this is
+  Default tuning set: the SciFact split at `~/.cache/warm-bench/scifact` (300 queries, 339 qrels; this is
   the BEIR `scifact` query file present on the machine, which is its test split, not train; it is a
   disjoint corpus, so no NFCorpus query is touched by tuning). The `--tune nfcorpus-head` mode tunes on
   the first 100 NFCorpus queries and reports on the untouched 223.

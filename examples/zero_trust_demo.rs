@@ -5,10 +5,10 @@
 //! original coordinates. This is keyed obfuscation, not encryption; the store
 //! still learns every pairwise similarity. See `core::mask` for the limits.
 
-use holographic_memory::core::entangled::EntangledHVec;
-use holographic_memory::core::mask::VectorMask;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use writerslogic_warm::core::entangled::EntangledHVec;
+use writerslogic_warm::core::mask::VectorMask;
 
 const DIM: usize = 16384;
 

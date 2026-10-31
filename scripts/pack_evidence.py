@@ -201,7 +201,7 @@ def main(argv=None):
     p.add_argument("paths", nargs="+", help="ROOT-relative files or directories")
     m = sub.add_parser("manifest", help="write MANIFEST.json from packed archives")
     m.add_argument("--out", required=True, help="directory holding the packed archives")
-    m.add_argument("--repo", default="writerslogic/holographic-memory")
+    m.add_argument("--repo", default="writerslogic/warm")
     m.add_argument("--tag", default="evidence-v1")
     m.add_argument("--archive", action="append", required=True, metavar="NAME=PATH[,PATH...]")
     m.add_argument("--manifest", required=True, help="where to write MANIFEST.json")

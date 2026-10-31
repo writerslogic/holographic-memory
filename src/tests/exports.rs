@@ -15,14 +15,14 @@ fn export_ts_bindings() {
     crate::IndexStatus::export_all(&cfg).unwrap();
     crate::StorageHealth::export_all(&cfg).unwrap();
     crate::HardwareCapabilities::export_all(&cfg).unwrap();
-    crate::HmsError::export_all(&cfg).unwrap();
+    crate::WarmError::export_all(&cfg).unwrap();
 }
 
 #[cfg(feature = "server")]
 #[test]
 fn export_json_schemas() {
     use schemars::schema_for;
-    let dir = std::env::var_os("HMS_SCHEMA_EXPORT_DIR")
+    let dir = std::env::var_os("WARM_SCHEMA_EXPORT_DIR")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| "schemas".into());
     std::fs::create_dir_all(&dir).unwrap();
@@ -32,7 +32,7 @@ fn export_json_schemas() {
         ("ConceptCandidate", schema_for!(crate::ConceptCandidate)),
         ("TextMetrics", schema_for!(crate::TextMetrics)),
         ("MemorizeBatchItem", schema_for!(crate::MemorizeBatchItem)),
-        ("HmsError", schema_for!(crate::HmsError)),
+        ("WarmError", schema_for!(crate::WarmError)),
         ("QueryExplanation", schema_for!(crate::QueryExplanation)),
         ("IndexStatus", schema_for!(crate::IndexStatus)),
         ("StorageHealth", schema_for!(crate::StorageHealth)),

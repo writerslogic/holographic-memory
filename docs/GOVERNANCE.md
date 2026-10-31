@@ -3,7 +3,7 @@
 
 # Governance
 
-HMS is maintained by WritersLogic, Inc. under a single-maintainer model. This page states how
+WARM is maintained by WritersLogic, Inc. under a single-maintainer model. This page states how
 decisions are made and who may do what, as it works today and as the repository enforces it.
 
 ## Roles

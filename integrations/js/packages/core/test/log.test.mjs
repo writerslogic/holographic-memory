@@ -6,10 +6,10 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { HmsStore, OrderedLog } from '../dist/index.js'
+import { WarmStore, OrderedLog } from '../dist/index.js'
 
-const tmp = () => mkdtempSync(join(tmpdir(), 'hms-log-'))
-const open = (path = tmp()) => new HmsStore({ path, dimensions: 256 })
+const tmp = () => mkdtempSync(join(tmpdir(), 'warm-log-'))
+const open = (path = tmp()) => new WarmStore({ path, dimensions: 256 })
 const entries = (n) => Array.from({ length: n }, (_, i) => ({ text: `old ${i}` }))
 
 function interrupt(store, boundary) {
@@ -50,8 +50,8 @@ for (const boundary of [1, 99, 100, 101]) {
   test(`interrupted clear resumes after a process restart at deletion ${boundary}`, async () => {
     const path = tmp()
     execFileSync(process.execPath, ['--input-type=module', '-e', `
-      import { HmsStore, OrderedLog } from ${JSON.stringify(new URL('../dist/index.js', import.meta.url).href)}
-      const store = new HmsStore({ path: ${JSON.stringify(path)}, dimensions: 256 })
+      import { WarmStore, OrderedLog } from ${JSON.stringify(new URL('../dist/index.js', import.meta.url).href)}
+      const store = new WarmStore({ path: ${JSON.stringify(path)}, dimensions: 256 })
       const log = new OrderedLog(store, 'session')
       await log.append(${JSON.stringify(entries(101))})
       const forget = store.forget.bind(store)
@@ -79,7 +79,7 @@ for (const boundary of [1, 99, 100, 101]) {
 
 test('competing wrappers serialize append, clear, read and pop across one native handle', async () => {
   const store = open()
-  const sibling = new HmsStore({ memory: store.memory })
+  const sibling = new WarmStore({ memory: store.memory })
   const a = new OrderedLog(store, 'shared')
   const b = new OrderedLog(sibling, 'shared')
   await Promise.all([a.append([{ text: 'first' }]), b.append([{ text: 'second' }])])
@@ -109,7 +109,7 @@ test('clear also removes orphan entries left by the older ascending-delete imple
 test('clear can remove historical entries without reconstructing unavailable source bytes', async () => {
   const store = open()
   await store.memory.memorizeDocument({ id: 'legacy#0000000000', text: 'old payload',
-    metadata: { _hms_collection: '', hms_log: 'legacy', hms_seq: 0 } })
+    metadata: { _warm_collection: '', warm_log: 'legacy', warm_seq: 0 } })
   await new OrderedLog(store, 'legacy').clear()
   assert.deepEqual((await store.list()).records, [])
   await store.close()

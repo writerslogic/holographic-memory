@@ -11,23 +11,23 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
-use holographic_memory::core::documents::{
+use serde_json::{json, Value};
+use writerslogic_warm::core::documents::{
     EncodeMode, IngestOptions, VectorIndexMode, VectorQueryOptions,
 };
-use holographic_memory::core::memory_api::{
+use writerslogic_warm::core::memory_api::{
     ForgetOptions, ForgetScope, ManualClock, MaxFacts, Memory, RecallOptions, RememberInput,
 };
-use holographic_memory::core::HmsConfig;
-use holographic_memory::{
-    DocumentInput, EmbeddingSpace, HmsCore, MemorizeBatchItem, SearchOptions,
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{
+    DocumentInput, EmbeddingSpace, MemorizeBatchItem, SearchOptions, WarmCore,
 };
-use serde_json::{json, Value};
 
 const DIM: usize = 8;
 const TARGET: usize = 999;
 
-fn config() -> HmsConfig {
-    HmsConfig {
+fn config() -> WarmConfig {
+    WarmConfig {
         embedding_space: Some(EmbeddingSpace {
             model: "fixture".into(),
             revision: "1".into(),
@@ -63,14 +63,14 @@ fn raw_items(ids: impl Iterator<Item = usize>) -> Vec<MemorizeBatchItem> {
     .collect()
 }
 
-fn open(dir: &Path) -> Result<HmsCore> {
-    HmsCore::new(256, Some(dir.display().to_string()), Some(config()))
+fn open(dir: &Path) -> Result<WarmCore> {
+    WarmCore::new(256, Some(dir.display().to_string()), Some(config()))
 }
 
 /// Raw vectors, then documents 0..240 in three transactions, with `extra` committed as its
 /// own transaction after the first; then the vector snapshot (with its graph) and the dense
 /// index.
-fn build(dir: &Path, extra: Option<usize>) -> Result<HmsCore> {
+fn build(dir: &Path, extra: Option<usize>) -> Result<WarmCore> {
     let core = open(dir)?;
     core.memorize_batch(&raw_items(0..32))?;
     for (n, range) in [0..80, 80..160, 160..240].into_iter().enumerate() {
@@ -84,7 +84,7 @@ fn build(dir: &Path, extra: Option<usize>) -> Result<HmsCore> {
     Ok(core)
 }
 
-fn observe(core: &HmsCore) -> Result<Value> {
+fn observe(core: &WarmCore) -> Result<Value> {
     let target = embedding(TARGET);
     let mut out = Vec::new();
     for text in ["rare999 common", "topic5 shared", "rare17", "words"] {
@@ -225,8 +225,8 @@ fn purge_leaves_the_store_of_a_document_never_stored() -> Result<()> {
 
 /// Documents 0..240 lexical-only in three transactions (no vectors, so compactions write a
 /// document checkpoint), with `extra` committed as its own transaction after the first.
-fn build_lexical(dir: &Path, extra: Option<usize>) -> Result<HmsCore> {
-    let core = HmsCore::new(256, Some(dir.display().to_string()), None)?;
+fn build_lexical(dir: &Path, extra: Option<usize>) -> Result<WarmCore> {
+    let core = WarmCore::new(256, Some(dir.display().to_string()), None)?;
     let options = IngestOptions {
         encode: EncodeMode::Lexical,
         ..Default::default()
@@ -248,7 +248,7 @@ fn build_lexical(dir: &Path, extra: Option<usize>) -> Result<HmsCore> {
     Ok(core)
 }
 
-fn observe_lexical(core: &HmsCore) -> Result<Value> {
+fn observe_lexical(core: &WarmCore) -> Result<Value> {
     let mut out = Vec::new();
     for text in ["rare999 common", "topic5 shared", "rare17", "words"] {
         let options = SearchOptions {
@@ -288,7 +288,7 @@ fn purge_of_a_checkpointed_store_leaves_the_store_of_a_document_never_stored() -
         Vec::<String>::new()
     );
     drop((a, b));
-    let reopen = |dir: &Path| HmsCore::new(256, Some(dir.display().to_string()), None);
+    let reopen = |dir: &Path| WarmCore::new(256, Some(dir.display().to_string()), None);
     let (a, b) = (reopen(a_dir.path())?, reopen(b_dir.path())?);
     assert!(a.serves_from_checkpoint() && b.serves_from_checkpoint());
     assert_eq!(observe_lexical(&a)?, observe_lexical(&b)?);
@@ -313,17 +313,17 @@ fn open_scrubs_a_canonical_segment_left_by_an_interrupted_purge() -> Result<()> 
 #[test]
 fn encrypted_purge_keeps_surviving_text_readable() -> Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut config = HmsConfig::default();
+    let mut config = WarmConfig::default();
     config.security.encryption_enabled = true;
     config.security.encryption_passphrase = Some("forget-equivalence".into());
     let open = || {
-        HmsCore::new(
+        WarmCore::new(
             256,
             Some(dir.path().display().to_string()),
             Some(config.clone()),
         )
     };
-    let text = |core: &HmsCore| -> Result<Option<String>> {
+    let text = |core: &WarmCore| -> Result<Option<String>> {
         let options = SearchOptions {
             k: Some(1),
             ..Default::default()
@@ -351,7 +351,7 @@ fn encrypted_purge_keeps_surviving_text_readable() -> Result<()> {
 fn compaction_output_does_not_depend_on_vector_arrival_order() -> Result<()> {
     let (forward, backward) = (tempfile::tempdir()?, tempfile::tempdir()?);
     for (dir, reverse) in [(forward.path(), false), (backward.path(), true)] {
-        let core = HmsCore::new(256, Some(dir.display().to_string()), None)?;
+        let core = WarmCore::new(256, Some(dir.display().to_string()), None)?;
         let mut items = raw_items(0..3000);
         if reverse {
             items.reverse();
@@ -371,7 +371,7 @@ fn compaction_output_does_not_depend_on_vector_arrival_order() -> Result<()> {
 /// Facts `f0..f8` remembered at times 10, 20, ... and, with `target`, fact `x` at time 35.
 fn facts(dir: &Path, limit: usize, target: bool) -> Result<Memory> {
     let clock = Arc::new(ManualClock::new(0));
-    let core = Arc::new(HmsCore::new(256, Some(dir.display().to_string()), None)?);
+    let core = Arc::new(WarmCore::new(256, Some(dir.display().to_string()), None)?);
     let memory = Memory::new(core)
         .with_clock(clock.clone())
         .with_forgetting(Arc::new(MaxFacts { limit }));

@@ -39,7 +39,7 @@ def write(path, value):
 
 def prepare(folder):
     folder.mkdir(parents=True, exist_ok=False)
-    corpus = Path.home() / ".cache/hms-bench/downloads/scifact/corpus.jsonl"
+    corpus = Path.home() / ".cache/warm-bench/downloads/scifact/corpus.jsonl"
     records = [json.loads(line) for line in corpus.open()]
     documents = []
     for number, row in enumerate(records[:5182]):
@@ -214,7 +214,7 @@ def run(folder, env):
         if sha(folder / f"input-{n}.json") != digest:
             raise ValueError("input changed")
     measurements = []
-    with Path("./.hms-target/timing.lock").open("a") as lock:
+    with Path("./.warm-target/timing.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         started = time.monotonic()
         for n in protocol["sizes"]:
@@ -272,7 +272,7 @@ def main():
     parser.add_argument("folder", type=Path)
     args = parser.parse_args()
     folder = args.folder.resolve()
-    env = dict(os.environ, RUSTUP_TOOLCHAIN="1.96.0", CARGO_TARGET_DIR="./.hms-target",
+    env = dict(os.environ, RUSTUP_TOOLCHAIN="1.96.0", CARGO_TARGET_DIR="./.warm-target",
                CARGO_BUILD_JOBS="4", RAYON_NUM_THREADS="1", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1")
     if args.action == "prepare":
         prepare(folder)
