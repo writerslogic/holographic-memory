@@ -5,7 +5,3 @@ from .checkpoint import WarmSaver
 from .store import WarmStore
 
 __all__ = ["WarmSaver", "WarmStore"]
-
-HolographicSaver = WarmSaver
-HolographicStore = WarmStore
-__all__ += ['HolographicSaver', 'HolographicStore']

@@ -161,7 +161,3 @@ class WarmTextRetriever:
     ) -> Dict[str, List[Document]]:
         merged, k, emb = _resolve(self, filters, top_k, return_embedding)
         return {"documents": await self.document_store.text_retrieval_async(query, merged, k, emb)}
-
-HolographicDocumentStore = WarmDocumentStore
-HolographicEmbeddingRetriever = WarmEmbeddingRetriever
-HolographicTextRetriever = WarmTextRetriever

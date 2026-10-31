@@ -64,5 +64,3 @@ class WarmVectorStore(BasePydanticVectorStore):
             ids.append(doc.get("id"))
             
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
-
-HolographicVectorStore = WarmVectorStore

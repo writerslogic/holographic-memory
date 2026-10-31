@@ -97,5 +97,3 @@ class WarmKnowledgeStorage(BaseKnowledgeStorage):
 
     async def areset(self) -> None:
         await self._async.forget_where(None)
-
-HolographicKnowledgeStorage = WarmKnowledgeStorage

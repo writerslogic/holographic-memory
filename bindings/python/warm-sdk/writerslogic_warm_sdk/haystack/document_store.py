@@ -40,5 +40,3 @@ class WarmDocumentStore:
     def delete_documents(self, document_ids: List[str]) -> None:
         for doc_id in document_ids:
             self._client.delete_document(doc_id)
-
-HolographicDocumentStore = WarmDocumentStore

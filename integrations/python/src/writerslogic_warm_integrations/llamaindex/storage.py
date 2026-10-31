@@ -161,7 +161,3 @@ class WarmIndexStore(KVIndexStore):
     def __init__(self, config: Optional[WarmConfig] = None, *, namespace: Optional[str] = None, buckets: int = 8, **warm_kwargs: Any):
         self.kvstore = WarmKVStore(config, buckets=buckets, **warm_kwargs)
         super().__init__(self.kvstore, namespace=namespace)
-
-HolographicKVStore = WarmKVStore
-HolographicDocumentStore = WarmDocumentStore
-HolographicIndexStore = WarmIndexStore

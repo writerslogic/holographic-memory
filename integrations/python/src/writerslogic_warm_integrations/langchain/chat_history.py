@@ -165,5 +165,3 @@ class WarmChatMessageHistory(BaseChatMessageHistory):
     async def aclear(self) -> None:
         await self.abackend.forget_where(Eq("session_id", self.session_id))
         self._next = 0
-
-HolographicChatMessageHistory = WarmChatMessageHistory

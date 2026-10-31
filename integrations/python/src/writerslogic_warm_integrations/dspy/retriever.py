@@ -208,6 +208,3 @@ class WarmRM:
                     seen.add(rid)
                     out.append(dotdict(long_text=text, score=score, id=rid, metadata=meta))
         return out
-
-HolographicRetriever = WarmRetriever
-HolographicRM = WarmRM

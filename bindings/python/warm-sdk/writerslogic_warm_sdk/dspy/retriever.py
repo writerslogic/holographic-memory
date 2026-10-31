@@ -39,5 +39,3 @@ class WarmRM(dspy.Retrieve):
                 passages.append(doc.get("text", ""))
                 
         return dspy.Prediction(passages=passages)
-
-HolographicRM = WarmRM

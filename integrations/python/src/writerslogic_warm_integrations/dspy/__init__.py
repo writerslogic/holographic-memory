@@ -4,7 +4,3 @@
 from .retriever import WarmRetriever, WarmRM
 
 __all__ = ["WarmRetriever", "WarmRM"]
-
-HolographicRetriever = WarmRetriever
-HolographicRM = WarmRM
-__all__ += ['HolographicRetriever', 'HolographicRM']
