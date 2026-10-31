@@ -42,8 +42,8 @@ pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
 pub(crate) use lexical::execute as execute_lexical;
 pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, LexicalResults};
-pub use listing::DocumentRecord;
-pub(crate) use listing::{count, get_record, list_records};
+pub(crate) use listing::{count, get_info, get_record, list_info, list_records};
+pub use listing::{DocumentInfo, DocumentRecord};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
 pub(crate) use overlay::Base as CheckpointBase;
 pub(crate) use search::{

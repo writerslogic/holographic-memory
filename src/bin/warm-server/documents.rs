@@ -1113,7 +1113,7 @@ pub async fn list_documents(
     let headers = req.headers().clone();
     cached_read(state, tenant, headers, move |core| {
         let from = params.after.as_deref().map(|after| format!("{after}\0"));
-        let mut page = core.list_documents(from.as_deref(), limit + 1);
+        let mut page = core.list_document_info(from.as_deref(), limit + 1);
         let more = page.len() > limit;
         page.truncate(limit);
         let next = more

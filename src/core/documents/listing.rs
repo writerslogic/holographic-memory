@@ -10,6 +10,85 @@ use super::index::text_of;
 use super::text::TextSegment;
 use super::{DocumentStore, StoredDocument};
 
+/// Document identity, provenance and metadata without copying stored chunk text.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentInfo {
+    pub id: String,
+    pub source_uri: Option<String>,
+    pub version: String,
+    pub metadata: Value,
+    pub chunk_count: usize,
+}
+
+fn info(document: &StoredDocument) -> DocumentInfo {
+    DocumentInfo {
+        id: document.id.clone(),
+        source_uri: document.source_uri.clone(),
+        version: document.version.clone(),
+        metadata: document.metadata.clone(),
+        chunk_count: document.chunks.len(),
+    }
+}
+
+pub(crate) fn get_info(store: &DocumentStore, id: &str) -> Option<DocumentInfo> {
+    if let Some(document) = store.get(id) {
+        return Some(info(document));
+    }
+    let base = store.base.as_ref()?;
+    base.live(id).map(|ordinal| {
+        base.image
+            .document_info(ordinal)
+            .expect("decoding checkpoint document metadata")
+    })
+}
+
+pub(crate) fn list_info(
+    store: &DocumentStore,
+    from: Option<&str>,
+    limit: usize,
+) -> Vec<DocumentInfo> {
+    use std::cmp::Ordering;
+    use std::ops::Bound::{Included, Unbounded};
+    let start = from.map_or(Unbounded, Included);
+    let mut live = store
+        .documents
+        .range::<str, _>((start, Unbounded))
+        .peekable();
+    let Some(base) = &store.base else {
+        return live
+            .take(limit)
+            .map(|(_, document)| info(document))
+            .collect();
+    };
+    let mut checkpoint = base.live_ordinals_from(from).peekable();
+    let mut result = Vec::new();
+    while result.len() < limit {
+        let take_live = match (checkpoint.peek(), live.peek()) {
+            (None, None) => break,
+            (None, Some(_)) => true,
+            (Some(_), None) => false,
+            (Some(&ordinal), Some((id, _))) => match base.image.id(ordinal).cmp(id.as_str()) {
+                Ordering::Less => false,
+                Ordering::Greater => true,
+                Ordering::Equal => {
+                    panic!("checkpoint and live store contain the same active document")
+                }
+            },
+        };
+        if take_live {
+            result.push(info(live.next().expect("peeked document").1));
+        } else {
+            result.push(
+                base.image
+                    .document_info(checkpoint.next().expect("peeked checkpoint ordinal"))
+                    .expect("decoding checkpoint document metadata"),
+            );
+        }
+    }
+    result
+}
+
 /// A stored document as the store holds it: first chunk's text, metadata and version.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -63,7 +142,7 @@ pub(crate) fn list_records(
 }
 
 pub(crate) fn count(store: &DocumentStore) -> usize {
-    store.documents.len()
+    store.documents.len() + store.base.as_ref().map_or(0, |base| base.live_documents())
 }
 
 #[cfg(test)]

@@ -66,6 +66,7 @@ class _Routes:
         self.document = httpx.URL(f"{base}/api/v1/documents")
         self.query = httpx.URL(f"{base}/api/v1/query")
         self.maintain = httpx.URL(f"{base}/api/v1/index/maintain")
+        self.stats = httpx.URL(f"{base}/api/v1/stats")
 
 
 def _get_headers(api_key: Optional[str], tenant_id: Optional[str]) -> Dict[str, str]:
@@ -191,6 +192,11 @@ class WarmClient:
         res = self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         _check(res)
 
+    def stats(self) -> Dict[str, Any]:
+        res = self.client.get(self._routes.stats)
+        _check(res)
+        return res.json()
+
     def maintain_document_index(self) -> Dict[str, Any]:
         res = self.client.post(self._routes.maintain, content=b"{}")
         _check(res)
@@ -264,6 +270,11 @@ class AsyncWarmClient:
     async def delete_document(self, doc_id: str) -> None:
         res = await self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         _check(res)
+
+    async def stats(self) -> Dict[str, Any]:
+        res = await self.client.get(self._routes.stats)
+        _check(res)
+        return res.json()
 
     async def maintain_document_index(self) -> Dict[str, Any]:
         res = await self.client.post(self._routes.maintain, content=b"{}")

@@ -56,6 +56,18 @@ impl Base {
             .filter(|&ordinal| !bit(&self.dead_documents, ordinal))
     }
 
+    pub(super) fn live_documents(&self) -> usize {
+        self.image.document_total() - self.dead_document_count
+    }
+
+    pub(super) fn live_ordinals_from(
+        &self,
+        from: Option<&str>,
+    ) -> impl Iterator<Item = usize> + '_ {
+        let start = from.map_or(0, |id| self.image.lower_bound(id));
+        (start..self.image.document_total()).filter(|&ordinal| !bit(&self.dead_documents, ordinal))
+    }
+
     pub(super) fn slot_dead(&self, slot: usize) -> bool {
         bit(&self.dead_slots, slot)
     }

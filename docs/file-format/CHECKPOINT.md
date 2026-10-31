@@ -27,7 +27,7 @@ checkpoint; later writes append frames after it until the next one folds them in
 1. The live generation is the one `CURRENT` names (LAYOUT.md). No `documents.ckpt` there: the
    frames are replayed as in any store.
 2. A checkpoint in a store whose schema is below 4 fails the open.
-3. The checkpoint is checked whole before use: magic, generation binding (CRC32 of the
+3. The checkpoint envelope and indexes are checked before use: magic, generation binding (CRC32 of the
    generation directory's name), vector dimensions, CRC32 of every byte after the CRC word (or
    the AEAD tag, ENCRYPTION.md), and every section, offset, dictionary entry and slot owner. A
    checkpoint that fails any check fails the open: it is never skipped, since the frames it
@@ -44,9 +44,13 @@ checkpoint; later writes append frames after it until the next one folds them in
    read that store and the vector shards without building the live store. Frames after the
    checkpoint are replayed the same way at open, which rebuilds the dead set: the frames are
    its persistent record.
-6. The first access of any other kind, and any other write, builds the live store from the
+6. Document summaries and counts read the live overlay and checkpoint directly. Sorted pages
+   merge their IDs and skip tombstones; only selected records are decoded, without copying
+   chunk text. Record decoding still checks borrowed text and allocates chunk descriptors.
+7. The first access of any other kind, and any other write, builds the live store from the
    checkpoint (no frame is read), removes the dead documents and installs the ones written
-   since.
+   since. Deep offline verification explicitly performs this rebuild to validate all record
+   contents and their agreement with the slot table, including checksum-valid malformed data.
 
 Building the live store re-encodes each posting list in the live encoding, restores every document and slot (free slots
 included) as recorded, reads each chunk's terms back from the postings, and moves chunk text to

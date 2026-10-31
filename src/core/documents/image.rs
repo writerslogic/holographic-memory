@@ -567,18 +567,34 @@ impl ServingImage {
         self.docs
     }
 
-    /// The ordinal of document `id` (ids are stored in ascending order).
-    pub(super) fn ordinal(&self, id: &str) -> Option<usize> {
+    pub(super) fn lower_bound(&self, id: &str) -> usize {
         let (mut lo, mut hi) = (0usize, self.docs);
         while lo < hi {
             let mid = lo + (hi - lo) / 2;
-            match self.id(mid).cmp(id) {
-                std::cmp::Ordering::Less => lo = mid + 1,
-                std::cmp::Ordering::Greater => hi = mid,
-                std::cmp::Ordering::Equal => return Some(mid),
+            if self.id(mid) < id {
+                lo = mid + 1;
+            } else {
+                hi = mid;
             }
         }
-        None
+        lo
+    }
+
+    /// The ordinal of document `id` (ids are stored in ascending order).
+    pub(super) fn ordinal(&self, id: &str) -> Option<usize> {
+        let at = self.lower_bound(id);
+        (at < self.docs && self.id(at) == id).then_some(at)
+    }
+
+    pub(super) fn document_info(&self, ordinal: usize) -> Result<super::DocumentInfo> {
+        let record = self.record(ordinal)?;
+        Ok(super::DocumentInfo {
+            id: self.id(ordinal).to_owned(),
+            source_uri: record.source_uri.map(str::to_owned),
+            version: record.version.to_owned(),
+            metadata: record.metadata,
+            chunk_count: record.chunks.len(),
+        })
     }
 
     /// The ordinal of the document owning `slot`, `None` for a free slot.

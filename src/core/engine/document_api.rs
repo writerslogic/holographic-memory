@@ -547,7 +547,30 @@ impl WarmCore {
 
     /// Number of stored documents.
     pub fn document_count(&self) -> usize {
-        documents::count(&self.documents())
+        let _transaction = self.mutation_gate.read();
+        documents::count(&self.documents.read())
+    }
+
+    pub(crate) fn verified_document_count(&self) -> Result<usize> {
+        self.hydrate_documents()?;
+        Ok(self.document_count())
+    }
+
+    /// One document's identity, provenance and metadata without copying its stored text.
+    pub fn get_document_info(&self, id: &str) -> Option<documents::DocumentInfo> {
+        let _transaction = self.mutation_gate.read();
+        documents::get_info(&self.documents.read(), id)
+    }
+
+    /// Up to `limit` document summaries with ids at or after `from`, in id order.
+    /// This does not copy stored chunk text.
+    pub fn list_document_info(
+        &self,
+        from: Option<&str>,
+        limit: usize,
+    ) -> Vec<documents::DocumentInfo> {
+        let _transaction = self.mutation_gate.read();
+        documents::list_info(&self.documents.read(), from, limit)
     }
 
     /// One stored document with its text, metadata and version.
