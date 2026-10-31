@@ -1,0 +1,39 @@
+{
+  "base": "363b837b",
+  "baseline": {
+    "framework": "llama-index-core 0.14.25",
+    "python": "3.10.19",
+    "initial_query_and_lifetime_failures": 34,
+    "deletion_regressions": "two fail before deletion changes; reference delete returned HTTP 200 for the unrelated node",
+    "text_regression": "query returned metadata-prefixed text before MetadataMode.NONE",
+    "qualification": "One initial expectation rejected empty ID lists; framework workflow evidence corrected it: [] means no restriction. Thus 33 of the original 34 failing cases express retained defect assertions."
+  },
+  "accepted": {
+    "llama-index-core0.10.0_python3.10": "42 final tests passed, including VectorStoreIndex insertion and filtered retrieval",
+    "llama-index-core0.14.25_python3.14": "125 full SDK tests and 46 subtests passed, including 48 LlamaIndex tests; 13 upstream LangSmith asyncio deprecation warnings"
+  },
+  "compatibility": "0.10.0 rejects nested filters at Pydantic construction; newer version reaches adapter rejection. Both prevent sending a broadened query. No minimum version or dependency changes.",
+  "server": {
+    "source": "3e036396 (restore diagnostics do not change document/query routes)",
+    "sha256": "45ac9d630dbf53fa9bd60d76e1177aba436a48a01a632da1feff6553d25ee106"
+  },
+  "validation": [
+    "scoped actionlint-py 1.7.12.25",
+    "zizmor 1.31.1 default offline mode, existing suppressions only",
+    "local wheel and sdist build",
+    "git diff --check"
+  ],
+  "limitations": [
+    "No paid API/cloud/model calls; local deterministic vectors",
+    "Reference-document/filtered deletion explicitly unsupported; explicit node deletes are sequential, not atomic",
+    "No full relationship/node-type reconstruction",
+    "No throughput/latency/relevance or overall security claim",
+    "Full PR CI and integration with preceding PRs remain required"
+  ],
+  "failed_workflow_trial": "Both framework versions failed with node_ids=[] from VectorStoreIndex.as_retriever; support the actual empty-list convention while rejecting nonempty restrictions.",
+  "primary_references": [
+    "https://developers.llamaindex.ai/python/framework-api-reference/storage/vector_store/",
+    "https://developers.llamaindex.ai/python/framework-api-reference/indices/vector/"
+  ],
+  "baseline_patch_check": "git apply --check passed against clean main 78f722cd before PR360 integration"
+}

@@ -34,6 +34,15 @@ The earlier standalone `langchain-holographic` distribution is retired. For Lang
 `writerslogic_warm_sdk.langchain`. This adapter connects to `warm-server`; update the old
 `langchain_holographic` import and its local-store configuration when migrating.
 
+The LangChain adapter requires `langchain-core>=0.3.86`. It preserves supplied
+IDs through `add_texts`, `add_documents`, `from_texts`, and search results. Supply
+stable IDs for writes you may need to reconcile or retry. The adapter forwards `filter` from similarity retrievers to WARM. Metadata and ID counts must
+match the input texts before embedding begins; the embedder must return one
+vector per text before any upload. Call `store.close()` when finished. Similarity
+retrieval is supported; scored retrieval, MMR, and the adapter's deletion APIs are
+not implemented. The legacy dependency combinations described in the security
+notes remain unresolved; these contract tests do not establish their safety.
+
 The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
 
 ```bash
@@ -126,6 +135,27 @@ The indices in `selected` are mandatory; packing raises `ValueError` if they exc
 | Phidata | `phidata` | `from writerslogic_warm_sdk.phidata import WarmVectorDb` |
 | Pydantic AI | `pydantic-ai` | `from writerslogic_warm_sdk.pydantic_ai import get_warm_tool` |
 | SmolAgents | `smolagents` | `from writerslogic_warm_sdk.smolagents import WarmSearchTool` |
+
+
+The LlamaIndex adapter supports dense similarity queries with flat equality
+metadata filters combined with AND. Filters run on the server before top-k
+selection. Plain node text and metadata are stored separately, without prepending
+metadata to the returned text. Unsupported search modes, operators, nested filters, ID restrictions
+and projection/hybrid options raise `NotImplementedError`; empty ID lists mean
+no restriction, matching LlamaIndex retrievers. Repeated filter keys
+raise `ValueError` instead of overwriting a constraint. The adapter owns one
+HTTP client; call `store.close()` when finished and construct a new store to
+change connection settings. These contracts are tested with llama-index-core
+0.10.0 and 0.14.25; this does not resolve the optional dependency advisories above.
+
+Use `delete_nodes([node_id, ...])` to delete known nodes. Missing nodes are already
+deleted; other errors propagate. Multiple deletions are sequential, not atomic,
+so a failure can follow earlier committed deletions. Reference-document deletion
+(`delete(ref_doc_id)`) and filtered deletion are unsupported and raise before any
+write. A reference-document ID must never be treated as a node ID: they can name
+different records. Full LlamaIndex relationship/node-type reconstruction remains
+outside this adapter's current TextNode result contract.
+
 
 ## Vector Masking
 

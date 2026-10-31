@@ -748,3 +748,118 @@ made. The second failed gate is retained, and new exact-head CI remains required
 The revised size-boundary cases and all 13 operations tests pass locally, as do
 strict operations Clippy, scoped formatting and diff validation. Windows CI
 remains required for this revision.
+
+PR [#360](https://github.com/writerslogic/warm/pull/360) merged as `30cd5d46`
+after 69 successful and three skipped exact-head checks, with no pending/failed
+checks or unresolved reviews and no open code-scanning alerts. The tested head
+`abc82f4a` and merge share tree `813b1c50d74d7e7855bfe8767fc5792a96718709`.
+Windows passed 807 baseline tests (14 existing skips) and all 170 service tests
+(no skips), including full restore, hostile archives and size boundaries. Admin
+merge bypassed owner review only. The exact gate and Windows log are retained.
+An immediate post-merge dependency-alert read still reported 210 open records,
+including four pyasn1 entries; no alert-closure count is inferred from the merge.
+
+### Python LangChain identity and filter contracts (2026-10-31)
+
+Fourteen real-server regressions fail on `78f722cd`: supplied IDs are ignored,
+`from_texts(ids=...)` passes IDs to the connection constructor and fails, retriever
+metadata filters are discarded, and `zip` silently truncates uploads when text,
+metadata, or embedding counts differ. Empty input also invokes the embedder.
+These are adapter contract failures, not retrieval-quality measurements.
+
+The adapter now preserves caller IDs, supplies secure UUIDs for absent IDs,
+returns stored IDs on Documents, forwards similarity filters, and checks input
+cardinality before embedding and output cardinality before upload. Explicit IDs
+from `add_documents` override Document IDs through the framework's base contract.
+`from_texts` separates IDs from connection options and closes its owned client
+on failure; callers can explicitly `close()` successful stores. Existing
+LangChain [VectorStore contracts](https://reference.langchain.com/python/langchain-core/vectorstores/base/VectorStore)
+and the installed implementations were inspected before changing the adapter.
+
+LangChain 0.2.11 has a Document ID field but its inherited `add_documents` still
+loses those IDs (13 pass / one fail in the compatibility trial). The declared
+minimum is now 0.3.86, matching the already locked legacy branch, which passes all
+17 final adapter tests on Python 3.10.19. Current 1.7.3 passes the full SDK suite
+on Python 3.14.7: 77 tests and 46 subtests, with 13 upstream asyncio deprecation
+warnings. The locked modern version, 1.7.0, also passes all 17 adapter contracts
+on Python 3.14. CI uses the two locked versions (0.3.86/3.10 and 1.7.0/3.14)
+against the real server with framework tracing disabled. All embeddings and
+server calls are local; no paid APIs, model downloads or relevance/latency claims.
+
+Offline lock validation, scoped actionlint/zizmor and distribution builds pass.
+uv 0.13.6 preserves lock revision 5 and every package/version pair; the final
+delta from PR360 is only the two LangChain requirement lower bounds. An older
+local resolver rewrote markers; that normalization was discarded.
+The pending dependency remediation must be integrated before this follow-up merges.
+No extra or Python version was retired. Legacy dependency advisories remain open;
+passing API contracts does not establish framework security. Scored retrieval,
+MMR and adapter deletion remain explicitly unsupported. Evidence and the 14-case
+baseline reproduction patch are in `langchain-contracts-20261031/`; final PR checks
+remain required before merge.
+
+
+### Python LlamaIndex query and deletion contracts (2026-10-31)
+
+The adapter ignored metadata filters, query modes and constraints, and created an
+unowned HTTP client for each property access. The initial real-server suite
+reported 34 failures on `363b837b`; one empty-ID-list expectation was later
+corrected from actual framework behavior, leaving 33 retained defect assertions. It now applies flat AND/equality filters before
+server-side top-k, rejects unsupported modes/operators/ID restrictions and
+projection options, rejects duplicate filter keys, and owns one explicitly
+closable client. Original node text is stored separately from metadata; a
+regression caught the previous metadata-prefixed text returned as node content.
+
+The framework's [reference-delete contract](https://developers.llamaindex.ai/python/framework-api-reference/indices/vector/#llama_index.core.indices.vector_store.base.VectorStoreIndex.delete_ref_doc)
+means source-document deletion, but WARM
+passed that value to node deletion. A source ID colliding with an unrelated node
+therefore deleted that node (HTTP 200 in the retained baseline). Reference and
+filtered deletion now raise before writes. `delete_nodes` implements explicit-ID
+deletion, validates the ID list before starting, tolerates only documented
+missing-node errors, and propagates authorization failures. Multiple deletes are
+sequential and can partially commit; they are not an atomic source-document purge.
+This prevents the false deletion contract without claiming reference ownership
+or complete node/relationship reconstruction is implemented.
+
+The actual LlamaIndex [vector-store types](https://developers.llamaindex.ai/python/framework-api-reference/storage/vector_store/)
+and installed Pydantic bridge were inspected.
+Its minimum 0.10.0 passes 42 final contracts on Python 3.10; 0.14.25 passes the
+full SDK suite on Python 3.14 (125 tests, including 48 LlamaIndex tests, plus
+46 subtests; 13 upstream asyncio deprecation warnings). The older framework
+rejects nested filters during Pydantic construction; the newer one delegates
+rejection to WARM. An initial compatibility test expected only the latter and
+was corrected without changing production validation. Existing dependency bounds
+remain. CI exercises both versions against the real server; all vectors are local.
+Scoped workflow lint and package builds pass. Logs, hashes and the initial
+34-case baseline patch are in `llamaindex-contracts-20261031/`; no performance,
+relevance or overall security improvement is inferred from these contract tests.
+The integrated exact-head PR gate remains required before publication.
+
+
+The added `VectorStoreIndex` insertion/retrieval workflow initially failed on
+both versions: text-storing indexes pass `node_ids=[]` for unrestricted search.
+Empty ID lists now preserve that framework convention; nonempty unsupported ID
+restrictions still raise. The real workflow and explicit empty-list cases pass
+on both versions using the framework's deterministic local MockEmbedding, with
+no LLM or model-weight calls. The earlier failed expectation and workflow logs
+remain archived; direct adapter tests alone had missed this caller contract.
+
+
+### Remaining adapter prerequisites: source observations, not runtime validation
+
+- `writerslogic_warm_sdk/haystack/document_store.py`: `count_documents` returns
+  zero and `filter_documents` an empty list unconditionally; `write_documents`
+  ignores its duplicate policy. Reproduce with the real framework before choosing
+  support scope. Counting can use existing tenant stats; correct FAIL/SKIP writes
+  need atomic server semantics, not a race-prone client preflight.
+- `writerslogic_warm_sdk/semantic_kernel/memory_store.py`: collection methods are
+  stubs; upsert/remove use raw record IDs and nearest matching omits collection
+  filtering. Installed-framework abstract-method/signature compatibility has not
+  been checked here, so runtime cross-collection consequences remain unverified.
+- HTTP `documents::list_documents` returns IDs/metadata only. Native
+  `Core::get_document` returns text, version and chunk count, but only first-chunk
+  text (with the documented whitespace normalization). Adapter document recovery
+  requires an explicit bounded retrieval contract, not fabricated empty results
+  or similarity search masquerading as enumeration. No new endpoint is implemented.
+
+These are follow-up prerequisites; the current framework fixes establish neither
+full Haystack/Semantic Kernel support nor all-adapter production readiness.
