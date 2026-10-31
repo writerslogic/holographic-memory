@@ -248,14 +248,20 @@ fn valid_token(token: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b"-._~+/".contains(&b))
 }
 
-fn bearer(headers: &HeaderMap) -> Option<&str> {
+pub(super) fn bearer_value(headers: &HeaderMap) -> Option<&str> {
     let mut values = headers.get_all(header::AUTHORIZATION).iter();
     let value = values.next()?.to_str().ok()?;
     if values.next().is_some() {
         return None;
     }
     let (scheme, token) = value.split_once(' ')?;
-    (scheme.eq_ignore_ascii_case("bearer") && valid_token(token)).then_some(token)
+    scheme
+        .eq_ignore_ascii_case("bearer")
+        .then(|| token.trim_start_matches(' '))
+}
+
+fn bearer(headers: &HeaderMap) -> Option<&str> {
+    bearer_value(headers).filter(|token| valid_token(token))
 }
 
 #[derive(Deserialize)]
@@ -628,6 +634,8 @@ mod tests {
         }
         let mut headers = HeaderMap::new();
         headers.insert(header::AUTHORIZATION, "bEaReR secret".parse().unwrap());
+        assert_eq!(bearer(&headers), Some("secret"));
+        headers.insert(header::AUTHORIZATION, "Bearer   secret".parse().unwrap());
         assert_eq!(bearer(&headers), Some("secret"));
         headers.append(header::AUTHORIZATION, "Bearer other".parse().unwrap());
         assert!(bearer(&headers).is_none());
