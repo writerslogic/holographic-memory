@@ -1,0 +1,22 @@
+{
+  "baseline.log": {
+    "bytes": 2053,
+    "sha256": "be12dc05f5b422934bf1770c5927a33d72296333f1aa1bef486fd46f599005cf"
+  },
+  "clippy.log": {
+    "bytes": 135,
+    "sha256": "de4cd2047a497d6990fd6277e3a3ec1ad4f0a3b5337902a4ede90250587c4192"
+  },
+  "fmt.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "http.log": {
+    "bytes": 409,
+    "sha256": "be2779e2a0679b372d6a9d7bcbc794031b1b76551a0116419e7f126288274dc3"
+  },
+  "unit.log": {
+    "bytes": 670,
+    "sha256": "c0d164e0404da034ef3b986f97d30587013971d56940141669037c7c195f1270"
+  }
+}

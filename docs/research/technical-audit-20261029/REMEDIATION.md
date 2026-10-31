@@ -159,7 +159,7 @@ bounded milestones, with no paid development API calls or model downloads.
 |---|---|---|---|
 | 1 | HTTP retry safety and retained-memory bounds | Post-commit panic never blindly repeats work; byte/capacity pressure preserves protected keys; expiry reclaims allocations; real HTTP and concurrency regressions | Merged in PR #352 (`f28095e0`); all CI checks pass |
 | 2 | Restart-safe committed effects | Transaction-backed effect identities and intents, idempotent delivery, explicit ambiguous outcomes, replay/compaction/restore invariants, process-interruption tests | Merged in PR #353 (`79609861`); provenance and HTTP restart receipts remain separate work |
-| 3 | Retrieval quality and workload performance | Reproducible local baselines, correctness-equivalent competitor workloads, update/churn/filter coverage, latency and allocation evidence | Verified capture-allocation reduction; follow-up CI pending; historical tail regression and competitive evidence remain open |
+| 3 | Retrieval quality and workload performance | Reproducible local baselines, correctness-equivalent competitor workloads, update/churn/filter coverage, latency and allocation evidence | Merged in PR #354 (`6a2ec2b7`); verified allocation reduction; historical tail regression and competitive evidence remain open |
 | 4 | Security lifecycle and assurance | Signing-key rotation and historical verification policy, adversarial validation, actionable dependency dispositions | Existing limitations in `docs/SECURITY.md`; no certification claim |
 | 5 | Interface and standards fidelity | Shared lifecycle/error/serialization checks across HTTP, native bindings, MCP and framework adapters; authoritative applicable requirements | Existing lifecycle fixtures are the baseline; expand where coverage is missing |
 | 6 | Operational recovery and observability | Restore generation and retry-state interactions, per-tenant isolation/resource admission, bounded diagnostics and operator acceptance checks | Review before introducing persistent request/effect state |
@@ -346,3 +346,49 @@ exit status and logs remain in [audit-cost-20261031/validation.json](audit-cost-
 Use the command and limits in `docs/production-readiness.md` on the deployment filesystem;
 audit write cost and backlog recovery throughput remain unverified production criteria.
 The retrieval/benchmark follow-up requires its own complete PR gate before merge.
+
+
+### Merged retrieval and security follow-ups
+
+PR [#354](https://github.com/writerslogic/warm/pull/354) merged as `6a2ec2b7` after all
+109 check entries completed without failures or pending jobs. The merged tree matches
+its tested head `ed953da8`; neutral/skipped jobs are not counted as passing tests.
+This completes the integration gate above, without strengthening its timing claims.
+
+PR [#355](https://github.com/writerslogic/warm/pull/355) merged as `5db4341a` after the
+109-entry final gate. Candle 0.11.1 became available during the investigation and
+removed the vulnerable ZIP 8.6 dependency; the lockfile and GitHub dependency graph
+both resolve ZIP 9.2.0. Local checks pass 30 model, 22 embedding and seven store tests
+(one existing embedding ignore), strict Clippy and formatting. Cargo Audit reports
+zero known vulnerabilities; bincode/paste maintenance warnings remain. Evidence and
+the advisory database revision are in `candle-security-20261031/`.
+
+The remaining esbuild and ZIP GitHub alerts were stale against the verified patched
+lockfile and dependency graph. Their dismissals record the exact version/range evidence,
+not risk acceptance. The unpatched deepmerge development-fixture alert remains open;
+it must not be presented as fixed or removed by dropping integration coverage.
+
+PR [#356](https://github.com/writerslogic/warm/pull/356) merged as `3f787a5e` after all
+69 check entries completed without failure or pending work. Node now exposes audit
+signatures, their exact signed bytes and optional delivery IDs; Rust exports named
+`AuditEntry`/`AuditOp` types. Three native tests verify legacy/signed/unsigned behavior,
+independently generated public keys, process restart, tampering and safe-integer timestamp
+bounds. Build, TypeScript, Clippy and formatting pass; evidence is in
+`audit-interface-20261031/`. Historical public keys remain necessary: this does not add
+key rotation, whole-history authentication, or independent cryptographic assurance.
+
+### Conditional-request semantics
+
+Source inspection found literal comparison of weak entity tags, inspection of only one
+header line, and comma splitting inside quoted opaque values. Three new regression groups
+fail on the prior implementation. The replacement parses admitted header bytes without
+allocation, combines header lines, preserves quoted commas/opaque bytes and compares
+validators independently of their strength. A lone wildcard remains valid; malformed
+conditions are ignored in favor of a full response, including mixed wildcard/tag lists.
+
+The applicable requirements are [RFC 9110 §13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.2)
+and [§8.8.3.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.3.2).
+The existing real-HTTP conditional-read test now covers strong/weak equivalence, repeated
+fields, quoted commas, empty 304 bodies, returned validators, invalid-condition fallback
+and invalidation after a write. This closes the inspected `If-None-Match` matching gap;
+it is not a claim of complete HTTP conformance. The follow-up requires its final PR gate.

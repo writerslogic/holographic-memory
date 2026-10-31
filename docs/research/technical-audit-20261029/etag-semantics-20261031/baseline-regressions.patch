@@ -1,0 +1,69 @@
+--- a/src/bin/warm-server/documents.rs
++++ b/src/bin/warm-server/documents.rs
+@@ -1113,3 +1113,66 @@
+     })
+     .await
+ }
++
++#[cfg(test)]
++mod conditional_tests {
++    use super::*;
++
++    fn matches(values: &[&[u8]], tag: &str) -> bool {
++        let mut headers = HeaderMap::new();
++        for value in values {
++            headers.append(
++                header::IF_NONE_MATCH,
++                HeaderValue::from_bytes(value).unwrap(),
++            );
++        }
++        not_modified(&headers, tag)
++    }
++
++    #[test]
++    fn weak_comparison_ignores_strength_and_combines_field_lines() {
++        for current in ["W/\"version\"", "\"version\""] {
++            for supplied in [b"W/\"version\"".as_slice(), b"\"version\""] {
++                assert!(matches(&[supplied], current));
++                assert!(matches(&[b"\"other\"", supplied], current));
++                assert!(matches(&[supplied, b"\"other\""], current));
++            }
++        }
++        assert!(!matches(&[b"\"VERSION\""], "W/\"version\""));
++    }
++
++    #[test]
++    fn entity_tag_lists_preserve_quoted_commas_and_opaque_bytes() {
++        assert!(matches(
++            &[b" , \"other,tag\",\tW/\"version\", ,"],
++            "\"version\""
++        ));
++        assert!(matches(&[b"\"other\", W/\"a,b\""], "W/\"a,b\""));
++        assert!(matches(&[b"\"\xff\", \"version\""], "W/\"version\""));
++        assert!(matches(&[b"\"a\\b\""], "W/\"a\\b\""));
++        assert!(matches(&[b"\"\""], "W/\"\""));
++    }
++
++    #[test]
++    fn malformed_conditions_do_not_produce_not_modified() {
++        assert!(matches(&[b"\t* "], "W/\"version\""));
++        for value in [
++            "\"version\", *",
++            "*, *",
++            "*,",
++            "*x",
++            "version",
++            "w/\"version\"",
++            "\"version\" trailing",
++            "\"version\", \"unfinished",
++            "\"ver sion\"",
++            "",
++            ", ,",
++        ] {
++            assert!(!matches(&[value.as_bytes()], "W/\"version\""), "{value}");
++        }
++        assert!(!matches(&[b"*", b"\"version\""], "W/\"version\""));
++        assert!(!matches(&[b"\"version\"", b"garbage"], "W/\"version\""));
++        assert!(!matches(&[], "W/\"version\""));
++    }
++}

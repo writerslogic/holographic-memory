@@ -473,13 +473,37 @@ fn list_stats_and_conditional_requests() {
     assert_eq!(again.status, 304);
     assert!(again.body.is_empty());
     assert_eq!(again.header("etag"), Some(tag.as_str()));
+    for condition in [
+        "*".to_string(),
+        tag.strip_prefix("W/").unwrap().to_string(),
+        format!("\"other,version\", {}", tag.strip_prefix("W/").unwrap()),
+    ] {
+        let cached = s
+            .req("GET", "/api/v1/stats")
+            .header("If-None-Match", &condition)
+            .send();
+        assert_eq!(cached.status, 304, "{condition}");
+        assert!(cached.body.is_empty());
+        assert_eq!(cached.header("etag"), Some(tag.as_str()));
+    }
     assert_eq!(
         s.req("GET", "/api/v1/stats")
-            .header("If-None-Match", "\"other\", *")
+            .header("If-None-Match", "\"other\"")
+            .header("If-None-Match", tag.strip_prefix("W/").unwrap())
             .send()
             .status,
         304
     );
+    for invalid in ["\"other\", *".to_string(), format!("{tag} trailing")] {
+        assert_eq!(
+            s.req("GET", "/api/v1/stats")
+                .header("If-None-Match", &invalid)
+                .send()
+                .status,
+            200,
+            "{invalid}"
+        );
+    }
     // A write changes the validator; the list shares it.
     s.req("POST", "/api/v1/documents")
         .json(&doc("new", 99))

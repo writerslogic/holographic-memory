@@ -1016,10 +1016,54 @@ fn etag(state: &AppState, core: &CoreGuard) -> String {
 }
 
 fn not_modified(headers: &HeaderMap, etag: &str) -> bool {
-    headers
-        .get(header::IF_NONE_MATCH)
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|v| v.split(',').any(|t| t.trim() == etag || t.trim() == "*"))
+    let values = headers.get_all(header::IF_NONE_MATCH);
+    if values.iter().count() == 1
+        && values
+            .iter()
+            .next()
+            .is_some_and(|value| value.as_bytes().trim_ascii() == b"*")
+    {
+        return true;
+    }
+    let expected = etag.strip_prefix("W/").unwrap_or(etag).as_bytes();
+    let mut matched = false;
+    for value in values.iter() {
+        let mut remaining = value.as_bytes();
+        loop {
+            remaining = remaining.trim_ascii_start();
+            if remaining.is_empty() {
+                break;
+            }
+            if remaining[0] == b',' {
+                remaining = &remaining[1..];
+                continue;
+            }
+            remaining = remaining.strip_prefix(b"W/").unwrap_or(remaining);
+            if remaining.first() != Some(&b'"') {
+                return false;
+            }
+            let Some(end) = remaining[1..].iter().position(|byte| *byte == b'"') else {
+                return false;
+            };
+            let end = end + 1;
+            if remaining[1..end]
+                .iter()
+                .any(|byte| !matches!(byte, 0x21 | 0x23..=0x7e | 0x80..=0xff))
+            {
+                return false;
+            }
+            matched |= &remaining[..=end] == expected;
+            remaining = remaining[end + 1..].trim_ascii_start();
+            if remaining.is_empty() {
+                break;
+            }
+            if remaining[0] != b',' {
+                return false;
+            }
+            remaining = &remaining[1..];
+        }
+    }
+    matched
 }
 
 fn with_etag(mut response: Response, etag: &str) -> Response {
@@ -1112,4 +1156,67 @@ pub async fn stats(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
         })
     })
     .await
+}
+
+#[cfg(test)]
+mod conditional_tests {
+    use super::*;
+
+    fn matches(values: &[&[u8]], tag: &str) -> bool {
+        let mut headers = HeaderMap::new();
+        for value in values {
+            headers.append(
+                header::IF_NONE_MATCH,
+                HeaderValue::from_bytes(value).unwrap(),
+            );
+        }
+        not_modified(&headers, tag)
+    }
+
+    #[test]
+    fn weak_comparison_ignores_strength_and_combines_field_lines() {
+        for current in ["W/\"version\"", "\"version\""] {
+            for supplied in [b"W/\"version\"".as_slice(), b"\"version\""] {
+                assert!(matches(&[supplied], current));
+                assert!(matches(&[b"\"other\"", supplied], current));
+                assert!(matches(&[supplied, b"\"other\""], current));
+            }
+        }
+        assert!(!matches(&[b"\"VERSION\""], "W/\"version\""));
+    }
+
+    #[test]
+    fn entity_tag_lists_preserve_quoted_commas_and_opaque_bytes() {
+        assert!(matches(
+            &[b" , \"other,tag\",\tW/\"version\", ,"],
+            "\"version\""
+        ));
+        assert!(matches(&[b"\"other\", W/\"a,b\""], "W/\"a,b\""));
+        assert!(matches(&[b"\"\xff\", \"version\""], "W/\"version\""));
+        assert!(matches(&[b"\"a\\b\""], "W/\"a\\b\""));
+        assert!(matches(&[b"\"\""], "W/\"\""));
+    }
+
+    #[test]
+    fn malformed_conditions_do_not_produce_not_modified() {
+        assert!(matches(&[b"\t* "], "W/\"version\""));
+        for value in [
+            "\"version\", *",
+            "*, *",
+            "*,",
+            "*x",
+            "version",
+            "w/\"version\"",
+            "\"version\" trailing",
+            "\"version\", \"unfinished",
+            "\"ver sion\"",
+            "",
+            ", ,",
+        ] {
+            assert!(!matches(&[value.as_bytes()], "W/\"version\""), "{value}");
+        }
+        assert!(!matches(&[b"*", b"\"version\""], "W/\"version\""));
+        assert!(!matches(&[b"\"version\"", b"garbage"], "W/\"version\""));
+        assert!(!matches(&[], "W/\"version\""));
+    }
 }

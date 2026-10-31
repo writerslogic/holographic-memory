@@ -1,0 +1,28 @@
+{
+  "baseline_revision": "3f787a5efb30468bc976623cc973edcbaa058029",
+  "baseline_regressions_failed": 3,
+  "candidate_regressions_passed": 3,
+  "real_http_conditional_read": "passed",
+  "strict_clippy": "passed",
+  "format": "passed",
+  "standards": [
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.2",
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.3.2"
+  ],
+  "covered": [
+    "weak comparison",
+    "repeated field lines",
+    "quoted commas",
+    "opaque bytes",
+    "empty opaque tags",
+    "lone wildcard",
+    "malformed-condition fallback",
+    "304 response metadata/body",
+    "write invalidation"
+  ],
+  "integrated_ci": "pending",
+  "limits": [
+    "This is an If-None-Match matching correction, not a complete HTTP conformance assessment.",
+    "No throughput or latency improvement is claimed."
+  ]
+}
