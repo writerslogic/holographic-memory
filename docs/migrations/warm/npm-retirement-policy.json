@@ -95,6 +95,32 @@
       "missing_deprecation": []
     }
   ],
-  "mcp_deprecation": "pending_verified_replacement",
-  "legacy_models": "not_published_http_404"
+  "mcp_deprecation": {
+    "status": "all_versions_deprecated",
+    "source": "https://registry.npmjs.org/holographic-memory-mcp",
+    "checked_at": "2026-10-31T04:05:48.619161+00:00",
+    "versions": [
+      "0.0.0-stage",
+      "0.1.0",
+      "0.1.1",
+      "0.1.2"
+    ],
+    "missing_deprecation": [],
+    "run": "https://github.com/writerslogic/warm/actions/runs/41167081535",
+    "unpublish_attempted": false,
+    "reason": "Previously established registry download threshold prevents deletion; protected workflow used deprecation-only mode."
+  },
+  "legacy_models": "not_published_http_404",
+  "mcp_replacement_public_verification": {
+    "checked_at": "2026-10-31T04:05:37.376086+00:00",
+    "npm_package": "writerslogic-warm-mcp",
+    "npm_version": "0.1.5",
+    "pypi_package": "warm-mcp",
+    "pypi_version": "0.1.5",
+    "release_run": "https://github.com/writerslogic/warm/actions/runs/41165920099",
+    "registry_source": "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.writerslogic%2Fwarm-mcp/versions/0.1.5",
+    "registry_status": "active",
+    "downloaded_binary_version": "warm-mcp 0.6.5",
+    "validation": "Release workflow public npm install, registry signature check, checksum-verified GitHub binary execution; independent public PyPI install and binary execution."
+  }
 }
