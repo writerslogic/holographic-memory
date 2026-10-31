@@ -14,7 +14,9 @@
 
   LiteLLM 1.106.6 requires Filelock below 4; the current patched Filelock requires
   the compatible older LiteLLM selected above. Do not assume an unconstrained
-  latest installation matches this profile.
+  latest installation matches this profile. WARM's DSPy extras also declare the
+  Filelock floor in package metadata, preventing a vulnerable Filelock 3 fallback
+  even when the repository lock is not in use.
 
 ## Current DSPy retriever shape
 

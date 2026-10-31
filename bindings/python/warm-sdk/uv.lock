@@ -1112,18 +1112,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dspy-ai"
-version = "3.4.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "dspy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/55/dd/da01a56bf0fd3c653710dd27a78011d73576607f0cc8b4891261aac5af9f/dspy_ai-3.4.1.tar.gz", hash = "sha256:fc23d4bbebd1c9220675ca2c33b3eb164eaded2fac53f69f184745ae582c0042", size = 1238, upload-time = "2026-10-12T23:07:32.619Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c7/55/8bcb332373248c3d76ff5180bce408b06c494e8f928811d69c85d099ea05/dspy_ai-3.4.1-py3-none-any.whl", hash = "sha256:b8dd66beb1e53ea09a33024de42f4fe07f7645375486ced47715ffe978690ac7", size = 1171, upload-time = "2026-10-12T23:07:31.783Z" },
-]
-
-[[package]]
 name = "duckdb"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -6195,7 +6183,8 @@ crewai = [
     { name = "crewai" },
 ]
 dspy = [
-    { name = "dspy-ai" },
+    { name = "dspy" },
+    { name = "filelock" },
 ]
 fast = [
     { name = "orjson" },
@@ -6326,10 +6315,11 @@ requires-dist = [
     { name = "annoy", marker = "extra == 'import-annoy'", specifier = ">=1.17" },
     { name = "chromadb", marker = "extra == 'import-chroma'", specifier = ">=0.5" },
     { name = "crewai", marker = "extra == 'crewai'", specifier = ">=1.15.33" },
-    { name = "dspy-ai", marker = "extra == 'dspy'", specifier = ">=2.4.0" },
+    { name = "dspy", marker = "extra == 'dspy'", specifier = ">=3.4.1" },
     { name = "duckdb", marker = "extra == 'import-files'", specifier = ">=1.0" },
     { name = "faiss-cpu", marker = "extra == 'import-faiss'", specifier = ">=1.8" },
     { name = "faiss-cpu", marker = "extra == 'import-langchain'", specifier = ">=1.8" },
+    { name = "filelock", marker = "extra == 'dspy'", specifier = ">=4.2.6" },
     { name = "haystack-ai", marker = "extra == 'haystack'", specifier = ">=2.0.0" },
     { name = "hnswlib", marker = "extra == 'import-hnswlib'", specifier = ">=0.8" },
     { name = "httpx", specifier = ">=0.27.0" },

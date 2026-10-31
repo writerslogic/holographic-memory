@@ -1191,3 +1191,29 @@ and three modules are absent, with the Python 3.11 floor intact. Wheel/sdist and
 lock checks pass. Final exact-head CI/merge gate remains pending.
 Evidence: [phidata-retirement-20261031/](phidata-retirement-20261031/), including
 hash-bound scan, exact lock delta, upstream archive metadata and constructor output.
+
+
+### Publish the DSPy security floor to consumers (2026-10-31)
+
+The initial remediation constrained the repository's Filelock only. A normal
+consumer install of DSPy still chose LiteLLM 1.106.6 and vulnerable Filelock
+3.32.7 unless the documented profile was explicitly supplied. Close that packaging
+gap: both `warm-sdk[dspy]` and `writerslogic-warm-integrations[dspy]` now declare
+`filelock>=4.2.6`; the SDK depends directly on maintained `dspy>=3.4.1` rather than
+the old `dspy-ai` metapackage. These are ordinary published requirements, not
+resolver overrides. Incompatible application pins now fail resolution.
+
+Independent installs of the newly built SDK wheel's DSPy extra and the separate
+integrations package's extra, without a repository lock or external constraints,
+both select DSPy 3.4.1, Filelock 4.2.6, and compatible LiteLLM 1.103.10. Both real
+retrievers construct. These are package-install/constructor checks; the earlier
+11-case offline retrieval/cache suite verifies the same DSPy/LiteLLM/Filelock
+versions. Disk caching must still be disabled before use as documented; this
+floor does not remove the installed DiskCache advisory.
+
+The final candidate lock now contains 245 total packages / 244 registry pairs:
+only the redundant `dspy-ai` metapackage is additionally removed. The fresh
+complete hash-bound OSV scan again reports four Chroma GHSA IDs and one DiskCache
+GHSA ID. This supersedes the preceding 246-package snapshot for final release
+assessment. Build and lock checks pass; final exact-head CI/merge remains pending.
+Evidence: [dspy-consumer-constraints-20261031/](dspy-consumer-constraints-20261031/).

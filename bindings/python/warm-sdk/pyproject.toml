@@ -22,7 +22,7 @@ Repository = "https://github.com/writerslogic/warm"
 langchain = ["langchain-core>=0.3.86"]
 llamaindex = ["llama-index-core>=0.10.0"]
 haystack = ["haystack-ai>=2.0.0"]
-dspy = ["dspy-ai>=2.4.0"]
+dspy = ["dspy>=3.4.1", "filelock>=4.2.6"]
 crewai = ["crewai>=1.15.33"]
 pydantic-ai = ["pydantic-ai-slim>=2.64.0"]
 smolagents = ["smolagents>=1.26.0"]

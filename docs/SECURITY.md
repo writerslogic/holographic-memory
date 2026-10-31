@@ -115,7 +115,9 @@ resolver guard, not a dependency override or a guarantee for independently
 resolved consumer environments. It selects LiteLLM 1.103.10 because 1.106.6
 requires Filelock below 4; the documented DSPy profile pins that compatible pair
 and passes its local retrieval/cache tests. An unconstrained latest installation
-does not reproduce this profile.
+does not reproduce this profile. Both WARM Python packages also publish the
+Filelock floor in their DSPy extras, so those extras cannot silently resolve a
+Filelock 3 release; incompatible application pins fail resolution instead.
 
 The full SDK lock scan on October 31, 2026 still matches four distinct Chroma
 advisories and one DiskCache advisory (OSV also returns duplicate PYSEC aliases):

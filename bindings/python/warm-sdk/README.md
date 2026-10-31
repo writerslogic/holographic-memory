@@ -65,8 +65,10 @@ when finished. Do not treat unsupported operations as empty successful results.
 DSPy users must configure memory-only caching before the first cache or LM use:
 `dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=True)`.
 See the [tested dependency profile and its limits](https://github.com/writerslogic/warm/blob/main/docs/integrations/frameworks/dspy.md#cache-safety):
-newer LiteLLM versions can force an older vulnerable Filelock. The SDK lock
-alone does not constrain a consumer installation.
+newer LiteLLM versions can force an older vulnerable Filelock. The DSPy extra
+requires `dspy>=3.4.1` and `filelock>=4.2.6` in published package metadata, which
+selects a compatible LiteLLM or rejects conflicting application pins. The SDK
+lock alone does not constrain a consumer installation.
 
 The CrewAI tool requires `crewai>=1.15.33` (currently Python 3.11–3.13 for this SDK)
 and closes its per-call HTTP client on
