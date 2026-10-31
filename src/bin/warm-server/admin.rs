@@ -174,13 +174,7 @@ fn sync_tree(dir: &Path) -> std::io::Result<()> {
         if kind.is_dir() {
             sync_tree(&entry.path())?;
         } else if kind.is_file() {
-            // Unix fsyncs through any handle (an archive may unpack read-only files); Windows
-            // flushes file buffers only through a write handle.
-            std::fs::OpenOptions::new()
-                .read(cfg!(unix))
-                .write(!cfg!(unix))
-                .open(entry.path())?
-                .sync_all()?;
+            crate::tenants::sync_staged_file(&entry.path())?;
         }
     }
     crate::vindex::sync_dir(dir)
@@ -408,4 +402,57 @@ pub async fn list_tenants(State(state): State<Arc<AppState>>, req: Request) -> A
             tenants,
         }),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uploaded_readonly_files_are_synced_without_changing_attributes() {
+        let dir = tempfile::tempdir().unwrap();
+        let archive_path = dir.path().join("snapshot.tar");
+        let mut archive = tar::Builder::new(std::fs::File::create(&archive_path).unwrap());
+        for (name, mode, content) in [
+            ("nested/deployment.json", 0o444, b"readonly".as_slice()),
+            ("nested/writable.json", 0o644, b"writable".as_slice()),
+        ] {
+            let mut header = tar::Header::new_gnu();
+            header.set_size(content.len() as u64);
+            header.set_mode(mode);
+            header.set_cksum();
+            archive.append_data(&mut header, name, content).unwrap();
+        }
+        archive.finish().unwrap();
+        drop(archive);
+        let staged = dir.path().join("staged");
+        unpack_archive(std::fs::File::open(archive_path).unwrap(), &staged, 1024).unwrap();
+        let readonly = staged.join("nested/deployment.json");
+        let permissions = std::fs::metadata(&readonly).unwrap().permissions();
+        assert!(permissions.readonly());
+        #[cfg(windows)]
+        assert_eq!(
+            std::fs::OpenOptions::new()
+                .write(true)
+                .open(&readonly)
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::PermissionDenied,
+        );
+        let result = sync_tree(&staged);
+        let after = std::fs::metadata(&readonly).unwrap().permissions();
+        #[cfg(windows)]
+        {
+            let mut writable = permissions.clone();
+            writable.set_readonly(false);
+            std::fs::set_permissions(&readonly, writable).unwrap();
+        }
+        result.unwrap();
+        assert_eq!(permissions, after);
+        assert_eq!(std::fs::read(&readonly).unwrap(), b"readonly");
+        assert_eq!(
+            std::fs::read(staged.join("nested/writable.json")).unwrap(),
+            b"writable"
+        );
+    }
 }
