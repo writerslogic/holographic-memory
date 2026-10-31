@@ -91,6 +91,14 @@ const BASE: Spec = Spec {
 fn specs() -> Vec<Spec> {
     vec![
         Spec {
+            name: "v6-audit-effects",
+            description: "Schema 6 audit intents and acknowledgements with compaction and post-compaction writes.",
+            schema: 6,
+            audit: true,
+            compact: true,
+            ..BASE
+        },
+        Spec {
             name: "v4-plain",
             description: "Current format, unencrypted: documents (one replaced, one deleted, \
                           one multi-chunk, one non-ASCII), vectors, a relation, deletes.",
@@ -936,6 +944,19 @@ fn open_and_check(golden: &Golden, store: &Path) -> Result<()> {
         check_memory(&core, &golden.meta["expect"])?;
     } else {
         check_expectations(&core, &golden.meta["expect"], golden.dimensions())?;
+    }
+    if golden.name == "v6-audit-effects" {
+        let entries = core.audit_since(0)?;
+        assert_eq!(
+            entries
+                .iter()
+                .map(|entry| entry.op as u8)
+                .collect::<Vec<_>>(),
+            [1, 1, 1, 2, 3]
+        );
+        assert!(entries.iter().all(|entry| entry.effect_id.is_some()));
+        assert!(core.durable_audit_delivery());
+        assert_eq!(core.pending_audit_effects(), 0);
     }
     Ok(())
 }

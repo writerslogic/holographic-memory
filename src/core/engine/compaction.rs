@@ -192,8 +192,18 @@ impl WarmCore {
         let end = self.compaction_end(&generation)?;
         self.arena
             .replay_compaction_tail(&mut prepared, &mut cursor, end)?;
+        let audit_intent = self.audit_intent(crate::core::audit::AuditOp::Compact, "");
+        if let Some(intent) = &audit_intent {
+            let mutations = [Mutation::AuditPending(intent.clone())];
+            self.validate_audit_transitions(&mutations)?;
+            prepared.append_frame(&self.maybe_encrypt(&self.transaction_payload(&mutations)?)?)?;
+        }
         staging.disarm();
         self.arena.replace_with_compacted(prepared, scrub)?;
+        if let Some(intent) = audit_intent {
+            self.audit_pending.write().push_back(intent);
+        }
+        crate::core::audit_effects::crash_point("compacted");
         self.revision
             .fetch_add(1, std::sync::atomic::Ordering::Release);
         // The arena pointer has moved, so writers may continue: the lease ends here. Index
@@ -210,16 +220,7 @@ impl WarmCore {
             "compaction index persistence",
             self.persist_indices(&self.shards.read()),
         )?;
-        if let Some(audit) = &self.audit {
-            crate::core::error::after_commit(
-                "compaction audit append",
-                audit.record(
-                    crate::core::audit::AuditOp::Compact,
-                    "",
-                    self.sign_fn().as_deref(),
-                ),
-            )?;
-        }
+        self.finish_audit(crate::core::audit::AuditOp::Compact, "")?;
         if scrub {
             // Still under the compaction lock: a concurrent compaction must not capture
             // documents whose text offsets the canonical rebuild is replacing.
@@ -339,6 +340,13 @@ impl WarmCore {
                     children: children.clone(),
                 }),
         );
+        mutations.extend(
+            self.audit_pending
+                .read()
+                .iter()
+                .cloned()
+                .map(Mutation::AuditPending),
+        );
         Ok(Snapshot {
             checkpoint: self.arena.checkpoint(),
             mutations,
@@ -384,6 +392,47 @@ mod tests {
     use crate::core::documents::{DocumentInput, SearchOptions};
     use crate::core::WarmConfig;
     use serde_json::json;
+
+    #[test]
+    fn audit_intents_survive_snapshot_and_concurrent_compaction_tail() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let mut config = WarmConfig::default();
+        config.security.audit_enabled = true;
+        config.document_checkpoint.enabled = false;
+        let mut core = WarmCore::new(
+            256,
+            Some(dir.path().display().to_string()),
+            Some(config.clone()),
+        )?;
+        core.audit_effects
+            .as_mut()
+            .unwrap()
+            .make_read_only(dir.path())?;
+        let write = |id: &str| {
+            let error = core
+                .memorize(id.into(), crate::EntangledHVec::new_deterministic(256, 7))
+                .unwrap_err();
+            assert!(error.is::<crate::CommittedMutationError>());
+        };
+        write("snapshot");
+        let error = core
+            .compact_impl(|| write("tail"), || {}, false)
+            .unwrap_err();
+        assert!(error.is::<crate::CommittedMutationError>());
+        let intents: Vec<_> = core
+            .audit_pending
+            .read()
+            .iter()
+            .map(|intent| intent.0.clone())
+            .collect();
+        assert_eq!(intents.len(), 3);
+        drop(core);
+        let core = WarmCore::new(256, Some(dir.path().display().to_string()), Some(config))?;
+        assert_eq!(core.audit_since(0)?, intents);
+        assert_eq!(core.shards.read().count(), 2);
+        assert_eq!(core.pending_audit_effects(), 0);
+        Ok(())
+    }
 
     fn config() -> WarmConfig {
         super::super::fixture_config(2)

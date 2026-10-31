@@ -306,10 +306,7 @@ fn audit_verify(store: &Path) -> Result<Value> {
     key_bytes.zeroize();
     let (mut verified, mut failed) = (0usize, 0usize);
     for e in &entries {
-        let mut msg = Vec::with_capacity(41);
-        msg.extend_from_slice(&e.timestamp_ms.to_le_bytes());
-        msg.push(e.op as u8);
-        msg.extend_from_slice(&e.id_hash);
+        let msg = e.signable_bytes();
         let sig = Signature::from_bytes(&e.signature);
         if verifying.verify(&msg, &sig).is_ok() {
             verified += 1;

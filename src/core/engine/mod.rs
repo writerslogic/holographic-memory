@@ -1,6 +1,7 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+mod audit_delivery;
 mod compaction;
 pub(crate) mod concepts;
 mod document_api;
@@ -121,6 +122,9 @@ pub struct WarmCore {
     goal_store: Option<GoalStore>,
     self_modifier: Option<SelfModifier>,
     audit: Option<AuditLog>,
+    audit_effects: Option<super::audit_effects::AuditEffectStream>,
+    audit_pending: RwLock<std::collections::VecDeque<super::audit_effects::AuditIntent>>,
+    audit_delivery: mutation_gate::MutationGate,
     #[cfg(feature = "security")]
     signing: Option<super::security::SigningManager>,
     #[cfg(feature = "security")]
@@ -181,6 +185,13 @@ impl WarmCore {
 
         let audit = if config.security.audit_enabled {
             Some(AuditLog::new(&base_path)?)
+        } else {
+            None
+        };
+
+        let audit_effects = if schema >= super::format::AUDIT_EFFECTS_SCHEMA_VERSION {
+            anyhow::ensure!(arena.stats().used_bytes == 0 || base_path.join(super::audit_effects::FILE_NAME).try_exists()?, "audit effect stream is missing from a nonempty schema 6 store; restore it before opening");
+            Some(super::audit_effects::AuditEffectStream::open(&base_path)?)
         } else {
             None
         };
@@ -316,6 +327,9 @@ impl WarmCore {
                 None
             },
             audit,
+            audit_effects,
+            audit_pending: RwLock::default(),
+            audit_delivery: mutation_gate::MutationGate::default(),
             #[cfg(feature = "security")]
             signing,
             #[cfg(feature = "security")]
@@ -356,6 +370,7 @@ impl WarmCore {
             shards.try_for_each_shard(|s| s.rebuild_inverted_index(dim))?;
         }
         // Only a completely opened engine may write an image when it closes.
+        core.flush_audit()?;
         core.mark_opened();
 
         Ok(core)
@@ -627,6 +642,7 @@ impl WarmCore {
         if !self.checkpoint_accepts(mutations) {
             self.hydrate_documents()?;
         }
+        self.validate_audit_transitions(mutations)?;
         self.apply_mutations(&self.prepare_mutations(mutations), shards)
     }
 
@@ -775,13 +791,11 @@ impl WarmCore {
             "use deleteDocument to delete document chunks"
         );
         let existed = self.shards.read().get_vector(id).is_some();
-        self.commit(&[Mutation::Delete { id: id.to_owned() }])?;
-        if let Some(ref audit) = self.audit {
-            super::error::after_commit(
-                "audit append",
-                audit.record(AuditOp::Delete, id, self.sign_fn().as_deref()),
-            )?;
-        }
+        self.commit_audited(
+            vec![Mutation::Delete { id: id.to_owned() }],
+            AuditOp::Delete,
+            id,
+        )?;
         #[cfg(feature = "provenance")]
         if let Some(ref mgr) = self.provenance {
             if self.config.provenance.auto_sign {
@@ -852,16 +866,14 @@ impl WarmCore {
             "chunk IDs are reserved for document ingestion"
         );
 
-        self.commit(&[Mutation::Vector {
-            id: id.clone(),
-            vector,
-        }])?;
-        if let Some(ref audit) = self.audit {
-            super::error::after_commit(
-                "audit append",
-                audit.record(AuditOp::Memorize, &id, self.sign_fn().as_deref()),
-            )?;
-        }
+        self.commit_audited(
+            vec![Mutation::Vector {
+                id: id.clone(),
+                vector,
+            }],
+            AuditOp::Memorize,
+            &id,
+        )?;
         Ok(())
     }
 
@@ -1474,10 +1486,14 @@ impl WarmCore {
     /// Query the audit log for entries since `timestamp_ms`.
     /// Returns an empty vec if audit logging is disabled.
     pub fn audit_since(&self, timestamp_ms: u64) -> Result<Vec<super::audit::AuditEntry>> {
-        match self.audit {
-            Some(ref audit) => audit.entries_since(timestamp_ms),
-            None => Ok(Vec::new()),
+        let Some(audit) = &self.audit else {
+            return Ok(Vec::new());
+        };
+        let mut entries = audit.entries_since(timestamp_ms)?;
+        if let Some(stream) = &self.audit_effects {
+            entries.extend(stream.entries_since(timestamp_ms)?);
         }
+        Ok(entries)
     }
 
     #[cfg(feature = "provenance")]

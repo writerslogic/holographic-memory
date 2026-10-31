@@ -1013,7 +1013,7 @@ fn check_indices(store: &Path, arena: &ArenaState, report: &mut Report) {
 }
 
 fn check_ancillary(store: &Path, schema: &Schema, report: &mut Report) {
-    const KNOWN: [&str; 17] = [
+    const KNOWN: [&str; 18] = [
         "store.json",
         "store.json.crc32",
         "indices.json",
@@ -1021,6 +1021,7 @@ fn check_ancillary(store: &Path, schema: &Schema, report: &mut Report) {
         "documents.text",
         "encryption.salt",
         "shard_meta.json",
+        "audit.effects.bin",
         "audit.bin",
         "hms_signing.key",
         "hms_provenance.key",
@@ -1032,6 +1033,52 @@ fn check_ancillary(store: &Path, schema: &Schema, report: &mut Report) {
         ".hms.lock",
         ARENA_DIRECTORY,
     ];
+    let effects = store.join(crate::core::audit_effects::FILE_NAME);
+    match effects.symlink_metadata() {
+        Ok(_) => {
+            report.checks.push("audit.effects.bin");
+            match crate::core::audit_effects::verify(&effects) {
+                Ok(0) => {}
+                Ok(trailing) => report.add(
+                    Severity::Warning,
+                    "audit-effects-torn-tail",
+                    "audit.effects.bin",
+                    None,
+                    format!(
+                        "{trailing} trailing bytes from an incomplete delivery; repaired on open"
+                    ),
+                ),
+                Err(error) => report.add(
+                    Severity::Error,
+                    "audit-effects-invalid",
+                    "audit.effects.bin",
+                    None,
+                    format!("{error:#}"),
+                ),
+            }
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            if schema.raw["version"]
+                .as_u64()
+                .is_some_and(|version| version >= u64::from(super::AUDIT_EFFECTS_SCHEMA_VERSION))
+            {
+                report.add(
+                    Severity::Error,
+                    "audit-effects-missing",
+                    "audit.effects.bin",
+                    None,
+                    "schema 6 audit effect stream is missing",
+                );
+            }
+        }
+        Err(error) => report.add(
+            Severity::Error,
+            "audit-effects-unreadable",
+            "audit.effects.bin",
+            None,
+            error.to_string(),
+        ),
+    }
     if let Ok(bytes) = std::fs::read(store.join("audit.bin")) {
         let audit = scan::scan_audit(&bytes);
         report.checks.push("audit.bin");
@@ -1054,7 +1101,7 @@ fn check_ancillary(store: &Path, schema: &Schema, report: &mut Report) {
                 "audit.bin",
                 None,
                 format!(
-                    "{} entries have an unknown operation byte; readers skip them",
+                    "{} entries have an unknown operation byte; audit queries reject the log",
                     audit.unknown_ops
                 ),
             );

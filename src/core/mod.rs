@@ -12,6 +12,8 @@ pub(crate) mod atom_memory;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod audit;
 #[cfg(not(target_arch = "wasm32"))]
+pub(crate) mod audit_effects;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod cognition;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod composite_memory;

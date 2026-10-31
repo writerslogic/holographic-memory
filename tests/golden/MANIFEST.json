@@ -904,6 +904,60 @@
         2952,
         "51c59725"
       ]
+    },
+    "v6-audit-effects": {
+      "audit.bin": [
+        0,
+        "00000000"
+      ],
+      "audit.effects.bin": [
+        633,
+        "05996197"
+      ],
+      "documents.text": [
+        1001,
+        "3157d8db"
+      ],
+      "golden.json": [
+        3629,
+        "a006301a"
+      ],
+      "indices.json": [
+        133,
+        "6969dc96"
+      ],
+      "store.json": [
+        225,
+        "ac3e9ec6"
+      ],
+      "store.json.crc32": [
+        9,
+        "b156d7e3"
+      ],
+      "vectors_data.bin/CURRENT": [
+        29,
+        "a3697ee9"
+      ],
+      "vectors_data.bin/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-93109-1793434059764288000/format.json": [
+        72,
+        "dfdc672e"
+      ],
+      "vectors_data.bin/gen-93109-1793434059764288000/format.json.crc32": [
+        9,
+        "9cb6b204"
+      ],
+      "vectors_data.bin/gen-93109-1793434059764288000/seg_0.bin": [
+        3013,
+        "5e5b5b9d"
+      ]
     }
   }
 }

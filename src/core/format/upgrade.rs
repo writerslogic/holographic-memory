@@ -89,35 +89,46 @@ struct Detected {
 static MIGRATIONS: &[Migration] = &[
     Migration {
         step: UpgradeStep {
-            id: "store-schema-2-to-5",
+            id: "store-schema-2-to-6",
             artefact: "store-schema",
             from: 2,
-            to: 5,
-            description: "enable namespace-scoped durable meaning maintenance; existing journal frames remain readable",
+            to: 6,
+            description: "enable durable audit delivery and namespace-scoped meaning maintenance; existing journal frames remain readable",
         },
         applies: |d| d.store_schema == 2,
         run: upgrade_schema,
     },
     Migration {
         step: UpgradeStep {
-            id: "store-schema-3-to-5",
+            id: "store-schema-3-to-6",
             artefact: "store-schema",
             from: 3,
-            to: 5,
-            description: "enable namespace-scoped durable meaning maintenance; existing journal frames remain readable",
+            to: 6,
+            description: "enable durable audit delivery and namespace-scoped meaning maintenance; existing journal frames remain readable",
         },
         applies: |d| d.store_schema == 3,
         run: upgrade_schema,
     },
     Migration {
         step: UpgradeStep {
-            id: "store-schema-4-to-5",
+            id: "store-schema-4-to-6",
             artefact: "store-schema",
             from: 4,
-            to: 5,
-            description: "enable namespace-scoped durable meaning maintenance; existing journal frames remain readable",
+            to: 6,
+            description: "enable durable audit delivery and namespace-scoped meaning maintenance; existing journal frames remain readable",
         },
         applies: |d| d.store_schema == 4,
+        run: upgrade_schema,
+    },
+    Migration {
+        step: UpgradeStep {
+            id: "store-schema-5-to-6",
+            artefact: "store-schema",
+            from: 5,
+            to: 6,
+            description: "enable durable audit delivery; existing journal frames remain readable",
+        },
+        applies: |d| d.store_schema == 5,
         run: upgrade_schema,
     },
     Migration {
@@ -594,6 +605,7 @@ fn stage_store(source: &Path, staging: &Path) -> Result<Staged> {
 }
 
 fn upgrade_schema(context: &mut StepContext<'_>) -> Result<()> {
+    crate::core::audit_effects::AuditEffectStream::open(context.staging)?;
     let path = context.staging.join("store.json");
     let mut schema: serde_json::Value = serde_json::from_slice(&std::fs::read(&path)?)?;
     schema["version"] = STORE_SCHEMA_VERSION.into();

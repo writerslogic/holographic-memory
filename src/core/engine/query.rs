@@ -149,13 +149,14 @@ impl WarmCore {
         std::thread::spawn(move || core.maintain_indices())
     }
 
-    /// Flush persistent vector data to durable storage.
+    /// Flush persistent data and deliver pending audit records to durable storage.
     pub fn flush(&self) -> anyhow::Result<()> {
         {
             let _transaction = self.mutation_gate.write();
             self.arena.flush()?;
             self.persist_indices(&self.shards.read())?;
         }
+        self.flush_audit()?;
         self.checkpoint_if_due()
     }
 

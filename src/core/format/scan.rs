@@ -283,7 +283,9 @@ pub fn classify_payload(payload: &[u8]) -> PayloadKind<'_> {
 }
 
 /// Mutation variants the journal may carry (`docs/file-format/MUTATIONS.md`).
-pub const MUTATION_VARIANTS: [&str; 17] = [
+pub const MUTATION_VARIANTS: [&str; 19] = [
+    "AuditPending",
+    "AuditAcknowledged",
     "Vector",
     "Atom",
     "Composite",
@@ -337,6 +339,7 @@ pub struct Replay {
     pub derived: BTreeMap<String, Vec<String>>,
     pub relations: BTreeSet<(String, String, String)>,
     pub mutations: usize,
+    pub audit_pending: std::collections::VecDeque<[u8; 16]>,
 }
 
 #[derive(Debug, Clone)]
@@ -598,6 +601,26 @@ fn check_mutation(
         return Err(format!("unknown mutation variant {variant:?}"));
     }
     match variant.as_str() {
+        "AuditPending" => {
+            let intent: crate::core::audit_effects::AuditIntent =
+                serde_json::from_value(body.clone()).map_err(|error| error.to_string())?;
+            let id = intent.id().map_err(|error| error.to_string())?;
+            if replay.audit_pending.len() >= crate::core::audit_effects::MAX_PENDING
+                || replay.audit_pending.contains(&id)
+            {
+                return Err("invalid audit delivery backlog".into());
+            }
+            replay.audit_pending.push_back(id);
+        }
+        "AuditAcknowledged" => {
+            let id: [u8; 16] =
+                serde_json::from_value(body.get("id").ok_or("missing audit identity")?.clone())
+                    .map_err(|error| error.to_string())?;
+            if replay.audit_pending.front() != Some(&id) {
+                return Err("audit acknowledgement is out of order".into());
+            }
+            replay.audit_pending.pop_front();
+        }
         "Vector" | "Atom" | "Composite" => {
             if !valid_id(body.get("id")) {
                 return Err("vector id is not 1..=65535 bytes without NUL".into());
@@ -689,6 +712,13 @@ pub fn check_transaction_with_schema(
 ) -> Result<usize, String> {
     let value: Value = serde_json::from_slice(json).map_err(|e| format!("not JSON: {e}"))?;
     let mutations = value.as_array().ok_or("transaction is not an array")?;
+    if schema < super::AUDIT_EFFECTS_SCHEMA_VERSION
+        && mutations.iter().any(|mutation| {
+            mutation.get("AuditPending").is_some() || mutation.get("AuditAcknowledged").is_some()
+        })
+    {
+        return Err("audit effects require store schema 6".into());
+    }
     if schema < super::MEANING_MAINTENANCE_SCHEMA_VERSION
         && mutations.iter().any(|mutation| {
             ["DeleteAtom", "DeleteComposite", "RefreshMeaningIndices"]
@@ -1116,5 +1146,43 @@ mod tests {
                 .collect();
             probe(&bytes);
         }
+    }
+
+    #[test]
+    fn audit_mutations_require_schema_six_and_ordered_acknowledgements() {
+        let intent = crate::core::audit_effects::AuditIntent::prepare(
+            crate::core::audit::AuditOp::Delete,
+            "record",
+            None,
+        );
+        let pending = serde_json::json!([{"AuditPending": intent}]);
+        let bytes = serde_json::to_vec(&pending).unwrap();
+        for schema in 2..6 {
+            assert!(check_transaction_with_schema(
+                &bytes,
+                Some(256),
+                schema,
+                &mut Replay::default()
+            )
+            .is_err());
+        }
+        let mut replay = Replay::default();
+        check_transaction_with_schema(&bytes, Some(256), 6, &mut replay).unwrap();
+        assert_eq!(replay.audit_pending.len(), 1);
+        assert!(check_transaction_with_schema(&bytes, Some(256), 6, &mut replay).is_err());
+        let id = intent.id().unwrap();
+        let mut wrong = id;
+        wrong[0] ^= 1;
+        let acknowledge = |id: [u8; 16]| {
+            serde_json::to_vec(&serde_json::json!([{"AuditAcknowledged": {"id": id}}])).unwrap()
+        };
+        assert!(
+            check_transaction_with_schema(&acknowledge(wrong), Some(256), 6, &mut replay).is_err()
+        );
+        check_transaction_with_schema(&acknowledge(id), Some(256), 6, &mut replay).unwrap();
+        assert!(replay.audit_pending.is_empty());
+        assert!(
+            check_transaction_with_schema(&acknowledge(id), Some(256), 6, &mut replay).is_err()
+        );
     }
 }

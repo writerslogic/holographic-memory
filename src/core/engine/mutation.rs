@@ -50,6 +50,10 @@ pub(super) fn transaction_payload(mutations: &[Mutation]) -> Result<Vec<u8>> {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) enum Mutation {
+    AuditPending(crate::core::audit_effects::AuditIntent),
+    AuditAcknowledged {
+        id: [u8; 16],
+    },
     Vector {
         id: String,
         vector: EntangledHVec,
@@ -280,6 +284,7 @@ impl WarmCore {
         if revision.is_some_and(|expected| expected != self.revision()) {
             return Ok(false);
         }
+        self.validate_audit_transitions(mutations.mutations)?;
         append(payload)?;
         let _transaction = transaction.publish();
         let shards = self.shards.write();
@@ -294,6 +299,19 @@ impl WarmCore {
 
     pub(super) fn validate_mutation(&self, mutation: &Mutation) -> Result<()> {
         match mutation {
+            Mutation::AuditPending(intent) => {
+                ensure!(
+                    self.schema >= crate::core::format::AUDIT_EFFECTS_SCHEMA_VERSION,
+                    "audit effects require schema 6"
+                );
+                intent.id()?;
+            }
+            Mutation::AuditAcknowledged { .. } => {
+                ensure!(
+                    self.schema >= crate::core::format::AUDIT_EFFECTS_SCHEMA_VERSION,
+                    "audit effects require schema 6"
+                );
+            }
             Mutation::Vector { id, vector }
             | Mutation::Atom { id, vector }
             | Mutation::Composite { id, vector } => {
@@ -535,6 +553,8 @@ impl WarmCore {
                 Mutation::Document(_)
                     | Mutation::DeleteDocument { .. }
                     | Mutation::EncodeDocument { .. }
+                    | Mutation::AuditPending(_)
+                    | Mutation::AuditAcknowledged { .. }
             ) {
                 self.image
                     .other_state
@@ -570,6 +590,19 @@ impl WarmCore {
         pending_ids: &mut HashSet<String>,
     ) -> Result<()> {
         match (mutation, prepared) {
+            (Mutation::AuditPending(intent), _) => {
+                self.audit_pending.write().push_back(intent.clone());
+            }
+            (Mutation::AuditAcknowledged { id }, _) => {
+                let mut pending = self.audit_pending.write();
+                ensure!(
+                    pending
+                        .front()
+                        .is_some_and(|intent| intent.0.effect_id == Some(*id)),
+                    "audit acknowledgement is out of order"
+                );
+                pending.pop_front();
+            }
             (
                 Mutation::Vector { id, vector },
                 Prepared::Vector {
