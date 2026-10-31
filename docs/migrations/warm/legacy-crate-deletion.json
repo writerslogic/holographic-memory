@@ -1,0 +1,5 @@
+{
+  "crate": "holographic-memory",
+  "status": 403,
+  "response": "{\"errors\":[{\"detail\":\"this action can only be performed on the crates.io website\"}]}"
+}

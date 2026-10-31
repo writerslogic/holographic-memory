@@ -32,7 +32,7 @@ fn input(id: usize, version: usize) -> Result<DocumentInput> {
     }))?)
 }
 
-fn query(hms: &WarmCore, origin: Instant, reader: usize, sequence: usize) -> Result<Value> {
+fn query(warm: &WarmCore, origin: Instant, reader: usize, sequence: usize) -> Result<Value> {
     let group = (reader + sequence) % 8;
     let options = SearchOptions {
         filter: Some(json!({"group":group})),
@@ -46,7 +46,7 @@ fn query(hms: &WarmCore, origin: Instant, reader: usize, sequence: usize) -> Res
         "start_ns":start,"end_ns":end,"results":results}))
 }
 
-fn phase(hms: &WarmCore, origin: Instant, args: &Args, name: &str) -> Result<Value> {
+fn phase(warm: &WarmCore, origin: Instant, args: &Args, name: &str) -> Result<Value> {
     let barrier = Barrier::new(args.readers + 1);
     let done = AtomicBool::new(false);
     std::thread::scope(|scope| -> Result<Value> {
@@ -106,7 +106,7 @@ fn phase(hms: &WarmCore, origin: Instant, args: &Args, name: &str) -> Result<Val
     })
 }
 
-fn snapshot(hms: &WarmCore, n: usize) -> Result<Vec<Value>> {
+fn snapshot(warm: &WarmCore, n: usize) -> Result<Vec<Value>> {
     (0..n)
         .map(|id| {
             let options = SearchOptions {
