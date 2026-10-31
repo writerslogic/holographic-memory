@@ -10,7 +10,7 @@ Rename core, SDKs, tooling, documentation, product sites, and hosted service. In
 
 `scripts/rename-warm.zsh` invokes the bounded Python renamer. `rename-plan.json` and `rename-applied.json` record every transformed file/path and before/after hashes. Original bytes are retained locally in `.git/warm-migration-backup/`. Subsequent compatibility edits intentionally retain legacy names; do not reapply the bulk transformation to those aliases.
 
-New source package family: `writerslogic-warm` (Rust/npm), `writerslogic-warm-py` (native Python), `writerslogic-warm-sdk` (HTTP Python SDK); native Python/Rust import `writerslogic_warm`. JavaScript framework adapters use `@writerslogic/warm-*`. New executables use `warm-*`. New package manifests do not imply that renamed distributions have already been published.
+New source package family: `writerslogic-warm` (Rust/npm), `warm-py` (native Python), `warm-sdk` (HTTP Python SDK); native Python/Rust import `writerslogic_warm`. JavaScript framework adapters use `@writerslogic/warm-*`. New executables use `warm-*`. New package manifests do not imply that renamed distributions have already been published.
 
 ## Compatibility boundary
 
@@ -22,4 +22,6 @@ Implementation validation completed: Rust library 799 passed (12 ignored), MCP 4
 
 WARM website, legacy product redirect, cloud services, billing branding and shared webhook have been deployed. Final source publication and GitHub Pages legacy documentation redirects are being completed. Canonical docs are staged with the product site and deployment guards require their presence.
 
-Renamed registry distributions are not published; installation is currently from source. Legacy wire identifiers, signed JSON-LD contexts, physical infrastructure names and historical evidence remain unchanged intentionally. Existing aliases do not block release, but ongoing compatibility is not promised.
+The Rust crate `writerslogic-warm` 0.6.4 is published and its registry checksum matches the verified artifact. Native npm and Python distributions are undergoing release validation. Python distribution names are `warm-py`, `warm-sdk`, and `warm-models`; their imports remain `writerslogic_warm`, `writerslogic_warm_sdk`, and `writerslogic_warm_models`. Dedicated Trusted Publisher workflows are `warm-py-release.yml`, `warm-sdk-release.yml`, and `warm-models-release.yml`, with repository `writerslogic/warm` and environment `pypi`. Legacy wire identifiers, signed JSON-LD contexts, physical infrastructure names and historical evidence remain unchanged intentionally. Existing aliases do not block release, but ongoing compatibility is not promised.
+
+Source publication: core migration `4592ff13`, Python package/publisher naming `81267d43`; main website `7d608ded`, legacy site `39bfc6b4`, hosted cloud `41b5ea26`. Website deployment `13d58bee` passed live metadata, docs search and legacy redirect checks. Rust crate checksum: `94c5493dcca5dfda98240ec2e9d3e290a87e908375f5de4225961b64e9f519e5`. Additional CI corrections cover server integration tests, importer reserved fields, Java loader configuration and historical benchmark citations.

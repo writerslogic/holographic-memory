@@ -74,6 +74,7 @@ jobs:
       # Informational on pull requests: third-party hosts flake. links.yml runs the same check
       # weekly and opens an issue on real rot. Internal links above are strict and blocking.
       - name: Check external links in the README and the dev site (non-blocking)
+        timeout-minutes: 5
         continue-on-error: true
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
