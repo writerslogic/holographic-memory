@@ -177,10 +177,12 @@ jobs:
             --notes "MCP binaries and checksum-verified npm and PyPI launchers."
 
   npm-publish:
+    environment: npm
     if: startsWith(github.ref, 'refs/tags/mcp-v')
     needs: release
     runs-on: ubuntu-24.04
     permissions:
+      contents: read
       id-token: write
     steps:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -196,6 +198,34 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish dist/npm/*.tgz --provenance --access public
+
+  npm-verify:
+    name: verify published MCP npm launcher
+    needs: npm-publish
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Install the registry package and run its checksum-verified binary
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#mcp-v}"
+          for attempt in {1..20}; do
+            if npm_config_cache="$RUNNER_TEMP/mcp-registry-$attempt" npm view "writerslogic-warm-mcp@$version" version >/dev/null 2>&1; then
+              break
+            fi
+            [ "$attempt" = 20 ] && { echo "MCP launcher did not appear in npm" >&2; exit 1; }
+            sleep 30
+          done
+          mkdir consumer && cd consumer
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "writerslogic-warm-mcp@$version"
+          npm audit signatures
+          ./node_modules/.bin/writerslogic-warm-mcp --version
 
   pypi-publish:
     if: startsWith(github.ref, 'refs/tags/mcp-v')
