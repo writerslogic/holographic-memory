@@ -473,14 +473,50 @@ fn list_stats_and_conditional_requests() {
     assert_eq!(again.status, 304);
     assert!(again.body.is_empty());
     assert_eq!(again.header("etag"), Some(tag.as_str()));
+    for condition in [
+        "*".to_string(),
+        tag.strip_prefix("W/").unwrap().to_string(),
+        format!("\"other,version\", {}", tag.strip_prefix("W/").unwrap()),
+    ] {
+        let cached = s
+            .req("GET", "/api/v1/stats")
+            .header("If-None-Match", &condition)
+            .send();
+        assert_eq!(cached.status, 304, "{condition}");
+        assert!(cached.body.is_empty());
+        assert_eq!(cached.header("etag"), Some(tag.as_str()));
+    }
     assert_eq!(
         s.req("GET", "/api/v1/stats")
-            .header("If-None-Match", "\"other\", *")
+            .header("If-None-Match", "\"other\"")
+            .header("If-None-Match", tag.strip_prefix("W/").unwrap())
             .send()
             .status,
         304
     );
-    // A write changes the validator; the list shares it.
+    for invalid in ["\"other\", *".to_string(), format!("{tag} trailing")] {
+        assert_eq!(
+            s.req("GET", "/api/v1/stats")
+                .header("If-None-Match", &invalid)
+                .send()
+                .status,
+            200,
+            "{invalid}"
+        );
+    }
+    let listing = s.req("GET", "/api/v1/documents?limit=1").send();
+    let listing_tag = listing.header("etag").unwrap().to_string();
+    assert_ne!(listing_tag, tag);
+    for (limit, status) in [(1, 304), (2, 200)] {
+        assert_eq!(
+            s.req("GET", &format!("/api/v1/documents?limit={limit}"))
+                .header("If-None-Match", &listing_tag)
+                .send()
+                .status,
+            status
+        );
+    }
+    // The changed count invalidates both representations.
     s.req("POST", "/api/v1/documents")
         .json(&doc("new", 99))
         .send();
@@ -492,8 +528,10 @@ fn list_stats_and_conditional_requests() {
         200
     );
     assert_ne!(
-        s.req("GET", "/api/v1/documents").send().header("etag"),
-        Some(tag.as_str())
+        s.req("GET", "/api/v1/documents?limit=1")
+            .send()
+            .header("etag"),
+        Some(listing_tag.as_str())
     );
     // Tenants do not share counts.
     assert_eq!(

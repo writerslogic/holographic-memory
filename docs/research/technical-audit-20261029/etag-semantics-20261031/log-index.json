@@ -1,0 +1,50 @@
+{
+  "baseline.log": {
+    "bytes": 2053,
+    "sha256": "be12dc05f5b422934bf1770c5927a33d72296333f1aa1bef486fd46f599005cf"
+  },
+  "clippy.log": {
+    "bytes": 135,
+    "sha256": "de4cd2047a497d6990fd6277e3a3ec1ad4f0a3b5337902a4ede90250587c4192"
+  },
+  "coherence-baseline.log": {
+    "bytes": 1154,
+    "sha256": "34b1432b01e89b43ff051e132433dc4f6937ae9923f929355ad5f644bb6cde8b"
+  },
+  "coherence-clippy-final.log": {
+    "bytes": 135,
+    "sha256": "bda0d2a5a81eb5261a08fd00fe03f590e57e37f3a50a03dc545653a22aa94476"
+  },
+  "coherence-http-final.log": {
+    "bytes": 409,
+    "sha256": "fb5aef8d23bdb072639fa679b59d837bbf2c4ed9738518722f94b1ff5a7f2175"
+  },
+  "coherence-http.log": {
+    "bytes": 1356,
+    "sha256": "fa072cc00a9c11c34920a19d1cdcc5a77444cb4861f21b51f24aa56b835508e6"
+  },
+  "coherence-unit-final.log": {
+    "bytes": 773,
+    "sha256": "c3a28a56c284ec4224e1a41c09a4cd648271769c31256df849dbcda443739f35"
+  },
+  "coherence-unit.log": {
+    "bytes": 1361,
+    "sha256": "7354060086fb886bf3a38fc2520b8c49d143bced856f45bbfe15e230181f842f"
+  },
+  "fmt-final.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "fmt.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "http.log": {
+    "bytes": 409,
+    "sha256": "be2779e2a0679b372d6a9d7bcbc794031b1b76551a0116419e7f126288274dc3"
+  },
+  "unit.log": {
+    "bytes": 670,
+    "sha256": "c0d164e0404da034ef3b986f97d30587013971d56940141669037c7c195f1270"
+  }
+}

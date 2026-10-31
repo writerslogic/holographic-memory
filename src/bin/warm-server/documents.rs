@@ -1007,19 +1007,64 @@ pub struct ListParams {
     pub after: Option<String>,
 }
 
-fn etag(state: &AppState, core: &CoreGuard) -> String {
+fn etag(state: &AppState, representation: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
     format!(
         "W/\"{:x}-{}\"",
         state.epoch,
-        core.tenant.generation.load(Ordering::Acquire)
+        crate::auth::hex(&Sha256::digest(representation))
     )
 }
 
 fn not_modified(headers: &HeaderMap, etag: &str) -> bool {
-    headers
-        .get(header::IF_NONE_MATCH)
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|v| v.split(',').any(|t| t.trim() == etag || t.trim() == "*"))
+    let values = headers.get_all(header::IF_NONE_MATCH);
+    if values.iter().count() == 1
+        && values
+            .iter()
+            .next()
+            .is_some_and(|value| value.as_bytes().trim_ascii() == b"*")
+    {
+        return true;
+    }
+    let expected = etag.strip_prefix("W/").unwrap_or(etag).as_bytes();
+    let mut matched = false;
+    for value in values.iter() {
+        let mut remaining = value.as_bytes();
+        loop {
+            remaining = remaining.trim_ascii_start();
+            if remaining.is_empty() {
+                break;
+            }
+            if remaining[0] == b',' {
+                remaining = &remaining[1..];
+                continue;
+            }
+            remaining = remaining.strip_prefix(b"W/").unwrap_or(remaining);
+            if remaining.first() != Some(&b'"') {
+                return false;
+            }
+            let Some(end) = remaining[1..].iter().position(|byte| *byte == b'"') else {
+                return false;
+            };
+            let end = end + 1;
+            if remaining[1..end]
+                .iter()
+                .any(|byte| !matches!(byte, 0x21 | 0x23..=0x7e | 0x80..=0xff))
+            {
+                return false;
+            }
+            matched |= &remaining[..=end] == expected;
+            remaining = remaining[end + 1..].trim_ascii_start();
+            if remaining.is_empty() {
+                break;
+            }
+            if remaining[0] != b',' {
+                return false;
+            }
+            remaining = &remaining[1..];
+        }
+    }
+    matched
 }
 
 fn with_etag(mut response: Response, etag: &str) -> Response {
@@ -1032,8 +1077,7 @@ fn with_etag(mut response: Response, etag: &str) -> Response {
     response
 }
 
-/// Serve a read of the tenant's store tagged with its generation: a matching `If-None-Match`
-/// answers 304 without calling `render`.
+/// Tag the actual representation, since a write can become visible before its generation bump.
 async fn cached_read(
     state: Arc<AppState>,
     tenant: String,
@@ -1042,16 +1086,19 @@ async fn cached_read(
 ) -> ApiResult {
     let permit = acquire(&state).await?;
     let (page, tag) = blocking(permit, move || {
-        let core = state.core(&tenant)?;
-        let tag = etag(&state, &core);
+        let representation = {
+            let core = state.core(&tenant)?;
+            render(&core).to_string().into_bytes()
+        };
+        let tag = etag(&state, &representation);
         if not_modified(&headers, &tag) {
             return Ok((None, tag));
         }
-        Ok((Some(render(&core)), tag))
+        Ok((Some(representation), tag))
     })
     .await?;
     let response = match page {
-        Some(page) => json_response(StatusCode::OK, &page),
+        Some(page) => json_bytes_response(StatusCode::OK, page),
         None => StatusCode::NOT_MODIFIED.into_response(),
     };
     Ok(with_etag(response, &tag))
@@ -1112,4 +1159,134 @@ pub async fn stats(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
         })
     })
     .await
+}
+
+#[cfg(test)]
+mod conditional_tests {
+    use super::*;
+
+    fn matches(values: &[&[u8]], tag: &str) -> bool {
+        let mut headers = HeaderMap::new();
+        for value in values {
+            headers.append(
+                header::IF_NONE_MATCH,
+                HeaderValue::from_bytes(value).unwrap(),
+            );
+        }
+        not_modified(&headers, tag)
+    }
+
+    #[test]
+    fn weak_comparison_ignores_strength_and_combines_field_lines() {
+        for current in ["W/\"version\"", "\"version\""] {
+            for supplied in [b"W/\"version\"".as_slice(), b"\"version\""] {
+                assert!(matches(&[supplied], current));
+                assert!(matches(&[b"\"other\"", supplied], current));
+                assert!(matches(&[supplied, b"\"other\""], current));
+            }
+        }
+        assert!(!matches(&[b"\"VERSION\""], "W/\"version\""));
+    }
+
+    #[test]
+    fn entity_tag_lists_preserve_quoted_commas_and_opaque_bytes() {
+        assert!(matches(
+            &[b" , \"other,tag\",\tW/\"version\", ,"],
+            "\"version\""
+        ));
+        assert!(matches(&[b"\"other\", W/\"a,b\""], "W/\"a,b\""));
+        assert!(matches(&[b"\"\xff\", \"version\""], "W/\"version\""));
+        assert!(matches(&[b"\"a\\b\""], "W/\"a\\b\""));
+        assert!(matches(&[b"\"\""], "W/\"\""));
+    }
+
+    #[test]
+    fn malformed_conditions_do_not_produce_not_modified() {
+        assert!(matches(&[b"\t* "], "W/\"version\""));
+        for value in [
+            "\"version\", *",
+            "*, *",
+            "*,",
+            "*x",
+            "version",
+            "w/\"version\"",
+            "\"version\" trailing",
+            "\"version\", \"unfinished",
+            "\"ver sion\"",
+            "",
+            ", ,",
+        ] {
+            assert!(!matches(&[value.as_bytes()], "W/\"version\""), "{value}");
+        }
+        assert!(!matches(&[b"*", b"\"version\""], "W/\"version\""));
+        assert!(!matches(&[b"\"version\"", b"garbage"], "W/\"version\""));
+        assert!(!matches(&[], "W/\"version\""));
+    }
+
+    #[tokio::test]
+    async fn visible_metadata_changes_cannot_reuse_the_previous_validator() {
+        fn document(value: &str) -> DocumentInput {
+            serde_json::from_value(json!({
+                "id": "record", "text": "stored text", "metadata": {"value": value}
+            }))
+            .unwrap()
+        }
+        async fn read(state: Arc<AppState>, tag: Option<HeaderValue>) -> Response {
+            let mut request = Request::builder()
+                .uri("/api/v1/documents?limit=1")
+                .header(header::AUTHORIZATION, "Bearer test-key")
+                .body(axum::body::Body::empty())
+                .unwrap();
+            if let Some(tag) = tag {
+                request.headers_mut().insert(header::IF_NONE_MATCH, tag);
+            }
+            let principal = state.auth.authenticate(request.headers()).unwrap();
+            request.extensions_mut().insert(Arc::new(principal));
+            list_documents(
+                State(state),
+                Ok(Query(ListParams {
+                    limit: Some(1),
+                    after: None,
+                })),
+                request,
+            )
+            .await
+            .unwrap()
+        }
+        let directory = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(directory.path(), 2, &[]);
+        {
+            let core = state.core("default").unwrap();
+            core.memorize_document(document("before")).unwrap();
+            core.bump();
+        }
+        let initial = read(state.clone(), None).await;
+        let before = initial.headers()[header::ETAG].clone();
+        let committed = Arc::new(tokio::sync::Notify::new());
+        let notification = committed.clone();
+        let (release, wait) = std::sync::mpsc::channel();
+        let writer_state = state.clone();
+        let writer = tokio::task::spawn_blocking(move || {
+            let core = writer_state.core("default").unwrap();
+            core.memorize_document(document("after")).unwrap();
+            notification.notify_one();
+            wait.recv().unwrap();
+            core.bump();
+        });
+        tokio::time::timeout(Duration::from_secs(5), committed.notified())
+            .await
+            .unwrap();
+        let updated = read(state.clone(), None).await;
+        let after = updated.headers()[header::ETAG].clone();
+        let bytes = axum::body::to_bytes(updated.into_body(), 16 * 1024)
+            .await
+            .unwrap();
+        let updated: Value = serde_json::from_slice(&bytes).unwrap();
+        let conditional = read(state, Some(before.clone())).await;
+        release.send(()).unwrap();
+        writer.await.unwrap();
+        assert_eq!(updated["documents"][0]["metadata"]["value"], "after");
+        assert_ne!(after, before);
+        assert_eq!(conditional.status(), StatusCode::OK);
+    }
 }

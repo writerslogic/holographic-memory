@@ -227,7 +227,7 @@ pub fn unhex(text: &str) -> Option<Vec<u8>> {
         .collect()
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 

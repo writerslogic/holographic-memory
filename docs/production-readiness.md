@@ -295,10 +295,10 @@ retrieval floors, and native/packed Node tests on Linux, macOS, and Windows.
 Measure durable audit write cost on the deployment filesystem with
 `cargo bench --locked --features security --bench audit_delivery`. Set `TMPDIR` to an
 owned directory on that filesystem. The benchmark compares disabled, unsigned and signed
-auditing for 16 individually committed 256-dimensional vectors per sample. Initialization,
+auditing for 16 individually committed 256-dimensional vectors per iteration. Initialization,
 input generation, reopening, result checks and signature verification are outside the timed
 region; each timed write includes the actual journal and audit delivery/acknowledgement work.
-Every sample uses a fresh store, checks an empty pending queue, and verifies the persisted
+Every iteration uses a fresh store, checks an empty pending queue, and verifies the persisted
 vectors and expected audit count after reopening. `cargo test --locked --features security
 --bench audit_delivery -- --test` runs its correctness checks without collecting timings.
 These measurements cover single-writer commits, not concurrent saturation, pending-backlog
