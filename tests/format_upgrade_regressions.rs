@@ -66,7 +66,24 @@ fn mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
         verify_path(&source, &VerifyOptions::default())?.verdict,
         Verdict::Ok
     );
-    let report = upgrade_store(&source, &output, false)?;
+    let note = source.join("deployment.json");
+    let contents = br#"{"owner":"operator"}"#;
+    std::fs::write(&note, contents)?;
+    let writable = std::fs::metadata(&note)?.permissions();
+    let mut read_only = writable.clone();
+    read_only.set_readonly(true);
+    std::fs::set_permissions(&note, read_only)?;
+    let result = upgrade_store(&source, &output, false);
+    let copied = output.join("deployment.json");
+    let source_read_only = std::fs::metadata(&note)?.permissions().readonly();
+    let copied_read_only = std::fs::metadata(&copied).map(|m| m.permissions().readonly());
+    std::fs::set_permissions(&note, writable.clone())?;
+    if copied.exists() {
+        std::fs::set_permissions(&copied, writable)?;
+    }
+    let report = result?;
+    assert!(source_read_only && copied_read_only?);
+    assert_eq!(std::fs::read(copied)?, contents);
     assert!(
         output.join("tenants/6e6577/vectors_data.bin").is_dir(),
         "current tenant's journal was omitted; output verdict {:?}",

@@ -94,6 +94,29 @@ pub(crate) fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()
     Err(std::io::ErrorKind::Unsupported.into())
 }
 
+pub(crate) fn copy_file_synced(source: &Path, destination: &Path) -> Result<u64> {
+    #[cfg(windows)]
+    {
+        // Retain write access for flushing even when the source is read-only.
+        let mut source = File::open(source)?;
+        let mut destination = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(destination)?;
+        let bytes = std::io::copy(&mut source, &mut destination)?;
+        destination.set_permissions(source.metadata()?.permissions())?;
+        destination.sync_all()?;
+        Ok(bytes)
+    }
+    #[cfg(not(windows))]
+    {
+        let bytes = std::fs::copy(source, destination)?;
+        #[cfg(unix)]
+        File::open(destination)?.sync_all()?;
+        Ok(bytes)
+    }
+}
+
 pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     #[cfg(unix)]
     std::fs::File::open(path)?.sync_all()?;

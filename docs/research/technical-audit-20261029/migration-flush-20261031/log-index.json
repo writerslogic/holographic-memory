@@ -1,0 +1,22 @@
+[
+  {
+    "file": "admin-final.log",
+    "bytes": 668,
+    "sha256": "0b6f624b35bb03ac3ba15aabea82a4bea16bc71eea6ad3791e6c802c5907698d"
+  },
+  {
+    "file": "upgrade-final.log",
+    "bytes": 896,
+    "sha256": "4763e3ad2f931dfe1ea59b9e56cee2f59b93f0f385341eccb6c92b470c53f9bf"
+  },
+  {
+    "file": "clippy-final.log",
+    "bytes": 136,
+    "sha256": "547e3f751ddee16943b84b90f8a1d0da83eafcdad0337ab9a3b61b32a6c6412d"
+  },
+  {
+    "file": "fmt-final.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

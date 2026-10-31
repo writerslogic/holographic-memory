@@ -383,8 +383,7 @@ pub fn migrate_store(
     let result = (|| -> Result<StoreInspection> {
         copy_tree(source, &temp)?;
         let inspection = inspect_store(&temp, true)?;
-        // `copy_tree` synced every file and directory of the copy, so only the rename and
-        // the parent entry remain to be made durable.
+        // Copied files are flushed; supported platforms also sync directory entries.
         std::fs::rename(&temp, destination).with_context(|| {
             format!(
                 "failed to atomically publish migration {} -> {}",
@@ -420,12 +419,7 @@ pub(crate) fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
         if file_type.is_dir() {
             copy_tree(&entry.path(), &target)?;
         } else if file_type.is_file() {
-            std::fs::copy(entry.path(), &target)?;
-            std::fs::set_permissions(&target, entry.metadata()?.permissions())?;
-            // Unix only, as `sync_directory`: Windows flushes need a writable handle, which a
-            // copied read-only file refuses.
-            #[cfg(unix)]
-            std::fs::File::open(&target)?.sync_all()?;
+            super::durable_file::copy_file_synced(&entry.path(), &target)?;
         } else {
             bail!("migration refuses special file {}", entry.path().display());
         }
@@ -553,6 +547,36 @@ mod tests {
             missing_documents(&expected, &core),
             vec!["doc9".to_string()]
         );
+        Ok(())
+    }
+
+    #[test]
+    fn migration_copy_preserves_read_only_files_and_excludes_the_lock() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let source = root.path().join("source");
+        let target = root.path().join("target");
+        std::fs::create_dir_all(source.join("nested"))?;
+        let original = source.join("nested/data");
+        std::fs::write(&original, b"migration data")?;
+        std::fs::write(source.join(LOCK_FILE), b"process lock")?;
+        let writable = std::fs::metadata(&original)?.permissions();
+        let mut read_only = writable.clone();
+        read_only.set_readonly(true);
+        std::fs::set_permissions(&original, read_only)?;
+
+        let result = copy_tree(&source, &target);
+        let copied = target.join("nested/data");
+        let source_read_only = std::fs::metadata(&original)?.permissions().readonly();
+        let copied_read_only = std::fs::metadata(&copied).map(|m| m.permissions().readonly());
+        std::fs::set_permissions(&original, writable.clone())?;
+        if copied.exists() {
+            std::fs::set_permissions(&copied, writable)?;
+        }
+
+        result?;
+        assert_eq!(std::fs::read(copied)?, b"migration data");
+        assert!(source_read_only && copied_read_only?);
+        assert!(!target.join(LOCK_FILE).exists());
         Ok(())
     }
 

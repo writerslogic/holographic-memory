@@ -461,3 +461,19 @@ restart-safe idempotency improvement is claimed. Full integration CI remains pen
 Six additional SDK end-to-end tests pass against the actual local `warm-server`
 process, covering synchronous/asynchronous workflows, errors and request payloads.
 This complements the transport fixtures; it does not validate Windows execution.
+
+### Migration and upgrade file-flush ordering
+
+Source inspection found `admin::copy_tree` explicitly skipped Windows file flushes,
+and format upgrades copied retained/root-level files without flushing their contents
+before publication. A shared crate-private copy helper now flushes copied files and
+preserves permissions, retaining writable handles on Windows and native copies on
+Unix. Upgrade publication syncs staged directory entries where supported.
+
+Four admin tests and eight upgrade regressions pass locally, including read-only
+nested files, process-lock exclusion, mixed-version tenant arenas and read-only
+deployment metadata. Strict library/test Clippy and formatting pass. Evidence is
+in `migration-flush-20261031/`. These tests verify data and permissions, not hardware
+power-loss behavior; the missing flushes were established by source inspection, not
+by claiming a new test fails on the baseline. Windows execution and PR integration
+remain pending. Windows directory-sync limitations and throughput are unverified.

@@ -405,7 +405,10 @@ fn upgrade_data_dir(
         for entry in std::fs::read_dir(source)? {
             let entry = entry?;
             if entry.file_name() != "tenants" && entry.file_type()?.is_file() {
-                std::fs::copy(entry.path(), staging.join(entry.file_name()))?;
+                crate::core::durable_file::copy_file_synced(
+                    &entry.path(),
+                    &staging.join(entry.file_name()),
+                )?;
             }
         }
         let mut verification = verify_path(&staging, &VerifyOptions::default())?;
@@ -438,6 +441,8 @@ fn upgrade_data_dir(
                 .to_string();
         }
         verification.path = destination.display().to_string();
+        crate::core::durable_file::sync_directory(&staging.join("tenants"))?;
+        crate::core::durable_file::sync_directory(&staging)?;
         std::fs::rename(&staging, destination)?;
         crate::core::durable_file::sync_directory(parent)?;
         Ok((frames, verification))
@@ -493,6 +498,7 @@ fn stage_and_publish(
         verification.frames,
         staged.frames
     );
+    crate::core::durable_file::sync_directory(staging)?;
     std::fs::rename(staging, destination).with_context(|| {
         format!(
             "failed to publish {} as {}",
@@ -533,8 +539,7 @@ fn copy_store_files(source: &Path, staging: &Path, skip: &[&str]) -> Result<()> 
         ensure!(!kind.is_symlink(), "upgrade refuses symbolic link {name}");
         if kind.is_file() {
             let target = staging.join(&name);
-            std::fs::copy(entry.path(), &target)?;
-            std::fs::set_permissions(&target, entry.metadata()?.permissions())?;
+            crate::core::durable_file::copy_file_synced(&entry.path(), &target)?;
         } else {
             bail!("upgrade does not know how to carry the directory {name}");
         }
