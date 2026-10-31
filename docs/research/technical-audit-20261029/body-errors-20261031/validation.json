@@ -49,6 +49,21 @@
       "command": "uvx --offline --from 'actionlint-py==1.7.12.25' actionlint .github/workflows/ci.yml",
       "result": "pass",
       "log": "actionlint.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server,mcp --bin warm-server -- --test-threads=1",
+      "passed": 72,
+      "log": "integrated-server.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server,mcp --bin warm-server --bin warm-mcp --test server_api -- -D warnings",
+      "result": "pass",
+      "log": "integrated-clippy.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check",
+      "result": "pass",
+      "log": "integrated-fmt.log"
     }
   ],
   "coverage": [
@@ -91,5 +106,6 @@
     "previous": "Windows nextest job used default features; Cargo.toml default=[] excludes the HTTP and MCP binaries.",
     "added_command": "cargo nextest run --locked --features server,mcp --no-fail-fast --bin warm-server --bin warm-mcp --test server --test server_api --test server_ops --test server_abuse --test server_ann",
     "status": "Pending Windows CI execution; local macOS tests do not verify Windows behavior."
-  }
+  },
+  "integrated_main": "5192ab7b"
 }

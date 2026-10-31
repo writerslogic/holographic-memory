@@ -475,3 +475,27 @@ HTTP and MCP runtime contracts. Its existing default-feature run is retained, fo
 by an explicit `server,mcp` nextest step scoped to both service binaries and the five
 server integration targets. Actionlint passes locally. Windows runtime acceptance is
 pending the new PR's exact-head CI, not inferred from local macOS results.
+
+
+PR [#358](https://github.com/writerslogic/warm/pull/358) merged as `5192ab7b` after
+68 successful and four skipped check entries, with no pending/failed checks or unresolved
+review threads. Its merged tree matches tested head `60088616`. This completes the
+header-semantics integration gate, including the pre-existing Windows default-feature job.
+It does not establish the expanded Windows service coverage added in the next follow-up.
+
+### Enforced CI protection
+
+Main's GitHub protection had `strict: true` but no required status contexts. After
+verifying the existing CI `check` aggregate succeeded, required status protection now
+names `check` from GitHub Actions app 15368. The aggregate fails unless all twelve
+listed prerequisite jobs succeed, including Windows tests and workflow lint. The
+strict up-to-date requirement and captured owner-review/admin settings remain intact.
+Before/after API evidence and the successful originating check are retained in
+`branch-protection-20261031/`. Conditional workflows outside this aggregate are still
+reviewed separately; this rule does not claim to enforce every GitHub check.
+
+
+After integrating main `5192ab7b`, the complete local server unit suite passes all
+72 tests with `server,mcp`; refreshed scoped Clippy and formatting pass. MCP source
+matches the 41-test validated header follow-up. The expanded Windows runtime gate
+remains pending, so local results are not presented as cross-platform verification.

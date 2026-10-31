@@ -53,5 +53,20 @@
     "file": "graph-final.log",
     "bytes": 927,
     "sha256": "f36fbab39352441ad287a9cc60826dad9b1eefd9d61f45f577d13fa8482a5c1d"
+  },
+  {
+    "file": "integrated-clippy.log",
+    "bytes": 138,
+    "sha256": "c45f031feb2f7bb6cf1ff35a190f425aa43429cb0e0081361296921ae3b11d61"
+  },
+  {
+    "file": "integrated-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "integrated-server.log",
+    "bytes": 24985,
+    "sha256": "9be34b945bd79db67361f44e251dc871faede7b571debb6f3e56d3f9d1020692"
   }
 ]
