@@ -86,3 +86,31 @@ Commands (shared target directory is optional):
 - `RUSTUP_TOOLCHAIN=1.99.0 bash scripts/check-generated.sh`
 - `uv build --package warm-sdk` from `bindings/python/warm-sdk`.
 
+
+
+Initial CI head `67f3b5701a5d20abc93657aa46e99901314c4897` failed the new
+Python assertion that a replacement keeps its document version. HTTP writes
+already generate a new `hv1:` version; DocIn does not accept a caller version.
+Both Python jobs found the same fixture error (one failure / 60 passes in the
+base suite). The HTTP test now checks changed versions, while the native chunk
+test explicitly reuses `v1` and checks that the store revision still changes.
+CI run 41228496053 was canceled after diagnosis, not accepted as a passing gate.
+The retained failure log is test-development evidence, not a product defect.
+
+
+## Final local checks after correcting the fixture
+
+All six chunk integration cases pass, including checkpoint-disabled journal
+compaction and replacement that reuses caller version `v1`. The ten checkpoint
+tests pass. Golden compatibility: six pass, one intentional generator skip;
+existing golden files were not rewritten. HTTP API: 20 pass. Strict Clippy
+(server/node-api/security, library/server/tests), scoped rustfmt and generated
+artifacts (16 exports) pass. SDK tests against the retained server binary pass
+62 tests and 46 subtests on each of Python 3.10 and 3.14, with three optional
+framework modules skipped because they were not installed in these local runs.
+Framework boundary jobs remain part of CI. Final wheel/sdist builds pass.
+
+`server.sha256` identifies the copied binary used for Python tests. Its Rust source
+matches initial head 67f3b570; the correction changes tests/evidence, not the server
+implementation. Final logs are retained separately from intermediate attempts.
+The baseline patch was not rerun; exact-head CI remains required before merge.

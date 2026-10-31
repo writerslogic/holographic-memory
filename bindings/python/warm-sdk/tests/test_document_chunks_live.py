@@ -24,7 +24,7 @@ def test_chunk_read_preserves_stored_text_and_tenant_scope(server):
         client.add_documents([{"id": id, "text": "replacement", "vector": embedding(1)}])
         updated = client.read_document_chunk(id)
         assert updated["revision"] != chunk["revision"]
-        assert updated["document"]["version"] == chunk["document"]["version"]
+        assert updated["document"]["version"] != chunk["document"]["version"]
         assert updated["text"] == "replacement"
         assert (chunk["index"], chunk["startByte"], chunk["endByte"], chunk["text"]) == (0, 2, 14, "café🙂\tβ")
         for index in [1, 2]:

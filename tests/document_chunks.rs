@@ -81,6 +81,12 @@ fn stored_chunks_preserve_spans_text_and_metadata_across_reopen() -> Result<()> 
         }
         assert!(core.read_document_chunk("absent", 0)?.is_none());
     }
+    let previous = core.read_document_chunk("doc", 0)?.unwrap();
+    core.memorize_document_with(input("doc", "new passage", true), &options)?;
+    let updated = core.read_document_chunk("doc", 0)?.unwrap();
+    assert_eq!(updated.document.version, previous.document.version);
+    assert_ne!(updated.revision, previous.revision);
+    assert_eq!(updated.text.as_deref(), Some("new passage"));
     core.delete_document("doc")?;
     assert!(core.read_document_chunk("doc", 0)?.is_none());
     Ok(())

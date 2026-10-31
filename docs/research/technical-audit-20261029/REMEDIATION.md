@@ -942,11 +942,16 @@ allocation. This supersedes the earlier absence of an HTTP text-retrieval endpoi
 it does not recover omitted original whitespace, unretained text or original
 embeddings, and does not establish full Haystack/Semantic Kernel conformance.
 
-Five text-integrity units, five deterministic read-concurrency units, five initial
+Five text-integrity units, five deterministic read-concurrency units, six
 recovery/chunk integration cases and the allocation regression pass locally. Reading
 one 64 KiB chunk allocated 66,233 bytes live/compacted and 66,281 reopened; this is
-requested allocation, not RSS, latency or an HTTP response bound. Ten checkpoint tests, including purge and encryption, also pass. Golden-store,
-HTTP/Python checks and exact-head CI remain pending. Evidence: `document-chunks-20261031/`.
+requested allocation, not RSS, latency or an HTTP response bound. Ten checkpoint tests, including purge and encryption, six golden-store checks
+(one intentional generator skip), 20 HTTP tests, strict Clippy and 16 generated
+exports pass. SDK tests pass 62 tests / 46 subtests on Python 3.10 and 3.14
+(three locally uninstalled framework modules skipped). An initial CI assertion
+incorrectly expected HTTP-generated document versions to stay unchanged; it was
+corrected and reused caller versions are tested natively. Exact-head CI remains
+required after that correction. Evidence: `document-chunks-20261031/`.
 
 The existing infallible get/search text-hydration paths still use `expect` for cache
 I/O failures. A follow-up must propagate errors through already-fallible engine/query
