@@ -499,3 +499,10 @@ After integrating main `5192ab7b`, the complete local server unit suite passes a
 72 tests with `server,mcp`; refreshed scoped Clippy and formatting pass. MCP source
 matches the 41-test validated header follow-up. The expanded Windows runtime gate
 remains pending, so local results are not presented as cross-platform verification.
+
+The expanded Windows step exposed an unconditional `tokio::net::UnixListener`
+import (CI run 41194768596), so the required aggregate correctly failed. Unix-only
+imports, listener variants, match arms and cleanup are now platform-guarded. A
+non-Unix CLI regression checks the existing explicit unsupported-platform error.
+The real Unix socket integration test and strict service Clippy pass locally;
+Windows runtime results remain pending. The failed CI log is preserved.

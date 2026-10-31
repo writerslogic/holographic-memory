@@ -845,3 +845,13 @@ fn an_unauthenticated_server_refuses_web_pages_and_rebound_names() {
         assert_eq!(s.exchange(raw.as_bytes()).status, 200, "{host}");
     }
 }
+
+#[cfg(not(unix))]
+#[test]
+fn unix_socket_option_is_rejected_on_non_unix() {
+    let stderr = Server::refuses(&["--no-auth", "--unix-socket", "unsupported.sock"], &[]);
+    assert!(
+        stderr.contains("--unix-socket is only supported on unix platforms"),
+        "{stderr}"
+    );
+}
