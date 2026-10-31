@@ -261,6 +261,16 @@ jobs:
         run: |
           uv run --no-project --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest pytest -q -rs tests
           uv run --no-project --with 'httpx>=0.27' --with 'sniffio>=1.3' --with orjson --with pytest pytest -q -rs tests/test_client.py tests/test_transport.py tests/test_live_server.py
+      - name: LangChain contracts against the real server
+        working-directory: bindings/python/warm-sdk
+        env:
+          WARM_SERVER_BIN: ${{ github.workspace }}/target/debug/warm-server
+          PYTHONPATH: .
+          LANGSMITH_TRACING: 'false'
+          LANGCHAIN_TRACING_V2: 'false'
+        run: |
+          uv run --no-project --python 3.10 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==0.3.86' pytest -q -rs tests/test_langchain_live.py
+          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==1.7.3' pytest -q -rs tests/test_langchain_live.py
 
   node:
     name: node (${{ matrix.os }})

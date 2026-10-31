@@ -30,6 +30,15 @@ The earlier standalone `langchain-holographic` distribution is retired. For Lang
 `writerslogic_warm_sdk.langchain`. This adapter connects to `warm-server`; update the old
 `langchain_holographic` import and its local-store configuration when migrating.
 
+The LangChain adapter requires `langchain-core>=0.3.86`. It preserves supplied
+IDs through `add_texts`, `add_documents`, `from_texts`, and search results, and
+forwards `filter` from similarity retrievers to WARM. Metadata and ID counts must
+match the input texts before embedding begins; the embedder must return one
+vector per text before any upload. Call `store.close()` when finished. Similarity
+retrieval is supported; scored retrieval, MMR, and the adapter's deletion APIs are
+not implemented. The legacy dependency combinations described in the security
+notes remain unresolved; these contract tests do not establish their safety.
+
 The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
 
 ```bash

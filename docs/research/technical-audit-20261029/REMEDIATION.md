@@ -608,3 +608,38 @@ tests (none skipped), including native-copy alternate streams, backup/restore,
 shutdown and idle boundaries. The final Windows log and check state are archived
 in `body-errors-20261031/`. This closes that PR’s integration gate; SDK/migration
 follow-up changes still require their own up-to-date CI gate.
+
+### Python LangChain identity and filter contracts (2026-10-31)
+
+Fourteen real-server regressions fail on `78f722cd`: supplied IDs are ignored,
+`from_texts(ids=...)` passes IDs to the connection constructor and fails, retriever
+metadata filters are discarded, and `zip` silently truncates uploads when text,
+metadata, or embedding counts differ. Empty input also invokes the embedder.
+These are adapter contract failures, not retrieval-quality measurements.
+
+The adapter now preserves caller IDs, supplies secure UUIDs for absent IDs,
+returns stored IDs on Documents, forwards similarity filters, and checks input
+cardinality before embedding and output cardinality before upload. Explicit IDs
+from `add_documents` override Document IDs through the framework's base contract.
+`from_texts` separates IDs from connection options and closes its owned client
+on failure; callers can explicitly `close()` successful stores. Existing
+LangChain [VectorStore contracts](https://reference.langchain.com/python/langchain-core/vectorstores/base/VectorStore)
+and the installed implementations were inspected before changing the adapter.
+
+LangChain 0.2.11 has a Document ID field but its inherited `add_documents` still
+loses those IDs (13 pass / one fail in the compatibility trial). The declared
+minimum is now 0.3.86, matching the already locked legacy branch, which passes all
+17 final adapter tests on Python 3.10.19. Current 1.7.3 passes the full SDK suite
+on Python 3.14.7: 77 tests and 46 subtests, with 13 upstream asyncio deprecation
+warnings. All embeddings and server calls are local; no paid APIs, model downloads
+or relevance/latency claims. CI now exercises both tested framework/Python pairs
+against the real server with framework tracing disabled.
+
+Offline lock validation, scoped actionlint/zizmor and distribution builds pass.
+No locked package/version pair changed; uv normalized existing resolution markers.
+The pending dependency remediation must be integrated before this follow-up merges.
+No extra or Python version was retired. Legacy dependency advisories remain open;
+passing API contracts does not establish framework security. Scored retrieval,
+MMR and adapter deletion remain explicitly unsupported. Evidence and the 14-case
+baseline reproduction patch are in `langchain-contracts-20261031/`; final PR checks
+remain required before merge.

@@ -19,7 +19,7 @@ Documentation = "https://writerslogic.com/warm/docs/"
 Repository = "https://github.com/writerslogic/warm"
 
 [project.optional-dependencies]
-langchain = ["langchain-core>=0.1.0"]
+langchain = ["langchain-core>=0.3.86"]
 llamaindex = ["llama-index-core>=0.10.0"]
 haystack = ["haystack-ai>=2.0.0"]
 semantic-kernel = ["semantic-kernel>=1.39.4"]
@@ -49,7 +49,7 @@ import-letta = ["letta-client>=0.1"]
 import-llamaindex = ["llama-index-core>=0.10"]
 import-langchain = ["langchain-core>=0.2", "faiss-cpu>=1.8"]
 all = [
-    "langchain-core>=0.1.0",
+    "langchain-core>=0.3.86",
     "llama-index-core>=0.10.0",
     "haystack-ai>=2.0.0",
     "semantic-kernel>=1.39.4",
