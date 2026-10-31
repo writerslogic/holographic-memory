@@ -504,7 +504,19 @@ fn list_stats_and_conditional_requests() {
             "{invalid}"
         );
     }
-    // A write changes the validator; the list shares it.
+    let listing = s.req("GET", "/api/v1/documents?limit=1").send();
+    let listing_tag = listing.header("etag").unwrap().to_string();
+    assert_ne!(listing_tag, tag);
+    for (limit, status) in [(1, 304), (2, 200)] {
+        assert_eq!(
+            s.req("GET", &format!("/api/v1/documents?limit={limit}"))
+                .header("If-None-Match", &listing_tag)
+                .send()
+                .status,
+            status
+        );
+    }
+    // The changed count invalidates both representations.
     s.req("POST", "/api/v1/documents")
         .json(&doc("new", 99))
         .send();
@@ -516,8 +528,10 @@ fn list_stats_and_conditional_requests() {
         200
     );
     assert_ne!(
-        s.req("GET", "/api/v1/documents").send().header("etag"),
-        Some(tag.as_str())
+        s.req("GET", "/api/v1/documents?limit=1")
+            .send()
+            .header("etag"),
+        Some(listing_tag.as_str())
     );
     // Tenants do not share counts.
     assert_eq!(

@@ -392,3 +392,13 @@ The existing real-HTTP conditional-read test now covers strong/weak equivalence,
 fields, quoted commas, empty 304 bodies, returned validators, invalid-condition fallback
 and invalidation after a write. This closes the inspected `If-None-Match` matching gap;
 it is not a claim of complete HTTP conformance. The follow-up requires its final PR gate.
+
+
+A deterministic concurrent-write regression subsequently reproduced a second issue:
+a document update became visible before the separate tenant generation bump, and two
+reads returned changed metadata under the old validator, including a stale 304. Validators
+now pair a digest of the exact serialized representation with the process epoch; serialization occurs
+on the blocking worker and the same bytes are sent for 200. This also removes reliance on
+restore/write timing for cache correctness. Response validators are no longer a shared tenant
+revision token. The tradeoff is explicit: 304 responses render and hash their representation;
+no latency improvement is claimed, and large metadata-page cost needs workload measurement.

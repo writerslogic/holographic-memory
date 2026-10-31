@@ -1,7 +1,7 @@
 {
   "baseline_revision": "3f787a5efb30468bc976623cc973edcbaa058029",
   "baseline_regressions_failed": 3,
-  "candidate_regressions_passed": 3,
+  "candidate_regressions_passed": 4,
   "real_http_conditional_read": "passed",
   "strict_clippy": "passed",
   "format": "passed",
@@ -18,11 +18,23 @@
     "lone wildcard",
     "malformed-condition fallback",
     "304 response metadata/body",
-    "write invalidation"
+    "write invalidation",
+    "visible metadata before generation bump",
+    "representation-specific validators",
+    "different pagination representations"
   ],
   "integrated_ci": "pending",
   "limits": [
     "This is an If-None-Match matching correction, not a complete HTTP conformance assessment.",
-    "No throughput or latency improvement is claimed."
+    "No throughput or latency improvement is claimed.",
+    "304 responses now render and hash response bytes; generation-only early skipping was unsound under concurrent writes. Large-page cost remains unmeasured."
+  ],
+  "coherence_baseline_revision": "896fdb2bb951220981ed8a68501796653f597fee",
+  "coherence_baseline_regressions_failed": 1,
+  "final_logs": [
+    "coherence-unit-final.log",
+    "coherence-http-final.log",
+    "coherence-clippy-final.log",
+    "fmt-final.log"
   ]
 }
