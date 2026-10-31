@@ -262,6 +262,17 @@ def test_qdrant_real_named_vectors_need_a_choice(tmp_path):
 KEY = "qd-test-key-123"
 
 
+def test_qdrant_description_preserves_port_without_credentials():
+    from writerslogic_warm_sdk.importers.sources.qdrant import QdrantSource
+
+    url = "http://127.0.0.1:40123"
+    with QdrantSource(url=url, api_key=KEY) as source:
+        description = source.describe()
+    assert description["url"] == url
+    assert "api_key" not in description
+    assert KEY not in str(description)
+
+
 def qdrant_mock(points_by_collection):
     api = MockApi(required_auth=("api-key", KEY))
 
@@ -294,7 +305,7 @@ def test_qdrant_mock_server_roundtrip(tmp_path, run, server):
                       "metadata": {"src": f"s{i}", "tag": i % 2}}} for i in range(N)]}
     with qdrant_mock(points) as api:
         src = QdrantSource(url=api.url, api_key=KEY, page_size=9)
-        assert "123" not in str(src.describe()) and KEY not in str(src.describe())
+        assert "api_key" not in src.describe() and KEY not in str(src.describe())
         assert src.count() == N
         report, tenant = run(src, batch_size=12)
         assert_faithful(report, N)
