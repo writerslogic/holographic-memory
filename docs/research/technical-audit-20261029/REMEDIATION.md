@@ -1299,3 +1299,16 @@ contains all baseline profile locks, the explicitly synthetic deduplicated
 inventory, complete scan responses, the changed profile lock/scan, final per-extra
 coverage, upstream metadata, test logs, and wheel verification. These additions
 remain separate from the native query PR #366 and await their own final CI gate.
+
+A bounded follow-up probe exercised the real Chroma 1.5.9 persistent importer
+with a registered embedding function whose stored configuration contains
+`trust_remote_code: true`, and whose configuration loader raises if executed.
+`count()` and `records()` imported one record without activating that loader or
+computing embeddings. Accessing Chroma's `collection.configuration` afterward
+activated the guard once, confirming the positive control. The imported URI was
+retained as metadata, not requested as loaded data. This supports only the
+tested local read path; it does not qualify untrusted Chroma servers, other
+versions, CrewAI native memory, or arbitrary embedding configurations as safe.
+All four Chroma advisory matches remain unresolved. The archived probe runs with
+the SDK and Chroma 1.5.9 installed, with telemetry/model downloads disabled, and
+uses only a local temporary store; it performs no malicious code execution.
