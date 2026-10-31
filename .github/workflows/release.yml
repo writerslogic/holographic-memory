@@ -345,7 +345,7 @@ jobs:
           VERSION: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          npm deprecate 'writerslogic-warm@0.3.0' "0.3.0 is unmaintained; upgrade to ${VERSION#v}."
+          npm deprecate 'holographic-memory@0.3.0' "0.3.0 is unmaintained; upgrade to ${VERSION#v}."
 
   verify-published:
     name: install the published packages and search
