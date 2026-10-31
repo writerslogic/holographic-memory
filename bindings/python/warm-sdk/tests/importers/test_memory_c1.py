@@ -164,11 +164,8 @@ def test_mem0_platform_rejects_mismatched_key_scope(mem0_api, org_id, project_id
 def test_mem0_platform_matching_key_scope(mem0_api):
     from writerslogic_warm_sdk.importers.sources.mem0 import Mem0PlatformSource
 
-    source = Mem0PlatformSource(M0_KEY, mem0_api.url, "org_1", "proj_1", [("user_id", "bob")], 4)
-    try:
+    with Mem0PlatformSource(M0_KEY, mem0_api.url, "org_1", "proj_1", [("user_id", "bob")], 4) as source:
         assert len(list(source.records())) == 9
-    finally:
-        source.close()
     mem0_api.assert_clean()
 
 
@@ -313,15 +310,12 @@ def test_mem0_oss_scope_limit_never_truncates_silently(tmp_path, limit):
 
     cfg = oss_config(tmp_path, "qdrant")
     populate_mem0(cfg, _close_qdrant)
-    src = Mem0Source(cfg, [("user_id", "alice")], False, 5, limit)
-    try:
+    with Mem0Source(cfg, [("user_id", "alice")], False, 5, limit) as src:
         if limit <= 8:
             with pytest.raises(ImporterError, match="raise --scope-limit"):
                 list(src.records())
         else:
             assert len(list(src.records())) == 8
-    finally:
-        src.close()
 
 
 def test_mem0_oss_config_secrets_are_masked(tmp_path, capsys):
