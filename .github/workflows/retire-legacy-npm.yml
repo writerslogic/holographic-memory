@@ -1,0 +1,102 @@
+# Copyright 2024-2026 WritersLogic Contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Retire legacy npm packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      retire_legacy:
+        description: Unpublish old holographic packages, or deprecate if registry policy refuses
+        type: boolean
+        default: false
+      scope:
+        description: Legacy package group to retire after its replacement is available
+        type: choice
+        options: [core, mcp, all]
+        default: core
+
+permissions:
+  contents: read
+
+jobs:
+  retire:
+    if: inputs.retire_legacy && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Apply the registry's unpublish policy to the exact legacy names
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RETIRE_SCOPE: ${{ inputs.scope }}
+        run: |
+          set -euo pipefail
+          npm whoami
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { spawnSync } = require('node:child_process');
+          const suffixes = ['darwin-arm64', 'darwin-x64', 'linux-arm64-gnu', 'linux-arm64-musl', 'linux-x64-gnu', 'linux-x64-musl', 'win32-arm64-msvc', 'win32-x64-msvc'];
+          const scope = process.env.RETIRE_SCOPE;
+          if (!['core', 'mcp', 'all'].includes(scope)) throw new Error('Invalid retirement scope');
+          const names = [];
+          if (scope !== 'mcp') names.push('holographic-memory');
+          if (scope !== 'core') names.push('holographic-memory-mcp');
+          if (scope === 'all') names.push('holographic-memory-models');
+          if (scope !== 'mcp') names.push(...suffixes.map(s => `holographic-memory-${s}`));
+          const results = [];
+          const clean = value => String(value ?? '').replaceAll(process.env.NODE_AUTH_TOKEN, '[redacted]');
+          async function metadata(name) {
+            const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`, { signal: AbortSignal.timeout(30000) });
+            if (response.status === 404) return null;
+            if (!response.ok) throw new Error(`Registry lookup ${name}: HTTP ${response.status}`);
+            return response.json();
+          }
+          function npm(args) {
+            const run = spawnSync('npm', args, { encoding: 'utf8', timeout: 120000 });
+            return { success: run.status === 0, output: clean(`${run.stdout ?? ''}${run.stderr ?? ''}${run.error?.message ?? ''}`) };
+          }
+          (async () => {
+            for (const legacy of names) {
+              const replacement = legacy.replace(/^holographic-memory/, 'writerslogic-warm');
+              const record = { legacy, replacement };
+              try {
+                const old = await metadata(legacy);
+                if (!old || !Object.keys(old.versions ?? {}).length) {
+                  record.result = 'already_absent';
+                } else {
+                  record.versions = Object.keys(old.versions);
+                  const current = await metadata(replacement);
+                  if (!current?.['dist-tags']?.latest) throw new Error(`Replacement ${replacement} is not published; preserving ${legacy}`);
+                  record.replacementVersion = current['dist-tags'].latest;
+                  const removed = npm(['unpublish', legacy, '--force']);
+                  record.unpublish = removed.output;
+                  if (removed.success) {
+                    record.result = 'unpublished';
+                  } else {
+                    const deprecated = npm(['deprecate', `${legacy}@*`, `Renamed to ${replacement}. Install ${replacement} instead; this legacy package is retired.`]);
+                    record.deprecation = deprecated.output;
+                    record.result = deprecated.success ? 'deprecated_after_unpublish_denial' : 'failed';
+                  }
+                }
+              } catch (error) {
+                record.result = 'failed';
+                record.error = clean(error.message);
+              }
+              results.push(record);
+              fs.writeFileSync('legacy-npm-retirement.json', `${JSON.stringify(results, null, 2)}\n`);
+              console.log(JSON.stringify(record));
+            }
+            if (results.some(r => r.result === 'failed')) process.exitCode = 1;
+          })().catch(error => { console.error(clean(error.message)); process.exitCode = 1; });
+          NODE
+      - name: Preserve each registry result and policy denial
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: legacy-npm-retirement-${{ inputs.scope }}
+          path: legacy-npm-retirement.json
+          if-no-files-found: warn
