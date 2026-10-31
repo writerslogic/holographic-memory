@@ -515,3 +515,17 @@ Unix retains SIGHUP coverage. No graceful-shutdown assertions were removed.
 All 13 local operations tests and the key-rotation test pass; strict scoped Clippy
 and formatting pass. Windows execution remains pending. The only added direct
 dependency is test-only `windows-sys`, already present at 0.61.2 in the lockfile.
+
+Windows CI run 41197071913 passed 159/164 service tests, including graceful
+shutdown/drain, readiness, TLS/key reloads and non-Unix socket rejection. Five
+snapshot-related tests failed. The unit-level log reports access denied: snapshot
+copying reopened each destination read-only before flushing, while Windows
+`FlushFileBuffers` requires a writable handle. Windows copying now retains that
+handle through permission restoration and flush; other platforms keep native copy.
+A portable regression covers nested read-only data, byte counts, permissions and
+process-state exclusions. Five local snapshot checks and refreshed strict Clippy
+and formatting pass; Windows acceptance remains pending.
+
+This fix does not establish full Windows power-loss durability: directory-sync
+helpers are still no-ops there. The separate core admin migration `copy_tree` also
+still skips Windows file flushes; that requires its own correction and validation.

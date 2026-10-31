@@ -105,9 +105,44 @@
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   {
+    "file": "snapshot-clippy.log",
+    "bytes": 137,
+    "sha256": "323121e046e03d3675406c7029bcfbafff7f07b2d1a323ffc32a2ac2e01d5ec5"
+  },
+  {
+    "file": "snapshot-copy.log",
+    "bytes": 1675,
+    "sha256": "ed58f9e1d489c36f8c5ff39e3297c4b3c7407554419b3e229a03404497348805"
+  },
+  {
+    "file": "snapshot-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "snapshot-platform-clippy.log",
+    "bytes": 137,
+    "sha256": "42ff5d2fe4868c79b05387d3cedee92003877f7148fcc0448b44ddd1fa091488"
+  },
+  {
+    "file": "snapshot-platform-final.log",
+    "bytes": 1674,
+    "sha256": "a54c5f3c95509f435646de205e5041d4d6e16a53344b010fe22bd7c2ac41aec7"
+  },
+  {
+    "file": "snapshot-platform-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
     "file": "unix-socket-final.log",
     "bytes": 447,
     "sha256": "21742092d4e37f6781e400cc1017e594c55b46eae53645e35e8209c4a4095c73"
+  },
+  {
+    "file": "windows-console-failure.log",
+    "bytes": 89865,
+    "sha256": "4057f2dfac5f90c04674a4711750b25c6a91c2d33740122e79a90116e5e2cd1d"
   },
   {
     "file": "windows-failure.log",

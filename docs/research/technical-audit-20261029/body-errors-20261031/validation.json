@@ -127,10 +127,25 @@
       "clippy": "pass",
       "formatting": "pass"
     },
-    "status": "Windows runtime CI pending.",
+    "status": "Run 41197071913: 159/164 runtime tests passed, including graceful shutdown, drain, readiness, key/TLS reloads and unsupported Unix socket rejection. Five snapshot-related tests failed; required aggregate failed.",
     "sources": [
       "https://learn.microsoft.com/en-us/windows/console/generateconsolectrlevent",
       "https://docs.rs/tokio/latest/tokio/signal/windows/fn.ctrl_break.html"
     ]
+  },
+  "snapshot_copy": {
+    "root_cause": "copy_store reopened copied files read-only before sync_all; Windows FlushFileBuffers requires GENERIC_WRITE.",
+    "fix": "On Windows retain a writable destination handle while copying, restoring source permissions and flushing. Preserve existing native copy path elsewhere.",
+    "regression": "snapshot_copy_preserves_read_only_files_and_skips_process_state checks nested data, exact byte count, read-only permissions and lock/compaction exclusions.",
+    "local_snapshot_tests": 5,
+    "local_clippy": "pass",
+    "local_fmt": "pass",
+    "windows_acceptance": "Pending next CI.",
+    "limits": [
+      "Windows directory sync remains a no-op; this is not a full power-loss durability claim.",
+      "Separate core admin migration copy_tree still skips Windows file flushing; not changed here.",
+      "No snapshot throughput claim."
+    ],
+    "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers"
   }
 }

@@ -955,8 +955,23 @@ pub fn copy_store(src: &Path, dst: &Path) -> Result<u64> {
         if kind.is_dir() {
             bytes += copy_store(&from, &to)?;
         } else if kind.is_file() {
-            bytes += std::fs::copy(&from, &to)?;
-            std::fs::File::open(&to)?.sync_all()?;
+            #[cfg(windows)]
+            {
+                // FlushFileBuffers requires a writable handle, even for read-only copies.
+                let mut source = std::fs::File::open(&from)?;
+                let mut target = std::fs::OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(&to)?;
+                bytes += std::io::copy(&mut source, &mut target)?;
+                target.set_permissions(source.metadata()?.permissions())?;
+                target.sync_all()?;
+            }
+            #[cfg(not(windows))]
+            {
+                bytes += std::fs::copy(&from, &to)?;
+                std::fs::File::open(&to)?.sync_all()?;
+            }
         }
     }
     sync_dir(dst)?;
@@ -981,6 +996,41 @@ pub fn dir_size(path: &Path) -> u64 {
 mod tests {
     use super::*;
     use std::sync::mpsc;
+
+    #[test]
+    fn snapshot_copy_preserves_read_only_files_and_skips_process_state() {
+        let root = tempfile::tempdir().unwrap();
+        let source = root.path().join("source");
+        let target = root.path().join("snapshot");
+        std::fs::create_dir_all(source.join("nested")).unwrap();
+        let original = source.join("nested/data");
+        std::fs::write(&original, b"snapshot bytes").unwrap();
+        std::fs::write(source.join(".hms.lock"), b"lock").unwrap();
+        std::fs::create_dir(source.join(".compact-pending")).unwrap();
+        std::fs::write(source.join(".compact-pending/data"), b"scratch").unwrap();
+        let writable = std::fs::metadata(&original).unwrap().permissions();
+        let mut read_only = writable.clone();
+        read_only.set_readonly(true);
+        std::fs::set_permissions(&original, read_only).unwrap();
+
+        let copied = copy_store(&source, &target);
+        let destination = target.join("nested/data");
+        let source_read_only = std::fs::metadata(&original)
+            .unwrap()
+            .permissions()
+            .readonly();
+        let target_read_only = std::fs::metadata(&destination).map(|m| m.permissions().readonly());
+        std::fs::set_permissions(&original, writable.clone()).unwrap();
+        if destination.exists() {
+            std::fs::set_permissions(&destination, writable).unwrap();
+        }
+
+        assert_eq!(copied.unwrap(), 14);
+        assert_eq!(std::fs::read(destination).unwrap(), b"snapshot bytes");
+        assert!(source_read_only && target_read_only.unwrap());
+        assert!(!target.join(".hms.lock").exists());
+        assert!(!target.join(".compact-pending").exists());
+    }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn quota_serializes_document_and_memory_writes_and_releases_failed_writes() {
