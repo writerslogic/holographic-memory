@@ -1,0 +1,46 @@
+{
+  "baseline": "5192ab7b",
+  "regressions": {
+    "initial": {
+      "failed": 5,
+      "log": "baseline.log",
+      "patch": "baseline.patch"
+    },
+    "exited_threads": {
+      "failed": 1,
+      "log": "thread-baseline.log",
+      "patch": "thread-baseline.patch"
+    }
+  },
+  "command": "uv run --project bindings/python/warm-sdk --locked --group dev pytest bindings/python/warm-sdk/tests/test_transport.py bindings/python/warm-sdk/tests/test_client.py bindings/python/warm-sdk/tests/test_memory.py bindings/python/warm-sdk/tests/importers/test_sink_retries.py -q",
+  "checks": [
+    {
+      "python": "3.14.7",
+      "passed": 47,
+      "skipped": 1,
+      "log": "final.log"
+    },
+    {
+      "python": "3.10.19",
+      "passed": 47,
+      "skipped": 1,
+      "log": "python310-online.log"
+    }
+  ],
+  "skip": "Optional orjson encoder branch; not installed.",
+  "sources": [
+    "https://www.python-httpx.org/advanced/timeouts/",
+    "https://www.python-httpx.org/advanced/extensions/",
+    "https://www.python-httpx.org/exceptions/",
+    "https://docs.python.org/3.10/library/http.client.html"
+  ],
+  "limits": [
+    "Real loopback HTTP tests, not production latency measurements.",
+    "HTTPS default client already uses HTTPX TLS; the plaintext defect affected direct misuse of the custom transport.",
+    "No automatic retries, restart-safe receipts, or global pool limits added.",
+    "Thread cleanup verified on CPython 3.10 and 3.14.",
+    "Minimum-version offline setup initially lacked tomli; public locked dependency fetch allowed tests to pass.",
+    "Initial typing.WeakSet import failed and was corrected to weakref.WeakSet."
+  ],
+  "integration_gate": "Pending PR CI."
+}

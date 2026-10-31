@@ -1,0 +1,90 @@
+diff --git a/bindings/python/warm-sdk/tests/test_transport.py b/bindings/python/warm-sdk/tests/test_transport.py
+index 7024227d..a63efc18 100644
+--- a/bindings/python/warm-sdk/tests/test_transport.py
++++ b/bindings/python/warm-sdk/tests/test_transport.py
+@@ -22,12 +22,17 @@ class _Handler(BaseHTTPRequestHandler):
+     def do_POST(self):
+         body = self.rfile.read(int(self.headers["Content-Length"]))
+         self.server.seen.append((self.path, self.headers.get("Authorization"), body))
++        if self.path == "/slow":
++            time.sleep(0.6)
+         reply = json.dumps({"matches": [], "port": self.client_address[1]}).encode()
+         self.send_response(200)
+         self.send_header("Content-Type", "application/json")
+         self.send_header("Content-Length", str(len(reply)))
+         self.end_headers()
+-        self.wfile.write(reply)
++        try:
++            self.wfile.write(reply)
++        except (BrokenPipeError, ConnectionResetError):
++            self.close_connection = True
+         if self.drop_after_response:
+             self.close_connection = True
+ 
+@@ -98,3 +103,66 @@ def test_json_body_rejects_non_finite_numbers(monkeypatch, use_orjson):
+     for bad in (math.nan, math.inf):
+         with pytest.raises(ValueError):
+             client_module._dumps({"query_vector": [0.0, bad]})
++
++
++def test_transport_rejects_https_before_sending_plaintext(server):
++    srv, url = server()
++    with httpx.Client(transport=KeepAliveTransport()) as client:
++        with pytest.raises(httpx.UnsupportedProtocol):
++            client.post(url.replace("http:", "https:", 1), content=b"private body")
++    assert srv.seen == []
++
++
++@pytest.mark.parametrize("reuse", [False, True])
++def test_transport_read_timeout_is_not_a_connect_timeout_or_the_connect_budget(server, reuse):
++    srv, url = server()
++    timeout = httpx.Timeout(2.0, read=0.05)
++    with httpx.Client(transport=KeepAliveTransport(), timeout=timeout) as client:
++        if reuse:
++            client.post(url + "/ready", content=b"ready").raise_for_status()
++        with pytest.raises(httpx.ReadTimeout):
++            client.post(url + "/slow", content=b"already sent")
++    assert [path for path, _, _ in srv.seen] == (["/ready", "/slow"] if reuse else ["/slow"])
++
++
++def test_transport_body_producer_failure_does_not_poison_the_connection(server):
++    srv, url = server()
++
++    def failed_body():
++        yield b"prefix"
++        raise RuntimeError("producer failed")
++
++    with httpx.Client(transport=KeepAliveTransport()) as client:
++        with pytest.raises(RuntimeError, match="producer failed"):
++            client.post(url + "/failed", content=failed_body())
++        response = client.post(url + "/healthy", content=b"valid")
++        response.raise_for_status()
++    assert [path for path, _, _ in srv.seen] == ["/healthy"]
++
++
++def test_transport_blocked_write_raises_write_timeout_without_retrying():
++    accepted = threading.Event()
++    release = threading.Event()
++    with socket.socket() as listener:
++        listener.bind(("127.0.0.1", 0))
++        listener.listen(1)
++        listener.settimeout(5)
++
++        def hold_connection():
++            with listener.accept()[0] as connection:
++                connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
++                accepted.set()
++                release.wait(5)
++
++        thread = threading.Thread(target=hold_connection, daemon=True)
++        thread.start()
++        try:
++            timeout = httpx.Timeout(2.0, write=0.05)
++            with httpx.Client(transport=KeepAliveTransport(), timeout=timeout) as client:
++                with pytest.raises(httpx.WriteTimeout):
++                    client.post(f"http://127.0.0.1:{listener.getsockname()[1]}/write", content=b"x" * (32 * 1024 * 1024))
++            assert accepted.is_set()
++        finally:
++            release.set()
++            thread.join(5)
++            assert not thread.is_alive()

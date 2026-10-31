@@ -441,3 +441,19 @@ cleared the empty responses; the rate test now initializes its store and repleni
 the warm-up token before measuring the burst, retaining every existing rate/quota
 assertion. All failed attempts remain in the evidence archive. No production timeout,
 rate limit, test assertion or validation gate was relaxed.
+
+### Python HTTP transport failure and lifetime contracts
+
+The plain-HTTP optimized SDK transport combined timeout budgets and classified
+post-send failures on fresh sockets as connection failures. It now applies separate
+connect/write/read socket deadlines and reports the matching HTTPX error class,
+without retrying requests. Direct HTTPS misuse is rejected before I/O (normal HTTPS
+clients already used HTTPX TLS). Body production happens before connection state
+changes, and a weak close registry stops retaining exited workers’ sockets.
+
+Five initial regressions and one thread-lifetime regression failed before their
+respective fixes. Real loopback checks plus client, memory and importer retry tests
+pass on CPython 3.10.19 and 3.14.7: 47 passed, one optional-orjson skip on each.
+Evidence, failed attempts and reproducible regression patches are retained in
+`python-transport-20261031/`. No latency, global pool-limit, automatic retry or
+restart-safe idempotency improvement is claimed. Full integration CI remains pending.
