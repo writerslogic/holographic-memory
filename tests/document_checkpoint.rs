@@ -673,3 +673,92 @@ fn compaction_right_after_opening_from_a_checkpoint_completes() -> Result<()> {
     assert_eq!(answers(&core)?, before);
     Ok(())
 }
+
+#[test]
+fn deep_verification_checks_checkpoint_records_after_fast_count() -> Result<()> {
+    use writerslogic_warm::core::format::{verify_path, Verdict, VerifyOptions};
+    let dir = tempfile::tempdir()?;
+    build(&open(dir.path(), config(true))?, 11, 1)?;
+    let path = checkpoints(dir.path()).pop().expect("a checkpoint");
+    let mut bytes = std::fs::read(&path)?;
+    // Slot section offset: header word 14 + 2 * section 5.
+    let slot_at = usize::try_from(u64::from_le_bytes(bytes[200..208].try_into()?))?;
+    let slots_len = usize::try_from(u64::from_le_bytes(bytes[208..216].try_into()?))?;
+    let occupied = (slot_at..slot_at + slots_len)
+        .step_by(12)
+        .find(|&at| bytes[at + 4..at + 8] != u32::MAX.to_le_bytes())
+        .expect("occupied slot");
+    bytes[occupied + 8..occupied + 12].copy_from_slice(&u32::MAX.to_le_bytes());
+    let crc = crc32fast::hash(&bytes[16..]);
+    bytes[8..16].copy_from_slice(&u64::from(crc).to_le_bytes());
+    std::fs::write(path, bytes)?;
+    let report = verify_path(
+        dir.path(),
+        &VerifyOptions {
+            deep: true,
+            ..Default::default()
+        },
+    )?;
+    assert_ne!(report.verdict, Verdict::Ok);
+    assert!(serde_json::to_string(&report)?.contains("checkpoint chunk slots out of order"));
+    Ok(())
+}
+
+#[test]
+fn metadata_pages_merge_checkpoint_replacements_and_deletions() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let input = |id: &str, version: &str| {
+        serde_json::from_value::<DocumentInput>(json!({
+            "id": id, "version": version, "text": "stored text", "metadata": {"version": version}
+        }))
+    };
+    let core = open(dir.path(), config(true))?;
+    for id in ["a", "a-b", "b", "café", "z"] {
+        core.memorize_document_with(input(id, "v1")?, &lexical())?;
+    }
+    drop(core);
+    assert!(!checkpoints(dir.path()).is_empty());
+    let mut keep_tail = config(true);
+    keep_tail.document_checkpoint.min_journal_bytes = usize::MAX;
+    let mut core = open(dir.path(), keep_tail.clone())?;
+    core.delete_document("a-b")?;
+    core.memorize_document_with(input("b", "v2")?, &lexical())?;
+    core.memorize_document_with(input("a-c", "v1")?, &lexical())?;
+    for reopen in [false, true] {
+        if reopen {
+            drop(core);
+            core = open(dir.path(), keep_tail.clone())?;
+        }
+        assert_eq!(core.document_count(), 5);
+        assert!(core.get_document_info("a-b").is_none());
+        let replacement = core.get_document_info("b").unwrap();
+        assert_eq!(replacement.version, "v2");
+        assert_eq!(replacement.metadata, json!({"version": "v2"}));
+        for (cursor, expected) in [
+            (None, vec!["a", "a-c", "b", "café", "z"]),
+            (Some(""), vec!["a", "a-c", "b", "café", "z"]),
+            (Some("a-b"), vec!["a-c", "b", "café", "z"]),
+            (Some("b"), vec!["b", "café", "z"]),
+            (Some("c"), vec!["café", "z"]),
+            (Some("z"), vec!["z"]),
+            (Some("zz"), vec![]),
+        ] {
+            for limit in [0, 1, 2, 5, 6] {
+                let page: Vec<_> = core
+                    .list_document_info(cursor, limit)
+                    .into_iter()
+                    .map(|record| record.id)
+                    .collect();
+                assert_eq!(
+                    page,
+                    expected.iter().take(limit).copied().collect::<Vec<_>>()
+                );
+            }
+        }
+    }
+    assert_eq!(
+        core.get_document("b").unwrap().text.as_deref(),
+        Some("stored text")
+    );
+    Ok(())
+}

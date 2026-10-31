@@ -26,6 +26,8 @@ test('listDocuments pages through stored documents in id order without their tex
     assert.deepEqual(seen.map(document => document.id), ids)
     assert.deepEqual(seen[1], { id: 'a-b', version: 'v-a-b', sourceUri: 'https://example.org/a-b', metadata: { kind: 'note' }, chunkCount: 1 })
     assert.equal('text' in seen[0], false)
+    assert.deepEqual(await warm.getDocumentInfo('a-b'), seen[1])
+    assert.equal(await warm.getDocumentInfo('missing'), null)
 
     // The cursor is exclusive, and an id that merely extends it still follows it.
     assert.deepEqual((await warm.listDocuments('a', 1)).map(document => document.id), ['a-b'])
@@ -33,6 +35,7 @@ test('listDocuments pages through stored documents in id order without their tex
     assert.equal((await warm.listDocuments()).length, ids.length)
 
     await warm.deleteDocument('a-b')
+    assert.equal(await warm.getDocumentInfo('a-b'), null)
     assert.deepEqual((await warm.listDocuments(undefined, 10)).map(document => document.id), ['a', 'b', 'c', 'é'])
 
     // Out-of-range values must be rejected, not wrapped into range (2 ** 32 + 2 would become 2).

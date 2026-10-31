@@ -130,7 +130,7 @@ impl WarmMemorySystem {
             // Document ids cannot contain NUL, so `id + NUL` is the first key after `id`.
             let from = after.map(|id| format!("{id}\0"));
             Ok(core
-                .list_documents(from.as_deref(), limit)
+                .list_document_info(from.as_deref(), limit)
                 .into_iter()
                 .map(ListedDocument::from)
                 .collect())
@@ -141,7 +141,7 @@ impl WarmMemorySystem {
     #[napi]
     pub async fn get_document_info(&self, id: String) -> Result<Option<ListedDocument>> {
         let core = self.core.clone();
-        run_async(move || Ok(core.get_document(&id).map(ListedDocument::from))).await
+        run_async(move || Ok(core.get_document_info(&id).map(ListedDocument::from))).await
     }
 
     /// Opaque store revision. Equal values bracket an unchanged store on this handle.

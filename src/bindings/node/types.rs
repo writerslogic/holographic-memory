@@ -44,8 +44,8 @@ pub struct ListedDocument {
     pub chunk_count: u32,
 }
 
-impl From<crate::core::documents::DocumentRecord> for ListedDocument {
-    fn from(record: crate::core::documents::DocumentRecord) -> Self {
+impl From<crate::core::documents::DocumentInfo> for ListedDocument {
+    fn from(record: crate::core::documents::DocumentInfo) -> Self {
         Self {
             id: record.id,
             version: record.version,

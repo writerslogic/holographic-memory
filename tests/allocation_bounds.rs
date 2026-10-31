@@ -172,3 +172,98 @@ fn goal_relevance_matches_sorted_lookup_without_allocating() {
         "GOALS sorted_bytes={old_bytes} scan_bytes={bytes} sorted_us={old_us} scan_us={micros}"
     );
 }
+
+#[test]
+fn metadata_listing_does_not_allocate_stored_text() {
+    use writerslogic_warm::core::documents::{DocumentInput, EncodeMode, IngestOptions};
+
+    let dir = tempfile::tempdir().unwrap();
+    let mut core = WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap();
+    for index in 0..18 {
+        core.memorize_document_with(
+            DocumentInput {
+                id: format!("doc-{index:02}"),
+                text: "x".repeat(64 * 1024),
+                source_uri: Some(format!("local://source/{index}")),
+                version: Some("v1".into()),
+                metadata: Some(serde_json::json!({"index": index})),
+                chunk_words: None,
+                overlap_words: None,
+                store_text: Some(true),
+                embeddings: None,
+                title_weight: None,
+            },
+            &IngestOptions {
+                encode: EncodeMode::Lexical,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    }
+    for phase in ["live", "compacted", "reopened"] {
+        if phase == "compacted" {
+            core.compact().unwrap();
+        } else if phase == "reopened" {
+            drop(core);
+            core = WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap();
+        }
+        let (count, allocated, _, _) = measured(|| core.document_count());
+        assert_eq!(count, 18);
+        assert!(allocated < 4096);
+        for limit in [15, 16, 17] {
+            let (records, allocated, calls, micros) = measured(|| {
+                core.list_document_info(Some("doc-01"), limit)
+                    .into_iter()
+                    .map(|record| {
+                        (
+                            record.id,
+                            record.version,
+                            record.source_uri,
+                            record.metadata,
+                            record.chunk_count,
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            });
+            assert_eq!(records.len(), limit);
+            for (index, record) in records.iter().enumerate() {
+                assert_eq!(record.0, format!("doc-{:02}", index + 1));
+                assert_eq!(record.1, "v1");
+                assert_eq!(
+                    record.2.as_deref(),
+                    Some(format!("local://source/{}", index + 1).as_str())
+                );
+                assert_eq!(record.3, serde_json::json!({"index": index + 1}));
+                assert_eq!(record.4, 1);
+            }
+            eprintln!("metadata listing: phase={phase} rows={limit} allocated_bytes={allocated} allocation_calls={calls} elapsed_us={micros}");
+            assert!(
+                allocated < 64 * 1024,
+                "metadata-only listing allocated {allocated} bytes for {limit} rows"
+            );
+        }
+        let (record, allocated, _, _) = measured(|| core.get_document_info("doc-01"));
+        assert_eq!(record.unwrap().metadata, serde_json::json!({"index": 1}));
+        assert!(
+            allocated < 4096,
+            "document summary allocated {allocated} bytes"
+        );
+        assert!(core.get_document_info("absent").is_none());
+        assert!(core.list_document_info(None, 0).is_empty());
+        assert!(core.list_document_info(Some("z"), 1).is_empty());
+    }
+    assert!(core.delete_document("doc-08").unwrap());
+    assert!(core.get_document_info("doc-08").is_none());
+    assert_eq!(
+        core.list_document_info(Some("doc-07"), 3)
+            .into_iter()
+            .map(|record| record.id)
+            .collect::<Vec<_>>(),
+        ["doc-07", "doc-09", "doc-10"]
+    );
+    assert_eq!(core.document_count(), 17);
+    assert_eq!(
+        core.get_document("doc-01").unwrap().text.unwrap().len(),
+        64 * 1024
+    );
+}

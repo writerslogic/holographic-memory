@@ -748,3 +748,22 @@ made. The second failed gate is retained, and new exact-head CI remains required
 The revised size-boundary cases and all 13 operations tests pass locally, as do
 strict operations Clippy, scoped formatting and diff validation. Windows CI
 remains required for this revision.
+
+
+### Metadata listing projection and cold checkpoint reads (2026-10-31)
+
+HTTP and Node metadata listings discarded text after copying full document records.
+A 15-row fixture allocated 998,897 bytes. The new projection uses live metadata
+and selected checkpoint records without copying stored text: 13,057 bytes live,
+13,777 reopened. Counts no longer hydrate the checkpoint. Sorted overlay merging
+preserves replacements, tombstones, cursor order and replay behavior. Deep offline
+verification now explicitly validates the full checkpoint and propagates decoder
+errors; a CRC-valid slot corruption regression guards against weakening this path.
+
+All nine checkpoint tests, 19 HTTP API tests, two Node tests and the allocation-bound
+regression pass locally, as do strict Clippy including tests, scoped formatting
+and generated-artifact verification. Exact-head CI remains required. The evidence directory
+`document-listing-20261031/` retains baseline, intermediate failed cold-read and
+candidate logs plus a baseline reproduction patch. Allocation results do not
+establish RSS, latency, throughput, or competitive leadership; chunk decoding and
+metadata sizes still affect work.
