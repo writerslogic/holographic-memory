@@ -457,3 +457,7 @@ pass on CPython 3.10.19 and 3.14.7: 47 passed, one optional-orjson skip on each.
 Evidence, failed attempts and reproducible regression patches are retained in
 `python-transport-20261031/`. No latency, global pool-limit, automatic retry or
 restart-safe idempotency improvement is claimed. Full integration CI remains pending.
+
+Six additional SDK end-to-end tests pass against the actual local `warm-server`
+process, covering synchronous/asynchronous workflows, errors and request payloads.
+This complements the transport fixtures; it does not validate Windows execution.

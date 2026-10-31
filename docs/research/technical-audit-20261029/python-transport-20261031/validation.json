@@ -25,6 +25,12 @@
       "passed": 47,
       "skipped": 1,
       "log": "python310-online.log"
+    },
+    {
+      "command": "WARM_SERVER_BIN=/Volumes/A/holographic-memory/target/debug/warm-server uv run --project bindings/python/warm-sdk --locked --offline --group dev pytest bindings/python/warm-sdk/tests/test_live_server.py -q",
+      "passed": 6,
+      "log": "live-server.log",
+      "server": "Local server,mcp build from platform-guard worktree; includes main 5192ab7b and PR359 fixes."
     }
   ],
   "skip": "Optional orjson encoder branch; not installed.",
