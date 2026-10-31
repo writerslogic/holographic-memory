@@ -122,3 +122,9 @@ SYSTEMS.update(SERVER_SYSTEMS)
 FACTS.update(SERVER_FACTS)
 TIMING_BOUNDARY.update(SERVER_TIMING_BOUNDARY)
 NOT_RUN.update(SERVER_NOT_RUN)
+
+
+def system(name):
+    """Resolve immutable measurement IDs without changing source-file key paths."""
+    legacy = {"hms": WARM, "hms-eager": WARM_EAGER, "hms-server": "warm-server"}
+    return SYSTEMS[legacy.get(name, name)]

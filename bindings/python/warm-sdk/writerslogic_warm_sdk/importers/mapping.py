@@ -19,7 +19,7 @@ from .report import Stats
 
 MAX_ID_BYTES = 256
 _TENANT_RE = re.compile(r"[^A-Za-z0-9_-]")
-RESERVED_PREFIX = "hms_"
+RESERVED_PREFIXES = ("hms_", "warm_")
 MAX_RECORD_PARTS = 1000
 
 
@@ -320,7 +320,7 @@ class Mapper:
         elif not isinstance(raw, dict):
             raw = {"value": raw}
         meta = to_jsonable(raw, note)
-        collided = {k: v for k, v in meta.items() if k.startswith(RESERVED_PREFIX)}
+        collided = {k: v for k, v in meta.items() if k.startswith(RESERVED_PREFIXES)}
         if collided:
             meta = {k: v for k, v in meta.items() if k not in collided}
             meta["warm_orig_meta"] = collided
@@ -351,7 +351,7 @@ class Mapper:
         sizes = {
             k: len(json.dumps(v, separators=(",", ":"), ensure_ascii=False).encode("utf-8"))
             for k, v in meta.items()
-            if not k.startswith(RESERVED_PREFIX)
+            if not k.startswith(RESERVED_PREFIXES)
         }
         for key in sorted(sizes, key=sizes.get, reverse=True):  # type: ignore[arg-type]
             dropped.append(key)

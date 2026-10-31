@@ -83,7 +83,7 @@ for q in queries:
     fts = row[0] if row else "-"
     warm_hits += warm == q["expect"]
     fts_hits += fts == q["expect"]
-    print(f"{q['query']:<58} {hms:<9} {fts:<9} {q['expect']}")
+    print(f"{q['query']:<58} {warm:<9} {fts:<9} {q['expect']}")
 print(f"top-1 correct: WARM {warm_hits}/{len(queries)}, FTS5 {fts_hits}/{len(queries)}")
 assert warm_hits >= 4, f"WARM found the expected article for only {warm_hits} queries"
 # --8<-- [end:compare]

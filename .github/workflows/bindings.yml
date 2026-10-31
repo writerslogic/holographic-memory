@@ -76,7 +76,7 @@ jobs:
       - name: Java
         working-directory: bindings/java
         shell: bash
-        run: mvn -B -Dhms.native.dir="$CARGO_TARGET_DIR/release" test
+        run: mvn -B -Dwarm.native.dir="$CARGO_TARGET_DIR/release" test
 
       - name: .NET
         shell: bash

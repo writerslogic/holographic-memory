@@ -168,7 +168,7 @@ def best_other(metric, cells):
     sign = 1 if analyze.direction(metric) == analyze.HIGHER else -1
     # The eager WARM row is reported, never a comparator.
     others = {s: c for s, c in cells.items()
-              if registry.SYSTEMS[s]["family"] != "warm" and c["value"] is not None and not c.get("informational")}
+              if registry.system(s)["family"] != "warm" and c["value"] is not None and not c.get("informational")}
     if not others:
         return None, None
     best = max(others, key=lambda s: sign * others[s]["value"])
@@ -177,7 +177,7 @@ def best_other(metric, cells):
 
 def reference(data):
     """The WARM row verdicts are drawn for: the library, or warm-server in a server-mode file."""
-    return data.get("reference", registry.WARM)
+    return data.get("reference", registry.WARM if registry.WARM in data["systems"] else "hms")
 
 
 def is_server(data):
@@ -228,7 +228,7 @@ def section(path, data):
 def timing_boundary_lines(data):
     boundary = data.get("timing_boundary", {})
     present = [s for s in data["systems"] if s in boundary]
-    return ["Timing boundary (where each query is timed): " + "; ".join(f"{registry.SYSTEMS[s]['display']}: {boundary[s]}" for s in present) + ".", ""] if present else []
+    return ["Timing boundary (where each query is timed): " + "; ".join(f"{registry.system(s)['display']}: {boundary[s]}" for s in present) + ".", ""] if present else []
 
 
 def render_section(sec, cells_out):
@@ -247,7 +247,7 @@ def render_section(sec, cells_out):
         note = analyze.comparison_note(key, mine, other) if other else ""
         if not note:
             return ""
-        footnote = f"{registry.SYSTEMS[reference(data)]['display']} vs {registry.SYSTEMS[name]['display']}: {note}."
+        footnote = f"{registry.system(reference(data))['display']} vs {registry.system(name)['display']}: {note}."
         if footnote not in footnotes:
             footnotes.append(footnote)
         return "†"
@@ -275,12 +275,12 @@ def render_section(sec, cells_out):
                               "factor_infinite": bool(adv and adv["factor"] == float("inf")), "ci": adv["ci"] if adv else None, "verdict": v,
                               "text": "n/m" if adv is None else fx(adv["factor"])})
         adv_text = "n/m" if adv is None else fx(adv["factor"]) + (f" [{adv['ci'][0]:.2f}, {adv['ci'][1]:.2f}]" if adv["ci"] else " (no CI)")
-        best_text = "n/m" if other is None else f"{registry.SYSTEMS[name]['display']} {fmt(other['value'], dec)}{mark}"
+        best_text = "n/m" if other is None else f"{registry.system(name)['display']} {fmt(other['value'], dec)}{mark}"
         note = f" ({mine['note']})" if mine["value"] is None and mine["note"] else ""
         lines.append(f"| {label}{' (' + unit + ')' if unit else ''} | {fmt(mine['value'], dec)}{mark}{note} | {best_text} | {adv_text} | **{v}** |")
     lines += ["", "<details><summary>All systems</summary>", ""]
     systems = list(data["systems"])
-    head = ["Metric"] + [registry.SYSTEMS[s]["display"] for s in systems]
+    head = ["Metric"] + [registry.system(s)["display"] for s in systems]
     lines += ["| " + " | ".join(head) + " |", "|" + "---|" * len(head)]
     for key, label, unit, dec in spec:
         cells = metrics.get(key)
@@ -307,7 +307,7 @@ def render_section(sec, cells_out):
                 row.append(f"**{text}**" if s == top else text)
         lines.append("| " + " | ".join(row) + " |")
     lines += ["", "Bold marks the best value in the row. Operating points for the QPS rows: "
-              + "; ".join(f"{registry.SYSTEMS[s]['display']}: {metrics['qps@recall0.95'][s]['note']}" for s in systems
+              + "; ".join(f"{registry.system(s)['display']}: {metrics['qps@recall0.95'][s]['note']}" for s in systems
                           if "qps@recall0.95" in metrics and s in metrics["qps@recall0.95"] and metrics["qps@recall0.95"][s]["note"]) + "." if sec["kind"] == "ann" else
               "Bold marks the best value in the row.", "", "</details>", ""]
     lines += [f"† {note}" for note in footnotes] + ([""] if footnotes else [])
@@ -326,7 +326,7 @@ def facts_table(results):
     for system, facts in seen.items():
         svc, enc = facts.get("service_needed", {}), facts.get("encrypted_at_rest", {})
         basis = "measured: " + enc["source"] if enc.get("basis") == "measured" else "documentation (not exercised)"
-        lines.append(f"| {registry.SYSTEMS[system]['display']} | {svc.get('value', 'n/m')} | {enc.get('value', 'n/m')} | {basis} |")
+        lines.append(f"| {registry.system(system)['display']} | {svc.get('value', 'n/m')} | {enc.get('value', 'n/m')} | {basis} |")
     return lines
 
 
@@ -337,7 +337,7 @@ def versions_table(results):
             seen[system] = entry.get("version")
     lines = ["| System | Pinned version(s) |", "|---|---|"]
     for system, version in seen.items():
-        lines.append(f"| {registry.SYSTEMS[system]['display']} | {', '.join(f'{k} {v}' for k, v in (version or {}).items())} |")
+        lines.append(f"| {registry.system(system)['display']} | {', '.join(f'{k} {v}' for k, v in (version or {}).items())} |")
     return lines
 
 
@@ -371,7 +371,7 @@ def build():
     if losses:
         out += ["| Dataset | Metric | Best other | WARM disadvantage | Candidate lever (hypothesis unless a file is cited) |", "|---|---|---|---|---|"]
         for sec, key, label, name, adv in losses:
-            out.append(f"| {sec['title']} ({sec['hw']['class']}) | {label} | {registry.SYSTEMS[name]['display']} | {'the comparator has 0' if adv['factor'] == 0 else format(1 / adv['factor'], '.2f') + 'x worse'} | {LEVERS.get(sec['kind'] + ':' + key) or LEVERS.get(key, '')} |")
+            out.append(f"| {sec['title']} ({sec['hw']['class']}) | {label} | {registry.system(name)['display']} | {'the comparator has 0' if adv['factor'] == 0 else format(1 / adv['factor'], '.2f') + 'x worse'} | {LEVERS.get(sec['kind'] + ':' + key) or LEVERS.get(key, '')} |")
     else:
         out.append("No metric in the committed results is lost.")
     out += ["", "## Results", ""] + body
@@ -415,7 +415,7 @@ def gaps_from(summary):
                 paths = CODE_PATHS[sec["kind"]]
                 gaps.append({
                     "status": status, "dataset": sec["title"], "hardware_class": sec["hw"]["class"], "suite": sec["data"]["suite"],
-                    "metric": key, "label": label, "comparator": registry.SYSTEMS[name]["display"],
+                    "metric": key, "label": label, "comparator": registry.system(name)["display"],
                     "warm": mine["value"], "comparator_value": other["value"], "unit": mine["unit"],
                     "advantage_factor": adv["factor"] if adv and adv["factor"] != float("inf") else None,
                     "advantage_ci": adv["ci"] if adv else None, "level": sec["level"], "file": rel(sec["path"]),
@@ -455,7 +455,7 @@ def readme_block(summary):
             name, other = best_other(key, cells)
             adv = advantage(key, mine, other) if other else None
             mark = {"WIN": "W", "TIE": "T", "LOSS": "L", "n/m": "-", "n/v": "-"}["n/v" if key in analyze.NO_VERDICT else verdict(adv) if other else "n/m"]
-            best_text = "n/m" if other is None else f"{registry.SYSTEMS[name]['display']} {fmt(other['value'], dec)}"
+            best_text = "n/m" if other is None else f"{registry.system(name)['display']} {fmt(other['value'], dec)}"
             lines.append(f"| {short} | {label}{' (' + unit + ')' if unit else ''} | {fmt(mine['value'], dec)} | {best_text} | " +
                          f"{'n/m' if adv is None else fx(adv['factor'])} | {mark} |")
     lines += ["", END]

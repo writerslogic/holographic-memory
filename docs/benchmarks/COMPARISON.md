@@ -444,11 +444,11 @@ Bold marks the best value in the row.
 | System | Pinned version(s) |
 |---|---|
 | hnswlib | hnswlib 0.8.0 |
-| WARM | writerslogic-warm 0.6.1, commit d5f3f3b8cbf963003d282181409e6a0203f9e96d |
+| WARM | holographic-memory 0.6.1, commit d5f3f3b8cbf963003d282181409e6a0203f9e96d |
 | SQLite FTS5 | python-sqlite3 3.40.1 |
 | Apache Lucene 9.12.3 (JVM) | lucene 9.12.3, jvm openjdk version "17.0.20.1" 2026-08-18 |
 | tantivy | tantivy 0.26.2 |
-| WARM (eager hypervectors) | writerslogic-warm 0.6.1, commit d5f3f3b8cbf963003d282181409e6a0203f9e96d |
+| WARM (eager hypervectors) | holographic-memory 0.6.1, commit d5f3f3b8cbf963003d282181409e6a0203f9e96d |
 | Whoosh | whoosh-reloaded 2.7.5 |
 | bm25s | bm25s 0.3.14, PyStemmer 3.1.0 |
 

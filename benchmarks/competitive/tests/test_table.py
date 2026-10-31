@@ -252,8 +252,8 @@ def test_audit_invalid_measurement_and_unknown_revision_cannot_win():
     data["commit"] = "a" * 40
     data["measurement_validity"] = {"serving_rss_mib": {"status": "invalid", "reason": "inherited process high-water mark"}}
     m, _, _ = table.metrics_for(Path("x.json"), data)
-    assert m["serving_rss_mib"][registry.HMS]["value"] is None
-    assert "high-water" in m["serving_rss_mib"][registry.HMS]["note"]
+    assert m["serving_rss_mib"][registry.WARM]["value"] is None
+    assert "high-water" in m["serving_rss_mib"][registry.WARM]["note"]
 
 
 def test_audit_text_uncertainty_counts_process_rounds_not_passes():

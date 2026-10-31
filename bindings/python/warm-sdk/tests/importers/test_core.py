@@ -125,11 +125,12 @@ def test_metadata_oversize_reject_and_truncate(tmp_path, run):
     assert report.verification["roundtrip_mismatches"] == 0
 
 
-def test_ids_namespaces_timestamps_and_reserved_keys(tmp_path, run, server):
+@pytest.mark.parametrize("reserved_key", ["hms_source", "warm_source"])
+def test_ids_namespaces_timestamps_and_reserved_keys(tmp_path, run, server, reserved_key):
     rows = [
         {"id": "x" * 300, "text": "long id", "emb": vec(1), "ns": "a", "ts": "2024-05-01T10:00:00Z"},
         {"id": "hms:reserved", "text": "reserved prefix", "emb": vec(2), "ns": "", "ts": 1_700_000_000_000},
-        {"id": "same", "text": "in a", "emb": vec(3), "ns": "a", "warm_source": "mine", "ts": "not a date"},
+        {"id": "same", "text": "in a", "emb": vec(3), "ns": "a", reserved_key: "mine", "ts": "not a date"},
         {"id": "same", "text": "in b", "emb": vec(4), "ns": "b", "ts": None},
     ]
     path = tmp_path / "n.jsonl"
@@ -143,7 +144,7 @@ def test_ids_namespaces_timestamps_and_reserved_keys(tmp_path, run, server):
     both = {m["id"]: m["metadata"] for m in sink.query(vector=vec(3), top_k=10, filter={"warm_source_id": "same"})}
     sink.close()
     assert set(both) == {"a::same", "b::same"}
-    assert both["a::same"]["warm_orig_meta"] == {"warm_source": "mine"}
+    assert both["a::same"]["warm_orig_meta"] == {reserved_key: "mine"}
     assert both["a::same"]["warm_created_at_raw"] == "not a date"
 
 

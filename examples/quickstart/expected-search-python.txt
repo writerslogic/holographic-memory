@@ -1,4 +1,4 @@
-query                                                      WARM       FTS5      expected
+query                                                      WARM      FTS5      expected
 right to a fair trial                                      udhr-23   udhr-10   udhr-10
 freedom of religion                                        udhr-18   udhr-18   udhr-18
 paid holidays and rest from work                           udhr-24   udhr-24   udhr-24
