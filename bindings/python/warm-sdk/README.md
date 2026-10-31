@@ -64,6 +64,21 @@ See the [tested dependency profile and its limits](https://github.com/writerslog
 newer LiteLLM versions can force an older vulnerable Filelock. The SDK lock
 alone does not constrain a consumer installation.
 
+The CrewAI tool requires `crewai>=1.15.33` (currently Python 3.11–3.13 for this SDK)
+and closes its per-call HTTP client on
+success or failure. Its Chroma dependency remains subject to the security notes;
+the tested tool path does not certify CrewAI's built-in storage or other features.
+The SmolAgents tool requires `smolagents>=1.26.0`. Its optional `top_k` input accepts
+omission or `None` as the default of three results. Use it as a context manager,
+or call `tool.close()` when finished, to release its persistent HTTP connection:
+
+```python
+from writerslogic_warm_sdk.smolagents import WarmSearchTool
+
+with WarmSearchTool(embedder=my_embedder, url="http://localhost:8080", api_key=my_api_key) as tool:
+    context = tool("notes about retention", top_k=3)
+```
+
 The `pydantic-ai` extra installs `pydantic-ai-slim>=2.64.0`, which provides the
 framework without every provider SDK. Add the provider extra you actually use,
 for example `pydantic-ai-slim[openai]`; local tests need no paid provider.

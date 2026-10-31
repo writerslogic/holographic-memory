@@ -1,0 +1,1 @@
+249 registry package/version pairs unchanged from prior OSV scan; only SDK requirement metadata changed.

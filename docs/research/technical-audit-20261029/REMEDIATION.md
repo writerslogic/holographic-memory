@@ -1127,3 +1127,38 @@ untrusted program deserialization, and later global cache reconfiguration are
 outside it. Chroma's four advisory matches and CrewAI's dependency remain open.
 The separate integrations package's whole dependency graph is not yet audited.
 Evidence: [dspy-cache-isolation-20261031/](dspy-cache-isolation-20261031/).
+
+
+### CrewAI and SmolAgents native tool contracts (2026-10-31)
+
+Inspection and actual framework calls reproduced two defects: CrewAI's WARM tool
+created a client for every call without closing it; SmolAgents 1.26.0 rejected the
+WARM tool constructor because its optional `top_k` parameter lacked the required
+nullable input declaration. The latter failed before any search could run.
+Eleven baseline cases failed (four unclosed CrewAI clients and seven SmolAgents
+construction failures). The tool descriptions also incorrectly promised
+"FHE-lite"/secure holographic storage; those claims are replaced with WARM search.
+
+CrewAI now closes its owned client on normal return, service rejection, and
+encoder exceptions. SmolAgents declares optional input semantics explicitly:
+omitted/None `top_k` means three, but zero still reaches the service's 422 rejection
+rather than being silently replaced by the default. Its reusable client has an
+explicit close/context-manager lifetime. Repeated close is harmless. Tests call
+real framework entry points (`BaseTool.run`, `Tool.__call__`) against a real local
+service, including tenant isolation, authorization, and both error paths. The
+client spy only tracks actual client lifetimes; service/encoder results are not
+mocked to restate the implementation.
+
+The SDK extras now require the actual verified framework versions, CrewAI 1.15.33
+and SmolAgents 1.26.0. Current CrewAI limits Python to <3.14, so SDK documentation
+states its 3.11–3.13 range. The registry package/version set is unchanged from the
+previous complete OSV scan: 249 pairs, with only root dependency metadata changed
+in the lock. This does not resolve Chroma advisories or qualify CrewAI's built-in
+storage, provider integrations, or arbitrary agents as secure.
+
+Validation: 11 cases passed on Python 3.11, 3.12, and 3.13; after adding the zero/one/
+two boundary checks, the final 13-case suite passed on 3.12. Wheel/sdist builds,
+uv 0.13.6 lock check, workflow lint, and diff checks pass. CI pins CrewAI 1.15.33,
+SmolAgents 1.26.0, LiteLLM 1.103.10, and Filelock 4.2.6, with telemetry disabled and
+only local encoders/service calls. Final PR/merge gate remains pending.
+Evidence: [framework-tools-20261031/](framework-tools-20261031/).

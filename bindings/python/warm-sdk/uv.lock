@@ -6383,7 +6383,7 @@ importers-test = [
 requires-dist = [
     { name = "annoy", marker = "extra == 'import-annoy'", specifier = ">=1.17" },
     { name = "chromadb", marker = "extra == 'import-chroma'", specifier = ">=0.5" },
-    { name = "crewai", marker = "extra == 'crewai'", specifier = ">=0.28.0" },
+    { name = "crewai", marker = "extra == 'crewai'", specifier = ">=1.15.33" },
     { name = "dspy-ai", marker = "extra == 'dspy'", specifier = ">=2.4.0" },
     { name = "duckdb", marker = "extra == 'import-files'", specifier = ">=1.0" },
     { name = "faiss-cpu", marker = "extra == 'import-faiss'", specifier = ">=1.8" },
@@ -6414,7 +6414,7 @@ requires-dist = [
     { name = "pymongo", marker = "extra == 'import-mongodb'", specifier = ">=4.6" },
     { name = "qdrant-client", marker = "extra == 'import-qdrant'", specifier = ">=1.9" },
     { name = "redis", marker = "extra == 'import-redis'", specifier = ">=5" },
-    { name = "smolagents", marker = "extra == 'smolagents'", specifier = ">=1.0.0" },
+    { name = "smolagents", marker = "extra == 'smolagents'", specifier = ">=1.26.0" },
     { name = "sniffio", specifier = ">=1.3" },
     { name = "sqlite-vec", marker = "extra == 'import-sqlite-vec'", specifier = ">=0.1.1" },
     { name = "zep-cloud", marker = "extra == 'import-zep'", specifier = ">=2" },
