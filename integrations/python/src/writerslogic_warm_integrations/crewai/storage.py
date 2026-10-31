@@ -14,6 +14,8 @@ from __future__ import annotations
 import hashlib
 import math
 import warnings
+from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -122,6 +124,14 @@ def build_filter(
     return all_of(terms)
 
 
+@dataclass(frozen=True)
+class _CreatedBefore(Filter):
+    cutoff: datetime
+
+    def matches(self, metadata: Mapping[str, Any]) -> bool:
+        return datetime.fromisoformat(metadata[_CREATED]) < self.cutoff
+
+
 class WarmMemoryStorage:
     """`StorageBackend` for `crewai.Memory(storage=...)`.
 
@@ -129,7 +139,7 @@ class WarmMemoryStorage:
         config: connection and behavior knobs (`WarmConfig`); or pass its fields as keywords.
             `config.embedder` is only used for records that arrive without an embedding.
 
-    Limits (the service has no list or offset endpoint): `list_records`, `get_scope_info`,
+    Bounded listings: `list_records`, `get_scope_info`,
     `list_scopes`, `list_categories` and `count` read at most `config.max_fetch` records per
     call (default 100, the server's `--max-top-k`) and emit a `UserWarning` when that
     truncates. `search` and `delete` are exact. `touch_records` is not implemented because
@@ -276,13 +286,8 @@ class WarmMemoryStorage:
             return self._sync.forget([r.id for r in found if self._eligible(r, flt, older_than)])
         if older_than is None:
             return self._sync.forget_where(flt)
-        removed = 0
-        while True:
-            page = self._sync.list(flt)
-            victims = [r.id for r in page.records if self._eligible(r, None, older_than)]
-            if not victims:
-                return removed
-            removed += self._sync.forget(victims)
+        terms = [flt] if flt is not None else []
+        return self._sync.forget_where(all_of([*terms, _CreatedBefore(older_than)]))
 
     async def adelete(
         self,
@@ -301,13 +306,8 @@ class WarmMemoryStorage:
             return await self._async.forget([r.id for r in found if self._eligible(r, flt, older_than)])
         if older_than is None:
             return await self._async.forget_where(flt)
-        removed = 0
-        while True:
-            page = await self._async.list(flt)
-            victims = [r.id for r in page.records if self._eligible(r, None, older_than)]
-            if not victims:
-                return removed
-            removed += await self._async.forget(victims)
+        terms = [flt] if flt is not None else []
+        return await self._async.forget_where(all_of([*terms, _CreatedBefore(older_than)]))
 
     def reset(self, scope_prefix: Optional[str] = None) -> None:
         self._sync.forget_where(build_filter(scope_prefix))

@@ -56,11 +56,11 @@ All WARM knobs are `WarmConfig` fields: `url`, `api_key`, `tenant_id` (hard isol
 | `categories=[c]` | by the service |
 | `categories=[a, b, ...]` (any of) | in the adapter, on an over-fetch of `overfetch * limit` candidates (bounded by `max_fetch`) |
 | `metadata_filter` | by the service (equality on every key, as in CrewAI) |
-| `older_than` | in the adapter (delete only) |
+| `older_than` | parsed datetime comparison during paginated metadata enumeration (delete only); unaffected by `max_fetch` |
 
 ## Limits
 
-- The service has no list or offset endpoint. `list_records`, `get_scope_info`, `list_scopes`, `list_categories` and `count` read at most `max_fetch` records (default 100, the server's `--max-top-k`) and emit a `UserWarning` when truncated. Raise `max_fetch` together with `--max-top-k` for larger scopes. `search`, `delete` and `reset` are exact at any size.
+- The backend enumerates paginated metadata. `list_records`, `get_scope_info`, `list_scopes`, `list_categories` and `count` read at most `max_fetch` records (default 100, the server's `--max-top-k`) and emit a `UserWarning` only when additional matching records exist. Raise `max_fetch` together with `--max-top-k` for larger scopes. `search`, `delete` and `reset` are exact at any size.
 - `touch_records` is not implemented (the service does not return stored vectors, so a record cannot be rewritten to update `last_accessed`); `last_accessed` is set when the record is saved. CrewAI treats `touch_records` as optional.
 - `search` returns at most `max_fetch` results.
 - Embedding dimension must equal `--input-dim`; a mismatch is a `422` from the service surfaced as `WarmError`, not CrewAI's `EmbeddingDimensionMismatchError`.
@@ -72,6 +72,11 @@ All WARM knobs are `WarmConfig` fields: `url`, `api_key`, `tenant_id` (hard isol
 
 ## Tested
 
-- crewai 1.15.28, Python 3.12, against `warm-server` built from this repo.
+- crewai 1.15.33, Python 3.12, against `warm-server` built from this repo.
 - Conformance: `isinstance(storage, StorageBackend)` (runtime-checkable protocol), every protocol method exercised against the real server, `Memory.remember/recall(depth="shallow")/forget/info/list_records` end to end, `Knowledge.add_sources/query` end to end, and a real `Crew.kickoff()` with a scripted `BaseLLM`: the recalled memory reaches the agent prompt and the task result is saved back through the backend (`tests/crewai/test_crewai.py`).
 - Deep recall (`depth="deep"`) and LLM-driven scope/category inference call the LLM and are CrewAI behavior, unchanged by the backend. They need a real LLM and were not run.
+
+The storage tests reject every Chroma system construction while exercising WARM
+memory and knowledge backends, including real scripted crew execution. This
+covers the explicitly configured WARM paths; it does not qualify CrewAI's other
+storage backends or remove its installed Chroma dependency advisories.

@@ -1312,3 +1312,42 @@ versions, CrewAI native memory, or arbitrary embedding configurations as safe.
 All four Chroma advisory matches remain unresolved. The archived probe runs with
 the SDK and Chroma 1.5.9 installed, with telemetry/model downloads disabled, and
 uses only a local temporary store; it performs no malicious code execution.
+
+
+## CrewAI retention completeness and bounded storage isolation (2026-10-31)
+
+The guarded CrewAI 1.15.33 integration run passed 11 existing tests and failed
+one stale assertion: the paginated backend now correctly reports no truncation
+when the match count equals the requested limit. The assertion now covers
+limit minus one, exactly the limit, and limit plus one.
+
+Source inspection exposed a separate correctness defect: sync and async
+`delete(older_than=...)` repeatedly read only the first `max_fetch` matching
+records, returning success as soon as that first page contained no eligible
+victim. Six baseline regressions returned zero instead of removing 4/5/6 old
+records placed after five newer records. This could leave retention obligations
+unsatisfied despite a successful return.
+
+Both paths now compose the existing scope/category/metadata filter with a parsed
+datetime predicate and reuse the backend's paginated `forget_where`. Enumeration
+is bounded per metadata page, does not hydrate text to decide age, and is not
+limited by `max_fetch`. Final cases preserve records at and after the cutoff,
+check equivalent timestamps with different UTC offsets, and preserve exclusions
+from each existing filter. The explicit-id deletion path is unchanged; this is
+not a transactional snapshot under concurrent writes.
+
+All 18 CrewAI tests passed against the real local server with Chroma system
+construction blocked, including memory, knowledge, and scripted `Crew.kickoff`.
+A positive control proved the guard intercepts a real PersistentClient; the final
+probe blocks external socket connections and uses local embedding/model fixtures.
+An autouse guard and a dedicated CI step now protect the configured WARM storage
+paths. This establishes bounded non-use of Chroma storage in those workflows,
+not safety of other CrewAI backends or absence of the four installed Chroma
+advisories. No advisory is dismissed and no provider/model download was needed.
+
+Final validation: 18 suite tests, seven focused tests after import/style cleanup,
+actionlint and diff checks passed. The optional Ruff check reports 77 findings
+both before and after this change (existing typing/import/test-style debt); a
+clean full Python lint gate is not claimed. Evidence and exact runtime versions:
+[crewai-retention-20261031/](crewai-retention-20261031/). This branch is based on
+the pending integration-security work and must be rebased/CI-gated after it merges.

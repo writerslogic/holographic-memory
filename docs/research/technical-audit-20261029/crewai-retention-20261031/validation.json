@@ -1,0 +1,17 @@
+{
+  "base": "6fdefcca4900858e07cf2d02b8e43ed6a927989c",
+  "python": "3.12",
+  "crewai": "1.15.33",
+  "chromadb": "1.5.9",
+  "litellm": "1.103.10",
+  "filelock": "4.2.6",
+  "server_sha256": "073c1c7dd85aa731a9c849dd4dcd48ad6a2d6840c1da11df41c751c5d2f4f81c",
+  "baseline_age_regressions_failed": 6,
+  "final_suite_passed": 18,
+  "post_import_style_change_focused_passed": 7,
+  "chroma_system_attempts": 0,
+  "positive_control_attempts": 1,
+  "ruff_baseline_findings": 77,
+  "ruff_final_findings": 77,
+  "actionlint_exit": 0
+}

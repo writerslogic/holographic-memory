@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import warnings
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -125,6 +125,10 @@ def test_listing_warns_when_truncated(server_factory):
         warnings.simplefilter("error")
         assert s.count() == 4
     s.save([rec("n4", "/s")])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert s.count() == 5
+    s.save([rec("n5", "/s")])
     with pytest.warns(UserWarning, match="truncated"):
         assert s.count() == 5
 
@@ -201,3 +205,33 @@ def test_crew_kickoff_recalls_from_writerslogic_warm(server):
     out = Crew(agents=[agent], tasks=[task], memory=mem).kickoff()
     assert "saw=True" in str(out)
     assert storage.count() >= 2  # the crew saved the task result back through the backend
+
+
+@pytest.mark.parametrize("count", [4, 5, 6])
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_age_deletion_scans_past_nonmatching_first_page(server, count, asynchronous):
+    cutoff = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    storage = WarmMemoryStorage(cfg(server, max_fetch=5))
+    recent = [rec("recent", "/keep", ["x"], {"selected": True}, id=f"a{i}", created_at=cutoff) for i in range(5)]
+    old = [rec("old", "/keep", ["x"], {"selected": True}, id=f"z{i}",
+               created_at=(cutoff - timedelta(microseconds=1)).astimezone(timezone(timedelta(hours=14))))
+           for i in range(count)]
+    after = rec("after cutoff", "/keep", ["x"], {"selected": True}, id="after", created_at=cutoff + timedelta(microseconds=1))
+    excluded = [
+        rec("other scope", "/other", ["x"], {"selected": True}, id="scope", created_at=cutoff - timedelta(days=1)),
+        rec("other category", "/keep", ["y"], {"selected": True}, id="category", created_at=cutoff - timedelta(days=1)),
+        rec("other metadata", "/keep", ["x"], {"selected": False}, id="metadata", created_at=cutoff - timedelta(days=1)),
+    ]
+    filters = {"scope_prefix": "/keep", "categories": ["x"], "metadata_filter": {"selected": True}, "older_than": cutoff}
+    storage.save(recent + old + [after] + excluded)
+    try:
+        if asynchronous:
+            removed = await storage.adelete(**filters)
+        else:
+            removed = storage.delete(**filters)
+        assert removed == count
+        assert all(storage.get_record(r.id) is None for r in old)
+        assert all(storage.get_record(r.id) is not None for r in recent + [after] + excluded)
+    finally:
+        storage.close()
+        await storage._async.aclose()
