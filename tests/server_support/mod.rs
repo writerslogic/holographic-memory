@@ -90,8 +90,21 @@ impl<'a> Request<'a> {
     }
 
     pub fn send(self) -> Resp {
+        let method = self.method;
+        let path = self.path.clone();
         let (server, bytes) = self.encode();
-        server.exchange(&bytes)
+        let raw = server.exchange_raw(&bytes);
+        assert!(
+            !raw.is_empty(),
+            "no response to {method} {path}; recent server events: {:?}",
+            server
+                .log_lines()
+                .into_iter()
+                .rev()
+                .take(10)
+                .collect::<Vec<_>>()
+        );
+        parse_response(&raw)
     }
 
     /// `None` when the server closed the connection without answering.
@@ -268,11 +281,15 @@ impl Server {
     }
 
     pub fn connect(&self) -> Box<dyn Stream> {
+        self.try_connect().unwrap()
+    }
+
+    fn try_connect(&self) -> std::io::Result<Box<dyn Stream>> {
         let timeout = Some(Duration::from_secs(20));
-        match &self.endpoint {
+        Ok(match &self.endpoint {
             Endpoint::Tcp(addr) => {
-                let tcp = TcpStream::connect(addr).unwrap();
-                tcp.set_read_timeout(timeout).unwrap();
+                let tcp = TcpStream::connect(addr)?;
+                tcp.set_read_timeout(timeout)?;
                 match &self.tls_root {
                     None => Box::new(tcp),
                     Some(pem) => Box::new(tls_stream(tcp, pem)),
@@ -280,16 +297,18 @@ impl Server {
             }
             #[cfg(unix)]
             Endpoint::Unix(path) => {
-                let s = std::os::unix::net::UnixStream::connect(path).unwrap();
-                s.set_read_timeout(timeout).unwrap();
-                Box::new(s)
+                let stream = std::os::unix::net::UnixStream::connect(path)?;
+                stream.set_read_timeout(timeout)?;
+                Box::new(stream)
             }
-        }
+        })
     }
 
     /// The bytes the server sent back, empty when the connection or handshake failed.
     pub fn exchange_raw(&self, bytes: &[u8]) -> Vec<u8> {
-        let mut stream = self.connect();
+        let Ok(mut stream) = self.try_connect() else {
+            return Vec::new();
+        };
         // The server may answer and close before reading an oversized body.
         let _ = stream.write_all(bytes);
         let mut raw = Vec::new();

@@ -294,44 +294,6 @@ fn idempotency_configuration_rejects_disabled_protection_bounds() {
     }
 }
 
-/// Idle tenants are flushed and closed, free their slot toward `--max-tenants`, and reopen
-/// with their data intact.
-#[test]
-fn idle_tenants_are_evicted_and_reopen_with_their_data() {
-    let directory = tempfile::tempdir().unwrap();
-    let state = state_with(
-        directory.path(),
-        2,
-        &["--tenant-idle-seconds", "1", "--max-tenants", "1"],
-    );
-    let document = |id: &str| DocumentInput {
-        id: id.into(),
-        text: "persisted words".into(),
-        source_uri: None,
-        version: None,
-        metadata: None,
-        chunk_words: None,
-        overlap_words: None,
-        store_text: None,
-        embeddings: Some(vec![vec![1.0, 0.0]]),
-        title_weight: None,
-    };
-    state
-        .core("a")
-        .unwrap()
-        .memorize_document(document("one"))
-        .unwrap();
-    assert_eq!(state.core("b").err().unwrap().code, "tenant_limit");
-    assert_eq!(state.evict_idle(), 0, "not idle yet");
-    std::thread::sleep(Duration::from_millis(1200));
-    assert_eq!(state.evict_idle(), 1);
-    assert_eq!(state.open_tenant_count(), 0);
-    state.core("b").unwrap();
-    std::thread::sleep(Duration::from_millis(1200));
-    assert_eq!(state.evict_idle(), 1);
-    assert_eq!(state.core("a").unwrap().document_count(), 1);
-}
-
 /// Restore swaps the store, verifies first, and a failed verification leaves the store alone.
 #[test]
 fn snapshot_restore_round_trips_and_keeps_the_replaced_store() {

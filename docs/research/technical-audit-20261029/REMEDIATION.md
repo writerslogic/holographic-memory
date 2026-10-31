@@ -529,3 +529,20 @@ and formatting pass; Windows acceptance remains pending.
 This fix does not establish full Windows power-loss durability: directory-sync
 helpers are still no-ops there. The separate core admin migration `copy_tree` also
 still skips Windows file flushes; that requires its own correction and validation.
+
+Windows run 41199300291 passed the read-only snapshot regression and cleared the
+access-denied failures, but finished 162/165: an idle test assumed writes took less
+than one second, a readiness test exhausted its two-second drain window, and a
+backup round-trip received an empty response without identifying the request.
+Eviction testing now injects explicit time at the idle boundary (-1/at/+1 ms),
+while production retains its monotonic clock. The readiness fixture pre-opens its
+tenant and tests a five-second delay with the matching minimum-time assertion.
+
+A stopped-server regression also exposed `try_send` panicking on connection
+refusal; it fails before the helper fix and passes afterward. Ordinary request
+failures now identify the method/path and recent server events. The Windows service
+step schedules independent fixtures serially, retaining every test and the
+multi-client concurrency inside them; socket read timeouts remain 20 seconds.
+All 13 local operations checks, the idle-boundary test, stopped-server/readiness
+checks, strict Clippy, formatting and actionlint pass. The backup timeout’s precise
+cause remains unconfirmed; the next Windows run must pass and is not overridden.

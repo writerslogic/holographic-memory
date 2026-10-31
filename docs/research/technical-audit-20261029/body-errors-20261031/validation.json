@@ -114,7 +114,7 @@
   },
   "windows_coverage": {
     "previous": "Windows nextest job used default features; Cargo.toml default=[] excludes the HTTP and MCP binaries.",
-    "added_command": "cargo nextest run --locked --features server,mcp --no-fail-fast --bin warm-server --bin warm-mcp --test server --test server_api --test server_ops --test server_abuse --test server_ann",
+    "added_command": "cargo nextest run --locked --features server,mcp --no-fail-fast --test-threads 1 --bin warm-server --bin warm-mcp --test server --test server_api --test server_ops --test server_abuse --test server_ann",
     "status": "Initial expanded CI failed compiling an unconditional UnixListener import (run 41194768596). Unix-only variants, imports and cleanup are now platform-guarded; Windows rerun pending."
   },
   "integrated_main": "5192ab7b",
@@ -140,12 +140,43 @@
     "local_snapshot_tests": 5,
     "local_clippy": "pass",
     "local_fmt": "pass",
-    "windows_acceptance": "Pending next CI.",
+    "windows_acceptance": "Run 41199300291 passed the new read-only-copy regression and previously access-denied snapshot tests. Overall 162/165 passed; three timing/empty-response failures remain under investigation.",
     "limits": [
       "Windows directory sync remains a no-op; this is not a full power-loss durability claim.",
       "Separate core admin migration copy_tree still skips Windows file flushing; not changed here.",
       "No snapshot throughput claim."
     ],
     "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers"
+  },
+  "timing_and_polling": {
+    "windows_run": 41199300291,
+    "failures": [
+      "Idle eviction assumed writes finish in less than one second.",
+      "Readiness test attempted requests after its two-second drain window.",
+      "Backup round-trip received an empty response under parallel filesystem-heavy tests; precise failed request was not logged."
+    ],
+    "changes": [
+      "Eviction receives a private explicit time argument; production uses the same monotonic clock. Test covers idle threshold -1/at/+1 milliseconds without sleeps.",
+      "Readiness fixture opens its query tenant before signaling; five-second configured delay retains corresponding 4.9-second minimum assertion.",
+      "Fallible polling returns None on connection refusal; ordinary send now includes method, path and last ten server events on empty responses.",
+      "Windows service fixtures run serially; all tests and internal multi-client concurrency checks remain enabled. Read timeout remains 20 seconds."
+    ],
+    "local_checks": {
+      "idle_boundaries": 1,
+      "operations": 13,
+      "closed_server_before_fix_failed": 1,
+      "closed_server_after_fix_passed": 1,
+      "readiness": 1,
+      "clippy": "pass",
+      "formatting": "pass",
+      "actionlint": "pass"
+    },
+    "baseline_patch": "closed-server-regression.patch",
+    "baseline_description": "Assertion added before changing the polling helper, on the working tree based on 2e01512e.",
+    "limits": [
+      "No production throughput or latency claim.",
+      "Empty backup response root cause not confirmed; serialization isolates cross-test contention and diagnostics identify the request if it recurs.",
+      "Latest Windows CI required before merge."
+    ]
   }
 }

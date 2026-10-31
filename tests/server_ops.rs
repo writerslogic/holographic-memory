@@ -670,8 +670,15 @@ fn shutdown_drains_in_flight_requests_and_flushes_before_exiting() {
 
 #[test]
 fn readiness_fails_during_the_shutdown_delay_while_requests_are_still_served() {
-    let mut s = Server::open(&["--shutdown-delay-seconds", "2"]);
+    let mut s = Server::open(&["--shutdown-delay-seconds", "5"]);
     assert_eq!(s.req("GET", "/readyz").send().status, 200);
+    assert_eq!(
+        s.req("POST", "/api/v1/query")
+            .json(&json!({"query_vector": embedding(1)}))
+            .send()
+            .status,
+        200
+    );
     let signalled = Instant::now();
     s.signal("TERM");
     wait_until("readiness to fail", || {
@@ -696,7 +703,7 @@ fn readiness_fails_during_the_shutdown_delay_while_requests_are_still_served() {
         .contains("warm_ready 0"));
     assert!(s.child.wait().unwrap().success());
     assert!(
-        signalled.elapsed() >= Duration::from_millis(1900),
+        signalled.elapsed() >= Duration::from_millis(4900),
         "exited before the delay: {:?}",
         signalled.elapsed()
     );

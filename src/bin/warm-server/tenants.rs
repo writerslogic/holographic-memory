@@ -573,11 +573,14 @@ impl AppState {
 
     /// Flush and close tenants idle longer than `--tenant-idle-seconds`.
     pub fn evict_idle(&self) -> usize {
+        self.evict_idle_at(self.now_ms())
+    }
+
+    fn evict_idle_at(&self, now: u64) -> usize {
         let idle = self.cfg.tenant_idle_seconds.saturating_mul(1000);
         if idle == 0 {
             return 0;
         }
-        let now = self.now_ms();
         let mut closed = 0;
         for tenant in self.ready_tenants() {
             if now.saturating_sub(tenant.last_used_ms.load(Ordering::Relaxed)) < idle
@@ -996,6 +999,43 @@ pub fn dir_size(path: &Path) -> u64 {
 mod tests {
     use super::*;
     use std::sync::mpsc;
+
+    /// Idle tenants are flushed and closed, free their slot toward `--max-tenants`, and reopen
+    /// with their data intact.
+    #[test]
+    fn idle_tenants_are_evicted_and_reopen_with_their_data() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(
+            directory.path(),
+            2,
+            &["--tenant-idle-seconds", "1", "--max-tenants", "1"],
+        );
+        let document = |id: &str| writerslogic_warm::DocumentInput {
+            id: id.into(),
+            text: "persisted words".into(),
+            source_uri: None,
+            version: None,
+            metadata: None,
+            chunk_words: None,
+            overlap_words: None,
+            store_text: None,
+            embeddings: Some(vec![vec![1.0, 0.0]]),
+            title_weight: None,
+        };
+        let core = state.core("a").unwrap();
+        core.memorize_document(document("one")).unwrap();
+        core.tenant.last_used_ms.store(1000, Ordering::Relaxed);
+        drop(core);
+        assert_eq!(state.core("b").err().unwrap().code, "tenant_limit");
+        assert_eq!(state.evict_idle_at(1999), 0, "one millisecond before idle");
+        assert_eq!(state.evict_idle_at(2000), 1, "exactly at the idle limit");
+        assert_eq!(state.open_tenant_count(), 0);
+        let core = state.core("b").unwrap();
+        core.tenant.last_used_ms.store(1000, Ordering::Relaxed);
+        drop(core);
+        assert_eq!(state.evict_idle_at(2001), 1, "one millisecond past idle");
+        assert_eq!(state.core("a").unwrap().document_count(), 1);
+    }
 
     #[test]
     fn snapshot_copy_preserves_read_only_files_and_skips_process_state() {
