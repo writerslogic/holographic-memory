@@ -34,7 +34,7 @@ the stored records before retrying. A broken connection may prevent delivery of 
 response. Size-limit violations remain 413, and body deadlines remain 408.
 
 ### invalid_tenant
-400. `X-Tenant-ID` is not 1 to 64 characters of `[A-Za-z0-9_-]`.
+400. `X-Tenant-ID` occurs more than once or is not 1 to 64 characters of `[A-Za-z0-9_-]`.
 
 ### invalid_request
 422. The body parsed but a value is not acceptable: wrong vector length or non-finite values, `top_k` out of range, an id with control characters or the reserved `hms:` prefix, text that does not fit one chunk, a batch over the limits, an archive that is not a valid store, a malformed query string. Streamed ingestion can retain earlier committed batches; reconcile stored records before retrying.

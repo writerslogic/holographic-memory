@@ -413,6 +413,53 @@ mod tests {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpStream;
 
+    #[tokio::test]
+    async fn static_bearer_headers_reject_ambiguity_and_accept_scheme_syntax() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        let app = Router::new()
+            .route(
+                "/protected",
+                axum::routing::get(move || {
+                    let counter = counter.clone();
+                    async move {
+                        counter.fetch_add(1, Ordering::SeqCst);
+                        "ok"
+                    }
+                }),
+            )
+            .layer(middleware::from_fn_with_state(
+                Arc::new("static-test-token".to_string()),
+                crate::bearer,
+            ));
+        let (address, shutdown, task) = start(app, limits(), CancellationToken::new()).await;
+        for (headers, expected) in [
+            ("Authorization: Bearer static-test-token\r\n", 200),
+            ("Authorization: bearer static-test-token\r\n", 200),
+            ("Authorization: bEaReR   static-test-token\r\n", 200),
+            ("Authorization: Bearer static-test-token\r\nauthorization: Bearer wrong\r\n", 401),
+            ("Authorization: Bearer wrong\r\nAuthorization: Bearer static-test-token\r\n", 401),
+            ("Authorization: Bearer static-test-token\r\nAuthorization: Bearer static-test-token\r\n", 401),
+            ("Authorization: Bearer\tstatic-test-token\r\n", 401),
+            ("Authorization: Bearer STATIC-TEST-TOKEN\r\n", 401),
+            ("Authorization: Bearer static-test-token, Bearer static-test-token\r\n", 401),
+            ("", 401),
+        ] {
+            let mut connection = TcpStream::connect(address).await.unwrap();
+            connection.write_all(format!("GET /protected HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n{headers}\r\n").as_bytes()).await.unwrap();
+            let mut bytes = Vec::new();
+            connection.read_to_end(&mut bytes).await.unwrap();
+            let response = String::from_utf8(bytes).unwrap();
+            assert!(response.starts_with(&format!("HTTP/1.1 {expected}")), "{response}");
+            if expected == 401 {
+                assert!(response.lines().any(|line| line.eq_ignore_ascii_case("www-authenticate: Bearer")));
+            }
+        }
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        stop(shutdown, task).await;
+    }
+
     fn limits() -> HttpLimits {
         config::Cli::parse_from(["warm-mcp"]).http
     }

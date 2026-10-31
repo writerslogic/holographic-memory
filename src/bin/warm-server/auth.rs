@@ -127,7 +127,16 @@ impl Principal {
 
     /// The tenant a request addresses: `X-Tenant-ID`, else the key's only tenant, else `default`.
     pub fn tenant(&self, headers: &HeaderMap) -> Result<String, ApiError> {
-        let name = match headers.get("x-tenant-id") {
+        let mut values = headers.get_all("x-tenant-id").iter();
+        let value = values.next();
+        if values.next().is_some() {
+            return Err(ApiError::new(
+                StatusCode::BAD_REQUEST,
+                "invalid_tenant",
+                "X-Tenant-ID must occur at most once",
+            ));
+        }
+        let name = match value {
             Some(value) => match value.to_str() {
                 Ok(v) if valid_tenant(v) => v.to_string(),
                 _ => {
@@ -347,10 +356,14 @@ impl Authenticator {
                 scopes: ScopeSet::ALL,
             });
         }
-        let token = headers
-            .get(header::AUTHORIZATION)
+        let mut values = headers.get_all(header::AUTHORIZATION).iter();
+        let token = values
+            .next()
+            .filter(|_| values.next().is_none())
             .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.strip_prefix("Bearer "))
+            .and_then(|v| v.split_once(' '))
+            .filter(|(scheme, _)| scheme.eq_ignore_ascii_case("bearer"))
+            .map(|(_, token)| token.trim_start_matches(' '))
             .unwrap_or("");
         let digest = digest_token(token);
         // Evaluate every comparison before branching so timing does not reveal which matched.
@@ -493,6 +506,35 @@ fn append_entry(path: &Path, entry: KeyEntry) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bearer_header_syntax_preserves_key_file_scope_and_secret_case() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("keys.json");
+        let (token, entry) = new_key(&args("Scoped", &["acme"], &["read"])).unwrap();
+        append_entry(&path, entry).unwrap();
+        let auth = Authenticator::new(false, None, Some(path)).unwrap();
+        for prefix in ["Bearer ", "bearer ", "bEaReR   "] {
+            let mut headers = HeaderMap::new();
+            headers.insert(
+                header::AUTHORIZATION,
+                format!("{prefix}{token}").parse().unwrap(),
+            );
+            let principal = auth.authenticate(&headers).unwrap();
+            assert_eq!(principal.tenant(&HeaderMap::new()).unwrap(), "acme");
+            assert!(principal.scopes.has(Scope::Read));
+            assert!(!principal.scopes.has(Scope::Write));
+            headers.append(
+                header::AUTHORIZATION,
+                format!("Bearer {token}").parse().unwrap(),
+            );
+            assert_eq!(
+                auth.authenticate(&headers).unwrap_err().code,
+                "unauthorized"
+            );
+        }
+        assert!(auth.authenticate(&headers(&token.to_uppercase())).is_err());
+    }
 
     #[test]
     fn legacy_key_prefix_keeps_its_original_digest_and_tenant_scope() {

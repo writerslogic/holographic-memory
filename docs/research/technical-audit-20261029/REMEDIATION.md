@@ -404,6 +404,45 @@ revision token. The tradeoff is explicit: 304 responses render and hash their re
 no latency improvement is claimed, and large metadata-page cost needs workload measurement.
 
 
+PR [#357](https://github.com/writerslogic/warm/pull/357) merged as `171c80d3` after
+67 successful and four skipped check entries, with no pending/failed checks or unresolved
+review threads. Its merged tree matches tested head `5d71997a`. This completes the
+conditional-request integration gate above; rendering cost remains unmeasured.
+
+### Authentication and request-header ambiguity
+
+Four real-HTTP regression groups fail on `3f787a5e`: lowercase Bearer schemes were
+refused, while duplicate Authorization, X-Tenant-ID and Idempotency-Key fields were
+silently reduced to the first value. Conflicting headers could therefore execute a
+write using one of the supplied identities or retry keys. This establishes ambiguous
+request handling, not a demonstrated authorization bypass or intermediary exploit.
+
+The server now rejects repeated authentication fields with 401/Bearer challenge,
+repeated tenant fields with 400 `invalid_tenant`, and repeated retry keys with 422
+`invalid_request`, before mutation or key reservation. Identical duplicates are also
+rejected. HTTP and MCP accept case-insensitive Bearer schemes and one or more ASCII
+spaces before the unchanged case-sensitive secret. MCP static-token mode reuses the
+OAuth header parser; OAuth retains its separate token-format and length checks.
+
+[RFC 9110 §11.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-11.1) defines
+case-insensitive authentication schemes; [RFC 6750 §2.1](https://www.rfc-editor.org/rfc/rfc6750.html#section-2.1)
+permits one or more spaces. Rejecting duplicates is the explicit WARM policy for these
+singleton fields, consistent with the sender restriction in
+[RFC 9110 §5.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3).
+No-auth mode remains explicitly unauthenticated. This is scoped protocol hardening,
+not full HTTP/OAuth conformance or a new restart-safe idempotency guarantee.
+
+Validation and the final PR gate are recorded in `header-semantics-20261031/validation.json`.
+
+Local acceptance passes seven authentication tests, all 19 HTTP integration tests,
+and all 41 MCP tests; strict scoped Clippy, formatting and diff checks pass. The first
+parallel HTTP run had four empty responses and a burst-timing failure. Serial execution
+cleared the empty responses; the rate test now initializes its store and replenishes
+the warm-up token before measuring the burst, retaining every existing rate/quota
+assertion. All failed attempts remain in the evidence archive. No production timeout,
+rate limit, test assertion or validation gate was relaxed.
+
+
 ### Request-body error classification and cleanup
 
 Four regressions fail on `171c80d3`: buffered reads label transport failure as 413;
