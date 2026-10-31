@@ -1,0 +1,68 @@
+{
+  "base": "78f722cd09a02b6c63365c8c0450f4395d8378e0",
+  "readonly_patch": "69983590",
+  "metadata_baseline": "Oversized valid PAX metadata was accepted; new rejection regression failed before preflight",
+  "metadata_regression_base": "91a119ffc5b323f715bddd7a003fbca6cb820262",
+  "local": {
+    "initial_readonly_unit": 1,
+    "snapshot_copy": 1,
+    "readonly_server_units": 74,
+    "readonly_server_ops": 13,
+    "final_archive_units": 5,
+    "final_server_ops": 13,
+    "strict_clippy": "passed",
+    "format": "passed",
+    "diff_check": "passed",
+    "strict_clippy_including_tests": "passed",
+    "restore_diagnostics_final": {
+      "server_units": 78,
+      "server_api_serial": 19,
+      "server_ops_serial": 13,
+      "strict_clippy_including_tests": "passed",
+      "format": "passed",
+      "diff_check": "passed"
+    },
+    "size_boundaries_final": {
+      "server_ops_serial": 13,
+      "strict_clippy": "passed",
+      "format": "passed",
+      "diff_check": "passed"
+    }
+  },
+  "failed_attempts": [
+    "copy_store filter selected zero tests; corrected to snapshot_copy_preserves",
+    "Two metadata-test runs expected HTTP 400; corrected to existing ApiError::bad HTTP 422 contract; production error semantics unchanged",
+    "PR360 head 7d093b23 failed Clippy byte_char_slices in a new test; use a byte string and include --tests in local Clippy",
+    "Final local default-parallel server_api run: four 20-second response timeouts, 15 passed; server binary units all 78 passed. Rerun integration suites with --test-threads=1, matching CI, without deadline changes."
+  ],
+  "coverage": [
+    "65535/65536/65537-byte valid PAX records",
+    "Header-only oversized PAX/GNU longname/GNU longlink rejected before reading payload",
+    "PAX size overrides survive an intervening GNU longname",
+    "Malformed, duplicate and dangling metadata; integer overflow, truncation, sparse entries",
+    "Read-only staged files retain bytes and permissions; Windows test asserts previous write-open failure before exercising corrected flush"
+  ],
+  "limits": [
+    "No RSS or latency claim",
+    "No hardware power-loss guarantee; Windows directory sync remains unchanged",
+    "Full Windows gate failed; final follow-up CI remains required"
+  ],
+  "windows_first_gate": {
+    "head": "cdf80c39af115e9bce5b5faf60fc0248bdf78547",
+    "run": 41210447140,
+    "job": 124564174125,
+    "result": "169 service tests passed, one failed, zero skipped; all five archive regressions passed",
+    "failure": "snapshot_restore_and_off_box_backup_round_trip received no restore response within the unchanged 20-second harness read deadline",
+    "log_sha256": "f224ce310d499a6ee39009214b4234f39b20c0d6b1c9afacd4480c68582a283d"
+  },
+  "windows_diagnostics_gate": {
+    "head": "3e036396d55571514abcedf15a49dbecc5880771",
+    "run": 41214558876,
+    "job": 124576251339,
+    "baseline": "807 passed, 14 skipped",
+    "service": "169 passed, one failed, zero skipped",
+    "full_round_trip": "passed in 43.814 seconds; no controlled performance comparison",
+    "failure": "Size-limit case sent a 1073753088-byte body to a 4096-byte limit. Server logged 413 in 70.4042 ms; client read immediately failed with Windows error 10053 after sending the whole body. This was not the earlier 20-second response timeout.",
+    "log_sha256": "1d7d17b0e72530ef298b0cb0a8eaef36820f10920e6cabb88437e3f272a271bd"
+  }
+}

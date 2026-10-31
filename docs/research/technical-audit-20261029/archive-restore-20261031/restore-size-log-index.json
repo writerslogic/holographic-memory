@@ -1,0 +1,12 @@
+[
+  {
+    "file": "final-restore-size-boundaries.log",
+    "bytes": 1322,
+    "sha256": "a45c5174c484ca7d149c7bfcecf43c5291095855269f6774420a70baf3297e2d"
+  },
+  {
+    "file": "final-restore-size-clippy.log",
+    "bytes": 144,
+    "sha256": "b29e4a0ffcbd920096c94d559b63b449795ef7f9c529ce9970519ce4199c6ea0"
+  }
+]

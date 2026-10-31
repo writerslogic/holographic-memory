@@ -180,7 +180,7 @@ fn snapshot_restore_and_off_box_backup_round_trip() {
         .bearer("root")
         .tenant("t2")
         .header("Content-Type", "application/x-tar")
-        .body(archive.body.clone())
+        .body(archive.body)
         .send();
     assert_eq!(up.status, 200, "{}", up.text());
     assert_eq!(count_with(&b, "root", "t2"), 2);
@@ -244,11 +244,11 @@ fn restore_rejects_hostile_or_damaged_archives_and_leaves_the_store_alone() {
         .send()
         .body;
 
+    let size_limit = 4096;
+    let limit_prefix = good[..=size_limit].to_vec();
     let file = tar::EntryType::Regular;
-    let mut damaged = good.clone();
-    let mid = damaged.len() / 2;
-    damaged.truncate(mid);
-    let mut flipped = good.clone();
+    let damaged = good[..good.len() / 2].to_vec();
+    let mut flipped = good;
     for byte in flipped.iter_mut().skip(2048).step_by(997) {
         *byte ^= 0xFF;
     }
@@ -309,14 +309,28 @@ fn restore_rejects_hostile_or_damaged_archives_and_leaves_the_store_alone() {
         !s.data_dir.join("evil").exists() && !s.data_dir.parent().unwrap().join("evil").exists()
     );
 
-    // Size limit.
     let small = Server::with_key("root", &["--max-restore-bytes", "4096"]);
-    let r = small
-        .req("PUT", "/api/v1/restore")
-        .bearer("root")
-        .body(good)
-        .send();
-    assert_eq!(r.status, 413);
+    for (size, status) in [
+        (size_limit - 1, 422),
+        (size_limit, 422),
+        (size_limit + 1, 413),
+    ] {
+        let r = small
+            .req("PUT", "/api/v1/restore")
+            .bearer("root")
+            .body(limit_prefix[..size].to_vec())
+            .send();
+        assert_eq!(r.status, status, "{size} bytes: {}", r.text());
+        assert_eq!(r.header("content-type"), Some("application/problem+json"));
+        let leftovers: Vec<_> = std::fs::read_dir(small.data_dir.join("staging"))
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect();
+        assert!(
+            leftovers.is_empty(),
+            "{size} bytes left staging files: {leftovers:?}"
+        );
+    }
     // Snapshot ids never reach the filesystem unvalidated.
     for bad in ["..", "..%2F..%2Ftenants", "%2E%2E", ".hidden"] {
         let r = s

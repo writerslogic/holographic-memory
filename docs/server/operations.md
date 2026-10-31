@@ -50,13 +50,16 @@ Per-tenant series are bounded by `--max-tenants` (only open stores report).
 
 ## Logs
 
-One JSON object per line on stderr (`--log-format text` for key=value). Every request logs `method`, `route` template, `status`, `latency_ms`, `tenant`, `key_id`, `bytes_in` and `request_id`; `X-Request-Id` from the client is honored when it is 1 to 64 characters of `[A-Za-z0-9._-]`, otherwise a fresh id is generated, and the id appears in the response header and in error bodies. Request bodies, vectors, query text, metadata, document ids and credentials are never written. Lifecycle events (`listening`, `shutdown_started`, `shutdown_complete`, `tenant_evicted`, `snapshot_created`, `snapshot_restored`, `compaction_done`, `keys_reloaded`, `tls_reloaded`) and failures carry identifiers and counts only. A test checks that secrets and content sent through the API never appear in the log.
+One JSON object per line on stderr (`--log-format text` for key=value). Every request logs `method`, `route` template, `status`, `latency_ms`, `tenant`, `key_id`, `bytes_in` and `request_id`; `X-Request-Id` from the client is honored when it is 1 to 64 characters of `[A-Za-z0-9._-]`, otherwise a fresh id is generated, and the id appears in the response header and in error bodies. Request bodies, vectors, query text, metadata, document ids and credentials are never written. Lifecycle events (`listening`, `shutdown_started`, `shutdown_complete`, `tenant_evicted`, `snapshot_created`, `snapshot_restored`, `restore_stage`, `compaction_done`, `keys_reloaded`, `tls_reloaded`) and failures carry identifiers and counts only. A test checks that secrets and content sent through the API never appear in the log.
+
+Restore uploads emit `restore_stage` events for receive, upload sync (including byte count), unpack, store sync, verification, and installation. These contain tenant identifiers and stage names, never archive contents; the timestamps help locate a stalled restore.
 
 ## Backup and restore
 
 - `POST /api/v1/snapshots` flushes the tenant's store and copies it to `<data-dir>/snapshots/<tenant>/<id>/`. The tenant pauses (requests wait) while the copy runs; other tenants are unaffected. Expect roughly the store's size in extra disk per snapshot; an empty store is about 64 MiB because the engine preallocates its first arena segment.
 - `GET /api/v1/snapshots/{id}/archive` streams the snapshot as a tar. This is the off-box backup: store it anywhere.
 - `POST /api/v1/snapshots/{id}/restore` replaces the tenant's store with the snapshot; `PUT /api/v1/restore` does the same from an uploaded tar (to the same server or a different one). Both verify the candidate store (checksums, manifests and a full open that authenticates every frame) before touching the live one, refuse archives with links, device nodes or paths outside the store, and, if anything fails after the swap starts, put the previous store back. The replaced store is kept as snapshot `pre-restore-<time>`; delete it when you no longer need it.
+- Uploaded tar archives allow GNU long-name and local PAX metadata records up to 64 KiB each. Larger metadata is rejected before extraction; PAX size overrides are included in the expanded-byte limit. Staged read-only files retain their permissions when flushed, including on Windows.
 - Snapshots on the same disk protect against mistakes, not against disk loss. Copy the archive off the machine for that.
 
 ## Compaction
