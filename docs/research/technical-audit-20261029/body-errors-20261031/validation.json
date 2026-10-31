@@ -44,6 +44,11 @@
       "command": "cargo +1.99.0 fmt --all -- --check; git diff --check",
       "result": "pass",
       "log": "fmt-graph-final.log"
+    },
+    {
+      "command": "uvx --offline --from 'actionlint-py==1.7.12.25' actionlint .github/workflows/ci.yml",
+      "result": "pass",
+      "log": "actionlint.log"
     }
   ],
   "coverage": [
@@ -81,5 +86,10 @@
     "log": "graph-final.log",
     "deficiency": "Existing index_unavailable code lacked a registered problem title and documentation; its 409 behavior was already implemented.",
     "recovery": "The same actual router accepts an explicit exact query after the graph request returns 409."
+  },
+  "windows_coverage": {
+    "previous": "Windows nextest job used default features; Cargo.toml default=[] excludes the HTTP and MCP binaries.",
+    "added_command": "cargo nextest run --locked --features server,mcp --no-fail-fast --bin warm-server --bin warm-mcp --test server --test server_api --test server_ops --test server_abuse --test server_ann",
+    "status": "Pending Windows CI execution; local macOS tests do not verify Windows behavior."
   }
 }

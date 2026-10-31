@@ -429,3 +429,10 @@ check verifies the specific problem title and successful explicit exact-search f
 on the same empty store. Its baseline failed on the generic Conflict title; the 409
 routing behavior itself was already implemented. The targeted check and refreshed
 error-contract, Clippy and formatting gates pass.
+
+
+The existing Windows job ran default features only (`default = []`), excluding both
+HTTP and MCP runtime contracts. Its existing default-feature run is retained, followed
+by an explicit `server,mcp` nextest step scoped to both service binaries and the five
+server integration targets. Actionlint passes locally. Windows runtime acceptance is
+pending the new PR's exact-head CI, not inferred from local macOS results.
