@@ -36,5 +36,6 @@
   "ci_matrix": [
     "langchain-core 0.3.86 / Python 3.10",
     "langchain-core 1.7.0 / Python 3.14"
-  ]
+  ],
+  "baseline_patch_check": "git apply --check passed against clean main 78f722cd before PR360 integration"
 }

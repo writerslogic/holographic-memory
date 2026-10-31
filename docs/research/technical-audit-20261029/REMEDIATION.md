@@ -749,6 +749,16 @@ The revised size-boundary cases and all 13 operations tests pass locally, as do
 strict operations Clippy, scoped formatting and diff validation. Windows CI
 remains required for this revision.
 
+PR [#360](https://github.com/writerslogic/warm/pull/360) merged as `30cd5d46`
+after 69 successful and three skipped exact-head checks, with no pending/failed
+checks or unresolved reviews and no open code-scanning alerts. The tested head
+`abc82f4a` and merge share tree `813b1c50d74d7e7855bfe8767fc5792a96718709`.
+Windows passed 807 baseline tests (14 existing skips) and all 170 service tests
+(no skips), including full restore, hostile archives and size boundaries. Admin
+merge bypassed owner review only. The exact gate and Windows log are retained.
+An immediate post-merge dependency-alert read still reported 210 open records,
+including four pyasn1 entries; no alert-closure count is inferred from the merge.
+
 ### Python LangChain identity and filter contracts (2026-10-31)
 
 Fourteen real-server regressions fail on `78f722cd`: supplied IDs are ignored,

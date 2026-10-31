@@ -34,5 +34,6 @@
   "primary_references": [
     "https://developers.llamaindex.ai/python/framework-api-reference/storage/vector_store/",
     "https://developers.llamaindex.ai/python/framework-api-reference/indices/vector/"
-  ]
+  ],
+  "baseline_patch_check": "git apply --check passed against clean main 78f722cd before PR360 integration"
 }
