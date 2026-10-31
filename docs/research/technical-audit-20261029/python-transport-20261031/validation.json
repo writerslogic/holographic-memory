@@ -48,5 +48,26 @@
     "Minimum-version offline setup initially lacked tomli; public locked dependency fetch allowed tests to pass.",
     "Initial typing.WeakSet import failed and was corrected to weakref.WeakSet."
   ],
-  "integration_gate": "Pending PR CI."
+  "integration_gate": "Pending PR CI.",
+  "final_gate": {
+    "pr": 361,
+    "head": "87a0acc24c395e41332da0295c82019939dc8335",
+    "merged": "78f722cd09a02b6c63365c8c0450f4395d8378e0",
+    "tested_and_merged_tree": "230fc9c9e2c72bfda93987ca979fb15d626e62bb",
+    "checks": {
+      "success": 68,
+      "skipped": 4,
+      "failed": 0,
+      "pending": 0
+    },
+    "windows": {
+      "baseline_pass": 807,
+      "baseline_skipped": 14,
+      "service_pass": 165,
+      "service_skipped": 0
+    },
+    "code_scanning_open": 0,
+    "unresolved_review_threads": 0,
+    "admin_override": "Owner review only; required check passed"
+  }
 }

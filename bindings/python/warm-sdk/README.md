@@ -18,12 +18,16 @@ stores vectors you supply and exposes document and query endpoints. See the
 uv add warm-sdk
 ```
 
-Framework adapters are optional extras. Install one, or all of them:
+Framework adapters are optional extras. Install only the integration you need:
 
 ```bash
 uv add "warm-sdk[langchain]"
-uv add "warm-sdk[all]"
 ```
+
+The `all` extra remains available, but includes the legacy Embedchain dependency
+stack with unresolved security advisories. It is not a recommended installation
+default. Other extras also bring their own dependency trees; audit the environment
+you deploy. See the [dependency security notes](https://github.com/writerslogic/warm/blob/main/docs/SECURITY.md#optional-python-integration-dependencies).
 
 The earlier standalone `langchain-holographic` distribution is retired. For LangChain, install
 `warm-sdk[langchain]` and import `WarmVectorStore` from

@@ -1,0 +1,35 @@
+{
+  "base": "78f722cd09a02b6c63365c8c0450f4395d8378e0",
+  "readonly_patch": "69983590",
+  "metadata_baseline": "Oversized valid PAX metadata was accepted; new rejection regression failed before preflight",
+  "metadata_regression_base": "91a119ffc5b323f715bddd7a003fbca6cb820262",
+  "local": {
+    "initial_readonly_unit": 1,
+    "snapshot_copy": 1,
+    "readonly_server_units": 74,
+    "readonly_server_ops": 13,
+    "final_archive_units": 5,
+    "final_server_ops": 13,
+    "strict_clippy": "passed",
+    "format": "passed",
+    "diff_check": "passed",
+    "strict_clippy_including_tests": "passed"
+  },
+  "failed_attempts": [
+    "copy_store filter selected zero tests; corrected to snapshot_copy_preserves",
+    "Two metadata-test runs expected HTTP 400; corrected to existing ApiError::bad HTTP 422 contract; production error semantics unchanged",
+    "PR360 head 7d093b23 failed Clippy byte_char_slices in a new test; use a byte string and include --tests in local Clippy"
+  ],
+  "coverage": [
+    "65535/65536/65537-byte valid PAX records",
+    "Header-only oversized PAX/GNU longname/GNU longlink rejected before reading payload",
+    "PAX size overrides survive an intervening GNU longname",
+    "Malformed, duplicate and dangling metadata; integer overflow, truncation, sparse entries",
+    "Read-only staged files retain bytes and permissions; Windows test asserts previous write-open failure before exercising corrected flush"
+  ],
+  "limits": [
+    "No RSS or latency claim",
+    "Windows behavior awaits CI",
+    "No hardware power-loss guarantee; Windows directory sync remains unchanged"
+  ]
+}

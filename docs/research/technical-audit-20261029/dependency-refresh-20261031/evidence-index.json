@@ -1,0 +1,172 @@
+[
+  {
+    "file": "before-uv.lock",
+    "bytes": 2905549,
+    "sha256": "b07a4d2f54a2577e2dbe1078735b471f8e3221ef5965f0a0657c5266fa774197"
+  },
+  {
+    "file": "docs-install-after.log",
+    "bytes": 160,
+    "sha256": "b8c21b2af4c8bf48017d5d731e0250b99eaba7946adfa709ba0191df44b7f130"
+  },
+  {
+    "file": "docs-install-before.log",
+    "bytes": 260,
+    "sha256": "f7322920934467b9875617c8af8728db069061244ff33088c048ef21fdf2e851"
+  },
+  {
+    "file": "docs-tests-with-deps.log",
+    "bytes": 149,
+    "sha256": "81a4782ef67d3502ff51301f06a81eb2729bf0be28e8df036b1438be8627dbfb"
+  },
+  {
+    "file": "docs-tests.log",
+    "bytes": 2809,
+    "sha256": "b8bc073f533106d74b38c4ca48ef9a7906cfc85667f1f92f53387ffeb53c3d01"
+  },
+  {
+    "file": "filelock-4.2.5-metadata.json",
+    "bytes": 103,
+    "sha256": "b508be2f4dfa027971632f797ddef031489074b8d8444d43d6c49ecef1185009"
+  },
+  {
+    "file": "final-sdk-python310.log",
+    "bytes": 662,
+    "sha256": "0a5b76caf73005018218dcb252766b8cc79013cc18ab550a8486778c514baa4b"
+  },
+  {
+    "file": "final-sdk-python314.log",
+    "bytes": 661,
+    "sha256": "3d2459a26a541462913c832eee8f5166d9a9e9b693fe388023ac512998e43c03"
+  },
+  {
+    "file": "instructor-1.12.0-full-metadata.json",
+    "bytes": 13819,
+    "sha256": "47c394465f69739f40975db096aa690aee4e4a74b58bbd334f4ab8c5f520304b"
+  },
+  {
+    "file": "lock-check.log",
+    "bytes": 50,
+    "sha256": "7d013c496422efe3f200f58dc57efa52862d1ff5d247e8d2abae0d874e9d33de"
+  },
+  {
+    "file": "lock-upgrade.log",
+    "bytes": 411,
+    "sha256": "0365f4918c03b3a33a4524b6028a66730f84c045129b4b824318cd64df6aa30e"
+  },
+  {
+    "file": "main-uv.lock",
+    "bytes": 3015876,
+    "sha256": "4cd093da805d01a81085976334a96e567560c00f0f381bac2558b861ed43d684"
+  },
+  {
+    "file": "mcp-1.30.0-metadata.json",
+    "bytes": 974,
+    "sha256": "b28dd47d6f9aabf02aa04789831341696e00b2ff5e3722db4d66e16d1f3f417d"
+  },
+  {
+    "file": "minimatch-api-probe.json",
+    "bytes": 44,
+    "sha256": "95c72f0b3ec8e5ae4c419a88eb5d4d2d94e66e114e0d18c02c31becdbe855acb"
+  },
+  {
+    "file": "onnxruntime-1.22.0-metadata.json",
+    "bytes": 21989,
+    "sha256": "e77da2a58cddc1fb1a5e328f27e0b5df99cc6bec80644cdf4ff7fff5abd279c4"
+  },
+  {
+    "file": "onnxruntime-1.24.3-metadata.json",
+    "bytes": 27754,
+    "sha256": "03f00756ef70879bc0b528ac650dd401c2483faa00f0694d371987c2dfc7c7bf"
+  },
+  {
+    "file": "onnxruntime-1.31.1-metadata.json",
+    "bytes": 27879,
+    "sha256": "bcf5f6f57781e2d3e985d5ec4e6cc4a1ec6c0bba4da3a16081746cedc145388a"
+  },
+  {
+    "file": "openapi-core-0.19.5-metadata.json",
+    "bytes": 798,
+    "sha256": "518617e10ba54d4bc6da2892a12ef45714c4e7b1a88a780290c0d6b6a9313a74"
+  },
+  {
+    "file": "pillow-13.0.0-metadata.json",
+    "bytes": 1191,
+    "sha256": "9f5eef69717ce5d7e06c3a1f5b1d67c74de2f39dcb1381c4b6515e1d5228a9f8"
+  },
+  {
+    "file": "pre-commit-4.6.2-full-metadata.json",
+    "bytes": 3559,
+    "sha256": "b3753cbc4a8cdb5e4346dc97ca4586e91cc6b32a3154e7eac0ffa5b059525c93"
+  },
+  {
+    "file": "pydantic-ai-2.53.0-metadata.json",
+    "bytes": 2018,
+    "sha256": "baad220ebb236e9f4ea316cb241dd7b64ff88ac82d2c8f7fff93344049e4333f"
+  },
+  {
+    "file": "pydantic-ai-slim-2.53.0-metadata.json",
+    "bytes": 3431,
+    "sha256": "2dc39db5e566a54bb628df303653fec0d6d50e6365fb9cd857ae1f97af32752a"
+  },
+  {
+    "file": "sdk-python310.log",
+    "bytes": 789,
+    "sha256": "51c7cac755fe3b96c63a36b6a9c4fc60e4f9b1a11b908917e751f1e5d060626d"
+  },
+  {
+    "file": "sdk-python314.log",
+    "bytes": 661,
+    "sha256": "0f9ce91b459474819d751b5ee39623f2c7ca2bf9e3115d6f22ab930d6359d850"
+  },
+  {
+    "file": "trial-broad-upgrade.lock",
+    "bytes": 3225378,
+    "sha256": "88dfb6425a0866f36a3de251dd89ce5ae9dfb001a04e91b1a1fe37ad1c50eaa4"
+  },
+  {
+    "file": "trial-docs-package-lock.json",
+    "bytes": 10560,
+    "sha256": "0acc0ba2ea5c97fa72dbf9f749f23ffff0fc6b9f5def97a763f5987c59271d7f"
+  },
+  {
+    "file": "trial-docs-package.json",
+    "bytes": 389,
+    "sha256": "8f86923c61d3122aedb1342bd56fd4980de5f8e981d558c4a2092ff0010d55a4"
+  },
+  {
+    "file": "trial-virtualenv-patch.lock",
+    "bytes": 2993464,
+    "sha256": "7d0c1562392ddbd17d704eb51f36a8d3d0ae67da5a61c1794fdbb3049e26c1d3"
+  },
+  {
+    "file": "virtualenv-21.14.5-full-metadata.json",
+    "bytes": 79631,
+    "sha256": "44216d7ccc82349677fa84f0f688316f495fcd8ff6cf47d0d8614aa48b59498b"
+  },
+  {
+    "file": "virtualenv-21.14.9-full-metadata.json",
+    "bytes": 17315,
+    "sha256": "bd8f09944dd77414cd34142d8b6e1a3009ee84473f21c22f6f743426f7b2a5d1"
+  },
+  {
+    "file": "virtualenv-21.14.9-metadata.json",
+    "bytes": 386,
+    "sha256": "ff84866f7b67089ca09b4da269fa936a14610220e2b770d9dffec4e8726506c2"
+  },
+  {
+    "file": "virtualenv-patch-resolve.log",
+    "bytes": 294,
+    "sha256": "e6487232c85fbde37e54be21395e70925c3514e126b93c66cc737763f545e168"
+  },
+  {
+    "file": "virtualenv-resolve.log",
+    "bytes": 402,
+    "sha256": "dada5d604d583ddd0c1a40f6a14f6b767220adcef7027c3e267ff6c33de02940"
+  },
+  {
+    "file": "werkzeug-3.1.9-metadata.json",
+    "bytes": 171,
+    "sha256": "b45dc093c8b99bbec4c1857dbc379df5ad052ad6249147efd361e0dc8f0c0b0c"
+  }
+]

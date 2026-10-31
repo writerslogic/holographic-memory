@@ -959,28 +959,32 @@ pub fn copy_store(src: &Path, dst: &Path) -> Result<u64> {
             bytes += copy_store(&from, &to)?;
         } else if kind.is_file() {
             bytes += std::fs::copy(&from, &to)?;
-            #[cfg(windows)]
-            {
-                let permissions = std::fs::metadata(&to)?.permissions();
-                let read_only = permissions.readonly();
-                if read_only {
-                    let mut writable = permissions.clone();
-                    writable.set_readonly(false);
-                    std::fs::set_permissions(&to, writable)?;
-                }
-                // Restore attributes before propagating an open error or flushing the copy.
-                let file = std::fs::OpenOptions::new().write(true).open(&to);
-                if read_only {
-                    std::fs::set_permissions(&to, permissions)?;
-                }
-                file?.sync_all()?;
-            }
-            #[cfg(not(windows))]
-            std::fs::File::open(&to)?.sync_all()?;
+            sync_staged_file(&to)?;
         }
     }
     sync_dir(dst)?;
     Ok(bytes)
+}
+
+pub fn sync_staged_file(path: &Path) -> std::io::Result<()> {
+    #[cfg(windows)]
+    {
+        let permissions = std::fs::metadata(path)?.permissions();
+        let read_only = permissions.readonly();
+        if read_only {
+            let mut writable = permissions.clone();
+            writable.set_readonly(false);
+            std::fs::set_permissions(path, writable)?;
+        }
+        // Restore attributes before propagating an open error or flushing the copy.
+        let file = std::fs::OpenOptions::new().write(true).open(path);
+        if read_only {
+            std::fs::set_permissions(path, permissions)?;
+        }
+        file?.sync_all()
+    }
+    #[cfg(not(windows))]
+    std::fs::File::open(path)?.sync_all()
 }
 
 pub fn dir_size(path: &Path) -> u64 {

@@ -609,6 +609,104 @@ shutdown and idle boundaries. The final Windows log and check state are archived
 in `body-errors-20261031/`. This closes that PR’s integration gate; SDK/migration
 follow-up changes still require their own up-to-date CI gate.
 
+### Dependency graph refresh and constrained remediation (2026-10-31)
+
+The refreshed GitHub dependency graph has **210 open alert records / 201 distinct
+advisory IDs**: 208 SDK optional-graph records, one docs-generator minimatch
+record, and the previously documented JavaScript deepmerge record. Severity by
+record is 10 critical, 72 high, 99 medium, 29 low. This supersedes earlier alert
+counts, not earlier verified code-scanning results. The snapshot is
+`dependency-refresh-20261031/open-alerts.jsonl`; package presence is not proof
+that a vulnerable operation is reachable through WARM. Base SDK dependencies
+remain httpx/sniffio; consumer environments resolve their own dependencies.
+
+Dependabot PR #360 updates pyasn1 0.6.4 to 0.6.5, covering four decoder DoS
+advisories. Its uv lock rewrite also removes onnxruntime 1.24.3 from the Python
+3.10 fork, retaining 1.22.0 there and 1.31.1 on newer Python. PyPI metadata declares
+1.24.3 supports Python 3.10 but publishes no cp310 wheel; 1.22.0 publishes four.
+This incidental solver change is disclosed, not claimed as a measured importer
+runtime improvement. No other package/version pair changes in the accepted lock.
+`uv lock --check --offline` passes; focused base SDK tests pass on Python 3.10.19
+and 3.14.7 (39 passed, one optional-orjson skip, 46 subtests each). This does not
+validate every optional framework or demonstrate absence of dependency exploits.
+
+Rejected changes and remaining work:
+
+- Broad uv updates left vulnerable legacy forks and removed a newer cohere fork.
+  Forcing virtualenv >=21.14.9 introduced older instructor/LangChain variants;
+  forcing exactly 21.14.9 removed virtualenv through an instructor downgrade.
+  Neither trial is committed. Patched virtualenv requires packaging >=26.3;
+  the legacy graph retains packaging 25. Resolve parent constraints before
+  claiming that an alert disappearing from a lock represents a safe upgrade.
+- Embedchain 0.1.128 constrains mem0ai<0.2 and chromadb<0.6. Semantic Kernel's
+  openapi-core 0.19.5 constrains Werkzeug<3.1.2, below patched 3.1.9. Pillow 13
+  and filelock 4 require Python >=3.11. A support-policy question is pending;
+  no extra was retired and Python 3.10 support remains. Acceptance: supported
+  extra combinations resolve without vulnerable mandatory dependencies and
+  pass their real adapter contracts; otherwise document a deliberate policy
+  decision rather than silently downgrade or suppress alerts.
+- TypeDoc 0.28.20 requires minimatch ^10.2.5. Patched minimatch 11.0.1 removes
+  `matchOne`, called by TypeDoc glob traversal. A scoped override installs and
+  reports zero npm advisories but breaks that API: it was reverted. Inspected
+  TypeDoc calls do not enable the advisory's optimizationLevel>=2 condition.
+  Keep the alert open pending compatible upstream support; acceptance includes
+  both generated references and glob traversal, not an install-only audit.
+
+SDK installation guidance now recommends the needed extra rather than `all`,
+without removing compatibility. `docs/SECURITY.md` records the unresolved
+constraints. Resolver trials, metadata, API probe, and test logs are archived in
+`dependency-refresh-20261031/investigation.tar.gz` with a SHA-256 index. No paid
+services, model downloads, advisory suppressions, or unsupported safety claims.
+
+After integration with main `78f722cd`, the same focused dependency-validation
+commands pass 46 tests, one optional-orjson skip, and 46 subtests on each Python
+version, including the newly merged transport regressions. PR #361 itself merged
+only after 68 successful and four skipped checks, with no pending/failing checks
+or unresolved review threads. Its Windows gate passed 807 baseline tests (14
+existing skips) and 165 service tests (zero skips). Tested and merged trees match;
+`python-transport-20261031/validation.json` and its final-state/log evidence record
+the gate. Code-scanning open alerts were zero at that merge; dependency alerts
+remain tracked separately above.
+
+### Uploaded archive resource bounds and read-only durability (2026-10-31)
+
+`restore_upload` extracted tar metadata before checking entry limits. In tar
+0.4.46, the normal iterator buffers GNU long names/links and local PAX records
+with `read_all()` before yielding a regular entry. The default 8 GiB upload
+limit therefore did not provide a suitable metadata-allocation bound. A valid
+65,537-byte PAX-comment fixture reproduced acceptance beyond the proposed bound;
+the new rejection regression fails before the change. No OOM or RSS result is
+claimed, and this route requires the existing admin authorization.
+
+A seek-based raw-header preflight now limits each extension to 64 KiB before
+normal extraction. It reuses tar's header/checksum and PAX parsers, preserves
+PAX size overrides across GNU extension headers, and rejects unsupported sparse
+entries before their parser can allocate. Checked offsets, effective file sizes,
+existing aggregate byte/entry limits, duplicate/dangling metadata and truncation
+are validated before extraction. File payloads are skipped by seeking, not loaded
+into memory. This is an application resource limit, not a tar-standard limit.
+
+The Windows upload flush also opened read-only extracted files directly for
+writing. It now shares the snapshot-copy helper: clear only the unpublished
+file's read-only attribute when needed, acquire the write handle, restore
+attributes even if opening failed, then sync. Native copies and their alternate
+streams remain unchanged. The Windows test checks that the old write-open path
+returns PermissionDenied before exercising the corrected flush.
+
+Local acceptance: five archive tests, including limit-1/limit/limit+1 metadata,
+PAX/GNU interoperability and malformed/overflow cases; all 13 real-server
+operations tests; strict server/operations Clippy and formatting. The earlier
+read-only-only gate also passed 74 server unit tests and the snapshot-copy test.
+Two test runs used an incorrect HTTP-400 expectation; it was corrected to WARM's
+existing HTTP-422 invalid-request contract, with no production error downgrade.
+`archive-restore-20261031/` retains logs, hashes and a reproducible baseline patch.
+Windows CI remains required; filesystem power-loss durability is not established.
+
+The first full archive CI gate caught Clippy's `byte_char_slices` lint in a new
+test, which the earlier binary-only local Clippy target did not compile. The test
+now uses the equivalent byte string, and local strict Clippy includes `--tests`.
+CI failure logs and the expanded local check are retained; no lint was disabled.
+
 ### Python LangChain identity and filter contracts (2026-10-31)
 
 Fourteen real-server regressions fail on `78f722cd`: supplied IDs are ignored,
