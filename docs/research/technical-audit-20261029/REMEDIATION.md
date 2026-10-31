@@ -441,3 +441,19 @@ cleared the empty responses; the rate test now initializes its store and repleni
 the warm-up token before measuring the burst, retaining every existing rate/quota
 assertion. All failed attempts remain in the evidence archive. No production timeout,
 rate limit, test assertion or validation gate was relaxed.
+
+### Migration and upgrade file-flush ordering
+
+Source inspection found `admin::copy_tree` explicitly skipped Windows file flushes,
+and format upgrades copied retained/root-level files without flushing their contents
+before publication. A shared crate-private copy helper now flushes copied files and
+preserves permissions, retaining writable handles on Windows and native copies on
+Unix. Upgrade publication syncs staged directory entries where supported.
+
+Four admin tests and eight upgrade regressions pass locally, including read-only
+nested files, process-lock exclusion, mixed-version tenant arenas and read-only
+deployment metadata. Strict library/test Clippy and formatting pass. Evidence is
+in `migration-flush-20261031/`. These tests verify data and permissions, not hardware
+power-loss behavior; the missing flushes were established by source inspection, not
+by claiming a new test fails on the baseline. Windows execution and PR integration
+remain pending. Windows directory-sync limitations and throughput are unverified.
