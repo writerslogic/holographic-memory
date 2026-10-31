@@ -1268,3 +1268,41 @@ from app 15368; no unresolved review threads or open code-scanning alerts.
 Only the owner-review requirement was bypassed. The verified signed merge tree
 matches tested tree `baf3a67a2600e9a7ad4b4b25ac5ecee893adcc4b`, and local main
 was fast-forwarded. Evidence: [SDK final gate](maintained-integrations-20261031/final-gate.json).
+
+## Windows snapshot archive padding (2026-10-31; locally validated)
+
+PR #366's first exact-head CI passed 831 Windows core tests and 170 of 171
+HTTP/MCP tests. `snapshot_restore_and_off_box_backup_round_trip` failed at the
+test client's existing 20-second response deadline while uploading a
+1,073,753,088-byte archive for two documents. Restore logs show time spent syncing
+the upload and extracted files before installation. This is not a reproduced raw
+query regression: the snapshot path and the deadline were unchanged by that head.
+
+Root cause of the payload amplification: Windows deliberately allocates the full
+1 GiB active journal to preserve mmap lifetimes, and the exporter serialized its
+unused zero padding. Format 4 already permits an active file rounded to 64 MiB
+steps; changing live allocation or the on-disk format is unnecessary.
+
+The candidate exporter plans only the active segment's archive size and emits a
+regular tar entry through that aligned boundary, including the end marker. It
+does not scan sealed journal payloads to plan the export. Padding is omitted only
+when every byte beyond the retained boundary is zero; nonzero tails and older
+fixed-size formats keep their full lengths. Live files, stored snapshots and
+reported on-disk snapshot bytes are unchanged. Non-regular archive entries fail
+closed. No test timeout or correctness assertion is relaxed.
+
+The focused tests pass: allocation-boundary minus one/exact/plus one, nonzero-tail
+preservation, source length unchanged, a padded 128 MiB source exported with a
+64 MiB journal entry, successful tar validation/extraction and vector recovery,
+and link rejection. The existing HTTP round-trip now asserts its small fixture's
+archive remains below 65 MiB. Final local validation passed all 5 core admin
+tests, 6 focused server archive tests, all 13 serial operator tests (74.29 s),
+and strict all-feature/all-target Clippy. Sparse auxiliary files remain regular
+tar entries and retain their contents; this avoids emitting GNU sparse entries
+that the restore validator rejects. Scoped formatting and diff checks passed.
+A new exact-head remote CI gate remains pending. No Windows restore-latency
+gain is claimed yet.
+
+Evidence: [snapshot-padding-20261031/](snapshot-padding-20261031/) preserves the
+failed Windows job and the passing focused tests. This necessary gate remediation
+will be included in the native reliability PR, separate from integration security.

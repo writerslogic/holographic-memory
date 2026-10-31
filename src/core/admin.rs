@@ -6,9 +6,9 @@ use crc32fast::Hasher;
 use memmap2::Mmap;
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::storage::{
@@ -55,6 +55,59 @@ pub struct DocumentCheck {
 /// Inspect storage framing without opening or changing the WARM engine.
 pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<StoreInspection> {
     let store_path = path.as_ref();
+    let (manifest, arena_path, ids) = store_layout(store_path)?;
+    let segment_count = ids.len();
+    let mut frame_count = 0usize;
+    let mut logical_bytes = 0u64;
+    let mut allocated_bytes = 0u64;
+    for id in ids {
+        let segment_path = arena_path.join(format!("seg_{id}.bin"));
+        let mmap = map_segment(&segment_path, &manifest, id + 1 == segment_count)?;
+        allocated_bytes = allocated_bytes
+            .checked_add(mmap.len() as u64)
+            .context("arena allocated byte count overflow")?;
+        let (frames, bytes) = inspect_segment(&mmap, &segment_path, verify_checksums)?;
+        frame_count += frames;
+        logical_bytes += bytes as u64;
+    }
+    Ok(StoreInspection {
+        store_path: store_path.display().to_string(),
+        format_version: manifest.version,
+        segment_count,
+        frame_count,
+        logical_bytes,
+        allocated_bytes,
+        checksums_verified: verify_checksums,
+        manifests_verified: Vec::new(),
+        documents: None,
+    })
+}
+
+/// Archive size overrides for an immutable snapshot, keyed by source file path.
+/// Only zero padding beyond format 4's aligned active journal capacity is omitted.
+/// The source files are never changed; older formats keep their fixed segment sizes.
+pub fn snapshot_archive_sizes(path: impl AsRef<Path>) -> Result<BTreeMap<PathBuf, u64>> {
+    let (manifest, arena_path, ids) = store_layout(path.as_ref())?;
+    let mut sizes = BTreeMap::new();
+    if manifest.version >= 4 {
+        let id = ids
+            .last()
+            .context("store contains no active arena segment")?;
+        let path = arena_path.join(format!("seg_{id}.bin"));
+        let map = map_segment(&path, &manifest, true)?;
+        let (_, used) = inspect_segment(&map, &path, false)?;
+        let end = used
+            .checked_add(HEADER_SIZE)
+            .context("journal end overflow")?;
+        let size = end.max(SEGMENT_SIZE).div_ceil(SEGMENT_SIZE) * SEGMENT_SIZE;
+        if size < map.len() && map[size..].iter().all(|&byte| byte == 0) {
+            sizes.insert(path, size as u64);
+        }
+    }
+    Ok(sizes)
+}
+
+fn store_layout(store_path: &Path) -> Result<(FormatManifest, PathBuf, Vec<usize>)> {
     let arena_path = store_path.join(ARENA_DIRECTORY);
     let manifest_path = arena_path.join(FORMAT_MANIFEST);
     let manifest: FormatManifest = serde_json::from_slice(
@@ -93,49 +146,26 @@ pub fn inspect_store(path: impl AsRef<Path>, verify_checksums: bool) -> Result<S
         ids.iter().enumerate().all(|(expected, &id)| expected == id),
         "arena segments are not contiguous from 0: {ids:?}"
     );
-    let segment_count = ids.len();
-    let mut frame_count = 0usize;
-    let mut logical_bytes = 0u64;
-    let mut allocated_bytes = 0u64;
-    for id in ids {
-        let segment_path = arena_path.join(format!("seg_{id}.bin"));
-        let file = File::open(&segment_path)?;
-        let metadata = file.metadata()?;
-        let final_segment = id + 1 == segment_count;
-        let valid_size = if manifest.version >= 4 && final_segment {
-            (SEGMENT_SIZE as u64..=manifest.segment_size as u64).contains(&metadata.len())
-                && metadata.len() % SEGMENT_SIZE as u64 == 0
-        } else {
-            metadata.len() == manifest.segment_size as u64
-        };
-        if !valid_size {
-            bail!(
-                "segment {} has size {}, expected {}",
-                segment_path.display(),
-                metadata.len(),
-                manifest.segment_size
-            );
-        }
-        allocated_bytes = allocated_bytes
-            .checked_add(metadata.len())
-            .context("arena allocated byte count overflow")?;
-        let mmap = unsafe { Mmap::map(&file)? };
-        let (frames, bytes) = inspect_segment(&mmap, &segment_path, verify_checksums)?;
-        frame_count += frames;
-        logical_bytes += bytes as u64;
-    }
+    Ok((manifest, arena_path, ids))
+}
 
-    Ok(StoreInspection {
-        store_path: store_path.display().to_string(),
-        format_version: manifest.version,
-        segment_count,
-        frame_count,
-        logical_bytes,
-        allocated_bytes,
-        checksums_verified: verify_checksums,
-        manifests_verified: Vec::new(),
-        documents: None,
-    })
+fn map_segment(path: &Path, manifest: &FormatManifest, active: bool) -> Result<Mmap> {
+    let file = super::durable_file::open_regular(path, false)?;
+    let length = file.metadata()?.len();
+    let valid_size = if manifest.version >= 4 && active {
+        (SEGMENT_SIZE as u64..=manifest.segment_size as u64).contains(&length)
+            && length % SEGMENT_SIZE as u64 == 0
+    } else {
+        length == manifest.segment_size as u64
+    };
+    ensure!(
+        valid_size,
+        "segment {} has size {}, expected {}",
+        path.display(),
+        length,
+        manifest.segment_size
+    );
+    Ok(unsafe { Mmap::map(&file)? })
 }
 
 /// `inspect_store(path, true)` plus the manifest checksums and a document cross-check: the
@@ -494,6 +524,57 @@ mod tests {
     use crate::core::documents::DocumentInput;
     use crate::core::entangled::EntangledHVec;
     use crate::core::WarmCore;
+
+    #[test]
+    fn archive_sizes_preserve_end_markers_at_allocation_boundaries() -> Result<()> {
+        use std::io::{Seek, SeekFrom, Write};
+
+        for delta in [-1isize, 0, 1] {
+            let root = tempfile::tempdir()?;
+            drop(WarmCore::new(
+                256,
+                Some(root.path().display().to_string()),
+                None,
+            )?);
+            let path = root.path().join(ARENA_DIRECTORY).join("seg_0.bin");
+            let capacity = 2 * SEGMENT_SIZE;
+            let used = (SEGMENT_SIZE - HEADER_SIZE)
+                .checked_add_signed(delta)
+                .unwrap();
+            let mut file = std::fs::OpenOptions::new().write(true).open(&path)?;
+            file.set_len(capacity as u64)?;
+            let first = SEGMENT_SIZE / 2;
+            for (length, version) in [(first, 1u32), (used - first - 2 * HEADER_SIZE, 2)] {
+                let mut crc = Hasher::new();
+                let zeroes = [0; 8192];
+                let mut left = length;
+                while left > 0 {
+                    let count = left.min(zeroes.len());
+                    crc.update(&zeroes[..count]);
+                    left -= count;
+                }
+                for word in [crc.finalize(), length as u32, length as u32, version] {
+                    file.write_all(&word.to_le_bytes())?;
+                }
+                file.seek(SeekFrom::Current(length as i64))?;
+            }
+            for word in [0u32, 0, 0, super::super::storage::END_MARK] {
+                file.write_all(&word.to_le_bytes())?;
+            }
+            file.sync_all()?;
+            assert_eq!(inspect_store(root.path(), true)?.frame_count, 2);
+            let sizes = snapshot_archive_sizes(root.path())?;
+            let actual = sizes.get(&path).copied().unwrap_or(capacity as u64);
+            let expected = if delta <= 0 { SEGMENT_SIZE } else { capacity };
+            assert_eq!(actual, expected as u64, "end marker boundary {delta}");
+            assert_eq!(file.metadata()?.len(), capacity as u64);
+            file.seek(SeekFrom::End(-1))?;
+            file.write_all(&[0x7f])?;
+            file.sync_all()?;
+            assert!(snapshot_archive_sizes(root.path())?.is_empty());
+        }
+        Ok(())
+    }
 
     /// `verify` cross-checks the opened store against the log: a healthy store reports every
     /// live document present, and a logged document the store cannot resolve is named.

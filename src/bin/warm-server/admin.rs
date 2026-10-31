@@ -4,7 +4,8 @@
 //! Operator endpoints: snapshots and restore, compaction, key reload, tenant listing.
 //! All need the `admin` scope; the key and tenant-listing endpoints also need an all-tenant key.
 
-use std::io::{Seek, SeekFrom, Write};
+use std::collections::BTreeMap;
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -73,6 +74,49 @@ impl Write for ChannelWriter {
     }
 }
 
+fn append_snapshot<W: Write>(
+    builder: &mut tar::Builder<W>,
+    root: &Path,
+    path: &Path,
+    sizes: &BTreeMap<PathBuf, u64>,
+) -> std::io::Result<()> {
+    let mut pending = vec![path.to_path_buf()];
+    while let Some(path) = pending.pop() {
+        let relative = path.strip_prefix(root).map_err(std::io::Error::other)?;
+        let name = if relative.as_os_str().is_empty() {
+            Path::new(".")
+        } else {
+            relative
+        };
+        let metadata = std::fs::symlink_metadata(&path)?;
+        if metadata.is_dir() {
+            builder.append_dir(name, &path)?;
+            for entry in std::fs::read_dir(&path)? {
+                pending.push(entry?.path());
+            }
+        } else if metadata.is_file() {
+            let size = sizes.get(&path).copied().unwrap_or(metadata.len());
+            let file = std::fs::File::open(&path)?;
+            if file.metadata()?.len() < size {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::UnexpectedEof,
+                    "snapshot file shrank",
+                ));
+            }
+            let mut header = tar::Header::new_gnu();
+            header.set_metadata_in_mode(&metadata, tar::HeaderMode::Deterministic);
+            header.set_size(size);
+            builder.append_data(&mut header, name, file.take(size))?;
+        } else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "snapshot contains a non-regular entry",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// `GET /api/v1/snapshots/{id}/archive`: the snapshot as an uncompressed tar stream, the
 /// off-box backup format accepted by `PUT /api/v1/restore`.
 pub async fn download_snapshot(
@@ -87,13 +131,15 @@ pub async fn download_snapshot(
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
         let result = (|| -> std::io::Result<()> {
+            let sizes = writerslogic_warm::core::admin::snapshot_archive_sizes(&dir)
+                .map_err(std::io::Error::other)?;
             let mut builder = tar::Builder::new(std::io::BufWriter::with_capacity(
                 256 * 1024,
                 ChannelWriter(tx.clone()),
             ));
             builder.mode(tar::HeaderMode::Deterministic);
             builder.follow_symlinks(false);
-            builder.append_dir_all(".", &dir)?;
+            append_snapshot(&mut builder, &dir, &dir, &sizes)?;
             builder.into_inner()?.flush()
         })();
         if let Err(error) = result {
@@ -510,6 +556,79 @@ pub async fn list_tenants(State(state): State<Arc<AppState>>, req: Request) -> A
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn snapshot_archive_omits_only_unused_capacity_and_restores_vectors() -> anyhow::Result<()> {
+        use writerslogic_warm::{EntangledHVec, WarmCore};
+
+        let root = tempfile::tempdir()?;
+        let source = root.path().join("snapshot");
+        let vector = EntangledHVec::new_deterministic(256, 7);
+        {
+            let core = WarmCore::new(256, Some(source.display().to_string()), None)?;
+            core.memorize("kept".into(), vector.clone())?;
+            core.flush()?;
+        }
+        std::fs::remove_file(source.join(".hms.lock"))?;
+        let segment = source.join("vectors_data.bin/seg_0.bin");
+        let file = std::fs::OpenOptions::new().write(true).open(&segment)?;
+        file.set_len(128 * 1024 * 1024)?;
+        file.sync_all()?;
+        drop(file);
+        let mut auxiliary = std::fs::File::create(source.join("sparse-auxiliary.bin"))?;
+        auxiliary.set_len(512 * 1024)?;
+        auxiliary.seek(SeekFrom::End(-1))?;
+        auxiliary.write_all(&[0x7f])?;
+        auxiliary.sync_all()?;
+        drop(auxiliary);
+        let sizes = writerslogic_warm::core::admin::snapshot_archive_sizes(&source)?;
+        assert_eq!(sizes.get(&segment), Some(&(64 * 1024 * 1024)));
+        let archive = root.path().join("snapshot.tar");
+        {
+            let mut builder = tar::Builder::new(std::fs::File::create(&archive)?);
+            builder.mode(tar::HeaderMode::Deterministic);
+            builder.follow_symlinks(false);
+            append_snapshot(&mut builder, &source, &source, &sizes)?;
+            builder.finish()?;
+        }
+        assert!(std::fs::metadata(&archive)?.len() < 65 * 1024 * 1024);
+        assert_eq!(std::fs::metadata(&segment)?.len(), 128 * 1024 * 1024);
+        for entry in tar::Archive::new(std::fs::File::open(&archive)?).entries()? {
+            let kind = entry?.header().entry_type();
+            assert!(kind.is_file() || kind.is_dir());
+        }
+        let restored = root.path().join("restored");
+        unpack_archive(std::fs::File::open(archive)?, &restored, 256 * 1024 * 1024).unwrap();
+        let auxiliary = std::fs::read(restored.join("sparse-auxiliary.bin"))?;
+        assert_eq!(auxiliary.len(), 512 * 1024);
+        assert_eq!(auxiliary.last(), Some(&0x7f));
+        assert_eq!(
+            std::fs::metadata(restored.join("vectors_data.bin/seg_0.bin"))?.len(),
+            64 * 1024 * 1024
+        );
+        assert_eq!(
+            writerslogic_warm::core::admin::inspect_store(&restored, true)?.frame_count,
+            1
+        );
+        let core = WarmCore::new(256, Some(restored.display().to_string()), None)?;
+        assert_eq!(core.query(&vector, 1)?[0].id, "kept");
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn snapshot_archive_rejects_links() -> std::io::Result<()> {
+        let root = tempfile::tempdir()?;
+        let file = root.path().join("data");
+        let link = root.path().join("link");
+        std::fs::write(&file, b"private")?;
+        std::os::unix::fs::symlink(file, &link)?;
+        let mut builder = tar::Builder::new(Vec::new());
+        let error =
+            append_snapshot(&mut builder, root.path(), &link, &BTreeMap::new()).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+        Ok(())
+    }
 
     fn archive_with_pax_comment(path: &Path, size: usize) {
         let mut builder = tar::Builder::new(std::fs::File::create(path).unwrap());
