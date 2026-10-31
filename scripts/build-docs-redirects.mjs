@@ -13,10 +13,11 @@ export function destination(pathname) {
 }
 
 const escapeAttribute = (value) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+const scriptJson = (value) => JSON.stringify(value).replaceAll("<", "\\u003c");
 
 export function redirectHtml(pathname, fallback = false) {
   const target = fallback ? `${DESTINATION}/latest/` : destination(pathname);
-  const script = `(()=>{let p=location.pathname;const v=${JSON.stringify(LEGACY_VERSIONS)}.find(v=>p==="/"+v||p.startsWith("/"+v+"/"));if(v)p="/latest"+(p.slice(v.length+1)||"/");location.replace(${JSON.stringify(DESTINATION)}+p+location.search+location.hash)})()`;
+  const script = `(()=>{let p=location.pathname;const v=${scriptJson(LEGACY_VERSIONS)}.find(v=>p==="/"+v||p.startsWith("/"+v+"/"));if(v)p="/latest"+(p.slice(v.length+1)||"/");location.replace(${scriptJson(DESTINATION)}+p+location.search+location.hash)})()`;
   return `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,follow"><title>Documentation moved — WARM</title><link rel="canonical" href="${escapeAttribute(target)}">${fallback ? "" : `<meta http-equiv="refresh" content="0;url=${escapeAttribute(target)}">`}<script>${script}</script></head><body><main><h1>Documentation moved to WARM</h1><p>WARM is WritersLogic Adaptive Retention &amp; Memory.</p><p><a href="${escapeAttribute(target)}">Continue to the WARM documentation</a>.</p><p>Retired version links open current documentation under <code>latest</code>; historical source remains available in the repository's version tags.</p></main></body></html>\n`;
 }
 
