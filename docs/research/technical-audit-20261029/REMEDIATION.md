@@ -555,3 +555,52 @@ attributes are restored before propagating open errors or flushing. The Windows
 regression now verifies an alternate stream as well as ordinary bytes and
 permissions. The portable test, Clippy and formatting pass locally; Windows
 acceptance of this final metadata-preserving variant remains pending.
+
+### Dependency graph refresh and constrained remediation (2026-10-31)
+
+The refreshed GitHub dependency graph has **210 open alert records / 201 distinct
+advisory IDs**: 208 SDK optional-graph records, one docs-generator minimatch
+record, and the previously documented JavaScript deepmerge record. Severity by
+record is 10 critical, 72 high, 99 medium, 29 low. This supersedes earlier alert
+counts, not earlier verified code-scanning results. The snapshot is
+`dependency-refresh-20261031/open-alerts.jsonl`; package presence is not proof
+that a vulnerable operation is reachable through WARM. Base SDK dependencies
+remain httpx/sniffio; consumer environments resolve their own dependencies.
+
+Dependabot PR #360 updates pyasn1 0.6.4 to 0.6.5, covering four decoder DoS
+advisories. Its uv lock rewrite also removes onnxruntime 1.24.3 from the Python
+3.10 fork, retaining 1.22.0 there and 1.31.1 on newer Python. PyPI metadata declares
+1.24.3 supports Python 3.10 but publishes no cp310 wheel; 1.22.0 publishes four.
+This incidental solver change is disclosed, not claimed as a measured importer
+runtime improvement. No other package/version pair changes in the accepted lock.
+`uv lock --check --offline` passes; focused base SDK tests pass on Python 3.10.19
+and 3.14.7 (39 passed, one optional-orjson skip, 46 subtests each). This does not
+validate every optional framework or demonstrate absence of dependency exploits.
+
+Rejected changes and remaining work:
+
+- Broad uv updates left vulnerable legacy forks and removed a newer cohere fork.
+  Forcing virtualenv >=21.14.9 introduced older instructor/LangChain variants;
+  forcing exactly 21.14.9 removed virtualenv through an instructor downgrade.
+  Neither trial is committed. Patched virtualenv requires packaging >=26.3;
+  the legacy graph retains packaging 25. Resolve parent constraints before
+  claiming that an alert disappearing from a lock represents a safe upgrade.
+- Embedchain 0.1.128 constrains mem0ai<0.2 and chromadb<0.6. Semantic Kernel's
+  openapi-core 0.19.5 constrains Werkzeug<3.1.2, below patched 3.1.9. Pillow 13
+  and filelock 4 require Python >=3.11. A support-policy question is pending;
+  no extra was retired and Python 3.10 support remains. Acceptance: supported
+  extra combinations resolve without vulnerable mandatory dependencies and
+  pass their real adapter contracts; otherwise document a deliberate policy
+  decision rather than silently downgrade or suppress alerts.
+- TypeDoc 0.28.20 requires minimatch ^10.2.5. Patched minimatch 11.0.1 removes
+  `matchOne`, called by TypeDoc glob traversal. A scoped override installs and
+  reports zero npm advisories but breaks that API: it was reverted. Inspected
+  TypeDoc calls do not enable the advisory's optimizationLevel>=2 condition.
+  Keep the alert open pending compatible upstream support; acceptance includes
+  both generated references and glob traversal, not an install-only audit.
+
+SDK installation guidance now recommends the needed extra rather than `all`,
+without removing compatibility. `docs/SECURITY.md` records the unresolved
+constraints. Resolver trials, metadata, API probe, and test logs are archived in
+`dependency-refresh-20261031/investigation.tar.gz` with a SHA-256 index. No paid
+services, model downloads, advisory suppressions, or unsupported safety claims.

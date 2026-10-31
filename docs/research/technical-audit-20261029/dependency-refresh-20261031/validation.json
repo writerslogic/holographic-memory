@@ -1,0 +1,19 @@
+{
+  "base": "f78b2175a41d8558943755949642c6b19de33d6d",
+  "dependabot_head": "384fd039fe12b38b440f0f1550ff98b5005b7be1",
+  "lock_check": "passed offline",
+  "sdk_tests": {
+    "python3.10": "39 passed, 1 skipped, 46 subtests",
+    "python3.14": "39 passed, 1 skipped, 46 subtests"
+  },
+  "docs_tests": {
+    "without_dependencies": "failed: missing yaml",
+    "with_docs_requirements": "19 passed"
+  },
+  "limits": [
+    "Optional adapter installs not validated",
+    "No reachability/exploit proof from alert presence",
+    "No extras retired; Python minimum remains 3.10",
+    "Rejected resolver and minimatch override trials are archived, not committed"
+  ]
+}

@@ -94,7 +94,26 @@ made for consumers' independently installed LlamaIndex dependencies. Keep the
 alert open pending the upstream dependency change. The workspace's `tsup` 9
 upgrade removes the vulnerable esbuild development-server dependency.
 
-### Legacy Embedchain optional dependency
+### Optional Python integration dependencies
+
+The October 31, 2026 dependency-graph refresh reported 208 alert records for the
+SDK lockfile. These span optional frameworks and importer/test dependencies;
+they are not 208 demonstrated vulnerabilities in the base HTTP client, whose
+runtime dependencies are `httpx` and `sniffio`. Nor does that distinction establish
+that an installed framework is safe. Audit the resolved deployment environment,
+install only needed extras, and avoid `all` as a default. The repository lockfile
+does not constrain dependencies in a consumer's independent PyPI installation.
+
+The pyasn1 lock update to 0.6.5 addresses four decoder denial-of-service advisories.
+Remaining constraints include Embedchain's legacy stack, Semantic Kernel's
+openapi-core dependency requiring Werkzeug below 3.1.2 (below patched 3.1.9),
+and Python 3.10 support preventing Pillow 13 and filelock 4, which require 3.11.
+Compatible upgrades, upstream changes, and supported-integration policy must be
+evaluated separately; blanket version overrides can break the adapters. The
+[remediation record](research/technical-audit-20261029/REMEDIATION.md) preserves
+the alert snapshot and rejected resolver trials. No alerts are suppressed.
+
+#### Legacy Embedchain optional dependency
 
 The `embedchain` and `all` Python extras still resolve Embedchain 0.1.128,
 which requires `mem0ai<0.2` and `chromadb<0.6`. Their existing mem0ai 0.1.116
@@ -106,6 +125,17 @@ Databricks queries. The independent `import-mem0` extra and importer test
 group now resolve mem0ai 2.2.1. Removing the legacy constraint requires an
 upstream Embedchain update or retirement of that optional adapter; this
 cleanup does not claim the legacy dependency stack is vulnerability-free.
+
+### Documentation generator dependency
+
+TypeDoc 0.28.20 depends on minimatch 10, affected by
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+The advisory concerns attacker-controlled patterns at `optimizationLevel >= 2`;
+the inspected TypeDoc calls use default optimization. This is build tooling,
+not the WARM service. Minimatch 11.0.1 is patched but removes `matchOne`, which
+TypeDoc's glob traversal calls. A forced major override was rejected as
+incompatible. Keep the alert open and upgrade when TypeDoc supports the patched
+API; verify generated reference pages and glob traversal, not just installation.
 
 ## Audit Trail
 
