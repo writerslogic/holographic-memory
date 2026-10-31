@@ -33,7 +33,7 @@ runtimes:
   - id: rust
     name: Rust
     status: available
-    install: cargo add warm-rust --git https://github.com/writerslogic/warm --features security
+    install: cargo add warm-rust --features security
     requires: [Cargo.toml, examples/quickstart/rust/src/main.rs]
     snippets:
       - examples/quickstart/rust/src/main.rs:ingest
@@ -42,7 +42,7 @@ runtimes:
   - id: python
     name: Python
     status: available
-    install: uv pip install "git+https://github.com/writerslogic/warm#subdirectory=bindings/python/warm-sdk"
+    install: uv pip install warm-sdk
     requires: [bindings/python/warm-sdk/pyproject.toml, examples/quickstart/python/quickstart.py]
     snippets:
       - examples/quickstart/python/quickstart.py:ingest
@@ -51,11 +51,7 @@ runtimes:
   - id: node
     name: Node
     status: available
-    install: |-
-      git clone https://github.com/writerslogic/warm
-      cd warm
-      npm ci --omit=optional
-      npm run build
+    install: npm install writerslogic-warm
     requires: [index.d.ts, examples/quickstart/node/quickstart.mjs]
     snippets:
       - examples/quickstart/node/quickstart.mjs:ingest

@@ -150,7 +150,7 @@ Run the offline agent-memory demo with `cargo run --release --example demo-offli
 From your own Rust project, add the current Apache-2.0 source:
 
 ```sh
-cargo add warm-rust --git https://github.com/writerslogic/warm
+cargo add warm-rust
 ```
 
 The published crate 0.6.1 remains AGPL-3.0-or-later.
@@ -177,15 +177,14 @@ println!("{} {:?}", hits[0].document_id, hits[0].source_uri);
 <details>
 <summary><strong>Node.js</strong></summary>
 
-The renamed npm package is not published yet. Build the native module from this source checkout (Rust required):
+Install the Node.js package and its platform-specific native binary:
 
 ```sh
-npm ci --omit=optional && npm run build
+npm install writerslogic-warm
 ```
 
-The organizational-knowledge examples target this source checkout and require
-the rebuild above. The npm 0.6.4 release does not expose the new `listDocuments`
-method used for scoped pruning. See the
+To build from source, run `npm ci --omit=optional && npm run build` with Rust installed.
+The WARM release includes `listDocuments` for scoped pruning. See the
 [integration guide](docs/integrations/organizational-knowledge.md) for source
 provenance, namespace isolation, dry runs and deletion limits.
 
@@ -218,7 +217,7 @@ supply. (`warm-python` provides native vector search and phase vectors, but no d
 ```sh
 cargo build --release --features server --bin warm-server
 WARM_API_KEY=change-me target/release/warm-server --input-dim 384 &
-uv pip install "git+https://github.com/writerslogic/warm#subdirectory=bindings/python/warm-sdk"
+uv pip install warm-sdk
 ```
 
 ```python
