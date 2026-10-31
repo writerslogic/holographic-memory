@@ -44,8 +44,7 @@
   ],
   "limits": [
     "No RSS or latency claim",
-    "No hardware power-loss guarantee; Windows directory sync remains unchanged",
-    "Full Windows gate failed; final follow-up CI remains required"
+    "No hardware power-loss guarantee; Windows directory sync remains unchanged"
   ],
   "windows_first_gate": {
     "head": "cdf80c39af115e9bce5b5faf60fc0248bdf78547",
@@ -64,5 +63,31 @@
     "full_round_trip": "passed in 43.814 seconds; no controlled performance comparison",
     "failure": "Size-limit case sent a 1073753088-byte body to a 4096-byte limit. Server logged 413 in 70.4042 ms; client read immediately failed with Windows error 10053 after sending the whole body. This was not the earlier 20-second response timeout.",
     "log_sha256": "1d7d17b0e72530ef298b0cb0a8eaef36820f10920e6cabb88437e3f272a271bd"
+  },
+  "final_gate": {
+    "pr": 360,
+    "head": "abc82f4ada7c4195a39a99d90e425ecb5ae4119b",
+    "merge": "30cd5d46f3758c9f62ae0d49708deb606a5a5aa7",
+    "tested_and_merged_tree": "813b1c50d74d7e7855bfe8767fc5792a96718709",
+    "checks": {
+      "success": 69,
+      "skipped": 3,
+      "pending": 0,
+      "failed": 0
+    },
+    "windows_run": 41217433101,
+    "windows_job": 124584809166,
+    "windows_baseline": {
+      "passed": 807,
+      "skipped": 14
+    },
+    "windows_service": {
+      "passed": 170,
+      "skipped": 0
+    },
+    "windows_log_sha256": "92afa057ec90626faeb7702f17bab5baa8ed208b0303307c97d62d0bea86906e",
+    "unresolved_reviews": 0,
+    "open_code_scanning_alerts": 0,
+    "admin_override": "owner review only, after all exact-head checks completed successfully"
   }
 }

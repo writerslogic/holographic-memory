@@ -1,0 +1,41 @@
+{
+  "base": "78f722cd09a02b6c63365c8c0450f4395d8378e0",
+  "baseline": {
+    "framework": "langchain-core 1.7.3",
+    "python": "3.10.19",
+    "failed": 14
+  },
+  "accepted": {
+    "langchain-core1.7.3_python3.10": "14 initial regressions passed",
+    "langchain-core0.3.86_python3.10": "17 final contract tests passed",
+    "langchain-core1.7.3_python3.14": "77 full SDK tests and 46 subtests passed; 13 upstream asyncio deprecation warnings",
+    "langchain-core1.7.0_python3.14": "17 final contract tests passed; 13 upstream asyncio deprecation warnings"
+  },
+  "rejected_minimum": {
+    "version": "0.2.11",
+    "result": "13 passed, one failed; inherited add_documents drops Document.id"
+  },
+  "minimum": "0.3.86, matching the existing locked legacy branch",
+  "server": {
+    "source": "80bf197a (archive restore changes do not alter these document routes)",
+    "sha256": "efa5d69642e37813a35e02143afa2b4cf1bc07d9d70fc2c7651dc5a5ad3bf7a6"
+  },
+  "lock": "uv 0.13.6 offline check passes; relative to dependency PR360, only two langchain-core requirement lower bounds change; revision 5 and all package/version pairs retained",
+  "workflow_checks": [
+    "actionlint-py 1.7.12.25",
+    "zizmor 1.31.1, medium severity threshold"
+  ],
+  "build": "wheel and sdist built locally, not published",
+  "limits": [
+    "No paid API/cloud/model calls; deterministic local embeddings",
+    "Legacy dependency security remains unresolved",
+    "Similarity retrieval only; scored/MMR/deletion adapter interfaces remain unsupported",
+    "Full PR CI gate pending",
+    "Zizmor used its default offline mode and existing repository suppressions; no new suppressions"
+  ],
+  "ci_matrix": [
+    "langchain-core 0.3.86 / Python 3.10",
+    "langchain-core 1.7.0 / Python 3.14"
+  ],
+  "baseline_patch_check": "git apply --check passed against clean main 78f722cd before PR360 integration"
+}

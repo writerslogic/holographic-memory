@@ -1,0 +1,17 @@
+[
+  {
+    "file": "current-resolver-lock-update.log",
+    "bytes": 830,
+    "sha256": "4a64427812682ab4b70e393efe1c8e2397bed3b0f13ddce85da50b25270ac32b"
+  },
+  {
+    "file": "current-resolver-lock-update-online.log",
+    "bytes": 52,
+    "sha256": "ba858fcecfc4565345222e1040de45af6dd1b34b6277712bf0a716188638eab9"
+  },
+  {
+    "file": "final-lock-check.log",
+    "bytes": 51,
+    "sha256": "dc94eca9d15b9f2ac4fd046a65c6ce85f97f6665bf6d21c44d03084a8bcac1f2"
+  }
+]
