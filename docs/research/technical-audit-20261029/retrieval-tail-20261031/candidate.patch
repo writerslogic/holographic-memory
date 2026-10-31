@@ -1,0 +1,353 @@
+diff --git a/src/core/documents/dense.rs b/src/core/documents/dense.rs
+index 0eda7907..1de26a93 100644
+--- a/src/core/documents/dense.rs
++++ b/src/core/documents/dense.rs
+@@ -25,6 +25,12 @@ const MAX_BOUND_BYTES: usize = 64 * 1024 * 1024;
+ const MAX_AUXILIARY_BYTES: usize = 80 * 1024 * 1024;
+ const LEAF_ROWS: usize = 64;
+ 
++#[derive(Clone, Copy)]
++pub(super) struct DenseChange {
++    pub(super) chunks: usize,
++    pub(super) previous_owner: Option<usize>,
++}
++
+ pub(crate) struct DenseIndexSnapshot {
+     generation: u64,
+     dimensions: usize,
+diff --git a/src/core/documents/dense_tests.rs b/src/core/documents/dense_tests.rs
+index 332718a4..96f31faa 100644
+--- a/src/core/documents/dense_tests.rs
++++ b/src/core/documents/dense_tests.rs
+@@ -565,7 +565,14 @@ fn delta_document_and_chunk_limits_drop_acceleration_without_losing_results() {
+         let replacement = document(7, &vec![vec![1.0, 0.0]; count]);
+         store.insert(replacement.id.clone(), replacement);
+         assert_eq!(store.dense_index.is_some(), count <= MAX_DELTA_CHUNKS);
+-        assert!(store.dense_changes.values().sum::<usize>() <= MAX_DELTA_CHUNKS);
++        assert!(
++            store
++                .dense_changes
++                .values()
++                .map(|change| change.chunks)
++                .sum::<usize>()
++                <= MAX_DELTA_CHUNKS
++        );
+         let options = documents::SearchOptions {
+             embedding: Some(vec![1.0, 0.0]),
+             k: Some(3),
+@@ -582,6 +589,68 @@ fn delta_document_and_chunk_limits_drop_acceleration_without_losing_results() {
+     }
+ }
+ 
++#[test]
++fn repeated_owner_replacement_and_recreation_match_exhaustive_snapshots() {
++    let mut store = store(256, 2);
++    let trained = train(&store, 2);
++    assert!(publish_dense_index(&mut store, &trained));
++    let options = documents::SearchOptions {
++        embedding: Some(vec![1.0, 0.0]),
++        min_semantic_score: Some(-1.0),
++        k: Some(8),
++        candidate_limit: Some(16),
++        ..Default::default()
++    };
++    let mut snapshots = Vec::new();
++    for (step, chunks) in [2, 3, 0, 1, 2].into_iter().enumerate() {
++        if chunks == 0 {
++            store.remove("d0007");
++            store.remove("d9999");
++        } else {
++            for id in [7, 9999] {
++                let mut updated = document(id, &vec![vec![1.0, step as f64 / 10.0]; chunks]);
++                updated.version = format!("revision-{step}");
++                store.insert(updated.id.clone(), updated);
++            }
++        }
++        for filter in [None, Some(json!({"group": 1}))] {
++            for fusion in ["blend", "rrf"] {
++                let options = documents::SearchOptions {
++                    filter: filter.clone(),
++                    fusion: Some(fusion.into()),
++                    ..options.clone()
++                };
++                for query in ["common", "rare7 rare9999"] {
++                    let expected = serde_json::to_value(
++                        documents::search_impl(&store, query, &options, Some(2), false).unwrap(),
++                    )
++                    .unwrap();
++                    let captured = documents::capture_search(
++                        &store,
++                        vec![documents::prepare_search(query, &options, Some(2)).unwrap()],
++                    );
++                    assert_eq!(
++                        serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
++                        expected,
++                        "step {step}"
++                    );
++                    snapshots.push((captured, expected));
++                }
++            }
++        }
++    }
++    let current = train(&store, 2);
++    assert!(publish_dense_index(&mut store, &current));
++    drop(trained);
++    drop(store);
++    for (captured, expected) in snapshots {
++        assert_eq!(
++            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
++            expected
++        );
++    }
++}
++
+ #[test]
+ fn delta_identifier_bytes_are_bounded_even_for_long_ids() {
+     for bytes in [
+diff --git a/src/core/documents/index.rs b/src/core/documents/index.rs
+index d5046083..b7592547 100644
+--- a/src/core/documents/index.rs
++++ b/src/core/documents/index.rs
+@@ -4,7 +4,7 @@
+ use std::collections::{BTreeMap, BTreeSet};
+ use std::sync::Arc;
+ 
+-use super::dense::{DenseIndex, MAX_ROWS, MIN_ROWS};
++use super::dense::{DenseChange, DenseIndex, MAX_ROWS, MIN_ROWS};
+ use super::positions::Positions;
+ use super::postings::PostingLists;
+ use super::text::TextSegment;
+@@ -36,7 +36,7 @@ pub(crate) struct DocumentStore {
+     pub(super) multichunk_documents: BTreeSet<String>,
+     pub(super) generation: u64,
+     pub(super) dense_index: Option<Arc<DenseIndex>>,
+-    pub(super) dense_changes: BTreeMap<String, usize>,
++    pub(super) dense_changes: BTreeMap<String, DenseChange>,
+     pub(super) embedded_documents: BTreeSet<String>,
+     embedded_count: usize,
+     owners: Vec<Option<(Arc<StoredDocument>, usize)>>,
+@@ -414,15 +414,19 @@ impl DocumentStore {
+             .expect("document generation overflow");
+     }
+ 
+-    fn track_dense_change(&mut self, id: &str, chunks: usize) {
++    fn track_dense_change(&mut self, id: &str, chunks: usize, previous: Option<&StoredDocument>) {
+         use super::dense::{MAX_DELTA_CHUNKS, MAX_DELTA_DOCUMENTS, MAX_DELTA_ID_BYTES};
+         if self.dense_index.is_none() {
+             return;
+         }
+         let documents =
+             self.dense_changes.len() + usize::from(!self.dense_changes.contains_key(id));
+-        let rows = self.dense_changes.values().sum::<usize>()
+-            - self.dense_changes.get(id).copied().unwrap_or(0);
++        let rows = self
++            .dense_changes
++            .values()
++            .map(|change| change.chunks)
++            .sum::<usize>()
++            - self.dense_changes.get(id).map_or(0, |change| change.chunks);
+         let bytes = self.dense_changes.keys().map(String::len).sum::<usize>()
+             + if self.dense_changes.contains_key(id) {
+                 0
+@@ -435,10 +439,18 @@ impl DocumentStore {
+         {
+             self.dense_index = None;
+             self.dense_changes.clear();
+-        } else if let Some(count) = self.dense_changes.get_mut(id) {
+-            *count = chunks;
++        } else if let Some(change) = self.dense_changes.get_mut(id) {
++            change.chunks = chunks;
+         } else {
+-            self.dense_changes.insert(id.to_owned(), chunks);
++            // Keep the first replaced owner: every captured index pins its indexed allocations.
++            self.dense_changes.insert(
++                id.to_owned(),
++                DenseChange {
++                    chunks,
++                    previous_owner: previous
++                        .map(|document| document as *const StoredDocument as usize),
++                },
++            );
+         }
+     }
+ 
+@@ -842,7 +854,7 @@ impl DocumentStore {
+             .checked_add(group.len() as u64)
+             .expect("document generation overflow");
+         for document in group {
+-            self.track_dense_change(&document.id, document.chunks.len());
++            self.track_dense_change(&document.id, document.chunks.len(), None);
+             self.documents.insert(document.id.clone(), document);
+         }
+     }
+@@ -960,7 +972,7 @@ impl DocumentStore {
+             );
+         }
+         self.advance_generation();
+-        self.track_dense_change(&id, document.chunks.len());
++        self.track_dense_change(&id, document.chunks.len(), Some(&previous));
+         self.scrub_replaced(&previous, &document);
+         self.documents.insert(id, document);
+     }
+@@ -1095,7 +1107,7 @@ impl DocumentStore {
+         let document = self.documents.remove(id)?;
+         self.multichunk_documents.remove(id);
+         self.advance_generation();
+-        self.track_dense_change(id, 0);
++        self.track_dense_change(id, 0, Some(&document));
+         if document
+             .chunks
+             .iter()
+diff --git a/src/core/documents/search.rs b/src/core/documents/search.rs
+index b997ecf1..cfd4ab4b 100644
+--- a/src/core/documents/search.rs
++++ b/src/core/documents/search.rs
+@@ -117,7 +117,7 @@ struct CapturedQuery {
+     use_postings: bool,
+     dense: Option<Arc<DenseIndex>>,
+     eligible: Option<FastSet<usize>>,
+-    changed: FastSet<String>,
++    excluded_owners: FastSet<usize>,
+     dfs: Option<[BTreeMap<String, usize>; 2]>,
+     /// The store's text segment, read for result text after the store lock is released (under
+     /// the mutation gate for a live search, see [`read_ranked`]).
+@@ -361,7 +361,7 @@ fn capture_postings(store: &DocumentStore, prepared: PreparedSearch) -> Captured
+         use_postings,
+         dense: None,
+         eligible: None,
+-        changed: FastSet::default(),
++        excluded_owners: FastSet::default(),
+         dfs: None,
+         text: store.text_segment(),
+         lexical_scores: None,
+@@ -400,7 +400,7 @@ fn capture_ranked_lexical(store: &DocumentStore, prepared: PreparedSearch) -> Ca
+         use_postings: true,
+         dense: None,
+         eligible: None,
+-        changed: FastSet::default(),
++        excluded_owners: FastSet::default(),
+         dfs: None,
+         text: store.text_segment(),
+         lexical_scores: Some(scores),
+@@ -510,7 +510,7 @@ fn capture_image(image: &ServingImage, prepared: PreparedSearch) -> anyhow::Resu
+         use_postings: true,
+         dense: None,
+         eligible: None,
+-        changed: FastSet::default(),
++        excluded_owners: FastSet::default(),
+         dfs: None,
+         text: None,
+         lexical_scores: Some(scores),
+@@ -570,7 +570,7 @@ fn capture_overlaid(
+         use_postings: true,
+         dense: None,
+         eligible: None,
+-        changed: FastSet::default(),
++        excluded_owners: FastSet::default(),
+         dfs: None,
+         text: store.text_segment(),
+         lexical_scores: Some(scores),
+@@ -1007,31 +1007,38 @@ fn capture_planned_query(
+             }
+         })
+         .collect();
+-    let mut captured_slots: FastSet<_> = chunks
+-        .iter()
+-        .map(|chunk| store.slots[&chunk.document.id][chunk.index])
+-        .collect();
+-    for id in store.dense_changes.keys().filter(|_| dense.is_some()) {
+-        let Some(document) = store
+-            .documents
+-            .get(id)
+-            .filter(|document| prepared.matches(document))
+-        else {
+-            continue;
+-        };
+-        for (index, (&slot, chunk)) in store.slots[id].iter().zip(&document.chunks).enumerate() {
+-            if chunk.embedding.is_some() && captured_slots.insert(slot) {
+-                chunks.push(CapturedChunk {
+-                    document: Arc::clone(document),
+-                    index,
+-                    word_count: store.slot_word_count(slot),
+-                    semantic_cache: None,
+-                });
++    if dense.is_some() && !store.dense_changes.is_empty() {
++        let mut captured_slots: FastSet<_> = chunks
++            .iter()
++            .map(|chunk| store.slots[&chunk.document.id][chunk.index])
++            .collect();
++        for id in store.dense_changes.keys() {
++            let Some(document) = store
++                .documents
++                .get(id)
++                .filter(|document| prepared.matches(document))
++            else {
++                continue;
++            };
++            for (index, (&slot, chunk)) in store.slots[id].iter().zip(&document.chunks).enumerate()
++            {
++                if chunk.embedding.is_some() && captured_slots.insert(slot) {
++                    chunks.push(CapturedChunk {
++                        document: Arc::clone(document),
++                        index,
++                        word_count: store.slot_word_count(slot),
++                        semantic_cache: None,
++                    });
++                }
+             }
+         }
+     }
+-    let changed = if dense.is_some() && eligible.is_none() {
+-        store.dense_changes.keys().cloned().collect()
++    let excluded_owners = if dense.is_some() && eligible.is_none() {
++        store
++            .dense_changes
++            .values()
++            .filter_map(|change| change.previous_owner)
++            .collect()
+     } else {
+         FastSet::default()
+     };
+@@ -1044,7 +1051,7 @@ fn capture_planned_query(
+         use_postings: false,
+         dense,
+         eligible,
+-        changed,
++        excluded_owners,
+         dfs: Some(dfs),
+         text: store.text_segment(),
+         lexical_scores: None,
+@@ -1117,7 +1124,7 @@ fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
+             .embedding
+             .as_ref()
+             .expect("indexed search lost its query embedding");
+-        let (hits, _) = if captured.prepared.unfiltered && captured.changed.is_empty() {
++        let (hits, _) = if captured.prepared.unfiltered && captured.excluded_owners.is_empty() {
+             index.search(query, captured.prepared.limit, captured.prepared.minimum)
+         } else {
+             index.search_where(
+@@ -1127,7 +1134,9 @@ fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
+                 |document| {
+                     captured.eligible.as_ref().map_or_else(
+                         || {
+-                            !captured.changed.contains(&document.id)
++                            !captured
++                                .excluded_owners
++                                .contains(&(document as *const StoredDocument as usize))
+                                 && captured.prepared.matches(document)
+                         },
+                         |eligible| eligible.contains(&(document as *const StoredDocument as usize)),
+@@ -1450,9 +1459,11 @@ mod tests {
+         if let Some(eligible) = &captured.queries[0].eligible {
+             assert!(!eligible.contains(&(Arc::as_ptr(&base_owner) as usize)));
+             assert!(eligible.contains(&(Arc::as_ptr(&store.documents["d007"]) as usize)));
+-            assert!(captured.queries[0].changed.is_empty());
++            assert!(captured.queries[0].excluded_owners.is_empty());
+         } else {
+-            assert!(captured.queries[0].changed.contains("d007"));
++            assert!(captured.queries[0]
++                .excluded_owners
++                .contains(&(Arc::as_ptr(&base_owner) as usize)));
+         }
+         let expected =
+             super::super::search_impl(&store, "common rare7", &options, Some(3), false).unwrap();

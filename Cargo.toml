@@ -129,6 +129,10 @@ fastrand = "2.5"
 name = "warm_benchmark"
 harness = false
 
+[[bench]]
+name = "audit_delivery"
+harness = false
+
 [[example]]
 name = "verify_cogmem_sample"
 required-features = ["provenance"]

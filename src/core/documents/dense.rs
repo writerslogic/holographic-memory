@@ -25,6 +25,12 @@ const MAX_BOUND_BYTES: usize = 64 * 1024 * 1024;
 const MAX_AUXILIARY_BYTES: usize = 80 * 1024 * 1024;
 const LEAF_ROWS: usize = 64;
 
+#[derive(Clone, Copy)]
+pub(super) struct DenseChange {
+    pub(super) chunks: usize,
+    pub(super) previous_owner: Option<usize>,
+}
+
 pub(crate) struct DenseIndexSnapshot {
     generation: u64,
     dimensions: usize,

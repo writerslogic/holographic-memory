@@ -1,0 +1,11 @@
+{
+  "strict_clippy": "passed",
+  "benchmark_correctness_modes": [
+    "disabled",
+    "unsigned",
+    "signed"
+  ],
+  "persisted_vectors_per_mode": 16,
+  "signature_verification": "All 16 signed entries verified after reopening outside timing",
+  "measurement": "Aborted; deployment-filesystem cost remains unverified"
+}

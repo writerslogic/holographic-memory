@@ -1,0 +1,24 @@
+{
+  "dense_tests": {
+    "passed": 12,
+    "log": "logs.tar.gz:dense-tests.log"
+  },
+  "search_tests": {
+    "passed": 14,
+    "ignored": 1,
+    "log": "logs.tar.gz:search-tests.log"
+  },
+  "benchmark_oracle_equalities": 5120,
+  "updated_hot_allocation_pairs": 640,
+  "allocation_delta_range": [
+    -22,
+    -22
+  ],
+  "all_updated_hot_allocation_pairs_lower": true,
+  "strict_clippy": "passed",
+  "integrated_ci": "pending",
+  "decision": "Retain candidate for verified allocation reduction subject to final validation; timing changes remain descriptive and do not resolve the historical tail claim.",
+  "candidate_patch_source_sha256_verified": "7c802dabe77e059ec758a8995d89e23efc4ec10cf55667341ff2295c1cc1acab",
+  "source_reproduction_command": "uv run --no-project --offline python docs/research/technical-audit-20261029/retrieval-tail-20261031/probe.py verify-source",
+  "baseline_source_sha256_verified": "c191efd450ec5f1ffe93ba4aa6d3508e307c3d181441275889a21f2b1a56865e"
+}

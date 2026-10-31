@@ -1,0 +1,42 @@
+{
+  "baseline": "f28095e024add5ce3964192f6af7b81457ad0b3d",
+  "status": "investigation; no performance gain demonstrated",
+  "prior_evidence": "../final-validation/RESULTS.md: updated hot-query p99 +11.5%, p50 +11.0%; 32 samples per group, code-layout and host-noise confounders unresolved",
+  "observed_mechanism": "capture_planned_query clones bounded changed document IDs into a per-query hash set; dense leaf selection hashes those strings for each candidate row. Captured slot membership is also built even when no dense delta is present.",
+  "hypothesis": "Represent excluded base-index owners by allocation identity, retaining the first replaced owner for each changed ID until index retirement; avoid per-query String clones and per-row string hashing without an unbounded cache. Skip slot membership construction when no dense delta needs merging.",
+  "invariants": [
+    "Exact canonical scores and full ordered results unchanged",
+    "First base owner retained across repeated replacement, delete/recreate and changed chunk counts",
+    "Index and captured Arc owners prevent address reuse for indexed rows",
+    "Clear delta state on index publication or overflow; old captured queries retain their own index and exclusions",
+    "Existing 128-document, 1024-chunk and 64 KiB ID bounds remain unchanged; no extra document ownership retained"
+  ],
+  "validation": [
+    "Existing dense/search correctness suites plus repeated replacement/delete/recreate regression",
+    "Paired baseline/candidate probes reuse frozen 10k-row 16-dimensional corpus and exhaustive ordered-result oracle",
+    "Rotate execution order over independent rounds; record capture/execution, requested bytes, mutation/train/reopen and host conditions",
+    "Increase hot-query samples beyond the original 32 before interpreting tails; report empirical quantiles, never population-tail guarantees",
+    "Run after unrelated local builds and fsync-heavy tests finish; local/offline only; no model downloads or paid APIs"
+  ],
+  "acceptance": [
+    "All correctness comparisons identical",
+    "Demonstrated reduction in changed-ID capture allocations",
+    "No sustained median hot-query regression over 5% across independent rounds; investigate variability before retaining optimization",
+    "Report any residual p99 limitation rather than claim the historical regression resolved"
+  ],
+  "rejection": "Reject or revise the candidate if owner-lifetime invariants fail, retained memory grows without bound, or equivalent-workload measurements do not support its cost/benefit.",
+  "execution_budget_seconds": 600,
+  "scope_limit": "This experiment does not establish competitive superiority, high-dimensional scaling, or production latency bounds.",
+  "sampling": {
+    "independent_rounds": 5,
+    "queries_per_group_per_round": 128,
+    "groups": [
+      "initial rare",
+      "initial hot",
+      "updated rare",
+      "updated hot"
+    ],
+    "order": "baseline/candidate alternates each round",
+    "oracle": "exhaustive ordered result equality for every timed query; oracle outside timed interval"
+  }
+}

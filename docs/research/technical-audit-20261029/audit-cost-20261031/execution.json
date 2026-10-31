@@ -1,0 +1,41 @@
+{
+  "revision": "6d65f07f8ac80260cdfc3451cb0e8ac757e34d15",
+  "command": [
+    "cargo",
+    "+1.99.0",
+    "bench",
+    "--offline",
+    "--locked",
+    "--profile",
+    "dev",
+    "--features",
+    "security",
+    "--bench",
+    "audit_delivery"
+  ],
+  "settings": {
+    "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "3",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "TMPDIR": "/Volumes/A/warm-audit-cost/target/audit-cost/tmp"
+  },
+  "platform": "Darwin 27.0.0 arm64",
+  "load_before": [
+    3.3271484375,
+    3.177734375,
+    3.1328125
+  ],
+  "budget_seconds": 240,
+  "classification": "Local development measurement on a shared host; no production or frontier claim",
+  "status": "aborted",
+  "exit_code": 101,
+  "elapsed_seconds": 107.97368116595317,
+  "load_after": [
+    3.26806640625,
+    3.37939453125,
+    3.2275390625
+  ],
+  "reason": "Concurrent worktree checkout introduced filesystem I/O; Criterion estimated 88.8 seconds for the first mode alone. Stopped the owned benchmark process at 108 seconds rather than exceed the 240-second budget or publish confounded measurements.",
+  "timing_claim": "None; no completed mode comparison"
+}

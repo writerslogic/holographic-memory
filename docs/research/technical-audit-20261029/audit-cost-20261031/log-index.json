@@ -1,0 +1,14 @@
+{
+  "clippy.log": {
+    "bytes": 131,
+    "sha256": "690a48f60a916141a48cf01e3989674d343dd1f6fc05c9bc72de716843305d57"
+  },
+  "execution.log": {
+    "bytes": 2571,
+    "sha256": "6e9c539d82d64f3ef805931b0414b259b4d552f7b9eb08e30be56499128575f9"
+  },
+  "smoke.log": {
+    "bytes": 445,
+    "sha256": "f853ca41a6650659d5825bcf34c7816bc48d49bc9aea8b9734c962e736f8829f"
+  }
+}
