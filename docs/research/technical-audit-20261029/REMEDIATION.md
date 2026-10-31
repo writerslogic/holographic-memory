@@ -667,3 +667,37 @@ existing skips) and 165 service tests (zero skips). Tested and merged trees matc
 `python-transport-20261031/validation.json` and its final-state/log evidence record
 the gate. Code-scanning open alerts were zero at that merge; dependency alerts
 remain tracked separately above.
+
+### Uploaded archive resource bounds and read-only durability (2026-10-31)
+
+`restore_upload` extracted tar metadata before checking entry limits. In tar
+0.4.46, the normal iterator buffers GNU long names/links and local PAX records
+with `read_all()` before yielding a regular entry. The default 8 GiB upload
+limit therefore did not provide a suitable metadata-allocation bound. A valid
+65,537-byte PAX-comment fixture reproduced acceptance beyond the proposed bound;
+the new rejection regression fails before the change. No OOM or RSS result is
+claimed, and this route requires the existing admin authorization.
+
+A seek-based raw-header preflight now limits each extension to 64 KiB before
+normal extraction. It reuses tar's header/checksum and PAX parsers, preserves
+PAX size overrides across GNU extension headers, and rejects unsupported sparse
+entries before their parser can allocate. Checked offsets, effective file sizes,
+existing aggregate byte/entry limits, duplicate/dangling metadata and truncation
+are validated before extraction. File payloads are skipped by seeking, not loaded
+into memory. This is an application resource limit, not a tar-standard limit.
+
+The Windows upload flush also opened read-only extracted files directly for
+writing. It now shares the snapshot-copy helper: clear only the unpublished
+file's read-only attribute when needed, acquire the write handle, restore
+attributes even if opening failed, then sync. Native copies and their alternate
+streams remain unchanged. The Windows test checks that the old write-open path
+returns PermissionDenied before exercising the corrected flush.
+
+Local acceptance: five archive tests, including limit-1/limit/limit+1 metadata,
+PAX/GNU interoperability and malformed/overflow cases; all 13 real-server
+operations tests; strict server/operations Clippy and formatting. The earlier
+read-only-only gate also passed 74 server unit tests and the snapshot-copy test.
+Two test runs used an incorrect HTTP-400 expectation; it was corrected to WARM's
+existing HTTP-422 invalid-request contract, with no production error downgrade.
+`archive-restore-20261031/` retains logs, hashes and a reproducible baseline patch.
+Windows CI remains required; filesystem power-loss durability is not established.

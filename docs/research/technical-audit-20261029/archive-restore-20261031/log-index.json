@@ -1,0 +1,57 @@
+[
+  {
+    "file": "clippy.log",
+    "bytes": 137,
+    "sha256": "9d91a97e5971bf6b8df3c360736fcbb808628b9839641fa07ba7e252f998b5c3"
+  },
+  {
+    "file": "copy.log",
+    "bytes": 317,
+    "sha256": "7408c14653b17b17c98043a6b174d2c5feceb05baa7e96427f990e9c3e67e1be"
+  },
+  {
+    "file": "final-tests.log",
+    "bytes": 26412,
+    "sha256": "4e27ba319576f103ec4e0b089cb242a2e3b63be55b8ecd7649068d129859b42f"
+  },
+  {
+    "file": "metadata-accepted-tests.log",
+    "bytes": 820,
+    "sha256": "28e37e60e1e1eff956d1d03d2ccc76bf39bbe851f13e53015e4281234b39c361"
+  },
+  {
+    "file": "metadata-baseline.log",
+    "bytes": 888,
+    "sha256": "e94b7e65ef58691ca5673fb6e3b18065d9fed3d7ba53d7294f6a953abd079d1c"
+  },
+  {
+    "file": "metadata-clippy.log",
+    "bytes": 137,
+    "sha256": "cf440e5d4f9f80a3168454457d73209e843af62beecdf99572c1cc90433ac649"
+  },
+  {
+    "file": "metadata-final-tests.log",
+    "bytes": 1553,
+    "sha256": "bc1a4ce53fe28c186b3785d55b5d54cd92afc938573ae1a64358bd0b9ede0539"
+  },
+  {
+    "file": "metadata-server-ops.log",
+    "bytes": 1315,
+    "sha256": "4cbcc92f2a394822570e4dc06f3177d70c29dbf8997debf9688ed0be0c470768"
+  },
+  {
+    "file": "metadata-tests.log",
+    "bytes": 1161,
+    "sha256": "ef3c6f37e7d170509386f44dbc9f2a8dac0b8c773c438c778681c68c8596f193"
+  },
+  {
+    "file": "snapshot-copy.log",
+    "bytes": 408,
+    "sha256": "668d47c637fe3f100b75b0923de031e22f97b61aeab577d23fa8cc44534ff8f8"
+  },
+  {
+    "file": "unit.log",
+    "bytes": 471,
+    "sha256": "626c4d25ba841cb26c327bb74e19786929fe8563f71f6408611ce0d322b299cf"
+  }
+]
