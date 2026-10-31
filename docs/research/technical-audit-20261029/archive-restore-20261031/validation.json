@@ -21,6 +21,12 @@
       "strict_clippy_including_tests": "passed",
       "format": "passed",
       "diff_check": "passed"
+    },
+    "size_boundaries_final": {
+      "server_ops_serial": 13,
+      "strict_clippy": "passed",
+      "format": "passed",
+      "diff_check": "passed"
     }
   },
   "failed_attempts": [
@@ -48,5 +54,15 @@
     "result": "169 service tests passed, one failed, zero skipped; all five archive regressions passed",
     "failure": "snapshot_restore_and_off_box_backup_round_trip received no restore response within the unchanged 20-second harness read deadline",
     "log_sha256": "f224ce310d499a6ee39009214b4234f39b20c0d6b1c9afacd4480c68582a283d"
+  },
+  "windows_diagnostics_gate": {
+    "head": "3e036396d55571514abcedf15a49dbecc5880771",
+    "run": 41214558876,
+    "job": 124576251339,
+    "baseline": "807 passed, 14 skipped",
+    "service": "169 passed, one failed, zero skipped",
+    "full_round_trip": "passed in 43.814 seconds; no controlled performance comparison",
+    "failure": "Size-limit case sent a 1073753088-byte body to a 4096-byte limit. Server logged 413 in 70.4042 ms; client read immediately failed with Windows error 10053 after sending the whole body. This was not the earlier 20-second response timeout.",
+    "log_sha256": "1d7d17b0e72530ef298b0cb0a8eaef36820f10920e6cabb88437e3f272a271bd"
   }
 }
