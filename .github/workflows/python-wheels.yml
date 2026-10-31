@@ -92,8 +92,8 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w "$IMAGE" sh -c '
             if ! command -v bash >/dev/null; then apk add --no-cache bash >/dev/null; fi
             bash scripts/ci/smoke-wheel.sh python /w/dist'
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
-      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
         with:
           tool: cargo-cyclonedx
       - name: CycloneDX SBOM
@@ -137,8 +137,8 @@ jobs:
           python3 -m venv /tmp/sdist-venv
           /tmp/sdist-venv/bin/pip install --quiet dist/*.tar.gz
           /tmp/sdist-venv/bin/python -I scripts/ci/smoke_python.py
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
-      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
         with:
           tool: cargo-cyclonedx
       - name: CycloneDX SBOM
