@@ -50,7 +50,9 @@ Per-tenant series are bounded by `--max-tenants` (only open stores report).
 
 ## Logs
 
-One JSON object per line on stderr (`--log-format text` for key=value). Every request logs `method`, `route` template, `status`, `latency_ms`, `tenant`, `key_id`, `bytes_in` and `request_id`; `X-Request-Id` from the client is honored when it is 1 to 64 characters of `[A-Za-z0-9._-]`, otherwise a fresh id is generated, and the id appears in the response header and in error bodies. Request bodies, vectors, query text, metadata, document ids and credentials are never written. Lifecycle events (`listening`, `shutdown_started`, `shutdown_complete`, `tenant_evicted`, `snapshot_created`, `snapshot_restored`, `compaction_done`, `keys_reloaded`, `tls_reloaded`) and failures carry identifiers and counts only. A test checks that secrets and content sent through the API never appear in the log.
+One JSON object per line on stderr (`--log-format text` for key=value). Every request logs `method`, `route` template, `status`, `latency_ms`, `tenant`, `key_id`, `bytes_in` and `request_id`; `X-Request-Id` from the client is honored when it is 1 to 64 characters of `[A-Za-z0-9._-]`, otherwise a fresh id is generated, and the id appears in the response header and in error bodies. Request bodies, vectors, query text, metadata, document ids and credentials are never written. Lifecycle events (`listening`, `shutdown_started`, `shutdown_complete`, `tenant_evicted`, `snapshot_created`, `snapshot_restored`, `restore_stage`, `compaction_done`, `keys_reloaded`, `tls_reloaded`) and failures carry identifiers and counts only. A test checks that secrets and content sent through the API never appear in the log.
+
+Restore uploads emit `restore_stage` events for receive, upload sync (including byte count), unpack, store sync, verification, and installation. These contain tenant identifiers and stage names, never archive contents; the timestamps help locate a stalled restore.
 
 ## Backup and restore
 

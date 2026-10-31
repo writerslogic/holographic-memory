@@ -92,8 +92,8 @@ impl<'a> Request<'a> {
     pub fn send(self) -> Resp {
         let method = self.method;
         let path = self.path.clone();
-        let (server, bytes) = self.encode();
-        let raw = server.exchange_raw(&bytes);
+        let (server, headers, body) = self.encode();
+        let raw = server.exchange_parts([headers, body]);
         assert!(
             !raw.is_empty(),
             "no response to {method} {path}; recent server events: {:?}",
@@ -109,12 +109,12 @@ impl<'a> Request<'a> {
 
     /// `None` when the server closed the connection without answering.
     pub fn try_send(self) -> Option<Resp> {
-        let (server, bytes) = self.encode();
-        let raw = server.exchange_raw(&bytes);
+        let (server, headers, body) = self.encode();
+        let raw = server.exchange_parts([headers, body]);
         (!raw.is_empty()).then(|| parse_response(&raw))
     }
 
-    fn encode(self) -> (&'a Server, Vec<u8>) {
+    fn encode(self) -> (&'a Server, Vec<u8>, Vec<u8>) {
         let mut raw = format!(
             "{} {} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: {}\r\n",
             self.method,
@@ -125,9 +125,7 @@ impl<'a> Request<'a> {
             raw.push_str(&format!("{k}: {v}\r\n"));
         }
         raw.push_str("\r\n");
-        let mut bytes = raw.into_bytes();
-        bytes.extend_from_slice(&self.body);
-        (self.server, bytes)
+        (self.server, raw.into_bytes(), self.body)
     }
 }
 
@@ -306,13 +304,32 @@ impl Server {
 
     /// The bytes the server sent back, empty when the connection or handshake failed.
     pub fn exchange_raw(&self, bytes: &[u8]) -> Vec<u8> {
+        self.exchange_parts([bytes])
+    }
+
+    fn exchange_parts(&self, parts: impl IntoIterator<Item = impl AsRef<[u8]>>) -> Vec<u8> {
         let Ok(mut stream) = self.try_connect() else {
             return Vec::new();
         };
         // The server may answer and close before reading an oversized body.
-        let _ = stream.write_all(bytes);
+        let mut request_bytes = 0usize;
+        let mut write_error = None;
+        for part in parts {
+            request_bytes += part.as_ref().len();
+            if write_error.is_none() {
+                write_error = stream.write_all(part.as_ref()).err();
+            }
+        }
         let mut raw = Vec::new();
-        let _ = stream.read_to_end(&mut raw);
+        let start = std::time::Instant::now();
+        if let Err(error) = stream.read_to_end(&mut raw) {
+            if raw.is_empty() {
+                eprintln!(
+                    "response read failed after {:?}: {error}; request bytes: {request_bytes}; write error: {write_error:?}",
+                    start.elapsed(),
+                );
+            }
+        }
         raw
     }
 

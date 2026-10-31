@@ -706,3 +706,22 @@ The first full archive CI gate caught Clippy's `byte_char_slices` lint in a new
 test, which the earlier binary-only local Clippy target did not compile. The test
 now uses the equivalent byte string, and local strict Clippy includes `--tests`.
 CI failure logs and the expanded local check are retained; no lint was disabled.
+
+
+Windows CI at `cdf80c39` passed all five archive regressions, including the
+read-only permission check, but the full service gate was 169 passed / one failed.
+The existing off-box round trip received no restore response within its 20-second
+read deadline. Resource pressure from the harness's full-archive copies is a
+hypothesis, not a measured cause. The follow-up removes the body clone and encoded
+request copy, drops the owned upload before reading the response, and retains the
+same payload, timeout and restore assertions. Transport failures now report read
+elapsed time, byte count and I/O errors; restore-stage events distinguish receive,
+upload sync, unpack, store sync, verification and installation without logging
+archive contents. The failed Windows log is retained. No memory or latency gain
+is claimed; a green final Windows gate remains necessary.
+
+The final local source passes 78 server unit tests, 19 HTTP API tests and 13
+operations tests, plus strict Clippy including test code and scoped formatting.
+The first default-parallel API run hit four 20-second response timeouts; the
+serial rerun matches CI and passes without changing deadlines. Both logs remain
+available; this is not evidence of unconstrained parallel-workload performance.

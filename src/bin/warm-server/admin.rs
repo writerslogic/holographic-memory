@@ -180,11 +180,17 @@ fn sync_tree(dir: &Path) -> std::io::Result<()> {
     crate::vindex::sync_dir(dir)
 }
 
+fn restore_stage(tenant: &str, stage: &str) {
+    crate::log_event!(Info, "restore_stage", "tenant" => tenant, "stage" => stage);
+}
+
 /// Verify the staged store and swap it in for the tenant's; the staging directory is removed
 /// on failure. Returns the snapshot taken of the replaced store.
 fn install_staged(state: &AppState, tenant: &str, staging: Staging) -> Result<String, ApiError> {
+    restore_stage(tenant, "verify");
     verify(staging.path())?;
     let staged = staging.take();
+    restore_stage(tenant, "install");
     let result = state.restore_staged(tenant, &staged);
     if result.is_err() {
         let _ = std::fs::remove_dir_all(&staged);
@@ -354,6 +360,7 @@ pub async fn restore_upload(State(state): State<Arc<AppState>>, req: Request) ->
     let upload = Upload(staging.path().with_extension("tar"));
     let max = state.cfg.max_restore_bytes;
     let idle = Duration::from_secs(state.cfg.body_timeout_seconds);
+    restore_stage(&tenant, "receive");
     let spooled: Result<(), ApiError> = async {
         if let Some(parent) = upload.0.parent() {
             tokio::fs::create_dir_all(parent)
@@ -393,6 +400,7 @@ pub async fn restore_upload(State(state): State<Arc<AppState>>, req: Request) ->
                 }
             }
         }
+        crate::log_event!(Info, "restore_stage", "tenant" => tenant, "stage" => "sync_upload", "bytes" => total);
         file.sync_all().await.map_err(ApiError::internal)?;
         Ok(())
     }
@@ -402,8 +410,10 @@ pub async fn restore_upload(State(state): State<Arc<AppState>>, req: Request) ->
     // remove the archive while it is being unpacked.
     let previous = blocking(permit, move || {
         let file = std::fs::File::open(&upload.0).map_err(ApiError::internal)?;
+        restore_stage(&tenant, "unpack");
         unpack_archive(file, staging.path(), max)?;
         drop(upload);
+        restore_stage(&tenant, "sync_store");
         sync_tree(staging.path()).map_err(ApiError::internal)?;
         install_staged(&state, &tenant, staging)
     })
