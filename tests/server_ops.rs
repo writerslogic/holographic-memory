@@ -511,13 +511,21 @@ fn tls_serves_https_and_reloads_the_certificate_on_sighup() {
     std::fs::write(&key, key_b).unwrap();
     // A mismatched pair is rejected and the old certificate stays in use.
     std::fs::write(&key, self_signed(&["localhost"]).1).unwrap();
-    s.signal("HUP");
-    std::thread::sleep(Duration::from_millis(500));
+    #[cfg(unix)]
+    {
+        s.signal("HUP");
+        wait_until("failed certificate reload", || {
+            s.log_json()
+                .iter()
+                .any(|e| e["event"] == "tls_reload_failed")
+        });
+    }
     assert_eq!(
         s.req("GET", "/healthz").send().status,
         200,
         "old certificate still serves"
     );
+    #[cfg(unix)]
     assert!(s
         .log_json()
         .iter()
@@ -662,8 +670,15 @@ fn shutdown_drains_in_flight_requests_and_flushes_before_exiting() {
 
 #[test]
 fn readiness_fails_during_the_shutdown_delay_while_requests_are_still_served() {
-    let mut s = Server::open(&["--shutdown-delay-seconds", "2"]);
+    let mut s = Server::open(&["--shutdown-delay-seconds", "5"]);
     assert_eq!(s.req("GET", "/readyz").send().status, 200);
+    assert_eq!(
+        s.req("POST", "/api/v1/query")
+            .json(&json!({"query_vector": embedding(1)}))
+            .send()
+            .status,
+        200
+    );
     let signalled = Instant::now();
     s.signal("TERM");
     wait_until("readiness to fail", || {
@@ -688,7 +703,7 @@ fn readiness_fails_during_the_shutdown_delay_while_requests_are_still_served() {
         .contains("warm_ready 0"));
     assert!(s.child.wait().unwrap().success());
     assert!(
-        signalled.elapsed() >= Duration::from_millis(1900),
+        signalled.elapsed() >= Duration::from_millis(4900),
         "exited before the delay: {:?}",
         signalled.elapsed()
     );
@@ -844,4 +859,14 @@ fn an_unauthenticated_server_refuses_web_pages_and_rebound_names() {
             format!("GET /api/v1/stats HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n");
         assert_eq!(s.exchange(raw.as_bytes()).status, 200, "{host}");
     }
+}
+
+#[cfg(not(unix))]
+#[test]
+fn unix_socket_option_is_rejected_on_non_unix() {
+    let stderr = Server::refuses(&["--no-auth", "--unix-socket", "unsupported.sock"], &[]);
+    assert!(
+        stderr.contains("--unix-socket is only supported on unix platforms"),
+        "{stderr}"
+    );
 }

@@ -1,0 +1,11 @@
+{
+  "repository": "writerslogic/warm",
+  "branch": "main",
+  "date": "2026-10-31",
+  "before": "No required status contexts despite the existing CI/check aggregate and strict=true.",
+  "after": "Require check from GitHub Actions app 15368, with strict=true.",
+  "verified_head": "600886165064ed54d59b7d88722d5900f8a277a7",
+  "verification": "The actual check run succeeded before policy application; API reread confirmed its required context/app ID. Captured owner-review and administrator settings compare equal before/after.",
+  "scope": "The CI aggregate requires all twelve declared prerequisite jobs to succeed. Conditional workflows outside that aggregate still require separate review; this does not claim they are enforced by this status rule.",
+  "source": "https://docs.github.com/en/rest/branches/branch-protection#update-status-check-protection"
+}

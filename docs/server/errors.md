@@ -25,11 +25,19 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 ### invalid_json
 400. The body is not valid JSON, or has the wrong shape for the endpoint.
 
+### invalid_body
+400. A request-body transport error reached the handler before the body completed.
+Its underlying error text is omitted from the response. JSON writes have not executed
+or reserved an idempotency key; failed restore uploads are removed without installing
+the archive. NDJSON ingest can retain batches committed before the failure: reconcile
+the stored records before retrying. A broken connection may prevent delivery of this
+response. Size-limit violations remain 413, and body deadlines remain 408.
+
 ### invalid_tenant
 400. `X-Tenant-ID` occurs more than once or is not 1 to 64 characters of `[A-Za-z0-9_-]`.
 
 ### invalid_request
-422. The body parsed but a value is not acceptable: wrong vector length or non-finite values, `top_k` out of range, an id with control characters or the reserved `hms:` prefix, text that does not fit one chunk, a batch over the limits, an archive that is not a valid store, a malformed query string. The request was not applied.
+422. The body parsed but a value is not acceptable: wrong vector length or non-finite values, `top_k` out of range, an id with control characters or the reserved `hms:` prefix, text that does not fit one chunk, a batch over the limits, an archive that is not a valid store, a malformed query string. Streamed ingestion can retain earlier committed batches; reconcile stored records before retrying.
 
 ### unauthorized
 401. Missing, unknown, expired, disabled or wrong credentials. `WWW-Authenticate: Bearer` is set.
@@ -51,6 +59,11 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 
 ### conflict
 409. The request conflicts with the current state (for example a tenant store closed while the operation was starting; retry).
+
+### index_unavailable
+409. A query explicitly requested `index: "graph"`, but no graph index is built. Select `index: "exact"` or `"auto"` to allow a scan, or run index maintenance
+when the tenant has enough vectors to meet `--graph-min-rows`. The query did not write
+documents.
 
 ### idempotency_in_flight
 409. Another request with the same `Idempotency-Key` is still running. Retry after the indicated delay to receive its recorded response.

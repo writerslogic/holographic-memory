@@ -547,6 +547,7 @@ fn graceful_shutdown_persists_data() {
     );
     s.json("DELETE", "/api/v1/documents/drop", None, &json!(null));
     assert!(s.stop(), "server must exit cleanly on SIGTERM");
+    assert!(s.req("GET", "/readyz").try_send().is_none());
 
     let s = Server::start_in(&data, &[], None);
     let (_, r) = s.json(

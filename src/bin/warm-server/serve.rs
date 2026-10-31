@@ -22,7 +22,9 @@ use parking_lot::RwLock;
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use tokio::io::{AsyncRead, AsyncWrite};
-use tokio::net::{TcpListener, UnixListener};
+use tokio::net::TcpListener;
+#[cfg(unix)]
+use tokio::net::UnixListener;
 use tokio::sync::Semaphore;
 use tokio_rustls::TlsAcceptor;
 use tower_service::Service;
@@ -35,6 +37,7 @@ impl<T: AsyncRead + AsyncWrite + Send + Unpin> Io for T {}
 
 pub enum Bound {
     Tcp(TcpListener),
+    #[cfg(unix)]
     Unix(UnixListener, PathBuf),
 }
 
@@ -42,6 +45,7 @@ impl Bound {
     pub fn describe(&self) -> Result<String> {
         Ok(match self {
             Self::Tcp(l) => l.local_addr()?.to_string(),
+            #[cfg(unix)]
             Self::Unix(_, path) => format!("unix:{}", path.display()),
         })
     }
@@ -53,11 +57,13 @@ impl Bound {
                 let _ = stream.set_nodelay(true);
                 Ok(Box::new(stream))
             }
+            #[cfg(unix)]
             Self::Unix(l, _) => Ok(Box::new(l.accept().await?.0)),
         }
     }
 }
 
+#[cfg(unix)]
 impl Drop for Bound {
     fn drop(&mut self) {
         if let Self::Unix(_, path) = self {

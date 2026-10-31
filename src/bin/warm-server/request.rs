@@ -90,12 +90,18 @@ pub async fn read_body(state: &AppState, body: Body) -> Result<Vec<u8>, ApiError
         )
     })?
     .map(Vec::from)
-    .map_err(|_| {
-        ApiError::new(
-            StatusCode::PAYLOAD_TOO_LARGE,
-            "payload_too_large",
-            format!("request body exceeds {} bytes", state.cfg.max_body_bytes),
-        )
+    .map_err(|error| {
+        if std::error::Error::source(&error)
+            .is_some_and(|source| source.is::<http_body_util::LengthLimitError>())
+        {
+            ApiError::new(
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "payload_too_large",
+                format!("request body exceeds {} bytes", state.cfg.max_body_bytes),
+            )
+        } else {
+            ApiError::invalid_body()
+        }
     })
 }
 
