@@ -43,6 +43,22 @@ retrieval is supported; scored retrieval, MMR, and the adapter's deletion APIs a
 not implemented. The legacy dependency combinations described in the security
 notes remain unresolved; these contract tests do not establish their safety.
 
+The Haystack adapter is partial: it supports writes with `OVERWRITE` and tenant-scoped
+counts and deletion. `NONE` (and an omitted policy) also means overwrite for WARM.
+`FAIL` and `SKIP` raise `NotImplementedError` before writing because atomic duplicate
+handling is not exposed by the server. Document enumeration/filtering raises
+`NotImplementedError`; it cannot be implemented faithfully from IDs/metadata-only
+listing or similarity search. This adapter does not yet implement the complete
+Haystack DocumentStore protocol or support FilterRetriever. Call `store.close()`
+when finished. Do not treat unsupported operations as empty successful results.
+
+The Semantic Kernel adapter is currently unusable with its declared minimum
+`semantic-kernel==1.39.4`: its obsolete method names leave the framework's abstract
+methods unimplemented. Do not rely on its collection or retrieval methods.
+Restoring it also requires durable collection isolation and full-record retrieval;
+renaming methods alone would expose incomplete behavior. The extra remains
+available while that work is unresolved.
+
 The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
 
 ```bash
@@ -69,6 +85,10 @@ client.close()
 ```
 
 `AsyncWarmClient` has the same methods as coroutines; close it with `await client.aclose()`. Embeddings come from your own model: the SDK sends vectors, it does not compute them.
+
+`client.stats()` returns authenticated, tenant-scoped server statistics, including
+`documents`. The async equivalent is `await client.stats()`; authorization and
+transport failures propagate rather than appearing as zero counts.
 
 After bulk ingestion, `client.maintain_document_index()` explicitly builds the server's
 exact dense document index and returns `{"documentIndexTrained": true}` when the

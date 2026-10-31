@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 from haystack import Document
+from haystack.document_stores.types import DuplicatePolicy
 from writerslogic_warm_sdk.client import WarmClient
 
 class WarmDocumentStore:
@@ -19,13 +20,31 @@ class WarmDocumentStore:
             timeout=timeout
         )
 
+    def close(self) -> None:
+        self._client.close()
+
     def count_documents(self) -> int:
-        return 0
+        count = self._client.stats().get("documents")
+        if type(count) is not int or count < 0:
+            raise ValueError("WARM stats returned an invalid document count")
+        return count
 
     def filter_documents(self, filters: Optional[Dict[str, Any]] = None) -> List[Document]:
-        return []
+        raise NotImplementedError(
+            "Haystack document enumeration/filtering requires full document retrieval, "
+            "which the WARM HTTP API does not expose"
+        )
 
-    def write_documents(self, documents: List[Document], policy: Any = None) -> int:
+    def write_documents(
+        self, documents: List[Document], policy: Optional[DuplicatePolicy] = DuplicatePolicy.NONE,
+    ) -> int:
+        if policy is not None and not isinstance(policy, DuplicatePolicy):
+            raise TypeError("policy must be a Haystack DuplicatePolicy")
+        if policy in (DuplicatePolicy.FAIL, DuplicatePolicy.SKIP):
+            raise NotImplementedError(
+                "FAIL and SKIP require atomic server-side duplicate handling; "
+                "WARM currently supports OVERWRITE (also used for NONE)"
+            )
         docs = []
         for doc in documents:
             docs.append({

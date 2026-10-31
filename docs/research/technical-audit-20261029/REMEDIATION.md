@@ -882,3 +882,32 @@ and generated-artifact verification. Exact-head CI remains required. The evidenc
 candidate logs plus a baseline reproduction patch. Allocation results do not
 establish RSS, latency, throughput, or competitive leadership; chunk decoding and
 metadata sizes still affect work.
+
+
+### Haystack silent-result and duplicate-policy corrections (2026-10-31)
+
+Nine real-server baseline failures confirm false zero counts, fabricated empty
+filter results, and ignored duplicate policies. Counts now use authenticated,
+tenant-scoped stats, exposed in both SDK clients. FAIL/SKIP and unknown policy
+types reject before mutation; NONE preserves WARM's existing overwrite default.
+Filtering explicitly raises until faithful full-document retrieval exists.
+
+Twelve contract tests pass on Haystack 2.0.0/Python 3.10 and 2.27.0/Python 3.14,
+including actual DocumentWriter use and sync/async authentication isolation.
+The whole SDK run passes 71 tests and 46 subtests with three documented optional
+skips; package builds and workflow lints pass. Evidence and reproducible baseline
+are in `haystack-contracts-20261031/`. Exact-head CI remains required. This is
+partial adapter support, not full DocumentStore conformance: atomic FAIL/SKIP,
+full-document enumeration/filtering and serialization remain prerequisites.
+
+
+### Semantic Kernel minimum-version instantiation blocker (2026-10-31)
+
+Runtime inspection with semantic-kernel 1.39.4 / Python 3.10 confirms that all 12
+MemoryStoreBase methods remain abstract: the adapter uses obsolete `_async`
+names. Normal instantiation raises TypeError before any backend request. The
+prior unverified compatibility concern is now reproduced; source-level collection
+isolation concerns are still not runtime disclosure findings. SDK docs flag the
+adapter as unusable. `semantic-kernel-compatibility-20261031/` records the probe,
+log and restoration acceptance criteria. No extra or Python support was retired;
+renaming methods without replacing collection stubs would enable unsafe behavior.
