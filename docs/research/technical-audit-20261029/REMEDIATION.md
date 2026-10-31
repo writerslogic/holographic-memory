@@ -832,3 +832,24 @@ restrictions still raise. The real workflow and explicit empty-list cases pass
 on both versions using the framework's deterministic local MockEmbedding, with
 no LLM or model-weight calls. The earlier failed expectation and workflow logs
 remain archived; direct adapter tests alone had missed this caller contract.
+
+
+### Remaining adapter prerequisites: source observations, not runtime validation
+
+- `writerslogic_warm_sdk/haystack/document_store.py`: `count_documents` returns
+  zero and `filter_documents` an empty list unconditionally; `write_documents`
+  ignores its duplicate policy. Reproduce with the real framework before choosing
+  support scope. Counting can use existing tenant stats; correct FAIL/SKIP writes
+  need atomic server semantics, not a race-prone client preflight.
+- `writerslogic_warm_sdk/semantic_kernel/memory_store.py`: collection methods are
+  stubs; upsert/remove use raw record IDs and nearest matching omits collection
+  filtering. Installed-framework abstract-method/signature compatibility has not
+  been checked here, so runtime cross-collection consequences remain unverified.
+- HTTP `documents::list_documents` returns IDs/metadata only. Native
+  `Core::get_document` returns text, version and chunk count, but only first-chunk
+  text (with the documented whitespace normalization). Adapter document recovery
+  requires an explicit bounded retrieval contract, not fabricated empty results
+  or similarity search masquerading as enumeration. No new endpoint is implemented.
+
+These are follow-up prerequisites; the current framework fixes establish neither
+full Haystack/Semantic Kernel support nor all-adapter production readiness.
