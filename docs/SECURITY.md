@@ -77,6 +77,27 @@ does not declare ZIP 8.6 safe for arbitrary use. Reassess before adding a ZIP
 model loader or archive-validation/extraction path, and upgrade the transitive
 dependency when Candle supports a patched version.
 
+The October 31, 2026 review also covers ZIP advisories
+[GHSA-q7v9-x93c-xqv3](https://github.com/advisories/GHSA-q7v9-x93c-xqv3),
+[GHSA-8hxf-qr8p-62x4](https://github.com/advisories/GHSA-8hxf-qr8p-62x4),
+[GHSA-hjqx-j4rw-g7xv](https://github.com/advisories/GHSA-hjqx-j4rw-g7xv), and
+[GHSA-9hj8-73fh-9963](https://github.com/advisories/GHSA-9hj8-73fh-9963).
+These affect ZIP extraction, AES authentication and legacy decompression, none
+of which the safetensors loader invokes. Candle's fix is merged upstream in
+[PR 4078](https://github.com/huggingface/candle/pull/4078), but its latest
+published release remains 0.11.0. Keep the dependency alerts open until a
+patched Candle release can be adopted and the local-model tests pass.
+
+### JavaScript development dependencies
+
+The integration test workspace's LlamaIndex fixture pulls `deepmerge` 4.3.1
+through `html-to-text`. [GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4)
+has no patched deepmerge release as of October 31, 2026. It is a development
+dependency, not bundled into the WARM adapters; no production safety claim is
+made for consumers' independently installed LlamaIndex dependencies. Keep the
+alert open pending the upstream dependency change. The workspace's `tsup` 9
+upgrade removes the vulnerable esbuild development-server dependency.
+
 ## Audit Trail
 
 The audit log at `{storage_path}/audit.bin` is an append-only binary file with fixed-size 105-byte entries:
