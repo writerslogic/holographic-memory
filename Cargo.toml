@@ -122,6 +122,9 @@ tempfile = "3"
 # TLS tests mint a throwaway certificate; ring keeps it free of the C toolchain.
 rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring", "pem"] }
 
+[target.'cfg(windows)'.dev-dependencies]
+fastrand = "2.5"
+
 [[bench]]
 name = "warm_benchmark"
 harness = false

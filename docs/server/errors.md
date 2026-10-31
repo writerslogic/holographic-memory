@@ -73,6 +73,12 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 ### internal
 500. An unexpected failure; see the server log for the request id.
 
+### resource_limit
+429. The query exceeded its work, frontier, or retained-byte budget. No partial answer is
+returned. Narrow the query or change the applicable budget before retrying; waiting alone
+does not resolve this limit, so there is no `Retry-After` header. The Node memory API uses
+the same `resource_limit` code; raw native Node calls carry a `[resource_limit]` prefix.
+
 ### mutation_committed
 500. The journal mutation is durable, but publication, audit, provenance, or cleanup failed.
 Inspect the resulting state and reopen or reconcile it before retrying. A failure with this

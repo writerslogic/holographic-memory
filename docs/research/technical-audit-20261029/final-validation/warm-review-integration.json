@@ -1,0 +1,45 @@
+{
+  "base": "5a4bc41e",
+  "preserved_branch_head": "2e4c91d4",
+  "platform": "macOS arm64",
+  "rust": "1.96.0",
+  "node": "26.8.1",
+  "checks": [
+    {
+      "command": "cargo test --locked --lib --features node-api,server,security",
+      "passed": 684,
+      "ignored": 12
+    },
+    {
+      "command": "cargo test --locked --features node-api,server,security --bin warm-server error::tests",
+      "passed": 4
+    },
+    {
+      "command": "cargo test --locked --features node-api,server,security --test memory_api --test memory_api_server",
+      "passed": 35
+    },
+    {
+      "command": "cargo clippy --locked --lib --bin warm-server --tests --features node-api,server,security -- -D warnings",
+      "result": "passed"
+    },
+    {
+      "command": "cargo fmt -- --check",
+      "result": "passed"
+    },
+    {
+      "command": "npm run test:types",
+      "result": "passed"
+    },
+    {
+      "command": "node --test --test-name-pattern='recall rejects' integrations/js/packages/core/test/store.test.mjs",
+      "passed": 4
+    },
+    {
+      "command": "node --test integrations/js/packages/core/test/*.test.mjs",
+      "passed": 62,
+      "failed": 0
+    }
+  ],
+  "integration_correction": "The initial native-backed JavaScript suite passed 60 of 62; two replacement regressions returned source-corruption errors before the revision check. Moving revision validation into finally rejects changed snapshots on both successful and failed assembly, while preserving same-revision errors.",
+  "remaining_platform_gate": "Windows collision and cleanup regressions plus full platform/feature matrix require current PR CI; old branch evidence is historical."
+}

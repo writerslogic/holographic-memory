@@ -66,7 +66,7 @@ impl WarmCore {
     /// Visits every document under one consistent snapshot and returns that snapshot's
     /// revision.
     pub(crate) fn scan_documents(&self, mut visit: impl FnMut(DocumentView<'_>)) -> u64 {
-        self.try_scan_documents(None, |document| {
+        self.try_scan_documents(None, None, |document| {
             visit(document);
             Ok(())
         })
@@ -76,6 +76,7 @@ impl WarmCore {
     pub(crate) fn try_scan_documents(
         &self,
         ids: Option<&std::collections::BTreeSet<String>>,
+        filter: Option<&Value>,
         mut visit: impl FnMut(DocumentView<'_>) -> Result<()>,
     ) -> Result<u64> {
         let _transaction = self.mutation_gate.read();
@@ -84,6 +85,11 @@ impl WarmCore {
         let store = self.documents.read();
         let mut visit_document =
             |document: std::sync::Arc<crate::core::documents::StoredDocument>| {
+                if ids.is_some_and(|ids| !ids.contains(&document.id))
+                    || !crate::core::documents::matches_metadata(&document.metadata, filter)
+                {
+                    return Ok(());
+                }
                 let text = || {
                     document
                         .chunks
@@ -97,7 +103,12 @@ impl WarmCore {
                     text: &text,
                 })
             };
-        if let Some(ids) = ids {
+        let candidates = match (ids, store.metadata_candidates(filter)) {
+            (Some(ids), Some(metadata)) if metadata.len() < ids.len() => Some(metadata),
+            (Some(ids), _) => Some(ids),
+            (None, metadata) => metadata,
+        };
+        if let Some(ids) = candidates {
             for id in ids {
                 if let Some(document) = store.get(id) {
                     visit_document(std::sync::Arc::clone(document))?;
@@ -173,6 +184,53 @@ mod tests {
     use super::*;
 
     #[test]
+    fn metadata_scan_intersects_scope_and_checks_unindexed_values() -> Result<()> {
+        use serde_json::json;
+        use std::collections::BTreeSet;
+
+        let directory = tempfile::tempdir()?;
+        let core = WarmCore::new(256, Some(directory.path().display().to_string()), None)?;
+        for (id, group, selected) in [
+            ("a", 1, false),
+            ("b", 1, true),
+            ("c", 2, true),
+            ("d", 2, false),
+        ] {
+            core.memorize_document(serde_json::from_value(json!({
+                "id": id, "text": "evidence", "metadata": {"group": group, "nested": {"selected": selected}}
+            }))?)?;
+        }
+        for (scope, filter, expected) in [
+            (
+                Some(BTreeSet::from(["a".into(), "b".into(), "c".into()])),
+                json!({"group": 2}),
+                vec!["c"],
+            ),
+            (
+                Some(BTreeSet::from(["b".into()])),
+                json!({"group": 1}),
+                vec!["b"],
+            ),
+            (
+                None,
+                json!({"group": 2, "nested": {"selected": true}}),
+                vec!["c"],
+            ),
+            (None, json!({"nested": {"selected": true}}), vec!["b", "c"]),
+            (None, json!({"group": 3}), vec![]),
+        ] {
+            let mut visited = Vec::new();
+            let revision = core.try_scan_documents(scope.as_ref(), Some(&filter), |document| {
+                visited.push(document.id.to_owned());
+                Ok(())
+            })?;
+            assert_eq!(revision, core.revision());
+            assert_eq!(visited, expected);
+        }
+        Ok(())
+    }
+
+    #[test]
     fn fallible_scoped_scan_stops_at_the_first_error() -> Result<()> {
         let directory = tempfile::tempdir()?;
         let core = WarmCore::new(256, Some(directory.path().display().to_string()), None)?;
@@ -183,7 +241,7 @@ mod tests {
         }
         let scope = std::collections::BTreeSet::from(["b".into(), "c".into()]);
         let mut visited = Vec::new();
-        let result = core.try_scan_documents(Some(&scope), |document| {
+        let result = core.try_scan_documents(Some(&scope), None, |document| {
             visited.push(document.id.to_owned());
             anyhow::bail!("budget exhausted")
         });

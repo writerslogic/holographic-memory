@@ -301,7 +301,8 @@ impl Memory {
     ) -> Result<Option<Run>> {
         let mut attempt = 1;
         loop {
-            let (run, consistent) = self.run_once(query, options, history, k, force_wide)?;
+            let (run, consistent) =
+                self.run_once(query, options, history, k, force_wide, Default::default())?;
             if consistent {
                 return Ok(run);
             }
@@ -324,54 +325,95 @@ impl Memory {
         history: HistoryMode,
         k: u32,
         force_wide: bool,
+        limits: crate::core::query_limits::QueryLimits,
     ) -> Result<(Option<Run>, bool)> {
         let revision = self.core.revision();
         let now = options.as_of.unwrap_or_else(|| self.clock.now_millis());
-        use crate::core::query_limits::{QueryBudget, QueryLimits};
-        let mut budget = QueryBudget::new(QueryLimits::default());
-        let (indexed, constrained, restrict) = {
+        use crate::core::query_limits::QueryBudget;
+        let mut budget = QueryBudget::new(limits);
+        let (indexed, constrained) = {
             let index = self.index.read();
-            (
-                index.revision,
-                index.constrained(),
-                Self::restriction(&index, options, &mut budget)?,
-            )
+            (index.revision, index.constrained())
         };
         let indexed = indexed == Some(revision);
+        let needs_status = constrained || options.known_at.is_some();
+        let temporal = needs_status && (history != HistoryMode::All || options.known_at.is_some());
+        let scoped = options.subject.is_some() || options.entities.is_some();
+        let filtered = options
+            .filter
+            .as_ref()
+            .and_then(serde_json::Value::as_object)
+            .is_some_and(|filter| !filter.is_empty());
+        let restrict = if filtered && (temporal || scoped) {
+            let mut selected = Vec::new();
+            let scanned =
+                self.core
+                    .try_scan_documents(None, options.filter.as_ref(), |document| {
+                        if scoped {
+                            let stamp = Stamp::from_parts(document.version, document.metadata);
+                            if options.subject.as_ref().is_some_and(|subject| {
+                                stamp.as_ref().and_then(|stamp| stamp.subject.as_deref())
+                                    != Some(subject.trim())
+                            }) || options.entities.as_ref().is_some_and(|entities| {
+                                !stamp.as_ref().is_some_and(|stamp| {
+                                    entities.iter().any(|entity| {
+                                        stamp.entities.iter().any(|known| known == entity.trim())
+                                    })
+                                })
+                            }) {
+                                return Ok(());
+                            }
+                        }
+                        budget.work(1)?;
+                        budget.reserve(document.id.len().saturating_add(256))?;
+                        selected.push(document.id.to_owned());
+                        Ok(())
+                    })?;
+            if scanned != revision {
+                return Ok((None, false));
+            }
+            Some(selected)
+        } else {
+            Self::restriction(&self.index.read(), options, &mut budget)?
+        };
         let mut restrict = match restrict {
             Some(ids) if ids.is_empty() => return Ok((None, indexed)),
             other => other,
         };
-        let needs_status = constrained || options.known_at.is_some();
         if history == HistoryMode::Historical && !needs_status && !force_wide {
             return Ok((None, indexed));
         }
-        if needs_status && (history != HistoryMode::All || options.known_at.is_some()) {
-            let edges = self.index.read().capture_edges(&mut budget)?;
+        if temporal {
             let scope = restrict
                 .take()
                 .map(|ids| ids.into_iter().collect::<BTreeSet<_>>());
+            let edges = self
+                .index
+                .read()
+                .capture_edges(scope.as_ref(), &mut budget)?;
             let mut eligible = Vec::new();
-            let scanned = self.core.try_scan_documents(scope.as_ref(), |document| {
-                budget.work(1)?;
-                let stamp = Stamp::from_parts(document.version, document.metadata);
-                let status = evaluate(
-                    stamp.as_ref(),
-                    edges.get(document.id).map_or(&[], Vec::as_slice),
-                    now,
-                    options.known_at,
-                );
-                let keep = status.is_some_and(|status| match history {
-                    HistoryMode::All => true,
-                    HistoryMode::Current => status == FactStatus::Current,
-                    HistoryMode::Historical => status != FactStatus::Current,
-                });
-                if keep {
-                    budget.reserve(document.id.len().saturating_mul(4).saturating_add(256))?;
-                    eligible.push(document.id.to_owned());
-                }
-                Ok(())
-            })?;
+            let scanned = self
+                .core
+                .try_scan_documents(scope.as_ref(), None, |document| {
+                    budget.work(1)?;
+                    let stamp = Stamp::from_parts(document.version, document.metadata);
+                    let status = evaluate(
+                        stamp.as_ref(),
+                        edges.get(document.id).map_or(&[], Vec::as_slice),
+                        now,
+                        options.known_at,
+                    );
+                    let keep = status.is_some_and(|status| match history {
+                        HistoryMode::All => true,
+                        HistoryMode::Current => status == FactStatus::Current,
+                        HistoryMode::Historical => status != FactStatus::Current,
+                    });
+                    if keep {
+                        budget.reserve(document.id.len().saturating_mul(4).saturating_add(256))?;
+                        eligible.push(document.id.to_owned());
+                    }
+                    Ok(())
+                })?;
             if scanned != revision {
                 return Ok((None, false));
             }
@@ -393,10 +435,7 @@ impl Memory {
             document_ids: restrict,
             ..options.search_options(fetch)
         };
-        let hits = self
-            .core
-            .search_documents(query, &search)
-            .map_err(|error| MemoryError::Invalid(format!("{error}")))?;
+        let hits = self.core.search_documents(query, &search)?;
         let index = self.index.read();
         // Commits bump the revision inside the gate that excludes the search's capture, so an
         // unchanged revision across the search means the capture saw exactly `revision`.
@@ -650,6 +689,126 @@ fn index_predecessors(index: &Index, id: &str, stamped: &[String]) -> Vec<String
 mod scope_budget_tests {
     use super::*;
     use crate::core::query_limits::{QueryBudget, QueryLimitExceeded, QueryLimits};
+
+    #[test]
+    fn temporal_capture_budgets_only_scoped_metadata_matches() -> Result<()> {
+        use super::super::ManualClock;
+        use serde_json::json;
+        use std::sync::Arc;
+
+        let directory = tempfile::tempdir()?;
+        let core = Arc::new(crate::WarmCore::new(
+            256,
+            Some(directory.path().display().to_string()),
+            None,
+        )?);
+        let memory = Memory::new(core).with_clock(Arc::new(ManualClock::new(100)));
+        for (id, subject, supersedes) in [
+            ("old", "wanted", None),
+            ("current", "wanted", None),
+            ("outside", "other", Some(vec!["old".into()])),
+        ] {
+            memory.remember(RememberInput {
+                id: Some(id.into()),
+                text: "evidence".into(),
+                subject: Some(subject.into()),
+                entities: Some(vec![subject.into()]),
+                supersedes,
+                valid_from: Some(0),
+                metadata: Some(json!({"group": subject, "nested": {"group": subject}})),
+                ..Default::default()
+            })?;
+        }
+        for i in 0..40 {
+            memory.remember(RememberInput {
+                id: Some(format!("unrelated-{i}")),
+                text: "evidence".into(),
+                subject: Some("crowded".into()),
+                entities: Some(vec!["crowded".into()]),
+                valid_to: Some(50),
+                supersedes: Some(vec!["outside".into()]),
+                metadata: Some(json!({"group": "other", "nested": {"group": "other"}})),
+                ..Default::default()
+            })?;
+        }
+        memory.remember(RememberInput {
+            id: Some("needle".into()),
+            text: "evidence".into(),
+            subject: Some("crowded".into()),
+            entities: Some(vec!["crowded".into()]),
+            metadata: Some(json!({"group": "needle"})),
+            ..Default::default()
+        })?;
+        let limits = QueryLimits {
+            max_work: 16,
+            max_bytes: 2048,
+            ..Default::default()
+        };
+        for options in [
+            RecallOptions {
+                subject: Some("wanted".into()),
+                ..Default::default()
+            },
+            RecallOptions {
+                entities: Some(vec!["wanted".into()]),
+                ..Default::default()
+            },
+            RecallOptions {
+                filter: Some(json!({"group": "wanted"})),
+                ..Default::default()
+            },
+            RecallOptions {
+                filter: Some(json!({"nested": {"group": "wanted"}})),
+                ..Default::default()
+            },
+            RecallOptions {
+                subject: Some("wanted".into()),
+                filter: Some(json!({"group": "wanted"})),
+                ..Default::default()
+            },
+        ] {
+            for (history, expected) in [
+                (HistoryMode::Current, "current"),
+                (HistoryMode::Historical, "old"),
+            ] {
+                let (run, consistent) =
+                    memory.run_once("evidence", &options, history, 1, false, limits)?;
+                assert!(consistent);
+                let run = run.unwrap();
+                assert_eq!(run.ranked.len(), 1);
+                assert_eq!(run.ranked[0].hit.document_id, expected);
+            }
+        }
+        let result = memory.run_once(
+            "evidence",
+            &RecallOptions::default(),
+            HistoryMode::Current,
+            1,
+            false,
+            limits,
+        );
+        assert!(result.err().unwrap().is::<QueryLimitExceeded>());
+        for options in [
+            RecallOptions {
+                subject: Some("crowded".into()),
+                filter: Some(json!({"group": "needle"})),
+                ..Default::default()
+            },
+            RecallOptions {
+                entities: Some(vec!["crowded".into()]),
+                filter: Some(json!({"group": "needle"})),
+                ..Default::default()
+            },
+        ] {
+            for history in [HistoryMode::Current, HistoryMode::All] {
+                let (run, consistent) =
+                    memory.run_once("evidence", &options, history, 1, false, limits)?;
+                assert!(consistent);
+                assert_eq!(run.unwrap().ranked[0].hit.document_id, "needle");
+            }
+        }
+        Ok(())
+    }
 
     #[test]
     fn scoped_postings_are_bounded_before_capture_and_intersection() {

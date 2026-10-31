@@ -513,31 +513,40 @@ impl DocumentStore {
         self.documents.get(id)
     }
 
+    pub(crate) fn metadata_candidates(
+        &self,
+        filter: Option<&serde_json::Value>,
+    ) -> Option<&BTreeSet<String>> {
+        static EMPTY: BTreeSet<String> = BTreeSet::new();
+        let mut smallest: Option<&BTreeSet<String>> = None;
+        for (key, value) in filter
+            .and_then(serde_json::Value::as_object)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(value) = scalar_key(value) {
+                let Some(ids) = self.metadata.get(&(key.clone(), value)) else {
+                    return Some(&EMPTY);
+                };
+                if smallest.is_none_or(|best| ids.len() < best.len()) {
+                    smallest = Some(ids);
+                }
+            }
+        }
+        smallest
+    }
+
     pub(super) fn candidate_ids<'a>(
         &'a self,
         options: &'a SearchOptions,
     ) -> Option<Vec<&'a String>> {
-        let mut smallest: Option<&BTreeSet<String>> = None;
+        let mut smallest = self.metadata_candidates(options.filter.as_ref());
         if let Some(uri) = &options.source_uri {
             let Some(ids) = self.sources.get(uri) else {
                 return Some(Vec::new());
             };
-            smallest = Some(ids);
-        }
-        if let Some(filter) = options
-            .filter
-            .as_ref()
-            .and_then(serde_json::Value::as_object)
-        {
-            for (key, value) in filter {
-                if let Some(value) = scalar_key(value) {
-                    let Some(ids) = self.metadata.get(&(key.clone(), value)) else {
-                        return Some(Vec::new());
-                    };
-                    if smallest.is_none_or(|best| ids.len() < best.len()) {
-                        smallest = Some(ids);
-                    }
-                }
+            if smallest.is_none_or(|best| ids.len() < best.len()) {
+                smallest = Some(ids);
             }
         }
         if let Some(ids) = options

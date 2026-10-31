@@ -62,3 +62,64 @@ The subsequent ARM Java gate stalled for 24 minutes inside `StoreTest` without m
 [Validation commands and outcomes](validation-results.json) include default/all-feature tests, Rust1.89 compatibility, Rust1.99 strict lint, rustdoc, schemas, bindings, packages, official SDKs, independent W3C/SCITT artifacts and the synthetic offline embedding addon. [The metric reassessment](assessment.json) is 7.5/10 using the original domain weights and explicit ordinal confidence; M6 remains separate at 8. These are engineering judgments about evidenced scope, not measured model quality or certification. Optional outbox/synchronization and strategic routing/calibration were not selected or represented as implemented.
 
 The 107 raw logs, including failed initial checks and all temporal outcomes, are preserved byte-for-byte in [logs.tar.gz](logs.tar.gz), with sizes and SHA-256 hashes in [log-index.json](log-index.json). Log names in the ledger and command manifest identify archive entries. The summary script reads that archive directly; its output is byte-identical to the summary made from the original files.
+
+## Post-merge review follow-up, 2026-10-30
+
+[The follow-up ledger](review-followup.json) records three functional repairs: revision-checked
+JavaScript recall, eligibility before temporal capture (including combined metadata and subject/entity
+filters), and the shared `resource_limit` error contract. The native-backed baseline reproduction
+returned five bytes of replacement text with nonmatching metadata and a citation ending at byte 789.
+The four new recall tests reject those mutations after the repair.
+
+[Main's run](https://github.com/writerslogic/holographic-memory/actions/runs/41023790294)
+failed with `PermissionDenied` inside `DeltaRows::mapped`; its log does not identify the underlying
+operation. Native Windows checks on `writerslogic-02` passed 644 library and 131 integration tests,
+an 80,000-mapping probe, and the subsequent focused memory/spill suite. The source now distinguishes
+temporary-file creation, writing and mapping errors, and adds a Windows concurrent spill test.
+These local passes do not establish the cause or repair of the Windows Server 2025 CI failure.
+
+After authorization, [diagnostic CI](https://github.com/writerslogic/holographic-memory/actions/runs/41092504502)
+passed every job, including 776 Windows tests on the same `20261021.278.1` runner image as the
+failure. A further native probe passed 800,000 mappings at the original boundary sizes; a separate
+mapping-policy probe did not reproduce the failure. These passes did not identify its cause. The existing CI
+workflow now accepts `windows_spill_stress=true` to run five minutes of spill stress without retries
+before the full Windows suite; normal required checks remain in place.
+
+A deterministic native Windows reproduction subsequently identified a concrete failure mode:
+when a scratch-file name is already occupied by a temporary directory, file creation returns
+Windows error 5 (`PermissionDenied`), which the temporary-file allocator does not treat as a
+name collision. The new regression fails in the original `DeltaRows::mapped` at temporary-file
+creation. Windows spills now allocate their file inside an owned temporary directory and retain
+that directory until the final mapping is released. The regression, cleanup checks and concurrent
+spill tests pass natively. [Final CI](https://github.com/writerslogic/holographic-memory/actions/runs/41097465940)
+passed all 25 jobs on source commit `25726ffc62b47dcc281430c87e29cc217bb956d3`, including 777 Windows
+tests and 65 spill-stress iterations. The repaired source also passed all 1,308 local Rust tests,
+strict Clippy on macOS and Windows, and Rust 1.89 compatibility. This repairs the reproduced
+collision; the original main log still cannot establish its exact historical cause.
+
+## WARM integration of the preserved review branch, 2026-10-31
+
+The four commits ending at `2e4c91d4` were reviewed and integrated onto WARM main
+`5a4bc41e` in an isolated worktree. Conflict resolution retains WARM crate/type names,
+current collection metadata keys, the existing source reconstruction and citation checks
+from #343, and the historical wire/storage identifiers. The original follow-up ledger
+and archived logs above remain historical evidence, not new measurements.
+
+Fresh macOS validation passed 684 library tests (12 existing ignored measurements),
+30 memory API integration tests, five real-server memory API tests, and four server error
+tests with `node-api,server,security`. Strict Clippy passed for the library, server and tests
+with those features; repository formatting and Node declaration checks passed. The tests
+cover metadata/scope intersection, out-of-scope superseders, byte/work budget boundaries,
+secret-free typed resource errors, and mapped-row copy-on-write behavior.
+
+The rebuilt native addon passed all 62 JavaScript core tests, including four mutation
+regressions and all five same-revision source-corruption cases. Integration exposed that
+source reconstruction can fail before a trailing revision check; validating the revision
+in `finally` preserves the concurrency error for changed snapshots and the original error
+for unchanged snapshots. [The fresh command ledger](warm-review-integration.json) records
+these results separately from the preserved branch evidence.
+
+Windows-only collision/cleanup tests and the complete cross-platform feature matrix must
+pass on the new PR head. Historical Windows passes above do not replace that gate. The
+JavaScript core requires the native revision method introduced here; older native addons
+are rejected explicitly at construction. No new package release is implied by this integration.

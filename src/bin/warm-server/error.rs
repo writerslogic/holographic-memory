@@ -9,6 +9,7 @@
 use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use serde_json::{json, Value};
+use writerslogic_warm::core::query_limits::QueryLimitExceeded;
 
 pub const PROBLEM_BASE: &str =
     "https://github.com/writerslogic/warm/blob/main/docs/server/errors.md#";
@@ -39,6 +40,11 @@ pub const CODES: &[(&str, u16, &str)] = &[
     ("unsupported_media_type", 415, "Unsupported media type"),
     ("rate_limited", 429, "Rate limit exceeded"),
     ("quota_exceeded", 429, "Tenant quota exceeded"),
+    (
+        QueryLimitExceeded::CODE,
+        429,
+        "Query resource limit exceeded",
+    ),
     ("internal", 500, "Internal server error"),
     (
         "mutation_committed",
@@ -103,6 +109,12 @@ impl ApiError {
     pub fn from_core(error: anyhow::Error) -> Self {
         if error.is::<writerslogic_warm::CommittedMutationError>() {
             Self::committed(error)
+        } else if let Some(limit) = error.downcast_ref::<QueryLimitExceeded>() {
+            Self::new(
+                StatusCode::TOO_MANY_REQUESTS,
+                QueryLimitExceeded::CODE,
+                limit.to_string(),
+            )
         } else {
             Self::internal(error)
         }
@@ -171,6 +183,44 @@ pub type ApiResult = Result<Response, ApiError>;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn query_exhaustion_is_a_resource_problem_without_private_context() {
+        for resource in ["work", "bytes", "frontier"] {
+            let error = anyhow::Error::new(QueryLimitExceeded { resource, limit: 7 })
+                .context("private context");
+            let error = ApiError::from_core(error);
+            let problem = error.problem();
+            assert_eq!(problem["status"], 429);
+            assert_eq!(problem["code"], "resource_limit");
+            assert_eq!(problem["error"]["code"], "resource_limit");
+            assert_eq!(
+                problem["detail"],
+                format!("query {resource} limit 7 exceeded")
+            );
+            assert!(problem["type"]
+                .as_str()
+                .unwrap()
+                .ends_with("#resource_limit"));
+            assert_eq!(error.retry_after, None);
+        }
+        assert_eq!(
+            ApiError::from_core(anyhow::anyhow!("query work limit 7 exceeded")).code,
+            "internal"
+        );
+        let committed = writerslogic_warm::CommittedMutationError {
+            effect: "publication",
+            source: QueryLimitExceeded {
+                resource: "work",
+                limit: 7,
+            }
+            .into(),
+        };
+        assert_eq!(
+            ApiError::from_core(committed.into()).code,
+            "mutation_committed"
+        );
+    }
 
     #[test]
     fn problem_carries_rfc9457_members_and_the_legacy_error_object() {

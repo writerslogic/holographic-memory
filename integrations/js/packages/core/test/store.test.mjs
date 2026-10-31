@@ -110,6 +110,61 @@ test('filters: pushed equality and client-side residual', async () => {
   assert.equal(arr.records.length, 0)
 })
 
+for (const mutation of ['replace', 'delete', 'reinsert']) {
+  test(`recall rejects ${mutation} between native ranking and assembly`, async () => {
+    const original = Array.from({ length: 100 }, (_, i) => `wörd${i}`).join(' ')
+    let mutate = true
+    const s = store({
+      chunkWords: 20,
+      overlapWords: 5,
+      rerank: async (_query, passages) => {
+        if (mutate) {
+          mutate = false
+          if (mutation !== 'replace') await s.memory.deleteDocument('x')
+          if (mutation !== 'delete') {
+            await s.memory.memorizeDocument({
+              id: 'x', text: 'short', storeText: true,
+              metadata: { parity: 0, _warm_collection: '' },
+              embeddings: (await s.embedder.encodeDocuments(['short'])).map((vector) => Array.from(vector)),
+            })
+          }
+        }
+        return passages.map((_, i) => passages.length - i)
+      },
+    })
+    try {
+      await s.remember([{ id: 'x', text: original, metadata: { parity: 1 } }])
+      assert.equal((await s.memory.getDocumentInfo('x')).version, '1')
+      await assert.rejects(
+        s.recall('wörd99', { k: 1, filter: { parity: 1 } }),
+        (error) => error.code === 'concurrent_mutation',
+      )
+      assert.deepEqual(await s.recall('wörd99', { k: 1, filter: { parity: 1 } }), [])
+    } finally {
+      await s.close()
+    }
+  })
+}
+
+test('recall rejects replacement during residual eligibility selection', async () => {
+  const embedder = new HashingEmbedder(384)
+  const encodeQuery = embedder.encodeQuery.bind(embedder)
+  const s = store({ embedder })
+  embedder.encodeQuery = async (query) => {
+    await s.remember([{ id: 'x', text: 'new alpha', metadata: { n: 0 } }])
+    return encodeQuery(query)
+  }
+  try {
+    await s.remember([{ id: 'x', text: 'old alpha', metadata: { n: 2 } }])
+    await assert.rejects(
+      s.recall('alpha', { k: 1, filter: { n: { $gt: 1 } } }),
+      (error) => error.code === 'concurrent_mutation',
+    )
+  } finally {
+    await s.close()
+  }
+})
+
 test('collections isolate ids and queries inside one store', async () => {
   const plain = store()
   const a = new WarmStore({ memory: plain.memory, collection: 'A' })

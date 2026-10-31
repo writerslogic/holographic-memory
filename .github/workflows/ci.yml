@@ -15,6 +15,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      windows_spill_stress:
+        description: Run five minutes of Windows spill stress tests before the full suite
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -156,6 +161,9 @@ jobs:
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
           tool: nextest
+      - name: Diagnose Windows spill lifetimes
+        if: inputs.windows_spill_stress
+        run: cargo nextest run --locked --lib --stress-duration 5m --retries 0 --fail-fast -E 'test(delta_rows::tests)'
       - name: Unit and integration tests
         run: cargo nextest run --locked --no-fail-fast
 

@@ -180,9 +180,9 @@ export interface ConsolidationReport {
   dryRun: boolean
 }
 
-/** `code` is `invalid_request`, `not_found`, `conflict` or `internal`. */
+/** Stable failure class shared with the HTTP memory API. */
 export class MemoryError extends Error {
-  code: 'invalid_request' | 'not_found' | 'conflict' | 'internal' | (string & {})
+  code: 'invalid_request' | 'not_found' | 'conflict' | 'concurrent_mutation' | 'resource_limit' | 'mutation_committed' | 'internal' | (string & {})
 }
 
 export class Memory {

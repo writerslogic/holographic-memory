@@ -25,6 +25,8 @@ export declare class WarmMemorySystem {
    */
   listDocuments(after?: string | undefined | null, limit?: number | undefined | null): Promise<Array<ListedDocument>>
   getDocumentInfo(id: string): Promise<ListedDocument | null>
+  /** Opaque store revision. Equal values bracket an unchanged store on this handle. */
+  revision(): string
   securityStatus(): any
   get vectorCount(): number
   get nsgTrained(): boolean

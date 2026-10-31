@@ -1380,15 +1380,15 @@ fn matches_document_metadata(document: &StoredDocument, options: &SearchOptions)
         .source_uri
         .as_ref()
         .is_none_or(|uri| document.source_uri.as_ref() == Some(uri))
-        && options
-            .filter
-            .as_ref()
-            .and_then(Value::as_object)
-            .is_none_or(|filter| {
-                filter
-                    .iter()
-                    .all(|(key, value)| document.metadata.get(key) == Some(value))
-            })
+        && matches_metadata(&document.metadata, options.filter.as_ref())
+}
+
+pub(crate) fn matches_metadata(metadata: &Value, filter: Option<&Value>) -> bool {
+    filter.and_then(Value::as_object).is_none_or(|filter| {
+        filter
+            .iter()
+            .all(|(key, value)| metadata.get(key) == Some(value))
+    })
 }
 
 fn top_ranked<T>(

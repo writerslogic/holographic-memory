@@ -27,6 +27,10 @@ pub struct QueryLimitExceeded {
     pub limit: usize,
 }
 
+impl QueryLimitExceeded {
+    pub const CODE: &'static str = "resource_limit";
+}
+
 pub(crate) struct QueryBudget {
     limits: QueryLimits,
     work: usize,

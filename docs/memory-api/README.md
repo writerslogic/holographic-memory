@@ -242,10 +242,13 @@ Each is covered by `tests/memory_api.rs`, `tests/memory_api_server.rs` and the b
 
 See [Measured cost](#measured-cost) for numbers. The default path adds one metadata parse and
 one map lookup per result to document search. When the store has validity windows or
-supersession links, recall resolves eligibility before retrieval. A subject or entity scope
-limits that source scan; without a scope it visits all documents. The scan and captured
-reverse links use the default `QueryLimits` work and byte budgets and return an explicit
-error on exhaustion. Eligible IDs enter the existing filtered-search path, so stale history
+supersession links, recall resolves eligibility before retrieval. Subject, entity and metadata
+filters constrain the documents and reverse links captured for temporal evaluation. Scalar
+metadata filters use the existing postings; object and array matches can require a metadata
+scan. Superseders outside the query scope still determine a selected fact's status. Capture
+uses the default `QueryLimits` work and byte budgets and returns `resource_limit` on exhaustion
+through Node and HTTP (429), without a partial answer. Eligible IDs enter the existing
+filtered-search path, so stale history
 does not consume `candidate_limit`. Recency adjustment remains bounded by that candidate
 budget. Metadata-only preselection adds source-scan work; its performance is not yet measured.
 
