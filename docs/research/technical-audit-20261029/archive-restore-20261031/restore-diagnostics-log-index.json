@@ -1,0 +1,17 @@
+[
+  {
+    "file": "final-restore-diagnostics-tests.log",
+    "bytes": 31104,
+    "sha256": "b1deef15c154fbd7fc878c1607c65777ec276b311c7a61d7ec2e72b3227971d0"
+  },
+  {
+    "file": "final-restore-diagnostics-serial.log",
+    "bytes": 2855,
+    "sha256": "4ef379c688132ddfea2bb752be05990c1c593b6422259334fbba175da16931b3"
+  },
+  {
+    "file": "final-restore-diagnostics-clippy.log",
+    "bytes": 145,
+    "sha256": "43638e79f2001c13b18ebdc87261870bdc13e3e08cadc3ace9f95074cfa12f29"
+  }
+]

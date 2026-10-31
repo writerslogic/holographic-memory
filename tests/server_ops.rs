@@ -180,7 +180,7 @@ fn snapshot_restore_and_off_box_backup_round_trip() {
         .bearer("root")
         .tenant("t2")
         .header("Content-Type", "application/x-tar")
-        .body(archive.body.clone())
+        .body(archive.body)
         .send();
     assert_eq!(up.status, 200, "{}", up.text());
     assert_eq!(count_with(&b, "root", "t2"), 2);
