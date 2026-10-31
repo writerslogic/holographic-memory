@@ -78,7 +78,7 @@ jobs:
         if: ${{ matrix.zig }}
         with:
           version: 0.15.2
-      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
         if: ${{ matrix.zig }}
         with:
           tool: cargo-zigbuild
@@ -98,7 +98,7 @@ jobs:
           # shellcheck disable=SC2086
           npm run build:platform -- --target "$TARGET" $FLAGS
           ls -l ./*.node
-      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      - uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2.88.0
         with:
           tool: cargo-cyclonedx
       - name: CycloneDX SBOM
