@@ -126,7 +126,7 @@ WARM_MCP_TOKEN="$(openssl rand -hex 24)" warm-mcp --transport http --bind 127.0.
 ```
 
 - Loopback by default. A non-loopback `--bind` requires `--allow-remote` and static bearer or OAuth authorization. Terminate TLS at a trusted proxy; the listener itself uses HTTP.
-- `WARM_MCP_TOKEN` (at least 16 characters, environment only) requires `Authorization: Bearer <token>` on the MCP endpoint, compared in constant time. `/health` answers `ok` without auth.
+- `WARM_MCP_TOKEN` (at least 16 characters, environment only) requires `Authorization: Bearer <token>` on the MCP endpoint, compared in constant time. Bearer scheme names are case-insensitive and accept one or more ASCII spaces before the token; tokens remain case-sensitive. Repeated Authorization fields are rejected with 401, including identical duplicates. OAuth mode uses the same field parsing plus its existing token-format and length checks. `/health` answers `ok` without auth.
 - `Host` must be a loopback name (extend with `--allow-host`) and a request carrying an `Origin` header must match `--allow-origin`; both reject DNS rebinding and cross-site calls with 403. Requests without `Origin` (non-browser clients) pass.
 - Request bodies are capped (`--max-request-bytes`, 1 MiB). HTTP/1.1 connections, request admission, response streams and legacy protocol sessions have separate limits below. Requests above HTTP admission capacity return 503 immediately; excess TCP connections close before parsing.
 - SIGINT or SIGTERM cancels HTTP streams and sessions, allows the configured connection shutdown grace, then flushes stores before exit.

@@ -21,6 +21,13 @@ A token looks like `warm_<id>.<64 hex digits>`: the key id, then 256 bits from t
 
 The key id appears in access logs (`key_id`), never the secret.
 
+Authenticated requests require one `Authorization` field. The Bearer scheme is
+case-insensitive and allows one or more ASCII spaces before the case-sensitive
+token ([RFC 9110 §11.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-11.1),
+[RFC 6750 §2.1](https://www.rfc-editor.org/rfc/rfc6750.html#section-2.1)). Repeated
+fields, even identical ones, return 401 with a Bearer challenge before any
+handler runs. Duplicate rejection is WARM's policy for ambiguous credentials.
+
 ## Creating keys
 
 ```sh

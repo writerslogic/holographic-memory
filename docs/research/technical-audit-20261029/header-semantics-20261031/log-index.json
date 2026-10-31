@@ -1,0 +1,57 @@
+[
+  {
+    "file": "auth-final.log",
+    "bytes": 914,
+    "sha256": "19bfdf0ce5e337025c42438334d3549c45e241ee37d3bbc2b6e58f07231f27c0"
+  },
+  {
+    "file": "baseline.log",
+    "bytes": 2127,
+    "sha256": "819bfce1ebc775e7123d23bb7d3550a5fdb612c6122e789f3b6145213f1edb21"
+  },
+  {
+    "file": "bearer-final.log",
+    "bytes": 118,
+    "sha256": "185fae8bc6494241cdd35fd80d76d1edb3a3f080b00810c10bffb7681fe54c72"
+  },
+  {
+    "file": "bearer-online.log",
+    "bytes": 10732,
+    "sha256": "53dc0dec6464e29edd34714dee0b8950553427fac6e7be805a0d8148b2c02b8d"
+  },
+  {
+    "file": "clippy-final.log",
+    "bytes": 1249,
+    "sha256": "a48eabb3f2ce56093691989be34a759661d3de1f2a3aad24d31acc6a85c8d7f4"
+  },
+  {
+    "file": "fmt-final.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "http-final.log",
+    "bytes": 3157,
+    "sha256": "8ef212957aa992fc41d73e359358148f25310e345fc36d3d7d02d7d2bf61a9ef"
+  },
+  {
+    "file": "http-serial.log",
+    "bytes": 2093,
+    "sha256": "1fe161c3c4be95bb78cc12a71af31a0fb425592a1f7656e17b76fa92307cff91"
+  },
+  {
+    "file": "http-warm-store.log",
+    "bytes": 1668,
+    "sha256": "a3dcb642197c66d59c80fcef8372d2e8e2599374175d8359cd28077d51824c7a"
+  },
+  {
+    "file": "mcp-final.log",
+    "bytes": 3628,
+    "sha256": "3ddae77919e717d6f84262445bac1482d557a4fe05623e1cb1da1161a4cacb6a"
+  },
+  {
+    "file": "server-final.log",
+    "bytes": 655,
+    "sha256": "6460c3b36beb30b9f9c5f2a8a4f0bc2cbd5def0051c2be606450cc65d5bf78ed"
+  }
+]

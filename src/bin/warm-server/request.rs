@@ -169,9 +169,13 @@ fn replay(stored: &StoredResponse) -> Response {
 }
 
 pub fn idempotency_key(headers: &HeaderMap) -> Result<Option<String>, ApiError> {
-    let Some(value) = headers.get("idempotency-key") else {
+    let mut values = headers.get_all("idempotency-key").iter();
+    let Some(value) = values.next() else {
         return Ok(None);
     };
+    if values.next().is_some() {
+        return Err(ApiError::bad("Idempotency-Key must occur at most once"));
+    }
     match value.to_str() {
         Ok(k) if (1..=128).contains(&k.len()) && k.bytes().all(|b| (0x21..=0x7e).contains(&b)) => {
             Ok(Some(k.to_string()))

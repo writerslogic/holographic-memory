@@ -766,6 +766,16 @@ fn ndjson_stream_commits_in_batches_and_reports_rejected_lines() {
 fn per_tenant_rate_limit_and_document_quota() {
     let s = Server::open(&["--rate-limit-rps", "1", "--rate-limit-burst", "3"]);
     let q = json!({"query_vector": embedding(1)});
+    // Store initialization can refill the bucket; measure only after opening it and refilling.
+    assert_eq!(
+        s.req("POST", "/api/v1/query")
+            .tenant("noisy")
+            .json(&q)
+            .send()
+            .status,
+        200
+    );
+    std::thread::sleep(Duration::from_millis(1100));
     let statuses: Vec<u16> = (0..5)
         .map(|_| {
             s.req("POST", "/api/v1/query")
@@ -1041,5 +1051,113 @@ fn search_ranks_like_lexical_recall_and_returns_fields_only_on_request() {
             status,
             "{bad}"
         );
+    }
+}
+
+#[test]
+fn singleton_headers_accept_bearer_scheme_case_and_spacing() {
+    let s = Server::with_key("test-key", &[]);
+    for value in [
+        "Bearer test-key",
+        "bearer test-key",
+        "BEARER test-key",
+        "bEaReR   test-key",
+    ] {
+        assert_eq!(
+            s.req("GET", "/api/v1/stats")
+                .header("Authorization", value)
+                .send()
+                .status,
+            200
+        );
+    }
+    for value in [
+        "Bearer",
+        "BearerWrong test-key",
+        "Bearer\ttest-key",
+        "Bearer TEST-KEY",
+        "Bearer test-key, Bearer test-key",
+    ] {
+        let response = s
+            .req("GET", "/api/v1/stats")
+            .header("Authorization", value)
+            .send();
+        assert_eq!(response.status, 401);
+        assert_eq!(response.header("www-authenticate"), Some("Bearer"));
+    }
+}
+
+#[test]
+fn singleton_headers_reject_repeated_authorization_without_writing() {
+    let s = Server::with_key("test-key", &[]);
+    for values in [
+        ["Bearer test-key", "Bearer wrong"],
+        ["Bearer wrong", "Bearer test-key"],
+        ["Bearer test-key", "Bearer test-key"],
+    ] {
+        let response = s
+            .req("POST", "/api/v1/documents")
+            .header("Authorization", values[0])
+            .header("authorization", values[1])
+            .json(&doc("ambiguous", 1))
+            .send();
+        assert_eq!(response.status, 401);
+        assert_eq!(response.header("www-authenticate"), Some("Bearer"));
+    }
+    assert_eq!(
+        s.req("GET", "/api/v1/documents")
+            .bearer("test-key")
+            .send()
+            .json()["count"],
+        0
+    );
+}
+
+#[test]
+fn singleton_headers_reject_repeated_tenants_without_writing() {
+    let s = Server::open(&[]);
+    for values in [["alpha", "beta"], ["beta", "alpha"], ["alpha", "alpha"]] {
+        let response = s
+            .req("POST", "/api/v1/documents")
+            .header("X-Tenant-ID", values[0])
+            .header("x-tenant-id", values[1])
+            .json(&doc("ambiguous", 1))
+            .send();
+        assert_eq!(response.status, 400);
+        assert_eq!(response.json()["code"], "invalid_tenant");
+    }
+    for tenant in ["alpha", "beta", "default"] {
+        assert_eq!(
+            s.req("GET", "/api/v1/documents")
+                .tenant(tenant)
+                .send()
+                .json()["count"],
+            0
+        );
+    }
+}
+
+#[test]
+fn singleton_headers_reject_repeated_retry_keys_without_reserving_them() {
+    let s = Server::open(&[]);
+    for values in [["first", "second"], ["second", "first"], ["first", "first"]] {
+        let response = s
+            .req("POST", "/api/v1/documents")
+            .header("Idempotency-Key", values[0])
+            .header("idempotency-key", values[1])
+            .json(&doc("ambiguous", 1))
+            .send();
+        assert_eq!(response.status, 422);
+        assert_eq!(response.json()["code"], "invalid_request");
+    }
+    assert_eq!(s.req("GET", "/api/v1/documents").send().json()["count"], 0);
+    for key in ["first", "second"] {
+        let response = s
+            .req("POST", "/api/v1/documents")
+            .header("Idempotency-Key", key)
+            .json(&doc(key, 2))
+            .send();
+        assert_eq!(response.status, 200);
+        assert!(response.header("idempotent-replayed").is_none());
     }
 }

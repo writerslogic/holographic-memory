@@ -1,0 +1,71 @@
+{
+  "baseline": "3f787a5efb30468bc976623cc973edcbaa058029",
+  "integrated_base": "171c80d3",
+  "toolchain": "Rust 1.99.0",
+  "features": "server,mcp",
+  "baseline_regressions": {
+    "command": "cargo +1.99.0 test --offline --locked --features server --test server_api singleton_headers",
+    "failed": 4,
+    "passed": 0,
+    "log": "baseline.log",
+    "patch": "baseline-regressions.patch"
+  },
+  "checks": [
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server,mcp --bin warm-server auth::tests",
+      "passed": 7,
+      "log": "auth-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server,mcp --test server_api -- --test-threads=1",
+      "passed": 19,
+      "log": "http-warm-store.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server,mcp --bin warm-mcp -- --test-threads=1",
+      "passed": 41,
+      "log": "mcp-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server,mcp --bin warm-server --bin warm-mcp --test server_api -- -D warnings",
+      "result": "pass",
+      "log": "clippy-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check; git diff --check",
+      "result": "pass",
+      "log": "fmt-final.log"
+    }
+  ],
+  "retained_failed_attempts": [
+    {
+      "log": "bearer-final.log",
+      "cause": "Offline registry cache lacked rmcp 3.8.0; fetched locked public dependencies and reran successfully, with no model downloads."
+    },
+    {
+      "log": "http-final.log",
+      "passed": 14,
+      "failed": 5,
+      "observations": "Four empty-response failures and one burst-count failure during parallel tests; host contention suspected, not directly measured."
+    },
+    {
+      "log": "http-serial.log",
+      "passed": 18,
+      "failed": 1,
+      "observations": "Serial execution cleared empty responses; the burst test still allowed tenant initialization to refill its bucket. Opening the store and replenishing the warm-up token before measuring the burst preserved every existing assertion and passed the full suite."
+    }
+  ],
+  "limits": [
+    "No demonstrated proxy exploit or authorization bypass; repeated headers were ambiguously accepted.",
+    "No full HTTP/OAuth conformance claim.",
+    "Static secrets keep their existing format policy; OAuth retains its stricter format and 8 KiB length cap.",
+    "No-auth mode remains unauthenticated.",
+    "No restart-persistent HTTP idempotency."
+  ],
+  "standards": [
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-11.1",
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3",
+    "https://www.rfc-editor.org/rfc/rfc6750.html#section-2.1"
+  ],
+  "integration_gate": "Pending PR checks; final tested PR head and merge record are authoritative."
+}

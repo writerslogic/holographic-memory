@@ -26,7 +26,7 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 400. The body is not valid JSON, or has the wrong shape for the endpoint.
 
 ### invalid_tenant
-400. `X-Tenant-ID` is not 1 to 64 characters of `[A-Za-z0-9_-]`.
+400. `X-Tenant-ID` occurs more than once or is not 1 to 64 characters of `[A-Za-z0-9_-]`.
 
 ### invalid_request
 422. The body parsed but a value is not acceptable: wrong vector length or non-finite values, `top_k` out of range, an id with control characters or the reserved `hms:` prefix, text that does not fit one chunk, a batch over the limits, an archive that is not a valid store, a malformed query string. The request was not applied.

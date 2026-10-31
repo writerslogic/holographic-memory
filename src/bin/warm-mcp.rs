@@ -152,12 +152,7 @@ fn limits(cli: &Cli) -> Limits {
 }
 
 async fn bearer(State(token): State<Arc<String>>, req: Request, next: Next) -> Response {
-    let presented = req
-        .headers()
-        .get(header::AUTHORIZATION)
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.strip_prefix("Bearer "))
-        .unwrap_or("");
+    let presented = oauth::bearer_value(req.headers()).unwrap_or("");
     // Constant-time over the bytes; the token length is not treated as secret.
     let ok =
         presented.len() == token.len() && bool::from(presented.as_bytes().ct_eq(token.as_bytes()));
