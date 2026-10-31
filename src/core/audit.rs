@@ -80,7 +80,8 @@ impl AuditLog {
         let path = storage_path.join("audit.bin");
         let file = OpenOptions::new()
             .read(true)
-            .append(true)
+            .write(true)
+            .truncate(false)
             .create(true)
             .open(&path)?;
         Self::repair_torn_tail(&file)?;
@@ -126,6 +127,8 @@ impl AuditLog {
         let mut file = self.file.lock();
         // A prior failed write can leave a partial record without closing this handle.
         Self::repair_torn_tail(&file)?;
+        // Windows append-only handles cannot truncate; append under the same writer lock.
+        file.seek(SeekFrom::End(0))?;
         file.write_all(&bytes)
             .map_err(|e| anyhow!("Audit write failed: {}", e))?;
         file.sync_data()
@@ -313,6 +316,12 @@ mod tests {
                 std::fs::read(dir.path().join("audit.bin")).unwrap(),
                 before_reopen
             );
+            drop(reopened);
+            let reopened = AuditLog::new(dir.path()).unwrap();
+            reopened.record(AuditOp::Compact, "", None).unwrap();
+            let after_append = std::fs::read(dir.path().join("audit.bin")).unwrap();
+            assert_eq!(&after_append[..before_reopen.len()], &before_reopen);
+            assert_eq!(reopened.entries_since(0).unwrap().len(), expected_count + 1);
         }
     }
 

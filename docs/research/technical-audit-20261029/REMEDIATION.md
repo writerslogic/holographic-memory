@@ -124,6 +124,10 @@ failed against the old implementation. Reads now reject invalid complete records
 with their byte offset even outside the timestamp filter. Opening and appending
 share a same-handle torn-tail repair; appends serialize repair and writing, sync
 the truncation, and stop if repair fails. Complete records are never discarded.
+The handle is opened for read/write and seeks to EOF within that same writer lock:
+Windows [requires `FILE_WRITE_DATA` for truncation](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntsetinformationfile),
+which Rust's append-only opening mode omits. Reopen-and-append checks preserve
+the existing prefix without first reading the reopened file.
 
 Eight focused audit tests pass, including operation corruption at read-buffer
 boundaries, one-byte and 104/105/106-byte interrupted tails, read-only repair
