@@ -15,7 +15,7 @@ from pathlib import Path
 def hnsw_ops(a):
     import numpy as np
     sys.path.insert(0, str(Path(__file__).parent))
-    from hmsbench.ann_worker import Hnswlib
+    from warmbench.ann_worker import Hnswlib
     meta = json.loads((a.data / "meta.json").read_text())
     n, dim = meta["n_train"], meta["dim"]
     count = n // 100
@@ -99,7 +99,7 @@ def main(a):
         shutil.copytree(updated, copied)
         output = a.work / f"{operation}.json"
         ops[operation] = run(operation, [a.after, "ann-updates", "--action", operation, "--index", copied, "--data", a.data, "--out", output], output=output)
-    worker = Path(__file__).parent / "hmsbench/ann_worker.py"
+    worker = Path(__file__).parent / "warmbench/ann_worker.py"
     hnsw_path = a.work / "hnsw"
     hnsw_build = run("hnsw-build", [a.python_hnsw, worker, "build", "--system", "hnswlib", "--build", "m32e500", "--threads", "10", "--data", a.data, "--workdir", hnsw_path], "12-21", "10")
     with (hnsw_path / "index.bin").open("rb") as handle:

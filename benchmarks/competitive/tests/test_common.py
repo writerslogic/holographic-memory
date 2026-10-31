@@ -10,9 +10,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from hmsbench import data  # noqa: E402
-from hmsbench import common  # noqa: E402
-from hmsbench.common import _Spawner, bootstrap_ci, dir_bytes, ndcg_at, pass_summary, quantile, recall_at, run_measured, timing_lock  # noqa: E402
+from warmbench import data  # noqa: E402
+from warmbench import common  # noqa: E402
+from warmbench.common import _Spawner, bootstrap_ci, dir_bytes, ndcg_at, pass_summary, quantile, recall_at, run_measured, timing_lock  # noqa: E402
 
 
 def test_bootstrap_interval_brackets_the_median_and_narrows_with_more_data():

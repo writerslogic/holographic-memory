@@ -86,7 +86,7 @@ def ann_subset(name, n_train, n_test):
     test.tofile(out / "test.f32")
     _truth(train, test, meta["metric"], meta["n_neighbors"]).tofile(out / "neighbors.i32")
     sub = {**meta, "n_train": int(n_train), "n_test": int(n_test), "subset_of": name,
-           "source_sha256": meta["sha256"], "truth": "exact, recomputed by hmsbench.data",
+           "source_sha256": meta["sha256"], "truth": "exact, recomputed by warmbench.data",
            "train_sha256": _sha(out / "train.f32"), "test_sha256": _sha(out / "test.f32")}
     (out / "meta.json").write_text(json.dumps(sub, indent=2) + "\n")
     return out, sub

@@ -18,7 +18,7 @@ from unittest.mock import patch
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from hmsbench import common, runner  # noqa: E402
+from warmbench import common, runner  # noqa: E402
 
 
 @unittest.skipUnless(os.environ.get("WARM_PUBLIC_BENCH"), "set WARM_PUBLIC_BENCH for the native integration test")

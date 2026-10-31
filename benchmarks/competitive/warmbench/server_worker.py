@@ -439,7 +439,7 @@ class OpenSearchBase(ServerSystem):
             shutil.copytree(home / "config", conf)
         heap = os.environ.get("WARM_BENCH_OPENSEARCH_HEAP", "4g")
         settings = {"path.data": self.data, "path.logs": self.logs, "http.port": self.port, "transport.port": transport,
-                    "network.host": "127.0.0.1", "discovery.type": "single-node", "cluster.name": "hmsbench", "node.name": "n1",
+                    "network.host": "127.0.0.1", "discovery.type": "single-node", "cluster.name": "warmbench", "node.name": "n1",
                     "plugins.security.disabled": "true", "bootstrap.memory_lock": "false"}
         argv = [home / "bin" / "opensearch", *(x for k, v in settings.items() for x in ("-E", f"{k}={v}"))]
         env = {"OPENSEARCH_PATH_CONF": str(conf), "OPENSEARCH_JAVA_OPTS": f"-Xms{heap} -Xmx{heap}"}
