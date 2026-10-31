@@ -8,9 +8,9 @@
     "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
-    "writerslogic-warm": "file:../..",
     "@types/node": "^22.20.2",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.3"
+    "tsup": "^9.0.0",
+    "typescript": "^5.9.3",
+    "writerslogic-warm": "file:../.."
   }
 }

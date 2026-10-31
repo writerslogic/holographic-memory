@@ -8,9 +8,9 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use anyhow::{ensure, Context, Result};
-use writerslogic_warm::core::WarmConfig;
-use writerslogic_warm::{DocumentInput, WarmCore, SearchOptions};
 use rusqlite::Connection;
+use writerslogic_warm::core::WarmConfig;
+use writerslogic_warm::{DocumentInput, SearchOptions, WarmCore};
 
 const DIMENSIONS: u32 = 4096;
 
