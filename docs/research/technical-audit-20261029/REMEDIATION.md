@@ -477,3 +477,11 @@ in `migration-flush-20261031/`. These tests verify data and permissions, not har
 power-loss behavior; the missing flushes were established by source inspection, not
 by claiming a new test fails on the baseline. Windows execution and PR integration
 remain pending. Windows directory-sync limitations and throughput are unverified.
+
+The migration helper likewise retains native file copies rather than stream
+copying, preserving NTFS alternate streams. It restores the unpublished Windows
+copy’s read-only attribute after acquiring a writable flush handle, including the
+open-error path. Windows-only stream-preservation assertions cover both nested
+migration files and top-level upgrade metadata. The refined helper passes the
+four admin/eight upgrade checks and strict Clippy/format gates locally; its
+Windows execution is still pending. This does not prove power-loss durability.

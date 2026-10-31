@@ -95,26 +95,26 @@ pub(crate) fn positioned_write(_: &File, _: &[u8], _: u64) -> std::io::Result<()
 }
 
 pub(crate) fn copy_file_synced(source: &Path, destination: &Path) -> Result<u64> {
+    let bytes = std::fs::copy(source, destination)?;
     #[cfg(windows)]
     {
-        // Retain write access for flushing even when the source is read-only.
-        let mut source = File::open(source)?;
-        let mut destination = std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(destination)?;
-        let bytes = std::io::copy(&mut source, &mut destination)?;
-        destination.set_permissions(source.metadata()?.permissions())?;
-        destination.sync_all()?;
-        Ok(bytes)
+        let permissions = std::fs::metadata(destination)?.permissions();
+        let read_only = permissions.readonly();
+        if read_only {
+            let mut writable = permissions.clone();
+            writable.set_readonly(false);
+            std::fs::set_permissions(destination, writable)?;
+        }
+        // Restore attributes even when opening the writable flush handle failed.
+        let file = std::fs::OpenOptions::new().write(true).open(destination);
+        if read_only {
+            std::fs::set_permissions(destination, permissions)?;
+        }
+        file?.sync_all()?;
     }
-    #[cfg(not(windows))]
-    {
-        let bytes = std::fs::copy(source, destination)?;
-        #[cfg(unix)]
-        File::open(destination)?.sync_all()?;
-        Ok(bytes)
-    }
+    #[cfg(unix)]
+    File::open(destination)?.sync_all()?;
+    Ok(bytes)
 }
 
 pub(crate) fn sync_directory(path: &Path) -> Result<()> {

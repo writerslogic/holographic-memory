@@ -69,6 +69,8 @@ fn mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
     let note = source.join("deployment.json");
     let contents = br#"{"owner":"operator"}"#;
     std::fs::write(&note, contents)?;
+    #[cfg(windows)]
+    std::fs::write(source.join("deployment.json:metadata"), b"alternate stream")?;
     let writable = std::fs::metadata(&note)?.permissions();
     let mut read_only = writable.clone();
     read_only.set_readonly(true);
@@ -84,6 +86,11 @@ fn mixed_version_upgrade_keeps_current_tenant_arena() -> anyhow::Result<()> {
     let report = result?;
     assert!(source_read_only && copied_read_only?);
     assert_eq!(std::fs::read(copied)?, contents);
+    #[cfg(windows)]
+    assert_eq!(
+        std::fs::read(output.join("deployment.json:metadata"))?,
+        b"alternate stream"
+    );
     assert!(
         output.join("tenants/6e6577/vectors_data.bin").is_dir(),
         "current tenant's journal was omitted; output verdict {:?}",

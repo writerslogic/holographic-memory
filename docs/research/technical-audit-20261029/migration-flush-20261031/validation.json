@@ -11,7 +11,7 @@
       "classification": "Source-verified ordering gap."
     }
   ],
-  "mechanism": "One crate-private copy_file_synced helper flushes the copied file and preserves its permissions; Windows retains the writable handle, Unix keeps native fs::copy. Upgrade publication also syncs staged directory entries on supported platforms.",
+  "mechanism": "One crate-private copy_file_synced helper retains native fs::copy, including native Windows metadata/alternate streams. Windows opens a writable flush handle after temporarily clearing the unpublished copy read-only bit when necessary, restoring it before propagating errors. Upgrade publication syncs directory entries where supported.",
   "checks": [
     {
       "command": "cargo +1.99.0 test --offline --locked --lib core::admin::tests -- --test-threads=1",
@@ -47,5 +47,20 @@
     "No migration throughput measurement."
   ],
   "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers",
-  "integration_gate": "Pending PR and up-to-date main integration."
+  "integration_gate": "Pending PR and up-to-date main integration.",
+  "native_copy_refinement": {
+    "reason": "The initial unmerged stream-copy implementation would omit NTFS alternate streams preserved by native copying.",
+    "tests": "Windows-only alternate-stream assertions added to nested migration copies and top-level multi-tenant upgrade metadata. Their runtime verification awaits Windows CI.",
+    "local_final": {
+      "admin_tests": 4,
+      "upgrade_tests": 8,
+      "clippy": "pass",
+      "formatting": "pass",
+      "log_prefix": "native-"
+    },
+    "sources": [
+      "https://doc.rust-lang.org/std/fs/fn.copy.html",
+      "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-copyfilew"
+    ]
+  }
 }

@@ -558,6 +558,8 @@ mod tests {
         std::fs::create_dir_all(source.join("nested"))?;
         let original = source.join("nested/data");
         std::fs::write(&original, b"migration data")?;
+        #[cfg(windows)]
+        std::fs::write(source.join("nested/data:metadata"), b"alternate stream")?;
         std::fs::write(source.join(LOCK_FILE), b"process lock")?;
         let writable = std::fs::metadata(&original)?.permissions();
         let mut read_only = writable.clone();
@@ -575,6 +577,11 @@ mod tests {
 
         result?;
         assert_eq!(std::fs::read(copied)?, b"migration data");
+        #[cfg(windows)]
+        assert_eq!(
+            std::fs::read(target.join("nested/data:metadata"))?,
+            b"alternate stream"
+        );
         assert!(source_read_only && copied_read_only?);
         assert!(!target.join(LOCK_FILE).exists());
         Ok(())
