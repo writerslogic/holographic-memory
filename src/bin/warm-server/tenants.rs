@@ -573,11 +573,14 @@ impl AppState {
 
     /// Flush and close tenants idle longer than `--tenant-idle-seconds`.
     pub fn evict_idle(&self) -> usize {
+        self.evict_idle_at(self.now_ms())
+    }
+
+    fn evict_idle_at(&self, now: u64) -> usize {
         let idle = self.cfg.tenant_idle_seconds.saturating_mul(1000);
         if idle == 0 {
             return 0;
         }
-        let now = self.now_ms();
         let mut closed = 0;
         for tenant in self.ready_tenants() {
             if now.saturating_sub(tenant.last_used_ms.load(Ordering::Relaxed)) < idle
@@ -956,6 +959,23 @@ pub fn copy_store(src: &Path, dst: &Path) -> Result<u64> {
             bytes += copy_store(&from, &to)?;
         } else if kind.is_file() {
             bytes += std::fs::copy(&from, &to)?;
+            #[cfg(windows)]
+            {
+                let permissions = std::fs::metadata(&to)?.permissions();
+                let read_only = permissions.readonly();
+                if read_only {
+                    let mut writable = permissions.clone();
+                    writable.set_readonly(false);
+                    std::fs::set_permissions(&to, writable)?;
+                }
+                // Restore attributes before propagating an open error or flushing the copy.
+                let file = std::fs::OpenOptions::new().write(true).open(&to);
+                if read_only {
+                    std::fs::set_permissions(&to, permissions)?;
+                }
+                file?.sync_all()?;
+            }
+            #[cfg(not(windows))]
             std::fs::File::open(&to)?.sync_all()?;
         }
     }
@@ -981,6 +1001,85 @@ pub fn dir_size(path: &Path) -> u64 {
 mod tests {
     use super::*;
     use std::sync::mpsc;
+
+    /// Idle tenants are flushed and closed, free their slot toward `--max-tenants`, and reopen
+    /// with their data intact.
+    #[test]
+    fn idle_tenants_are_evicted_and_reopen_with_their_data() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = crate::tests::state_with(
+            directory.path(),
+            2,
+            &["--tenant-idle-seconds", "1", "--max-tenants", "1"],
+        );
+        let document = |id: &str| writerslogic_warm::DocumentInput {
+            id: id.into(),
+            text: "persisted words".into(),
+            source_uri: None,
+            version: None,
+            metadata: None,
+            chunk_words: None,
+            overlap_words: None,
+            store_text: None,
+            embeddings: Some(vec![vec![1.0, 0.0]]),
+            title_weight: None,
+        };
+        let core = state.core("a").unwrap();
+        core.memorize_document(document("one")).unwrap();
+        core.tenant.last_used_ms.store(1000, Ordering::Relaxed);
+        drop(core);
+        assert_eq!(state.core("b").err().unwrap().code, "tenant_limit");
+        assert_eq!(state.evict_idle_at(1999), 0, "one millisecond before idle");
+        assert_eq!(state.evict_idle_at(2000), 1, "exactly at the idle limit");
+        assert_eq!(state.open_tenant_count(), 0);
+        let core = state.core("b").unwrap();
+        core.tenant.last_used_ms.store(1000, Ordering::Relaxed);
+        drop(core);
+        assert_eq!(state.evict_idle_at(2001), 1, "one millisecond past idle");
+        assert_eq!(state.core("a").unwrap().document_count(), 1);
+    }
+
+    #[test]
+    fn snapshot_copy_preserves_read_only_files_and_skips_process_state() {
+        let root = tempfile::tempdir().unwrap();
+        let source = root.path().join("source");
+        let target = root.path().join("snapshot");
+        std::fs::create_dir_all(source.join("nested")).unwrap();
+        let original = source.join("nested/data");
+        std::fs::write(&original, b"snapshot bytes").unwrap();
+        #[cfg(windows)]
+        std::fs::write(source.join("nested/data:metadata"), b"alternate stream").unwrap();
+        std::fs::write(source.join(".hms.lock"), b"lock").unwrap();
+        std::fs::create_dir(source.join(".compact-pending")).unwrap();
+        std::fs::write(source.join(".compact-pending/data"), b"scratch").unwrap();
+        let writable = std::fs::metadata(&original).unwrap().permissions();
+        let mut read_only = writable.clone();
+        read_only.set_readonly(true);
+        std::fs::set_permissions(&original, read_only).unwrap();
+
+        let copied = copy_store(&source, &target);
+        let destination = target.join("nested/data");
+        let source_read_only = std::fs::metadata(&original)
+            .unwrap()
+            .permissions()
+            .readonly();
+        let target_read_only = std::fs::metadata(&destination).map(|m| m.permissions().readonly());
+        std::fs::set_permissions(&original, writable.clone()).unwrap();
+        if destination.exists() {
+            std::fs::set_permissions(&destination, writable).unwrap();
+        }
+
+        assert_eq!(copied.unwrap(), 14);
+        assert_eq!(std::fs::read(destination).unwrap(), b"snapshot bytes");
+        #[cfg(windows)]
+        assert_eq!(
+            std::fs::read(target.join("nested/data:metadata")).unwrap(),
+            b"alternate stream"
+        );
+        assert!(source_read_only && target_read_only.unwrap());
+        assert!(!target.join(".hms.lock").exists());
+        assert!(!target.join(".compact-pending").exists());
+    }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn quota_serializes_document_and_memory_writes_and_releases_failed_writes() {

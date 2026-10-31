@@ -2,6 +2,11 @@
 
 Reference for running the server in production. Settings are in [`configuration.md`](configuration.md); the API is [`openapi.json`](openapi.json).
 
+On Windows, Ctrl+C or Ctrl+Break requests the same graceful drain and flush as
+SIGINT/SIGTERM on Unix. Use the authenticated admin endpoints to reload keys or
+TLS certificates on Windows; SIGHUP and Unix sockets are Unix-only. Forceful
+process termination does not request a graceful shutdown.
+
 ## Deployment artifacts
 
 | Target | Path | Notes |

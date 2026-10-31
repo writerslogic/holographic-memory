@@ -1,0 +1,1 @@
+{"enforce_admins":true,"required_status_checks":{"checks":[],"contexts":[],"strict":true},"reviews":{"bypass_users":["dcondrey"],"dismiss_stale_reviews":true,"require_code_owner_reviews":true,"require_last_push_approval":false,"required_approving_review_count":1}}

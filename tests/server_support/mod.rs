@@ -90,8 +90,21 @@ impl<'a> Request<'a> {
     }
 
     pub fn send(self) -> Resp {
+        let method = self.method;
+        let path = self.path.clone();
         let (server, bytes) = self.encode();
-        server.exchange(&bytes)
+        let raw = server.exchange_raw(&bytes);
+        assert!(
+            !raw.is_empty(),
+            "no response to {method} {path}; recent server events: {:?}",
+            server
+                .log_lines()
+                .into_iter()
+                .rev()
+                .take(10)
+                .collect::<Vec<_>>()
+        );
+        parse_response(&raw)
     }
 
     /// `None` when the server closed the connection without answering.
@@ -213,6 +226,11 @@ impl Server {
         for (k, v) in envs {
             cmd.env(k, v);
         }
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP);
+        }
         let mut child = cmd.spawn().unwrap();
         let mut line = String::new();
         BufReader::new(child.stdout.as_mut().unwrap())
@@ -263,11 +281,15 @@ impl Server {
     }
 
     pub fn connect(&self) -> Box<dyn Stream> {
+        self.try_connect().unwrap()
+    }
+
+    fn try_connect(&self) -> std::io::Result<Box<dyn Stream>> {
         let timeout = Some(Duration::from_secs(20));
-        match &self.endpoint {
+        Ok(match &self.endpoint {
             Endpoint::Tcp(addr) => {
-                let tcp = TcpStream::connect(addr).unwrap();
-                tcp.set_read_timeout(timeout).unwrap();
+                let tcp = TcpStream::connect(addr)?;
+                tcp.set_read_timeout(timeout)?;
                 match &self.tls_root {
                     None => Box::new(tcp),
                     Some(pem) => Box::new(tls_stream(tcp, pem)),
@@ -275,16 +297,18 @@ impl Server {
             }
             #[cfg(unix)]
             Endpoint::Unix(path) => {
-                let s = std::os::unix::net::UnixStream::connect(path).unwrap();
-                s.set_read_timeout(timeout).unwrap();
-                Box::new(s)
+                let stream = std::os::unix::net::UnixStream::connect(path)?;
+                stream.set_read_timeout(timeout)?;
+                Box::new(stream)
             }
-        }
+        })
     }
 
     /// The bytes the server sent back, empty when the connection or handshake failed.
     pub fn exchange_raw(&self, bytes: &[u8]) -> Vec<u8> {
-        let mut stream = self.connect();
+        let Ok(mut stream) = self.try_connect() else {
+            return Vec::new();
+        };
         // The server may answer and close before reading an oversized body.
         let _ = stream.write_all(bytes);
         let mut raw = Vec::new();
@@ -318,6 +342,7 @@ impl Server {
         self.child.id()
     }
 
+    #[cfg(unix)]
     pub fn signal(&self, name: &str) {
         let status = Command::new("kill")
             .args([&format!("-{name}"), &self.child.id().to_string()])
@@ -326,7 +351,16 @@ impl Server {
         assert!(status.success());
     }
 
-    /// SIGTERM and wait; true when the process exited cleanly.
+    #[cfg(windows)]
+    pub fn signal(&self, name: &str) {
+        use windows_sys::Win32::System::Console::{GenerateConsoleCtrlEvent, CTRL_BREAK_EVENT};
+        assert_eq!(name, "TERM", "Windows reloads must use the admin endpoints");
+        // Each child owns a process group; never signal group zero (the test runner).
+        let sent = unsafe { GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, self.child.id()) };
+        assert_ne!(sent, 0, "{}", std::io::Error::last_os_error());
+    }
+
+    /// Request a graceful shutdown and wait for a successful exit.
     pub fn stop(&mut self) -> bool {
         self.signal("TERM");
         self.child.wait().unwrap().success()

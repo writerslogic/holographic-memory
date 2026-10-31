@@ -1,0 +1,9 @@
+{
+  "strict": true,
+  "checks": [
+    {
+      "context": "check",
+      "app_id": 15368
+    }
+  ]
+}
