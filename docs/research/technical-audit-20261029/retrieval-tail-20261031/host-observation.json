@@ -1,0 +1,13 @@
+{
+  "observation": "ps immediately before the single planned execution campaign",
+  "background_cpu_percent": {
+    "spotlightknowledged": 100.0,
+    "Finder": 46.6,
+    "Terminal": 25.3,
+    "WindowManager": 13.5,
+    "codex_process_1": 10.7,
+    "codex_process_2": 10.4,
+    "WindowServer": 7.3
+  },
+  "limitation": "Host is not isolated; background indexing and desktop activity are latency confounders. Per-run load averages and alternating execution order are retained. No production-tail guarantee or causal attribution from a small timing change."
+}

@@ -4,7 +4,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use super::dense::{DenseIndex, MAX_ROWS, MIN_ROWS};
+use super::dense::{DenseChange, DenseIndex, MAX_ROWS, MIN_ROWS};
 use super::positions::Positions;
 use super::postings::PostingLists;
 use super::text::TextSegment;
@@ -36,7 +36,7 @@ pub(crate) struct DocumentStore {
     pub(super) multichunk_documents: BTreeSet<String>,
     pub(super) generation: u64,
     pub(super) dense_index: Option<Arc<DenseIndex>>,
-    pub(super) dense_changes: BTreeMap<String, usize>,
+    pub(super) dense_changes: BTreeMap<String, DenseChange>,
     pub(super) embedded_documents: BTreeSet<String>,
     embedded_count: usize,
     owners: Vec<Option<(Arc<StoredDocument>, usize)>>,
@@ -414,15 +414,19 @@ impl DocumentStore {
             .expect("document generation overflow");
     }
 
-    fn track_dense_change(&mut self, id: &str, chunks: usize) {
+    fn track_dense_change(&mut self, id: &str, chunks: usize, previous: Option<&StoredDocument>) {
         use super::dense::{MAX_DELTA_CHUNKS, MAX_DELTA_DOCUMENTS, MAX_DELTA_ID_BYTES};
         if self.dense_index.is_none() {
             return;
         }
         let documents =
             self.dense_changes.len() + usize::from(!self.dense_changes.contains_key(id));
-        let rows = self.dense_changes.values().sum::<usize>()
-            - self.dense_changes.get(id).copied().unwrap_or(0);
+        let rows = self
+            .dense_changes
+            .values()
+            .map(|change| change.chunks)
+            .sum::<usize>()
+            - self.dense_changes.get(id).map_or(0, |change| change.chunks);
         let bytes = self.dense_changes.keys().map(String::len).sum::<usize>()
             + if self.dense_changes.contains_key(id) {
                 0
@@ -435,10 +439,18 @@ impl DocumentStore {
         {
             self.dense_index = None;
             self.dense_changes.clear();
-        } else if let Some(count) = self.dense_changes.get_mut(id) {
-            *count = chunks;
+        } else if let Some(change) = self.dense_changes.get_mut(id) {
+            change.chunks = chunks;
         } else {
-            self.dense_changes.insert(id.to_owned(), chunks);
+            // Keep the first replaced owner: every captured index pins its indexed allocations.
+            self.dense_changes.insert(
+                id.to_owned(),
+                DenseChange {
+                    chunks,
+                    previous_owner: previous
+                        .map(|document| document as *const StoredDocument as usize),
+                },
+            );
         }
     }
 
@@ -842,7 +854,7 @@ impl DocumentStore {
             .checked_add(group.len() as u64)
             .expect("document generation overflow");
         for document in group {
-            self.track_dense_change(&document.id, document.chunks.len());
+            self.track_dense_change(&document.id, document.chunks.len(), None);
             self.documents.insert(document.id.clone(), document);
         }
     }
@@ -960,7 +972,7 @@ impl DocumentStore {
             );
         }
         self.advance_generation();
-        self.track_dense_change(&id, document.chunks.len());
+        self.track_dense_change(&id, document.chunks.len(), Some(&previous));
         self.scrub_replaced(&previous, &document);
         self.documents.insert(id, document);
     }
@@ -1095,7 +1107,7 @@ impl DocumentStore {
         let document = self.documents.remove(id)?;
         self.multichunk_documents.remove(id);
         self.advance_generation();
-        self.track_dense_change(id, 0);
+        self.track_dense_change(id, 0, Some(&document));
         if document
             .chunks
             .iter()

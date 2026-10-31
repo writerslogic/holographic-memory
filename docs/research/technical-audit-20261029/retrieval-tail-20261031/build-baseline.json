@@ -1,0 +1,28 @@
+{
+  "variant": "baseline",
+  "revision": "f28095e024add5ce3964192f6af7b81457ad0b3d",
+  "source_sha256": "c191efd450ec5f1ffe93ba4aa6d3508e307c3d181441275889a21f2b1a56865e",
+  "binary": "/Volumes/A/warm-retrieval-capture/target/retrieval-tail-20261031/baseline-probe",
+  "binary_sha256": "20533cba8451a9fdcddd1ea48c8d8a0f15ada5345f40339f6fbbd985a61d10b1",
+  "probe_sha256": "225bec167cbaceb5675a5972845a0e0d0d6e00fc29a3d6a8814e4bd8215a9f21",
+  "command": [
+    "cargo",
+    "+1.99.0",
+    "test",
+    "--offline",
+    "--locked",
+    "--lib",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "settings": {
+    "CARGO_TARGET_DIR": "/Volumes/A/holographic-memory/target",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "3",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "3",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "RAYON_NUM_THREADS": "1"
+  },
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1\n"
+}

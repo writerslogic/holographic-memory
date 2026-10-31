@@ -565,7 +565,14 @@ fn delta_document_and_chunk_limits_drop_acceleration_without_losing_results() {
         let replacement = document(7, &vec![vec![1.0, 0.0]; count]);
         store.insert(replacement.id.clone(), replacement);
         assert_eq!(store.dense_index.is_some(), count <= MAX_DELTA_CHUNKS);
-        assert!(store.dense_changes.values().sum::<usize>() <= MAX_DELTA_CHUNKS);
+        assert!(
+            store
+                .dense_changes
+                .values()
+                .map(|change| change.chunks)
+                .sum::<usize>()
+                <= MAX_DELTA_CHUNKS
+        );
         let options = documents::SearchOptions {
             embedding: Some(vec![1.0, 0.0]),
             k: Some(3),
@@ -578,6 +585,68 @@ fn delta_document_and_chunk_limits_drop_acceleration_without_losing_results() {
                 documents::search_impl(&store, "rare7", &options, Some(2), false).unwrap()
             )
             .unwrap()
+        );
+    }
+}
+
+#[test]
+fn repeated_owner_replacement_and_recreation_match_exhaustive_snapshots() {
+    let mut store = store(256, 2);
+    let trained = train(&store, 2);
+    assert!(publish_dense_index(&mut store, &trained));
+    let options = documents::SearchOptions {
+        embedding: Some(vec![1.0, 0.0]),
+        min_semantic_score: Some(-1.0),
+        k: Some(8),
+        candidate_limit: Some(16),
+        ..Default::default()
+    };
+    let mut snapshots = Vec::new();
+    for (step, chunks) in [2, 3, 0, 1, 2].into_iter().enumerate() {
+        if chunks == 0 {
+            store.remove("d0007");
+            store.remove("d9999");
+        } else {
+            for id in [7, 9999] {
+                let mut updated = document(id, &vec![vec![1.0, step as f64 / 10.0]; chunks]);
+                updated.version = format!("revision-{step}");
+                store.insert(updated.id.clone(), updated);
+            }
+        }
+        for filter in [None, Some(json!({"group": 1}))] {
+            for fusion in ["blend", "rrf"] {
+                let options = documents::SearchOptions {
+                    filter: filter.clone(),
+                    fusion: Some(fusion.into()),
+                    ..options.clone()
+                };
+                for query in ["common", "rare7 rare9999"] {
+                    let expected = serde_json::to_value(
+                        documents::search_impl(&store, query, &options, Some(2), false).unwrap(),
+                    )
+                    .unwrap();
+                    let captured = documents::capture_search(
+                        &store,
+                        vec![documents::prepare_search(query, &options, Some(2)).unwrap()],
+                    );
+                    assert_eq!(
+                        serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+                        expected,
+                        "step {step}"
+                    );
+                    snapshots.push((captured, expected));
+                }
+            }
+        }
+    }
+    let current = train(&store, 2);
+    assert!(publish_dense_index(&mut store, &current));
+    drop(trained);
+    drop(store);
+    for (captured, expected) in snapshots {
+        assert_eq!(
+            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+            expected
         );
     }
 }

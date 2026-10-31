@@ -117,7 +117,7 @@ struct CapturedQuery {
     use_postings: bool,
     dense: Option<Arc<DenseIndex>>,
     eligible: Option<FastSet<usize>>,
-    changed: FastSet<String>,
+    excluded_owners: FastSet<usize>,
     dfs: Option<[BTreeMap<String, usize>; 2]>,
     /// The store's text segment, read for result text after the store lock is released (under
     /// the mutation gate for a live search, see [`read_ranked`]).
@@ -361,7 +361,7 @@ fn capture_postings(store: &DocumentStore, prepared: PreparedSearch) -> Captured
         use_postings,
         dense: None,
         eligible: None,
-        changed: FastSet::default(),
+        excluded_owners: FastSet::default(),
         dfs: None,
         text: store.text_segment(),
         lexical_scores: None,
@@ -400,7 +400,7 @@ fn capture_ranked_lexical(store: &DocumentStore, prepared: PreparedSearch) -> Ca
         use_postings: true,
         dense: None,
         eligible: None,
-        changed: FastSet::default(),
+        excluded_owners: FastSet::default(),
         dfs: None,
         text: store.text_segment(),
         lexical_scores: Some(scores),
@@ -510,7 +510,7 @@ fn capture_image(image: &ServingImage, prepared: PreparedSearch) -> anyhow::Resu
         use_postings: true,
         dense: None,
         eligible: None,
-        changed: FastSet::default(),
+        excluded_owners: FastSet::default(),
         dfs: None,
         text: None,
         lexical_scores: Some(scores),
@@ -570,7 +570,7 @@ fn capture_overlaid(
         use_postings: true,
         dense: None,
         eligible: None,
-        changed: FastSet::default(),
+        excluded_owners: FastSet::default(),
         dfs: None,
         text: store.text_segment(),
         lexical_scores: Some(scores),
@@ -1007,31 +1007,38 @@ fn capture_planned_query(
             }
         })
         .collect();
-    let mut captured_slots: FastSet<_> = chunks
-        .iter()
-        .map(|chunk| store.slots[&chunk.document.id][chunk.index])
-        .collect();
-    for id in store.dense_changes.keys().filter(|_| dense.is_some()) {
-        let Some(document) = store
-            .documents
-            .get(id)
-            .filter(|document| prepared.matches(document))
-        else {
-            continue;
-        };
-        for (index, (&slot, chunk)) in store.slots[id].iter().zip(&document.chunks).enumerate() {
-            if chunk.embedding.is_some() && captured_slots.insert(slot) {
-                chunks.push(CapturedChunk {
-                    document: Arc::clone(document),
-                    index,
-                    word_count: store.slot_word_count(slot),
-                    semantic_cache: None,
-                });
+    if dense.is_some() && !store.dense_changes.is_empty() {
+        let mut captured_slots: FastSet<_> = chunks
+            .iter()
+            .map(|chunk| store.slots[&chunk.document.id][chunk.index])
+            .collect();
+        for id in store.dense_changes.keys() {
+            let Some(document) = store
+                .documents
+                .get(id)
+                .filter(|document| prepared.matches(document))
+            else {
+                continue;
+            };
+            for (index, (&slot, chunk)) in store.slots[id].iter().zip(&document.chunks).enumerate()
+            {
+                if chunk.embedding.is_some() && captured_slots.insert(slot) {
+                    chunks.push(CapturedChunk {
+                        document: Arc::clone(document),
+                        index,
+                        word_count: store.slot_word_count(slot),
+                        semantic_cache: None,
+                    });
+                }
             }
         }
     }
-    let changed = if dense.is_some() && eligible.is_none() {
-        store.dense_changes.keys().cloned().collect()
+    let excluded_owners = if dense.is_some() && eligible.is_none() {
+        store
+            .dense_changes
+            .values()
+            .filter_map(|change| change.previous_owner)
+            .collect()
     } else {
         FastSet::default()
     };
@@ -1044,7 +1051,7 @@ fn capture_planned_query(
         use_postings: false,
         dense,
         eligible,
-        changed,
+        excluded_owners,
         dfs: Some(dfs),
         text: store.text_segment(),
         lexical_scores: None,
@@ -1117,7 +1124,7 @@ fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
             .embedding
             .as_ref()
             .expect("indexed search lost its query embedding");
-        let (hits, _) = if captured.prepared.unfiltered && captured.changed.is_empty() {
+        let (hits, _) = if captured.prepared.unfiltered && captured.excluded_owners.is_empty() {
             index.search(query, captured.prepared.limit, captured.prepared.minimum)
         } else {
             index.search_where(
@@ -1127,7 +1134,9 @@ fn execute_query(captured: &CapturedQuery) -> Vec<RankedHit> {
                 |document| {
                     captured.eligible.as_ref().map_or_else(
                         || {
-                            !captured.changed.contains(&document.id)
+                            !captured
+                                .excluded_owners
+                                .contains(&(document as *const StoredDocument as usize))
                                 && captured.prepared.matches(document)
                         },
                         |eligible| eligible.contains(&(document as *const StoredDocument as usize)),
@@ -1450,9 +1459,11 @@ mod tests {
         if let Some(eligible) = &captured.queries[0].eligible {
             assert!(!eligible.contains(&(Arc::as_ptr(&base_owner) as usize)));
             assert!(eligible.contains(&(Arc::as_ptr(&store.documents["d007"]) as usize)));
-            assert!(captured.queries[0].changed.is_empty());
+            assert!(captured.queries[0].excluded_owners.is_empty());
         } else {
-            assert!(captured.queries[0].changed.contains("d007"));
+            assert!(captured.queries[0]
+                .excluded_owners
+                .contains(&(Arc::as_ptr(&base_owner) as usize)));
         }
         let expected =
             super::super::search_impl(&store, "common rare7", &options, Some(3), false).unwrap();
