@@ -1,0 +1,5945 @@
+{
+  "source": "https://api.osv.dev/v1/querybatch",
+  "queried_at": "2026-10-31T19:08:03.396112+00:00",
+  "lock_sha256": "52c319d5f4d4954d22466f3b6a985bb9f53aec03e0ef596228784f5ac1f7dd04",
+  "results": [
+    {
+      "query": {
+        "package": {
+          "name": "aiofile",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.8.8"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aiofile",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.12.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aiofiles",
+          "ecosystem": "PyPI"
+        },
+        "version": "24.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aiohappyeyeballs",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.7.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aiohttp",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.14.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aioice",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.10.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aiortc",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.15.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aiosignal",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.4.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "aiosqlite",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.21.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "alembic",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.20.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "annotated-doc",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.0.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "annotated-types",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.8.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "annoy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.17.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "anthropic",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "anyio",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.15.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "appdirs",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.4.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "argcomplete",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.7.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "asgiref",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.12.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "asgiref",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.13.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "asttokens",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.0.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "async-timeout",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.0.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "async-timeout",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.0.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "asyncer",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.0.8"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "attrs",
+          "ecosystem": "PyPI"
+        },
+        "version": "26.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "authlib",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.9.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "av",
+          "ecosystem": "PyPI"
+        },
+        "version": "17.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "azure-ai-agents",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.0b6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "azure-ai-projects",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "azure-ai-projects",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.4.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "azure-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.41.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "azure-identity",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.26.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "azure-storage-blob",
+          "ecosystem": "PyPI"
+        },
+        "version": "12.31.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "backoff",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.2.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "backports-tarfile",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "banks",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.5.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "bcrypt",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "beartype",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.23.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "beautifulsoup4",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.15.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "blinker",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "boto3",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.43.118"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "botocore",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.43.118"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "build",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.6.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cachetools",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.2.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "caio",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.9.25"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "caio",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.12.10"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cel-python",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.5.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "certifi",
+          "ecosystem": "PyPI"
+        },
+        "version": "2026.10.23"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cffi",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.1.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cfgv",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "chardet",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "charset-normalizer",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "chroma-hnswlib",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.7.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "chromadb",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.5.23"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-2wm9-hf6c-p5cr",
+          "modified": "2026-09-10T12:25:31.394776Z"
+        },
+        {
+          "id": "GHSA-36p7-vc44-83pf",
+          "modified": "2026-09-10T12:25:44.502926Z"
+        },
+        {
+          "id": "GHSA-xph7-9rjv-w5fr",
+          "modified": "2026-09-10T12:25:45.510140Z"
+        },
+        {
+          "id": "PYSEC-2026-3813",
+          "modified": "2026-09-10T12:15:06.103369Z"
+        },
+        {
+          "id": "PYSEC-2026-3814",
+          "modified": "2026-09-10T12:15:04.042216Z"
+        },
+        {
+          "id": "PYSEC-2026-3815",
+          "modified": "2026-09-10T12:15:06.245023Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "chromadb",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.5.9"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-2wm9-hf6c-p5cr",
+          "modified": "2026-09-10T12:25:31.394776Z"
+        },
+        {
+          "id": "GHSA-36p7-vc44-83pf",
+          "modified": "2026-09-10T12:25:44.502926Z"
+        },
+        {
+          "id": "GHSA-f4j7-r4q5-qw2c",
+          "modified": "2026-10-05T21:45:03.620198Z"
+        },
+        {
+          "id": "GHSA-xph7-9rjv-w5fr",
+          "modified": "2026-09-10T12:25:45.510140Z"
+        },
+        {
+          "id": "PYSEC-2026-311",
+          "modified": "2026-07-01T20:22:50.354214Z"
+        },
+        {
+          "id": "PYSEC-2026-3813",
+          "modified": "2026-09-10T12:15:06.103369Z"
+        },
+        {
+          "id": "PYSEC-2026-3814",
+          "modified": "2026-09-10T12:15:04.042216Z"
+        },
+        {
+          "id": "PYSEC-2026-3815",
+          "modified": "2026-09-10T12:15:06.245023Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "click",
+          "ecosystem": "PyPI"
+        },
+        "version": "8.5.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cloudevents",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.13.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cloudevents",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cloudpickle",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.1.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cohere",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.21.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cohere",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "colorama",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "coloredlogs",
+          "ecosystem": "PyPI"
+        },
+        "version": "15.0.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "colorlog",
+          "ecosystem": "PyPI"
+        },
+        "version": "6.12.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "crewai",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.193.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "crewai",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.15.30"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "crewai-cli",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.15.30"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "crewai-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.15.30"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "cryptography",
+          "ecosystem": "PyPI"
+        },
+        "version": "50.0.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dataclasses-json",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.6.7"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "datasets",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.0.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "decorator",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "defusedxml",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.7.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "deprecated",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "deprecated",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "deprecation",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dill",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dirtyjson",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.0.8"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "diskcache",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.6.3"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-w8v5-vhqr-4h9v",
+          "modified": "2026-09-10T03:50:36.025928Z"
+        },
+        {
+          "id": "PYSEC-2026-2447",
+          "modified": "2026-07-13T16:31:44.266546Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "distlib",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "distro",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dnspython",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.8.0"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-45c3-73f7-pv4m",
+          "modified": "2026-10-27T15:47:24.143338Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dnspython",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "docker",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "docstring-parser",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.18.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dspy",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.6.13"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-vvw2-h478-xwr3",
+          "modified": "2026-07-07T17:57:24.503135Z"
+        },
+        {
+          "id": "PYSEC-2026-1318",
+          "modified": "2026-07-07T17:46:39.452854Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dspy",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dspy-ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.6.27"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "dspy-ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "duckdb",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.5.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "duckdb",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "durationpy",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.11"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "elastic-transport",
+          "ecosystem": "PyPI"
+        },
+        "version": "9.4.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "elasticsearch",
+          "ecosystem": "PyPI"
+        },
+        "version": "9.5.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "email-validator",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "embedchain",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.128"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "et-xmlfile",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "eval-type-backport",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "events",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "exceptiongroup",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "executing",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "faiss-cpu",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.15.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fasta2a",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fastapi",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.162.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fastavro",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.12.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fastavro",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.13.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fastcore",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.2.33"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fastmcp-slim",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.4.11"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fastuuid",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "filelock",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.32.7"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-567q-5qvw-pf92",
+          "modified": "2026-10-23T22:45:03.452878Z"
+        },
+        {
+          "id": "GHSA-6627-m3xw-93mp",
+          "modified": "2026-10-28T21:15:05.690884Z"
+        },
+        {
+          "id": "GHSA-69hj-f68j-2879",
+          "modified": "2026-10-28T21:15:04.974667Z"
+        },
+        {
+          "id": "GHSA-8mx5-7m5m-r77g",
+          "modified": "2026-10-28T21:15:05.688436Z"
+        },
+        {
+          "id": "GHSA-9c4x-gm8v-wgc4",
+          "modified": "2026-10-28T21:15:05.681708Z"
+        },
+        {
+          "id": "GHSA-9j6q-wvj5-jgjg",
+          "modified": "2026-10-28T21:15:05.577927Z"
+        },
+        {
+          "id": "GHSA-9vhv-jxww-xfm5",
+          "modified": "2026-10-23T22:45:03.439584Z"
+        },
+        {
+          "id": "GHSA-cwqr-hh33-gh44",
+          "modified": "2026-10-28T21:15:04.923553Z"
+        },
+        {
+          "id": "GHSA-fq56-3cx3-fjxp",
+          "modified": "2026-10-28T21:15:04.933315Z"
+        },
+        {
+          "id": "GHSA-j8f7-rjxc-mr56",
+          "modified": "2026-10-28T21:15:04.169983Z"
+        },
+        {
+          "id": "GHSA-m462-7rxw-wvpg",
+          "modified": "2026-10-28T21:15:04.165555Z"
+        },
+        {
+          "id": "GHSA-rfpc-qcw5-3pc4",
+          "modified": "2026-10-28T21:15:05.584943Z"
+        },
+        {
+          "id": "GHSA-v4x8-3wr5-3wq8",
+          "modified": "2026-10-23T22:15:04.432475Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "filetype",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "flatbuffers",
+          "ecosystem": "PyPI"
+        },
+        "version": "25.12.19"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "frozenlist",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.8.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fsspec",
+          "ecosystem": "PyPI"
+        },
+        "version": "2026.6.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "fsspec",
+          "ecosystem": "PyPI"
+        },
+        "version": "2026.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "genai-prices",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.13"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "gepa",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "gitdb",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.0.12"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "gitpython",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.2.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "google-auth",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.62.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "google-crc32c",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "google-genai",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.20.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "google-genai",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.33.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "google-re2",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.20251105"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "googleapis-common-protos",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.75.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "gptcache",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.44"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-xfqj-4cr9-9gr5",
+          "modified": "2026-07-23T15:11:18.668388Z"
+        },
+        {
+          "id": "PYSEC-2026-3468",
+          "modified": "2026-07-23T15:00:12.577851Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "greenlet",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "griffe",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "griffe",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "griffecli",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "griffecli",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "griffelib",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "griffelib",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "groq",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "grpcio",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.78.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "h11",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.16.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "h2",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "haystack-ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "haystack-ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "haystack-ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.4.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "hf-xet",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "hnswlib",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.8.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "hpack",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpcore",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.0.9"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpcore2",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpcore2",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.16.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpr",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.7.8"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httptools",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpx",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.28.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpx-sse",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpx2",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpx2",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.16.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "httpx2-jsfetch",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "huggingface-hub",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.36.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "huggingface-hub",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.33.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "humanfriendly",
+          "ecosystem": "PyPI"
+        },
+        "version": "10.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "hyperframe",
+          "ecosystem": "PyPI"
+        },
+        "version": "6.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "identify",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.6.20"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "idna",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.20"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ifaddr",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "importlib-metadata",
+          "ecosystem": "PyPI"
+        },
+        "version": "8.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "importlib-resources",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "iniconfig",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "instructor",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.12.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "instructor",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.15.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ipython",
+          "ecosystem": "PyPI"
+        },
+        "version": "8.39.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ipython",
+          "ecosystem": "PyPI"
+        },
+        "version": "9.17.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ipython-pygments-lexers",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "isodate",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.7.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jaraco-classes",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.4.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jaraco-context",
+          "ecosystem": "PyPI"
+        },
+        "version": "6.1.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jaraco-functools",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.6.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jedi",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.20.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jeepney",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jinja2",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.1.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jiter",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.10.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jiter",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jmespath",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "joblib",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.6.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "joserfc",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.7.7"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "json-repair",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.25.2"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-xf7x-x43h-rpqh",
+          "modified": "2026-07-13T23:45:11.773964Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "json-repair",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.60.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "json5",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.10.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonpatch",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.37"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonpath-python",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonpickle",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.1.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonpointer",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonref",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonschema",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.26.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonschema-path",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "jsonschema-specifications",
+          "ecosystem": "PyPI"
+        },
+        "version": "2025.9.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "keyring",
+          "ecosystem": "PyPI"
+        },
+        "version": "25.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "kubernetes",
+          "ecosystem": "PyPI"
+        },
+        "version": "36.0.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lance-namespace",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.13.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lance-namespace-urllib3-client",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.13.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lancedb",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.40.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.30"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-gr75-jv2w-4656",
+          "modified": "2026-09-10T03:51:08.737829Z"
+        },
+        {
+          "id": "PYSEC-2026-2192",
+          "modified": "2026-07-13T16:43:09.845932Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.4.7"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-classic",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.0.8"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-cohere",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-community",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.31"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-community",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.86"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-2g6r-c272-w58r",
+          "modified": "2026-09-10T03:50:33.793703Z"
+        },
+        {
+          "id": "GHSA-qh6h-p6c9-ff54",
+          "modified": "2026-09-10T03:50:40.646863Z"
+        },
+        {
+          "id": "PYSEC-2026-2193",
+          "modified": "2026-07-13T07:15:26.389701Z"
+        },
+        {
+          "id": "PYSEC-2026-2562",
+          "modified": "2026-07-13T16:31:48.686407Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-experimental",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-openai",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.2.14"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-r7w7-9xr2-qq2r",
+          "modified": "2026-06-06T01:15:07.912179Z"
+        },
+        {
+          "id": "PYSEC-2026-76",
+          "modified": "2026-05-20T09:19:04.187253Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-protocol",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.0.20"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-text-splitters",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.11"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-fv5p-p927-qmxr",
+          "modified": "2026-09-10T03:50:44.294835Z"
+        },
+        {
+          "id": "PYSEC-2026-77",
+          "modified": "2026-05-20T09:19:04.238442Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langchain-text-splitters",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langgraph",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.17"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langgraph-checkpoint",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langgraph-prebuilt",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langgraph-sdk",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.9"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langsmith",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.45"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-3644-q5cj-c5c7",
+          "modified": "2026-09-10T03:51:04.416695Z"
+        },
+        {
+          "id": "GHSA-f4xh-w4cj-qxq8",
+          "modified": "2026-09-10T03:50:49.251222Z"
+        },
+        {
+          "id": "GHSA-rr7j-v2q5-chgv",
+          "modified": "2026-09-10T03:51:03.075090Z"
+        },
+        {
+          "id": "PYSEC-2026-2582",
+          "modified": "2026-07-13T16:43:39.736848Z"
+        },
+        {
+          "id": "PYSEC-2026-2583",
+          "modified": "2026-07-13T16:31:59.981609Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "langsmith",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.14.12"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lark",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lazy-imports",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lazy-object-proxy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.12.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lazy-object-proxy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.13.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "letta-client",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.12.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "linkify-it-py",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "litellm",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.74.9"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-3cv6-jpf6-8222",
+          "modified": "2026-10-01T17:55:39.952052Z"
+        },
+        {
+          "id": "GHSA-4g5m-c9r5-49xf",
+          "modified": "2026-09-10T03:51:10.285552Z"
+        },
+        {
+          "id": "GHSA-4jcj-7x88-m979",
+          "modified": "2026-10-01T17:55:39.243118Z"
+        },
+        {
+          "id": "GHSA-4xpc-pv4p-pm3w",
+          "modified": "2026-09-10T03:50:48.301716Z"
+        },
+        {
+          "id": "GHSA-53mr-6c8q-9789",
+          "modified": "2026-09-10T03:50:43.006877Z"
+        },
+        {
+          "id": "GHSA-5jmr-gcrj-2c9q",
+          "modified": "2026-09-10T03:51:10.470938Z"
+        },
+        {
+          "id": "GHSA-69x8-hrgq-fjj8",
+          "modified": "2026-09-10T03:50:43.345454Z"
+        },
+        {
+          "id": "GHSA-6wvf-77m9-58rm",
+          "modified": "2026-09-10T12:25:33.314139Z"
+        },
+        {
+          "id": "GHSA-72m8-9m7m-h278",
+          "modified": "2026-09-10T03:51:10.829513Z"
+        },
+        {
+          "id": "GHSA-7488-6r32-c95q",
+          "modified": "2026-09-10T03:51:10.889726Z"
+        },
+        {
+          "id": "GHSA-c693-x898-5g4h",
+          "modified": "2026-10-01T17:56:07.699173Z"
+        },
+        {
+          "id": "GHSA-g5ff-637f-6q2m",
+          "modified": "2026-10-27T15:47:24.299145Z"
+        },
+        {
+          "id": "GHSA-hhww-mrg2-969h",
+          "modified": "2026-10-27T15:47:24.395753Z"
+        },
+        {
+          "id": "GHSA-hx8v-g79f-8w5f",
+          "modified": "2026-10-01T17:55:42.736980Z"
+        },
+        {
+          "id": "GHSA-j37q-q7p9-vpwm",
+          "modified": "2026-10-01T17:56:22.052705Z"
+        },
+        {
+          "id": "GHSA-jjhc-v7c2-5hh6",
+          "modified": "2026-09-10T03:50:44.584849Z"
+        },
+        {
+          "id": "GHSA-m2v5-74w2-qhcj",
+          "modified": "2026-10-01T17:55:53.505398Z"
+        },
+        {
+          "id": "GHSA-mf52-j94g-746m",
+          "modified": "2026-10-01T17:56:12.956550Z"
+        },
+        {
+          "id": "GHSA-p897-vf7j-f5h8",
+          "modified": "2026-10-01T17:56:08.092505Z"
+        },
+        {
+          "id": "GHSA-qmf3-4767-5fg3",
+          "modified": "2026-10-01T17:56:12.041392Z"
+        },
+        {
+          "id": "GHSA-qrc4-49gv-mv9m",
+          "modified": "2026-09-10T03:51:06.939723Z"
+        },
+        {
+          "id": "GHSA-v4p8-mg3p-g94g",
+          "modified": "2026-09-10T03:51:03.195872Z"
+        },
+        {
+          "id": "GHSA-w2mh-qq9q-453x",
+          "modified": "2026-10-01T17:56:17.548563Z"
+        },
+        {
+          "id": "GHSA-wpfp-gwwc-vwq6",
+          "modified": "2026-09-10T03:50:47.941656Z"
+        },
+        {
+          "id": "PYSEC-2026-2597",
+          "modified": "2026-07-13T16:32:03.793894Z"
+        },
+        {
+          "id": "PYSEC-2026-2598",
+          "modified": "2026-07-13T16:32:04.017038Z"
+        },
+        {
+          "id": "PYSEC-2026-2599",
+          "modified": "2026-07-13T16:32:04.086728Z"
+        },
+        {
+          "id": "PYSEC-2026-2600",
+          "modified": "2026-07-13T16:32:04.301271Z"
+        },
+        {
+          "id": "PYSEC-2026-3476",
+          "modified": "2026-07-23T15:00:12.511484Z"
+        },
+        {
+          "id": "PYSEC-2026-3477",
+          "modified": "2026-07-23T15:00:15.302353Z"
+        },
+        {
+          "id": "PYSEC-2026-3478",
+          "modified": "2026-07-23T15:00:14.016159Z"
+        },
+        {
+          "id": "PYSEC-2026-3479",
+          "modified": "2026-07-23T15:00:13.909880Z"
+        },
+        {
+          "id": "PYSEC-2026-3861",
+          "modified": "2026-09-10T12:15:08.177938Z"
+        },
+        {
+          "id": "PYSEC-2026-388",
+          "modified": "2026-07-01T20:22:56.295059Z"
+        },
+        {
+          "id": "PYSEC-2026-390",
+          "modified": "2026-07-01T20:22:56.400828Z"
+        },
+        {
+          "id": "PYSEC-2026-4066",
+          "modified": "2026-10-01T17:45:03.105462Z"
+        },
+        {
+          "id": "PYSEC-2026-4067",
+          "modified": "2026-10-01T17:45:04.682994Z"
+        },
+        {
+          "id": "PYSEC-2026-4069",
+          "modified": "2026-10-01T17:45:03.814303Z"
+        },
+        {
+          "id": "PYSEC-2026-4070",
+          "modified": "2026-10-01T17:45:05.570511Z"
+        },
+        {
+          "id": "PYSEC-2026-4071",
+          "modified": "2026-10-01T17:45:03.123853Z"
+        },
+        {
+          "id": "PYSEC-2026-4072",
+          "modified": "2026-10-01T17:45:06.218523Z"
+        },
+        {
+          "id": "PYSEC-2026-4073",
+          "modified": "2026-10-01T17:45:11.775346Z"
+        },
+        {
+          "id": "PYSEC-2026-4074",
+          "modified": "2026-10-01T17:45:12.788897Z"
+        },
+        {
+          "id": "PYSEC-2026-4075",
+          "modified": "2026-10-01T17:45:12.154411Z"
+        },
+        {
+          "id": "PYSEC-2026-4076",
+          "modified": "2026-10-01T17:45:11.005923Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "litellm",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.106.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "llama-index-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.14.25"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "llama-index-instrumentation",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.6.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "llama-index-workflows",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.26.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "logfire",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "logfire-api",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "logfire-sdk",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "lxml",
+          "ecosystem": "PyPI"
+        },
+        "version": "6.1.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "magicattr",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.7"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mako",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.4.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "markdown-it-py",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "markupsafe",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.0.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "marshmallow",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.26.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "matplotlib-inline",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.2.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mcp",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.27.2"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-5h93-6whr-6q8j",
+          "modified": "2026-10-27T21:15:03.819223Z"
+        },
+        {
+          "id": "GHSA-84m7-p3x7-pcfv",
+          "modified": "2026-10-15T20:30:08.565001Z"
+        },
+        {
+          "id": "GHSA-rwrf-2pqf-9j8j",
+          "modified": "2026-10-27T21:15:03.830660Z"
+        },
+        {
+          "id": "GHSA-vj7q-gjh5-988w",
+          "modified": "2026-09-10T03:50:53.083568Z"
+        },
+        {
+          "id": "GHSA-w4fh-qvv9-3v23",
+          "modified": "2026-10-27T21:15:03.825987Z"
+        },
+        {
+          "id": "PYSEC-2026-3483",
+          "modified": "2026-07-23T15:00:13.898863Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mcp",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.30.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mdit-py-plugins",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.6.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mdurl",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mem0ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.116"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-5324-3w58-qpp2",
+          "modified": "2026-10-28T21:30:05.847356Z"
+        },
+        {
+          "id": "GHSA-cgx8-qgvr-f7vf",
+          "modified": "2026-07-13T16:43:14.387936Z"
+        },
+        {
+          "id": "GHSA-gq6f-qwv9-rf4j",
+          "modified": "2026-07-13T16:43:43.800291Z"
+        },
+        {
+          "id": "GHSA-jfv9-68m5-gjjr",
+          "modified": "2026-07-13T16:43:45.967686Z"
+        },
+        {
+          "id": "GHSA-xqxw-r767-67m7",
+          "modified": "2026-07-13T16:43:27.538142Z"
+        },
+        {
+          "id": "PYSEC-2026-2633",
+          "modified": "2026-07-13T16:32:14.653447Z"
+        },
+        {
+          "id": "PYSEC-2026-2634",
+          "modified": "2026-07-13T16:32:14.657379Z"
+        },
+        {
+          "id": "PYSEC-2026-2635",
+          "modified": "2026-07-13T16:32:14.690497Z"
+        },
+        {
+          "id": "PYSEC-2026-2636",
+          "modified": "2026-07-13T16:32:14.655870Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mem0ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.2.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "milvus-lite",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.2.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mistralai",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mmh3",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "monotonic",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "more-itertools",
+          "ecosystem": "PyPI"
+        },
+        "version": "11.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "more-itertools",
+          "ecosystem": "PyPI"
+        },
+        "version": "11.2.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mpmath",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "msal",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.39.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "msal-extensions",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "msgspec",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.22.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "multidict",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "multidict",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.2.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "multiprocess",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.70.19"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "mypy-extensions",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "nest-asyncio",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.6.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "networkx",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.4.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "networkx",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.6.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "networkx",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.7"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "nltk",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.10.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "nodeenv",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.11.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "numpy",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.2.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "numpy",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.4.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "numpy",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.5.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "oauthlib",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "onnxruntime",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.22.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "onnxruntime",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.31.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "openai",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.109.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "openai",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.54.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "openapi-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.19.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "openapi-schema-validator",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.6.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "openapi-spec-validator",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.7.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "openpyxl",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.1.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opensearch-protobufs",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opensearch-py",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-api",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.45.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-exporter-http-transport",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-exporter-otlp-common",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-exporter-otlp-proto-common",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.45.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-exporter-otlp-proto-grpc",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.45.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-exporter-otlp-proto-http",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.45.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-instrumentation",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-instrumentation-asgi",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-instrumentation-fastapi",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-instrumentation-httpx",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-proto",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.45.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-sdk",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.45.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-semantic-conventions",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "opentelemetry-util-http",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.66b1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "optuna",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "orjson",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.13.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ormsgpack",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.12.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "overrides",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "packaging",
+          "ecosystem": "PyPI"
+        },
+        "version": "25.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "packaging",
+          "ecosystem": "PyPI"
+        },
+        "version": "26.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pandas",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pandas",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "parse",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.22.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "parso",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.8.7"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pathable",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pdfminer-six",
+          "ecosystem": "PyPI"
+        },
+        "version": "20260107"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pdfplumber",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.11.10"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pendulum",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pexpect",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pgvector",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.5.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "phidata",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.7.10"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pillow",
+          "ecosystem": "PyPI"
+        },
+        "version": "12.3.0"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-22hg-r758-rrw9",
+          "modified": "2026-10-26T08:56:03.565713Z"
+        },
+        {
+          "id": "GHSA-24rc-8hj2-v98c",
+          "modified": "2026-10-29T10:55:36.262902Z"
+        },
+        {
+          "id": "GHSA-254f-3936-288h",
+          "modified": "2026-10-26T08:56:17.690706Z"
+        },
+        {
+          "id": "GHSA-27h8-gf7j-v5hc",
+          "modified": "2026-10-27T11:10:35.409737Z"
+        },
+        {
+          "id": "GHSA-332p-7hrc-92wf",
+          "modified": "2026-10-26T08:56:07.886625Z"
+        },
+        {
+          "id": "GHSA-3j72-p6qg-6xp7",
+          "modified": "2026-10-29T10:55:45.826300Z"
+        },
+        {
+          "id": "GHSA-4558-3h8r-v8xp",
+          "modified": "2026-10-27T11:10:34.006455Z"
+        },
+        {
+          "id": "GHSA-462x-pgg6-55fp",
+          "modified": "2026-10-26T08:56:01.770928Z"
+        },
+        {
+          "id": "GHSA-4rm8-3hmm-39fg",
+          "modified": "2026-10-29T10:56:07.449486Z"
+        },
+        {
+          "id": "GHSA-4rr5-89j8-mwwm",
+          "modified": "2026-10-27T11:10:49.694224Z"
+        },
+        {
+          "id": "GHSA-58r4-6rv3-gfh8",
+          "modified": "2026-10-28T11:10:53.627071Z"
+        },
+        {
+          "id": "GHSA-5x8w-8jj5-q52h",
+          "modified": "2026-10-28T11:10:48.833199Z"
+        },
+        {
+          "id": "GHSA-5xm2-6676-qcp9",
+          "modified": "2026-10-26T08:56:16.789537Z"
+        },
+        {
+          "id": "GHSA-654x-cwwv-5j9c",
+          "modified": "2026-10-29T10:56:00.934076Z"
+        },
+        {
+          "id": "GHSA-65qm-jvmh-6pqg",
+          "modified": "2026-10-26T08:55:49.781288Z"
+        },
+        {
+          "id": "GHSA-74r2-7ff9-mjj2",
+          "modified": "2026-10-26T08:56:13.792431Z"
+        },
+        {
+          "id": "GHSA-78g4-xqwv-q3g8",
+          "modified": "2026-10-22T17:15:04.326552Z"
+        },
+        {
+          "id": "GHSA-7mwm-ghpf-9vrm",
+          "modified": "2026-10-28T11:10:35.587185Z"
+        },
+        {
+          "id": "GHSA-8g5g-8vmr-9782",
+          "modified": "2026-10-28T11:10:51.788355Z"
+        },
+        {
+          "id": "GHSA-9v9v-9qvf-h2hj",
+          "modified": "2026-10-29T10:55:35.129178Z"
+        },
+        {
+          "id": "GHSA-c6hw-5grf-ff96",
+          "modified": "2026-10-26T08:55:55.669563Z"
+        },
+        {
+          "id": "GHSA-cp9v-662q-vvx9",
+          "modified": "2026-10-28T11:10:36.014536Z"
+        },
+        {
+          "id": "GHSA-f2g6-542v-9j58",
+          "modified": "2026-10-26T08:56:13.538142Z"
+        },
+        {
+          "id": "GHSA-fc9g-5qg7-mf45",
+          "modified": "2026-10-26T08:56:06.483214Z"
+        },
+        {
+          "id": "GHSA-g4qv-2jxx-769h",
+          "modified": "2026-10-29T10:55:44.091799Z"
+        },
+        {
+          "id": "GHSA-g7cr-3p24-7wf7",
+          "modified": "2026-10-29T10:56:05.933422Z"
+        },
+        {
+          "id": "GHSA-g842-9rc4-69pw",
+          "modified": "2026-10-29T10:55:56.102454Z"
+        },
+        {
+          "id": "GHSA-gg2r-wvfm-q9rx",
+          "modified": "2026-10-26T08:55:54.537605Z"
+        },
+        {
+          "id": "GHSA-j4m9-6w36-pw47",
+          "modified": "2026-10-26T08:55:43.891551Z"
+        },
+        {
+          "id": "GHSA-jg86-v3jv-hrpm",
+          "modified": "2026-10-26T08:56:08.669907Z"
+        },
+        {
+          "id": "GHSA-mrfp-p49p-3hf2",
+          "modified": "2026-10-29T10:55:39.916451Z"
+        },
+        {
+          "id": "GHSA-p4wg-p73j-c528",
+          "modified": "2026-10-26T08:55:38.434240Z"
+        },
+        {
+          "id": "GHSA-p8hx-v2p6-rp84",
+          "modified": "2026-10-29T10:55:49.521326Z"
+        },
+        {
+          "id": "GHSA-pchr-8j38-3x4p",
+          "modified": "2026-10-28T11:10:41.233140Z"
+        },
+        {
+          "id": "GHSA-q45j-58j2-45rg",
+          "modified": "2026-10-26T08:56:08.265781Z"
+        },
+        {
+          "id": "GHSA-rfgq-q3w2-pmv2",
+          "modified": "2026-10-26T08:55:50.383984Z"
+        },
+        {
+          "id": "GHSA-v9pv-5gc8-w2m6",
+          "modified": "2026-10-29T10:55:37.663049Z"
+        },
+        {
+          "id": "GHSA-vx6w-vv9f-6gvg",
+          "modified": "2026-10-20T21:00:04.428653Z"
+        },
+        {
+          "id": "GHSA-w889-685w-c8fh",
+          "modified": "2026-10-26T08:55:37.091976Z"
+        },
+        {
+          "id": "GHSA-xgh8-jp6q-p5x8",
+          "modified": "2026-10-28T11:10:55.647541Z"
+        },
+        {
+          "id": "GHSA-xvh5-g6gv-559v",
+          "modified": "2026-10-21T21:45:08.352742Z"
+        },
+        {
+          "id": "PYSEC-2026-4326",
+          "modified": "2026-10-27T11:10:35.409737Z"
+        },
+        {
+          "id": "PYSEC-2026-4327",
+          "modified": "2026-10-27T11:10:34.006455Z"
+        },
+        {
+          "id": "PYSEC-2026-4328",
+          "modified": "2026-10-27T11:10:49.694224Z"
+        },
+        {
+          "id": "PYSEC-2026-4329",
+          "modified": "2026-10-28T11:10:53.627071Z"
+        },
+        {
+          "id": "PYSEC-2026-4330",
+          "modified": "2026-10-28T11:10:48.833199Z"
+        },
+        {
+          "id": "PYSEC-2026-4331",
+          "modified": "2026-10-28T11:10:35.587185Z"
+        },
+        {
+          "id": "PYSEC-2026-4332",
+          "modified": "2026-10-28T11:10:51.788355Z"
+        },
+        {
+          "id": "PYSEC-2026-4333",
+          "modified": "2026-10-28T11:10:36.014536Z"
+        },
+        {
+          "id": "PYSEC-2026-4334",
+          "modified": "2026-10-28T11:10:41.233140Z"
+        },
+        {
+          "id": "PYSEC-2026-4335",
+          "modified": "2026-10-28T11:10:55.647541Z"
+        },
+        {
+          "id": "PYSEC-2026-4336",
+          "modified": "2026-10-29T10:56:00.934076Z"
+        },
+        {
+          "id": "PYSEC-2026-4337",
+          "modified": "2026-10-29T10:55:49.521326Z"
+        },
+        {
+          "id": "PYSEC-2026-4338",
+          "modified": "2026-10-29T10:55:56.102454Z"
+        },
+        {
+          "id": "PYSEC-2026-4339",
+          "modified": "2026-10-29T10:55:37.663049Z"
+        },
+        {
+          "id": "PYSEC-2026-4340",
+          "modified": "2026-10-29T10:56:07.449486Z"
+        },
+        {
+          "id": "PYSEC-2026-4341",
+          "modified": "2026-10-29T10:55:45.826300Z"
+        },
+        {
+          "id": "PYSEC-2026-4342",
+          "modified": "2026-10-29T10:55:44.091799Z"
+        },
+        {
+          "id": "PYSEC-2026-4343",
+          "modified": "2026-10-29T10:55:35.129178Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pillow",
+          "ecosystem": "PyPI"
+        },
+        "version": "13.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pinecone",
+          "ecosystem": "PyPI"
+        },
+        "version": "10.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "platformdirs",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.12.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "platformdirs",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pluggy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "portalocker",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "posthog",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.25.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "posthog",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.77.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "prance",
+          "ecosystem": "PyPI"
+        },
+        "version": "25.4.8.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "prance",
+          "ecosystem": "PyPI"
+        },
+        "version": "26.7.19.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pre-commit",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.6.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pre-commit",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "prompt-toolkit",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.0.53"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "propcache",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.5.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "protobuf",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.29.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "psutil",
+          "ecosystem": "PyPI"
+        },
+        "version": "7.2.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "psycopg",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.3.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "psycopg-binary",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.3.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ptyprocess",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pure-eval",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.2.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "py-key-value-aio",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyarrow",
+          "ecosystem": "PyPI"
+        },
+        "version": "25.0.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyarrow",
+          "ecosystem": "PyPI"
+        },
+        "version": "26.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyasn1",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.6.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyasn1-modules",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pybars4",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.9.13"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pybase64",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.5.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pycparser",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.11"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pycparser",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.12"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.11.10"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.12.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.6"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-2jrp-274c-jhv3",
+          "modified": "2026-07-13T16:43:19.878999Z"
+        },
+        {
+          "id": "GHSA-3gh4-cghq-f8v4",
+          "modified": "2026-10-15T14:56:22.971904Z"
+        },
+        {
+          "id": "GHSA-4x9p-g9wm-8q7f",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        },
+        {
+          "id": "PYSEC-2026-2976",
+          "modified": "2026-07-13T16:43:19.878999Z"
+        },
+        {
+          "id": "PYSEC-2026-4274",
+          "modified": "2026-10-15T14:56:22.971904Z"
+        },
+        {
+          "id": "PYSEC-2026-4275",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-ai",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.31.1"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-4x9p-g9wm-8q7f",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        },
+        {
+          "id": "GHSA-6fqq-452j-qhrp",
+          "modified": "2026-10-15T14:55:42.276272Z"
+        },
+        {
+          "id": "GHSA-fpf4-vwcp-v4hp",
+          "modified": "2026-10-15T14:56:08.216259Z"
+        },
+        {
+          "id": "GHSA-v36g-jcw9-x7cw",
+          "modified": "2026-10-15T14:56:19.955322Z"
+        },
+        {
+          "id": "GHSA-vmxc-h2x2-jmf3",
+          "modified": "2026-10-15T14:56:18.251254Z"
+        },
+        {
+          "id": "PYSEC-2026-4275",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        },
+        {
+          "id": "PYSEC-2026-4276",
+          "modified": "2026-10-15T14:55:42.276272Z"
+        },
+        {
+          "id": "PYSEC-2026-4277",
+          "modified": "2026-10-15T14:56:08.216259Z"
+        },
+        {
+          "id": "PYSEC-2026-4281",
+          "modified": "2026-10-15T14:56:19.955322Z"
+        },
+        {
+          "id": "PYSEC-2026-4282",
+          "modified": "2026-10-15T14:56:18.251254Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-ai-slim",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.6"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-2jrp-274c-jhv3",
+          "modified": "2026-07-13T16:43:19.878999Z"
+        },
+        {
+          "id": "GHSA-3gh4-cghq-f8v4",
+          "modified": "2026-10-15T14:56:22.971904Z"
+        },
+        {
+          "id": "GHSA-4x9p-g9wm-8q7f",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        },
+        {
+          "id": "PYSEC-2026-2980",
+          "modified": "2026-07-13T16:43:19.878999Z"
+        },
+        {
+          "id": "PYSEC-2026-4283",
+          "modified": "2026-10-15T14:56:22.971904Z"
+        },
+        {
+          "id": "PYSEC-2026-4284",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-ai-slim",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.31.1"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-4x9p-g9wm-8q7f",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        },
+        {
+          "id": "GHSA-6fqq-452j-qhrp",
+          "modified": "2026-10-15T14:55:42.276272Z"
+        },
+        {
+          "id": "GHSA-fpf4-vwcp-v4hp",
+          "modified": "2026-10-15T14:56:08.216259Z"
+        },
+        {
+          "id": "GHSA-v36g-jcw9-x7cw",
+          "modified": "2026-10-15T14:56:19.955322Z"
+        },
+        {
+          "id": "GHSA-vmxc-h2x2-jmf3",
+          "modified": "2026-10-15T14:56:18.251254Z"
+        },
+        {
+          "id": "PYSEC-2026-4284",
+          "modified": "2026-10-15T14:55:44.755725Z"
+        },
+        {
+          "id": "PYSEC-2026-4285",
+          "modified": "2026-10-15T14:55:42.276272Z"
+        },
+        {
+          "id": "PYSEC-2026-4286",
+          "modified": "2026-10-15T14:56:08.216259Z"
+        },
+        {
+          "id": "PYSEC-2026-4290",
+          "modified": "2026-10-15T14:56:19.955322Z"
+        },
+        {
+          "id": "PYSEC-2026-4291",
+          "modified": "2026-10-15T14:56:18.251254Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.33.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-core",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.41.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-evals",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-evals",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.31.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-graph",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-graph",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.31.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-settings",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.15.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pydantic-settings",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.16.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyee",
+          "ecosystem": "PyPI"
+        },
+        "version": "13.0.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyee",
+          "ecosystem": "PyPI"
+        },
+        "version": "16.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pygments",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.21.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyjwt",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.15.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pylibsrtp",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pymeta3",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.5.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pymilvus",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.0.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pymongo",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.18.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pymongo",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.19.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyopenssl",
+          "ecosystem": "PyPI"
+        },
+        "version": "26.4.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pypdf",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.9.0"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-23w6-3w8w-8484",
+          "modified": "2026-09-10T12:25:45.197931Z"
+        },
+        {
+          "id": "GHSA-248m-82v9-q6g6",
+          "modified": "2026-09-10T03:51:07.304973Z"
+        },
+        {
+          "id": "GHSA-2q4j-m29v-hq73",
+          "modified": "2026-09-10T03:50:32.300137Z"
+        },
+        {
+          "id": "GHSA-2rw7-x74f-jg35",
+          "modified": "2026-07-13T16:42:58.625591Z"
+        },
+        {
+          "id": "GHSA-39mj-jf6j-2qj3",
+          "modified": "2026-10-21T17:00:26.618873Z"
+        },
+        {
+          "id": "GHSA-3crg-w4f6-42mx",
+          "modified": "2026-09-10T03:50:42.398553Z"
+        },
+        {
+          "id": "GHSA-42gh-23hr-vphw",
+          "modified": "2026-10-30T23:15:05.410552Z"
+        },
+        {
+          "id": "GHSA-4f6g-68pf-7vhv",
+          "modified": "2026-07-07T17:56:05.491150Z"
+        },
+        {
+          "id": "GHSA-4pxv-j86v-mhcw",
+          "modified": "2026-09-10T03:50:42.729754Z"
+        },
+        {
+          "id": "GHSA-4vqv-7265-gm2w",
+          "modified": "2026-10-30T23:15:07.229853Z"
+        },
+        {
+          "id": "GHSA-4xc4-762w-m6cg",
+          "modified": "2026-07-07T17:56:40.246085Z"
+        },
+        {
+          "id": "GHSA-52x6-gq3r-vpf4",
+          "modified": "2026-09-10T03:50:48.282377Z"
+        },
+        {
+          "id": "GHSA-55h5-xmcq-c37v",
+          "modified": "2026-09-10T03:50:12.272620Z"
+        },
+        {
+          "id": "GHSA-5849-834g-hvw5",
+          "modified": "2026-10-30T23:30:04.101910Z"
+        },
+        {
+          "id": "GHSA-5hgr-hg42-57jg",
+          "modified": "2026-07-13T16:42:25.325556Z"
+        },
+        {
+          "id": "GHSA-5hx5-vpf9-5wcv",
+          "modified": "2026-10-21T20:15:04.178781Z"
+        },
+        {
+          "id": "GHSA-5jq2-8x83-x246",
+          "modified": "2026-10-01T17:55:50.646603Z"
+        },
+        {
+          "id": "GHSA-5qjq-93h5-hrgp",
+          "modified": "2026-09-10T03:51:10.495417Z"
+        },
+        {
+          "id": "GHSA-5xf7-4p34-54qr",
+          "modified": "2026-09-10T03:51:10.501615Z"
+        },
+        {
+          "id": "GHSA-62m5-6wh8-28x7",
+          "modified": "2026-10-30T23:15:05.408554Z"
+        },
+        {
+          "id": "GHSA-6c7f-9265-g8fw",
+          "modified": "2026-10-23T21:00:06.235957Z"
+        },
+        {
+          "id": "GHSA-6vvc-x485-93v7",
+          "modified": "2026-10-22T17:00:04.207149Z"
+        },
+        {
+          "id": "GHSA-763m-79hh-57f2",
+          "modified": "2026-09-10T12:26:04.098858Z"
+        },
+        {
+          "id": "GHSA-7gw9-cf7v-778f",
+          "modified": "2026-09-10T03:50:43.750842Z"
+        },
+        {
+          "id": "GHSA-7hfw-26vp-jp8m",
+          "modified": "2026-09-10T03:50:26.651449Z"
+        },
+        {
+          "id": "GHSA-7mh2-4gg2-979f",
+          "modified": "2026-10-21T17:00:06.161656Z"
+        },
+        {
+          "id": "GHSA-87mj-5ggw-8qc3",
+          "modified": "2026-09-10T03:51:00.069856Z"
+        },
+        {
+          "id": "GHSA-996q-pr4m-cvgq",
+          "modified": "2026-09-10T03:50:34.616221Z"
+        },
+        {
+          "id": "GHSA-9m86-7pmv-2852",
+          "modified": "2026-09-10T03:50:38.603469Z"
+        },
+        {
+          "id": "GHSA-9mvc-8737-8j8h",
+          "modified": "2026-09-10T03:50:34.680998Z"
+        },
+        {
+          "id": "GHSA-9mx8-4j7g-633p",
+          "modified": "2026-10-21T17:00:06.245541Z"
+        },
+        {
+          "id": "GHSA-cgf9-327m-v77c",
+          "modified": "2026-10-22T17:00:04.215115Z"
+        },
+        {
+          "id": "GHSA-cggf-277g-3q54",
+          "modified": "2026-10-30T23:30:04.096691Z"
+        },
+        {
+          "id": "GHSA-cj93-chg6-vgv8",
+          "modified": "2026-09-10T03:51:08.468487Z"
+        },
+        {
+          "id": "GHSA-f2v5-7jq9-h8cg",
+          "modified": "2026-09-10T03:50:34.825129Z"
+        },
+        {
+          "id": "GHSA-f54x-cmq8-qg57",
+          "modified": "2026-10-22T17:00:04.224392Z"
+        },
+        {
+          "id": "GHSA-fc8x-2rww-xw9m",
+          "modified": "2026-09-10T12:25:53.327187Z"
+        },
+        {
+          "id": "GHSA-fp3f-mc75-235c",
+          "modified": "2026-09-10T03:51:13.982103Z"
+        },
+        {
+          "id": "GHSA-fp3h-c4fm-7vvf",
+          "modified": "2026-10-01T17:56:15.156271Z"
+        },
+        {
+          "id": "GHSA-fwg2-594c-jp42",
+          "modified": "2026-09-10T03:51:13.932861Z"
+        },
+        {
+          "id": "GHSA-g867-7843-wf8q",
+          "modified": "2026-09-10T03:50:51.957724Z"
+        },
+        {
+          "id": "GHSA-g9cg-prrw-2r8q",
+          "modified": "2026-10-01T17:55:49.593652Z"
+        },
+        {
+          "id": "GHSA-g9xf-7f8q-9mcj",
+          "modified": "2026-07-13T16:42:31.458290Z"
+        },
+        {
+          "id": "GHSA-gmh7-3g9r-mjh5",
+          "modified": "2026-10-23T21:00:05.293776Z"
+        },
+        {
+          "id": "GHSA-hqmh-ppp3-xvm7",
+          "modified": "2026-09-10T03:50:39.503255Z"
+        },
+        {
+          "id": "GHSA-j543-4vmf-qm7v",
+          "modified": "2026-07-13T16:43:16.995390Z"
+        },
+        {
+          "id": "GHSA-jfx9-29x2-rv3j",
+          "modified": "2026-09-10T03:50:29.885611Z"
+        },
+        {
+          "id": "GHSA-jj6c-8h6c-hppx",
+          "modified": "2026-09-10T03:50:44.569518Z"
+        },
+        {
+          "id": "GHSA-jm82-fx9c-mx94",
+          "modified": "2026-09-10T03:51:08.790625Z"
+        },
+        {
+          "id": "GHSA-jp53-mhqp-8xcg",
+          "modified": "2026-09-10T12:25:36.667036Z"
+        },
+        {
+          "id": "GHSA-jr96-gvgh-j3r4",
+          "modified": "2026-10-23T21:00:06.090706Z"
+        },
+        {
+          "id": "GHSA-jw7q-gvrg-4vj3",
+          "modified": "2026-10-01T17:56:11.608019Z"
+        },
+        {
+          "id": "GHSA-m2v9-299j-rv96",
+          "modified": "2026-09-10T03:51:08.924739Z"
+        },
+        {
+          "id": "GHSA-m449-cwjh-6pw7",
+          "modified": "2026-09-10T03:50:31.107367Z"
+        },
+        {
+          "id": "GHSA-mfr5-77xh-9j7h",
+          "modified": "2026-10-30T23:30:04.094971Z"
+        },
+        {
+          "id": "GHSA-php9-fj8v-98fj",
+          "modified": "2026-10-01T17:55:51.350316Z"
+        },
+        {
+          "id": "GHSA-qfv9-64jg-mh7p",
+          "modified": "2026-10-21T17:00:06.238658Z"
+        },
+        {
+          "id": "GHSA-qpxp-75px-xjcp",
+          "modified": "2026-09-10T03:51:00.643708Z"
+        },
+        {
+          "id": "GHSA-qv6h-rv94-w285",
+          "modified": "2026-10-01T17:56:17.149212Z"
+        },
+        {
+          "id": "GHSA-v247-6f48-mgcj",
+          "modified": "2026-10-01T17:55:57.901958Z"
+        },
+        {
+          "id": "GHSA-vr63-x8vc-m265",
+          "modified": "2026-09-10T03:50:58.424138Z"
+        },
+        {
+          "id": "GHSA-w23x-9jrw-r45c",
+          "modified": "2026-10-01T17:56:15.557598Z"
+        },
+        {
+          "id": "GHSA-wgvp-vg3v-2xq3",
+          "modified": "2026-09-10T03:50:36.045929Z"
+        },
+        {
+          "id": "GHSA-wjqc-6w8f-h24c",
+          "modified": "2026-07-13T16:42:29.123625Z"
+        },
+        {
+          "id": "GHSA-x284-j5p8-9c5p",
+          "modified": "2026-09-10T03:51:03.926113Z"
+        },
+        {
+          "id": "GHSA-x3rh-gjgm-fmqc",
+          "modified": "2026-10-30T23:15:04.529631Z"
+        },
+        {
+          "id": "GHSA-x7hp-r3qg-r3cj",
+          "modified": "2026-07-13T16:43:05.154122Z"
+        },
+        {
+          "id": "PYSEC-2026-1827",
+          "modified": "2026-07-07T17:47:50.536225Z"
+        },
+        {
+          "id": "PYSEC-2026-1828",
+          "modified": "2026-07-07T17:47:50.544051Z"
+        },
+        {
+          "id": "PYSEC-2026-1829",
+          "modified": "2026-07-07T17:46:58.600168Z"
+        },
+        {
+          "id": "PYSEC-2026-1830",
+          "modified": "2026-07-07T17:46:59.107811Z"
+        },
+        {
+          "id": "PYSEC-2026-1831",
+          "modified": "2026-07-07T17:46:59.105637Z"
+        },
+        {
+          "id": "PYSEC-2026-1832",
+          "modified": "2026-07-07T17:46:59.109908Z"
+        },
+        {
+          "id": "PYSEC-2026-1833",
+          "modified": "2026-07-07T17:46:59.377958Z"
+        },
+        {
+          "id": "PYSEC-2026-3004",
+          "modified": "2026-07-13T16:33:08.822851Z"
+        },
+        {
+          "id": "PYSEC-2026-3005",
+          "modified": "2026-07-13T16:33:08.814408Z"
+        },
+        {
+          "id": "PYSEC-2026-3006",
+          "modified": "2026-07-13T16:33:08.833060Z"
+        },
+        {
+          "id": "PYSEC-2026-3007",
+          "modified": "2026-07-13T16:33:08.858387Z"
+        },
+        {
+          "id": "PYSEC-2026-3009",
+          "modified": "2026-07-13T16:33:08.967216Z"
+        },
+        {
+          "id": "PYSEC-2026-3010",
+          "modified": "2026-07-13T16:33:08.991048Z"
+        },
+        {
+          "id": "PYSEC-2026-3011",
+          "modified": "2026-07-13T16:33:08.986136Z"
+        },
+        {
+          "id": "PYSEC-2026-3012",
+          "modified": "2026-07-13T16:33:09.017461Z"
+        },
+        {
+          "id": "PYSEC-2026-3013",
+          "modified": "2026-07-13T16:33:09.766482Z"
+        },
+        {
+          "id": "PYSEC-2026-3014",
+          "modified": "2026-07-13T16:33:09.771479Z"
+        },
+        {
+          "id": "PYSEC-2026-3015",
+          "modified": "2026-07-13T16:33:09.769451Z"
+        },
+        {
+          "id": "PYSEC-2026-3016",
+          "modified": "2026-07-13T16:33:09.978909Z"
+        },
+        {
+          "id": "PYSEC-2026-3017",
+          "modified": "2026-07-13T16:33:05.716208Z"
+        },
+        {
+          "id": "PYSEC-2026-3018",
+          "modified": "2026-07-13T16:33:05.720750Z"
+        },
+        {
+          "id": "PYSEC-2026-3019",
+          "modified": "2026-07-13T16:33:05.714514Z"
+        },
+        {
+          "id": "PYSEC-2026-3020",
+          "modified": "2026-07-13T16:33:05.754257Z"
+        },
+        {
+          "id": "PYSEC-2026-3021",
+          "modified": "2026-07-13T16:33:05.744616Z"
+        },
+        {
+          "id": "PYSEC-2026-3022",
+          "modified": "2026-07-13T16:33:05.718241Z"
+        },
+        {
+          "id": "PYSEC-2026-3023",
+          "modified": "2026-07-13T16:33:05.762977Z"
+        },
+        {
+          "id": "PYSEC-2026-3024",
+          "modified": "2026-07-13T16:33:10.005226Z"
+        },
+        {
+          "id": "PYSEC-2026-3025",
+          "modified": "2026-07-13T16:33:09.986339Z"
+        },
+        {
+          "id": "PYSEC-2026-3026",
+          "modified": "2026-07-13T16:33:10.029564Z"
+        },
+        {
+          "id": "PYSEC-2026-3027",
+          "modified": "2026-07-13T16:33:10.036726Z"
+        },
+        {
+          "id": "PYSEC-2026-3610",
+          "modified": "2026-08-04T14:30:26.214155Z"
+        },
+        {
+          "id": "PYSEC-2026-3611",
+          "modified": "2026-08-04T14:30:29.975242Z"
+        },
+        {
+          "id": "PYSEC-2026-3612",
+          "modified": "2026-08-04T14:30:29.975219Z"
+        },
+        {
+          "id": "PYSEC-2026-3613",
+          "modified": "2026-08-04T14:30:19.271362Z"
+        },
+        {
+          "id": "PYSEC-2026-3655",
+          "modified": "2026-08-10T11:30:12.871465Z"
+        },
+        {
+          "id": "PYSEC-2026-3656",
+          "modified": "2026-08-10T11:30:13.138982Z"
+        },
+        {
+          "id": "PYSEC-2026-3910",
+          "modified": "2026-09-10T12:15:11.754454Z"
+        },
+        {
+          "id": "PYSEC-2026-3911",
+          "modified": "2026-09-10T12:15:12.053292Z"
+        },
+        {
+          "id": "PYSEC-2026-3912",
+          "modified": "2026-09-10T12:15:11.755909Z"
+        },
+        {
+          "id": "PYSEC-2026-3913",
+          "modified": "2026-09-10T12:15:12.765651Z"
+        },
+        {
+          "id": "PYSEC-2026-4153",
+          "modified": "2026-10-01T17:45:14.200694Z"
+        },
+        {
+          "id": "PYSEC-2026-4154",
+          "modified": "2026-10-01T17:45:13.795166Z"
+        },
+        {
+          "id": "PYSEC-2026-4155",
+          "modified": "2026-10-01T17:45:17.849117Z"
+        },
+        {
+          "id": "PYSEC-2026-4156",
+          "modified": "2026-10-01T17:45:17.628292Z"
+        },
+        {
+          "id": "PYSEC-2026-4157",
+          "modified": "2026-10-01T17:45:17.844503Z"
+        },
+        {
+          "id": "PYSEC-2026-4158",
+          "modified": "2026-10-01T17:45:15.988582Z"
+        },
+        {
+          "id": "PYSEC-2026-4159",
+          "modified": "2026-10-01T17:45:16.839952Z"
+        },
+        {
+          "id": "PYSEC-2026-4160",
+          "modified": "2026-10-01T17:45:15.991772Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pypdfium2",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyperclip",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.11.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pypika",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.51.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyproject-hooks",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyreadline3",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pysbd",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pytest",
+          "ecosystem": "PyPI"
+        },
+        "version": "9.2.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "python-dateutil",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.9.0.post0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "python-discovery",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.6.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "python-dotenv",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "python-multipart",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.0.32"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pytz",
+          "ecosystem": "PyPI"
+        },
+        "version": "2026.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyvespa",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.2.9"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyvis",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.3.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pywin32",
+          "ecosystem": "PyPI"
+        },
+        "version": "312"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pywin32-ctypes",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.2.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "pyyaml",
+          "ecosystem": "PyPI"
+        },
+        "version": "6.0.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "qdrant-client",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.20.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "redis",
+          "ecosystem": "PyPI"
+        },
+        "version": "8.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "referencing",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.36.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "regex",
+          "ecosystem": "PyPI"
+        },
+        "version": "2026.1.15"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "requests",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.34.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "requests-oauthlib",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "requests-toolbelt",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "rfc3339-validator",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "rich",
+          "ecosystem": "PyPI"
+        },
+        "version": "13.9.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "rich",
+          "ecosystem": "PyPI"
+        },
+        "version": "14.3.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "rpds-py",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.30.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "rpds-py",
+          "ecosystem": "PyPI"
+        },
+        "version": "2026.9.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ruamel-yaml",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.19.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "s3transfer",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.19.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "schema",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.7.8"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "scipy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.15.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "scipy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.17.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "scipy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.18.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "secretstorage",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "semantic-kernel",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.39.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "semantic-kernel",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.45.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "setuptools",
+          "ecosystem": "PyPI"
+        },
+        "version": "84.2.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "shellingham",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.5.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "six",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.17.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "smmap",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.0.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "smolagents",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.26.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "sniffio",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "soupsieve",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.10"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "soupsieve",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.0.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "sqlalchemy",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.0.55"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "sqlalchemy",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.1.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "sqlite-vec",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.1.9"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "sse-starlette",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.5.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "sse-starlette",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.6.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "stack-data",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.6.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "starlette",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.7.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "starlette",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.10.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "sympy",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tabulate",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tenacity",
+          "ecosystem": "PyPI"
+        },
+        "version": "9.1.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tenacity",
+          "ecosystem": "PyPI"
+        },
+        "version": "9.2.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "textual",
+          "ecosystem": "PyPI"
+        },
+        "version": "8.2.8"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tiktoken",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.14.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tinytag",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.3.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tokenizers",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.20.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tokenizers",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.23.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tomli",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.0.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tomli-w",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.1.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tqdm",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.70.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "traitlets",
+          "ecosystem": "PyPI"
+        },
+        "version": "5.16.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "truststore",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.10.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "typer",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.27.3"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "types-requests",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.33.0.20261006"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "typing-extensions",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.16.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "typing-inspect",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.9.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "typing-inspection",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.4.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "tzdata",
+          "ecosystem": "PyPI"
+        },
+        "version": "2026.6"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "ujson",
+          "ecosystem": "PyPI"
+        },
+        "version": "6.0.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "urllib3",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.8.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "uuid-utils",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.18.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "uv",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.13.5"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "uvicorn",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.54.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "uvloop",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.23.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "validators",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.35.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "validators",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.36.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "virtualenv",
+          "ecosystem": "PyPI"
+        },
+        "version": "21.14.5"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-394h-qwmc-48pf",
+          "modified": "2026-10-29T10:55:57.228294Z"
+        },
+        {
+          "id": "GHSA-43mp-35q3-x3fq",
+          "modified": "2026-10-29T10:55:47.691444Z"
+        },
+        {
+          "id": "GHSA-494p-63j8-28p3",
+          "modified": "2026-10-29T10:55:43.999222Z"
+        },
+        {
+          "id": "GHSA-558c-9hv2-4prj",
+          "modified": "2026-10-29T10:55:51.822936Z"
+        },
+        {
+          "id": "GHSA-6w3r-xr62-4xcp",
+          "modified": "2026-10-29T10:55:32.039209Z"
+        },
+        {
+          "id": "GHSA-c978-59m8-c77v",
+          "modified": "2026-10-29T10:55:46.719521Z"
+        },
+        {
+          "id": "GHSA-cw65-gx24-rc82",
+          "modified": "2026-10-29T10:55:59.838026Z"
+        },
+        {
+          "id": "GHSA-cx28-75q4-x26q",
+          "modified": "2026-10-29T10:55:56.839709Z"
+        },
+        {
+          "id": "GHSA-fc2g-4w5p-6whm",
+          "modified": "2026-10-29T10:55:56.743073Z"
+        },
+        {
+          "id": "GHSA-hhxq-47xx-j5xx",
+          "modified": "2026-10-29T10:56:02.747342Z"
+        },
+        {
+          "id": "GHSA-qmx5-4p3x-wvqf",
+          "modified": "2026-10-29T10:55:39.718166Z"
+        },
+        {
+          "id": "GHSA-vxj4-q4g9-crj7",
+          "modified": "2026-10-29T10:55:53.696944Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "watchfiles",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.3.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "wcwidth",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.9.4"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "weaviate-client",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.24.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "websocket-client",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.9.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "websockets",
+          "ecosystem": "PyPI"
+        },
+        "version": "15.0.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "werkzeug",
+          "ecosystem": "PyPI"
+        },
+        "version": "3.1.1"
+      },
+      "vulns": [
+        {
+          "id": "GHSA-29vq-49wr-vm6x",
+          "modified": "2026-09-10T03:50:33.709103Z"
+        },
+        {
+          "id": "GHSA-87hc-h4r5-73f7",
+          "modified": "2026-09-10T03:50:32.862525Z"
+        },
+        {
+          "id": "GHSA-g6x2-hccm-hh4m",
+          "modified": "2026-10-15T14:56:11.020811Z"
+        },
+        {
+          "id": "GHSA-hgf8-39gv-g3f2",
+          "modified": "2026-09-10T03:50:31.900494Z"
+        },
+        {
+          "id": "PYSEC-2026-2044",
+          "modified": "2026-07-07T17:47:56.418445Z"
+        },
+        {
+          "id": "PYSEC-2026-2046",
+          "modified": "2026-07-07T17:47:56.418201Z"
+        },
+        {
+          "id": "PYSEC-2026-2320",
+          "modified": "2026-07-13T07:15:48.093424Z"
+        },
+        {
+          "id": "PYSEC-2026-4312",
+          "modified": "2026-10-15T14:45:14.716393Z"
+        }
+      ]
+    },
+    {
+      "query": {
+        "package": {
+          "name": "wrapt",
+          "ecosystem": "PyPI"
+        },
+        "version": "2.5.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "xxhash",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.0.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "yarl",
+          "ecosystem": "PyPI"
+        },
+        "version": "1.25.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "zep-cloud",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.0.1"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "zipp",
+          "ecosystem": "PyPI"
+        },
+        "version": "4.1.2"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "zstandard",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.23.0"
+      },
+      "vulns": []
+    },
+    {
+      "query": {
+        "package": {
+          "name": "zstandard",
+          "ecosystem": "PyPI"
+        },
+        "version": "0.25.0"
+      },
+      "vulns": []
+    }
+  ]
+}

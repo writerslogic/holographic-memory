@@ -1,0 +1,11 @@
+Downloading networkx (2.0MiB)
+Downloading pillow (4.6MiB)
+Downloading pandas (10.6MiB)
+Downloading sqlalchemy (2.4MiB)
+ Downloaded networkx
+ Downloaded sqlalchemy
+ Downloaded pillow
+ Downloaded pandas
+Installed 62 packages in 178ms
+..........................................                               [100%]
+42 passed in 3.73s

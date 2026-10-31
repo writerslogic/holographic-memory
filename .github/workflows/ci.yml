@@ -259,7 +259,7 @@ jobs:
           WARM_SERVER_BIN: ${{ github.workspace }}/target/debug/warm-server
           PYTHONPATH: .
         run: |
-          uv run --no-project --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest pytest -q -rs tests
+          uv run --no-project --python 3.11 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest pytest -q -rs tests
           uv run --no-project --with 'httpx>=0.27' --with 'sniffio>=1.3' --with orjson --with pytest pytest -q -rs tests/test_client.py tests/test_transport.py tests/test_live_server.py
       - name: LangChain contracts against the real server
         working-directory: bindings/python/warm-sdk
@@ -269,8 +269,8 @@ jobs:
           LANGSMITH_TRACING: 'false'
           LANGCHAIN_TRACING_V2: 'false'
         run: |
-          uv run --no-project --python 3.10 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==0.3.86' pytest -q -rs tests/test_langchain_live.py
-          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==1.7.0' pytest -q -rs tests/test_langchain_live.py
+          uv run --no-project --python 3.11 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==0.3.86' pytest -q -rs tests/test_langchain_live.py
+          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'langchain-core==1.7.3' pytest -q -rs tests/test_langchain_live.py
 
 
       - name: LlamaIndex contracts against the real server
@@ -279,7 +279,7 @@ jobs:
           WARM_SERVER_BIN: ${{ github.workspace }}/target/debug/warm-server
           PYTHONPATH: .
         run: |
-          uv run --no-project --python 3.10 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'llama-index-core==0.10.0' pytest -q -rs tests/test_llamaindex_live.py
+          uv run --no-project --python 3.11 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'llama-index-core==0.10.0' pytest -q -rs tests/test_llamaindex_live.py
           uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'llama-index-core==0.14.25' pytest -q -rs tests/test_llamaindex_live.py
 
       - name: Haystack contracts against the real server
@@ -289,8 +289,17 @@ jobs:
           PYTHONPATH: .
           HAYSTACK_TELEMETRY_ENABLED: 'false'
         run: |
-          uv run --no-project --python 3.10 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'haystack-ai==2.0.0' pytest -q -rs tests/test_haystack_live.py
-          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'haystack-ai==2.27.0' pytest -q -rs tests/test_haystack_live.py
+          uv run --no-project --python 3.11 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'haystack-ai==2.0.0' pytest -q -rs tests/test_haystack_live.py
+          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'haystack-ai==3.4.1' pytest -q -rs tests/test_haystack_live.py
+
+      - name: Pydantic AI contracts without paid providers
+        working-directory: bindings/python/warm-sdk
+        env:
+          WARM_SERVER_BIN: ${{ github.workspace }}/target/debug/warm-server
+          PYTHONPATH: .
+        run: |
+          uv run --no-project --python 3.11 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'pydantic-ai-slim==2.64.0' pytest -q -rs tests/test_pydantic_ai_live.py
+          uv run --no-project --python 3.14 --with 'httpx>=0.27' --with 'sniffio>=1.3' --with pytest --with 'pydantic-ai-slim==2.64.0' pytest -q -rs tests/test_pydantic_ai_live.py
 
   node:
     name: node (${{ matrix.os }})

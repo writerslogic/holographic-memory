@@ -96,35 +96,54 @@ upgrade removes the vulnerable esbuild development-server dependency.
 
 ### Optional Python integration dependencies
 
-The October 31, 2026 dependency-graph refresh reported 208 alert records for the
-SDK lockfile. These span optional frameworks and importer/test dependencies;
-they are not 208 demonstrated vulnerabilities in the base HTTP client, whose
-runtime dependencies are `httpx` and `sniffio`. Nor does that distinction establish
-that an installed framework is safe. Audit the resolved deployment environment,
-install only needed extras, and avoid `all` as a default. The repository lockfile
-does not constrain dependencies in a consumer's independent PyPI installation.
+The SDK's `all`, `embedchain`, and legacy `semantic-kernel` extras and the two
+legacy adapter modules are retired. Embedchain forces an obsolete dependency
+stack; the old Semantic Kernel implementation also cannot satisfy its framework
+contract. This retirement does not remove the separate
+`writerslogic-warm-integrations` package's current Semantic Kernel adapter, whose
+resolved dependencies still require independent review.
 
-The pyasn1 lock update to 0.6.5 addresses four decoder denial-of-service advisories.
-Remaining constraints include Embedchain's legacy stack, Semantic Kernel's
-openapi-core dependency requiring Werkzeug below 3.1.2 (below patched 3.1.9),
-and Python 3.10 support preventing Pillow 13 and filelock 4, which require 3.11.
-Compatible upgrades, upstream changes, and supported-integration policy must be
-evaluated separately; blanket version overrides can break the adapters. The
-[remediation record](research/technical-audit-20261029/REMEDIATION.md) preserves
-the alert snapshot and rejected resolver trials. No alerts are suppressed.
+The SDK now requires Python 3.11 or newer. [Python 3.10 reached end of life on
+October 1, 2026](https://devguide.python.org/versions/); retaining it also prevented
+patched Pillow and Filelock releases. `pydantic-ai` now installs the official slim
+distribution, without all provider SDKs. The refreshed lock uses Pillow 13.0.0,
+Filelock 4.2.6, and Pydantic AI Slim 2.64.0. The Filelock constraint is a repository
+resolver guard, not a dependency override or a guarantee for independently
+resolved consumer environments.
 
-#### Legacy Embedchain optional dependency
+The full SDK lock scan on October 31, 2026 still matches four distinct Chroma
+advisories and one DiskCache advisory (OSV also returns duplicate PYSEC aliases):
 
-The `embedchain` and `all` Python extras still resolve Embedchain 0.1.128,
-which requires `mem0ai<0.2` and `chromadb<0.6`. Their existing mem0ai 0.1.116
-lock is retained; it is affected by
-[GHSA-7587-9684-52r6](https://github.com/advisories/GHSA-7587-9684-52r6) and
-[GHSA-jfv9-68m5-gjjr](https://github.com/advisories/GHSA-jfv9-68m5-gjjr).
-Do not use that extra to expose a mem0 server or to process untrusted
-Databricks queries. The independent `import-mem0` extra and importer test
-group now resolve mem0ai 2.2.1. Removing the legacy constraint requires an
-upstream Embedchain update or retirement of that optional adapter; this
-cleanup does not claim the legacy dependency stack is vulnerability-free.
+- Chroma 1.5.9 remains in `import-chroma`, the importer test group, and CrewAI's
+  transitive dependencies. [Code injection](https://github.com/advisories/GHSA-36p7-vc44-83pf),
+  [pre-authentication code injection](https://github.com/advisories/GHSA-f4j7-r4q5-qw2c),
+  [tenant authorization](https://github.com/advisories/GHSA-xph7-9rjv-w5fr), and
+  [cross-tenant access](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr)
+  advisories include that release. WARM's importer reads local collections or an
+  external Chroma service; it does not start a Chroma HTTP server. This is not a
+  demonstrated mitigation of all four advisories. Do not deploy these extras as
+  a security-qualified integration until their actual paths are verified or the
+  dependency is patched/replaced.
+- DSPy requires DiskCache 5.6.3, whose default pickle deserialization permits code
+  execution if an attacker can write its cache directory
+  ([GHSA-w8v5-vhqr-4h9v](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v)).
+  Shared or untrusted cache directories are unsafe. A usable cache isolation or
+  cache-disable contract must be verified before this integration passes the
+  security gate; a successful framework import is not sufficient.
+
+These are dependency matches, not five reproduced WARM exploits. The base HTTP
+client depends only on `httpx` and `sniffio`; install only needed extras and audit
+the resolved deployment environment. A consumer's PyPI installation is not bound
+by the repository lock. Neither this SDK scan nor retirement establishes the
+security of the separate Python/JavaScript integration packages. No advisories
+are suppressed. The [remediation record](research/technical-audit-20261029/REMEDIATION.md)
+preserves the full before/after scan, resolver trials, and remaining gates.
+
+The earlier note associated mem0ai 0.1.116 with GHSA-7587-9684-52r6. The current
+[advisory range](https://github.com/advisories/GHSA-7587-9684-52r6) starts at 0.1.117,
+so that specific attribution was incorrect. Other legacy mem0 advisories were
+separate findings; retirement removes the old dependency fork rather than
+asserting it was safe.
 
 ### Documentation generator dependency
 

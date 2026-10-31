@@ -1013,3 +1013,70 @@ ingest/postings, and 20 HTTP API tests; strict Clippy and scoped formatting pass
 It is folded into PR #364 before merge, so its final exact-head CI covers chunk
 access, cache integrity, and error propagation together. The previous 3b5b61dd
 head had not completed its Windows gate and is not recorded as fully validated.
+
+
+### Maintained SDK integrations and dependency retirement (2026-10-31)
+
+User policy: prioritize maintained integrations and retire extras that cannot be
+secured. This supersedes the unresolved support-policy gate in the earlier
+October 31 dependency investigation. This change retires the SDK's `all`,
+`embedchain`, and legacy `semantic-kernel` extras and deletes their two obsolete
+adapter modules. No callers outside the retired modules were found; the separate
+current Semantic Kernel implementation under `integrations/python` is preserved,
+with its security gate explicit. Historical audit and rename evidence is retained.
+
+The SDK floor moves from Python 3.10 to 3.11, matching Python's published October
+1, 2026 end of life for 3.10. This is an intentional compatibility change, not a
+resolver marker that silently omits a requested integration. The Pydantic AI extra
+uses the official provider-free `pydantic-ai-slim>=2.64.0`; applications explicitly
+choose provider extras. The resolver constraint `filelock>=4.2.6` is not an
+incompatible override: all declared upstream requirements remain satisfied. It
+applies to this repository, not to independently resolved consumer installations.
+
+Before/after scan: every registry package/version pair in both complete locks was
+queried against the public OSV API, including inactive interpreter/extra forks.
+The SDK lock shrinks from 458 to 250 total packages (457 to 249 registry pairs).
+Affected pairs fall from 24 to 2; distinct GHSA IDs fall from 195 to 5. Raw OSV IDs
+include PYSEC aliases: 319 before, 10 after; these are not independent exploit
+counts. Separate GitHub alert snapshot: 206 open records / 197 distinct GHSA IDs,
+204 records for the SDK lock and two JavaScript locks. The two databases and their
+record granularities differ; neither count measures reproduced WARM exploits.
+
+Remaining SDK matches: Chroma 1.5.9 (four distinct GHSA IDs; direct importer/test
+and transitive CrewAI dependency) and DiskCache 5.6.3 (one; DSPy dependency).
+Current upstream package versions are still affected. Chroma importer code calls
+`PersistentClient` or `HttpClient` and read operations, not an HTTP server; that
+observation alone does not prove safe loading of stored collection configurations.
+DiskCache requires attacker write access to a cache directory. These integrations
+remain outside a security-qualified release until reachability and cache/source
+isolation are verified or dependencies replaced/retired. This pass does not claim
+zero advisories, secure optional extras, or safety of the separate integrations
+packages. No alert suppression, broken dependency overrides, or paid API/model
+calls were used.
+
+Validation: uv 0.13.6 resolves/checks the lock and builds wheel/sdist. An isolated
+installed wheel verifies Python metadata, removal of retired modules/extras, and
+real Pydantic AI tool registration. Offline FunctionModel + real local server
+checks pass on Python 3.11 and 3.14 (4 each): tenant isolation, normal retrieval,
+authorization errors, encoder failures, and connection closure. The latter exposed
+and fixes a leaked per-call client; both success and exceptions now close it.
+Base SDK on 3.11: 61 passed, 5 skips (four absent optional framework modules and
+orjson), 46 subtests. Existing minimum and current framework contracts pass:
+LangChain 0.3.86/1.7.3 (17/17), LlamaIndex 0.10.0/0.14.25 (42/48), Haystack
+2.0.0/3.4.1 (12/12), on Python 3.11/3.14 respectively. CI pins those versions and
+adds the Pydantic AI cases. Local checks reuse the existing server binary whose
+SHA-256 is recorded; final exact-head CI must build and test the server itself.
+The locked Python 3.12 importer group passes 173 cases with one opt-in embedded
+Weaviate skip (54.86s); it uses local stores and fixture HTTP servers. The optional
+fast transport passes 31 cases on Python 3.14. Workflow lint, 214 pinned-action
+checks, and diff whitespace checks pass. Final PR gate remains pending.
+
+Evidence: [maintained-integrations-20261031/](maintained-integrations-20261031/)
+contains the repeatable `scan_lock.py`, hash-bound complete OSV responses,
+GitHub alert snapshot, primary advisory records, lock/build logs, contract logs,
+and wheel check. `docs/SECURITY.md` corrects the older mem0ai 0.1.116 attribution:
+GHSA-7587-9684-52r6 currently starts at 0.1.117, so that one attribution was wrong;
+other legacy mem0 advisories were independent. Primary references:
+[Python support](https://devguide.python.org/versions/),
+[Pydantic AI slim installation](https://pydantic.dev/docs/ai/overview/install/),
+[OSV query API](https://google.github.io/osv.dev/post-v1-querybatch/).

@@ -1,0 +1,22 @@
+.....................s.................................................. [ 41%]
+........................................................................ [ 82%]
+..............................                                           [100%]
+=============================== warnings summary ===============================
+tests/importers/test_vectordbs_a1.py::test_lancedb_all_tables_by_default
+  /Volumes/A/warm-query-errors/bindings/python/warm-sdk/writerslogic_warm_sdk/importers/sources/lancedb.py:64: DeprecationWarning: table_names() is deprecated, use list_tables() instead
+    res = self._connect().table_names()
+
+tests/importers/test_vectordbs_a1.py::test_lancedb_all_tables_by_default
+  /Users/davidcondrey/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/events.py:88: DeprecationWarning: table_names() is deprecated, use list_tables() instead
+    self._context.run(self._callback, *self._args)
+
+tests/importers/test_vectordbs_a1.py::test_qdrant_mock_server_roundtrip
+tests/importers/test_vectordbs_a1.py::test_qdrant_mock_server_resume
+tests/importers/test_vectordbs_a1.py::test_qdrant_mock_wrong_key_is_not_leaked_and_fails
+  /Volumes/A/warm-query-errors/bindings/python/warm-sdk/writerslogic_warm_sdk/importers/sources/qdrant.py:86: UserWarning: Api key is used with an insecure connection.
+    self._client = QdrantClient(url=self.url, api_key=self.api_key, timeout=self.timeout,
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/importers/test_cloud_b2.py:565: set WARM_TEST_WEAVIATE_EMBEDDED=1 to run against a real embedded Weaviate
+173 passed, 1 skipped, 5 warnings in 54.86s

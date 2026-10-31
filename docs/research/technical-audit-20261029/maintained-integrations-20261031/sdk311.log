@@ -1,0 +1,10 @@
+Installed 13 packages in 8ms
+.......................... [ 41%]
+...........................s........                                     [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_haystack_live.py:6: could not import 'haystack': No module named 'haystack'
+SKIPPED [1] tests/test_langchain_live.py:7: could not import 'langchain_core': No module named 'langchain_core'
+SKIPPED [1] tests/test_llamaindex_live.py:7: could not import 'llama_index.core': No module named 'llama_index'
+SKIPPED [1] tests/test_pydantic_ai_live.py:6: could not import 'pydantic_ai': No module named 'pydantic_ai'
+SKIPPED [1] tests/test_transport.py:119: could not import 'orjson': No module named 'orjson'
+61 passed, 5 skipped, 46 subtests passed in 7.31s
