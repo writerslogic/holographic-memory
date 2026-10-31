@@ -96,10 +96,13 @@ upgrade removes the vulnerable esbuild development-server dependency.
 
 ### Optional Python integration dependencies
 
-The SDK's `all`, `embedchain`, and legacy `semantic-kernel` extras and the two
-legacy adapter modules are retired. Embedchain forces an obsolete dependency
+The SDK's `all`, `embedchain`, `phidata`, and legacy `semantic-kernel` extras
+and their three legacy adapter modules are retired. Embedchain forces an obsolete dependency
 stack; the old Semantic Kernel implementation also cannot satisfy its framework
-contract. This retirement does not remove the separate
+contract. Phidata's [upstream is archived](https://github.com/agno-agi/phidata),
+and its WARM vector-store adapter also fails construction with six unimplemented
+abstract methods. Its retirement reflects support/correctness failures, not a
+newly discovered vulnerability. This retirement does not remove the separate
 `writerslogic-warm-integrations` package's current Semantic Kernel adapter, whose
 resolved dependencies still require independent review.
 

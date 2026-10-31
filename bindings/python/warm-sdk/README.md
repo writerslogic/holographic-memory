@@ -24,10 +24,14 @@ Framework adapters are optional extras. Install only the integration you need:
 uv add "warm-sdk[langchain]"
 ```
 
-The `all`, `embedchain`, and legacy `semantic-kernel` extras are retired.
+The `all`, `embedchain`, `phidata`, and legacy `semantic-kernel` extras are retired.
 Install individual maintained integrations instead of the former aggregate.
 Embedchain forces obsolete dependencies; its incomplete adapter has been removed.
 The legacy `writerslogic_warm_sdk.semantic_kernel` module has also been removed.
+Phidata's upstream is archived, and its WARM adapter could not instantiate because
+six abstract methods were unimplemented. Its module is removed rather than
+advertising a working vector store. Agno is the upstream successor; WARM does not
+yet provide or claim a compatible Agno adapter.
 The separate [current Semantic Kernel adapter](https://github.com/writerslogic/warm/blob/main/docs/integrations/frameworks/semantic-kernel.md)
 uses a different API and is not a drop-in replacement; its dependency environment
 still needs a security review before deployment.
@@ -184,7 +188,6 @@ The indices in `selected` are mandatory; packing raises `ValueError` if they exc
 | Haystack | `haystack` | `from writerslogic_warm_sdk.haystack import WarmDocumentStore` |
 | DSPy | `dspy` | `from writerslogic_warm_sdk.dspy import WarmRM` |
 | CrewAI | `crewai` | `from writerslogic_warm_sdk.crewai import WarmSearchTool` |
-| Phidata | `phidata` | `from writerslogic_warm_sdk.phidata import WarmVectorDb` |
 | Pydantic AI | `pydantic-ai` | `from writerslogic_warm_sdk.pydantic_ai import get_warm_tool` |
 | SmolAgents | `smolagents` | `from writerslogic_warm_sdk.smolagents import WarmSearchTool` |
 

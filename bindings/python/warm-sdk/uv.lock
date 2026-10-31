@@ -1451,30 +1451,6 @@ wheels = [
 ]
 
 [[package]]
-name = "gitdb"
-version = "4.0.12"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "smmap" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/72/94/63b0fc47eb32792c7ba1fe1b694daec9a63620db1e313033d18140c2320a/gitdb-4.0.12.tar.gz", hash = "sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571", size = 394684, upload-time = "2025-01-02T07:20:46.413Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a0/61/5c78b91c3143ed5c14207f463aecfc8f9dbb5092fb2869baf37c273b2705/gitdb-4.0.12-py3-none-any.whl", hash = "sha256:67073e15955400952c6565cc3e707c554a4eea2e428946f7a4c162fab9bd9bcf", size = 62794, upload-time = "2025-01-02T07:20:43.624Z" },
-]
-
-[[package]]
-name = "gitpython"
-version = "3.2.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "gitdb" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/ff/fee293f1ec3e1b64db6eb270e00964f29c086d769201474cedb8d1608930/gitpython-3.2.1.tar.gz", hash = "sha256:0f1229ec5c057bdabdeeda8bda4f17bda679ab33dbccc00f24e6a480553c8613", size = 241688, upload-time = "2026-10-14T12:20:20.589Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/50/2a923c4dc02522ff9567f07c67ed1deca6d5fa9474f4708168b8088dfa37/gitpython-3.2.1-py3-none-any.whl", hash = "sha256:d66b0832aa8755c1a84892937282df0befb16c97e5a64aeebd68be9c5e323f53", size = 231548, upload-time = "2026-10-14T12:20:18.844Z" },
-]
-
-[[package]]
 name = "google-re2"
 version = "1.1.20251105"
 source = { registry = "https://pypi.org/simple" }
@@ -4174,28 +4150,6 @@ wheels = [
 ]
 
 [[package]]
-name = "phidata"
-version = "2.7.10"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "docstring-parser" },
-    { name = "gitpython" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "python-dotenv" },
-    { name = "pyyaml" },
-    { name = "rich" },
-    { name = "tomli" },
-    { name = "typer" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/bc/808d8f82c1be723d51c945bbedca62c68950b3cb294716f309428a9d3be7/phidata-2.7.10.tar.gz", hash = "sha256:d8d01e5e3841bf0df659f57d84a5eb5a8e5271fdf2f2899f6037f54839463482", size = 500479, upload-time = "2025-01-27T14:27:54.142Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/de/814e0bc3532a9a0ad45c7164ac3a43abfcaac1253e61ad852ae344badc55/phidata-2.7.10-py3-none-any.whl", hash = "sha256:9cb3b2bf790440d644c5443cd20e0ab27dea98e5b7cfed4676a615e1583e2501", size = 716942, upload-time = "2025-01-27T14:27:50.415Z" },
-]
-
-[[package]]
 name = "pillow"
 version = "13.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -5673,15 +5627,6 @@ wheels = [
 ]
 
 [[package]]
-name = "smmap"
-version = "5.0.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1f/ea/49c993d6dfdd7338c9b1000a0f36817ed7ec84577ae2e52f890d1a4ff909/smmap-5.0.3.tar.gz", hash = "sha256:4d9debb8b99007ae47165abc08670bd74cb74b5227dda7f643eccc4e9eb5642c", size = 22506, upload-time = "2026-03-09T03:43:26.1Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/d4/59e74daffcb57a07668852eeeb6035af9f32cbfd7a1d2511f17d2fe6a738/smmap-5.0.3-py3-none-any.whl", hash = "sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f", size = 24390, upload-time = "2026-03-09T03:43:24.361Z" },
-]
-
-[[package]]
 name = "smolagents"
 version = "1.26.0"
 source = { registry = "https://pypi.org/simple" }
@@ -6332,9 +6277,6 @@ langchain = [
 llamaindex = [
     { name = "llama-index-core" },
 ]
-phidata = [
-    { name = "phidata" },
-]
 pydantic-ai = [
     { name = "pydantic-ai-slim" },
 ]
@@ -6404,7 +6346,6 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'import-hnswlib'", specifier = ">=1.26" },
     { name = "openai", marker = "extra == 'import-openai'", specifier = ">=1.40" },
     { name = "orjson", marker = "extra == 'fast'", specifier = ">=3.9" },
-    { name = "phidata", marker = "extra == 'phidata'", specifier = ">=2.4.0" },
     { name = "pinecone", marker = "extra == 'import-pinecone'", specifier = ">=5" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'import-pgvector'", specifier = ">=3.1" },
     { name = "pyarrow", marker = "extra == 'import-files'", specifier = ">=15" },
@@ -6419,7 +6360,7 @@ requires-dist = [
     { name = "sqlite-vec", marker = "extra == 'import-sqlite-vec'", specifier = ">=0.1.1" },
     { name = "zep-cloud", marker = "extra == 'import-zep'", specifier = ">=2" },
 ]
-provides-extras = ["langchain", "llamaindex", "haystack", "dspy", "crewai", "phidata", "pydantic-ai", "smolagents", "import-files", "import-chroma", "import-sqlite-vec", "import-lancedb", "import-qdrant", "import-faiss", "import-hnswlib", "import-annoy", "import-pinecone", "import-milvus", "import-pgvector", "import-redis", "import-mongodb", "import-openai", "import-mem0", "import-zep", "import-letta", "import-llamaindex", "import-langchain", "fast"]
+provides-extras = ["langchain", "llamaindex", "haystack", "dspy", "crewai", "pydantic-ai", "smolagents", "import-files", "import-chroma", "import-sqlite-vec", "import-lancedb", "import-qdrant", "import-faiss", "import-hnswlib", "import-annoy", "import-pinecone", "import-milvus", "import-pgvector", "import-redis", "import-mongodb", "import-openai", "import-mem0", "import-zep", "import-letta", "import-llamaindex", "import-langchain", "fast"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]

@@ -1162,3 +1162,32 @@ uv 0.13.6 lock check, workflow lint, and diff checks pass. CI pins CrewAI 1.15.3
 SmolAgents 1.26.0, LiteLLM 1.103.10, and Filelock 4.2.6, with telemetry disabled and
 only local encoders/service calls. Final PR/merge gate remains pending.
 Evidence: [framework-tools-20261031/](framework-tools-20261031/).
+
+
+### Archived Phidata adapter retirement and final SDK scan (2026-10-31)
+
+The remaining Phidata extra resolves 2.7.10, whose upstream repository
+[agno-agi/phidata](https://github.com/agno-agi/phidata) is archived. Inspecting and
+instantiating WARM's actual adapter fails: `create`, `delete`, `doc_exists`,
+`exists`, `name_exists`, and `upsert` remain abstract. Its `drop` also silently
+succeeds without deleting anything, and inserted IDs derive from process-random
+Python hashes when names are absent. The constructor failure is measured; those
+additional defects are source observations, not runtime exploit claims.
+
+Under the user's maintained-integration policy, remove the `phidata` extra and
+adapter rather than implement a new lifecycle/storage contract for an archived
+framework. No other production callers were found. Documentation removes the
+advertised working connector and explicitly does not claim an Agno replacement.
+The separate current integrations and historical audit/rename records remain.
+
+The final SDK lock has 246 total packages / 245 registry package-version pairs,
+compared with 458 / 457 before this work. This step removes only phidata, gitdb,
+gitpython, and smmap; no registry package/version additions or upgrades occur.
+A fresh complete OSV scan of this exact final lock still matches the same four
+Chroma GHSA IDs and one DiskCache GHSA ID (10 IDs including PYSEC aliases).
+Retirement is justified by archived support and broken contracts, not an invented
+Phidata vulnerability. The final installed wheel confirms all four retired extras
+and three modules are absent, with the Python 3.11 floor intact. Wheel/sdist and
+lock checks pass. Final exact-head CI/merge gate remains pending.
+Evidence: [phidata-retirement-20261031/](phidata-retirement-20261031/), including
+hash-bound scan, exact lock delta, upstream archive metadata and constructor output.
