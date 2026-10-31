@@ -25,6 +25,14 @@ Every failure of an API call is an RFC 9457 `application/problem+json` document:
 ### invalid_json
 400. The body is not valid JSON, or has the wrong shape for the endpoint.
 
+### invalid_body
+400. A request-body transport error reached the handler before the body completed.
+Its underlying error text is omitted from the response. JSON writes have not executed
+or reserved an idempotency key; failed restore uploads are removed without installing
+the archive. NDJSON ingest can retain batches committed before the failure: reconcile
+the stored records before retrying. A broken connection may prevent delivery of this
+response. Size-limit violations remain 413, and body deadlines remain 408.
+
 ### invalid_tenant
 400. `X-Tenant-ID` is not 1 to 64 characters of `[A-Za-z0-9_-]`.
 

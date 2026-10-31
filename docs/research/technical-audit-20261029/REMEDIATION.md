@@ -402,3 +402,27 @@ on the blocking worker and the same bytes are sent for 200. This also removes re
 restore/write timing for cache correctness. Response validators are no longer a shared tenant
 revision token. The tradeoff is explicit: 304 responses render and hash their representation;
 no latency improvement is claimed, and large metadata-page cost needs workload measurement.
+
+
+### Request-body error classification and cleanup
+
+Four regressions fail on `171c80d3`: buffered reads label transport failure as 413;
+restore labels it 422; streaming ingest returns 400 with `invalid_request`, whose
+registered contract is 422. One `invalid_body` 400 problem now describes unreadable
+bodies consistently. Buffered reads retain 413 only for Axum's documented
+`LengthLimitError`; 408 deadlines remain unchanged. The underlying transport error
+text never enters the problem response. This follows the distinction between
+[RFC 9110 §15.5.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.1)
+and [§15.5.14](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.14).
+
+Seven body-handling and four error-contract checks pass, including multi-frame size
+boundaries, real-router error injection, work-slot/gauge reclamation, no buffered
+mutation or retry-key reservation, restore-upload cleanup, and preservation of a
+previously committed NDJSON batch. Strict binary Clippy, formatting and diff checks
+pass. Evidence: `body-errors-20261031/`. Response delivery after a network disconnect
+is not guaranteed, and streaming retries still require reconciliation. The complete
+PR gate remains required before merge.
+
+A separate source inspection found `index_unavailable` emitted as 409 by
+`documents::vector_search` but absent from `error::CODES` and the error reference.
+Its graph-unavailable behavior and documented recovery need a targeted contract check.

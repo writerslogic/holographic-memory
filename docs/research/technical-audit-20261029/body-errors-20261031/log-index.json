@@ -1,0 +1,27 @@
+[
+  {
+    "file": "baseline.log",
+    "bytes": 2982,
+    "sha256": "f1d39503c593dedf006389b1939ae8614438dce96c3975217181b79042137096"
+  },
+  {
+    "file": "body-final.log",
+    "bytes": 4408,
+    "sha256": "1a2477449ef7e3f99ebf24c3ea4801d2c6ac43fb37b90faa25e44248a5a81655"
+  },
+  {
+    "file": "clippy-final.log",
+    "bytes": 227,
+    "sha256": "e78bbbf5180854ba73b565aeebcb7edecdb809de9875260a168b9b663c1ffec1"
+  },
+  {
+    "file": "error-final.log",
+    "bytes": 960,
+    "sha256": "81cc3c5f8e0e9699bf932a2701c19d52c06af6d4d69284f7e6a2ca3d4123a416"
+  },
+  {
+    "file": "fmt-final.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

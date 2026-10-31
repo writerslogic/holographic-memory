@@ -1,0 +1,59 @@
+{
+  "baseline": "171c80d3",
+  "toolchain": "Rust 1.99.0",
+  "features": "server",
+  "baseline_regressions": {
+    "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server body_failure -- --test-threads=1",
+    "passed": 0,
+    "failed": 4,
+    "log": "baseline.log",
+    "patch": "baseline-regressions.patch"
+  },
+  "checks": [
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server body -- --test-threads=1",
+      "passed": 7,
+      "log": "body-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 test --offline --locked --features server --bin warm-server error::tests",
+      "passed": 4,
+      "log": "error-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 clippy --offline --locked --features server --bin warm-server -- -D warnings",
+      "result": "pass",
+      "log": "clippy-final.log"
+    },
+    {
+      "command": "cargo +1.99.0 fmt --all -- --check; git diff --check",
+      "result": "pass",
+      "log": "fmt-final.log"
+    }
+  ],
+  "coverage": [
+    "Buffered size boundary 7/8/9 bytes against an 8-byte limit, across multiple frames",
+    "Injected body errors traverse real router and authentication middleware",
+    "No buffered write or retry-key reservation before a failed read",
+    "Admission and in-flight gauge released after every tested handler failure",
+    "Incomplete restore upload and staging directory removed",
+    "NDJSON preserves an earlier committed batch after a later transport failure",
+    "Underlying sensitive error text is absent from the response",
+    "Existing timeout and frame-independent batch tests pass"
+  ],
+  "sources": [
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.1",
+    "https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.14"
+  ],
+  "api_verification": {
+    "source": "axum 0.8.9 registry source, src/body/mod.rs; to_bytes documentation and implementation",
+    "module_sha256": "83a6632a770e9f3c0ddcdafc26dce4729a1c305f12eef0006c9200f38e774a5a",
+    "mechanism": "Inspect the axum error source for http_body_util::LengthLimitError, as documented by the installed version."
+  },
+  "limits": [
+    "Injected-stream regressions verify handler semantics, not response delivery over a disconnected network.",
+    "Streaming batches are not rolled back on body failure; retry requires reconciliation.",
+    "No new restart-safe retry guarantee."
+  ],
+  "integration_gate": "Pending PR checks; final tested head and merge record are authoritative."
+}

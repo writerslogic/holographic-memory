@@ -628,3 +628,107 @@ async fn stream_batch_preserves_line_errors_and_final_unterminated_document() {
         assert!(core.has_document("d"));
     }
 }
+
+#[tokio::test]
+async fn body_failure_distinguishes_size_limits_from_transport_errors() {
+    use axum::body::Body;
+    let directory = tempfile::tempdir().unwrap();
+    let state = state_with(directory.path(), 1, &["--max-body-bytes", "8"]);
+    for size in [7, 8, 9] {
+        let chunks = futures_util::stream::iter([
+            Ok::<_, std::io::Error>(bytes::Bytes::from(vec![0; 4])),
+            Ok(bytes::Bytes::from(vec![0; size - 4])),
+        ]);
+        let result = crate::request::read_body(&state, Body::from_stream(chunks)).await;
+        if size <= 8 {
+            assert_eq!(result.unwrap().len(), size);
+        } else {
+            let error = result.unwrap_err();
+            assert_eq!(error.status.as_u16(), 413);
+            assert_eq!(error.code, "payload_too_large");
+        }
+    }
+    let chunks = futures_util::stream::iter([
+        Ok(bytes::Bytes::from_static(b"{")),
+        Err(std::io::Error::other("sensitive transport detail")),
+    ]);
+    let error = crate::request::read_body(&state, Body::from_stream(chunks))
+        .await
+        .unwrap_err();
+    assert_eq!(error.status.as_u16(), 400);
+    assert_eq!(error.code, "invalid_body");
+    assert!(!error
+        .problem()
+        .to_string()
+        .contains("sensitive transport detail"));
+}
+
+async fn failed_body_request(path: &str, method: &str, prefix: &'static [u8], committed: usize) {
+    use tower_service::Service;
+    let directory = tempfile::tempdir().unwrap();
+    let state = state_with(directory.path(), 1, &["--stream-batch", "1"]);
+    let chunks = futures_util::stream::iter([
+        Ok(bytes::Bytes::from_static(prefix)),
+        Err(std::io::Error::other("sensitive transport detail")),
+    ]);
+    let request = axum::http::Request::builder()
+        .method(method)
+        .uri(path)
+        .header("Authorization", "Bearer test-key")
+        .header(
+            "Content-Type",
+            if path.ends_with("stream") {
+                "application/x-ndjson"
+            } else {
+                "application/json"
+            },
+        )
+        .header("Idempotency-Key", "failed-upload")
+        .body(axum::body::Body::from_stream(chunks))
+        .unwrap();
+    let mut app = routes::router(state.clone());
+    let response = app.call(request).await.unwrap();
+    let status = response.status().as_u16();
+    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .unwrap();
+    let problem: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(state.work.slots.available_permits(), 1);
+    assert_eq!(state.metrics.in_flight.load(Ordering::Relaxed), 0);
+    assert_eq!(state.idem.usage(), (0, 0, 0));
+    if state.staging_root().exists() {
+        assert_eq!(std::fs::read_dir(state.staging_root()).unwrap().count(), 0);
+    }
+    assert_eq!(state.core("default").unwrap().document_count(), committed);
+    assert_eq!(status, 400);
+    assert_eq!(problem["code"], "invalid_body");
+    assert_eq!(problem["status"], 400);
+    assert!(!problem.to_string().contains("sensitive transport detail"));
+}
+
+#[tokio::test]
+async fn body_failure_buffered_write_does_not_commit_or_reserve_a_retry_key() {
+    failed_body_request(
+        "/api/v1/documents",
+        "POST",
+        br#"{"id":"partial","vector":[1,0]}"#,
+        0,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn body_failure_stream_preserves_prior_committed_batches() {
+    failed_body_request(
+        "/api/v1/documents/stream",
+        "POST",
+        b"{\"id\":\"partial\",\"vector\":[1,0]}\n",
+        1,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn body_failure_restore_cleans_up_the_incomplete_archive() {
+    failed_body_request("/api/v1/restore", "PUT", &[0; 1024], 0).await;
+}
