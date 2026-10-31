@@ -56,8 +56,23 @@ Vectors are not returned (`include_vectors` is ignored): the service does not re
 - `include_total_count` reports the number of candidates fetched, not the collection size.
 - `upsert` with an existing key replaces the record. `delete` of an absent key is a no-op.
 
+## Dependency policy
+
+Install `writerslogic-warm-integrations[semantic-kernel]`. The extra requires
+`werkzeug>=3.1.9` so published consumer installs exclude the affected Windows
+`safe_join` versions. Semantic Kernel 1.46.0 requires OpenAPI Core below 0.20;
+OpenAPI Core 0.19.5 caps Werkzeug below 3.1.2, so the tested resolver selects
+OpenAPI Core 0.19.4 with Werkzeug 3.1.9. This is a compatible dependency resolution,
+not an override of upstream requirements. The upstream cap concerns
+[Werkzeug header typing](https://github.com/python-openapi/openapi-core/issues/938).
+
+The vector-store and Kernel search workflows below are tested with this graph.
+Other Semantic Kernel plugins and OpenAPI Core web-framework integrations are
+outside that validation. If another dependency requires OpenAPI Core 0.19.5,
+use a separate environment rather than removing the Werkzeug security floor.
+
 ## Tested
 
-semantic-kernel 1.45.0, Python 3.12, real `warm-server`. `tests/semantic_kernel/test_semantic_kernel.py` runs the idioms from Semantic Kernel's own vector store tests (single and batch upsert/get/delete, `get` with ordering and paging, search with values and vectors, lambda and string filters, `skip`), a custom `EmbeddingGeneratorBase` service, distance-function orientation, model validation errors, collection isolation inside one tenant, a filter whose only match lies beyond the service's page size, and a real `Kernel` invoking `create_search_function` through `kernel.invoke`. Semantic Kernel does not ship a reusable connector conformance suite in the installed package, so this mirrors its in-repo integration tests rather than importing them.
+semantic-kernel 1.45.0 on Python 3.11 and 1.46.0 on Python 3.14, real `warm-server`: 12 tests pass on each. `tests/semantic_kernel/test_semantic_kernel.py` runs the idioms from Semantic Kernel's own vector store tests (single and batch upsert/get/delete, `get` with ordering and paging, search with values and vectors, lambda and string filters, `skip`), a custom `EmbeddingGeneratorBase` service, distance-function orientation, model validation errors, collection isolation inside one tenant, a filter whose only match lies beyond the service's page size, and a real `Kernel` invoking `create_search_function` through `kernel.invoke`. Semantic Kernel does not ship a reusable connector conformance suite in the installed package, so this mirrors its in-repo integration tests rather than importing them.
 
 Not run: a real embedding service (the offline `HashingEmbedder` stands in), and `hybrid_search` against on-device models.

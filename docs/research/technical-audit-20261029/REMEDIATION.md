@@ -1217,3 +1217,44 @@ complete hash-bound OSV scan again reports four Chroma GHSA IDs and one DiskCach
 GHSA ID. This supersedes the preceding 246-package snapshot for final release
 assessment. Build and lock checks pass; final exact-head CI/merge remains pending.
 Evidence: [dspy-consumer-constraints-20261031/](dspy-consumer-constraints-20261031/).
+
+## Maintained Semantic Kernel dependency security (2026-10-31)
+
+The separate `writerslogic-warm-integrations[semantic-kernel]` adapter remains
+implemented and usable; it is distinct from the retired legacy SDK extra.
+Fresh resolution selected Semantic Kernel 1.46.0 → OpenAPI Core 0.19.5 →
+Werkzeug 3.1.1. A complete OSV scan of 100 registry package/version pairs matched
+four GHSA IDs (eight IDs including aliases), all in Werkzeug's Windows
+`safe_join` handling. This is dependency advisory evidence, not a demonstrated
+exploit in WARM's Rust server or the vector-store adapter.
+
+The published extra now requires `werkzeug>=3.1.9`. The resolver selects OpenAPI
+Core 0.19.4, which satisfies Semantic Kernel's `>=0.18,<0.20` requirement, instead
+of overriding 0.19.5's `<3.1.2` cap. The cap's rationale is documented in upstream
+[issue 938](https://github.com/python-openapi/openapi-core/issues/938); the
+[0.19.4…0.19.5 changes](https://github.com/python-openapi/openapi-core/compare/0.19.4...0.19.5)
+are archived for review. No package metadata or advisory is suppressed. This
+tradeoff validates WARM's vector-store workflows, not every OpenAPI or Django
+integration available through Semantic Kernel.
+
+Twelve real-server tests pass with Semantic Kernel 1.45.0/Python 3.11 and
+1.46.0/Python 3.14, including custom embedding generators and `Kernel.invoke`.
+The first run exposed an existing stale `HmsConfig` reference (11 pass, one
+NameError); it now uses the imported `WarmConfig`, with assertions unchanged.
+Both boundaries are added to the existing live-server CI job. No paid model
+providers or model downloads are used.
+
+Wheel and sdist build; wheel metadata includes the extra-scoped security floor.
+A fresh wheel consumer selecting the extra resolves Werkzeug 3.1.9/OpenAPI Core
+0.19.4 without external constraints. Installing the bare package plus Semantic
+Kernel separately does not activate an extra's requirements and still resolves
+the vulnerable version; use the documented extra. A new hash-bound universal
+lock scan reports zero matches across 100 registry pairs (103 total packages).
+That snapshot does not establish vulnerability absence or cover other extras.
+Workflow lint and all 214 action pins pass. Exact-head remote CI and merge are
+still pending.
+
+Evidence: [semantic-kernel-security-20261031/](semantic-kernel-security-20261031/)
+contains resolution locks, OSV responses, upstream metadata, compatibility and
+consumer logs, and the tested server binary hash. The server was built from the
+separately validated PR #366 source tree; this change adds no Rust code.

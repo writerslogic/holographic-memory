@@ -164,7 +164,7 @@ async def test_collections_are_isolated_in_a_tenant(server):
 
 async def test_sk_embedding_generator_and_vector_values(server):
     st = WarmStore(
-        HmsConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM)),
+        WarmConfig(url=server.url, tenant_id=server.tenant(), input_dim=DIM, embedder=HashingEmbedder(DIM)),
         embedding_generator=SkEmbedder(service_id="e", ai_model_id="hash"),
     )
     col = st.get_collection(Doc, collection_name="g")

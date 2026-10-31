@@ -18,7 +18,7 @@ Every adapter was run against a real `warm-server` (Python) or the native Node a
 | `crewai` | [crewai](crewai.md) | crewai 1.15.28 | real `Crew.kickoff()` with a scripted LLM |
 | `autogen` | [autogen](autogen.md) | autogen-agentchat / core / ext 0.7.5 | real `AssistantAgent` with a replay client |
 | `ag2` | [autogen](autogen.md) | ag2 1.1.2 | tool toolkit (AG2 1.x has no memory interface WARM can back) |
-| `semantic-kernel` | [semantic-kernel](semantic-kernel.md) | semantic-kernel 1.45.0 | real `Kernel.invoke` of a search function |
+| `semantic-kernel` | [semantic-kernel](semantic-kernel.md) | semantic-kernel 1.45.0 / 1.46.0; Werkzeug >=3.1.9 | real `Kernel.invoke` of a search function |
 | `mem0` | [mem0](mem0.md) | mem0ai 2.2.1 | one scenario through real mem0 and the shim; result shapes compared |
 | `letta` | [letta](letta.md) | letta-client 1.12.1 | `PassagesResource` signatures; tool source executed against the real server |
 

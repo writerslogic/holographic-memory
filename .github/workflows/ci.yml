@@ -308,6 +308,16 @@ jobs:
         run: |
           uv run --no-project --python 3.12 --with './bindings/python/warm-sdk' --with './integrations/python[dspy]' --with 'dspy==3.4.1' --with 'litellm==1.103.10' --with 'filelock==4.2.6' --with pytest --with pytest-asyncio pytest -q -rs integrations/python/tests/dspy
 
+      - name: Maintained Semantic Kernel contracts against the real server
+        env:
+          WARM_SERVER_BIN: ${{ github.workspace }}/target/debug/warm-server
+          OTEL_SDK_DISABLED: 'true'
+          HF_HUB_OFFLINE: '1'
+          TRANSFORMERS_OFFLINE: '1'
+        run: |
+          uv run --no-project --python 3.11 --with './bindings/python/warm-sdk' --with './integrations/python[semantic-kernel]' --with 'semantic-kernel==1.45.0' --with pytest --with pytest-asyncio pytest -q -rs integrations/python/tests/semantic_kernel
+          uv run --no-project --python 3.14 --with './bindings/python/warm-sdk' --with './integrations/python[semantic-kernel]' --with 'semantic-kernel==1.46.0' --with pytest --with pytest-asyncio pytest -q -rs integrations/python/tests/semantic_kernel
+
       - name: CrewAI and SmolAgents native tool contracts
         working-directory: bindings/python/warm-sdk
         env:
