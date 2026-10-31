@@ -121,8 +121,19 @@ The audit log at `{storage_path}/audit.bin` is an append-only binary file with f
 
 - **Operations**: Memorize (1), Delete (2), Compact (3)
 - **Timestamps**: Milliseconds since Unix epoch
-- **Queryable**: `audit_since(timestamp_ms)` returns all entries after a given time
+- **Queryable**: `audit_since(timestamp_ms)` returns all entries at or after a given time
 - **Tamper evidence**: When signing is enabled, each entry carries an Ed25519 signature over its timestamp, operation, and ID hash
+
+Audit reads reject complete records with unknown operation codes, including records
+outside the requested timestamp range, and report the corrupt record's byte offset.
+This is structural validation, not automatic signature verification. A trailing
+incomplete record is excluded from reads and durably truncated on open or before
+the next append under the audit writer lock. Complete records are retained, including
+records whose write completed but whose sync reported an error. Recovery preserves
+alignment; it does not reconstruct missing audit events or establish exactly-once
+delivery. A failed repair prevents the new audit append, but the associated core
+mutation may already be committed as described in the
+[committed-effect contract](production-readiness.md#durability-and-concurrency).
 
 ## IDF Clipping Poisoning Defense (Meaning Memory)
 

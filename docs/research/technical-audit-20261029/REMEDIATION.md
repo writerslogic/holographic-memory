@@ -114,3 +114,35 @@ Rust1.99; strict MkDocs and workflow lint pass. The final binding/runtime and pl
 are recorded by the PR's exact-head gate. See [bounded-validation.json](bounded-validation.json)
 and its retained passing logs. The source commits are `6cd497c` and `107f0e86`; later evidence-only
 commits do not claim additional implementation or performance gains.
+
+## Audit log integrity follow-up
+
+The October 31 follow-up reproduced two audit-sidecar defects on the merged WARM
+baseline: unknown operation codes silently disappeared from query results, and a
+partial append misaligned subsequent records until reopening. Both new regressions
+failed against the old implementation. Reads now reject invalid complete records
+with their byte offset even outside the timestamp filter. Opening and appending
+share a same-handle torn-tail repair; appends serialize repair and writing, sync
+the truncation, and stop if repair fails. Complete records are never discarded.
+The handle is opened for read/write and seeks to EOF within that same writer lock:
+Windows [requires `FILE_WRITE_DATA` for truncation](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntsetinformationfile),
+which Rust's append-only opening mode omits. Reopen-and-append checks preserve
+the existing prefix without first reading the reopened file.
+
+Eight focused audit tests pass, including operation corruption at read-buffer
+boundaries, one-byte and 104/105/106-byte interrupted tails, read-only repair
+failure, concurrent append preservation and reopen parity. The security-enabled
+library suite passes 672 tests with 12 existing ignores. Reproduce with Rust 1.99:
+
+```sh
+cargo test --locked --lib core::audit::tests
+cargo test --locked --features security --lib
+cargo test --locked --features security --test allocation_bounds --test format_crash --test committed_sidecars --test format_golden
+cargo clippy --locked --features security --lib --tests -- -D warnings
+```
+
+The follow-up PR's checks record the final platform gate. This does not add a
+durable outbox, reconstruct missing sidecar events, verify signatures on read,
+or establish physical power-loss behavior. The audit format and existing typed
+committed-effect contract remain unchanged; `docs/SECURITY.md` defines the reader
+and recovery guarantees.

@@ -78,22 +78,28 @@ pub struct AuditLog {
 impl AuditLog {
     pub fn new(storage_path: &std::path::Path) -> Result<Self> {
         let path = storage_path.join("audit.bin");
-        // An append the crash interrupted leaves a partial entry. Readers ignore it, but every
-        // entry appended after it would start at the wrong offset, so it is cut off here.
-        if let Ok(metadata) = std::fs::metadata(&path) {
-            let whole = metadata.len() - metadata.len() % ENTRY_SIZE as u64;
-            if whole != metadata.len() {
-                OpenOptions::new().write(true).open(&path)?.set_len(whole)?;
-            }
-        }
         let file = OpenOptions::new()
             .read(true)
-            .append(true)
+            .write(true)
+            .truncate(false)
             .create(true)
             .open(&path)?;
+        Self::repair_torn_tail(&file)?;
         Ok(Self {
             file: Mutex::new(file),
         })
+    }
+
+    fn repair_torn_tail(file: &File) -> Result<()> {
+        let len = file.metadata()?.len();
+        let whole = len - len % ENTRY_SIZE as u64;
+        if whole != len {
+            file.set_len(whole)
+                .map_err(|e| anyhow!("Audit tail repair failed: {e}"))?;
+            file.sync_data()
+                .map_err(|e| anyhow!("Audit tail repair sync failed: {e}"))?;
+        }
+        Ok(())
     }
 
     /// Record an operation. The `sign_fn` is called with the entry's
@@ -119,6 +125,10 @@ impl AuditLog {
         }
 
         let mut file = self.file.lock();
+        // A prior failed write can leave a partial record without closing this handle.
+        Self::repair_torn_tail(&file)?;
+        // Windows append-only handles cannot truncate; append under the same writer lock.
+        file.seek(SeekFrom::End(0))?;
         file.write_all(&bytes)
             .map_err(|e| anyhow!("Audit write failed: {}", e))?;
         file.sync_data()
@@ -127,6 +137,7 @@ impl AuditLog {
     }
 
     /// Read all entries with timestamp >= `since_ms`.
+    /// Reject malformed complete records even outside the requested time range.
     pub fn entries_since(&self, since_ms: u64) -> Result<Vec<AuditEntry>> {
         let mut file = self.file.lock();
         file.seek(SeekFrom::Start(0))?;
@@ -150,13 +161,15 @@ impl AuditLog {
                     entry_count * ENTRY_SIZE - remaining
                 )
             })?;
-            for chunk in buf[..read].as_chunks::<ENTRY_SIZE>().0 {
-                let timestamp =
-                    u64::from_le_bytes(chunk[..8].try_into().expect("fixed entry size"));
-                if timestamp >= since_ms {
-                    if let Some(entry) = AuditEntry::from_bytes(chunk) {
-                        entries.push(entry);
-                    }
+            for (index, chunk) in buf[..read].as_chunks::<ENTRY_SIZE>().0.iter().enumerate() {
+                let entry = AuditEntry::from_bytes(chunk).ok_or_else(|| {
+                    anyhow!(
+                        "Audit record has invalid operation at offset {}",
+                        entry_count * ENTRY_SIZE - remaining + index * ENTRY_SIZE
+                    )
+                })?;
+                if entry.timestamp_ms >= since_ms {
+                    entries.push(entry);
                 }
             }
             remaining -= read;
@@ -241,5 +254,126 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].op, AuditOp::Memorize);
         assert_eq!(entries[0].id_hash, hash_id("persist_test"));
+    }
+
+    #[test]
+    fn malformed_operations_are_reported_even_outside_the_timestamp_filter() {
+        for index in [623, 624, 625] {
+            for op in [0, 4, u8::MAX] {
+                let dir = tempdir().unwrap();
+                let log = AuditLog::new(dir.path()).unwrap();
+                let entry = AuditEntry {
+                    timestamp_ms: 1,
+                    op: AuditOp::Memorize,
+                    id_hash: [0; 32],
+                    signature: [0; 64],
+                }
+                .to_bytes();
+                let mut bytes = entry.repeat(index + 2);
+                bytes[index * ENTRY_SIZE + 8] = op;
+                std::fs::write(dir.path().join("audit.bin"), bytes).unwrap();
+                for since in [0, 1, 2] {
+                    let error = log.entries_since(since).unwrap_err().to_string();
+                    assert!(error.contains(&format!("offset {}", index * ENTRY_SIZE)));
+                    assert!(error.contains("invalid operation"));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn subsequent_append_repairs_a_torn_tail_without_reopening() {
+        for written in [1, ENTRY_SIZE - 1, ENTRY_SIZE, ENTRY_SIZE + 1] {
+            let dir = tempdir().unwrap();
+            let log = AuditLog::new(dir.path()).unwrap();
+            log.record(AuditOp::Memorize, "before", None).unwrap();
+            let interrupted = AuditEntry {
+                timestamp_ms: 1,
+                op: AuditOp::Delete,
+                id_hash: hash_id("interrupted"),
+                signature: [0; 64],
+            }
+            .to_bytes();
+            log.file
+                .lock()
+                .write_all(&interrupted.repeat(2)[..written])
+                .unwrap();
+            log.record(AuditOp::Memorize, "after", None).unwrap();
+            let expected_count = 2 + written / ENTRY_SIZE;
+            let entries = log.entries_since(0).unwrap();
+            assert_eq!(entries.len(), expected_count);
+            assert_eq!(entries[0].id_hash, hash_id("before"));
+            assert_eq!(entries.last().unwrap().id_hash, hash_id("after"));
+            let before_reopen = std::fs::read(dir.path().join("audit.bin")).unwrap();
+            assert_eq!(before_reopen.len(), expected_count * ENTRY_SIZE);
+            if written >= ENTRY_SIZE {
+                assert_eq!(&before_reopen[ENTRY_SIZE..2 * ENTRY_SIZE], &interrupted);
+            }
+            drop(log);
+            let reopened = AuditLog::new(dir.path()).unwrap();
+            assert_eq!(reopened.entries_since(0).unwrap().len(), expected_count);
+            assert_eq!(
+                std::fs::read(dir.path().join("audit.bin")).unwrap(),
+                before_reopen
+            );
+            drop(reopened);
+            let reopened = AuditLog::new(dir.path()).unwrap();
+            reopened.record(AuditOp::Compact, "", None).unwrap();
+            let after_append = std::fs::read(dir.path().join("audit.bin")).unwrap();
+            assert_eq!(&after_append[..before_reopen.len()], &before_reopen);
+            assert_eq!(reopened.entries_since(0).unwrap().len(), expected_count + 1);
+        }
+    }
+
+    #[test]
+    fn failed_tail_repair_prevents_append() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("audit.bin");
+        let bytes = [7; ENTRY_SIZE - 1];
+        std::fs::write(&path, bytes).unwrap();
+        let log = AuditLog {
+            file: Mutex::new(File::open(&path).unwrap()),
+        };
+        let error = log.record(AuditOp::Delete, "new", None).unwrap_err();
+        assert!(error.to_string().contains("Audit tail repair failed"));
+        assert_eq!(std::fs::read(path).unwrap(), bytes);
+    }
+
+    #[test]
+    fn concurrent_appends_preserve_records_after_tail_repair() {
+        let dir = tempdir().unwrap();
+        let log = AuditLog::new(dir.path()).unwrap();
+        log.record(AuditOp::Memorize, "before", None).unwrap();
+        log.file.lock().write_all(&[7; ENTRY_SIZE - 1]).unwrap();
+        let barrier = std::sync::Barrier::new(8);
+        std::thread::scope(|scope| {
+            for index in 0..8 {
+                let log = &log;
+                let barrier = &barrier;
+                scope.spawn(move || {
+                    barrier.wait();
+                    log.record(AuditOp::Delete, &index.to_string(), None)
+                        .unwrap();
+                });
+            }
+        });
+        let entries = log.entries_since(0).unwrap();
+        assert_eq!(entries.len(), 9);
+        assert_eq!(entries[0].id_hash, hash_id("before"));
+        for index in 0..8 {
+            assert_eq!(
+                entries
+                    .iter()
+                    .filter(|entry| entry.id_hash == hash_id(&index.to_string()))
+                    .count(),
+                1
+            );
+        }
+        assert_eq!(
+            std::fs::metadata(dir.path().join("audit.bin"))
+                .unwrap()
+                .len(),
+            9 * ENTRY_SIZE as u64
+        );
     }
 }
