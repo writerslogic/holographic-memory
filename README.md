@@ -150,7 +150,7 @@ Run the offline agent-memory demo with `cargo run --release --example demo-offli
 From your own Rust project, add the current Apache-2.0 source:
 
 ```sh
-cargo add writerslogic-warm --git https://github.com/writerslogic/warm
+cargo add warm-rust --git https://github.com/writerslogic/warm
 ```
 
 The published crate 0.6.1 remains AGPL-3.0-or-later.

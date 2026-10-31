@@ -2,7 +2,7 @@
 
 The crate builds with `default = []`: the default build is a local, offline library with no
 network code, no bindings and no research modules. Every capability below is off until you turn it
-on, for example `cargo add writerslogic-warm --features security,server`. Dependencies for each
+on, for example `cargo add warm-rust --features security,server`. Dependencies for each
 feature are in [`Cargo.toml`](https://github.com/writerslogic/warm/blob/main/Cargo.toml).
 
 "Stable" features are covered by the [stability policy](../STABILITY.md); "experimental" features

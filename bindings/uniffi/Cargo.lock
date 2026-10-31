@@ -1443,7 +1443,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "uniffi",
- "writerslogic-warm",
+ "warm-rust",
 ]
 
 [[package]]
@@ -1490,7 +1490,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "writerslogic-warm"
+name = "warm-rust"
 version = "0.6.4"
 dependencies = [
  "aes-gcm",

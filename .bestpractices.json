@@ -184,7 +184,7 @@
   "build_repeatable_status": "Met",
   "build_repeatable_justification": ".github/workflows/reproducible.yml builds on two runners from different directories; warm-eval, warm-server, the napi cdylib and the crate are bit-for-bit identical, the wheel differs only in the SBOM maturin embeds (docs/RELEASING.md 'Reproducible builds').",
   "installation_common_status": "Met",
-  "installation_common_justification": "README.md 'Installation': cargo add writerslogic-warm, npm install writerslogic-warm, pip install holographic-vsa.",
+  "installation_common_justification": "README.md 'Installation': cargo add warm-rust, npm install writerslogic-warm, pip install holographic-vsa.",
   "installation_standard_variables_status": "N/A",
   "installation_standard_variables_justification": "Distribution is through language package managers; there is no make install.",
   "installation_development_quick_status": "Met",

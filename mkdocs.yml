@@ -152,7 +152,7 @@ extra:
       link: https://github.com/writerslogic/warm
       name: GitHub
     - icon: fontawesome/brands/rust
-      link: https://crates.io/crates/writerslogic-warm
+      link: https://crates.io/crates/warm-rust
       name: crates.io
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/warm-sdk/

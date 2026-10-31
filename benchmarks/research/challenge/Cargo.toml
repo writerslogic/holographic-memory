@@ -16,7 +16,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Root crate, default features: the memory API (src/core/memory_api) is unconditional.
-writerslogic-warm = { path = "../../.." }
+writerslogic-warm = { package = "warm-rust", path = "../../.." }
 # Every crates.io dependency below is already a dependency of the root crate at the same version.
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }

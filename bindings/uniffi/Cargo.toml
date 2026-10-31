@@ -18,7 +18,7 @@ name = "warm_mobile"
 crate-type = ["cdylib", "staticlib", "lib"]
 
 [dependencies]
-writerslogic-warm = { path = "../..", features = ["security"] }
+writerslogic-warm = { package = "warm-rust", path = "../..", features = ["security"] }
 uniffi = { version = "0.32", features = ["tokio"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 thiserror = "2"

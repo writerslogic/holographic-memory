@@ -269,7 +269,7 @@ name = "warm-research-evidence"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "writerslogic-warm",
+ "warm-rust",
  "narrative-lens",
  "serde",
  "serde_json",
@@ -277,7 +277,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "writerslogic-warm"
+name = "warm-rust"
 version = "0.6.4"
 dependencies = [
  "anyhow",

@@ -453,14 +453,14 @@ name = "warm-quickstart"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "writerslogic-warm",
+ "warm-rust",
  "rusqlite",
  "serde_json",
  "tempfile",
 ]
 
 [[package]]
-name = "writerslogic-warm"
+name = "warm-rust"
 version = "0.6.1"
 dependencies = [
  "aes-gcm",

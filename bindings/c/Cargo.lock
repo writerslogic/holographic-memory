@@ -986,7 +986,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "writerslogic-warm"
+name = "warm-rust"
 version = "0.6.4"
 dependencies = [
  "aes-gcm",
@@ -1022,7 +1022,7 @@ dependencies = [
  "rayon",
  "serde_json",
  "tempfile",
- "writerslogic-warm",
+ "warm-rust",
 ]
 
 [[package]]

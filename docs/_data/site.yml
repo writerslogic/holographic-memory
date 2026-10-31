@@ -33,7 +33,7 @@ runtimes:
   - id: rust
     name: Rust
     status: available
-    install: cargo add writerslogic-warm --git https://github.com/writerslogic/warm --features security
+    install: cargo add warm-rust --git https://github.com/writerslogic/warm --features security
     requires: [Cargo.toml, examples/quickstart/rust/src/main.rs]
     snippets:
       - examples/quickstart/rust/src/main.rs:ingest

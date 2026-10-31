@@ -63,7 +63,7 @@ while IFS= read -r entry; do
     echo "skip $tag: no mkdocs.yml at that tag"
     continue
   fi
-  if ! git show "$rev:Cargo.toml" | grep -q '^name = "writerslogic-warm"$'; then
+  if ! git show "$rev:Cargo.toml" | grep -q '^name = "warm-rust"$'; then
     echo "skip $tag: legacy HMS documentation redirects to latest; tagged source is preserved"
     continue
   fi

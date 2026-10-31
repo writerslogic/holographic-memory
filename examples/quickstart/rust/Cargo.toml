@@ -13,7 +13,7 @@ default-run = "warm-quickstart"
 [workspace]
 
 [dependencies]
-writerslogic-warm = { path = "../../..", features = ["security"] }
+writerslogic-warm = { package = "warm-rust", path = "../../..", features = ["security"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 serde_json = "1"
 anyhow = "1"

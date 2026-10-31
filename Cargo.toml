@@ -1,5 +1,5 @@
 [package]
-name = "writerslogic-warm"
+name = "warm-rust"
 version = "0.6.4"
 edition = "2021"
 rust-version = "1.89"
@@ -8,7 +8,7 @@ authors = ["WritersLogic, Inc. <david@writerslogic.com>"]
 description = "Local-first search engine and agent memory: fast approximate nearest-neighbor and BM25 full-text search, encrypted stores, provable deletion, built on vector-symbolic architectures."
 repository = "https://github.com/writerslogic/warm"
 homepage = "https://writerslogic.com/warm"
-documentation = "https://docs.rs/writerslogic-warm"
+documentation = "https://docs.rs/warm-rust"
 keywords = ["vector-database", "vector-search", "full-text-search", "agent-memory", "rag"]
 categories = ["database-implementations", "text-processing", "algorithms", "data-structures", "science"]
 readme = "README.md"
@@ -32,6 +32,7 @@ include = [
 ]
 
 [lib]
+name = "writerslogic_warm"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]

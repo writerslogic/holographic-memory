@@ -35,7 +35,7 @@ class VersionTests(unittest.TestCase):
             shutil.copyfile(ROOT / relative, destination)
         version = tomllib.loads((ROOT / "Cargo.toml").read_text())["package"]["version"]
         (self.tree / "Cargo.toml").write_text(
-            f'[package]\nname = "writerslogic-warm"\nversion = "{version}"\nedition = "2021"\n'
+            f'[package]\nname = "warm-rust"\nversion = "{version}"\nedition = "2021"\n'
         )
         (self.tree / "src").mkdir()
         (self.tree / "src/lib.rs").write_text("")
