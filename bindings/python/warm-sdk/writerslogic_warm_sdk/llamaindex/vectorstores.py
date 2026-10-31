@@ -78,8 +78,11 @@ class WarmVectorStore(BasePydanticVectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.mode != VectorStoreQueryMode.DEFAULT:
             raise NotImplementedError("WARM supports dense similarity queries only")
-        for field in ("doc_ids", "node_ids", "output_fields", "embedding_field", "alpha",
-                      "mmr_threshold", "sparse_top_k", "hybrid_top_k"):
+        # Text-storing indexes pass node_ids=[] when there is no ID restriction.
+        if any(value is not None and value != [] for value in (query.doc_ids, query.node_ids)):
+            raise NotImplementedError("WARM does not support query ID restrictions")
+        for field in ("output_fields", "embedding_field", "alpha", "mmr_threshold",
+                      "sparse_top_k", "hybrid_top_k"):
             if getattr(query, field, None) is not None:
                 raise NotImplementedError(f"WARM does not support the query option {field}")
         filters = {}

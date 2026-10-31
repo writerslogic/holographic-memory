@@ -141,7 +141,8 @@ The LlamaIndex adapter supports dense similarity queries with flat equality
 metadata filters combined with AND. Filters run on the server before top-k
 selection. Plain node text and metadata are stored separately, without prepending
 metadata to the returned text. Unsupported search modes, operators, nested filters, ID restrictions
-and projection/hybrid options raise `NotImplementedError`; repeated filter keys
+and projection/hybrid options raise `NotImplementedError`; empty ID lists mean
+no restriction, matching LlamaIndex retrievers. Repeated filter keys
 raise `ValueError` instead of overwriting a constraint. The adapter owns one
 HTTP client; call `store.close()` when finished and construct a new store to
 change connection settings. These contracts are tested with llama-index-core

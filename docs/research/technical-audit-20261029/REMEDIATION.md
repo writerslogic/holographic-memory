@@ -749,8 +749,9 @@ remain required before merge.
 ### Python LlamaIndex query and deletion contracts (2026-10-31)
 
 The adapter ignored metadata filters, query modes and constraints, and created an
-unowned HTTP client for each property access. Thirty-four initial real-server
-regressions fail on `363b837b`. It now applies flat AND/equality filters before
+unowned HTTP client for each property access. The initial real-server suite
+reported 34 failures on `363b837b`; one empty-ID-list expectation was later
+corrected from actual framework behavior, leaving 33 retained defect assertions. It now applies flat AND/equality filters before
 server-side top-k, rejects unsupported modes/operators/ID restrictions and
 projection options, rejects duplicate filter keys, and owns one explicitly
 closable client. Original node text is stored separately from metadata; a
@@ -767,8 +768,8 @@ This prevents the false deletion contract without claiming reference ownership
 or complete node/relationship reconstruction is implemented.
 
 The actual LlamaIndex vector-store types and Pydantic bridge were inspected.
-Its minimum 0.10.0 passes 39 final contracts on Python 3.10; 0.14.25 passes the
-full SDK suite on Python 3.14 (122 tests, including 45 LlamaIndex tests, plus
+Its minimum 0.10.0 passes 42 final contracts on Python 3.10; 0.14.25 passes the
+full SDK suite on Python 3.14 (125 tests, including 48 LlamaIndex tests, plus
 46 subtests; 13 upstream asyncio deprecation warnings). The older framework
 rejects nested filters during Pydantic construction; the newer one delegates
 rejection to WARM. An initial compatibility test expected only the latter and
@@ -778,3 +779,12 @@ Scoped workflow lint and package builds pass. Logs, hashes and the initial
 34-case baseline patch are in `llamaindex-contracts-20261031/`; no performance,
 relevance or overall security improvement is inferred from these contract tests.
 The integrated exact-head PR gate remains required before publication.
+
+
+The added `VectorStoreIndex` insertion/retrieval workflow initially failed on
+both versions: text-storing indexes pass `node_ids=[]` for unrestricted search.
+Empty ID lists now preserve that framework convention; nonempty unsupported ID
+restrictions still raise. The real workflow and explicit empty-list cases pass
+on both versions using the framework's deterministic local MockEmbedding, with
+no LLM or model-weight calls. The earlier failed expectation and workflow logs
+remain archived; direct adapter tests alone had missed this caller contract.

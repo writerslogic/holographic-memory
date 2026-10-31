@@ -76,7 +76,7 @@ def test_duplicate_equalities_are_not_overwritten(store, second):
             filters=[MetadataFilter(key="n", value=1), MetadataFilter(key="n", value=second)])))
 
 
-@pytest.mark.parametrize("field,value", [("doc_ids", []), ("node_ids", ["absent"]),
+@pytest.mark.parametrize("field,value", [("doc_ids", ["absent"]), ("node_ids", ["absent"]),
     ("alpha", 0.5), ("mmr_threshold", 0.5), ("output_fields", ["id"]),
     ("embedding_field", "custom"), ("sparse_top_k", 2), ("hybrid_top_k", 2)])
 def test_unsupported_query_constraints_are_explicit(store, field, value):
@@ -139,3 +139,31 @@ def test_node_deletion_propagates_authorization_failure(store):
     finally:
         store.client.client.headers["Authorization"] = f"Bearer {API_KEY}"
     assert store.query(VectorStoreQuery(query_embedding=embedding(1))).ids == ["retained"]
+
+
+def test_index_insertion_and_filtered_retrieval_use_the_adapter(store):
+    from llama_index.core import VectorStoreIndex
+    from llama_index.core.embeddings import MockEmbedding
+    from test_live_server import DIM
+
+    index = VectorStoreIndex.from_vector_store(store, embed_model=MockEmbedding(embed_dim=DIM))
+    index.insert_nodes([
+        TextNode(id_="public", text="public source", metadata={"scope": "public"}),
+        TextNode(id_="private", text="private source", metadata={"scope": "private"}),
+    ])
+    retriever = index.as_retriever(similarity_top_k=1, filters=MetadataFilters(
+        filters=[MetadataFilter(key="scope", value="public")]))
+    found = retriever.retrieve("find source")
+    assert len(found) == 1
+    assert found[0].node.node_id == "public"
+    assert found[0].node.text == "public source"
+    assert found[0].node.metadata == {"scope": "public"}
+    assert found[0].score == pytest.approx(1.0)
+
+
+
+@pytest.mark.parametrize("field", ["doc_ids", "node_ids"])
+def test_empty_id_lists_mean_no_restriction_as_in_framework_retrievers(store, field):
+    store.add([TextNode(id_="present", text="present", embedding=embedding(1))])
+    result = store.query(VectorStoreQuery(query_embedding=embedding(1), **{field: []}))
+    assert result.ids == ["present"]
