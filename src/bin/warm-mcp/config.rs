@@ -67,7 +67,7 @@ pub struct Cli {
     #[command(flatten)]
     pub oauth: crate::oauth::Options,
 
-    /// Root directory for stores. Default: the platform data directory, `warm-mcp` inside it.
+    /// Root directory for stores. Default: the platform data directory, `hms-mcp` inside it.
     #[arg(long, env = writerslogic_warm::compatibility::env_name("WARM_MCP_DATA_DIR", "HMS_MCP_DATA_DIR"))]
     pub data_dir: Option<PathBuf>,
     /// Use exactly this directory as the single store (no namespacing).

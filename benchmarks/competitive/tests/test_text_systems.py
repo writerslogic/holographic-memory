@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from hmsbench import text_worker  # noqa: E402
+from warmbench import text_worker  # noqa: E402
 
 
 @pytest.mark.parametrize("system, package", [("sqlite-fts5", "sqlite3"), ("tantivy", "tantivy"), ("whoosh", "whoosh")])

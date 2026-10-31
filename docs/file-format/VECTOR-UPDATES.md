@@ -175,7 +175,7 @@ change after consolidation by 0.002. Golden-byte regeneration passes on ARM macO
 and x86 Linux.
 
 Reproduce the full comparison on Linux, after preparing SIFT-1M with
-`benchmarks/competitive/hmsbench/h5_convert.py` and building the before and after
+`benchmarks/competitive/warmbench/h5_convert.py` and building the before and after
 `public-bench` binaries in separate target directories:
 
 ```sh

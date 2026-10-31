@@ -193,7 +193,7 @@ numbers above are a model, not a measurement; the kill tests replace them.
 
 ## hnswlib and FAISS HNSW on the same machine (competitive harness)
 
-The harness (`benchmarks/competitive/warm-bench`, `hmsbench/runner.py`, `ann_worker.py`) runs
+The harness (`benchmarks/competitive/warm-bench`, `warmbench/runner.py`, `ann_worker.py`) runs
 WARM and every comparator in interleaved rounds on one machine, one query at a time in a single
 client thread, per-query `perf_counter_ns` inside the worker process; builds use
 `spec["threads"]` cores, search one (`OMP_NUM_THREADS=1`, `hnswlib set_num_threads(1)`,

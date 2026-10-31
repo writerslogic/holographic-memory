@@ -15,8 +15,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from hmsbench import analyze, registry, table  # noqa: E402
-from hmsbench.common import ROOT  # noqa: E402
+from warmbench import analyze, registry, table  # noqa: E402
+from warmbench.common import ROOT  # noqa: E402
 
 HAVE_RESULTS = bool(list(table.RESULTS.glob("*.json"))) and table.CELLS.exists()
 
@@ -109,7 +109,7 @@ def test_published_tables_regenerate_byte_for_byte(tmp_path):
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
     harness = Path("benchmarks/competitive")
-    shutil.copytree(ROOT / harness / "hmsbench", tmp_path / harness / "hmsbench", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(ROOT / harness / "warmbench", tmp_path / harness / "warmbench", ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copy2(ROOT / harness / "warm-bench", tmp_path / harness / "warm-bench")
     generated = subprocess.run([sys.executable, str(tmp_path / harness / "warm-bench"), "table"], cwd=tmp_path,
                                capture_output=True, text=True)
@@ -182,7 +182,7 @@ def test_a_comparator_that_ships_with_the_interpreter_draws_no_install_verdict()
 
 
 def test_raw_pass_timings_from_older_files_summarise_like_stored_summaries():
-    from hmsbench.common import pass_summary
+    from warmbench.common import pass_summary
 
     raw = [[5_000, 1_000, 3_000, 9_000], [2_000, 2_000, 4_000, 8_000]]
     old = {"passes_ns": raw}

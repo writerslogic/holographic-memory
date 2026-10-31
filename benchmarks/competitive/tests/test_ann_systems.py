@@ -14,9 +14,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from hmsbench import envs, registry  # noqa: E402
+from warmbench import envs, registry  # noqa: E402
 
-WORKER = Path(__file__).resolve().parents[1] / "hmsbench" / "ann_worker.py"
+WORKER = Path(__file__).resolve().parents[1] / "warmbench" / "ann_worker.py"
 
 
 def _adapters():
@@ -196,7 +196,7 @@ def test_milvus_mutations_flush_the_wal_before_returning(tmp_path, synced):
 
 
 def test_ann_ops_commit_each_mutation_before_starting_the_next(tmp_path):
-    from hmsbench import ann_worker as worker
+    from warmbench import ann_worker as worker
     train = np.random.default_rng(7).standard_normal((200, 16)).astype(np.float32)
     train.tofile(tmp_path / "train.f32")
     path = tmp_path / "control.db"

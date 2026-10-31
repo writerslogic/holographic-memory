@@ -217,52 +217,6 @@ export interface HardwareCapabilities {
   sparseIntersectionKernel: string
 }
 
-export interface WarmConfigJs {
-  embeddingModel?: string
-  embeddingRevision?: string
-  embeddingDimensions?: number
-  nsgMaxDegree?: number
-  nsgEfConstruction?: number
-  nsgAutoThreshold?: number
-  ivfEnabled?: boolean
-  ivfNClusters?: number
-  ivfNLandmarks?: number
-  ivfDReduced?: number
-  ivfNProbe?: number
-  ivfAutoThreshold?: number
-  shardEnabled?: boolean
-  shardCount?: number
-  shardAutoThreshold?: number
-  shardTargetSize?: number
-  componentSimilarityThreshold?: number
-  componentMaxNeighbors?: number
-  conceptSimilarityThreshold?: number
-  conceptMinClusterSize?: number
-  diffusionSteps?: number
-  diffusionSigmaMax?: number
-  diffusionSigmaMin?: number
-  diffusionStepSize?: number
-  diffusionNLangevin?: number
-  signingEnabled?: boolean
-  signingKeyPath?: string
-  encryptionEnabled?: boolean
-  encryptionPassphrase?: string
-  encryptionPassphraseEnv?: string
-  auditEnabled?: boolean
-  dpEnabled?: boolean
-  dpEpsilon?: number
-  meaningEnabled?: boolean
-  meaningBeta?: number
-  meaningMaxFanout?: number
-  meaningAutoDecompose?: boolean
-  meaningMaxHopDepth?: number
-  cognitionEnabled?: boolean
-  cognitionIntervalSecs?: number
-  cognitionMinPatternFreq?: number
-  cognitionMinAbstractionMembers?: number
-  cognitionMinHypothesisConfidence?: number
-}
-
 /** Current index lifecycle state and the next recommended maintenance action. */
 export interface IndexStatus {
   vectorCount: number
@@ -406,4 +360,50 @@ export interface TextMetrics {
   vowelCount: number
   consonantCount: number
   punctuationCount: number
+}
+
+export interface WarmConfigJs {
+  embeddingModel?: string
+  embeddingRevision?: string
+  embeddingDimensions?: number
+  nsgMaxDegree?: number
+  nsgEfConstruction?: number
+  nsgAutoThreshold?: number
+  ivfEnabled?: boolean
+  ivfNClusters?: number
+  ivfNLandmarks?: number
+  ivfDReduced?: number
+  ivfNProbe?: number
+  ivfAutoThreshold?: number
+  shardEnabled?: boolean
+  shardCount?: number
+  shardAutoThreshold?: number
+  shardTargetSize?: number
+  componentSimilarityThreshold?: number
+  componentMaxNeighbors?: number
+  conceptSimilarityThreshold?: number
+  conceptMinClusterSize?: number
+  diffusionSteps?: number
+  diffusionSigmaMax?: number
+  diffusionSigmaMin?: number
+  diffusionStepSize?: number
+  diffusionNLangevin?: number
+  signingEnabled?: boolean
+  signingKeyPath?: string
+  encryptionEnabled?: boolean
+  encryptionPassphrase?: string
+  encryptionPassphraseEnv?: string
+  auditEnabled?: boolean
+  dpEnabled?: boolean
+  dpEpsilon?: number
+  meaningEnabled?: boolean
+  meaningBeta?: number
+  meaningMaxFanout?: number
+  meaningAutoDecompose?: boolean
+  meaningMaxHopDepth?: number
+  cognitionEnabled?: boolean
+  cognitionIntervalSecs?: number
+  cognitionMinPatternFreq?: number
+  cognitionMinAbstractionMembers?: number
+  cognitionMinHypothesisConfidence?: number
 }

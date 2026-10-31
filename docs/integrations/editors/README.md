@@ -1,6 +1,6 @@
 # WARM in editors and agents
 
-Every host below talks to `warm-mcp` (see `docs/integrations/mcp/README.md`). Ready-made configs live in `integrations/editors/<host>/`. The commands assume the launcher packages are published (`npx -y writerslogic-warm-mcp`, or `uvx writerslogic-warm-mcp`); until then substitute the path of a binary you built (`cargo build --release --features mcp,security --bin warm-mcp`) for `npx -y writerslogic-warm-mcp`.
+Every host below talks to `warm-mcp` (see `docs/integrations/mcp/README.md`). Ready-made configs live in `integrations/editors/<host>/`. The commands assume the launcher packages are published (`npx -y writerslogic-warm-mcp`, or `uvx warm-mcp`); until then substitute the path of a binary you built (`cargo build --release --features mcp,security --bin warm-mcp`) for `npx -y writerslogic-warm-mcp`.
 
 Two ways to run it, for any host:
 
@@ -67,7 +67,7 @@ A block file in `.continue/mcpServers/` with `name`, `version` and `schema: v1`,
 
 ## Gemini CLI
 
-`~/.gemini/settings.json` (`-s user`) or `.gemini/settings.json` (project, the default scope), `mcpServers`, with `httpUrl` for streamable HTTP. The extension in `integrations/editors/gemini-cli` bundles the server and a context file (`HOLOGRAPHIC-MEMORY.md`) that tells the model how to use it; `gemini extensions link <path>` installs it from a checkout. A folder must be trusted before project or user MCP servers run in it. Shared server: `gemini mcp add --transport http writerslogic-warm http://127.0.0.1:8765/mcp --header "Authorization: Bearer $WARM_MCP_TOKEN"`.
+`~/.gemini/settings.json` (`-s user`) or `.gemini/settings.json` (project, the default scope), `mcpServers`, with `httpUrl` for streamable HTTP. The extension in `integrations/editors/gemini-cli` bundles the server and a context file (`WARM.md`) that tells the model how to use it; `gemini extensions link <path>` installs it from a checkout. A folder must be trusted before project or user MCP servers run in it. Shared server: `gemini mcp add --transport http writerslogic-warm http://127.0.0.1:8765/mcp --header "Authorization: Bearer $WARM_MCP_TOKEN"`.
 
 ## Codex CLI
 

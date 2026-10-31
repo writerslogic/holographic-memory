@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from hmsbench.cli import main  # noqa: E402
+from warmbench.cli import main  # noqa: E402
 
 if __name__ == "__main__":
     sys.exit(main())

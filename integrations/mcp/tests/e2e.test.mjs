@@ -74,6 +74,7 @@ describe("stdio", () => {
         assert.ok(t.description.length > 20);
       }
       assert.equal(tools.find((t) => t.name === "remember").annotations.readOnlyHint, false);
+      assert.match(tools.find((t) => t.name === "remember").inputSchema.properties.metadata.description, /"hms\."/);
       assert.equal(tools.find((t) => t.name === "recall").annotations.readOnlyHint, true);
       assert.equal(tools.find((t) => t.name === "forget").annotations.destructiveHint, true);
     } finally {
@@ -207,7 +208,7 @@ describe("stdio", () => {
       await err(c, "remember", { text: "ok", id: "a".repeat(257) }, "invalid_argument");
       await err(c, "remember", { text: "ok", tags: ["a", "b", "c"] }, "invalid_argument");
       await err(c, "remember", { text: "ok", tags: [""] }, "invalid_argument");
-      await err(c, "remember", { text: "ok", metadata: { "warm.v": 1 } }, "invalid_argument");
+      await err(c, "remember", { text: "ok", metadata: { "hms.v": 1 } }, "invalid_argument");
       await err(c, "remember", { text: "ok", metadata: "nope" }, "invalid_argument");
       await err(c, "remember", { text: "ok", create_only: true, if_version: "x" }, "invalid_argument");
       await err(c, "recall", { query: "  " }, "invalid_argument");

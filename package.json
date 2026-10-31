@@ -1,6 +1,6 @@
 {
   "name": "writerslogic-warm",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "license": "Apache-2.0",
   "author": "WritersLogic, Inc. <david@writerslogic.com>",
   "description": "WritersLogic Adaptive Retention & Memory (WARM): local document search (BM25 + embedding cosine) and vector-symbolic associative memory.",
@@ -74,14 +74,14 @@
     "typescript": "^7.0.2"
   },
   "optionalDependencies": {
-    "writerslogic-warm-darwin-arm64": "0.6.4",
-    "writerslogic-warm-darwin-x64": "0.6.4",
-    "writerslogic-warm-linux-arm64-gnu": "0.6.4",
-    "writerslogic-warm-linux-arm64-musl": "0.6.4",
-    "writerslogic-warm-linux-x64-gnu": "0.6.4",
-    "writerslogic-warm-linux-x64-musl": "0.6.4",
-    "writerslogic-warm-win32-arm64-msvc": "0.6.4",
-    "writerslogic-warm-win32-x64-msvc": "0.6.4"
+    "writerslogic-warm-darwin-arm64": "0.6.5",
+    "writerslogic-warm-darwin-x64": "0.6.5",
+    "writerslogic-warm-linux-arm64-gnu": "0.6.5",
+    "writerslogic-warm-linux-arm64-musl": "0.6.5",
+    "writerslogic-warm-linux-x64-gnu": "0.6.5",
+    "writerslogic-warm-linux-x64-musl": "0.6.5",
+    "writerslogic-warm-win32-arm64-msvc": "0.6.5",
+    "writerslogic-warm-win32-x64-msvc": "0.6.5"
   },
   "peerDependencies": {
     "@huggingface/transformers": "^3.8.1 || ^4.2.0"

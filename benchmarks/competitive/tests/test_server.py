@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from hmsbench import registry, server_proc, server_registry, server_runner, table  # noqa: E402
+from warmbench import registry, server_proc, server_registry, server_runner, table  # noqa: E402
 
 
 def test_every_server_records_its_durability_class():
@@ -25,7 +25,7 @@ def test_every_server_records_its_durability_class():
 @pytest.mark.parametrize("system", ["pg-tsvector", "paradedb"])
 def test_postgres_text_replacement_accepts_the_same_nul_text_as_ingest(tmp_path, system):
     psycopg = pytest.importorskip("psycopg")
-    from hmsbench.server_worker import TEXT
+    from warmbench.server_worker import TEXT
 
     encoded = []
 

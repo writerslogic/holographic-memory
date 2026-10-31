@@ -1,6 +1,6 @@
 {
   "audit": false,
-  "description": "The output of `warm-admin migrate` (a verified point-in-time copy) of a compacted store.",
+  "description": "The output of `hms-admin migrate` (a verified point-in-time copy) of a compacted store.",
   "dimensions": 1024,
   "embeddingSpace": null,
   "encrypted": false,

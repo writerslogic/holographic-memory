@@ -1,5 +1,7 @@
 # Capacity limits
 
+## How many items fit in a bundle?
+
 A bundle superposes items into one fixed-size vector, so it has a capacity: past some number of
 items it can no longer tell members from non-members. This page reports what was measured and
 where the measurement stops. It does not extrapolate.

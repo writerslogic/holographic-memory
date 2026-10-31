@@ -66,7 +66,7 @@ An unknown or disabled tool, a malformed request or an unknown resource or promp
 
 | Setting | Flag / environment | Default |
 |---|---|---|
-| Root directory | `--data-dir` / `WARM_MCP_DATA_DIR` | `~/Library/Application Support/warm-mcp` (macOS), `$XDG_DATA_HOME/warm-mcp` or `~/.local/share/warm-mcp` (Linux), `%LOCALAPPDATA%\warm-mcp` (Windows) |
+| Root directory | `--data-dir` / `WARM_MCP_DATA_DIR` | `~/Library/Application Support/hms-mcp` (macOS), `$XDG_DATA_HOME/hms-mcp` or `~/.local/share/hms-mcp` (Linux), `%LOCALAPPDATA%\hms-mcp` (Windows); retained for existing stores |
 | One exact directory | `--store` / `WARM_MCP_STORE` | unset |
 | Namespace strategy | `--namespace-strategy global\|project` / `WARM_MCP_NAMESPACE_STRATEGY` | `global` |
 | Global namespace name | `--namespace` / `WARM_MCP_NAMESPACE` | `default` |

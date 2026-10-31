@@ -51,7 +51,7 @@ tuned on a train holdout, never on the benchmark queries) and `examples/competit
 
 * **glove-100-angular** (1.18M x 100, ann-benchmarks): `light` uses the first 100,000 vectors and
   1,000 queries, `standard` 250,000 and 2,000, `heavy` all 1,183,514 and 10,000. For every subset
-  the exact top-100 truth is recomputed (`hmsbench/data.py`); the files WARM and every comparator
+  the exact top-100 truth is recomputed (`warmbench/data.py`); the files WARM and every comparator
   read are byte-identical, and their sha256 are recorded.
 * **sift-128-euclidean** (1M x 128, ann-benchmarks): `standard` uses the first 250,000 vectors
   and 2,000 queries, `heavy` all 1,000,000 and 10,000. WARM runs `public-bench ann-qgraph
@@ -163,8 +163,8 @@ their files carry `mode: "server"` and render under "Server mode results".
 
 | Kind | Systems | Source |
 |---|---|---|
-| ANN | `warm-server`, Qdrant, Weaviate, OpenSearch k-NN, PostgreSQL + pgvector (HNSW, IVFFlat), Redis 8 query engine (HNSW, FLAT) | `hmsbench/servers.py` |
-| Text | OpenSearch BM25, Meilisearch, Typesense, PostgreSQL tsvector/ts_rank, ParadeDB pg_search | `hmsbench/servers.py` |
+| ANN | `warm-server`, Qdrant, Weaviate, OpenSearch k-NN, PostgreSQL + pgvector (HNSW, IVFFlat), Redis 8 query engine (HNSW, FLAT) | `warmbench/servers.py` |
+| Text | OpenSearch BM25, Meilisearch, Typesense, PostgreSQL tsvector/ts_rank, ParadeDB pg_search | `warmbench/servers.py` |
 
 ```sh
 ./benchmarks/competitive/warm-bench install-servers            # downloads, sha256/sha512 checks, client env
@@ -177,7 +177,7 @@ their files carry `mode: "server"` and render under "Server mode results".
   pinned zonky build; ParadeDB's package is unpacked, never installed, and loaded through
   `extension_control_path`. OpenSearch has no macOS build. Milvus standalone is not run: its
   current releases ship only Docker Compose files.
-* `hmsbench/server_proc.py` owns each server: stable loopback ports per data directory, its own
+* `warmbench/server_proc.py` owns each server: stable loopback ports per data directory, its own
   session, bounded readiness probe, log in the work directory, SIGTERM then SIGKILL of the whole
   process group, sampled RSS of the group (PSS on Linux).
 * The protocol (one client, one persistent connection, sequential queries, client-side timing;
@@ -237,12 +237,12 @@ Verdicts, warm-server against each comparator (ratio of medians, 5% band), befor
 
 ## Plugging in more systems
 
-* **ANN or vector store:** add an `Adapter` subclass in `hmsbench/ann_worker.py` (`build`, `open`,
+* **ANN or vector store:** add an `Adapter` subclass in `warmbench/ann_worker.py` (`build`, `open`,
   `configure`, `query`, optional `replace`/`delete`/`flush`), register it in `ann_worker.SYSTEMS`
-  and `hmsbench/registry.py`, add its pinned requirement to `hmsbench/envs.py` (`PINS`) and run
+  and `warmbench/registry.py`, add its pinned requirement to `warmbench/envs.py` (`PINS`) and run
   `./benchmarks/competitive/warm-bench lock`.
 * **Text or memory retrieval:** add a class with `build(documents)`, `open()`, `prepare(text)`,
-  `search(prepared)`, `replace(doc)`, `delete(doc)` in `hmsbench/text_worker.py`. The `memory`
+  `search(prepared)`, `replace(doc)`, `delete(doc)` in `warmbench/text_worker.py`. The `memory`
   dataset already has the agent-memory shape (sessions as documents, answer sessions as relevant),
   so Mem0, Zep, Letta and LangMem plug in as text systems with their own pinned environment; the
   stage that runs them is a separate piece of work and none of them is run here.
@@ -254,7 +254,7 @@ Verdicts, warm-server against each comparator (ratio of medians, 5% band), befor
 | Path | Purpose |
 |---|---|
 | `benchmarks/competitive/warm-bench` | entry point |
-| `benchmarks/competitive/hmsbench/` | runner, workers, analysis, table generator |
+| `benchmarks/competitive/warmbench/` | runner, workers, analysis, table generator |
 | `benchmarks/competitive/lucene/LuceneBm25.java` | Lucene BM25 comparator |
 | `benchmarks/competitive/requirements/` | pinned, locked comparator environments |
 | `benchmarks/competitive/tests/` | generator and traceability tests |

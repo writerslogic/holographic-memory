@@ -9,6 +9,10 @@ on:
         description: Unpublish old holographic packages, or deprecate if registry policy refuses
         type: boolean
         default: false
+      deprecate_only:
+        description: Skip deletion when registry policy already prevents unpublishing
+        type: boolean
+        default: true
       scope:
         description: Legacy package group to retire after its replacement is available
         type: choice
@@ -33,6 +37,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           RETIRE_SCOPE: ${{ inputs.scope }}
+          DEPRECATE_ONLY: ${{ inputs.deprecate_only }}
         run: |
           set -euo pipefail
           npm whoami
@@ -72,14 +77,19 @@ jobs:
                   const current = await metadata(replacement);
                   if (!current?.['dist-tags']?.latest) throw new Error(`Replacement ${replacement} is not published; preserving ${legacy}`);
                   record.replacementVersion = current['dist-tags'].latest;
-                  const removed = npm(['unpublish', legacy, '--force']);
+                  const deprecateOnly = process.env.DEPRECATE_ONLY === 'true';
+                  const removed = deprecateOnly
+                    ? { success: false, output: 'Skipped: deprecation-only retirement requested.' }
+                    : npm(['unpublish', legacy, '--force']);
                   record.unpublish = removed.output;
                   if (removed.success) {
                     record.result = 'unpublished';
                   } else {
                     const deprecated = npm(['deprecate', `${legacy}@*`, `Renamed to ${replacement}. Install ${replacement} instead; this legacy package is retired.`]);
                     record.deprecation = deprecated.output;
-                    record.result = deprecated.success ? 'deprecated_after_unpublish_denial' : 'failed';
+                    record.result = deprecated.success
+                      ? (deprecateOnly ? 'deprecated_without_unpublish_attempt' : 'deprecated_after_unpublish_denial')
+                      : 'failed';
                   }
                 }
               } catch (error) {

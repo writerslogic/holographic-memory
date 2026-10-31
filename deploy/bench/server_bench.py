@@ -397,7 +397,7 @@ async def compare(args: argparse.Namespace) -> None:
             SqliteFastApi,
         ]
         for make in factories:
-            with tempfile.TemporaryDirectory(prefix="hmsbench-") as tmp:
+            with tempfile.TemporaryDirectory(prefix="warmbench-") as tmp:
                 system = make(Path(tmp))
                 print(f"== N={n} {system.name} [{system.variant}]", flush=True)
                 try:

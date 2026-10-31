@@ -3,7 +3,7 @@
 """Generate docs/benchmarks/COMPARISON.md, the README block and the cell index.
 
 Reads only the committed benchmarks/results/competitive/*.json (smoke runs excluded). Every
-number in the output is produced by hmsbench.analyze from those files; docs/benchmarks/
+number in the output is produced by warmbench.analyze from those files; docs/benchmarks/
 comparison.cells.json lists every cell with the file and key path it came from, and
 tests/test_table.py recomputes each one.
 """

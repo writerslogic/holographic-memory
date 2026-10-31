@@ -1,4 +1,5 @@
 ---
+title: Release notes and changelog
 search:
   boost: 0.8
 description: Every notable change to WARM, generated from the commit history.
