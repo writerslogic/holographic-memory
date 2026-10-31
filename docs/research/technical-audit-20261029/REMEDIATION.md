@@ -735,7 +735,9 @@ against the real server with framework tracing disabled. All embeddings and
 server calls are local; no paid APIs, model downloads or relevance/latency claims.
 
 Offline lock validation, scoped actionlint/zizmor and distribution builds pass.
-No locked package/version pair changed; uv normalized existing resolution markers.
+uv 0.13.6 preserves lock revision 5 and every package/version pair; the final
+delta from PR360 is only the two LangChain requirement lower bounds. An older
+local resolver rewrote markers; that normalization was discarded.
 The pending dependency remediation must be integrated before this follow-up merges.
 No extra or Python version was retired. Legacy dependency advisories remain open;
 passing API contracts does not establish framework security. Scored retrieval,

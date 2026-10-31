@@ -20,7 +20,7 @@
     "source": "80bf197a (archive restore changes do not alter these document routes)",
     "sha256": "efa5d69642e37813a35e02143afa2b4cf1bc07d9d70fc2c7651dc5a5ad3bf7a6"
   },
-  "lock": "offline check passes; no package/version pair changes; markers normalized by uv",
+  "lock": "uv 0.13.6 offline check passes; relative to dependency PR360, only two langchain-core requirement lower bounds change; revision 5 and all package/version pairs retained",
   "workflow_checks": [
     "actionlint-py 1.7.12.25",
     "zizmor 1.31.1, medium severity threshold"
