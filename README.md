@@ -24,7 +24,6 @@
 [Get started](#get-started-in-60-seconds) ·
 [Standards and provenance](docs/reference/standards.md) ·
 [Results](#headline-results) ·
-[Why "holographic"?](#why-is-it-called-holographic) ·
 [Capabilities](#what-ships-today) ·
 [Limits](#limits) ·
 [Contribute](CONTRIBUTING.md)
@@ -33,7 +32,7 @@
 
 ## What it is
 
-WARM (WARM for short) is a Rust library that stores text, vectors and facts in a
+WARM is a Rust library that stores text, vectors and facts in a
 directory on your machine and finds them again. It ships with Node.js bindings, C, WASM and UniFFI
 bindings, an HTTP server with a Python client, and an MCP server. There are no service calls, no
 telemetry and no model downloads unless you turn on a feature that asks for one.
@@ -262,34 +261,6 @@ The [five-minute quickstart](https://writerslogic.com/warm/docs/latest/quickstar
 walks through ingest, search, a SQLite FTS5 comparison and encryption in Rust, Python and Node,
 and CI runs that code on every pull request. For a whole agent memory with no embeddings and no
 network, run `cargo run --example demo-offline-agent`.
-
-## Why is it called "holographic"?
-
-In a hologram, every fragment of the plate carries a blurry copy of the whole picture. Cut it in
-half and you get the whole picture at lower resolution, not half a picture. **Holographic Reduced
-Representations** and **Vector Symbolic Architectures** (VSA) give memory that property:
-
-- **Bind** two vectors (here, XOR of sparse bit sets) to tie a role to a filler: `capital ⊗ paris`.
-  Binding again with the role recovers a noisy copy of the filler.
-- **Bundle** many bound pairs into one vector of fixed size. The result stays similar to every
-  part, so one vector can hold a whole record, with no single bit holding any one fact.
-- **Recall by resonance.** Present a noisy cue and the nearest stored pattern wins (similarity
-  search, Hopfield cleanup). Damaging the vector degrades every item a little instead of
-  deleting a few, so recall falls off gradually under noise.
-
-You can watch it happen in a few lines (a union bundle of 100 items, damaged step by step):
-`cargo run --release --manifest-path examples/quickstart/rust/Cargo.toml --bin holographic`.
-
-**What is literally that here:** the sparse hypervector type and its bind, bundle and permute
-operations; the relational "meaning memory" (triples stored as bound composites, multi-hop
-queries, Hopfield cleanup); the union-bundle membership test and the resonator network (both
-behind the `experimental` feature).
-
-**What is conventional engineering:** document search (stemmed BM25 plus exact cosine; it does
-not read the hypervectors), the graph and inverted-file vector indexes, the memory API, the
-journaled storage and the servers. No holographic behavior is claimed for these. The longer
-version, with the tested numbers, is in
-[Concepts](https://writerslogic.com/warm/docs/latest/concepts/holographic/).
 
 ## What ships today
 
