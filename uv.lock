@@ -3,19 +3,19 @@ revision = 3
 requires-python = ">=3.9"
 
 [[package]]
-name = "writerslogic-warm-models"
+name = "warm-models"
 version = "0.1.0"
 source = { directory = "bindings/embed-models/python" }
 
 [[package]]
-name = "writerslogic-warm-py"
+name = "warm-py"
 source = { editable = "." }
 
 [package.optional-dependencies]
 embed = [
-    { name = "writerslogic-warm-models" },
+    { name = "warm-models" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "writerslogic-warm-models", marker = "extra == 'embed'", directory = "bindings/embed-models/python" }]
+requires-dist = [{ name = "warm-models", marker = "extra == 'embed'", directory = "bindings/embed-models/python" }]
 provides-extras = ["embed"]

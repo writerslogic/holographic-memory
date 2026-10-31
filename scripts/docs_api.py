@@ -73,9 +73,9 @@ def python_pages() -> list[str]:
     if native_source:
         stub_dir = ROOT / ".docs-gen" / "pyi"
         docs_pyo3_stub.write(ROOT, stub_dir)
-        text = ("The `writerslogic-warm-py` wheel provides native vector search and phase vectors, "
+        text = ("The `warm-py` wheel provides native vector search and phase vectors, "
                 "imported as `writerslogic_warm`. It does not include document search; "
-                "`writerslogic-warm-sdk` is the HTTP client for that API.")
+                "`warm-sdk` is the HTTP client for that API.")
         write("api/python/vsa.md", front(text) + f"# Phase vectors\n\n{text}\n\n::: writerslogic_warm\n", native_source)
         pages.append("api/python/vsa.md")
     return pages

@@ -61,7 +61,7 @@ await memory.recall('where does Alice live')                       // Berlin
 await memory.recall('where does Alice live', { asOf: new Date('2021-06-01') })   // Paris
 ```
 
-Python (`writerslogic-warm-sdk`, against `warm-server`):
+Python (`warm-sdk`, against `warm-server`):
 
 ```python
 from writerslogic_warm_sdk import WarmClient

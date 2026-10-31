@@ -17,6 +17,6 @@ trap 'rm -rf "$work"' EXIT
 bin="$work/venv/bin"
 [ -d "$work/venv/Scripts" ] && bin="$work/venv/Scripts"
 
-"$bin/python" -m pip install --quiet --no-index --find-links "$dist" writerslogic-warm-py
+"$bin/python" -m pip install --quiet --no-index --find-links "$dist" warm-py
 # -I: ignore the working directory, so the installed wheel is what gets imported.
 "$bin/python" -I scripts/ci/smoke_python.py --expect-version "$version"

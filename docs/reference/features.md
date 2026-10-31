@@ -22,7 +22,7 @@ can change in any release.
 | `cli` | `clap` argument parsing for the command-line binaries and examples (`warm-admin`, `warm-format`, `public-bench`, the benchmark drivers); implied by `server` and `mcp` | stable | no | [Evaluation](../evaluation.md) |
 | `mimalloc` | mimalloc as the global allocator of the `public-bench` binary (the library never sets one) | stable | no | [Public benchmarks](../PUBLIC-BENCHMARKS.md) |
 | `node-api` | The Node.js bindings published to npm | stable | no | [Node API](../api/node/index.md) |
-| `python` | The `writerslogic-warm-py` Python wheel (vector search and phase vectors) | experimental | no | [Python API](../api/python/vsa.md) |
+| `python` | The `warm-py` Python wheel (vector search and phase vectors) | experimental | no | [Python API](../api/python/vsa.md) |
 | `private-search` | Query-private similarity scoring over an index held by someone else (LWE, SimplePIR-style): the index holder ranks an encrypted query and learns nothing about it | experimental, research | no (you transport the messages) | [Private search](../PRIVATE-SEARCH.md) |
 | `experimental` | VSA research modules (block codes, Bloom memories, algebraic codebooks, operand retriever, connection and phase graphs) and the experiment binaries | experimental, research | no | [Research](../RESEARCH.md) |
 

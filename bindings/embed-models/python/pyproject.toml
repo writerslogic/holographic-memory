@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [project]
-name = "writerslogic-warm-models"
+name = "warm-models"
 version = "0.1.0"
 description = "Pinned offline embedding model pack for WARM Python bindings"
 readme = "README.md"

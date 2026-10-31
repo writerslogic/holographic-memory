@@ -13,7 +13,7 @@ on:
         default: false
   pull_request:
     paths:
-      - .github/workflows/python-models-release.yml
+      - .github/workflows/warm-models-release.yml
       - bindings/embed-models/python/**
       - src/core/embed/**
       - src/bin/warm-embed.rs
@@ -61,7 +61,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish writerslogic-warm-models to PyPI
+    name: Publish warm-models to PyPI
     if: startsWith(github.ref, 'refs/tags/py-models-v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
     needs: build
     runs-on: ubuntu-latest

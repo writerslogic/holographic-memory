@@ -10,9 +10,9 @@ run.
 | Tag | Workflow | Produces |
 | --- | --- | --- |
 | `vX.Y.Z` | `.github/workflows/release.yml` | the crate, 8 npm native packages and the root npm package, Python wheels and sdist (as release assets), SBOMs, SLSA provenance, a draft GitHub release; then publishes the crate and the npm packages |
-| `py-models-vX.Y.Z` | `.github/workflows/python-models-release.yml` | the pinned default offline `writerslogic-warm-models` pack, published to PyPI through Trusted Publishing |
-| `py-vX.Y.Z` | `.github/workflows/python-native-release.yml` | `writerslogic-warm-py` wheels and sdist, published to PyPI through Trusted Publishing |
-| `sdk-vX.Y.Z` | `.github/workflows/python-sdk-release.yml` | `writerslogic-warm-sdk` wheel and sdist, published to PyPI through Trusted Publishing |
+| `py-models-vX.Y.Z` | `.github/workflows/warm-models-release.yml` | the pinned default offline `warm-models` pack, published to PyPI through Trusted Publishing |
+| `py-vX.Y.Z` | `.github/workflows/warm-py-release.yml` | `warm-py` wheels and sdist, published to PyPI through Trusted Publishing |
+| `sdk-vX.Y.Z` | `.github/workflows/warm-sdk-release.yml` | `warm-sdk` wheel and sdist, published to PyPI through Trusted Publishing |
 | `mcp-vX.Y.Z` | `.github/workflows/mcp-release.yml` | five `warm-mcp` binaries, checksum tables embedded in npm and PyPI launchers, a GitHub release, then the launcher packages and official MCP Registry entry |
 
 Publish the model pack before the native wheel that offers it through `[embed]`. The Python
@@ -31,7 +31,7 @@ metadata proves ownership of `io.github.writerslogic/warm-mcp`.
 
 Before the first release, add a **pending Trusted Publisher** for the new project at
 `https://pypi.org/manage/account/publishing/`: project `writerslogic-warm-mcp`, owner
-`writerslogic`, repository `writerslogic-warm`, workflow `mcp-release.yml`, environment `pypi`.
+`writerslogic`, repository `writerslogic-warm`, workflow `warm-mcp-release.yml`, environment `pypi`.
 PyPI creates the project on the first successful upload. The repository's `NPM_TOKEN` secret must
 have publish access to `writerslogic-warm-mcp`.
 
@@ -125,10 +125,10 @@ These cannot be committed; the publish jobs wait on them.
    `--provenance`. The token must also permit `npm deprecate` until the 0.3.0 listing is corrected;
    npm Trusted Publishing alone does not authorize that command.
 4. PyPI: add pending Trusted Publishers under owner `writerslogic`, repository
-   `writerslogic-warm`, environment `pypi`: `writerslogic-warm-models` uses
-   `python-models-release.yml`, `writerslogic-warm-py` uses `python-native-release.yml`, and
-   `writerslogic-warm-sdk` uses `python-sdk-release.yml`. The MCP launcher uses
-   `mcp-release.yml` with the same owner, repository and environment. PyPI permits three pending
+   `warm`, environment `pypi`: `warm-models` uses
+   `warm-models-release.yml`, `warm-py` uses `warm-py-release.yml`, and
+   `warm-sdk` uses `warm-sdk-release.yml`. The MCP launcher uses
+   `warm-mcp-release.yml` with the same owner, repository and environment. PyPI permits three pending
    projects at a time; publish one before registering the fourth.
 
 ## Cut a release

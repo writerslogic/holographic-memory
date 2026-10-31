@@ -30,7 +30,7 @@ index.add(&["a", "b"], &["The cat sat on the mat.", "Quarterly revenue grew."])?
 let hits = index.search("feline on a rug", 3)?;                     // [{id, score, text}]
 ```
 
-Python (`uv pip install writerslogic-warm-py`; add `[embed]` for the pinned default offline pack):
+Python (`uv pip install warm-py`; add `[embed]` for the pinned default offline pack):
 
 ```python
 import writerslogic_warm as hm
@@ -143,7 +143,7 @@ warm-embed fetch default --out ./packs            # on a connected machine
 export WARM_EMBED_MODEL_DIR=./packs WARM_EMBED_OFFLINE=1   # on the offline one
 ```
 
-`writerslogic-warm-py[embed]` installs `writerslogic-warm-models`, which carries the pinned
+`warm-py[embed]` installs `warm-models`, which carries the pinned
 default Granite embedding pack. The Python `Embedder` also uses packs from
 `WARM_EMBED_MODEL_DIR` or the local cache. Fetch other models on a connected machine with
 `warm-embed fetch`, then copy them to an offline machine if needed.

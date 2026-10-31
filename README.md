@@ -212,8 +212,8 @@ main().catch(error => { console.error(error); process.exit(1) })
 <details>
 <summary><strong>Server and Python</strong></summary>
 
-The Python package `writerslogic-warm-sdk` is an HTTP client for `warm-server`, which stores vectors you
-supply. (`writerslogic-warm-py` provides native vector search and phase vectors, but no document search.)
+The Python package `warm-sdk` is an HTTP client for `warm-server`, which stores vectors you
+supply. (`warm-py` provides native vector search and phase vectors, but no document search.)
 
 ```sh
 cargo build --release --features server --bin warm-server
@@ -328,7 +328,7 @@ flowchart TB
     rust["Rust crate"]
     node["Node.js (napi)"]
     ffi["C, WASM, UniFFI"]
-    python["Python: writerslogic-warm-sdk"]
+    python["Python: warm-sdk"]
     server["warm-server (HTTP)"]
     mcp["warm-mcp (stdio, HTTP)"]
   end

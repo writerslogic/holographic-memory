@@ -8,7 +8,7 @@
 //! pip-installable module built with `maturin` under the `python` feature. This is
 //! the initial, curated surface (the phase substrate, qFHRR arXiv 2604.25939, and the
 //! `VectorIndex` nearest-neighbour index); it will grow as the public API stabilises.
-//! See `pyproject.toml` and `.github/workflows/python-native-release.yml`. The module is named
+//! See `pyproject.toml` and `.github/workflows/warm-py-release.yml`. The module is named
 //! `writerslogic_warm`.
 
 use pyo3::exceptions::PyValueError;

@@ -15,25 +15,25 @@ stores vectors you supply and exposes document and query endpoints. See the
 ## Installation
 
 ```bash
-uv add writerslogic-warm-sdk
+uv add warm-sdk
 ```
 
 Framework adapters are optional extras. Install one, or all of them:
 
 ```bash
-uv add "writerslogic-warm-sdk[langchain]"
-uv add "writerslogic-warm-sdk[all]"
+uv add "warm-sdk[langchain]"
+uv add "warm-sdk[all]"
 ```
 
 The earlier standalone `langchain-holographic` distribution is retired. For LangChain, install
-`writerslogic-warm-sdk[langchain]` and import `WarmVectorStore` from
+`warm-sdk[langchain]` and import `WarmVectorStore` from
 `writerslogic_warm_sdk.langchain`. This adapter connects to `warm-server`; update the old
 `langchain_holographic` import and its local-store configuration when migrating.
 
 The `fast` extra adds `orjson` for request encoding, which cuts the per-query cost of sending an embedding:
 
 ```bash
-uv add "writerslogic-warm-sdk[fast]"
+uv add "warm-sdk[fast]"
 ```
 
 Requires Python 3.10 or newer.

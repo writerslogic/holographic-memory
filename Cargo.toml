@@ -179,7 +179,7 @@ local-embed-download = ["local-embed", "ureq"]
 # Experimental query-private similarity scoring (LWE, SimplePIR-style). Hides
 # the query from the server only; see docs/PRIVATE-SEARCH.md for the limits.
 private-search = ["zeroize", "rand/chacha"]
-# HTTP service for the writerslogic-warm-sdk Python client (`warm-server` binary).
+# HTTP service for the warm-sdk Python client (`warm-server` binary).
 server = ["dep:parking_lot", "tokio", "tokio/rt-multi-thread", "tokio/macros", "tokio/net", "tokio/time", "tokio/sync", "tokio/io-util", "tokio/fs", "tokio/signal", "cli", "dep:schemars", "axum", "subtle", "sha2", "dep:hyper", "dep:hyper-util", "dep:tower-service", "dep:rustls", "dep:tokio-rustls", "dep:tar", "dep:http-body-util", "dep:bytes", "dep:futures-util"]
 # MCP server over stdio and streamable HTTP (`warm-mcp` binary). Encryption at rest needs `security`;
 # semantic recall needs `local-models`.

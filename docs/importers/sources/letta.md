@@ -5,7 +5,7 @@ LETTA_API_KEY=... warm-import letta --warm-url http://127.0.0.1:8080 --embedder 
 warm-import letta --base-url http://localhost:8283 --kinds passages,blocks,messages --agent-id agent-1234
 ```
 
-Requires `uv add 'writerslogic-warm-sdk[import-letta]'`. Credentials: `LETTA_API_KEY` (optional for an unauthenticated
+Requires `uv add 'warm-sdk[import-letta]'`. Credentials: `LETTA_API_KEY` (optional for an unauthenticated
 self-hosted server). Without `--base-url` the SDK default (Letta Cloud) is used.
 
 The importer uses the real `letta_client.Letta` SDK. Agents come from `GET /v1/agents/` (or `--agent-id`,

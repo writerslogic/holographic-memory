@@ -24,9 +24,9 @@ paraphrases. The [quickstart](../quickstart/index.md) runs both ways.
 
 ## Why does the Python package need a server?
 
-`writerslogic-warm-sdk` is an HTTP client for `warm-server`. The server wraps one store per tenant and
+`warm-sdk` is an HTTP client for `warm-server`. The server wraps one store per tenant and
 holds the engine, so the Python process stays small and the store has one writer. The
-`writerslogic-warm-py` wheel on PyPI provides native vector search and phase vectors, and
+`warm-py` wheel on PyPI provides native vector search and phase vectors, and
 does not include document search. See the [server page](../SERVER.md).
 
 ## Does it send anything over the network?

@@ -77,7 +77,7 @@ fn large_single_batch_reopens_identically() -> anyhow::Result<()> {
         })
         .collect();
     let queries = ["topic5 common", "item1299", "word7 topic11", "shared"];
-    let snapshot = |hms: &WarmCore| -> anyhow::Result<Vec<Vec<(String, u64)>>> {
+    let snapshot = |warm: &WarmCore| -> anyhow::Result<Vec<Vec<(String, u64)>>> {
         queries
             .iter()
             .map(|q| {

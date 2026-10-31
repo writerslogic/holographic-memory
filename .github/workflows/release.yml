@@ -10,7 +10,7 @@
 # after a tag's crate upload fails; the normal publish jobs and GitHub release run only on `v*` tags.
 # The publish jobs sit behind their own environments
 # (`crates-io`, `npm`, `release`; give them required reviewers). PyPI publishing stays in
-# python-native-release.yml, whose trusted publisher is bound to that file name. See docs/RELEASING.md.
+# warm-py-release.yml, whose trusted publisher is bound to that file name. See docs/RELEASING.md.
 name: Release
 
 on:

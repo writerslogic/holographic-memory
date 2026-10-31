@@ -29,15 +29,15 @@ def main() -> int:
     models = tomllib.loads((ROOT / "bindings/embed-models/python/pyproject.toml").read_text())["project"]
     sdk = tomllib.loads((ROOT / "bindings/python/warm-sdk/pyproject.toml").read_text())["project"]
     problems = []
-    if native["name"] != "writerslogic-warm-py":
+    if native["name"] != "warm-py":
         problems.append(f"native Python distribution is {native['name']}")
-    if models["name"] != "writerslogic-warm-models":
+    if models["name"] != "warm-models":
         problems.append(f"embedding model distribution is {models['name']}")
     if native.get("optional-dependencies", {}).get("embed") != [
-        f"writerslogic-warm-models=={models['version']}"
+        f"warm-models=={models['version']}"
     ]:
         problems.append("native Python embed extra disagrees with the model package")
-    if sdk["name"] != "writerslogic-warm-sdk":
+    if sdk["name"] != "warm-sdk":
         problems.append(f"SDK distribution is {sdk['name']}")
     if package["version"] != cargo:
         problems.append(f"package.json is {package['version']}, Cargo.toml is {cargo}")

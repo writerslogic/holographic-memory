@@ -3,7 +3,7 @@
 `warm-import` copies memories from another vector store or memory system into an `warm-server`. It streams, resumes from a checkpoint, is idempotent, and ends with a fidelity report so nothing is lost silently.
 
 ```sh
-uv add 'writerslogic-warm-sdk[import-chroma]'          # one extra per source, see the table
+uv add 'warm-sdk[import-chroma]'          # one extra per source, see the table
 export WARM_API_KEY=...                                  # destination credential (env, never logged)
 warm-import chroma --path ./chroma-db --warm-url http://127.0.0.1:8080 --tenant acme \
   --report migration.json                               # dry run first: add --dry-run

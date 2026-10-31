@@ -11,11 +11,11 @@ Keep the original store intact while investigating.
 
 ## Python import fails
 
-For `from writerslogic_warm_sdk import WarmClient`, install `writerslogic-warm-sdk` in the same
-virtual environment as your application. `writerslogic-warm-py` has a different import name and API.
+For `from writerslogic_warm_sdk import WarmClient`, install `warm-sdk` in the same
+virtual environment as your application. `warm-py` has a different import name and API.
 
 ```sh
-uv run --with writerslogic-warm-sdk python -c "from writerslogic_warm_sdk import WarmClient; print(WarmClient.__name__)"
+uv run --with warm-sdk python -c "from writerslogic_warm_sdk import WarmClient; print(WarmClient.__name__)"
 ```
 
 If this works but your application fails, compare the interpreter and environment used to run it.

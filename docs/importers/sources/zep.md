@@ -5,7 +5,7 @@ ZEP_API_KEY=... warm-import zep --warm-url http://127.0.0.1:8080 --embedder mypk
 warm-import zep --base-url https://zep.internal.example/api/v4 --kinds facts,entities ...
 ```
 
-Requires `uv add 'writerslogic-warm-sdk[import-zep]'`. Credentials: `ZEP_API_KEY` only. Zep memory is text, so the
+Requires `uv add 'warm-sdk[import-zep]'`. Credentials: `ZEP_API_KEY` only. Zep memory is text, so the
 server must embed text or you pass `--embedder`.
 
 The importer uses the real `zep_cloud.Zep` client against the v4 API (cursor pagination, ordered by

@@ -13,14 +13,14 @@ Native Python bindings for WARM's vector search and vector-symbolic algebra.
 Python 3.9 or newer is required. Install the native binding and NumPy for the vector-index API:
 
 ```sh
-uv add writerslogic-warm-py numpy
+uv add warm-py numpy
 ```
 
-The distribution is named `writerslogic-warm-py`; the import is `writerslogic_warm`.
+The distribution is named `warm-py`; the import is `writerslogic_warm`.
 
 For the pinned default embedding model with no first-use download, install
-`writerslogic-warm-py[embed]`. That extra adds the separate
-[`writerslogic-warm-models`](https://pypi.org/project/writerslogic-warm-models/) wheel.
+`warm-py[embed]`. That extra adds the separate
+[`warm-models`](https://pypi.org/project/warm-models/) wheel.
 
 ## Vector search
 
@@ -81,5 +81,5 @@ or allocating the resonator index.
 
 This native binding runs vector search and phase-vector operations in your Python process. It does
 not expose the persistent document-search and agent-memory APIs. For an HTTP client to `warm-server`,
-use [`writerslogic-warm-sdk`](https://pypi.org/project/writerslogic-warm-sdk/). The Rust and Node.js
+use [`warm-sdk`](https://pypi.org/project/warm-sdk/). The Rust and Node.js
 packages expose the full embedded engine.

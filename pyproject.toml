@@ -3,7 +3,7 @@ requires = ["maturin>=1.7,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "writerslogic-warm-py"
+name = "warm-py"
 description = "Native Python bindings for WARM vector search and phase-vector algebra."
 requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
@@ -27,7 +27,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-embed = ["writerslogic-warm-models==0.1.0"]
+embed = ["warm-models==0.1.0"]
 
 [project.urls]
 Homepage = "https://writerslogic.com/warm/"
@@ -36,7 +36,7 @@ Repository = "https://github.com/writerslogic/warm"
 
 [tool.maturin]
 # The import name is `writerslogic_warm` (matches the #[pymodule] in src/bindings/python/mod.rs);
-# the PyPI distribution name is `writerslogic-warm-py` (the crate name is taken on PyPI).
+# the PyPI distribution name is `warm-py` (the crate name is taken on PyPI).
 module-name = "writerslogic_warm"
 features = ["python", "local-embed-download"]
 exclude = [
@@ -46,4 +46,4 @@ exclude = [
 # Version is read from Cargo.toml (dynamic).
 
 [tool.uv.sources]
-writerslogic-warm-models = { path = "bindings/embed-models/python" }
+warm-models = { path = "bindings/embed-models/python" }

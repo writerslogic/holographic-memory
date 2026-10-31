@@ -427,7 +427,7 @@ fn abandoned_and_stalled_connections_do_not_leak_work_slots_or_memory() {
         "k",
         &["--max-concurrent-work", "2", "--body-timeout-seconds", "1"],
     );
-    let hms: Value = s.req("GET", "/healthz").send().json();
+    let warm: Value = s.req("GET", "/healthz").send().json();
     assert_eq!(warm["status"], "ok");
     let before = rss(&s);
     for round in 0..24 {

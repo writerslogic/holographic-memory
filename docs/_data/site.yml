@@ -47,7 +47,7 @@ runtimes:
     snippets:
       - examples/quickstart/python/quickstart.py:ingest
       - examples/quickstart/python/quickstart.py:hit
-    note: An HTTP client for warm-server. The writerslogic-warm-py wheel provides native vector search and phase vectors.
+    note: An HTTP client for warm-server. The warm-py wheel provides native vector search and phase vectors.
   - id: node
     name: Node
     status: available

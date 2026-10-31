@@ -27,8 +27,8 @@ pub const MAX_CONCURRENT_WORK: usize = 256;
 #[command(
     name = "warm-server",
     version,
-    about = "HTTP service for the writerslogic-warm-sdk client. See docs/SERVER.md and docs/server/.",
-    long_about = "HTTP service for the writerslogic-warm-sdk client.\n\nAuthentication is required unless --no-auth is given (loopback only). Credentials: WARM_API_KEY (one all-tenant key, environment only) and/or --keys-file (per-tenant hashed keys with scopes; create entries with `warm-server keygen`)."
+    about = "HTTP service for the warm-sdk client. See docs/SERVER.md and docs/server/.",
+    long_about = "HTTP service for the warm-sdk client.\n\nAuthentication is required unless --no-auth is given (loopback only). Credentials: WARM_API_KEY (one all-tenant key, environment only) and/or --keys-file (per-tenant hashed keys with scopes; create entries with `warm-server keygen`)."
 )]
 pub struct Cli {
     #[command(subcommand)]

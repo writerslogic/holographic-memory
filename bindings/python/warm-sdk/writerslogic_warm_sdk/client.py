@@ -10,7 +10,7 @@ from ._transport import KeepAliveTransport, usable_for
 
 try:
     import orjson
-except ImportError:  # optional: `uv add writerslogic-warm-sdk[fast]`
+except ImportError:  # optional: `uv add warm-sdk[fast]`
     orjson = None
 
 if TYPE_CHECKING:

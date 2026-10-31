@@ -155,5 +155,5 @@ extra:
       link: https://crates.io/crates/writerslogic-warm
       name: crates.io
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/writerslogic-warm-sdk/
+      link: https://pypi.org/project/warm-sdk/
       name: PyPI

@@ -5,7 +5,7 @@ search:
 
 # warm-server
 
-`warm-server` is the HTTP service for WARM. It implements the endpoints used by the `writerslogic-warm-sdk` Python client (`bindings/python/warm-sdk`) and any other HTTP client, wrapping one `WarmCore` store per tenant, and adds what a service needs: scoped per-tenant authentication, limits and backpressure, observability, TLS and unix sockets, snapshots, compaction and graceful shutdown.
+`warm-server` is the HTTP service for WARM. It implements the endpoints used by the `warm-sdk` Python client (`bindings/python/warm-sdk`) and any other HTTP client, wrapping one `WarmCore` store per tenant, and adds what a service needs: scoped per-tenant authentication, limits and backpressure, observability, TLS and unix sockets, snapshots, compaction and graceful shutdown.
 
 | Document | Contents |
 |---|---|
