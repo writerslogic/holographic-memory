@@ -289,3 +289,9 @@ this is extra write/sync cost, not a measured performance improvement. Productio
 must include audit-enabled write latency and recovery throughput. Individual record signatures
 do not detect removal of whole records without an external history anchor. No hardware
 power-loss, generalized provenance recovery or restart-safe HTTP receipt claim is made.
+
+Pre-merge review found that an empty current journal does not prove a store has no audit
+history: compaction with logging disabled may leave only a document checkpoint. Initialization
+now durably creates the audit header before publishing `store.json`, and every subsequent
+schema-6 open requires the existing stream, including empty and checkpoint-only stores. New
+regressions cover both cases and interruption between header creation and schema publication.

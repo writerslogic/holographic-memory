@@ -100,6 +100,8 @@ pub(crate) fn validate_store(path: &Path, dimensions: usize, config: &WarmConfig
         if path.join("vectors_data.bin").exists() {
             bail!("legacy store has no embedding schema; preserve it and use warm-admin reencode with original source documents to create a new store");
         }
+        super::audit_effects::AuditEffectStream::open(path)?;
+        super::audit_effects::crash_point("initialized");
         super::durable_file::atomic_write(&schema_path, &serde_json::to_vec_pretty(&expected)?)?;
     }
     Ok(expected.version)

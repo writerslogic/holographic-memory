@@ -190,8 +190,9 @@ impl WarmCore {
         };
 
         let audit_effects = if schema >= super::format::AUDIT_EFFECTS_SCHEMA_VERSION {
-            anyhow::ensure!(arena.stats().used_bytes == 0 || base_path.join(super::audit_effects::FILE_NAME).try_exists()?, "audit effect stream is missing from a nonempty schema 6 store; restore it before opening");
-            Some(super::audit_effects::AuditEffectStream::open(&base_path)?)
+            Some(super::audit_effects::AuditEffectStream::open_existing(
+                &base_path,
+            )?)
         } else {
             None
         };

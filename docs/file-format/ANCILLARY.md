@@ -22,7 +22,9 @@ Note the id hash differs by build feature: it is not comparable across builds wi
 
 ## audit.effects.bin (schema 6)
 
-Every schema 6 store has this file, even with logging disabled. Header: eight bytes `WARMAU02`.
+Every schema 6 store has this file, even with logging disabled. Its header is durably
+created before the new store schema is published; reopening an initialized store never
+creates a replacement history. Header: eight bytes `WARMAU02`.
 Each 125-byte record contains a 16-byte effect identity, the legacy 105-byte entry layout,
 and a little-endian CRC32 of the preceding 121 bytes. A signed record covers
 `WARM-AUDIT-2\0 || effect_id || timestamp_ms_le || op_byte || id_hash` (70 bytes), binding
@@ -33,7 +35,7 @@ re-signing under a potentially changed key.
 Open and offline verification validate every complete record with bounded scratch memory.
 An interrupted partial tail is repaired before delivery. Complete checksum or operation
 corruption is an error, as are conflicting payloads for the last delivered identity. A missing
-stream in a nonempty schema 6 store fails open; restore the intact history from backup.
+stream in any initialized schema 6 store fails open; restore the intact history from backup.
 An upgrade creates the new stream and preserves `audit.bin`; audit queries return legacy
 entries followed by new entries in their persisted order. These files must travel together
 with journal generations in backups and restores. CRC32 detects accidental corruption; it

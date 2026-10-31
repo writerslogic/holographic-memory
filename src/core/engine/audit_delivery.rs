@@ -249,6 +249,53 @@ mod tests {
     }
 
     #[test]
+    fn missing_history_is_rejected_after_checkpoint_only_compaction() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let mut config = WarmConfig::default();
+        config.security.audit_enabled = true;
+        config.document_checkpoint.min_journal_bytes = usize::MAX;
+        let path = dir.path().display().to_string();
+        let core = WarmCore::new(256, Some(path.clone()), Some(config.clone()))?;
+        core.memorize_document_with(
+            serde_json::from_value(serde_json::json!({
+                "id": "checkpoint", "text": "preserved document"
+            }))?,
+            &crate::core::documents::IngestOptions {
+                encode: crate::core::documents::EncodeMode::Lexical,
+                ..Default::default()
+            },
+        )?;
+        core.compact()?;
+        assert_eq!(core.audit_since(0)?.len(), 1);
+        drop(core);
+        config.security.audit_enabled = false;
+        let core = WarmCore::new(256, Some(path.clone()), Some(config.clone()))?;
+        core.compact()?;
+        assert_eq!(core.arena.stats().used_bytes, 0);
+        drop(core);
+        std::fs::remove_file(dir.path().join(FILE_NAME))?;
+        assert!(WarmCore::new(256, Some(path), Some(config))
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("audit effect stream is missing"));
+        Ok(())
+    }
+
+    #[test]
+    fn initialized_empty_store_does_not_recreate_missing_history() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        drop(open(dir.path())?);
+        std::fs::remove_file(dir.path().join(FILE_NAME))?;
+        assert!(open(dir.path())
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("audit effect stream is missing"));
+        Ok(())
+    }
+
+    #[test]
     fn concurrent_delivery_preserves_commit_order() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let core = std::sync::Arc::new(open(dir.path())?);
@@ -310,6 +357,7 @@ mod tests {
     #[test]
     fn process_crashes_at_commit_write_sync_and_ack_recover_once() -> Result<()> {
         for phase in [
+            "initialized",
             "before_commit",
             "committed",
             "written",
@@ -337,10 +385,10 @@ mod tests {
                 let core = open(dir.path())?;
                 assert_eq!(
                     core.shards.read().get_vector("crash-write").is_some(),
-                    phase != "before_commit"
+                    !matches!(phase, "before_commit" | "initialized")
                 );
                 let expected = match phase {
-                    "before_commit" => 0,
+                    "before_commit" | "initialized" => 0,
                     "compacted" => 2,
                     _ => 1,
                 };

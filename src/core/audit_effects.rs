@@ -123,6 +123,21 @@ impl AuditEffectStream {
             }
             Err(error) => return Err(error.into()),
         };
+        Self::from_file(file)
+    }
+
+    pub(crate) fn open_existing(store: &Path) -> Result<Self> {
+        let file = match open_regular_read_write(&store.join(FILE_NAME)) {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                anyhow::bail!("audit effect stream is missing from a schema 6 store; restore it before opening")
+            }
+            Err(error) => return Err(error.into()),
+        };
+        Self::from_file(file)
+    }
+
+    fn from_file(file: File) -> Result<Self> {
         inspect(&file)?;
         let stream = Self {
             file,
