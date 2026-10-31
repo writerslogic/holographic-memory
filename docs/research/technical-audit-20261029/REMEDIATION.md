@@ -436,7 +436,7 @@ Validation and the final PR gate are recorded in `header-semantics-20261031/vali
 
 Local acceptance passes seven authentication tests, all 19 HTTP integration tests,
 and all 41 MCP tests; strict scoped Clippy, formatting and diff checks pass. The first
-parallel HTTP run had four empty responses and a burst-timing failure. Serialization
+parallel HTTP run had four empty responses and a burst-timing failure. Serial execution
 cleared the empty responses; the rate test now initializes its store and replenishes
 the warm-up token before measuring the burst, retaining every existing rate/quota
 assertion. All failed attempts remain in the evidence archive. No production timeout,
