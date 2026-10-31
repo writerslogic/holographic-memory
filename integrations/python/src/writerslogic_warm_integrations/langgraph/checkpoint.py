@@ -504,5 +504,3 @@ class WarmSaver(BaseCheckpointSaver[str]):
     def get_next_version(self, current: Optional[str], channel: None) -> str:
         current_v = 0 if current is None else (current if isinstance(current, int) else int(current.split(".")[0]))
         return f"{current_v + 1:032}.{random.random():016}"
-
-HolographicSaver = WarmSaver

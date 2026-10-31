@@ -15,11 +15,3 @@ __all__ = [
     "WarmMemoryBlock",
     "WarmVectorStore",
 ]
-
-HolographicAsyncChatStore = WarmAsyncChatStore
-HolographicChatStore = WarmChatStore
-HolographicDocumentStore = WarmDocumentStore
-HolographicIndexStore = WarmIndexStore
-HolographicKVStore = WarmKVStore
-HolographicVectorStore = WarmVectorStore
-__all__ += ['HolographicAsyncChatStore', 'HolographicChatStore', 'HolographicDocumentStore', 'HolographicIndexStore', 'HolographicKVStore', 'HolographicVectorStore']

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
@@ -62,6 +63,7 @@ class Mem0PlatformSource(Source):
         self.api_key, self.host, self.org_id, self.project_id = api_key, host, org_id, project_id
         self.scopes, self.page_size = scopes, page_size
         self._client = None
+        self._list_options: Dict[str, Any] = {}
 
     @classmethod
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
@@ -91,10 +93,19 @@ class Mem0PlatformSource(Source):
             except ImportError:
                 raise MissingDependency("mem0-platform", "mem0ai", "import-mem0") from None
             try:
-                self._client = MemoryClient(api_key=self.api_key, host=self.host, org_id=self.org_id,
-                                            project_id=self.project_id)
+                legacy = "org_id" in inspect.signature(MemoryClient).parameters
+                options = {"org_id": self.org_id, "project_id": self.project_id} if legacy else {}
+                client = MemoryClient(api_key=self.api_key, host=self.host, **options)
             except ValueError as exc:
                 raise ImporterError(f"mem0 platform rejected the credentials or host: {exc}") from None
+            if not legacy:
+                for key in ("org_id", "project_id"):
+                    expected = getattr(self, key)
+                    if expected is not None and getattr(client, key, None) != expected:
+                        client.client.close()
+                        raise ImporterError(f"mem0 API key does not match the requested {key}")
+            self._list_options = {"version": "v2"} if legacy else {}
+            self._client = client
         return self._client
 
     def close(self) -> None:
@@ -127,7 +138,8 @@ class Mem0PlatformSource(Source):
         for kind, name in self._entities():
             page = 1
             while True:
-                data = client.get_all(version="v2", filters={kind: name}, page=page, page_size=self.page_size)
+                data = client.get_all(filters={kind: name}, page=page, page_size=self.page_size,
+                                      **self._list_options)
                 items = data if isinstance(data, list) else data.get("results", [])
                 for mem in items:
                     owner = _owner(mem)
@@ -280,8 +292,9 @@ class Mem0Source(Source):
             resume_page = False
 
     def _by_scope(self, vs: Any) -> Iterator[Record]:
+        limit_name = "top_k" if "top_k" in inspect.signature(vs.list).parameters else "limit"
         for key, value in sorted(self.scopes):
-            res = vs.list(filters={key: value}, limit=self.scope_limit)
+            res = vs.list(filters={key: value}, **{limit_name: self.scope_limit})
             items = res[0] if isinstance(res, (tuple, list)) and res else res
             if len(items) >= self.scope_limit:
                 raise ImporterError(f"{key}={value} has at least {self.scope_limit} memories; raise --scope-limit")

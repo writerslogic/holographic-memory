@@ -483,6 +483,3 @@ class WarmDocumentStore:
         pushed, fetch = self._fetch_size(filters, top_k)
         hits = await self.async_backend.recall(query, k=fetch, filter=pushed or None)
         return self._finish(hits, filters, top_k, False, return_embedding)
-
-
-HolographicDocumentStore = WarmDocumentStore

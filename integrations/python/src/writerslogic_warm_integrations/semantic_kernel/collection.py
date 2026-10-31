@@ -389,6 +389,3 @@ class WarmStore(VectorStore):
             await backend.forget_where(None)
         if collection_name in self._opened:
             self._opened.remove(collection_name)
-
-HolographicCollection = WarmCollection
-HolographicStore = WarmStore

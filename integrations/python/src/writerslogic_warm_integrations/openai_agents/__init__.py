@@ -5,6 +5,3 @@ from .session import WarmSession
 from .tools import memory_tools
 
 __all__ = ["WarmSession", "memory_tools"]
-
-HolographicSession = WarmSession
-__all__ += ['HolographicSession']

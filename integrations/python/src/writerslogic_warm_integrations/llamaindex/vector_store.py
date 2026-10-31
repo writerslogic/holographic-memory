@@ -232,5 +232,3 @@ class WarmVectorStore(BasePydanticVectorStore):
 
     async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         return self._result(await self.abackend.recall(**self._plan(query)))
-
-HolographicVectorStore = WarmVectorStore

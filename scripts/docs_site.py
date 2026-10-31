@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from urllib.parse import urlsplit
+from urllib.parse import quote_from_bytes, urlsplit
 from mkdocs.exceptions import PluginError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -194,6 +194,7 @@ def on_config(config):
         "runtimes": build_runtimes(root, site), "features": features,
         "headline": headline, "chart": chart, "inline_css": inline_css(docs_dir, config["site_url"]), "crate_version": crate_version(root),
         "comparison": build_comparison(root, site),
+        "hero_image": "data:image/svg+xml," + quote_from_bytes((docs_dir / "assets/crystal-detailed-static.svg").read_bytes()),
         "ref": ref, "is_dev": ref == "main", "is_latest": os.environ.get("WARM_IS_LATEST") == "1",
         "repo": REPO, "repo_ref": ref,
     }

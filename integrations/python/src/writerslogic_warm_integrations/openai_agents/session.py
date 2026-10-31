@@ -75,5 +75,3 @@ class WarmSession(SessionABC):
 
     async def clear_session(self) -> None:
         await self._log.clear()
-
-HolographicSession = WarmSession

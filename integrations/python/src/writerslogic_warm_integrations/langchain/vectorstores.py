@@ -274,5 +274,3 @@ def _np(vector: Sequence[float]):
     import numpy as np
 
     return np.asarray(vector, dtype=float)
-
-HolographicVectorStore = WarmVectorStore

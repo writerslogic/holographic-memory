@@ -61,5 +61,3 @@ class WarmVectorStore(VectorStore):
         store = cls(embedding=embedding, **kwargs)
         store.add_texts(texts=texts, metadatas=metadatas)
         return store
-
-HolographicVectorStore = WarmVectorStore

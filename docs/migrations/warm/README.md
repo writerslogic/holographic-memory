@@ -53,3 +53,60 @@ The user deleted both `holographic-memory` and the superseded `writerslogic-warm
 npm automation-token deletion was rejected with 403; interactive authenticated/2FA deletion of `holographic-memory` was also rejected with 422. The legacy core had 579 downloads and MCP 770 downloads in the registry's measured week, exceeding npm's less-than-300 rule for packages older than 72 hours. All 27 legacy core/platform versions and all four legacy MCP versions have migration deprecations, independently checked against the public registry. MCP deprecation-only workflow `41167081535` succeeded without another deletion attempt. Permanent deletion remains subject to registry policy. Exact evidence is in `npm-retirement-policy.json`; no new WARM package is targeted by the retirement workflow.
 
 Final validation follow-up: immutable golden snapshot metadata restored rather than changing its manifest (6 golden tests passed, 1 intentional generator skip); generated TypeScript declaration order refreshed and type tests passed. The fixed MCP passed 39 unit tests, 18 end-to-end tests and 16 launcher tests. Final core CI `41166182376` passed all gates, including all-feature tests, Windows Rust tests and Node platform checks.
+
+## Post-migration repository cleanup
+
+The October 31 cleanup checks open PRs, code scanning, dependency advisories and
+preserved development branches. Main includes the Rust quickstart formatting and
+renamed output-heading repairs, script-safe redirect serialization with regression
+tests, and tsup 9 with patched esbuild. All 139 JavaScript integration tests pass;
+the quickstart crate passes formatting and strict Clippy. The Python example now
+uses the frozen SDK lock instead of resolving unpinned dependencies.
+
+PR #344 adds mem0 2.2.1 support, scope mismatch rejection, bounded listing across
+SDK generations, repaired uv conflict markers and an importer CI environment fix.
+Local validation: 172 importer tests pass, one optional dependency skip; mem0 2.2.1
+passes 16 focused tests and 0.1.118 passes 14 with two v2-only skips. PR #345 updates
+rmcp to 3.8.0 (merged as `9dd080b8`); PR #346 updates pinned workflow actions.
+PR #347 integrated the preserved recall/Windows repairs as `316c61a4`, with all
+platform checks passing. PR #348 removes 64 obsolete Python aliases and the old
+forwarding namespace; 96 focused tests and wheel/public-export checks pass.
+
+PR #349 removes the separate homepage hero-image fetch by embedding its exact SVG
+bytes. Local mobile Lighthouse improved from 86 to 99, simulated LCP from 4,061 to
+1,847 ms, with pixel-identical hero images in six viewport/theme combinations.
+All 36 accessibility views, 46 search cases and 12 navigation flows pass. Thresholds
+are unchanged. The tradeoff is approximately 8 KB more compressed homepage HTML.
+Repeated CI performance misses were investigated rather than repeatedly retried.
+
+The cleanup integration combines the pending PR heads with their ancestry intact;
+full platform validation for that combined tree is recorded on its integration PR.
+An additional importer regression preserves legitimate URL port digits while
+checking complete credential omission: a random port `40123` had triggered the
+old assertion against the secret suffix `123`. The combined mem0/Qdrant checks
+pass all 20 cases. Code Quality review suggestions use the existing source context
+managers; all four focused context-manager checks pass.
+
+Code scanning findings 140/141 were fixed by HTML-safe script serialization; 138
+was fixed by frozen dependency installation. False positives 143/144 were traced
+to trusted Axum application state and generated NAPI FFI initialization; the native
+forged-receiver regression passes. Findings 137/142/145/146 are intentionally
+testing locally built benchmark/release artifacts or exact just-published versions,
+with dispositions recorded on the alerts. No secret-scanning alerts were open.
+Residual upstream dependency limitations are documented in `docs/SECURITY.md`;
+they are not represented as fixed.
+
+The separate GitHub Code Quality API initially reported 35 notes: 31 legacy Python
+alias exports, two unused imports, one client context-manager suggestion and one
+historical probe catching `BaseException`. The import/context-manager corrections
+pass 10 SDK memory tests and three renamer tests. Finding 151 is intentional:
+`docs/research/technical-audit-20261030/python_reproduction.py` must catch PyO3
+`PanicException` to record the original native assertion failures (shown in the
+adjacent `python-reproduction.log`). Its historical evidence remains unchanged.
+
+Already-integrated audit branch tips are retained locally under
+`refs/archive/20261031/` before obsolete branch removal. Their original worktrees
+remain intact and detached. Clean temporary crate-release worktrees were removed.
+The user confirmed the C2PA conformance application was submitted as
+`holographic-memory`; `/Volumes/A/.hms-c2pa-24` and its historical submission files
+are preserved unchanged, separately from this cleanup.

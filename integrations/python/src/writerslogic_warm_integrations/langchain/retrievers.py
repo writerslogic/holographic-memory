@@ -65,6 +65,3 @@ class WarmRetriever(BaseRetriever):
         if self.search_type == "mmr":
             return await self.vectorstore.amax_marginal_relevance_search(query, o["k"], self.fetch_k, self.lambda_mult, o["filter"])
         return self._finish(await self.vectorstore.asimilarity_search_with_score(query, o["k"], o["filter"]), o["score_threshold"])
-
-HolographicVectorStore = WarmVectorStore
-HolographicRetriever = WarmRetriever

@@ -33,7 +33,3 @@ def get_warm_tool():
         return "\n\n---\n\n".join(results) if results else "No matches found."
         
     return search_writerslogic_warm
-
-HolographicDependencies = WarmDependencies
-
-get_holographic_tool = get_warm_tool

@@ -10,5 +10,3 @@ __all__ = [
     "AsyncWarmBackend", "WarmBackend", "WarmConfig", "Embedder", "FunctionEmbedder", "HashingEmbedder",
     "And", "Cmp", "Eq", "Filter", "Not", "Or", "parse_filter", "Hit", "WarmError", "Page", "Record",
 ]
-
-AsyncHmsBackend = AsyncWarmBackend

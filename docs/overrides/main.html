@@ -4,7 +4,6 @@
 
 {% block site_meta %}
   {{ super() }}
-  {% if page and page.is_homepage %}<link rel="preload" href="{{ config.theme.logo }}" as="image" fetchpriority="high">{% endif %}
   <link rel="preload" href="{{ 'assets/fonts/geist-latin-wght-normal.woff2' | url }}" as="font" type="font/woff2" crossorigin>
 {% endblock %}
 

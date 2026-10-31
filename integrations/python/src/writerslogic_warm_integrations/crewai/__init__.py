@@ -8,6 +8,3 @@ from .knowledge import WarmKnowledgeStorage
 from .storage import WarmMemoryStorage, similarity
 
 __all__ = ["WarmKnowledgeStorage", "WarmMemoryStorage", "similarity"]
-
-HolographicKnowledgeStorage = WarmKnowledgeStorage
-__all__ += ['HolographicKnowledgeStorage']
