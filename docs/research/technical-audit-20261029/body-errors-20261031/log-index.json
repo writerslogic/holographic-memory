@@ -110,6 +110,21 @@
     "sha256": "9be34b945bd79db67361f44e251dc871faede7b571debb6f3e56d3f9d1020692"
   },
   {
+    "file": "native-copy-clippy.log",
+    "bytes": 137,
+    "sha256": "849ca082ead7596613cb5d1d29bf915184c9b0cf039af915656e2f8b8a5ce41e"
+  },
+  {
+    "file": "native-copy-final.log",
+    "bytes": 474,
+    "sha256": "8195d194da1ecf1b37d7a03819339f88bc855fd820c99a80568fbd95bc36a581"
+  },
+  {
+    "file": "native-copy-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
     "file": "operations-serialized.log",
     "bytes": 1315,
     "sha256": "786f9018394f6061a42fb9fbb3445471debf2b5731f6a348e41afe5df297fdcd"

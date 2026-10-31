@@ -546,3 +546,12 @@ multi-client concurrency inside them; socket read timeouts remain 20 seconds.
 All 13 local operations checks, the idle-boundary test, stopped-server/readiness
 checks, strict Clippy, formatting and actionlint pass. The backup timeout’s precise
 cause remains unconfirmed; the next Windows run must pass and is not overridden.
+
+A review of the unmerged Windows copy fix found that byte-stream copying would
+omit NTFS alternate streams preserved by `std::fs::copy`. Native copying is now
+retained everywhere. For a read-only Windows destination, only the unpublished
+copy’s read-only bit is temporarily cleared to acquire a writable flush handle;
+attributes are restored before propagating open errors or flushing. The Windows
+regression now verifies an alternate stream as well as ordinary bytes and
+permissions. The portable test, Clippy and formatting pass locally; Windows
+acceptance of this final metadata-preserving variant remains pending.

@@ -958,23 +958,25 @@ pub fn copy_store(src: &Path, dst: &Path) -> Result<u64> {
         if kind.is_dir() {
             bytes += copy_store(&from, &to)?;
         } else if kind.is_file() {
+            bytes += std::fs::copy(&from, &to)?;
             #[cfg(windows)]
             {
-                // FlushFileBuffers requires a writable handle, even for read-only copies.
-                let mut source = std::fs::File::open(&from)?;
-                let mut target = std::fs::OpenOptions::new()
-                    .write(true)
-                    .create_new(true)
-                    .open(&to)?;
-                bytes += std::io::copy(&mut source, &mut target)?;
-                target.set_permissions(source.metadata()?.permissions())?;
-                target.sync_all()?;
+                let permissions = std::fs::metadata(&to)?.permissions();
+                let read_only = permissions.readonly();
+                if read_only {
+                    let mut writable = permissions.clone();
+                    writable.set_readonly(false);
+                    std::fs::set_permissions(&to, writable)?;
+                }
+                // Restore attributes before propagating an open error or flushing the copy.
+                let file = std::fs::OpenOptions::new().write(true).open(&to);
+                if read_only {
+                    std::fs::set_permissions(&to, permissions)?;
+                }
+                file?.sync_all()?;
             }
             #[cfg(not(windows))]
-            {
-                bytes += std::fs::copy(&from, &to)?;
-                std::fs::File::open(&to)?.sync_all()?;
-            }
+            std::fs::File::open(&to)?.sync_all()?;
         }
     }
     sync_dir(dst)?;
@@ -1045,6 +1047,8 @@ mod tests {
         std::fs::create_dir_all(source.join("nested")).unwrap();
         let original = source.join("nested/data");
         std::fs::write(&original, b"snapshot bytes").unwrap();
+        #[cfg(windows)]
+        std::fs::write(source.join("nested/data:metadata"), b"alternate stream").unwrap();
         std::fs::write(source.join(".hms.lock"), b"lock").unwrap();
         std::fs::create_dir(source.join(".compact-pending")).unwrap();
         std::fs::write(source.join(".compact-pending/data"), b"scratch").unwrap();
@@ -1067,6 +1071,11 @@ mod tests {
 
         assert_eq!(copied.unwrap(), 14);
         assert_eq!(std::fs::read(destination).unwrap(), b"snapshot bytes");
+        #[cfg(windows)]
+        assert_eq!(
+            std::fs::read(target.join("nested/data:metadata")).unwrap(),
+            b"alternate stream"
+        );
         assert!(source_read_only && target_read_only.unwrap());
         assert!(!target.join(".hms.lock").exists());
         assert!(!target.join(".compact-pending").exists());

@@ -135,7 +135,7 @@
   },
   "snapshot_copy": {
     "root_cause": "copy_store reopened copied files read-only before sync_all; Windows FlushFileBuffers requires GENERIC_WRITE.",
-    "fix": "On Windows retain a writable destination handle while copying, restoring source permissions and flushing. Preserve existing native copy path elsewhere.",
+    "fix": "Retain native fs::copy on every platform. On Windows temporarily clear the unpublished destination read-only bit only when necessary to open a writable handle, restore attributes before propagating open errors, then flush that handle.",
     "regression": "snapshot_copy_preserves_read_only_files_and_skips_process_state checks nested data, exact byte count, read-only permissions and lock/compaction exclusions.",
     "local_snapshot_tests": 5,
     "local_clippy": "pass",
@@ -146,7 +146,16 @@
       "Separate core admin migration copy_tree still skips Windows file flushing; not changed here.",
       "No snapshot throughput claim."
     ],
-    "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers"
+    "source": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers",
+    "native_metadata": {
+      "finding": "The initial unmerged byte-stream implementation omitted NTFS alternate streams; native fs::copy preserves them.",
+      "windows_test": "The read-only nested-file regression now also writes and verifies an NTFS alternate stream. Windows acceptance pending.",
+      "local_check": "Read-only-copy test, strict Clippy and formatting pass on macOS.",
+      "sources": [
+        "https://doc.rust-lang.org/std/fs/fn.copy.html",
+        "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-copyfilew"
+      ]
+    }
   },
   "timing_and_polling": {
     "windows_run": 41199300291,
