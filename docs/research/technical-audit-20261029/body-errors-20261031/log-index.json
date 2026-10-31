@@ -68,5 +68,25 @@
     "file": "integrated-server.log",
     "bytes": 24985,
     "sha256": "9be34b945bd79db67361f44e251dc871faede7b571debb6f3e56d3f9d1020692"
+  },
+  {
+    "file": "platform-clippy.log",
+    "bytes": 138,
+    "sha256": "10965bba19f4bb1a8723cafa08fb4a2f590d729ee459aa4d1b7d5522b34fafa4"
+  },
+  {
+    "file": "platform-fmt.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "file": "unix-socket-final.log",
+    "bytes": 447,
+    "sha256": "21742092d4e37f6781e400cc1017e594c55b46eae53645e35e8209c4a4095c73"
+  },
+  {
+    "file": "windows-failure.log",
+    "bytes": 23563,
+    "sha256": "3299f8f903fb510a7bc7b0e8243f7e19a01d04fa579f497ed1e81548a1c0e902"
   }
 ]
