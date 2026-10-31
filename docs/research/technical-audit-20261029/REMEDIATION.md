@@ -863,3 +863,20 @@ remain archived; direct adapter tests alone had missed this caller contract.
 
 These are follow-up prerequisites; the current framework fixes establish neither
 full Haystack/Semantic Kernel support nor all-adapter production readiness.
+
+
+### Haystack silent-result and duplicate-policy corrections (2026-10-31)
+
+Nine real-server baseline failures confirm false zero counts, fabricated empty
+filter results, and ignored duplicate policies. Counts now use authenticated,
+tenant-scoped stats, exposed in both SDK clients. FAIL/SKIP and unknown policy
+types reject before mutation; NONE preserves WARM's existing overwrite default.
+Filtering explicitly raises until faithful full-document retrieval exists.
+
+Twelve contract tests pass on Haystack 2.0.0/Python 3.10 and 2.27.0/Python 3.14,
+including actual DocumentWriter use and sync/async authentication isolation.
+The whole SDK run passes 71 tests and 46 subtests with three documented optional
+skips; package builds and workflow lints pass. Evidence and reproducible baseline
+are in `haystack-contracts-20261031/`. Exact-head CI remains required. This is
+partial adapter support, not full DocumentStore conformance: atomic FAIL/SKIP,
+full-document enumeration/filtering and serialization remain prerequisites.
