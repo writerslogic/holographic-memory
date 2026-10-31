@@ -118,12 +118,11 @@ These cannot be committed; the publish jobs wait on them.
 1. Environments (Settings, Environments), each with required reviewers: `release`, `crates-io`,
    `npm`, `pypi`.
 2. crates.io: add this repository's `release.yml` and environment `crates-io` as a Trusted Publisher
-   for `writerslogic-warm`. The job uses `rust-lang/crates-io-auth-action` and holds no token.
+   for `warm-rust`. The job uses `rust-lang/crates-io-auth-action` and holds no token.
 3. npm: provide an automation token for the `writerslogic-warm` and
    `writerslogic-warm-*` names as `NPM_TOKEN` (a repository or `npm` environment secret).
    The first publish of the eight platform package names needs a token. Publishing uses
-   `--provenance`. The token must also permit `npm deprecate` until the 0.3.0 listing is corrected;
-   npm Trusted Publishing alone does not authorize that command.
+   `--provenance`. Legacy package retirement runs separately through `retire-legacy-npm.yml`; registry policy and interactive two-factor authentication can restrict permanent deletion.
 4. PyPI: add pending Trusted Publishers under owner `writerslogic`, repository
    `warm`, environment `pypi`: `warm-models` uses
    `warm-models-release.yml`, `warm-python` uses `warm-py-release.yml`, and
