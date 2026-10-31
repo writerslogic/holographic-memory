@@ -511,13 +511,21 @@ fn tls_serves_https_and_reloads_the_certificate_on_sighup() {
     std::fs::write(&key, key_b).unwrap();
     // A mismatched pair is rejected and the old certificate stays in use.
     std::fs::write(&key, self_signed(&["localhost"]).1).unwrap();
-    s.signal("HUP");
-    std::thread::sleep(Duration::from_millis(500));
+    #[cfg(unix)]
+    {
+        s.signal("HUP");
+        wait_until("failed certificate reload", || {
+            s.log_json()
+                .iter()
+                .any(|e| e["event"] == "tls_reload_failed")
+        });
+    }
     assert_eq!(
         s.req("GET", "/healthz").send().status,
         200,
         "old certificate still serves"
     );
+    #[cfg(unix)]
     assert!(s
         .log_json()
         .iter()

@@ -117,5 +117,20 @@
     "added_command": "cargo nextest run --locked --features server,mcp --no-fail-fast --bin warm-server --bin warm-mcp --test server --test server_api --test server_ops --test server_abuse --test server_ann",
     "status": "Initial expanded CI failed compiling an unconditional UnixListener import (run 41194768596). Unix-only variants, imports and cleanup are now platform-guarded; Windows rerun pending."
   },
-  "integrated_main": "5192ab7b"
+  "integrated_main": "5192ab7b",
+  "windows_console": {
+    "source_finding": "Server test harness used Unix kill for every shutdown and SIGHUP reload; Windows server listened only for Ctrl+C.",
+    "mechanism": "Windows child process groups receive targeted Ctrl+Break; server handles it using Tokio. Windows key and certificate reload tests use existing authenticated endpoints. Unix signal coverage is retained.",
+    "local_checks": {
+      "server_ops": 13,
+      "key_rotation": 1,
+      "clippy": "pass",
+      "formatting": "pass"
+    },
+    "status": "Windows runtime CI pending.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/windows/console/generateconsolectrlevent",
+      "https://docs.rs/tokio/latest/tokio/signal/windows/fn.ctrl_break.html"
+    ]
+  }
 }

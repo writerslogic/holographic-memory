@@ -506,3 +506,12 @@ imports, listener variants, match arms and cleanup are now platform-guarded. A
 non-Unix CLI regression checks the existing explicit unsupported-platform error.
 The real Unix socket integration test and strict service Clippy pass locally;
 Windows runtime results remain pending. The failed CI log is preserved.
+
+Source inspection also found that the newly enabled service tests used Unix
+`kill` for shutdown and SIGHUP. Windows children now get their own process groups;
+the harness sends targeted Ctrl+Break and the server routes it through its existing
+drain/flush path. Windows reloads exercise the authenticated admin endpoints, while
+Unix retains SIGHUP coverage. No graceful-shutdown assertions were removed.
+All 13 local operations tests and the key-rotation test pass; strict scoped Clippy
+and formatting pass. Windows execution remains pending. The only added direct
+dependency is test-only `windows-sys`, already present at 0.61.2 in the lockfile.

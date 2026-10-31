@@ -213,6 +213,11 @@ impl Server {
         for (k, v) in envs {
             cmd.env(k, v);
         }
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP);
+        }
         let mut child = cmd.spawn().unwrap();
         let mut line = String::new();
         BufReader::new(child.stdout.as_mut().unwrap())
@@ -318,6 +323,7 @@ impl Server {
         self.child.id()
     }
 
+    #[cfg(unix)]
     pub fn signal(&self, name: &str) {
         let status = Command::new("kill")
             .args([&format!("-{name}"), &self.child.id().to_string()])
@@ -326,7 +332,16 @@ impl Server {
         assert!(status.success());
     }
 
-    /// SIGTERM and wait; true when the process exited cleanly.
+    #[cfg(windows)]
+    pub fn signal(&self, name: &str) {
+        use windows_sys::Win32::System::Console::{GenerateConsoleCtrlEvent, CTRL_BREAK_EVENT};
+        assert_eq!(name, "TERM", "Windows reloads must use the admin endpoints");
+        // Each child owns a process group; never signal group zero (the test runner).
+        let sent = unsafe { GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, self.child.id()) };
+        assert_ne!(sent, 0, "{}", std::io::Error::last_os_error());
+    }
+
+    /// Request a graceful shutdown and wait for a successful exit.
     pub fn stop(&mut self) -> bool {
         self.signal("TERM");
         self.child.wait().unwrap().success()

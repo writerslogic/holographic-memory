@@ -157,9 +157,17 @@ fn keys_are_scoped_tenant_bound_and_rotate_without_restart() {
         }
     }
     std::fs::write(&keys, file.to_string()).unwrap();
-    // SIGHUP reloads too.
+    #[cfg(unix)]
     s.signal("HUP");
-    wait_until("SIGHUP key reload", || {
+    #[cfg(windows)]
+    assert_eq!(
+        s.req("POST", "/api/v1/admin/keys/reload")
+            .bearer(&admin)
+            .send()
+            .status,
+        200
+    );
+    wait_until("key reload", || {
         s.req("POST", "/api/v1/query")
             .bearer(&reader)
             .json(&query)

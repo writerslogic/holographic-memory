@@ -124,6 +124,7 @@ rcgen = { version = "0.14", default-features = false, features = ["crypto", "rin
 
 [target.'cfg(windows)'.dev-dependencies]
 fastrand = "2.5"
+windows-sys = { version = "0.61", features = ["Win32_System_Console", "Win32_System_Threading"] }
 
 [[bench]]
 name = "warm_benchmark"
