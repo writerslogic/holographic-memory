@@ -7,5 +7,9 @@
   ],
   "tests_per_boundary": 8,
   "paid_calls": 0,
-  "model_downloads": 0
+  "model_downloads": 0,
+  "baseline_source_commit": "a726ab4f3ab6c0267630507bd882db91220129d7",
+  "final_dependency_commit": "7410ae41f04285863bf21a31fa4af041e1d92a23",
+  "resolver": "uv 0.13.6",
+  "profile_python": ">=3.12,<3.13"
 }
