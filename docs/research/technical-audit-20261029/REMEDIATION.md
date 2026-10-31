@@ -146,3 +146,48 @@ durable outbox, reconstruct missing sidecar events, verify signatures on read,
 or establish physical power-loss behavior. The audit format and existing typed
 committed-effect contract remain unchanged; `docs/SECURITY.md` defines the reader
 and recovery guarantees.
+
+## Production-readiness improvement program
+
+The active October 31 objective is production readiness and demonstrated leading
+quality across WARM's features. The historical scorecards remain evidence about
+their reviewed revisions; passing more tests alone does not earn a new score or
+establish competitive superiority. Implementation and verification proceed in
+bounded milestones, with no paid development API calls or model downloads.
+
+| Priority | Capability / shared constraint | Required evidence | State |
+|---|---|---|---|
+| 1 | HTTP retry safety and retained-memory bounds | Post-commit panic never blindly repeats work; byte/capacity pressure preserves protected keys; expiry reclaims allocations; real HTTP and concurrency regressions | Implemented on `fix/http-retry-safety`; local checks pass, integrated CI pending |
+| 2 | Restart-safe committed effects | Transaction-backed effect identities and intents, idempotent delivery, explicit ambiguous outcomes, replay/compaction/restore invariants, process-interruption tests | Design required; current audit/provenance and HTTP retry state remain separate from core transactions |
+| 3 | Retrieval quality and workload performance | Reproducible local baselines, correctness-equivalent competitor workloads, update/churn/filter coverage, latency and allocation evidence | Preserve existing benchmark evidence; unresolved hot-query tail regression is not a demonstrated improvement |
+| 4 | Security lifecycle and assurance | Signing-key rotation and historical verification policy, adversarial validation, actionable dependency dispositions | Existing limitations in `docs/SECURITY.md`; no certification claim |
+| 5 | Interface and standards fidelity | Shared lifecycle/error/serialization checks across HTTP, native bindings, MCP and framework adapters; authoritative applicable requirements | Existing lifecycle fixtures are the baseline; expand where coverage is missing |
+| 6 | Operational recovery and observability | Restore generation and retry-state interactions, per-tenant isolation/resource admission, bounded diagnostics and operator acceptance checks | Review before introducing persistent request/effect state |
+
+### HTTP retry safety milestone
+
+The shared write pipeline previously discarded its running key when a worker
+panicked, even if that worker had already committed. Count-based cache eviction
+could also discard completed keys before TTL, and cached JSON trees had no retained
+byte budget. The implementation now reserves uncertain keys for reconciliation,
+rejects new keys when protected records fill capacity, and bounds retained response
+buffer allocations independently. Replays share serialized bytes; completion-order
+expiry reclaims both keys and bytes without expiring live workers. Metrics expose
+record count, retained buffer bytes and unreplayable keys.
+
+Acceptance covers actual committed writes followed by panic, response-budget
+overflow, concurrent completions, capacity pressure, TTL boundaries, tenant and
+fingerprint separation, and real HTTP responses. Final local and CI results will
+be recorded on the milestone PR. This is process-local retry protection, not a
+durable outbox or an exactly-once guarantee. The remaining restart boundary must
+be closed with durable transaction identities, not by persisting a cache and
+assuming its write is atomic with the core mutation.
+
+Local validation: 62 server tests pass; the final admission/retention changes pass
+all 11 focused limit tests; three real-HTTP idempotency tests and the generated
+OpenAPI/security check pass. Strict server/API-test Clippy passes. The initial
+unit run preceded the documentation updates and failed the two reference-drift
+checks; both pass after the configuration and error references were updated.
+The response-buffer accounting includes serialization capacity, not merely JSON
+length, but excludes active sends and process-wide allocations. Capacity planning
+and the changed full-cache admission behavior are explicit in `docs/SERVER.md`.

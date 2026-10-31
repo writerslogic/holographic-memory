@@ -131,7 +131,10 @@ it does not supply an automatic sidecar repair service or exactly-once external 
 Reopening restores committed arena state and repairs torn sidecar tails; it does not recreate
 missing audit entries or provenance effects. Do not repeat a committed mutation merely to
 obtain an auxiliary record. HTTP replays a retained idempotency key's committed failure within
-its cache TTL/capacity; that cache is process-local and does not survive restart. Reconciliation
+its cache TTL. Capacity pressure rejects new keys instead of evicting protected ones;
+if the response cannot fit the replay byte budget, its key requires reconciliation without
+reexecuting the operation. Worker panics retain the same protection. The cache is
+process-local and does not survive restart. Reconciliation
 after cache expiry or restart must compare application-owned IDs, versions and resulting state.
 Any external repair/delivery workflow must persist its own stable effect IDs and deduplicate
 delivery; WARM currently provides no such automatic retry worker.

@@ -32,6 +32,11 @@ pub const CODES: &[(&str, u16, &str)] = &[
         "Idempotent request still running",
     ),
     (
+        "idempotency_reconciliation_required",
+        409,
+        "Idempotent request requires reconciliation",
+    ),
+    (
         "idempotency_key_reused",
         422,
         "Idempotency key reused with a different request",

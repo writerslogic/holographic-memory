@@ -189,17 +189,31 @@ impl RateLimiter {
 #[derive(Clone)]
 pub struct StoredResponse {
     pub status: StatusCode,
-    pub body: Arc<serde_json::Value>,
+    pub body: bytes::Bytes,
+    allocated_bytes: usize,
+    committed: bool,
+}
+
+impl StoredResponse {
+    pub fn new(status: StatusCode, body: &serde_json::Value, committed: bool) -> Self {
+        let serialized = body.to_string();
+        Self {
+            status,
+            allocated_bytes: serialized.capacity(),
+            body: serialized.into(),
+            committed,
+        }
+    }
 }
 
 enum State {
     Running,
     Done(StoredResponse),
+    Unreplayable,
 }
 
 struct Record {
     fingerprint: [u8; 32],
-    created: Instant,
     state: State,
 }
 
@@ -208,12 +222,29 @@ type Key = (String, String);
 #[derive(Default)]
 struct Inner {
     records: HashMap<Key, Record>,
-    order: VecDeque<Key>,
+    completed: VecDeque<(Instant, Key)>,
+    body_bytes: usize,
+}
+
+impl Inner {
+    fn remove(&mut self, key: &Key) {
+        if let Some(Record {
+            state: State::Done(response),
+            ..
+        }) = self.records.remove(key)
+        {
+            self.body_bytes = self
+                .body_bytes
+                .checked_sub(response.allocated_bytes)
+                .expect("retained replay bytes are accounted");
+        }
+    }
 }
 
 pub struct Idempotency {
     ttl: Duration,
     capacity: usize,
+    max_bytes: usize,
     inner: Arc<Mutex<Inner>>,
 }
 
@@ -226,34 +257,48 @@ pub struct IdempotencyGuard {
     inner: Arc<Mutex<Inner>>,
     key: Key,
     done: bool,
+    max_bytes: usize,
 }
 
 impl IdempotencyGuard {
-    /// Record the outcome. A durable mutation's incomplete effects remain replayable;
-    /// other server failures and shed load allow another attempt.
+    /// Retain the outcome or a reconciliation marker; only known transient failures release the key.
     pub fn complete(mut self, response: &StoredResponse) {
-        self.done = true;
         let mut inner = self.inner.lock();
-        let committed = response
-            .body
-            .get("code")
-            .and_then(serde_json::Value::as_str)
-            == Some("mutation_committed");
-        let retryable = !committed
+        let retryable = !response.committed
             && (response.status.is_server_error() || matches!(response.status.as_u16(), 408 | 429));
         if retryable {
-            inner.records.remove(&self.key);
-        } else if let Some(record) = inner.records.get_mut(&self.key) {
-            record.state = State::Done(response.clone());
-            record.created = Instant::now();
+            inner.remove(&self.key);
+        } else {
+            let state =
+                if response.allocated_bytes <= self.max_bytes.saturating_sub(inner.body_bytes) {
+                    inner.body_bytes += response.allocated_bytes;
+                    State::Done(response.clone())
+                } else {
+                    State::Unreplayable
+                };
+            let now = Instant::now();
+            let record = inner
+                .records
+                .get_mut(&self.key)
+                .expect("running request retains its key");
+            record.state = state;
+            inner.completed.push_back((now, self.key.clone()));
         }
+        self.done = true;
     }
 }
 
 impl Drop for IdempotencyGuard {
     fn drop(&mut self) {
         if !self.done {
-            self.inner.lock().records.remove(&self.key);
+            let mut inner = self.inner.lock();
+            let now = Instant::now();
+            let record = inner
+                .records
+                .get_mut(&self.key)
+                .expect("running request retains its key");
+            record.state = State::Unreplayable;
+            inner.completed.push_back((now, self.key.clone()));
         }
     }
 }
@@ -269,34 +314,61 @@ pub fn fingerprint(method: &str, path: &str, tenant: &str, body: &[u8]) -> [u8; 
 }
 
 impl Idempotency {
-    pub fn new(ttl: Duration, capacity: usize) -> Self {
+    pub fn new(ttl: Duration, capacity: usize, max_bytes: usize) -> Self {
         Self {
             ttl,
             capacity,
+            max_bytes,
             inner: Arc::new(Mutex::new(Inner::default())),
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.inner.lock().records.len()
+    pub fn usage(&self) -> (usize, usize, usize) {
+        let inner = self.inner.lock();
+        (
+            inner.records.len(),
+            inner.body_bytes,
+            inner
+                .records
+                .values()
+                .filter(|r| matches!(r.state, State::Unreplayable))
+                .count(),
+        )
     }
 
     pub fn begin(&self, tenant: &str, key: &str, fingerprint: [u8; 32]) -> Result<Begin, ApiError> {
+        self.begin_at(tenant, key, fingerprint, Instant::now())
+    }
+
+    fn begin_at(
+        &self,
+        tenant: &str,
+        key: &str,
+        fingerprint: [u8; 32],
+        now: Instant,
+    ) -> Result<Begin, ApiError> {
         let id = (tenant.to_string(), key.to_string());
         let mut inner = self.inner.lock();
-        let now = Instant::now();
+        while inner
+            .completed
+            .front()
+            .is_some_and(|(created, _)| now.saturating_duration_since(*created) >= self.ttl)
+        {
+            let (_, expired) = inner
+                .completed
+                .pop_front()
+                .expect("expired completion exists");
+            inner.remove(&expired);
+        }
         if let Some(record) = inner.records.get(&id) {
-            let expired = matches!(record.state, State::Done(_))
-                && now.duration_since(record.created) > self.ttl;
-            if !expired {
-                if record.fingerprint != fingerprint {
-                    return Err(ApiError::new(
-                        StatusCode::UNPROCESSABLE_ENTITY,
-                        "idempotency_key_reused",
-                        "this Idempotency-Key was already used with a different request",
-                    ));
-                }
-                return match &record.state {
+            if record.fingerprint != fingerprint {
+                return Err(ApiError::new(
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "idempotency_key_reused",
+                    "this Idempotency-Key was already used with a different request",
+                ));
+            }
+            return match &record.state {
                     State::Done(response) => Ok(Begin::Replay(response.clone())),
                     State::Running => Err(ApiError::new(
                         StatusCode::CONFLICT,
@@ -304,45 +376,34 @@ impl Idempotency {
                         "a request with this Idempotency-Key is still running",
                     )
                     .retry_after(1)),
+                    State::Unreplayable => Err(ApiError::new(
+                        StatusCode::CONFLICT,
+                        "idempotency_reconciliation_required",
+                        "this request may have executed but its response is unavailable; reconcile state before retrying",
+                    )),
                 };
-            }
-            inner.records.remove(&id);
-        }
-        let mut remaining = inner.order.len();
-        while inner.records.len() >= self.capacity && remaining > 0 {
-            remaining -= 1;
-            let Some(oldest) = inner.order.pop_front() else {
-                break;
-            };
-            if inner
-                .records
-                .get(&oldest)
-                .is_some_and(|r| matches!(r.state, State::Running))
-            {
-                inner.order.push_back(oldest);
-            } else {
-                inner.records.remove(&oldest);
-            }
         }
         if inner.records.len() >= self.capacity {
+            let retry_after = inner.completed.front().map_or(1, |(completed, _)| {
+                let remaining = self
+                    .ttl
+                    .saturating_sub(now.saturating_duration_since(*completed));
+                remaining
+                    .as_secs()
+                    .saturating_add(u64::from(remaining.subsec_nanos() != 0))
+                    .max(1)
+            });
             return Err(ApiError::new(
                 StatusCode::SERVICE_UNAVAILABLE,
                 "server_busy",
                 "idempotency capacity is full; retry later",
             )
-            .retry_after(1));
-        }
-        inner.order.push_back(id.clone());
-        // Keep the order queue proportional to the live records.
-        if inner.order.len() > self.capacity * 2 {
-            let Inner { records, order } = &mut *inner;
-            order.retain(|k| records.contains_key(k));
+            .retry_after(retry_after));
         }
         inner.records.insert(
             id.clone(),
             Record {
                 fingerprint,
-                created: now,
                 state: State::Running,
             },
         );
@@ -350,6 +411,7 @@ impl Idempotency {
             inner: self.inner.clone(),
             key: id,
             done: false,
+            max_bytes: self.max_bytes,
         }))
     }
 }
@@ -388,7 +450,7 @@ mod tests {
 
     #[test]
     fn idempotency_keeps_running_entries_at_capacity() {
-        let store = Idempotency::new(Duration::from_secs(60), 1);
+        let store = Idempotency::new(Duration::from_secs(60), 1, 1024);
         let fp = fingerprint("POST", "/x", "t", b"body");
         let Begin::Proceed(first) = store.begin("t", "first", fp).unwrap() else {
             panic!()
@@ -400,10 +462,14 @@ mod tests {
             "a retry is executing while its original request is still running"
         );
         drop(first);
-        assert!(matches!(
-            store.begin("t", "second", fp).unwrap(),
-            Begin::Proceed(_)
-        ));
+        assert_eq!(
+            store.begin("t", "first", fp).err().unwrap().code,
+            "idempotency_reconciliation_required"
+        );
+        assert_eq!(
+            store.begin("t", "second", fp).err().unwrap().code,
+            "server_busy"
+        );
     }
 
     #[tokio::test]
@@ -458,7 +524,7 @@ mod tests {
 
     #[test]
     fn idempotency_replays_rejects_mismatch_and_retries_after_failure() {
-        let store = Idempotency::new(Duration::from_secs(60), 8);
+        let store = Idempotency::new(Duration::from_secs(60), 8, 1024);
         let fp = fingerprint("POST", "/x", "t", b"body");
         let Begin::Proceed(guard) = store.begin("t", "k", fp).unwrap() else {
             panic!()
@@ -467,15 +533,20 @@ mod tests {
             store.begin("t", "k", fp).err().unwrap().code,
             "idempotency_in_flight"
         );
-        let ok = StoredResponse {
-            status: StatusCode::OK,
-            body: Arc::new(serde_json::json!({"added": 1})),
-        };
+        let ok = StoredResponse::new(StatusCode::OK, &serde_json::json!({"added": 1}), false);
         guard.complete(&ok);
         let Begin::Replay(r) = store.begin("t", "k", fp).unwrap() else {
             panic!()
         };
-        assert_eq!(*r.body, serde_json::json!({"added": 1}));
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&r.body).unwrap(),
+            serde_json::json!({"added": 1})
+        );
+        assert_eq!(
+            r.body.as_ptr(),
+            ok.body.as_ptr(),
+            "replays share the serialized allocation"
+        );
         let other = fingerprint("POST", "/x", "t", b"other");
         assert_eq!(
             store.begin("t", "k", other).err().unwrap().code,
@@ -490,10 +561,11 @@ mod tests {
         let Begin::Proceed(guard) = store.begin("t", "f", fp).unwrap() else {
             panic!()
         };
-        guard.complete(&StoredResponse {
-            status: StatusCode::SERVICE_UNAVAILABLE,
-            body: Arc::new(serde_json::json!({})),
-        });
+        guard.complete(&StoredResponse::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            &serde_json::json!({}),
+            false,
+        ));
         assert!(matches!(
             store.begin("t", "f", fp).unwrap(),
             Begin::Proceed(_)
@@ -502,16 +574,182 @@ mod tests {
 
     #[test]
     fn idempotency_capacity_is_bounded() {
-        let store = Idempotency::new(Duration::from_secs(60), 4);
+        let store = Idempotency::new(Duration::from_secs(60), 4, 1024);
         let fp = fingerprint("POST", "/x", "t", b"");
         for i in 0..50 {
-            if let Begin::Proceed(g) = store.begin("t", &format!("k{i}"), fp).unwrap() {
-                g.complete(&StoredResponse {
-                    status: StatusCode::OK,
-                    body: Arc::new(serde_json::json!({})),
+            let result = store.begin("t", &format!("k{i}"), fp);
+            if i < 4 {
+                let Begin::Proceed(g) = result.unwrap() else {
+                    panic!()
+                };
+                g.complete(&StoredResponse::new(
+                    StatusCode::OK,
+                    &serde_json::json!({}),
+                    false,
+                ));
+            } else {
+                assert_eq!(result.err().unwrap().code, "server_busy");
+            }
+            assert!(store.usage().0 <= 4);
+        }
+        for i in 0..4 {
+            assert!(matches!(
+                store.begin("t", &format!("k{i}"), fp).unwrap(),
+                Begin::Replay(_)
+            ));
+        }
+    }
+
+    #[test]
+    fn replay_byte_budget_preserves_keys_at_allocation_boundaries() {
+        let response = StoredResponse::new(
+            StatusCode::OK,
+            &serde_json::json!({"result": "x".repeat(1024)}),
+            false,
+        );
+        let size = response.allocated_bytes;
+        for limit in [size - 1, size, size + 1] {
+            let store = Idempotency::new(Duration::from_secs(60), 2, limit);
+            let Begin::Proceed(g) = store.begin("t", "k", [1; 32]).unwrap() else {
+                panic!()
+            };
+            g.complete(&response);
+            if limit < size {
+                assert_eq!(store.usage(), (1, 0, 1));
+                assert_eq!(
+                    store.begin("t", "k", [1; 32]).err().unwrap().code,
+                    "idempotency_reconciliation_required"
+                );
+            } else {
+                assert_eq!(store.usage(), (1, size, 0));
+                assert!(matches!(
+                    store.begin("t", "k", [1; 32]).unwrap(),
+                    Begin::Replay(_)
+                ));
+            }
+            assert_eq!(
+                store.begin("t", "k", [2; 32]).err().unwrap().code,
+                "idempotency_key_reused"
+            );
+            let finished = store.inner.lock().completed.front().unwrap().0;
+            let Begin::Proceed(next) = store
+                .begin_at("t", "k", [2; 32], finished + Duration::from_secs(60))
+                .unwrap()
+            else {
+                panic!()
+            };
+            assert_eq!(store.usage(), (1, 0, 0));
+            drop(next);
+        }
+    }
+
+    #[test]
+    fn expiration_reclaims_bytes_without_expiring_running_requests() {
+        let ttl = Duration::from_secs(60);
+        let response = StoredResponse::new(StatusCode::OK, &serde_json::json!({"ok": true}), false);
+        let store = Idempotency::new(ttl, 2, response.allocated_bytes);
+        let Begin::Proceed(running) = store.begin("t", "running", [0; 32]).unwrap() else {
+            panic!()
+        };
+        let Begin::Proceed(done) = store.begin("t", "done", [0; 32]).unwrap() else {
+            panic!()
+        };
+        done.complete(&response);
+        let finished = store.inner.lock().completed.front().unwrap().0;
+        assert_eq!(
+            store
+                .begin_at("t", "new", [0; 32], finished + Duration::from_secs(30))
+                .err()
+                .unwrap()
+                .retry_after,
+            Some(30)
+        );
+        assert_eq!(
+            store
+                .begin_at(
+                    "t",
+                    "new",
+                    [0; 32],
+                    finished + ttl - Duration::from_nanos(1)
+                )
+                .err()
+                .unwrap()
+                .code,
+            "server_busy"
+        );
+        assert_eq!(
+            store
+                .begin_at("t", "running", [0; 32], finished + ttl)
+                .err()
+                .unwrap()
+                .code,
+            "idempotency_in_flight"
+        );
+        assert_eq!(store.usage(), (1, 0, 0));
+        let Begin::Proceed(next) = store
+            .begin_at(
+                "t",
+                "new",
+                [0; 32],
+                finished + ttl + Duration::from_nanos(1),
+            )
+            .unwrap()
+        else {
+            panic!()
+        };
+        next.complete(&response);
+        assert_eq!(store.usage(), (2, response.allocated_bytes, 0));
+        drop(running);
+        assert_eq!(store.usage(), (2, response.allocated_bytes, 1));
+    }
+
+    #[test]
+    fn concurrent_completions_cannot_exceed_the_shared_byte_budget() {
+        let response = StoredResponse::new(
+            StatusCode::OK,
+            &serde_json::json!({"payload": "x".repeat(512)}),
+            false,
+        );
+        let store = Idempotency::new(Duration::from_secs(60), 8, response.allocated_bytes);
+        let barrier = std::sync::Barrier::new(8);
+        std::thread::scope(|scope| {
+            for i in 0..8 {
+                let Begin::Proceed(guard) = store.begin("t", &i.to_string(), [0; 32]).unwrap()
+                else {
+                    panic!()
+                };
+                let response = &response;
+                let barrier = &barrier;
+                scope.spawn(move || {
+                    barrier.wait();
+                    guard.complete(response);
                 });
             }
-            assert!(store.len() <= 4);
+        });
+        assert_eq!(store.usage(), (8, response.allocated_bytes, 7));
+        for i in 0..8 {
+            assert!(!matches!(
+                store.begin("t", &i.to_string(), [0; 32]),
+                Ok(Begin::Proceed(_))
+            ));
+        }
+    }
+
+    #[test]
+    fn repeated_transient_failures_do_not_retain_keys_or_queue_entries() {
+        let store = Idempotency::new(Duration::from_secs(60), 1, 1024);
+        let response = StoredResponse::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            &serde_json::json!({}),
+            false,
+        );
+        for _ in 0..100 {
+            let Begin::Proceed(g) = store.begin("t", "retry", [0; 32]).unwrap() else {
+                panic!()
+            };
+            g.complete(&response);
+            assert_eq!(store.usage(), (0, 0, 0));
+            assert!(store.inner.lock().completed.is_empty());
         }
     }
 }

@@ -61,6 +61,8 @@ pub struct Saturation {
     pub queue_depth: usize,
     pub tenants: Vec<TenantGauge>,
     pub idempotency_records: usize,
+    pub idempotency_body_bytes: usize,
+    pub idempotency_unreplayable: usize,
     pub ready: bool,
 }
 
@@ -202,6 +204,18 @@ impl Metrics {
             "warm_idempotency_records",
             "Idempotency records held.",
             &sat.idempotency_records,
+        );
+        gauge(
+            &mut out,
+            "warm_idempotency_body_bytes",
+            "Response-buffer bytes retained for replay.",
+            &sat.idempotency_body_bytes,
+        );
+        gauge(
+            &mut out,
+            "warm_idempotency_unreplayable",
+            "Retained keys requiring reconciliation instead of replay.",
+            &sat.idempotency_unreplayable,
         );
         counter(
             &mut out,
@@ -408,6 +422,8 @@ mod tests {
             queue_depth: 0,
             tenants: vec![],
             idempotency_records: 0,
+            idempotency_body_bytes: 0,
+            idempotency_unreplayable: 0,
             ready: true,
         });
         assert!(text.contains("hms_http_request_duration_seconds_count{route=\"/x\"} 3"));
