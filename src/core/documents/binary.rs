@@ -295,10 +295,10 @@ pub(crate) fn write_document(
     for (index, chunk) in document.chunks.iter().enumerate() {
         let text: Option<Cow<'_, str>> = match (&chunk.text, chunk.text_at) {
             (Some(text), _) => Some(Cow::Borrowed(text)),
-            (None, Some((at, len))) => Some(Cow::Owned(
+            (None, Some((at, len, checksum))) => Some(Cow::Owned(
                 segment
                     .context("chunk text moved to a segment that is not attached")?
-                    .read(at, len)?,
+                    .read(at, len, checksum)?,
             )),
             (None, None) => None,
         };

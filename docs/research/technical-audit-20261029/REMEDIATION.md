@@ -911,3 +911,57 @@ isolation concerns are still not runtime disclosure findings. SDK docs flag the
 adapter as unusable. `semantic-kernel-compatibility-20261031/` records the probe,
 log and restoration acceptance criteria. No extra or Python support was retired;
 renaming methods without replacing collection stubs would enable unsafe behavior.
+
+
+### Metadata listing / Haystack merge gate (2026-10-31)
+
+PR #363 merged at `68e016dba33eee777e3630ce27ec4b9a953995b3` after 68 checks
+succeeded and four skipped; required aggregate passed. The signed merge and
+exact tested head `79ce353407fee9df816bf60b5fda2a16dc3589cc` share tree
+`15ed4efc790d38704f41dee04f0fd589defbd051`. Windows passed 810 baseline tests
+(14 skips) and 170 service tests; Python passed both real Haystack boundaries
+(12 each) alongside LangChain/LlamaIndex and SDK suites. Evidence:
+`haystack-listing-gate-20261031/`. This supersedes the pending-gate notes above;
+partial framework support and dependency risks remain.
+
+
+### Retained chunks and text-cache integrity (2026-10-31)
+
+A truncated cache reproduced a panic while closing a store with a due checkpoint.
+A same-length UTF-8 byte change reproduced altered text after close/reopen: unchecked
+cache bytes entered an authoritative checkpoint. Fallible JSON/checkpoint writers
+and process-local plaintext CRC32 values now reject damaged reads while preserving
+journal recovery. CRC32 is not malicious-tamper authentication; encrypted records
+retain AEAD, and durable format bytes are unchanged.
+
+A new Rust/HTTP/sync+async Python read returns one retained chunk, metadata, source
+span and opaque revision. It checks tenant/read authorization, reports absence and
+unretained text distinctly, and retries boundedly when document/segment identities
+change during unlocked I/O. Checkpoint record decoding enforces ingest limits before
+allocation. This supersedes the earlier absence of an HTTP text-retrieval endpoint;
+it does not recover omitted original whitespace, unretained text or original
+embeddings, and does not establish full Haystack/Semantic Kernel conformance.
+
+Five text-integrity units, five deterministic read-concurrency units, five initial
+recovery/chunk integration cases and the allocation regression pass locally. Reading
+one 64 KiB chunk allocated 66,233 bytes live/compacted and 66,281 reopened; this is
+requested allocation, not RSS, latency or an HTTP response bound. Ten checkpoint tests, including purge and encryption, also pass. Golden-store,
+HTTP/Python checks and exact-head CI remain pending. Evidence: `document-chunks-20261031/`.
+
+The existing infallible get/search text-hydration paths still use `expect` for cache
+I/O failures. A follow-up must propagate errors through already-fallible engine/query
+APIs while preserving intentional deletion/scrubbing behavior; inject truncation and
+same-length corruption, require an explicit error and successful journal recovery,
+and retain concurrent-delete/search regressions. Do not hide corruption as no hits
+or missing text. Atomic duplicate policies and faithful framework record/collection
+semantics remain separate prerequisites.
+
+Follow-up call map (source inspection, not additional runtime reproductions):
+`search.rs::RankedHit::read` feeds `read_ranked` / `execute_search` and
+`engine/document_api.rs::run_searches`; `vector_index.rs::to_result` feeds
+`read_vector_hits` / `search_vector_snapshot`. Preserve the distinction between
+`None` (a scrubbed/stale capture requiring retry) and `Err` (storage failure).
+`DocumentStore::chunk_text` also reaches lexical phrase fallback, deferred-encoding
+fingerprints and memory document views; those consumers must not silently turn
+errors into absent text. Existing `document_snapshot_tests` cover retained captures
+and concurrent deletion. Memory/get-view API changes require their own caller audit.

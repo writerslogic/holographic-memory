@@ -971,7 +971,7 @@ mod tests {
                 broken.chunks[0].text_at.is_some(),
                 "text kept in the segment"
             );
-            broken.chunks[0].text_at = Some((u64::MAX / 2, 4));
+            broken.chunks[0].text_at = Some((u64::MAX / 2, 4, 0));
             store.insert("a".into(), broken);
         }
         let revision = core.revision.load(std::sync::atomic::Ordering::Acquire);

@@ -13,8 +13,8 @@ pub use bindings::node::*;
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::core::audit::{AuditEntry, AuditOp};
 pub use crate::core::documents::{
-    chunk_document, DocumentChunk, DocumentInfo, DocumentInput, DocumentRecord, DocumentResult,
-    SearchOptions,
+    chunk_document, DocumentChunk, DocumentChunkRecord, DocumentInfo, DocumentInput,
+    DocumentReadChanged, DocumentRecord, DocumentResult, SearchOptions,
 };
 pub use crate::core::entangled::EntangledHVec;
 pub use crate::core::error::{CommittedMutationError, WarmError};

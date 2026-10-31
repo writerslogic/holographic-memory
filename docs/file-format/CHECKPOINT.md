@@ -52,6 +52,14 @@ checkpoint; later writes append frames after it until the next one folds them in
    since. Deep offline verification explicitly performs this rebuild to validate all record
    contents and their agreement with the slot table, including checksum-valid malformed data.
 
+Record decoding enforces the writer's input limits before allocating metadata or
+chunk arrays: version 1..=1024 bytes, source URI at most 8192 bytes, metadata JSON
+at most 64 KiB and an object, and 1..=4096 chunks. Document and explicit chunk IDs
+must be nonempty, at most 65535 UTF-8 bytes, and contain no NUL. Chunk spans are
+nonempty and end within the 8 MiB document limit; retained text must match the
+span's byte length. These checks do not replace whole-checkpoint verification of
+record/slot/posting agreement.
+
 Building the live store re-encodes each posting list in the live encoding, restores every document and slot (free slots
 included) as recorded, reads each chunk's terms back from the postings, and moves chunk text to
 `documents.text`. The result answers every query exactly as the replay of the frames the
@@ -106,3 +114,11 @@ scrubbing compaction before it returns: the store's slots and text segment are f
 as a store that never held the document lays them out, the new checkpoint is built from that
 store, and the previous generation, checkpoint included, is overwritten with zeros, synced
 and removed (`tests/document_checkpoint.rs::purge_leaves_no_trace_in_any_checkpoint`).
+
+The process-local text-cache location also carries a CRC32 of the original
+plaintext. It is computed while replaying or inserting authoritative records and
+checked on reads before text can enter a checkpoint or compacted journal. It is
+not serialized: neither the cache bytes nor the durable formats change. This
+detects accidental cache corruption, not maliciously chosen CRC collisions;
+encrypted records retain AES-GCM authentication. A failed optional close-time
+checkpoint reports its error and leaves the original journal recoverable.

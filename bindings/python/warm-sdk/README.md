@@ -90,6 +90,16 @@ client.close()
 `documents`. The async equivalent is `await client.stats()`; authorization and
 transport failures propagate rather than appearing as zero counts.
 
+`client.read_document_chunk(doc_id, index=0)` returns one stored passage and its
+`document` metadata, `chunkCount`, byte span, and opaque store `revision`. Use
+`await client.read_document_chunk(...)` with the async client. Missing documents
+or indices raise `WarmError` (404); `text is None` means text was not retained.
+Each response contains at most 8 MiB of chunk text plus document metadata. Compare
+revision strings across multi-chunk reads and restart the read sequence if they
+differ. Chunk spans and overlapping passages cannot recover discarded source
+whitespace or unretained data; this is not a lossless original-document export.
+This method requires a server exposing the chunk-read endpoint.
+
 After bulk ingestion, `client.maintain_document_index()` explicitly builds the server's
 exact dense document index and returns `{"documentIndexTrained": true}` when the
 store is eligible. Smaller or unsupported stores return `false` and use exact scanning.

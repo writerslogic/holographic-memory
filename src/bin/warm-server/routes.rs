@@ -134,6 +134,7 @@ pub static OPS: &[Op] = &[
     Op { method: "get", path: "/api/v1/documents", id: "listDocuments", tag: "documents", summary: "List document ids and metadata, paginated by id cursor.", scope: Some(Scope::Read), tenant: true, request: Request::None, status: 200, reply: Reply::Json(schema::<types::DocumentPage>), params: LIST_PARAMS, handler: || get(documents::list_documents) },
     Op { method: "post", path: "/api/v1/documents/batch", id: "addDocuments", tag: "documents", summary: "Store or replace up to --max-batch documents in one atomic commit.", scope: Some(Scope::Write), tenant: true, request: Request::Json(doc_array), status: 200, reply: Reply::Json(schema::<types::Added>), params: IDEMPOTENCY, handler: || post(documents::add_batch) },
     Op { method: "post", path: "/api/v1/documents/stream", id: "streamDocuments", tag: "documents", summary: "Bulk ingest newline-delimited documents, committed in batches; not atomic across batches.", scope: Some(Scope::Write), tenant: true, request: Request::Raw("application/x-ndjson", "One document object per line"), status: 200, reply: Reply::Json(schema::<types::StreamResult>), params: &[], handler: || post(documents::ingest_stream) },
+    Op { method: "get", path: "/api/v1/documents/{id}/chunks/{index}", id: "readDocumentChunk", tag: "documents", summary: "Read one retained chunk and its document metadata (up to 8 MiB of text). Missing retained text is null; missing documents/chunks return 404. Byte spans do not reconstruct omitted whitespace or unretained text.", scope: Some(Scope::Read), tenant: true, request: Request::None, status: 200, reply: Reply::Json(schema::<writerslogic_warm::DocumentChunkRecord>), params: &[Param { name: "index", location: "path", description: "Zero-based chunk index, less than document.chunkCount.", kind: "integer" }], handler: || get(documents::read_document_chunk) },
     Op { method: "delete", path: "/api/v1/documents/{id}", id: "deleteDocument", tag: "documents", summary: "Delete a document by id (percent-encoded).", scope: Some(Scope::Write), tenant: true, request: Request::None, status: 200, reply: Reply::Json(schema::<types::Deleted>), params: PURGE, handler: || delete(documents::delete_doc) },
     Op { method: "post", path: "/api/v1/query", id: "query", tag: "documents", summary: "Nearest documents to a vector, best first, with exact cosine scores.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<documents::QueryIn>), status: 200, reply: Reply::Json(schema::<types::Matches>), params: &[], handler: || post(documents::query) },
     Op { method: "post", path: "/api/v1/search", id: "search", tag: "documents", summary: "Text search: document ids and scores, best first (BM25, or the on-device model stages when configured); stored text and metadata on request.", scope: Some(Scope::Read), tenant: true, request: Request::Json(schema::<documents::SearchIn>), status: 200, reply: Reply::Json(schema::<types::SearchHits>), params: &[], handler: || post(documents::search) },
@@ -250,7 +251,7 @@ fn build_openapi() -> Value {
         }
         for p in op.params {
             parameters.push(json!({
-                "name": p.name, "in": p.location, "required": false,
+                "name": p.name, "in": p.location, "required": p.location == "path",
                 "description": p.description, "schema": {"type": p.kind}
             }));
         }
@@ -295,7 +296,7 @@ fn build_openapi() -> Value {
         };
         let mut responses = Map::new();
         responses.insert(op.status.to_string(), success);
-        if matches!(op.id, "stats" | "listDocuments") {
+        if matches!(op.id, "stats" | "listDocuments" | "readDocumentChunk") {
             responses.insert(
                 "304".into(),
                 json!({"description": "ETag matched If-None-Match"}),

@@ -245,6 +245,81 @@
         ],
         "type": "object"
       },
+      "DocumentChunkRecord": {
+        "description": "One retained chunk, with its source byte span and document metadata.\n`text` is absent when text retention was disabled; spans do not restore omitted whitespace.",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/DocumentInfo"
+          },
+          "endByte": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "index": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "revision": {
+            "description": "Opaque store revision captured with this chunk; compare across reads, do not interpret numerically.",
+            "type": "string"
+          },
+          "startByte": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "revision",
+          "document",
+          "index",
+          "id",
+          "startByte",
+          "endByte"
+        ],
+        "type": "object"
+      },
+      "DocumentInfo": {
+        "description": "Document identity, provenance and metadata without copying stored chunk text.",
+        "properties": {
+          "chunkCount": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "metadata": true,
+          "sourceUri": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "metadata",
+          "chunkCount"
+        ],
+        "type": "object"
+      },
       "DocumentPage": {
         "properties": {
           "count": {
@@ -2450,6 +2525,77 @@
           }
         ],
         "summary": "Delete a document by id (percent-encoded).",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/{id}/chunks/{index}": {
+      "get": {
+        "operationId": "readDocumentChunk",
+        "parameters": [
+          {
+            "description": "Tenant whose store is used: 1..=64 of [A-Za-z0-9_-]. Defaults to the key's only tenant, else \"default\".",
+            "in": "header",
+            "name": "X-Tenant-ID",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Document id, percent-encoded.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Zero-based chunk index, less than document.chunkCount.",
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentChunkRecord"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "304": {
+            "description": "ETag matched If-None-Match"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (RFC 9457 problem details)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Read one retained chunk and its document metadata (up to 8 MiB of text). Missing retained text is null; missing documents/chunks return 404. Byte spans do not reconstruct omitted whitespace or unretained text.",
         "tags": [
           "documents"
         ]

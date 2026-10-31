@@ -573,6 +573,41 @@ impl WarmCore {
         documents::list_info(&self.documents.read(), from, limit)
     }
 
+    /// Reads one retained chunk without hydrating the store or holding locks during file I/O.
+    /// Returns `None` for a missing document or chunk; concurrent changes may require retry.
+    pub fn read_document_chunk(
+        &self,
+        id: &str,
+        index: usize,
+    ) -> Result<Option<documents::DocumentChunkRecord>> {
+        self.read_document_chunk_with(id, index, || {})
+    }
+
+    fn read_document_chunk_with(
+        &self,
+        id: &str,
+        index: usize,
+        mut after_capture: impl FnMut(),
+    ) -> Result<Option<documents::DocumentChunkRecord>> {
+        validate_id(id)?;
+        for _ in 0..3 {
+            let captured = {
+                let _transaction = self.mutation_gate.read();
+                documents::capture_chunk(&self.documents.read(), id, index, self.revision())?
+            };
+            let Some(captured) = captured else {
+                return Ok(None);
+            };
+            after_capture();
+            let (identity, result) = captured.read();
+            let _transaction = self.mutation_gate.read();
+            if identity.is_current(&self.documents.read()) {
+                return result.map(Some);
+            }
+        }
+        Err(documents::DocumentReadChanged.into())
+    }
+
     /// One stored document with its text, metadata and version.
     pub fn get_document(&self, id: &str) -> Option<documents::DocumentRecord> {
         let _transaction = self.mutation_gate.read();
@@ -789,5 +824,153 @@ impl WarmCore {
             .zip(self.run_searches(prepared)?)
             .collect();
         stages.fuse(text, lists, k)
+    }
+}
+
+#[cfg(test)]
+mod chunk_read_tests {
+    use super::*;
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    fn document(version: &str) -> DocumentInput {
+        serde_json::from_value(serde_json::json!({
+            "id": "doc", "text": format!("text {version}"), "version": version,
+            "metadata": {"version": version}
+        }))
+        .unwrap()
+    }
+
+    fn run(test: impl FnOnce(&WarmCore) -> Result<()> + Send + 'static) {
+        let (tx, rx) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let dir = tempfile::tempdir().unwrap();
+            let core = WarmCore::new(256, Some(dir.path().display().to_string()), None).unwrap();
+            core.memorize_document_with(
+                document("old"),
+                &IngestOptions {
+                    encode: documents::EncodeMode::Lexical,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert!(core.documents.read().get("doc").unwrap().chunks[0]
+                .text_at
+                .is_some());
+            tx.send(test(&core)).unwrap();
+        });
+        let result = rx
+            .recv_timeout(Duration::from_secs(30))
+            .expect("chunk read worker failed or stalled");
+        worker.join().unwrap();
+        result.unwrap();
+    }
+
+    #[test]
+    fn chunk_read_retries_replacement_without_mixing_versions() {
+        run(|core| {
+            let mut replaced = false;
+            let chunk = core
+                .read_document_chunk_with("doc", 0, || {
+                    if !replaced {
+                        core.memorize_document_with(
+                            document("new"),
+                            &IngestOptions {
+                                encode: documents::EncodeMode::Lexical,
+                                ..Default::default()
+                            },
+                        )
+                        .unwrap();
+                        replaced = true;
+                    }
+                })?
+                .unwrap();
+            assert_eq!(chunk.revision, core.revision().to_string());
+            assert_eq!(chunk.document.version, "new");
+            assert_eq!(
+                chunk.document.metadata,
+                serde_json::json!({"version": "new"})
+            );
+            assert_eq!(chunk.text.as_deref(), Some("text new"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn chunk_read_does_not_return_scrubbed_text_after_delete() {
+        run(|core| {
+            assert!(core
+                .read_document_chunk_with("doc", 0, || {
+                    core.delete_document("doc").unwrap();
+                })?
+                .is_none());
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn chunk_read_survives_text_segment_replacement_without_revision_change() {
+        run(|core| {
+            let before = core.revision();
+            let mut compacted = false;
+            let chunk = core
+                .read_document_chunk_with("doc", 0, || {
+                    if !compacted {
+                        let _maintenance = core.mutation_gate.maintenance();
+                        core.documents
+                            .write()
+                            .rebuild_canonical(&core.storage_path.join("documents.text"))
+                            .unwrap();
+                        compacted = true;
+                    }
+                })?
+                .unwrap();
+            assert_eq!(core.revision(), before);
+            assert_eq!(chunk.text.as_deref(), Some("text old"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn chunk_read_bounds_retries_and_propagates_real_io_errors() {
+        run(|core| {
+            let mut version = 0;
+            let error = core
+                .read_document_chunk_with("doc", 0, || {
+                    version += 1;
+                    core.memorize_document_with(
+                        document(&version.to_string()),
+                        &IngestOptions {
+                            encode: documents::EncodeMode::Lexical,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap();
+                })
+                .unwrap_err();
+            assert!(error.is::<documents::DocumentReadChanged>());
+            assert_eq!(version, 3);
+            std::fs::OpenOptions::new()
+                .write(true)
+                .open(core.storage_path.join("documents.text"))?
+                .set_len(8)?;
+            let error = core.read_document_chunk("doc", 0).unwrap_err();
+            assert!(format!("{error:#}").contains("reading chunk text"));
+            Ok(())
+        });
+    }
+    #[test]
+    fn chunk_read_reports_a_scrubbed_live_record_as_corrupt_not_empty() {
+        run(|core| {
+            let (segment, at, len) = {
+                let store = core.documents.read();
+                let (at, len, _) = store.get("doc").unwrap().chunks[0].text_at.unwrap();
+                (store.text_segment().unwrap(), at, len)
+            };
+            segment.scrub(at, len)?;
+            let error = core.read_document_chunk("doc", 0).unwrap_err();
+            assert!(error.to_string().contains("text length disagrees"));
+            Ok(())
+        });
     }
 }

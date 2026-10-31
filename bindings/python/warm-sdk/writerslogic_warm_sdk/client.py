@@ -192,6 +192,13 @@ class WarmClient:
         res = self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         _check(res)
 
+    def read_document_chunk(self, doc_id: str, index: int = 0) -> Dict[str, Any]:
+        if type(index) is not int or index < 0:
+            raise ValueError("chunk index must be a nonnegative integer")
+        res = self.client.get(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}/chunks/{index}")
+        _check(res)
+        return res.json()
+
     def stats(self) -> Dict[str, Any]:
         res = self.client.get(self._routes.stats)
         _check(res)
@@ -270,6 +277,13 @@ class AsyncWarmClient:
     async def delete_document(self, doc_id: str) -> None:
         res = await self.client.delete(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}")
         _check(res)
+
+    async def read_document_chunk(self, doc_id: str, index: int = 0) -> Dict[str, Any]:
+        if type(index) is not int or index < 0:
+            raise ValueError("chunk index must be a nonnegative integer")
+        res = await self.client.get(f"{self.url}/api/v1/documents/{quote(doc_id, safe='')}/chunks/{index}")
+        _check(res)
+        return res.json()
 
     async def stats(self) -> Dict[str, Any]:
         res = await self.client.get(self._routes.stats)

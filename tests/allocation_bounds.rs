@@ -242,6 +242,13 @@ fn metadata_listing_does_not_allocate_stored_text() {
                 "metadata-only listing allocated {allocated} bytes for {limit} rows"
             );
         }
+        let (chunk, allocated, calls, _) = measured(|| core.read_document_chunk("doc-01", 0));
+        assert_eq!(chunk.unwrap().unwrap().text.unwrap().len(), 64 * 1024);
+        assert!(
+            allocated < 128 * 1024,
+            "one chunk allocated {allocated} bytes"
+        );
+        eprintln!("chunk read: phase={phase} allocated_bytes={allocated} allocation_calls={calls}");
         let (record, allocated, _, _) = measured(|| core.get_document_info("doc-01"));
         assert_eq!(record.unwrap().metadata, serde_json::json!({"index": 1}));
         assert!(

@@ -42,8 +42,8 @@ pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
 pub(crate) use lexical::execute as execute_lexical;
 pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, LexicalResults};
-pub(crate) use listing::{count, get_info, get_record, list_info, list_records};
-pub use listing::{DocumentInfo, DocumentRecord};
+pub(crate) use listing::{capture_chunk, count, get_info, get_record, list_info, list_records};
+pub use listing::{DocumentChunkRecord, DocumentInfo, DocumentReadChanged, DocumentRecord};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
 pub(crate) use overlay::Base as CheckpointBase;
 pub(crate) use search::{
@@ -378,9 +378,9 @@ pub(crate) struct StoredChunk {
     /// Inline text, or none when the store moved it to its text segment (`text_at`) or the
     /// document was stored without text.
     pub text: Option<String>,
-    /// Location of the text in the store's text segment, for the process that installed it.
+    /// Process-local offset, stored length and plaintext CRC32; rebuilt from authoritative records.
     #[serde(skip)]
-    pub text_at: Option<(u64, u32)>,
+    pub text_at: Option<(u64, u32, u32)>,
     pub start_byte: u32,
     pub end_byte: u32,
     pub vector: EntangledHVec,
