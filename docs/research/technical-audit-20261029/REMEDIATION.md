@@ -911,3 +911,105 @@ isolation concerns are still not runtime disclosure findings. SDK docs flag the
 adapter as unusable. `semantic-kernel-compatibility-20261031/` records the probe,
 log and restoration acceptance criteria. No extra or Python support was retired;
 renaming methods without replacing collection stubs would enable unsafe behavior.
+
+
+### Metadata listing / Haystack merge gate (2026-10-31)
+
+PR #363 merged at `68e016dba33eee777e3630ce27ec4b9a953995b3` after 68 checks
+succeeded and four skipped; required aggregate passed. The signed merge and
+exact tested head `79ce353407fee9df816bf60b5fda2a16dc3589cc` share tree
+`15ed4efc790d38704f41dee04f0fd589defbd051`. Windows passed 810 baseline tests
+(14 skips) and 170 service tests; Python passed both real Haystack boundaries
+(12 each) alongside LangChain/LlamaIndex and SDK suites. Evidence:
+`haystack-listing-gate-20261031/`. This supersedes the pending-gate notes above;
+partial framework support and dependency risks remain.
+
+
+### Retained chunks and text-cache integrity (2026-10-31)
+
+A truncated cache reproduced a panic while closing a store with a due checkpoint.
+A same-length UTF-8 byte change reproduced altered text after close/reopen: unchecked
+cache bytes entered an authoritative checkpoint. Fallible JSON/checkpoint writers
+and process-local plaintext CRC32 values now reject damaged reads while preserving
+journal recovery. CRC32 is not malicious-tamper authentication; encrypted records
+retain AEAD, and durable format bytes are unchanged.
+
+A new Rust/HTTP/sync+async Python read returns one retained chunk, metadata, source
+span and opaque revision. It checks tenant/read authorization, reports absence and
+unretained text distinctly, and retries boundedly when document/segment identities
+change during unlocked I/O. Checkpoint record decoding enforces ingest limits before
+allocation. This supersedes the earlier absence of an HTTP text-retrieval endpoint;
+it does not recover omitted original whitespace, unretained text or original
+embeddings, and does not establish full Haystack/Semantic Kernel conformance.
+
+Five text-integrity units, five deterministic read-concurrency units, six
+recovery/chunk integration cases and the allocation regression pass locally. Reading
+one 64 KiB chunk allocated 66,233 bytes live/compacted and 66,281 reopened; this is
+requested allocation, not RSS, latency or an HTTP response bound. Ten checkpoint tests, including purge and encryption, six golden-store checks
+(one intentional generator skip), 20 HTTP tests, strict Clippy and 16 generated
+exports pass. SDK tests pass 62 tests / 46 subtests on Python 3.10 and 3.14
+(three locally uninstalled framework modules skipped). An initial CI assertion
+incorrectly expected HTTP-generated document versions to stay unchanged; it was
+corrected and reused caller versions are tested natively. Exact-head CI remains
+required after that correction. Evidence: `document-chunks-20261031/`.
+
+The existing infallible get/search text-hydration paths still use `expect` for cache
+I/O failures. A follow-up must propagate errors through already-fallible engine/query
+APIs while preserving intentional deletion/scrubbing behavior; inject truncation and
+same-length corruption, require an explicit error and successful journal recovery,
+and retain concurrent-delete/search regressions. Do not hide corruption as no hits
+or missing text. Atomic duplicate policies and faithful framework record/collection
+semantics remain separate prerequisites.
+
+Follow-up call map (source inspection, not additional runtime reproductions):
+`search.rs::RankedHit::read` feeds `read_ranked` / `execute_search` and
+`engine/document_api.rs::run_searches`; `vector_index.rs::to_result` feeds
+`read_vector_hits` / `search_vector_snapshot`. Preserve the distinction between
+`None` (a scrubbed/stale capture requiring retry) and `Err` (storage failure).
+`DocumentStore::chunk_text` also reaches lexical phrase fallback, deferred-encoding
+fingerprints and memory document views; those consumers must not silently turn
+errors into absent text. Existing `document_snapshot_tests` cover retained captures
+and concurrent deletion. Memory/get-view API changes require their own caller audit.
+
+
+### Fallible query text hydration (2026-10-31)
+
+Four runtime probes reproduce eight panics: text, vector-snapshot, phrase-fallback
+and captured queries each panic on truncated or same-length damaged cache text,
+despite already exposing Result contracts. Ranked hydration now propagates errors;
+a scrubbed capture remains a distinct retry outcome. Phrase fallback uses fallible
+text access, and in-memory search forwards the result. Four paired candidate
+probes pass; expanded mixed healthy/damaged-hit fixtures and seven existing
+snapshot/concurrency/recovery cases also pass (11 tests total). Evidence:
+`query-errors-20261031/`. Broader validation and CI remain pending.
+
+This closes the query-result slice of the preceding call map; deferred encoding
+is addressed below, while infallible views remain. Existing read guards across query text I/O remain;
+a separate change must capture and revalidate store/segment identity without
+weakening erasure or coherent retries. No new lock or critical-section extension
+is part of this error-propagation change.
+
+
+### Deferred-encoding cache failures and committed outcomes (2026-10-31)
+
+Two more probes reproduce four panics during encoding preparation or fingerprint
+validation at installation, for both truncation and same-length damage. The latter
+can happen after the encoding transaction is durable. Text/fingerprint reads now
+propagate errors; the existing post-commit wrapper reports CommittedMutationError
+instead of unwinding before reporting durability. Both tests pass: preparation
+leaves journal/revision unchanged, while a failed committed installation advances
+them and replay recovers encoded state from original text. Encoding is idempotent
+after repair/reopen. Evidence and independent reproduction patch are included in
+`query-errors-20261031/`; broader final validation and exact-head CI are pending.
+
+Remaining scope: legacy raw `WarmCore::query` logs deferred-catch-up failures and
+can omit pending vectors; existing get/list and memory-view helpers remain
+infallible. Do not claim full query completeness or universal I/O recovery.
+
+
+The combined query/encoding follow-up passes its final local gate: 11 snapshot,
+119 document (one deliberate benchmark skip), two deferred fault/replay, four
+ingest/postings, and 20 HTTP API tests; strict Clippy and scoped formatting pass.
+It is folded into PR #364 before merge, so its final exact-head CI covers chunk
+access, cache integrity, and error propagation together. The previous 3b5b61dd
+head had not completed its Windows gate and is not recorded as fully validated.

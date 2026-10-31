@@ -1,6 +1,6 @@
 // Copyright 2024-2026 WritersLogic Contributors
 // SPDX-License-Identifier: Apache-2.0
-//! File-backed chunk text: the store keeps `(offset, length)` per chunk and reads a chunk's
+//! File-backed chunk text: the store keeps `(offset, length, checksum)` per chunk and reads a chunk's
 //! text back with a positioned read when a result needs it, so the serving process holds no
 //! copy of the corpus text. The journal frames still carry every document's text, so the
 //! segment is a cache rebuilt from the journal at open (truncated, then re-appended as the
@@ -81,7 +81,7 @@ impl TextSegment {
     }
 
     /// Appends `text` and returns its location.
-    pub(crate) fn append(&self, text: &str) -> Result<(u64, u32)> {
+    pub(crate) fn append(&self, text: &str) -> Result<(u64, u32, u32)> {
         let at = self.len.load(Ordering::Acquire);
         #[cfg(feature = "security")]
         let sealed;
@@ -99,7 +99,7 @@ impl TextSegment {
         let len = u32::try_from(bytes.len()).context("chunk text over 4 GiB")?;
         positioned_write(&self.file, bytes, at).context("appending chunk text")?;
         self.len.store(at + u64::from(len), Ordering::Release);
-        Ok((at, len))
+        Ok((at, len, crc32fast::hash(text.as_bytes())))
     }
 
     /// Overwrites the record at a location returned by [`TextSegment::append`] with zeros, so a
@@ -130,7 +130,7 @@ impl TextSegment {
     }
 
     /// Reads the text stored at a location returned by [`TextSegment::append`].
-    pub(crate) fn read(&self, at: u64, len: u32) -> Result<String> {
+    pub(crate) fn read(&self, at: u64, len: u32, checksum: u32) -> Result<String> {
         ensure!(
             at.checked_add(u64::from(len))
                 .is_some_and(|end| end <= self.len.load(Ordering::Acquire)),
@@ -149,6 +149,10 @@ impl TextSegment {
         if let Some(cipher) = &self.cipher {
             bytes = cipher.decrypt_with_aad(&bytes, &at.to_le_bytes())?;
         }
+        ensure!(
+            crc32fast::hash(&bytes) == checksum,
+            "chunk text checksum mismatch"
+        );
         String::from_utf8(bytes).context("chunk text is not UTF-8")
     }
 
@@ -167,13 +171,26 @@ mod tests {
         let segment = create(&dir.path().join("text"));
         for prefix in [15, 16, 17] {
             let text = format!("{}live searchable text", "\0".repeat(prefix));
-            let (at, len) = segment.append(&text).unwrap();
-            assert_eq!(segment.read(at, len).unwrap(), text);
+            let (at, len, checksum) = segment.append(&text).unwrap();
+            assert_eq!(segment.read(at, len, checksum).unwrap(), text);
             assert!(
                 !segment.is_scrubbed(at, len),
                 "live prefix of {prefix} NUL bytes triggers the deleted-record path"
             );
         }
+    }
+
+    #[test]
+    fn checksum_rejects_equal_length_utf8_corruption() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("text");
+        let segment = create(&path);
+        let (at, len, checksum) = segment.append("alpha beta").unwrap();
+        positioned_write(&segment.file, b"o", at).unwrap();
+        let error = segment.read(at, len, checksum).unwrap_err();
+        assert!(error.to_string().contains("checksum mismatch"));
+        positioned_write(&segment.file, b"a", at).unwrap();
+        assert_eq!(segment.read(at, len, checksum).unwrap(), "alpha beta");
     }
 
     fn create(path: &Path) -> TextSegment {
@@ -194,7 +211,7 @@ mod tests {
         let segment = TextSegment::create(&path, Some(std::sync::Arc::new(manager))).unwrap();
         let a = segment.append("same text").unwrap();
         let b = segment.append("same text").unwrap();
-        assert_eq!(segment.read(a.0, a.1).unwrap(), "same text");
+        assert_eq!(segment.read(a.0, a.1, a.2).unwrap(), "same text");
         let raw = std::fs::read(&path).unwrap();
         assert!(!raw.windows(9).any(|w| w == b"same text"));
         // Equal plaintexts never share a nonce or ciphertext.
@@ -204,7 +221,7 @@ mod tests {
         let mut moved = raw.clone();
         moved.copy_within(ra..ra + a.1 as usize, rb);
         std::fs::write(&path, &moved).unwrap();
-        assert!(segment.read(b.0, b.1).is_err());
+        assert!(segment.read(b.0, b.1, b.2).is_err());
     }
 
     #[test]
@@ -218,8 +235,8 @@ mod tests {
         segment.sync().unwrap();
         let raw = std::fs::read(&path).unwrap();
         assert!(!raw.windows(7).any(|w| w == b"deleted"));
-        assert_eq!(segment.read(a.0, a.1).unwrap(), "");
-        assert_eq!(segment.read(b.0, b.1).unwrap(), "kept passage");
+        assert_eq!(segment.read(a.0, a.1, a.2).unwrap(), "");
+        assert_eq!(segment.read(b.0, b.1, b.2).unwrap(), "kept passage");
         // limit+1 stays an error; the header is never scrubbed.
         assert!(segment.scrub(b.0, b.1 + 1).is_err());
         assert!(segment.scrub(0, 4).is_err());
@@ -232,19 +249,19 @@ mod tests {
         let a = segment.append("").unwrap();
         let b = segment.append("héllo wörld").unwrap();
         let c = segment.append(&"x".repeat(70_000)).unwrap();
-        assert_eq!(a, (HEADER_LEN, 0));
-        assert_eq!(b, (HEADER_LEN, "héllo wörld".len() as u32));
+        assert_eq!((a.0, a.1), (HEADER_LEN, 0));
+        assert_eq!((b.0, b.1), (HEADER_LEN, "héllo wörld".len() as u32));
         assert_eq!(c.0, HEADER_LEN + u64::from(b.1));
-        assert_eq!(segment.read(a.0, a.1).unwrap(), "");
-        assert_eq!(segment.read(b.0, b.1).unwrap(), "héllo wörld");
-        assert_eq!(segment.read(c.0, c.1).unwrap().len(), 70_000);
+        assert_eq!(segment.read(a.0, a.1, a.2).unwrap(), "");
+        assert_eq!(segment.read(b.0, b.1, b.2).unwrap(), "héllo wörld");
+        assert_eq!(segment.read(c.0, c.1, c.2).unwrap().len(), 70_000);
         assert_eq!(segment.len(), HEADER_LEN + u64::from(b.1) + 70_000);
         // Past the end, and a length that overflows, are errors, never reads.
-        assert!(segment.read(c.0, c.1 + 1).is_err());
-        assert!(segment.read(segment.len(), 1).is_err());
-        assert!(segment.read(u64::MAX, 1).is_err());
+        assert!(segment.read(c.0, c.1 + 1, c.2).is_err());
+        assert!(segment.read(segment.len(), 1, 0).is_err());
+        assert!(segment.read(u64::MAX, 1, 0).is_err());
         // A slice that splits a multi-byte character is rejected as text.
-        assert!(segment.read(b.0 + 1, 1).is_err());
+        assert!(segment.read(b.0 + 1, 1, b.2).is_err());
         // Reopening truncates: the journal replay rebuilds it.
         let reopened = create(&dir.path().join("t"));
         assert_eq!(reopened.len(), HEADER_LEN);

@@ -56,6 +56,7 @@ The contract is [`server/openapi.json`](server/openapi.json). Every operation li
 | `POST /api/v1/documents/stream` NDJSON, committed every `--stream-batch` lines | write | 200 `{"added","rejected","errors":[{"line","message"}],"errors_truncated"}` |
 | `DELETE /api/v1/documents/{id}[?purge=true]` (percent-encoded; `purge` also rewrites the journal and scrubs the deleted data) | write | 200 `{"deleted": true}` |
 | `GET /api/v1/documents?limit&after` ids and metadata, id cursor | read | 200 `{"documents":[{"id","metadata"}],"next_cursor","count"}` |
+| `GET /api/v1/documents/{id}/chunks/{index}` retained chunk, zero-based index | read | 200 `{"revision","document","index","id","startByte","endByte","text"}`; 404 if absent |
 | `GET /api/v1/stats` | read | 200 `{"tenant","documents","vectors","documentIndexTrained","usedBytes","capacityBytes"}` |
 | `POST /api/v1/query` | read | 200 `{"matches":[{"id","text","metadata","score"}]}` best first |
 | `POST /api/v1/search` | read | 200 `{"hits":[{"id","score"}]}` best first (BM25; model stages when configured) |
@@ -70,6 +71,29 @@ The contract is [`server/openapi.json`](server/openapi.json). Every operation li
 ### Documents and queries
 
 A document is `{"id": str, "vector": [float], "text"?: str, "metadata"?: object}`. `vector` has exactly `--input-dim` finite f64 values, not all zero; query vectors follow the same rule. Normalization handles very large and very small finite magnitudes without narrowing to f32. `id` is 1 to 256 bytes with no control characters and not starting with `hms:`. `text` must fit one engine chunk (at most 4096 words and 64 KiB), because one vector describes one stored chunk; split longer documents and send one vector per part. `metadata` is at most 64 KiB. Adding an existing id replaces it.
+
+`GET /api/v1/documents/{id}/chunks/{index}` reads one retained chunk with document
+identity, metadata, version, source URI and `chunkCount`. It requires read scope and
+the selected tenant. `text: null` means text was not retained; a missing document
+or out-of-range index returns 404. HTTP-ingested documents have one chunk; native
+stores restored into the server may have more. A chunk contains at most 8 MiB of UTF-8
+text (the native whole-document limit), plus bounded document metadata. JSON
+escaping and serialization copies can make the response and peak allocation larger.
+
+Chunks preserve their stored passages, including internal whitespace. They do not
+recover omitted leading/trailing whitespace, gaps between nonoverlapping chunks,
+unretained text, or original pre-normalization embedding values. Recorded byte
+spans describe the ingested chunk; vector-only HTTP records use an unretained
+placeholder, so their spans are not evidence of original source text. Overlapping
+chunks must not be concatenated blindly.
+
+`revision` is an opaque string captured with the chunk. When assembling multiple
+reads, require the same revision throughout and retry if it changes. It is not the
+user-supplied document version and is not a durable cross-restart sequence number.
+Concurrent replacement/deletion or text-segment rebuilding triggers bounded internal
+retries; repeated changes return 503 `concurrent_mutation` with `Retry-After`.
+Storage failures remain errors, not missing text. Chunk reads support ETag and
+If-None-Match for the complete returned representation.
 
 `POST /api/v1/query` takes `{"query_vector": [...], "top_k"?: 1..=max-top-k (default 3), "filter"?: object}`. `filter` keeps documents whose metadata contains every filter key with an equal JSON value; it is applied before ranking, so it never reduces the number of matches below `top_k` when enough documents match. `score` is the exact cosine similarity between the query and the stored embedding.
 
@@ -88,7 +112,7 @@ Index maintenance also builds the tenant's optional document index over stored e
 ### Retries and conditional requests
 
 - `Idempotency-Key` on `POST /api/v1/documents`, `/documents/batch` and the memory operations replays the recorded response of an earlier request with the same key, tenant, method, path and body (`Idempotent-Replayed: true`); the same key with a different request is 422 `idempotency_key_reused`, and a key still running is 409 `idempotency_in_flight`. Transient failures (5xx, 429, 408) release the key, except typed `mutation_committed` errors. Completed keys are protected for `--idempotency-ttl-seconds`; running keys do not expire. Panics or insufficient replay-buffer capacity retain a key that returns 409 `idempotency_reconciliation_required`, preventing blind reexecution. Repeated `Idempotency-Key` fields are rejected with 422 before reserving a key or executing the write. Keys do not survive restart. An upsert alone does not guarantee that repeating every operation after restart is safe; reconcile IDs, versions and resulting state first.
-- `GET /api/v1/stats` and `GET /api/v1/documents` return a weak `ETag` derived from the serialized response and process epoch, and answer matching `If-None-Match` conditions with 304. Validators use weak comparison across repeated header lines and quoted lists; a lone `*` matches an existing representation. Malformed conditions are ignored rather than used to produce 304. See [RFC 9110 §13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.2). Validators are response-specific, not tenant revision tokens: unchanged pages may retain their tag after unrelated writes. Conditional reads render and hash the response before deciding whether to omit its body; this prevents reused validators during concurrent writes but adds work to 304 responses. Individual documents have no GET endpoint, so there is no per-document validator.
+- `GET /api/v1/stats`, `GET /api/v1/documents`, and retained-chunk reads return a weak `ETag` derived from the serialized response and process epoch, and answer matching `If-None-Match` conditions with 304. Validators use weak comparison across repeated header lines and quoted lists; a lone `*` matches an existing representation. Malformed conditions are ignored rather than used to produce 304. See [RFC 9110 §13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.2). Validators are response-specific, not tenant revision tokens: unchanged pages may retain their tag after unrelated writes. Conditional reads render and hash the response before deciding whether to omit its body; this prevents reused validators during concurrent writes but adds work to 304 responses. Chunk validators include the captured revision; they are not whole-document snapshot handles.
 
 ## Tenants
 

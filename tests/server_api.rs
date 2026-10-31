@@ -342,7 +342,7 @@ fn openapi_matches_the_committed_file_and_documented_security_is_enforced() {
     let generated: Value = serde_json::from_slice(&out.stdout).unwrap();
     let committed = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/server/openapi.json");
     if std::env::var_os("WARM_UPDATE_OPENAPI").is_some() {
-        std::fs::write(committed, [out.stdout.as_slice(), b"\n"].concat()).unwrap();
+        std::fs::write(committed, out.stdout.as_slice()).unwrap();
     }
     let on_disk: Value = serde_json::from_slice(&std::fs::read(committed).unwrap())
         .expect("docs/server/openapi.json; regenerate with WARM_UPDATE_OPENAPI=1");
@@ -362,7 +362,7 @@ fn openapi_matches_the_committed_file_and_documented_security_is_enforced() {
     for (path, item) in generated["paths"].as_object().unwrap() {
         for (method, op) in item.as_object().unwrap() {
             operations += 1;
-            let url = path.replace("{id}", "x");
+            let url = path.replace("{id}", "x").replace("{index}", "0");
             let scope = op["security"][0]["bearerAuth"][0].as_str();
             let send = |token: Option<&str>| {
                 let verb = method.to_uppercase();
@@ -1168,4 +1168,105 @@ fn singleton_headers_reject_repeated_retry_keys_without_reserving_them() {
         assert_eq!(response.status, 200);
         assert!(response.header("idempotent-replayed").is_none());
     }
+}
+
+#[test]
+fn chunk_reads_are_scoped_bounded_and_conditionally_cached() {
+    let scratch = tempfile::tempdir().unwrap();
+    let keys = scratch.path().join("keys.json");
+    let reader = keygen(&keys, "reader", "acme", "read");
+    let writer = keygen(&keys, "writer", "acme", "write");
+    let s = Server::start(&["--keys-file", keys.to_str().unwrap()], &[]);
+    let id = "folder/doc #1?";
+    let path = "/api/v1/documents/folder%2Fdoc%20%231%3F/chunks/0";
+    let mut value = doc(id, 1);
+    value["text"] = json!("  café🙂\tβ  ");
+    value["metadata"] = json!({"kind": "note"});
+    assert_eq!(
+        s.req("POST", "/api/v1/documents")
+            .bearer(&writer)
+            .json(&value)
+            .send()
+            .status,
+        200
+    );
+    assert_eq!(s.req("GET", path).send().status, 401);
+    assert_eq!(s.req("GET", path).bearer(&writer).send().status, 403);
+    assert_eq!(
+        s.req("GET", path)
+            .bearer(&reader)
+            .tenant("other")
+            .send()
+            .status,
+        403
+    );
+    let response = s.req("GET", path).bearer(&reader).send();
+    assert_eq!(response.status, 200);
+    let body = response.json();
+    assert_eq!(body["document"]["id"], id);
+    assert_eq!(body["document"]["metadata"], json!({"kind": "note"}));
+    assert_eq!(body["document"]["chunkCount"], 1);
+    assert_eq!(body["text"], "café🙂\tβ");
+    assert_eq!(
+        (body["startByte"].as_u64(), body["endByte"].as_u64()),
+        (Some(2), Some(14))
+    );
+    let tag = response.header("etag").unwrap();
+    let cached = s
+        .req("GET", path)
+        .bearer(&reader)
+        .header("If-None-Match", tag)
+        .send();
+    assert_eq!(cached.status, 304);
+    for suffix in ["1", "2", "999999"] {
+        let bad = format!("/api/v1/documents/folder%2Fdoc%20%231%3F/chunks/{suffix}");
+        assert_eq!(s.req("GET", &bad).bearer(&reader).send().status, 404);
+    }
+    for suffix in ["-1", "abc", "18446744073709551616"] {
+        let bad = format!("/api/v1/documents/folder%2Fdoc%20%231%3F/chunks/{suffix}");
+        let response = s.req("GET", &bad).bearer(&reader).send();
+        assert_eq!(response.status, 422);
+        assert_eq!(response.json()["code"], "invalid_request");
+    }
+    value["text"] = json!("replacement");
+    assert_eq!(
+        s.req("POST", "/api/v1/documents")
+            .bearer(&writer)
+            .json(&value)
+            .send()
+            .status,
+        200
+    );
+    let updated = s
+        .req("GET", path)
+        .bearer(&reader)
+        .header("If-None-Match", tag)
+        .send();
+    assert_eq!(updated.status, 200);
+    assert_eq!(updated.json()["text"], "replacement");
+    assert_ne!(updated.json()["revision"], body["revision"]);
+    assert_ne!(updated.header("etag"), Some(tag));
+    let vector_only = json!({"id": "vector-only", "vector": embedding(2)});
+    assert_eq!(
+        s.req("POST", "/api/v1/documents")
+            .bearer(&writer)
+            .json(&vector_only)
+            .send()
+            .status,
+        200
+    );
+    let missing_text = s
+        .req("GET", "/api/v1/documents/vector-only/chunks/0")
+        .bearer(&reader)
+        .send();
+    assert_eq!(missing_text.status, 200);
+    assert!(missing_text.json()["text"].is_null());
+    assert_eq!(
+        s.req("DELETE", "/api/v1/documents/folder%2Fdoc%20%231%3F")
+            .bearer(&writer)
+            .send()
+            .status,
+        200
+    );
+    assert_eq!(s.req("GET", path).bearer(&reader).send().status, 404);
 }

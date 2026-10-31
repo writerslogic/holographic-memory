@@ -42,8 +42,8 @@ pub(crate) use index::DocumentWithText;
 pub(crate) use index::{canonical_staging_path, opaque_counter_start, DocumentStore};
 pub(crate) use lexical::execute as execute_lexical;
 pub use lexical::{LexicalExecution, LexicalHit, LexicalOptions, LexicalQuery, LexicalResults};
-pub(crate) use listing::{count, get_info, get_record, list_info, list_records};
-pub use listing::{DocumentInfo, DocumentRecord};
+pub(crate) use listing::{capture_chunk, count, get_info, get_record, list_info, list_records};
+pub use listing::{DocumentChunkRecord, DocumentInfo, DocumentReadChanged, DocumentRecord};
 pub use memory::{MemoryDocumentStore, MemoryStoreStats};
 pub(crate) use overlay::Base as CheckpointBase;
 pub(crate) use search::{
@@ -378,9 +378,9 @@ pub(crate) struct StoredChunk {
     /// Inline text, or none when the store moved it to its text segment (`text_at`) or the
     /// document was stored without text.
     pub text: Option<String>,
-    /// Location of the text in the store's text segment, for the process that installed it.
+    /// Process-local offset, stored length and plaintext CRC32; rebuilt from authoritative records.
     #[serde(skip)]
-    pub text_at: Option<(u64, u32)>,
+    pub text_at: Option<(u64, u32, u32)>,
     pub start_byte: u32,
     pub end_byte: u32,
     pub vector: EntangledHVec,
@@ -1300,21 +1300,23 @@ pub(crate) fn prepare_spans(
 }
 
 /// Identity of the content deferred encoding reads: the version, byte spans and text of every
-/// chunk, mixed with the crate's splitmix64 chain. `None` when a chunk's text is unavailable.
+/// chunk, mixed with the crate's splitmix64 chain. `None` for unretained text; storage errors propagate.
 /// `Mutation::EncodeDocument` carries it so vectors computed for one revision of a document
 /// are never installed on another that reused its id, version and chunk count.
 pub(crate) fn document_fingerprint(
     store: &DocumentStore,
     document: &StoredDocument,
-) -> Option<u64> {
+) -> Result<Option<u64>> {
     let mut h = super::encoding::hash_str_seed(&document.version, 0x5EED_D0C5_F1A6_0001);
     for chunk in &document.chunks {
-        let text = store.chunk_text(chunk)?;
+        let Some(text) = store.try_chunk_text(chunk)? else {
+            return Ok(None);
+        };
         h = super::entangled::hash_u64(h, u64::from(chunk.start_byte));
         h = super::entangled::hash_u64(h, u64::from(chunk.end_byte));
         h = super::encoding::hash_str_seed(&text, h);
     }
-    Some(h)
+    Ok(Some(h))
 }
 
 /// Whether every query in `prepared` ranks from the checkpoint under `store` and the store's
@@ -1352,7 +1354,7 @@ pub(crate) fn search(
 ) -> Result<Vec<DocumentResult>> {
     let prepared = prepare_search(text, options, embedding_dimensions)?;
     let captured = capture_search(store, vec![prepared]);
-    Ok(execute_search(&captured, 0))
+    execute_search(&captured, 0)
 }
 
 #[cfg(test)]
@@ -1982,7 +1984,7 @@ mod tests {
                 };
                 let prepared = prepare_search("running common ghost", &options, Some(3)).unwrap();
                 let retained = capture_search(&store, vec![prepared]);
-                let old = serde_json::to_value(execute_search(&retained, 0)).unwrap();
+                let old = serde_json::to_value(execute_search(&retained, 0).unwrap()).unwrap();
                 let mut replacement = document(3, 2);
                 replacement.chunks.truncate(chunks);
                 replacement.metadata = json!({"group":99, "flag":false});
@@ -2004,7 +2006,7 @@ mod tests {
                     vec![prepare_search("running common ghost", &options, Some(3)).unwrap()],
                 );
                 assert_eq!(
-                    serde_json::to_value(execute_search(&captured, 0)).unwrap(),
+                    serde_json::to_value(execute_search(&captured, 0).unwrap()).unwrap(),
                     serde_json::to_value(
                         search_impl(&store, "running common ghost", &options, Some(3), false)
                             .unwrap()
@@ -2012,7 +2014,7 @@ mod tests {
                     .unwrap()
                 );
                 assert_eq!(
-                    serde_json::to_value(execute_search(&retained, 0)).unwrap(),
+                    serde_json::to_value(execute_search(&retained, 0).unwrap()).unwrap(),
                     old
                 );
                 assert_eq!(
@@ -2072,7 +2074,7 @@ mod tests {
                 store.remove("d003");
                 assert_scan_parity(&store);
                 assert_eq!(
-                    serde_json::to_value(execute_search(&retained, 0)).unwrap(),
+                    serde_json::to_value(execute_search(&retained, 0).unwrap()).unwrap(),
                     old
                 );
             }

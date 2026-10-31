@@ -9,7 +9,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use axum::extract::rejection::QueryRejection;
+use axum::extract::rejection::{PathRejection, QueryRejection};
 use axum::extract::{Path as UrlPath, Query, Request, State};
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -72,16 +72,21 @@ pub fn dense(values: &[f64], input_dim: usize, what: &str) -> Result<(), ApiErro
     Ok(())
 }
 
-pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<ValidDoc, ApiError> {
-    if doc.id.is_empty()
-        || doc.id.len() > MAX_ID_BYTES
-        || doc.id.chars().any(char::is_control)
-        || doc.id.starts_with("hms:")
+fn validate_document_id(id: &str) -> Result<(), ApiError> {
+    if id.is_empty()
+        || id.len() > MAX_ID_BYTES
+        || id.chars().any(char::is_control)
+        || id.starts_with("hms:")
     {
         return Err(ApiError::bad(format!(
             "id must be 1..={MAX_ID_BYTES} bytes, without control characters or the reserved \"hms:\" prefix"
         )));
     }
+    Ok(())
+}
+
+pub fn validate_doc(doc: DocIn, cfg: &Config, server_embeds: bool) -> Result<ValidDoc, ApiError> {
+    validate_document_id(&doc.id)?;
     let text = doc.text.unwrap_or_default();
     if text.len() > MAX_TEXT_BYTES {
         return Err(ApiError::bad(format!(
@@ -1076,13 +1081,13 @@ async fn cached_read(
     state: Arc<AppState>,
     tenant: String,
     headers: HeaderMap,
-    render: impl FnOnce(&CoreGuard) -> Value + Send + 'static,
+    render: impl FnOnce(&CoreGuard) -> Result<Value, ApiError> + Send + 'static,
 ) -> ApiResult {
     let permit = acquire(&state).await?;
     let (page, tag) = blocking(permit, move || {
         let representation = {
             let core = state.core(&tenant)?;
-            render(&core).to_string().into_bytes()
+            render(&core)?.to_string().into_bytes()
         };
         let tag = etag(&state, &representation);
         if not_modified(&headers, &tag) {
@@ -1096,6 +1101,37 @@ async fn cached_read(
         None => StatusCode::NOT_MODIFIED.into_response(),
     };
     Ok(with_etag(response, &tag))
+}
+
+pub async fn read_document_chunk(
+    State(state): State<Arc<AppState>>,
+    path: Result<UrlPath<(String, usize)>, PathRejection>,
+    req: Request,
+) -> ApiResult {
+    let (_, tenant) = admit(&state, &req, Scope::Read)?;
+    let UrlPath((id, index)) =
+        path.map_err(|_| ApiError::bad("invalid document id or chunk index"))?;
+    validate_document_id(&id)?;
+    let headers = req.headers().clone();
+    cached_read(state, tenant, headers, move |core| {
+        let chunk = core
+            .read_document_chunk(&id, index)
+            .map_err(|error| {
+                if error.is::<writerslogic_warm::DocumentReadChanged>() {
+                    ApiError::new(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "concurrent_mutation",
+                        error.to_string(),
+                    )
+                    .retry_after(1)
+                } else {
+                    ApiError::from_core(error)
+                }
+            })?
+            .ok_or_else(|| ApiError::not_found("document or chunk not found"))?;
+        Ok(body(&chunk))
+    })
+    .await
 }
 
 /// `GET /api/v1/documents`: ids and metadata, paginated by id cursor, with the total count.
@@ -1126,11 +1162,11 @@ pub async fn list_documents(
                 metadata: record.metadata,
             })
             .collect();
-        body(&DocumentPage {
+        Ok(body(&DocumentPage {
             documents,
             next_cursor: next,
             count: core.document_count(),
-        })
+        }))
     })
     .await
 }
@@ -1142,7 +1178,7 @@ pub async fn stats(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
     let name = tenant.clone();
     cached_read(state, tenant, headers, move |core| {
         let health = core.storage_health();
-        body(&Stats {
+        Ok(body(&Stats {
             tenant: name,
             documents: core.document_count(),
             vectors: core.document_embedding_count(),
@@ -1150,7 +1186,7 @@ pub async fn stats(State(state): State<Arc<AppState>>, req: Request) -> ApiResul
             vector_index: vector_index_body(core),
             used_bytes: health.used_bytes,
             capacity_bytes: health.capacity_bytes,
-        })
+        }))
     })
     .await
 }

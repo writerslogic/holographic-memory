@@ -60,7 +60,7 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
     }
     writer.join().unwrap()?;
     drop(core);
-    let old = documents::execute_search(&captured, 0);
+    let old = documents::execute_search(&captured, 0)?;
     assert_eq!(
         old.iter()
             .map(|r| r.document_id.as_str())
@@ -71,7 +71,7 @@ fn captured_queries_survive_durable_mutation_compaction_and_restart() -> Result<
         && r.source_uri.as_deref() == Some("source:old")
         && r.metadata["group"] == "before"
         && r.semantic_score == Some(1.0)));
-    let second = documents::execute_search(&captured, 1);
+    let second = documents::execute_search(&captured, 1)?;
     assert_eq!(second.len(), 1);
     assert_eq!(second[0].document_id, "b");
     // The delete zeroed the text on disk, so a query captured before it reads none.
@@ -108,11 +108,11 @@ fn ranked_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()
     };
     let captured = capture()?;
     let ranked = documents::rank_search(&captured, 0);
-    let read = documents::read_ranked(&captured, 0, ranked).expect("nothing scrubbed");
+    let read = documents::read_ranked(&captured, 0, ranked)?.expect("nothing scrubbed");
     assert_eq!(read[0].text.as_deref(), Some("current revision1"));
     let ranked = documents::rank_search(&captured, 0);
     core.memorize_document(input("a", "2", "current revision2", "g")?)?;
-    assert!(documents::read_ranked(&captured, 0, ranked).is_none());
+    assert!(documents::read_ranked(&captured, 0, ranked)?.is_none());
     let found = core.search_documents("current", &SearchOptions::default())?;
     assert_eq!(found[0].version, "2");
     assert_eq!(found[0].text.as_deref(), Some("current revision2"));
@@ -145,11 +145,11 @@ fn vector_hits_are_not_read_after_a_replacement_scrubs_their_text() -> Result<()
     };
     let ranked = rank()?.expect("current snapshot");
     let read =
-        documents::read_vector_hits(ranked, &core.documents.read()).expect("nothing scrubbed");
+        documents::read_vector_hits(ranked, &core.documents.read())?.expect("nothing scrubbed");
     assert_eq!(read[0].text.as_deref(), Some("current revision1"));
     let ranked = rank()?.expect("current snapshot");
     core.memorize_document(input("a", "2", "current revision2", "g")?)?;
-    assert!(documents::read_vector_hits(ranked, &core.documents.read()).is_none());
+    assert!(documents::read_vector_hits(ranked, &core.documents.read())?.is_none());
     let found = core.search_vectors(&[1.0, 0.0], 1, &options)?;
     assert_eq!(found[0].version, "2");
     assert_eq!(found[0].text.as_deref(), Some("current revision2"));
@@ -313,4 +313,91 @@ fn failed_canonical_rebuild_keeps_the_live_text_segment() -> Result<()> {
     let record = core.get_document("a").expect("document a");
     assert_eq!(record.text.as_deref(), Some("kept alpha text"));
     Ok(())
+}
+
+fn check_query_cache_errors(query: impl Fn(&WarmCore) -> Result<usize>) -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let core = WarmCore::new(
+        256,
+        Some(directory.path().display().to_string()),
+        Some(super::fixture_config(2)),
+    )?;
+    core.memorize_document(input("a", "1", "needle alpha beta", "g")?)?;
+    core.memorize_document(input("b", "1", "needle alpha beta", "g")?)?;
+    assert!(core.rebuild_vector_index(usize::MAX)?);
+    assert_eq!(query(&core)?, 2);
+    let path = directory.path().join("documents.text");
+    let original = std::fs::read(&path)?;
+    let damaged_at = core.documents.read().get("b").unwrap().chunks[0]
+        .text_at
+        .unwrap()
+        .0 as usize;
+    assert_eq!(&original[damaged_at..], b"needle alpha beta");
+    let mut failures = Vec::new();
+    for truncate in [false, true] {
+        let mut damaged = original.clone();
+        if truncate {
+            damaged.pop();
+        } else {
+            damaged[damaged_at] ^= 1;
+        }
+        std::fs::write(&path, damaged)?;
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| query(&core)));
+        std::fs::write(&path, &original)?;
+        let expected = if truncate {
+            "reading chunk text"
+        } else {
+            "checksum mismatch"
+        };
+        match result {
+            Ok(Err(error)) if format!("{error:#}").contains(expected) => {}
+            Ok(other) => failures.push(format!(
+                "truncate={truncate}: expected cache error, got {other:?}"
+            )),
+            Err(_) => failures.push(format!("truncate={truncate}: query panicked")),
+        }
+        assert_eq!(query(&core)?, 2);
+    }
+    assert!(failures.is_empty(), "{}", failures.join("; "));
+    Ok(())
+}
+
+#[test]
+fn document_queries_report_cache_errors_without_panicking() -> Result<()> {
+    check_query_cache_errors(|core| {
+        core.search_documents("needle", &SearchOptions::default())
+            .map(|hits| hits.len())
+    })
+}
+
+#[test]
+fn vector_queries_report_cache_errors_without_panicking() -> Result<()> {
+    check_query_cache_errors(|core| {
+        core.search_vectors(&[1.0, 0.0], 2, &documents::VectorQueryOptions::default())
+            .map(|hits| hits.len())
+    })
+}
+
+#[test]
+fn phrase_queries_report_cache_errors_without_panicking() -> Result<()> {
+    check_query_cache_errors(|core| {
+        core.search_lexical(
+            &documents::LexicalQuery::parse("\"alpha beta\"")?,
+            &documents::LexicalOptions::default(),
+        )
+        .map(|result| result.hits.len())
+    })
+}
+
+#[test]
+fn captured_queries_report_cache_errors_without_panicking() -> Result<()> {
+    check_query_cache_errors(|core| {
+        documents::search(
+            &core.documents.read(),
+            "needle",
+            &SearchOptions::default(),
+            Some(2),
+        )
+        .map(|hits| hits.len())
+    })
 }

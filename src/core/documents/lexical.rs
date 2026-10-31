@@ -222,7 +222,7 @@ fn positions_for_chunk<'a>(
     match chunk.terms.positions.as_deref() {
         Some(positions) => Ok(Cow::Borrowed(positions)),
         None => {
-            let text = store.chunk_text(chunk).context("unsupported index: a candidate phrase needs stored positions or retained chunk text")?;
+            let text = store.try_chunk_text(chunk)?.context("unsupported index: a candidate phrase needs stored positions or retained chunk text")?;
             Ok(Cow::Owned(super::positions::Positions::from_text(
                 &text,
                 chunk.stemmed,

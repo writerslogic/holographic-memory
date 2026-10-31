@@ -6,12 +6,17 @@
 use serde::Serialize;
 use serde_json::Value;
 
+use std::sync::Arc;
+
+use anyhow::{ensure, Context, Result};
+
 use super::index::text_of;
 use super::text::TextSegment;
 use super::{DocumentStore, StoredDocument};
 
 /// Document identity, provenance and metadata without copying stored chunk text.
 #[derive(Clone, Debug, Serialize)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct DocumentInfo {
     pub id: String,
@@ -19,6 +24,153 @@ pub struct DocumentInfo {
     pub version: String,
     pub metadata: Value,
     pub chunk_count: usize,
+}
+
+/// One retained chunk, with its source byte span and document metadata.
+/// `text` is absent when text retention was disabled; spans do not restore omitted whitespace.
+#[derive(Clone, Debug, Serialize)]
+#[cfg_attr(feature = "server", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentChunkRecord {
+    /// Opaque store revision captured with this chunk; compare across reads, do not interpret numerically.
+    pub revision: String,
+    pub document: DocumentInfo,
+    pub index: usize,
+    pub id: String,
+    pub start_byte: u32,
+    pub end_byte: u32,
+    pub text: Option<String>,
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("document changed repeatedly while reading; retry")]
+pub struct DocumentReadChanged;
+
+pub(crate) struct CapturedChunkRead {
+    record: DocumentChunkRecord,
+    segment: Option<(Arc<TextSegment>, u64, u32, u32)>,
+    document: Option<Arc<StoredDocument>>,
+}
+
+pub(crate) struct ChunkReadIdentity {
+    document: Option<Arc<StoredDocument>>,
+    segment: Option<Arc<TextSegment>>,
+}
+
+impl ChunkReadIdentity {
+    pub(crate) fn is_current(&self, store: &DocumentStore) -> bool {
+        let Some(document) = &self.document else {
+            return true;
+        };
+        store
+            .get(&document.id)
+            .is_some_and(|current| Arc::ptr_eq(document, current))
+            && match (&self.segment, store.text_segment()) {
+                (Some(old), Some(current)) => Arc::ptr_eq(old, &current),
+                (None, None) => true,
+                _ => false,
+            }
+    }
+}
+
+impl CapturedChunkRead {
+    pub(crate) fn read(mut self) -> (ChunkReadIdentity, Result<DocumentChunkRecord>) {
+        let identity = ChunkReadIdentity {
+            document: self.document,
+            segment: self
+                .segment
+                .as_ref()
+                .map(|(segment, _, _, _)| Arc::clone(segment)),
+        };
+        let result = (|| {
+            if let Some((segment, at, len, checksum)) = self.segment {
+                let text = segment.read(at, len, checksum)?;
+                ensure!(
+                    text.len() <= super::MAX_DOCUMENT_BYTES,
+                    "stored chunk exceeds read limit"
+                );
+                self.record.text = Some(text);
+            }
+            ensure!(
+                self.record.text.as_ref().is_none_or(|text| self
+                    .record
+                    .end_byte
+                    .checked_sub(self.record.start_byte)
+                    .is_some_and(|length| text.len() == length as usize)),
+                "stored chunk text length disagrees with its byte span"
+            );
+            Ok(self.record)
+        })();
+        (identity, result)
+    }
+}
+
+pub(crate) fn capture_chunk(
+    store: &DocumentStore,
+    id: &str,
+    index: usize,
+    revision: u64,
+) -> Result<Option<CapturedChunkRead>> {
+    if let Some(document) = store.get(id) {
+        let Some(chunk) = document.chunks.get(index) else {
+            return Ok(None);
+        };
+        ensure!(
+            chunk
+                .text
+                .as_ref()
+                .is_none_or(|text| text.len() <= super::MAX_DOCUMENT_BYTES),
+            "stored chunk exceeds read limit"
+        );
+        let segment = if chunk.text.is_none() {
+            chunk
+                .text_at
+                .map(|(at, len, checksum)| {
+                    ensure!(
+                        len as usize <= super::MAX_DOCUMENT_BYTES + 12 + 16,
+                        "stored chunk exceeds read limit"
+                    );
+                    Ok((
+                        store
+                            .text_segment()
+                            .context("stored chunk has no text segment")?,
+                        at,
+                        len,
+                        checksum,
+                    ))
+                })
+                .transpose()?
+        } else {
+            None
+        };
+        return Ok(Some(CapturedChunkRead {
+            record: DocumentChunkRecord {
+                revision: revision.to_string(),
+                document: info(document),
+                index,
+                id: chunk.id.clone(),
+                start_byte: chunk.start_byte,
+                end_byte: chunk.end_byte,
+                text: chunk.text.clone(),
+            },
+            document: segment.as_ref().map(|_| Arc::clone(document)),
+            segment,
+        }));
+    }
+    let Some(base) = &store.base else {
+        return Ok(None);
+    };
+    let Some(ordinal) = base.live(id) else {
+        return Ok(None);
+    };
+    Ok(base
+        .image
+        .document_chunk(ordinal, index, revision)?
+        .map(|record| CapturedChunkRead {
+            record,
+            segment: None,
+            document: None,
+        }))
 }
 
 fn info(document: &StoredDocument) -> DocumentInfo {

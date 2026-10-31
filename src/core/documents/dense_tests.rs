@@ -373,7 +373,7 @@ fn captured_index_survives_replacement_delete_and_slot_reuse_while_stale_build_i
     let fresh = document(999, &[vec![0.0, 1.0, 0.0, 0.0]]);
     store.insert(fresh.id.clone(), fresh);
     assert_eq!(
-        serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+        serde_json::to_value(documents::execute_search(&captured, 0).unwrap()).unwrap(),
         expected_old
     );
     assert!(!Arc::ptr_eq(&old, &store.documents["d0003"]));
@@ -391,7 +391,7 @@ fn captured_index_survives_replacement_delete_and_slot_reuse_while_stale_build_i
     assert_eq!(result(&store, "running rare3", &options, 4), expected);
     drop(store);
     assert_eq!(
-        serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+        serde_json::to_value(documents::execute_search(&captured, 0).unwrap()).unwrap(),
         expected_old
     );
 }
@@ -630,7 +630,8 @@ fn repeated_owner_replacement_and_recreation_match_exhaustive_snapshots() {
                         vec![documents::prepare_search(query, &options, Some(2)).unwrap()],
                     );
                     assert_eq!(
-                        serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+                        serde_json::to_value(documents::execute_search(&captured, 0).unwrap())
+                            .unwrap(),
                         expected,
                         "step {step}"
                     );
@@ -645,7 +646,7 @@ fn repeated_owner_replacement_and_recreation_match_exhaustive_snapshots() {
     drop(store);
     for (captured, expected) in snapshots {
         assert_eq!(
-            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+            serde_json::to_value(documents::execute_search(&captured, 0).unwrap()).unwrap(),
             expected
         );
     }

@@ -284,7 +284,7 @@ fn encode_document(
         }
         put_varint(out, u64::from(chunk.start_byte));
         put_varint(out, u64::from(chunk.end_byte));
-        match super::index::text_of(chunk, segment) {
+        match super::index::try_text_of(chunk, segment)? {
             Some(text) => {
                 out.push(TEXT_INLINE);
                 put_bytes(out, text.as_bytes());
@@ -447,6 +447,10 @@ impl ServingImage {
                 previous.is_none_or(|p| p < id),
                 "checkpoint ids out of order"
             );
+            ensure!(
+                !id.is_empty() && id.len() <= u16::MAX as usize && !id.contains('\0'),
+                "checkpoint document id"
+            );
             previous = Some(id);
         }
         Ok(())
@@ -587,14 +591,53 @@ impl ServingImage {
     }
 
     pub(super) fn document_info(&self, ordinal: usize) -> Result<super::DocumentInfo> {
-        let record = self.record(ordinal)?;
-        Ok(super::DocumentInfo {
+        Ok(self.info(ordinal, self.record(ordinal)?))
+    }
+
+    fn info(&self, ordinal: usize, record: Record<'_>) -> super::DocumentInfo {
+        super::DocumentInfo {
             id: self.id(ordinal).to_owned(),
             source_uri: record.source_uri.map(str::to_owned),
             version: record.version.to_owned(),
             metadata: record.metadata,
             chunk_count: record.chunks.len(),
-        })
+        }
+    }
+
+    pub(super) fn document_chunk(
+        &self,
+        ordinal: usize,
+        index: usize,
+        revision: u64,
+    ) -> Result<Option<super::DocumentChunkRecord>> {
+        let record = self.record(ordinal)?;
+        let Some(chunk) = record.chunks.get(index) else {
+            return Ok(None);
+        };
+        ensure!(
+            chunk
+                .text
+                .is_none_or(|text| text.len() <= super::MAX_DOCUMENT_BYTES),
+            "stored chunk exceeds read limit"
+        );
+        let id = chunk
+            .id
+            .map(str::to_owned)
+            .unwrap_or_else(|| super::chunk_id(self.id(ordinal), index));
+        let (start_byte, end_byte, text) = (
+            chunk.start_byte,
+            chunk.end_byte,
+            chunk.text.map(str::to_owned),
+        );
+        Ok(Some(super::DocumentChunkRecord {
+            revision: revision.to_string(),
+            document: self.info(ordinal, record),
+            index,
+            id,
+            start_byte,
+            end_byte,
+            text,
+        }))
     }
 
     /// The ordinal of the document owning `slot`, `None` for a free slot.
@@ -618,15 +661,36 @@ impl ServingImage {
         let (start, end) = self.span(Section::DocOffsets, ordinal);
         let mut reader = Reader::new(&self.section(Section::Docs)[start..end]);
         let version = reader.str()?;
+        ensure!(
+            (1..=1024).contains(&version.len()),
+            "checkpoint version length"
+        );
         let source_uri = match reader.byte()? {
             0 => None,
             1 => Some(reader.str()?),
             other => bail!("checkpoint source flag {other}"),
         };
+        ensure!(
+            source_uri.is_none_or(|uri| uri.len() <= 8192),
+            "checkpoint source URI length"
+        );
+        let metadata_bytes = reader.bytes()?;
+        ensure!(
+            metadata_bytes.len() <= 64 * 1024,
+            "checkpoint metadata exceeds 64 KiB"
+        );
         let mut metadata: serde_json::Value =
-            serde_json::from_slice(reader.bytes()?).context("checkpoint metadata")?;
+            serde_json::from_slice(metadata_bytes).context("checkpoint metadata")?;
+        ensure!(
+            metadata.is_object(),
+            "checkpoint metadata must be an object"
+        );
         super::compact_metadata(&mut metadata);
         let count = reader.count(4)?;
+        ensure!(
+            (1..=4096).contains(&count),
+            "checkpoint document chunk count"
+        );
         let mut chunks = Vec::with_capacity(count);
         for _ in 0..count {
             let flags = reader.byte()?;
@@ -639,13 +703,27 @@ impl ServingImage {
             } else {
                 None
             };
+            ensure!(
+                id.is_none_or(|id| !id.is_empty()
+                    && id.len() <= u16::MAX as usize
+                    && !id.contains('\0')),
+                "checkpoint chunk id"
+            );
             let start_byte = u32::try_from(reader.varint()?)?;
             let end_byte = u32::try_from(reader.varint()?)?;
+            ensure!(
+                start_byte < end_byte && end_byte as usize <= super::MAX_DOCUMENT_BYTES,
+                "checkpoint chunk byte span"
+            );
             let text = match reader.byte()? {
                 TEXT_NONE => None,
                 TEXT_INLINE => Some(reader.str()?),
                 other => bail!("checkpoint text kind {other}"),
             };
+            ensure!(
+                text.is_none_or(|text| text.len() == (end_byte - start_byte) as usize),
+                "checkpoint chunk text length"
+            );
             chunks.push(RecordChunk {
                 id,
                 stemmed: flags & STEMMED != 0,
@@ -1018,5 +1096,102 @@ mod tests {
         // (docs + 1) * 4 and slots * 12 wrap to the 4- and 0-byte tables.
         assert!(ServingImage::new(checkpoint(&[(H_DOCS, 1 << 62)], lens)).is_err());
         assert!(ServingImage::new(checkpoint(&[(H_SLOTS, 1 << 62)], lens)).is_err());
+    }
+    fn image_with_record(record: &[u8]) -> ServingImage {
+        let mut lens = [0; SECTIONS];
+        lens[Section::IdOffsets as usize] = 8;
+        lens[Section::Ids as usize] = 3;
+        lens[Section::DocOffsets as usize] = 8;
+        lens[Section::Docs as usize] = record.len();
+        let mut bytes = checkpoint(&[(H_DOCS, 1)], lens).to_vec();
+        for (section, data) in [
+            (
+                Section::IdOffsets,
+                [0u32.to_le_bytes(), 3u32.to_le_bytes()].concat(),
+            ),
+            (Section::Ids, b"doc".to_vec()),
+            (
+                Section::DocOffsets,
+                [0u32.to_le_bytes(), (record.len() as u32).to_le_bytes()].concat(),
+            ),
+            (Section::Docs, record.to_vec()),
+        ] {
+            let at = word(&bytes, H_SECTIONS + 2 * section as usize) as usize;
+            bytes[at..at + data.len()].copy_from_slice(&data);
+        }
+        ServingImage::new(Backing::Owned(bytes)).unwrap()
+    }
+
+    fn record_prefix(version: usize, uri: usize, metadata: usize, chunks: usize) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        put_bytes(&mut bytes, "v".repeat(version).as_bytes());
+        bytes.push(1);
+        put_bytes(&mut bytes, "u".repeat(uri).as_bytes());
+        let metadata = serde_json::json!({"x": "x".repeat(metadata - 8)}).to_string();
+        put_bytes(&mut bytes, metadata.as_bytes());
+        put_varint(&mut bytes, chunks as u64);
+        bytes
+    }
+
+    #[test]
+    fn record_lengths_obey_ingest_bounds_before_allocating_fields() {
+        for (field, limit) in [
+            ("version", 1024),
+            ("uri", 8192),
+            ("metadata", 64 * 1024),
+            ("chunks", 4096),
+        ] {
+            for value in [limit - 1, limit, limit + 1] {
+                let (mut version, mut uri, mut metadata, mut chunks) = (1, 1, 8, 1);
+                match field {
+                    "version" => version = value,
+                    "uri" => uri = value,
+                    "metadata" => metadata = value,
+                    _ => chunks = value,
+                }
+                let mut bytes = record_prefix(version, uri, metadata, chunks);
+                for _ in 0..chunks {
+                    bytes.extend_from_slice(&[0, 0, 1, TEXT_NONE]);
+                }
+                let image = image_with_record(&bytes);
+                assert_eq!(image.record(0).is_ok(), value <= limit, "{field} {value}");
+            }
+        }
+        let bytes = record_prefix(1, 1, 8, 0);
+        assert!(image_with_record(&bytes).record(0).is_err());
+    }
+
+    #[test]
+    fn chunk_ids_spans_and_text_obey_stored_record_bounds() {
+        for length in [65534, 65535, 65536] {
+            let mut bytes = record_prefix(1, 1, 8, 1);
+            bytes.push(OWN_ID);
+            put_bytes(&mut bytes, "i".repeat(length).as_bytes());
+            bytes.extend_from_slice(&[0, 1, TEXT_NONE]);
+            assert_eq!(image_with_record(&bytes).record(0).is_ok(), length <= 65535);
+        }
+        for end in [
+            super::super::MAX_DOCUMENT_BYTES - 1,
+            super::super::MAX_DOCUMENT_BYTES,
+            super::super::MAX_DOCUMENT_BYTES + 1,
+        ] {
+            let mut bytes = record_prefix(1, 1, 8, 1);
+            bytes.extend_from_slice(&[0, 0]);
+            put_varint(&mut bytes, end as u64);
+            bytes.push(TEXT_NONE);
+            assert_eq!(
+                image_with_record(&bytes).record(0).is_ok(),
+                end <= super::super::MAX_DOCUMENT_BYTES
+            );
+        }
+        for (end, text) in [(1, "x"), (2, "x"), (1, "xx")] {
+            let mut bytes = record_prefix(1, 1, 8, 1);
+            bytes.extend_from_slice(&[0, 0, end, TEXT_INLINE]);
+            put_bytes(&mut bytes, text.as_bytes());
+            assert_eq!(
+                image_with_record(&bytes).record(0).is_ok(),
+                text.len() == end as usize
+            );
+        }
     }
 }

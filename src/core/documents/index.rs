@@ -4,6 +4,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+use anyhow::Context;
+
 use super::dense::{DenseChange, DenseIndex, MAX_ROWS, MIN_ROWS};
 use super::positions::Positions;
 use super::postings::PostingLists;
@@ -239,7 +241,8 @@ impl serde::Serialize for ChunkWithText<'_> {
         let c = self.chunk;
         let mut s = serializer.serialize_struct("StoredChunk", 9)?;
         s.serialize_field("id", &c.id)?;
-        s.serialize_field("text", &text_of(c, self.segment))?;
+        let text = try_text_of(c, self.segment).map_err(<S::Error as serde::ser::Error>::custom)?;
+        s.serialize_field("text", &text)?;
         s.serialize_field("start_byte", &c.start_byte)?;
         s.serialize_field("end_byte", &c.end_byte)?;
         s.serialize_field("vector", &c.vector)?;
@@ -256,15 +259,21 @@ impl serde::Serialize for ChunkWithText<'_> {
 
 /// A chunk's text from its inline copy or the segment holding it.
 pub(super) fn text_of(chunk: &StoredChunk, segment: Option<&TextSegment>) -> Option<String> {
+    try_text_of(chunk, segment).expect("chunk text read")
+}
+
+pub(super) fn try_text_of(
+    chunk: &StoredChunk,
+    segment: Option<&TextSegment>,
+) -> anyhow::Result<Option<String>> {
     match (&chunk.text, chunk.text_at) {
-        (Some(text), _) => Some(text.clone()),
-        (None, Some((at, len))) => Some(
+        (Some(text), _) => Ok(Some(text.clone())),
+        (None, Some((at, len, checksum))) => Ok(Some(
             segment
-                .expect("chunk text moved to a segment the store no longer has")
-                .read(at, len)
-                .expect("chunk text read"),
-        ),
-        (None, None) => None,
+                .context("chunk text moved to a segment the store no longer has")?
+                .read(at, len, checksum)?,
+        )),
+        (None, None) => Ok(None),
     }
 }
 
@@ -275,7 +284,7 @@ pub(super) fn text_scrubbed(chunk: &StoredChunk, segment: Option<&TextSegment>) 
         && chunk
             .text_at
             .zip(segment)
-            .is_some_and(|((at, len), segment)| segment.is_scrubbed(at, len))
+            .is_some_and(|((at, len, _), segment)| segment.is_scrubbed(at, len))
 }
 
 fn remove_secondary<K: Ord>(map: &mut BTreeMap<K, BTreeSet<String>>, key: &K, id: &str) {
@@ -465,7 +474,11 @@ impl DocumentStore {
 
     /// A chunk's text from its inline copy or this store's text segment.
     pub(crate) fn chunk_text(&self, chunk: &StoredChunk) -> Option<String> {
-        text_of(chunk, self.text.as_deref())
+        self.try_chunk_text(chunk).expect("chunk text read")
+    }
+
+    pub(crate) fn try_chunk_text(&self, chunk: &StoredChunk) -> anyhow::Result<Option<String>> {
+        try_text_of(chunk, self.text.as_deref())
     }
 
     /// Whether document `id` is stored, here or live in the checkpoint under the store.
@@ -986,7 +999,7 @@ impl DocumentStore {
                     .chunks
                     .iter()
                     .filter_map(|c| c.text_at)
-                    .any(|(at, len)| segment.is_scrubbed(at, len))
+                    .any(|(at, len, _)| segment.is_scrubbed(at, len))
             })
     }
 
@@ -1020,7 +1033,7 @@ impl DocumentStore {
         removed: Option<Arc<StoredDocument>>,
     ) -> anyhow::Result<Option<Arc<StoredDocument>>> {
         if let (Some(document), Some(segment)) = (&removed, self.text.as_deref()) {
-            for (at, len) in document.chunks.iter().filter_map(|c| c.text_at) {
+            for (at, len, _) in document.chunks.iter().filter_map(|c| c.text_at) {
                 segment.scrub(at, len)?;
             }
         }
@@ -1058,8 +1071,8 @@ impl DocumentStore {
             .map(|document| {
                 let mut owned = StoredDocument::clone(document);
                 for chunk in &mut owned.chunks {
-                    if let Some((at, len)) = chunk.text_at.take() {
-                        chunk.text = Some(old.read(at, len)?);
+                    if let Some((at, len, checksum)) = chunk.text_at.take() {
+                        chunk.text = Some(old.read(at, len, checksum)?);
                     }
                 }
                 Ok(Arc::new(owned))
@@ -1260,7 +1273,7 @@ mod position_source_tests {
             vec![documents::prepare_search("red", &SearchOptions::default(), None).unwrap()],
         );
         let captured_result =
-            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap();
+            serde_json::to_value(documents::execute_search(&captured, 0).unwrap()).unwrap();
 
         store.insert(
             "live".into(),
@@ -1308,7 +1321,7 @@ mod position_source_tests {
         assert!(removed_source.upgrade().is_none());
         assert_eq!(serde_json::to_vec(&held).unwrap(), serialized);
         assert_eq!(
-            serde_json::to_value(documents::execute_search(&captured, 0)).unwrap(),
+            serde_json::to_value(documents::execute_search(&captured, 0).unwrap()).unwrap(),
             captured_result
         );
         drop(held);
@@ -1407,5 +1420,46 @@ mod position_source_tests {
             assert_eq!(Arc::strong_count(source), owners);
             assert_eq!(expected.count, Some(store.documents.len()));
         }
+    }
+}
+
+#[cfg(test)]
+mod text_serialization_tests {
+    use super::*;
+
+    #[test]
+    fn damaged_text_cache_is_a_serialization_error_not_a_panic() -> anyhow::Result<()> {
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("text");
+        let segment = TextSegment::create(
+            &path,
+            #[cfg(feature = "security")]
+            None,
+        )?;
+        let mut document = super::super::prepare(
+            serde_json::from_value(serde_json::json!({"id":"doc", "text":"alpha beta"}))?,
+            64,
+            None,
+            crate::core::encoding::TextEncoder::default(),
+        )?;
+        let chunk = &mut document.chunks[0];
+        chunk.text_at = Some(segment.append(chunk.text.as_deref().unwrap())?);
+        chunk.text = None;
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(path)?
+            .set_len(8)?;
+        let serialized = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            serde_json::to_vec(&DocumentWithText {
+                document: &document,
+                segment: Some(&segment),
+            })
+        }))
+        .expect("serializer panicked instead of returning its I/O error");
+        assert!(serialized
+            .unwrap_err()
+            .to_string()
+            .contains("reading chunk text"));
+        Ok(())
     }
 }
